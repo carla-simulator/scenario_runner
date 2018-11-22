@@ -108,7 +108,7 @@ class ScenarioManager(object):
         world.on_tick(self.tick_scenario)
 
         # To print the scenario tree uncomment the next line
-        py_trees.display.render_dot_tree(self.scenario_tree)
+        # py_trees.display.render_dot_tree(self.scenario_tree)
 
     def run_scenario(self):
         """

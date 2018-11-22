@@ -101,10 +101,11 @@ class FollowLeadingVehicle(object):
         blueprint_library = world.get_blueprint_library()
 
         # Get vehicle by model
-        bp = random.choice(blueprint_library.filter(model))
-        color = random.choice(bp.get_attribute('color').recommended_values)
-        bp.set_attribute('color', color)
-        vehicle = world.spawn_actor(bp, spawn_point)
+        blueprint = random.choice(blueprint_library.filter(model))
+        color = random.choice(
+            blueprint.get_attribute('color').recommended_values)
+        blueprint.set_attribute('color', color)
+        vehicle = world.spawn_actor(blueprint, spawn_point)
 
         # Let's put the vehicle to drive around.
         vehicle.set_autopilot(False)
@@ -125,23 +126,29 @@ class FollowLeadingVehicle(object):
         If this does not happen within 60 seconds, a timeout stops the scenario
         """
 
-        # Build behavior tree
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
-        startcondition = atomic_scenario_behavior.InTriggerDistance(
-            self.other_vehicle,
+        # start condition
+        startcondition = atomic_scenario_behavior.InTimeToArrivalToLocation(
             self.ego_vehicle,
-            self.trigger_distance_from_ego_vehicle,
+            4,
+            self.other_vehicle.get_location(),
             name="Waiting for start position")
-        accelerate = atomic_scenario_behavior.AccelerateToVelocity(
+
+        # accelerate to target_velocity but at most for 5 seconds
+        accelerate = py_trees.composites.Parallel(
+            "Accelerate with timeout",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        accelerate_behavior = atomic_scenario_behavior.AccelerateToVelocity(
             self.other_vehicle,
             self.other_vehicle_max_throttle,
             self.other_vehicle_target_velocity)
-        stop = atomic_scenario_behavior.StopVehicle(
-            self.other_vehicle,
-            self.other_vehicle_max_brake)
+        accelerate_timeout = timer.TimeOut(timeout=5, name="Duration")
+        accelerate.add_child(accelerate_behavior)
+        accelerate.add_child(accelerate_timeout)
 
+        # keep velocity for 2 seconds
         keep_velocity_for_duration = py_trees.composites.Parallel(
-            "Keep velocity for duration", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            "Keep velocity for duration",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity = atomic_scenario_behavior.KeepVelocity(
             self.other_vehicle,
             self.other_vehicle_target_velocity)
@@ -149,9 +156,27 @@ class FollowLeadingVehicle(object):
         keep_velocity_for_duration.add_child(keep_velocity)
         keep_velocity_for_duration.add_child(keep_velocity_duration)
 
-        endcondition = atomic_scenario_behavior.InTriggerRegion(
-            self.ego_vehicle, 198, 200, 128, 130, name="Waiting for end position")
+        # stop vehicle
+        stop = atomic_scenario_behavior.StopVehicle(
+            self.other_vehicle,
+            self.other_vehicle_max_brake)
 
+        # end condition
+        endcondition = py_trees.composites.Parallel(
+            "Waiting for end position",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+        endcondition_part1 = atomic_scenario_behavior.InTriggerDistanceToVehicle(
+            self.other_vehicle,
+            self.ego_vehicle,
+            distance=10,
+            name="FinalDistance")
+        endcondition_part2 = atomic_scenario_behavior.TriggerVelocity(
+            self.ego_vehicle, target_velocity=0, name="FinalSpeed")
+        endcondition.add_child(endcondition_part1)
+        endcondition.add_child(endcondition_part2)
+
+        # Build behavior tree
+        sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(startcondition)
         sequence.add_child(accelerate)
         sequence.add_child(keep_velocity_for_duration)

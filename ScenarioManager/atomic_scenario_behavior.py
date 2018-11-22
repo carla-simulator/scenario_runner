@@ -17,6 +17,31 @@ import math
 import py_trees
 import carla
 
+EPSILON = 0.001
+
+
+def calculate_distance(location, other_location):
+    """
+    Method to calculate the distance between to locations
+
+    Note: It uses the direct distance between the current location and the
+          target location to estimate the time to arrival.
+          To be accurate, it would have to use the distance along the
+          (shortest) route between the two locations.
+    """
+    distance_squared = (location.x - other_location.x)**2
+    distance_squared += (location.y - other_location.y)**2
+    return math.sqrt(distance_squared)
+
+
+def calculate_velocity(vehicle):
+    """
+    Method to calculate the velocity of a vehicle
+    """
+    velocity_squared = vehicle.get_velocity().x**2
+    velocity_squared += vehicle.get_velocity().y**2
+    return math.sqrt(velocity_squared)
+
 
 class InTriggerRegion(py_trees.behaviour.Behaviour):
 
@@ -62,22 +87,22 @@ class InTriggerRegion(py_trees.behaviour.Behaviour):
         return new_status
 
     def terminate(self, new_status):
-        self.vehicle = None
         self.logger.debug("%s.terminate()[%s->%s]" % (
             self.__class__.__name__, self.status, new_status))
 
 
-class InTriggerDistance(py_trees.behaviour.Behaviour):
+class InTriggerDistanceToVehicle(py_trees.behaviour.Behaviour):
 
     """
-    This class contains the trigger distance (condition) of a scenario
+    This class contains the trigger distance (condition) between to vehicles
+    of a scenario
     """
 
-    def __init__(self, other_vehicle, ego_vehicle, distance, name="TriggerDistance"):
+    def __init__(self, other_vehicle, ego_vehicle, distance, name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
         """
-        super(InTriggerDistance, self).__init__(name)
+        super(InTriggerDistanceToVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.other_vehicle = other_vehicle
         self.ego_vehicle = ego_vehicle
@@ -97,10 +122,7 @@ class InTriggerDistance(py_trees.behaviour.Behaviour):
         ego_location = self.ego_vehicle.get_location()
         other_location = self.other_vehicle.get_location()
 
-        distance_squared = (ego_location.x - other_location.x)**2
-        distance_squared += (ego_location.y - other_location.y)**2
-
-        if distance_squared > self.distance**2:
+        if calculate_distance(ego_location, other_location) > self.distance:
             new_status = py_trees.common.Status.RUNNING
         else:
             new_status = py_trees.common.Status.SUCCESS
@@ -111,8 +133,203 @@ class InTriggerDistance(py_trees.behaviour.Behaviour):
         return new_status
 
     def terminate(self, new_status):
-        self.ego_vehicle = None
-        self.other_vehicle = None
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
+
+
+class InTriggerDistanceToLocation(py_trees.behaviour.Behaviour):
+
+    """
+    This class contains the trigger (condition) for a distance to a fixed
+    location of a scenario
+    """
+
+    def __init__(self, vehicle, target_location, distance, name="InTriggerDistanceToLocation"):
+        """
+        Setup trigger distance
+        """
+        super(InTriggerDistanceToLocation, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.target_location = target_location
+        self.vehicle = vehicle
+        self.distance = distance
+
+    def setup(self, unused_timeout=15):
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Check if the vehicle is within trigger distance to the target location
+        """
+        location = self.vehicle.get_location()
+
+        if calculate_distance(location, self.target_location) > self.distance:
+            new_status = py_trees.common.Status.RUNNING
+        else:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
+
+
+class TriggerVelocity(py_trees.behaviour.Behaviour):
+
+    """
+    This class contains the trigger velocity (condition) of a scenario
+    """
+
+    def __init__(self, vehicle, target_velocity, name="TriggerVelocity"):
+        """
+        Setup trigger velocity
+        """
+        super(TriggerVelocity, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.vehicle = vehicle
+        self.target_velocity = target_velocity
+
+    def setup(self, unused_timeout=15):
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Check if the vehicle has the trigger velocity
+        """
+        if (calculate_velocity(self.vehicle) - self.target_velocity) < EPSILON:
+            new_status = py_trees.common.Status.SUCCESS
+        else:
+            new_status = py_trees.common.Status.RUNNING
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
+
+
+class InTimeToArrivalToLocation(py_trees.behaviour.Behaviour):
+
+    """
+    This class contains a check if a vehicle arrives within a given time
+    at a given location.
+    """
+
+    max_time_to_arrival = 10000
+
+    def __init__(self, vehicle, time, location, name="TimeToArrival"):
+        """
+        Setup parameters
+        """
+        super(InTimeToArrivalToLocation, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.vehicle = vehicle
+        self.time = time
+        self.target_location = location
+
+    def setup(self, unused_timeout=15):
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Check if the vehicle can arrive at target_location within time
+        """
+        current_location = self.vehicle.get_location()
+        distance = calculate_distance(current_location, self.target_location)
+        velocity = calculate_velocity(self.vehicle)
+
+        # if velocity is too small, simply use a large time to arrival
+        time_to_arrival = self.max_time_to_arrival
+        if velocity > EPSILON:
+            time_to_arrival = distance / velocity
+
+        if time_to_arrival > self.time:
+            new_status = py_trees.common.Status.RUNNING
+        else:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
+
+
+class InTimeToArrivalToVehicle(py_trees.behaviour.Behaviour):
+
+    """
+    This class contains a check if a vehicle arrives within a given time
+    at another vehicle.
+    """
+
+    max_time_to_arrival = 10000
+
+    def __init__(self, other_vehicle, ego_vehicle, time, name="TimeToArrival"):
+        """
+        Setup parameters
+        """
+        super(InTimeToArrivalToVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.other_vehicle = other_vehicle
+        self.ego_vehicle = ego_vehicle
+        self.time = time
+
+    def setup(self, unused_timeout=15):
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Check if the ego vehicle can arrive at other vehicle within time
+        """
+        current_location = self.ego_vehicle.get_location()
+        target_location = self.other_vehicle.get_location()
+
+        distance = calculate_distance(current_location, target_location)
+        current_velocity = calculate_velocity(self.ego_vehicle)
+        other_velocity = calculate_velocity(self.other_vehicle)
+
+        # if velocity is too small, simply use a large time to arrival
+        time_to_arrival = self.max_time_to_arrival
+        if current_velocity > other_velocity:
+            time_to_arrival = 2 * distance / (current_velocity - other_velocity)
+
+        if time_to_arrival > self.time:
+            new_status = py_trees.common.Status.RUNNING
+        else:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
         self.logger.debug("%s.terminate()[%s->%s]" % (
             self.__class__.__name__, self.status, new_status))
 
@@ -148,10 +365,7 @@ class AccelerateToVelocity(py_trees.behaviour.Behaviour):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
         """
-        velocity_squared = math.pow(self.vehicle.get_velocity().x, 2)
-        velocity_squared += math.pow(self.vehicle.get_velocity().y, 2)
-
-        if velocity_squared < self.target_velocity * self.target_velocity:
+        if calculate_velocity(self.vehicle) < self.target_velocity:
             new_status = py_trees.common.Status.RUNNING
             self.control.throttle = self.throttle_value
         else:
@@ -165,7 +379,6 @@ class AccelerateToVelocity(py_trees.behaviour.Behaviour):
         return new_status
 
     def terminate(self, new_status):
-        self.vehicle = None
         self.logger.debug("%s.terminate()[%s->%s]" % (
             self.__class__.__name__, self.status, new_status))
 
@@ -205,12 +418,8 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
         """
-
         new_status = py_trees.common.Status.RUNNING
-        velocity_squared = math.pow(self.vehicle.get_velocity().x, 2)
-        velocity_squared += math.pow(self.vehicle.get_velocity().y, 2)
-
-        if velocity_squared < self.target_velocity * self.target_velocity:
+        if calculate_velocity(self.vehicle) < self.target_velocity:
             self.control.throttle = 1.0
         else:
             self.control.throttle = 0.0
@@ -226,9 +435,7 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
         to avoid further acceleration.
         """
         self.control.throttle = 0.0
-        if self.vehicle is not None:
-            self.vehicle.apply_control(self.control)
-        self.vehicle = None
+        self.vehicle.apply_control(self.control)
         self.logger.debug("%s.terminate()[%s->%s]" % (
             self.__class__.__name__, self.status, new_status))
 
@@ -239,8 +446,6 @@ class StopVehicle(py_trees.behaviour.Behaviour):
     This class contains an atomic stopping behavior. The controlled traffic
     participant will decelerate with _bake_value_ until reaching a full stop.
     """
-
-    epsilon = 0.001  # velocities lower than epsilon are considered as 0.
 
     def __init__(self, vehicle, brake_value, name="Stopping"):
         """
@@ -263,10 +468,7 @@ class StopVehicle(py_trees.behaviour.Behaviour):
         """
         Set brake to brake_value until reaching full stop
         """
-        velocity_squared = math.pow(self.vehicle.get_velocity().x, 2)
-        velocity_squared += math.pow(self.vehicle.get_velocity().y, 2)
-
-        if velocity_squared > self.epsilon:
+        if calculate_velocity(self.vehicle) > EPSILON:
             new_status = py_trees.common.Status.RUNNING
             self.control.brake = self.brake_value
         else:
@@ -280,6 +482,5 @@ class StopVehicle(py_trees.behaviour.Behaviour):
         return new_status
 
     def terminate(self, new_status):
-        self.vehicle = None
         self.logger.debug("%s.terminate()[%s->%s]" % (
             self.__class__.__name__, self.status, new_status))
