@@ -23,6 +23,7 @@ import carla
 from ScenarioManager import atomic_scenario_behavior
 from ScenarioManager import scenario_manager
 from ScenarioManager import atomic_scenario_criteria
+from ScenarioManager import timer
 
 
 class FollowLeadingVehicle(object):
@@ -34,7 +35,8 @@ class FollowLeadingVehicle(object):
 
     manager = None          # Scenario manager
     criteria_list = []      # List of evaluation criteria
-    timeout = 10            # Timeout of scenario in seconds
+    timeout = 60            # Timeout of scenario in seconds
+    debug_mode = False
 
     # ego vehicle parameters
     ego_vehicle = None
@@ -66,11 +68,17 @@ class FollowLeadingVehicle(object):
                                               self.ego_vehicle_start)
 
         # Setup scenario
-        # py_trees.logging.level = py_trees.logging.Level.DEBUG
+        timer.GameTime(world)
+
+        if self.debug_mode:
+            py_trees.logging.level = py_trees.logging.Level.DEBUG
+
         behavior = self.create_behavior()
         criteria = self.create_test_criteria()
-        scenario = scenario_manager.Scenario(behavior, criteria, self.timeout)
-        self.manager = scenario_manager.ScenarioManager(scenario)
+        scenario = scenario_manager.Scenario(
+            behavior, criteria, "FollowVehicle", self.timeout)
+        self.manager = scenario_manager.ScenarioManager(
+            world, scenario, self.debug_mode)
 
     def execute(self):
         """
@@ -131,16 +139,22 @@ class FollowLeadingVehicle(object):
         stop = atomic_scenario_behavior.StopVehicle(
             self.other_vehicle,
             self.other_vehicle_max_brake)
+
+        keep_velocity_for_duration = py_trees.composites.Parallel(
+            "Keep velocity for duration", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity = atomic_scenario_behavior.KeepVelocity(
             self.other_vehicle,
-            self.other_vehicle_target_velocity,
-            duration=2)
+            self.other_vehicle_target_velocity)
+        keep_velocity_duration = timer.TimeOut(timeout=2, name="Duration")
+        keep_velocity_for_duration.add_child(keep_velocity)
+        keep_velocity_for_duration.add_child(keep_velocity_duration)
+
         endcondition = atomic_scenario_behavior.InTriggerRegion(
             self.ego_vehicle, 198, 200, 128, 130, name="Waiting for end position")
 
         sequence.add_child(startcondition)
         sequence.add_child(accelerate)
-        sequence.add_child(keep_velocity)
+        sequence.add_child(keep_velocity_for_duration)
         sequence.add_child(stop)
         sequence.add_child(endcondition)
 

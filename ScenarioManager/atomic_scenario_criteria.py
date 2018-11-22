@@ -4,11 +4,6 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-#
-# This file contains all atomic evaluation critera required to evaluate the
-# success or failure of a scenario, e.g. collision checks, etc.
-#
-
 """
 This module provides all atomic evaluation criteria required to analyze if a
 scenario was completed successfully or failed.
@@ -18,7 +13,6 @@ The atomic criteria are implemented with py_trees.
 
 import math
 import weakref
-import time
 
 import py_trees
 import carla
@@ -82,8 +76,8 @@ class MaxVelocityTest(py_trees.behaviour.Behaviour):
         return self.test_status
 
     def get_test_metric(self):
-        return "Value: {} Limit: {}".format(self.max_velocity_driven,
-                                            self.max_velocity_allowed)
+        return "Value: %5.2f Limit: %5.2f" % (self.max_velocity_driven,
+                                              self.max_velocity_allowed)
 
 
 class CollisionTest(py_trees.behaviour.Behaviour):
@@ -157,7 +151,7 @@ class CollisionTest(py_trees.behaviour.Behaviour):
         return self.test_status
 
     def get_test_metric(self):
-        return "Value: {} Limit: {}".format(self.collision_count, 0)
+        return "Value: %5.2f Limit: %5.2f" % (self.collision_count, 0)
 
 
 class KeepLaneTest(py_trees.behaviour.Behaviour):
@@ -231,4 +225,4 @@ class KeepLaneTest(py_trees.behaviour.Behaviour):
         return self.test_status
 
     def get_test_metric(self):
-        return "Value: {} Limit: {}".format(self.violation_count, 0)
+        return "Value: %5.2f Limit: %5.2f" % (self.violation_count, 0)

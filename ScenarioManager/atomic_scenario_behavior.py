@@ -4,11 +4,6 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-#
-# This file contains all atomic behaviors required to perform a scenario,
-# e.g. accelerate, stop, keep velocity, etc.
-#
-
 """
 This module provides all atomic scenario behaviors required to realize
 complex, realistic scenarios such as "follow a leading vehicle", "lane change",
@@ -18,7 +13,6 @@ The atomic behaviors are implemented with py_trees.
 """
 
 import math
-import time
 
 import py_trees
 import carla
@@ -181,11 +175,15 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
     """
     This class contains an atomic behavior to keep the provided velocity.
     The controlled traffic participant will accelerate as fast as possible
-    until reaching a given _target_velocity_, which is maintained for a
-    given duration _duration_
+    until reaching a given _target_velocity_, which is then maintained for
+    as long as this behavior is active.
+
+    Note: In parallel to this behavior a termination behavior has to be used
+          to keep the velocity either for a certain duration, or for a certain
+          distance, etc.
     """
 
-    def __init__(self, vehicle, target_velocity, duration, name="KeepVelocity"):
+    def __init__(self, vehicle, target_velocity, name="KeepVelocity"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
@@ -195,9 +193,6 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
         self.control = carla.VehicleControl()
         self.vehicle = vehicle
         self.target_velocity = target_velocity
-        self.duration = duration
-        self.elapsed_time = 0
-        self.start_time = 0
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
@@ -210,24 +205,15 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
         """
-        if self.start_time == 0:
-            self.start_time = time.time()
 
-        self.elapsed_time = time.time() - self.start_time
-        if self.elapsed_time < self.duration:
-            new_status = py_trees.common.Status.RUNNING
-            velocity_squared = math.pow(self.vehicle.get_velocity().x, 2)
-            velocity_squared += math.pow(self.vehicle.get_velocity().y, 2)
+        new_status = py_trees.common.Status.RUNNING
+        velocity_squared = math.pow(self.vehicle.get_velocity().x, 2)
+        velocity_squared += math.pow(self.vehicle.get_velocity().y, 2)
 
-            if velocity_squared < self.target_velocity * self.target_velocity:
-                self.control.throttle = 1.0
-            else:
-                self.control.throttle = 0.0
+        if velocity_squared < self.target_velocity * self.target_velocity:
+            self.control.throttle = 1.0
         else:
-            # If duration is elapsed, the throttle value is set to 0 (to avoid
-            # further acceleration)
             self.control.throttle = 0.0
-            new_status = py_trees.common.Status.SUCCESS
 
         self.vehicle.apply_control(self.control)
         self.logger.debug("%s.update()[%s->%s]" %
@@ -235,6 +221,13 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
         return new_status
 
     def terminate(self, new_status):
+        """
+        On termination of this behavior, the throttle should be set back to 0.,
+        to avoid further acceleration.
+        """
+        self.control.throttle = 0.0
+        if self.vehicle is not None:
+            self.vehicle.apply_control(self.control)
         self.vehicle = None
         self.logger.debug("%s.terminate()[%s->%s]" % (
             self.__class__.__name__, self.status, new_status))
