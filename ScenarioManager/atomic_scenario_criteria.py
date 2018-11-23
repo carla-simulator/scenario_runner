@@ -18,7 +18,41 @@ import py_trees
 import carla
 
 
-class MaxVelocityTest(py_trees.behaviour.Behaviour):
+class Criterion(py_trees.behaviour.Behaviour):
+
+    """
+    Base class for all criteria used to evaluate a scenario for success/failure
+
+    Important parameters:
+    - name: Name of the criterion
+    - expected_value: Result in case of success (e.g. max_speed, zero collisions, ...)
+    - actual_value: Actual result after running the scenario
+    """
+
+    def __init__(self, name, expected_value):
+        super(Criterion, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.name = name
+        self.expected_value = expected_value
+        self.actual_value = 0
+        self.test_status = "INIT"
+        self.terminate_on_failure = False
+
+    def setup(self, unused_timeout=15):
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def get_data(self):
+        """
+        Provide access to all test data
+        """
+        return self
+
+
+class MaxVelocityTest(Criterion):
 
     """
     This class contains an atomic test for maximum velocity.
@@ -28,20 +62,8 @@ class MaxVelocityTest(py_trees.behaviour.Behaviour):
         """
         Setup vehicle and maximum allowed velovity
         """
-        super(MaxVelocityTest, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        super(MaxVelocityTest, self).__init__(name, max_velocity_allowed)
         self.vehicle = vehicle
-        self.max_velocity_allowed = max_velocity_allowed
-        self.max_velocity_driven = 0
-        self.terminate_on_failure = False
-        self.test_status = "INIT"
-
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def update(self):
         """
@@ -50,9 +72,9 @@ class MaxVelocityTest(py_trees.behaviour.Behaviour):
         velocity = math.sqrt(
             self.vehicle.get_velocity().x**2 + self.vehicle.get_velocity().y**2)
 
-        self.max_velocity_driven = max(velocity, self.max_velocity_driven)
+        self.actual_value = max(velocity, self.actual_value)
 
-        if velocity > self.max_velocity_allowed:
+        if velocity > self.expected_value:
             self.test_status = "FAILURE"
         else:
             self.test_status = "SUCCESS"
@@ -72,15 +94,8 @@ class MaxVelocityTest(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.terminate()[%s->%s]" % (
             self.__class__.__name__, self.status, new_status))
 
-    def get_test_status(self):
-        return self.test_status
 
-    def get_test_metric(self):
-        return "Value: %5.2f Limit: %5.2f" % (self.max_velocity_driven,
-                                              self.max_velocity_allowed)
-
-
-class CollisionTest(py_trees.behaviour.Behaviour):
+class CollisionTest(Criterion):
 
     """
     This class contains an atomic test for collisions.
@@ -90,32 +105,22 @@ class CollisionTest(py_trees.behaviour.Behaviour):
         """
         Construction with sensor setup
         """
-        super(CollisionTest, self).__init__(name)
+        super(CollisionTest, self).__init__(name, 0)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.vehicle = vehicle
-        self.collision_count = 0
-        self.terminate_on_failure = False
-        self.test_status = "INIT"
 
         world = self.vehicle.get_world()
-        bp = world.get_blueprint_library().find('sensor.other.collision')
+        blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self.collision_sensor = world.spawn_actor(
-            bp, carla.Transform(), attach_to=self.vehicle)
+            blueprint, carla.Transform(), attach_to=self.vehicle)
         self.collision_sensor.listen(
             lambda event: self.count_collisions(weakref.ref(self), event))
-
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def update(self):
         """
         Check collision count
         """
-        if self.collision_count > 0:
+        if self.actual_value > 0:
             self.test_status = "FAILURE"
         else:
             self.test_status = "SUCCESS"
@@ -145,16 +150,10 @@ class CollisionTest(py_trees.behaviour.Behaviour):
         self = weak_self()
         if not self:
             return
-        self.collision_count += 1
-
-    def get_test_status(self):
-        return self.test_status
-
-    def get_test_metric(self):
-        return "Value: %5.2f Limit: %5.2f" % (self.collision_count, 0)
+        self.actual_value += 1
 
 
-class KeepLaneTest(py_trees.behaviour.Behaviour):
+class KeepLaneTest(Criterion):
 
     """
     This class contains an atomic test for keeping lane.
@@ -164,32 +163,23 @@ class KeepLaneTest(py_trees.behaviour.Behaviour):
         """
         Construction with sensor setup
         """
-        super(KeepLaneTest, self).__init__(name)
+        super(KeepLaneTest, self).__init__(name, 0)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.vehicle = vehicle
-        self.violation_count = 0
-        self.terminate_on_failure = False
-        self.test_status = "INIT"
 
         world = self.vehicle.get_world()
-        bp = world.get_blueprint_library().find('sensor.other.lane_detector')
+        blueprint = world.get_blueprint_library().find(
+            'sensor.other.lane_detector')
         self.lane_sensor = world.spawn_actor(
-            bp, carla.Transform(), attach_to=self.vehicle)
+            blueprint, carla.Transform(), attach_to=self.vehicle)
         self.lane_sensor.listen(
             lambda event: self.count_lane_invasion(weakref.ref(self), event))
-
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def update(self):
         """
         Check lane invasion count
         """
-        if self.violation_count > 0:
+        if self.actual_value > 0:
             self.test_status = "FAILURE"
         else:
             self.test_status = "SUCCESS"
@@ -219,10 +209,4 @@ class KeepLaneTest(py_trees.behaviour.Behaviour):
         self = weak_self()
         if not self:
             return
-        self.violation_count += 1
-
-    def get_test_status(self):
-        return self.test_status
-
-    def get_test_metric(self):
-        return "Value: %5.2f Limit: %5.2f" % (self.violation_count, 0)
+        self.actual_value += 1

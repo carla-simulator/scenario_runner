@@ -49,20 +49,20 @@ class Scenario(object):
         self.timeout_node = timer.TimeOut(timeout, name="TimeOut")
 
         # Create overall py_tree
-        self.scenario = py_trees.composites.Parallel(
+        self.scenario_tree = py_trees.composites.Parallel(
             name,
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        self.scenario.add_child(self.behavior)
-        self.scenario.add_child(self.timeout_node)
-        self.scenario.add_child(self.criteria_tree)
-        self.scenario.setup(timeout=1)
+        self.scenario_tree.add_child(self.behavior)
+        self.scenario_tree.add_child(self.timeout_node)
+        self.scenario_tree.add_child(self.criteria_tree)
+        self.scenario_tree.setup(timeout=1)
 
     def terminate(self):
         """
         This function sets the status of all leaves in the scenario tree to INVALID
         """
         # Get list of all leaves in the tree
-        node_list = [self.scenario]
+        node_list = [self.scenario_tree]
         more_nodes_exist = True
         while more_nodes_exist:
             more_nodes_exist = False
@@ -98,8 +98,8 @@ class ScenarioManager(object):
         """
         Init requires scenario as input
         """
-        self.scenario = scenario
-        self.scenario_tree = scenario.scenario
+        self.scenario = scenario.scenario
+        self.scenario_tree = self.scenario.scenario_tree
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
         self.debug_mode = debug_mode
@@ -162,7 +162,7 @@ class ScenarioManager(object):
 
     def stop_scenario(self):
         """
-        This function sets all entries in the
+        This function triggers a proper termination of a scenario
         """
         self.scenario.terminate()
 
@@ -176,13 +176,13 @@ class ScenarioManager(object):
         print("Scenario duration: System Time %5.2fs --- Game Time %5.2fs" %
               (self.scenario_duration_system, self.scenario_duration_game))
         for criterion in self.scenario.test_criteria:
-            if criterion.get_test_status() == "FAILURE":
-                print("Criterion %s failed with %s" %
-                      (criterion.name, criterion.get_test_metric()))
+            print("Criterion: %s %s: actual value %5.2f -- expected value %5.2f" %
+                  (criterion.name,
+                   criterion.get_data().test_status,
+                   criterion.get_data().actual_value,
+                   criterion.get_data().expected_value))
+            if criterion.get_data().test_status == "FAILURE":
                 failure = True
-            else:
-                print("Criterion %s successful with %s" %
-                      (criterion.name, criterion.get_test_metric()))
 
         if ((self.scenario.timeout_node.status == py_trees.common.Status.SUCCESS)
                 and (self.scenario_tree.tip().status != py_trees.common.Status.SUCCESS)

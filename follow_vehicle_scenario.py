@@ -7,220 +7,14 @@
 """
 Welcome to CARLA following vehicle scenario.
 
-The scenario realizes a common driving behavior, in which the
-user-controlled ego vehicle follows a leading car driving down
-a given road. At some point the leading car has to slow down and
-finally stop. The ego vehicle has to react accordingly to avoid
-a collision.
-
+This is an example code on how to use a scenario, the scenario manager
+and how to evaluate scenario results.
 """
 
-import random
-
-import py_trees
 import carla
 
-from ScenarioManager import atomic_scenario_behavior
-from ScenarioManager import scenario_manager
-from ScenarioManager import atomic_scenario_criteria
-from ScenarioManager import timer
-
-
-class FollowLeadingVehicle(object):
-
-    """
-    This class holds everything required for a simple "Follow a leading vehicle"
-    scenario involving two vehicles.
-    """
-
-    manager = None          # Scenario manager
-    criteria_list = []      # List of evaluation criteria
-    timeout = 60            # Timeout of scenario in seconds
-    debug_mode = False
-
-    # ego vehicle parameters
-    ego_vehicle = None
-    ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    ego_vehicle_start = carla.Transform(
-        carla.Location(x=312, y=129, z=39), carla.Rotation(yaw=180))
-    ego_vehicle_max_velocity_allowed = 20   # Maximum allowed velocity
-
-    # other vehicle
-    other_vehicle = None
-    other_vehicle_model = 'vehicle.tesla.model3'
-    other_vehicle_start = carla.Transform(
-        carla.Location(x=263, y=129, z=39), carla.Rotation(yaw=180))
-    other_vehicle_target_velocity = 15      # Target velocity of other vehicle
-    trigger_distance_from_ego_vehicle = 15  # Starting point of other vehicle maneuver
-    other_vehicle_max_throttle = 1.0        # Maximum throttle of other vehicle
-    other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
-
-    def __init__(self, world):
-        """
-        Setup all relevant parameters and create scenario
-        and instantiate scenario manager
-        """
-        self.other_vehicle = self.setup_vehicle(world,
-                                                self.other_vehicle_model,
-                                                self.other_vehicle_start)
-        self.ego_vehicle = self.setup_vehicle(world,
-                                              self.ego_vehicle_model,
-                                              self.ego_vehicle_start)
-
-        # Setup scenario
-        timer.GameTime(world)
-
-        if self.debug_mode:
-            py_trees.logging.level = py_trees.logging.Level.DEBUG
-
-        behavior = self.create_behavior()
-        criteria = self.create_test_criteria()
-        scenario = scenario_manager.Scenario(
-            behavior, criteria, "FollowVehicle", self.timeout)
-        self.manager = scenario_manager.ScenarioManager(
-            world, scenario, self.debug_mode)
-
-    def execute(self):
-        """
-        Function to run and analyze the scenario
-        """
-        self.manager.run_scenario()
-        if not self.manager.analyze_scenario():
-            print("Success!")
-        else:
-            print("Failure!")
-
-        print("\n")
-        print("\n")
-
-    def setup_vehicle(self, world, model, spawn_point):
-        """
-        Function to setup the most relevant vehicle parameters,
-        incl. spawn point and vehicle model.
-        """
-        blueprint_library = world.get_blueprint_library()
-
-        # Get vehicle by model
-        blueprint = random.choice(blueprint_library.filter(model))
-        color = random.choice(
-            blueprint.get_attribute('color').recommended_values)
-        blueprint.set_attribute('color', color)
-        vehicle = world.spawn_actor(blueprint, spawn_point)
-
-        # Let's put the vehicle to drive around.
-        vehicle.set_autopilot(False)
-
-        return vehicle
-
-    def create_behavior(self):
-        """
-        Example of a user defined scenario behavior. This function should be
-        adapted by the user for other scenarios.
-
-        The scenario defined after is a "follow leading vehicle" scenario. After
-        invoking this scenario, it will wait for the user controlled vehicle to
-        enter the start region, then make a traffic participant to accelerate
-        until reaching a certain speed, then keep this speed for 2 seconds,
-        before initiating a stopping maneuver. Finally, the user-controlled
-        vehicle has to reach a target region.
-        If this does not happen within 60 seconds, a timeout stops the scenario
-        """
-
-        # start condition
-        startcondition = atomic_scenario_behavior.InTimeToArrivalToLocation(
-            self.ego_vehicle,
-            4,
-            self.other_vehicle.get_location(),
-            name="Waiting for start position")
-
-        # accelerate to target_velocity but at most for 5 seconds
-        accelerate = py_trees.composites.Parallel(
-            "Accelerate with timeout",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        accelerate_behavior = atomic_scenario_behavior.AccelerateToVelocity(
-            self.other_vehicle,
-            self.other_vehicle_max_throttle,
-            self.other_vehicle_target_velocity)
-        accelerate_timeout = timer.TimeOut(timeout=5, name="Duration")
-        accelerate.add_child(accelerate_behavior)
-        accelerate.add_child(accelerate_timeout)
-
-        # keep velocity for 2 seconds
-        keep_velocity_for_duration = py_trees.composites.Parallel(
-            "Keep velocity for duration",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity = atomic_scenario_behavior.KeepVelocity(
-            self.other_vehicle,
-            self.other_vehicle_target_velocity)
-        keep_velocity_duration = timer.TimeOut(timeout=2, name="Duration")
-        keep_velocity_for_duration.add_child(keep_velocity)
-        keep_velocity_for_duration.add_child(keep_velocity_duration)
-
-        # stop vehicle
-        stop = atomic_scenario_behavior.StopVehicle(
-            self.other_vehicle,
-            self.other_vehicle_max_brake)
-
-        # end condition
-        endcondition = py_trees.composites.Parallel(
-            "Waiting for end position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        endcondition_part1 = atomic_scenario_behavior.InTriggerDistanceToVehicle(
-            self.other_vehicle,
-            self.ego_vehicle,
-            distance=10,
-            name="FinalDistance")
-        endcondition_part2 = atomic_scenario_behavior.TriggerVelocity(
-            self.ego_vehicle, target_velocity=0, name="FinalSpeed")
-        endcondition.add_child(endcondition_part1)
-        endcondition.add_child(endcondition_part2)
-
-        # Build behavior tree
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
-        sequence.add_child(startcondition)
-        sequence.add_child(accelerate)
-        sequence.add_child(keep_velocity_for_duration)
-        sequence.add_child(stop)
-        sequence.add_child(endcondition)
-
-        return sequence
-
-    def create_test_criteria(self):
-        """
-        Example of a user defined test catalogue.
-        This function should be adapted by the user.
-
-        A list of all test criteria will be created that is later used
-        in parallel behavior tree.
-        """
-        criteria = []
-
-        max_velocity_criterion = atomic_scenario_criteria.MaxVelocityTest(
-            self.ego_vehicle,
-            self.ego_vehicle_max_velocity_allowed)
-        collision_criterion = atomic_scenario_criteria.CollisionTest(
-            self.ego_vehicle)
-        keep_lane_criterion = atomic_scenario_criteria.KeepLaneTest(
-            self.ego_vehicle)
-
-        criteria.append(max_velocity_criterion)
-        criteria.append(collision_criterion)
-        criteria.append(keep_lane_criterion)
-
-        return criteria
-
-    def __del__(self):
-        """
-        Cleanup.
-        - Scenario manager stops the scenario and triggers a cleanup.
-        - Removal of the vehicles
-        """
-        self.manager.stop_scenario()
-
-        actors = [self.ego_vehicle, self.other_vehicle]
-        for actor in actors:
-            actor.destroy()
-            actor = None
+from Scenarios.follow_leading_vehicle import FollowLeadingVehicle
+from ScenarioManager.scenario_manager import ScenarioManager
 
 
 def main():
@@ -228,6 +22,8 @@ def main():
     Main function starting a CARLA client and connecting to the world.
     """
     world = None
+    scenario = None
+    manager = None
 
     try:
         # First of all, we need to create the client that will send the requests
@@ -243,13 +39,25 @@ def main():
         # Wait for the world to be ready
         world.wait_for_tick(10.0)
 
-        follow_leading_vehicle = FollowLeadingVehicle(world)
-        follow_leading_vehicle.execute()
+        # Create scenario, manager and run scenario
+        debug_mode = False
+        scenario = FollowLeadingVehicle(world, debug_mode)
+        manager = ScenarioManager(world, scenario, debug_mode)
+        manager.run_scenario()
+
+        if not manager.analyze_scenario():
+            print("Success!")
+        else:
+            print("Failure!")
 
     finally:
+        if manager is not None:
+            manager.stop_scenario()
+            del manager
+        if scenario is not None:
+            del scenario
         if world is not None:
             del world
-
 
 if __name__ == '__main__':
 
