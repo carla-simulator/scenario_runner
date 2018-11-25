@@ -42,8 +42,8 @@ class GlobalRoutePlanner(object):
         heading     : current heading of the vehicle in radian
 
         return      : list of turn by turn navigation decision
-        possible values are GO_STRAIGHT,LEFT,RIGHT,
-        CHANGE_LANE_LEFT,CHANGE_LANE_RIGHT
+        possible values are GO_STRAIGHT, LEFT, RIGHT,
+        CHANGE_LANE_LEFT, CHANGE_LANE_RIGHT
         """
 
         x_origin, y_origin = origin
@@ -51,6 +51,8 @@ class GlobalRoutePlanner(object):
 
         x_start, y_start = self.localise(x_origin, y_origin,
                                          heading, self.topology)
+        x_end, y_end = self.localise(x_destination, y_destination,
+                                     heading, self.topology)
 
         return None
 
@@ -137,7 +139,7 @@ class GlobalRoutePlanner(object):
         vector1 = self.unit_vector((x, y), segment[0])
         vector2 = self.unit_vector((x, y), segment[1])
 
-        dot1 = self.dot(vector1, heading)
+        dot1 = self.dot(vector1, heading_vector)
         dot2 = self.dot(vector2, heading_vector)
 
         start_waypoint = None

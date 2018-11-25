@@ -17,13 +17,27 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
     def tearDown(self):
         self.grp = None
 
+    def test_localise(self):
+        input_topology = [[(0, 1), (1, 0)],
+                          [(1, 1), (2, 1)],
+                          [(2, 1), (1, 2)],
+                          [(2, 2), (3, 2)]]
+        x, y = (1.2, 1.01)
+        heading = 3.14159
+        xn, yn = self.grp.localise(x, y, heading, input_topology)
+        self.assertEqual(xn, 1)
+        self.assertEqual(yn, 1)
+
+        pass
+
     def test_build_graph(self):
         input_topology = [[(1, 3), (1, 2)],
                           [(1, 2), (2, 2)],
                           [(2, 2), (2, 1)],
                           [(2, 1), (4, 1)],
                           [(4, 1), (4, 3)],
-                          [(4, 3), (1, 3)]]
+                          [(4, 3), (1, 3)],
+                          [(4, 3), (1, 2)]]
         graph, id_map = self.grp.build_graph(input_topology)
 
         def connection_check(n1, n2):
@@ -35,6 +49,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         self.assertTrue(connection_check(3, 4))
         self.assertTrue(connection_check(4, 5))
         self.assertTrue(connection_check(5, 0))
+        self.assertTrue(connection_check(5, 1))
 
     def test_distance_to_line(self):
         dist = self.grp.distance_to_line((0, 0), (2, 2), (2, 0))
@@ -44,7 +59,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         vector = self.grp.unit_vector((1, 1), (2, 2))
         self.assertAlmostEquals(vector[0], 1/math.sqrt(2))
         self.assertAlmostEquals(vector[1], 1/math.sqrt(2))
- 
+
     def test_dot(self):
         self.assertAlmostEqual(self.grp.dot((1, 0), (0, 1)), 0)
         self.assertAlmostEqual(self.grp.dot((1, 0), (1, 0)), 1)
@@ -59,7 +74,8 @@ def suite():
     suite.addTest(Test_GlobalRoutePlanner('test_unit_vector'))
     suite.addTest(Test_GlobalRoutePlanner('test_dot'))
     suite.addTest(Test_GlobalRoutePlanner('test_distance_to_line'))
-    # suite.addTest(Test_GlobalRoutePlanner('test___find_start_waypoint__'))
+    suite.addTest(Test_GlobalRoutePlanner('test_build_graph'))
+    suite.addTest(Test_GlobalRoutePlanner('test_localise'))
 
     return suite
 
