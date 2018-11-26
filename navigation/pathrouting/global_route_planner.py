@@ -8,6 +8,7 @@ This module provides GlobalRoutePlanner implementation.
 """
 
 import math
+from heapq import heappop, heapify
 
 
 class GlobalRoutePlanner(object):
@@ -31,7 +32,7 @@ class GlobalRoutePlanner(object):
             y2 = segment[1].transform.location.y
             self.topology.append([(x1, y1), (x2, y2)])
         pass
-        self.topology = self.roundoff(self.topology)
+        # self.topology = self.roundoff(self.topology)
         self.graph, self.id_map = self.build_graph(self.topology)
 
     def plan_route(self, origin, destination, heading):
@@ -46,15 +47,80 @@ class GlobalRoutePlanner(object):
         CHANGE_LANE_LEFT, CHANGE_LANE_RIGHT
         """
 
-        x_origin, y_origin = origin
-        x_destination, y_destination = destination
+        xo, yo = origin
+        xd, yd = destination
 
-        x_start, y_start = self.localise(x_origin, y_origin,
-                                         heading, self.topology)
-        x_end, y_end = self.localise(x_destination, y_destination,
-                                     heading, self.topology)
+        start = self.localise(xo, yo,
+                               heading, self.topology)[0]
+        end1, end2 = self.localise(xd, yd,
+                                   heading, self.topology)
+
+        route = self.graph_search(origin, start, end1, end2, self.graph, self.id_map)
 
         return None
+    
+    def graph_search(self, origin, start, end1, end2, graph, idmap):
+        """
+        This function perform's a Dijsktra's search from start to
+        end nodes
+        """
+        q = [] # priority queue for Dijsktra's search
+        visited = dict() # visited node to through node map
+        entry_lookup = dict() # entry lookup for modifying q
+        inf = float('inf')
+
+        def d(a, b):
+            return math.sqrt((a[0]-b[0])**2+(a[0]-b[0])**2)
+
+        cnode = graph[idmap[start]]    # current node 
+        for i in graph:
+            node = graph[i]
+            entry = [inf, [node.id, cnode.id]]
+            entry_lookup[node.id] = entry
+            q.append(entry)
+       
+        entry_lookup[cnode.id][0] = 0
+        heapify(q)
+        while idmap[end1] not in visited and idmap[end2] not in visited:
+            popentry = heappop(q)
+            popid = popentry[1][0]
+            cnode = graph[popid]
+            cd = popentry[0]    # current node distance from start
+            via = popentry[1][1]    # through node
+            visited[cnode.id] = [cd, via]
+            for i in cnode.connections:
+                node = graph[i]
+                if via != cnode.id:
+                    pre_vector = self.unit_vector(graph[via].vertex, cnode.vertex)
+                else:
+                    pre_vector = self.unit_vector(origin, cnode.vertex)
+                new_vector = self.unit_vector(cnode.vertex, node.vertex)
+                if self.dot(pre_vector, new_vector) >= 0:
+                    entry = entry_lookup[node.id]
+                    new_distance = d(node.vertex, cnode.vertex)+cd
+                    if new_distance < entry[0]:
+                        entry[0] = new_distance
+                        entry[1][1] = cnode.id
+                        heapify(q)
+        
+        endid1, endid2 = None, None
+        if idmap[end1] in visited:
+            endid1 = idmap[end1]
+            endid2 = idmap[end2]
+        else:
+            endid1 = idmap[end2]
+            endid2 = idmap[end1]
+        
+        route = []
+        route.append(endid2)
+        route.append(endid1)
+        nextnode = visited[endid1][1]
+        while nextnode != idmap[start]:
+            route.append(nextnode)
+            nextnode = visited[nextnode][1]
+        route.append(idmap[start])
+
+        return route
 
     def build_graph(self, topology):
         """
@@ -95,7 +161,8 @@ class GlobalRoutePlanner(object):
     def roundoff(self, topology):
         """
         This function rounds off the co-ordinate values in the topology
-        list to 1cm.
+        list to 1cm. This is performed by comparing the co-ordinate pairs
+        that are closer than 1cm to overcome edge case roundoff errors.
         """
 
         def dist_check(p1, p2, threshold):
@@ -118,10 +185,10 @@ class GlobalRoutePlanner(object):
 
         return topology
 
-    def localise(self, x, y, heading, topology):
+    def localise(self, x, y, topology, heading=None):
         """
-        This function finds the next topology waypoint
-        Along vehicle's heading
+        This function finds the segment closest to (x, y)
+        Optionally, it orders the segment with vertex along heading (in radians)
         """
 
         distance = self.distance_to_line(topology[0][0],
@@ -134,21 +201,21 @@ class GlobalRoutePlanner(object):
                 nearest_segment = (distance, segment)
         segment = nearest_segment[1]
 
-        heading_vector = (math.cos(heading), math.sin(heading))
+        if heading is not None:
+            heading_vector = (math.cos(heading), math.sin(heading))
 
-        vector1 = self.unit_vector((x, y), segment[0])
-        vector2 = self.unit_vector((x, y), segment[1])
+            vector1 = self.unit_vector((x, y), segment[0])
+            vector2 = self.unit_vector((x, y), segment[1])
 
-        dot1 = self.dot(vector1, heading_vector)
-        dot2 = self.dot(vector2, heading_vector)
+            dot1 = self.dot(vector1, heading_vector)
+            dot2 = self.dot(vector2, heading_vector)
 
-        start_waypoint = None
-        if dot1 > dot2:
-            start_waypoint = segment[0]
-        else:
-            start_waypoint = segment[1]
+            if dot1 > dot2:
+                segment = (segment[0], segment[1])
+            else:
+                segment = (segment[1], segment[0])
 
-        return start_waypoint
+        return segment
 
     def distance_to_line(self, point1, point2, target):
         """

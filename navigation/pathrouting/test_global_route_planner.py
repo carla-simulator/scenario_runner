@@ -17,6 +17,18 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
     def tearDown(self):
         self.grp = None
 
+    def test_graph_search(self):
+        input_topology = [[(1, 3), (1, 2)],
+                          [(1, 2), (2, 2)],
+                          [(2, 2), (2, 1)],
+                          [(2, 1), (4, 1)],
+                          [(4, 1), (4, 3)],
+                          [(4, 3), (1, 3)],
+                          [(4, 3), (1, 2)]]
+        graph, id_map = self.grp.build_graph(input_topology)
+        route = self.grp.graph_search((1.1, 3), (1, 3), (2, 1), (4, 1), graph, id_map)
+        self.assertEqual(route, [4, 3, 2, 1, 0])
+
     def test_localise(self):
         input_topology = [[(0, 1), (1, 0)],
                           [(1, 1), (2, 1)],
@@ -24,7 +36,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
                           [(2, 2), (3, 2)]]
         x, y = (1.2, 1.01)
         heading = 3.14159
-        xn, yn = self.grp.localise(x, y, heading, input_topology)
+        xn, yn = self.grp.localise(x, y, input_topology, heading)[0]
         self.assertEqual(xn, 1)
         self.assertEqual(yn, 1)
 
