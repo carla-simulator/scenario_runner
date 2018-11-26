@@ -11,13 +11,16 @@ This is an example code on how to use a scenario, the scenario manager
 and how to evaluate scenario results.
 """
 
+import argparse
+from argparse import RawTextHelpFormatter
+
 import carla
 
 from Scenarios.follow_leading_vehicle import FollowLeadingVehicle
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
-def main():
+def main(stdout, filename, junit, scenario_name, debug_mode=False):
     """
     Main function starting a CARLA client and connecting to the world.
     """
@@ -40,12 +43,15 @@ def main():
         world.wait_for_tick(10.0)
 
         # Create scenario, manager and run scenario
-        debug_mode = False
-        scenario = FollowLeadingVehicle(world, debug_mode)
+        if scenario_name == "FollowLeadingVehicle":
+            scenario = FollowLeadingVehicle(world, debug_mode)
+        else:
+            raise Exception(
+                "Unsupported scenario with name: {}".format(scenario_name))
         manager = ScenarioManager(world, scenario, debug_mode)
         manager.run_scenario()
 
-        if not manager.analyze_scenario():
+        if not manager.analyze_scenario(stdout, filename, junit):
             print("Success!")
         else:
             print("Failure!")
@@ -61,4 +67,20 @@ def main():
 
 if __name__ == '__main__':
 
-    main()
+    description = (
+        "CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n")
+
+    parser = argparse.ArgumentParser(description=description,
+                                     formatter_class=RawTextHelpFormatter)
+    parser.add_argument(
+        '--debug', action="store_true", help='Run with debug output')
+    parser.add_argument(
+        '--output', action="store_true", help='Provide results on stdout')
+    parser.add_argument('--filename', help='Write results into given file')
+    parser.add_argument(
+        '--junit', help='Write results into the given junit file')
+    parser.add_argument('--scenario', required=True,
+                        help='Name of the scenario to be executed')
+    args = parser.parse_args()
+
+    main(args.output, args.filename, args.junit, args.scenario, args.debug)

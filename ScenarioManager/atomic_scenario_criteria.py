@@ -17,6 +17,8 @@ import weakref
 import py_trees
 import carla
 
+from ScenarioManager import timer
+
 
 class Criterion(py_trees.behaviour.Behaviour):
 
@@ -45,12 +47,6 @@ class Criterion(py_trees.behaviour.Behaviour):
     def initialise(self):
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
-    def get_data(self):
-        """
-        Provide access to all test data
-        """
-        return self
-
 
 class MaxVelocityTest(Criterion):
 
@@ -78,6 +74,95 @@ class MaxVelocityTest(Criterion):
             self.test_status = "FAILURE"
         else:
             self.test_status = "SUCCESS"
+
+        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+        else:
+            new_status = py_trees.common.Status.RUNNING
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        self.vehicle = None
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
+
+
+class DrivenDistanceTest(Criterion):
+
+    """
+    This class contains an atomic test to check the driven distance
+    """
+
+    def __init__(self, vehicle, distance, name="CheckDrivenDistance"):
+        """
+        Setup vehicle
+        """
+        super(DrivenDistanceTest, self).__init__(name, distance)
+        self.vehicle = vehicle
+        self.last_location = vehicle.get_location()
+
+    def update(self):
+        """
+        Check distance
+        """
+        location = self.vehicle.get_location()
+        self.actual_value += location.distance(self.last_location)
+        self.last_location = location
+
+        if self.actual_value > self.expected_value:
+            self.test_status = "SUCCESS"
+        else:
+            self.test_status = "RUNNING"
+
+        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+        else:
+            new_status = py_trees.common.Status.RUNNING
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        self.vehicle = None
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
+
+
+class AverageVelocityTest(Criterion):
+
+    """
+    This class contains an atomic test for average velocity.
+    """
+
+    def __init__(self, vehicle, avg_velocity, name="CheckAverageVelocity"):
+        """
+        Setup vehicle and average velovity expected
+        """
+        super(AverageVelocityTest, self).__init__(name, avg_velocity)
+        self.vehicle = vehicle
+        self.last_location = vehicle.get_location()
+        self.distance = 0.0
+
+    def update(self):
+        """
+        Check velocity
+        """
+        location = self.vehicle.get_location()
+        self.distance += location.distance(self.last_location)
+        self.last_location = location
+
+        self.actual_value = self.distance / timer.GameTime.get_time()
+
+        if self.actual_value > self.expected_value:
+            self.test_status = "SUCCESS"
+        else:
+            self.test_status = "RUNNING"
 
         if self.terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE

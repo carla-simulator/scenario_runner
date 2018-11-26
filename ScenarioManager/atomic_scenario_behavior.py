@@ -29,9 +29,7 @@ def calculate_distance(location, other_location):
           To be accurate, it would have to use the distance along the
           (shortest) route between the two locations.
     """
-    distance_squared = (location.x - other_location.x)**2
-    distance_squared += (location.y - other_location.y)**2
-    return math.sqrt(distance_squared)
+    return location.distance(other_location)
 
 
 def calculate_velocity(vehicle):

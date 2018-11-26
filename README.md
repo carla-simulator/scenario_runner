@@ -25,7 +25,7 @@ Now, you can start Carla server with Town01 from ${CARLA_ROOT}
 
 Start the example scenario (follow a leading vehicle) in an extra terminal:
 ```
-python follow_vehicle_scenario.py
+python scenario_runner.py --scenario FollowLeadingVehicle
 ```
 
 To control the ego vehicle within the scenario, open another terminal and run:

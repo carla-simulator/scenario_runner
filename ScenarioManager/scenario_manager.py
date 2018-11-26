@@ -16,6 +16,7 @@ import threading
 import py_trees
 
 from ScenarioManager import timer
+from ScenarioManager import result_writer
 
 
 class Scenario(object):
@@ -36,6 +37,7 @@ class Scenario(object):
     def __init__(self, behavior, criteria, name, timeout=60, terminate_on_failure=False):
         self.behavior = behavior
         self.test_criteria = criteria
+        self.timeout = timeout
 
         for criterion in self.test_criteria:
             criterion.terminate_on_failure = terminate_on_failure
@@ -46,7 +48,7 @@ class Scenario(object):
         self.criteria_tree.setup(timeout=1)
 
         # Create node for timeout
-        self.timeout_node = timer.TimeOut(timeout, name="TimeOut")
+        self.timeout_node = timer.TimeOut(self.timeout, name="TimeOut")
 
         # Create overall py_tree
         self.scenario_tree = py_trees.composites.Parallel(
@@ -102,6 +104,8 @@ class ScenarioManager(object):
         self.scenario_tree = self.scenario.scenario_tree
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
+        self.start_system_time = None
+        self.end_system_time = None
         self.debug_mode = debug_mode
         self.running = False
         self.timestamp_last_run = 0.0
@@ -114,7 +118,8 @@ class ScenarioManager(object):
         """
         Trigger the start of the scenario and wait for it to finish/fail
         """
-        start_system_time = time.time()
+
+        self.start_system_time = time.time()
         start_game_time = timer.GameTime.get_time()
 
         self.running = True
@@ -122,10 +127,11 @@ class ScenarioManager(object):
         while self.running:
             time.sleep(0.5)
 
-        end_system_time = time.time()
+        self.end_system_time = time.time()
         end_game_time = timer.GameTime.get_time()
 
-        self.scenario_duration_system = end_system_time - start_system_time
+        self.scenario_duration_system = self.end_system_time - \
+            self.start_system_time
         self.scenario_duration_game = end_game_time - start_game_time
 
         if self.scenario_tree.status == py_trees.common.Status.FAILURE:
@@ -166,27 +172,29 @@ class ScenarioManager(object):
         """
         self.scenario.terminate()
 
-    def analyze_scenario(self):
+    def analyze_scenario(self, stdout, filename, junit):
         """
         This function is intended to be called from outside and provide
         statistics about the scenario (human-readable, in form of a junit
         report, etc.)
         """
+
         failure = False
-        print("Scenario duration: System Time %5.2fs --- Game Time %5.2fs" %
-              (self.scenario_duration_system, self.scenario_duration_game))
+        timeout = False
+        result = "SUCCESS"
         for criterion in self.scenario.test_criteria:
-            print("Criterion: %s %s: actual value %5.2f -- expected value %5.2f" %
-                  (criterion.name,
-                   criterion.get_data().test_status,
-                   criterion.get_data().actual_value,
-                   criterion.get_data().expected_value))
-            if criterion.get_data().test_status == "FAILURE":
+            if criterion.test_status != "SUCCESS":
                 failure = True
+                result = "FAILURE"
 
         if ((self.scenario.timeout_node.status == py_trees.common.Status.SUCCESS)
                 and (self.scenario_tree.tip().status != py_trees.common.Status.SUCCESS)
                 and not failure):
-            print("Timeout")
-            failure = True
-        return failure
+            timeout = True
+            result = "TIMEOUT"
+
+        output = result_writer.ResultOutputProvider(
+            self, result, stdout, filename, junit)
+        output.write()
+
+        return failure or timeout
