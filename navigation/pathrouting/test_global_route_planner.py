@@ -26,11 +26,13 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
                           [(4, 3), (1, 3)],
                           [(4, 3), (1, 2)]]
         graph, id_map = self.grp.build_graph(input_topology)
-        route = self.grp.graph_search((1.1, 3), (1, 3), (2, 1), (4, 1), graph, id_map)
+        route = self.grp.graph_search((1.1, 3), (1, 3), (2, 1), (4, 1), 
+                                      graph, id_map)
         self.assertEqual(route, [4, 3, 2, 1, 0])
 
     def test_localise(self):
         input_topology = [[(0, 1), (1, 0)],
+                          [(2, 1), (3, 1)],
                           [(1, 1), (2, 1)],
                           [(2, 1), (1, 2)],
                           [(2, 2), (3, 2)]]
@@ -39,8 +41,11 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         xn, yn = self.grp.localise(x, y, input_topology, heading)[0]
         self.assertEqual(xn, 1)
         self.assertEqual(yn, 1)
-
-        pass
+        # testing on Town01 map
+        x, y = 334.7, 25
+        segment = self.grp.localise(x, y, self.grp.topology)
+        self.assertEqual(segment, [(334.6214904785156, 3.790151834487915),
+                                   (334.63958740234375, 53.424442291259766)])
 
     def test_build_graph(self):
         input_topology = [[(1, 3), (1, 2)],

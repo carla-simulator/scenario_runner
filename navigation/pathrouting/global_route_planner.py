@@ -43,7 +43,7 @@ class GlobalRoutePlanner(object):
         heading     : current heading of the vehicle in radian
 
         return      : list of turn by turn navigation decision
-        possible values are GO_STRAIGHT, LEFT, RIGHT,
+        possible values are START, GO_STRAIGHT, LEFT, RIGHT,
         CHANGE_LANE_LEFT, CHANGE_LANE_RIGHT
         """
 
@@ -51,22 +51,37 @@ class GlobalRoutePlanner(object):
         xd, yd = destination
 
         start = self.localise(xo, yo,
-                               self.topology, heading)[0]
+                              self.topology, heading)[0]
         end1, end2 = self.localise(xd, yd,
                                    self.topology)
 
-        route = self.graph_search(origin, start, end1, end2, self.graph, self.id_map)
+        route = self.graph_search(origin, start, end1, end2,
+                                  self.graph, self.id_map)
+        route = route[::-1]
+
+        plan = []
+        plan.append('START')
+        cur_vector = self.unit_vector((xo, yo), route[0])
+        for i in range(len(route)):
+            if cur_vector is None:
+                cur_vector = self.unit_vector(route[i-1], route[i])
+            if i+1 < range(len(route)):
+                next_vector = self.unit_vector(route[i], route[i+1])
+            else:
+                break
+            angle = \
+                math.atan2(*next_vector[::-1]) - math.atan2(*cur_vector[::-1])
 
         return None
-    
+
     def graph_search(self, origin, start, end1, end2, graph, idmap):
         """
         This function perform's a Dijsktra's search from start to
         end nodes
         """
-        q = [] # priority queue for Dijsktra's search
-        visited = dict() # visited node to through node map
-        entry_lookup = dict() # entry lookup for modifying q
+        q = []  # priority queue for Dijsktra's search
+        visited = dict()    # visited node to through node map
+        entry_lookup = dict()   # entry lookup for modifying q
         inf = float('inf')
 
         def d(a, b):
@@ -78,7 +93,7 @@ class GlobalRoutePlanner(object):
             entry = [inf, [node.id, cnode.id]]
             entry_lookup[node.id] = entry
             q.append(entry)
-       
+
         entry_lookup[cnode.id][0] = 0
         heapify(q)
         while idmap[end1] not in visited and idmap[end2] not in visited:
@@ -91,7 +106,8 @@ class GlobalRoutePlanner(object):
             for i in cnode.connections:
                 node = graph[i]
                 if via != cnode.id:
-                    pre_vector = self.unit_vector(graph[via].vertex, cnode.vertex)
+                    pre_vector = self.unit_vector(graph[via].vertex, 
+                                                  cnode.vertex)
                 else:
                     pre_vector = self.unit_vector(origin, cnode.vertex)
                 new_vector = self.unit_vector(cnode.vertex, node.vertex)
@@ -102,7 +118,7 @@ class GlobalRoutePlanner(object):
                         entry[0] = new_distance
                         entry[1][1] = cnode.id
                         heapify(q)
-        
+
         endid1, endid2 = None, None
         if idmap[end1] in visited:
             endid1 = idmap[end1]
@@ -110,7 +126,7 @@ class GlobalRoutePlanner(object):
         else:
             endid1 = idmap[end2]
             endid2 = idmap[end1]
-        
+
         route = []
         route.append(endid2)
         route.append(endid1)
@@ -188,7 +204,10 @@ class GlobalRoutePlanner(object):
     def localise(self, x, y, topology, heading_vector=None):
         """
         This function finds the segment closest to (x, y)
-        Optionally, it orders the segment with vertex along heading (in radians)
+        Optionally, it orders the segment with vertex
+        along heading (in radians)
+
+        TODO: Further test with visualizations
         """
 
         distance = float('inf')
@@ -196,11 +215,14 @@ class GlobalRoutePlanner(object):
         for segment in topology:
             distance = self.distance_to_line(segment[0],
                                              segment[1], (x, y))
-            if distance < nearest_segment[0]:
+            # print(distance, segment)
+            v1 = self.unit_vector((x, y), segment[0])
+            v2 = self.unit_vector((x, y), segment[1])
+            if self.dot(v1, v2) < 0 and distance < nearest_segment[0]:
                 nearest_segment = (distance, segment)
         segment = nearest_segment[1]
 
-        if heading_vector is not None:
+        if heading_vector is not None and segment is not None:
             vector1 = self.unit_vector((x, y), segment[0])
             vector2 = self.unit_vector((x, y), segment[1])
             dot1 = self.dot(vector1, heading_vector)
@@ -214,7 +236,7 @@ class GlobalRoutePlanner(object):
 
     def distance_to_line(self, point1, point2, target):
         """
-        This functions finds the distance between the target point and 
+        This functions finds the distance between the target point and
         The line joining point1, point2
         """
 
