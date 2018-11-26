@@ -35,7 +35,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
                           [(2, 1), (1, 2)],
                           [(2, 2), (3, 2)]]
         x, y = (1.2, 1.01)
-        heading = 3.14159
+        heading = (-1, 0)
         xn, yn = self.grp.localise(x, y, input_topology, heading)[0]
         self.assertEqual(xn, 1)
         self.assertEqual(yn, 1)

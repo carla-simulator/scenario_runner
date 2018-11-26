@@ -51,9 +51,9 @@ class GlobalRoutePlanner(object):
         xd, yd = destination
 
         start = self.localise(xo, yo,
-                               heading, self.topology)[0]
+                               self.topology, heading)[0]
         end1, end2 = self.localise(xd, yd,
-                                   heading, self.topology)
+                                   self.topology)
 
         route = self.graph_search(origin, start, end1, end2, self.graph, self.id_map)
 
@@ -185,15 +185,14 @@ class GlobalRoutePlanner(object):
 
         return topology
 
-    def localise(self, x, y, topology, heading=None):
+    def localise(self, x, y, topology, heading_vector=None):
         """
         This function finds the segment closest to (x, y)
         Optionally, it orders the segment with vertex along heading (in radians)
         """
 
-        distance = self.distance_to_line(topology[0][0],
-                                         topology[0][1], (x, y))
-        nearest_segment = (distance, topology[0])
+        distance = float('inf')
+        nearest_segment = (distance, None)
         for segment in topology:
             distance = self.distance_to_line(segment[0],
                                              segment[1], (x, y))
@@ -201,15 +200,11 @@ class GlobalRoutePlanner(object):
                 nearest_segment = (distance, segment)
         segment = nearest_segment[1]
 
-        if heading is not None:
-            heading_vector = (math.cos(heading), math.sin(heading))
-
+        if heading_vector is not None:
             vector1 = self.unit_vector((x, y), segment[0])
             vector2 = self.unit_vector((x, y), segment[1])
-
             dot1 = self.dot(vector1, heading_vector)
             dot2 = self.dot(vector2, heading_vector)
-
             if dot1 > dot2:
                 segment = (segment[0], segment[1])
             else:
