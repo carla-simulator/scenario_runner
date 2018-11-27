@@ -25,6 +25,7 @@ class GlobalRoutePlanner(object):
         """
         self.world = world
         self.topology = []
+        # Transforming topology into list of vertex pairs
         for segment in self.world.get_map().get_topology():
             x1 = segment[0].transform.location.x
             y1 = segment[0].transform.location.y
@@ -32,7 +33,8 @@ class GlobalRoutePlanner(object):
             y2 = segment[1].transform.location.y
             self.topology.append([(x1, y1), (x2, y2)])
         pass
-        # self.topology = self.roundoff(self.topology)
+        # Creating graph of the world map and also a map from 
+        # node co-ordinates to node id
         self.graph, self.id_map = self.build_graph(self.topology)
 
     def plan_route(self, origin, heading, destination, graph, idmap, topology):
@@ -74,35 +76,40 @@ class GlobalRoutePlanner(object):
 
     def graph_search(self, start, end, graph, idmap):
         """
-        This function perform's a Dijsktra's search from start to
-        end nodes
+        This function perform's a Dijsktra's search from start to end nodes.
+        start   :   the road segment containing origin
+        end     :   the orad segment containing destination
+
+        return  :   list of nodes connecting start and end
         """
         
         start1, start2 = start
         end1, end2 = end
         q = []  # priority queue for Dijsktra's search
         visited = dict()    # visited node to through node map
-        entry_lookup = dict()   # entry lookup for modifying q
+        entry_lookup = dict()   # map from node id to queue entry
         inf = float('inf')
 
         def d(a, b):
             return math.sqrt((a[0]-b[0])**2+(a[0]-b[0])**2)
 
+        # Initializing priority queue for Dijsktra's search
         cnode = graph[idmap[start1]]    # current node 
         for i in graph:
             node = graph[i]
             entry = [inf, [node.id, cnode.id]]
             entry_lookup[node.id] = entry
             q.append(entry)
-
         entry_lookup[cnode.id][0] = 0
         heapify(q)
+
+        # Performing Dijsktra's search
         while idmap[end1] not in visited and idmap[end2] not in visited:
             popentry = heappop(q)
             popid = popentry[1][0]
             cnode = graph[popid]
             cd = popentry[0]    # current node distance from start
-            via = popentry[1][1]    # through node
+            via = popentry[1][1]    # through node id
             visited[cnode.id] = [cd, via]
             for i in cnode.connections:
                 node = graph[i]
@@ -120,6 +127,8 @@ class GlobalRoutePlanner(object):
                         entry[1][1] = cnode.id
                         heapify(q)
 
+        # Checking which vertex of the end segment was reached first
+        # for appending the other vertex to route in proper order
         endid1, endid2 = None, None
         if idmap[end1] in visited:
             endid1 = idmap[end1]
@@ -128,6 +137,7 @@ class GlobalRoutePlanner(object):
             endid1 = idmap[end2]
             endid2 = idmap[end1]
 
+        # Building route
         route = []
         route.append(endid2)
         route.append(endid1)
@@ -168,7 +178,7 @@ class GlobalRoutePlanner(object):
 
         def __init__(self, id, vertex):
             self.id = id
-            self.vertex = vertex  # vertex co-ordinate pair as a tuple
+            self.vertex = vertex  # vertex co-ordinates as a tuple
             self.connections = []   # list of connecting node ids
 
         def add_connection(self, connecting_node_id):
@@ -176,54 +186,28 @@ class GlobalRoutePlanner(object):
             pass
         pass
 
-    def roundoff(self, topology):
-        """
-        This function rounds off the co-ordinate values in the topology
-        list to 1cm. This is performed by comparing the co-ordinate pairs
-        that are closer than 1cm to overcome edge case roundoff errors.
-        """
-
-        def dist_check(p1, p2, threshold):
-            return math.sqrt((p2[0]-p1[0])**2+(p2[1]-p1[1])**2) < threshold
-
-        for i, segment in enumerate(topology):
-            for j in range(i+1, len(topology)):
-
-                for vid_self, vertex_self in enumerate(segment):
-                    for vid_other, vertex_other in enumerate(topology[j]):
-
-                        if dist_check(vertex_self, vertex_other, 0.01):
-                            x = round(segment[vid_self][0], 2)
-                            y = round(segment[vid_self][1], 2)
-                            try:
-                                segment[vid_self] = (x, y)
-                            except:
-                                pass
-                            topology[j][vid_other] = (x, y)
-
-        return topology
-
     def localise(self, x, y, topology, heading_vector=None):
         """
-        This function finds the segment closest to (x, y)
+        This function finds the road segment closest to (x, y)
         Optionally, it orders the segment with vertex
-        along heading (in radians)
-
-        TODO: Further test with visualizations
+        along heading_vector at position 0
         """
 
         distance = float('inf')
-        nearest_segment = (distance, None)
+        nearest_segment = (distance, (float('inf'), float('inf')))
+        # Finding the road segment with the least distance from (x, y) 
+        # and also such that (x, y) lies inside the circle formed by the 
+        # segment as diameter
         for segment in topology:
             distance = self.distance_to_line(segment[0],
                                              segment[1], (x, y))
-            # print(distance, segment)
             v1 = self.unit_vector((x, y), segment[0])
             v2 = self.unit_vector((x, y), segment[1])
             if self.dot(v1, v2) < 0 and distance < nearest_segment[0]:
                 nearest_segment = (distance, segment)
         segment = nearest_segment[1]
 
+        # Ordering the segment vertices along heading_vector
         if heading_vector is not None and segment is not None:
             vector1 = self.unit_vector((x, y), segment[0])
             vector2 = self.unit_vector((x, y), segment[1])
@@ -238,8 +222,8 @@ class GlobalRoutePlanner(object):
 
     def distance_to_line(self, point1, point2, target):
         """
-        This functions finds the distance between the target point and
-        The line joining point1, point2
+        This functions returns the distance between the target point and
+        The line joining point1, point2. Accurate to 5 decimal places.
         """
 
         x1, y1 = point1

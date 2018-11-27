@@ -19,6 +19,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
 
     def test_plan_route(self):
         """
+        Test for GlobalROutePlanner.plan_route()
         Run this test with a carla (0.9.1) instance running Town01
         """
         xo, yo = 120, -2.27
@@ -35,6 +36,9 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
                                 'STOP'])
 
     def test_graph_search(self):
+        """
+        Test for GlobalROutePlanner.graph_search()
+        """
         input_topology = [[(1, 3), (1, 2)],
                           [(1, 2), (2, 2)],
                           [(2, 2), (2, 1)],
@@ -53,6 +57,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         
     def test_graph_search_town01(self):
         """
+        Test for GlobalROutePlanner.graph_search()
         Run this test with a carla (0.9.1) instance running Town01
         """
         xo, yo = 120, -2.27
@@ -67,6 +72,9 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
                           85, 69, 70, 73, 74, 63, 65])
 
     def test_localise(self):
+        """
+        Test for GlobalROutePlanner.localise()
+        """
         input_topology = [[(0, 1), (1, 0)],
                           [(2, 1), (3, 1)],
                           [(1, 1), (2, 1)],
@@ -84,6 +92,9 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
                                    (334.63958740234375, 53.424442291259766)])
 
     def test_build_graph(self):
+        """
+        Test for GlobalROutePlanner.build_graph()
+        """
         input_topology = [[(1, 3), (1, 2)],
                           [(1, 2), (2, 2)],
                           [(2, 2), (2, 1)],
@@ -105,22 +116,31 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         self.assertTrue(connection_check(5, 1))
 
     def test_distance_to_line(self):
+        """
+        Test for GlobalROutePlanner.distance_to_line()
+        """
         dist = self.grp.distance_to_line((0, 0), (2, 2), (2, 0))
         self.assertEqual(round(dist, 3), round(math.sqrt(2), 3))
 
     def test_unit_vector(self):
+        """
+        Test for GlobalROutePlanner.unit_vector()
+        """
         vector = self.grp.unit_vector((1, 1), (2, 2))
         self.assertAlmostEquals(vector[0], 1/math.sqrt(2))
         self.assertAlmostEquals(vector[1], 1/math.sqrt(2))
 
     def test_dot(self):
+        """
+        Test for GlobalROutePlanner.test_dot()
+        """
         self.assertAlmostEqual(self.grp.dot((1, 0), (0, 1)), 0)
         self.assertAlmostEqual(self.grp.dot((1, 0), (1, 0)), 1)
 
 
 def suite():
     """
-    Gathering all test cases
+    Gathering all tests
     """
 
     suite = unittest.TestSuite()
@@ -133,7 +153,9 @@ def suite():
     return suite
 
 if __name__ == '__main__':
-
+    """
+    Running test suite
+    """
     mySuit = suite()
     runner = unittest.TextTestRunner()
     runner.run(mySuit)
