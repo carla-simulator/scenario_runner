@@ -51,11 +51,11 @@ class GlobalRoutePlanner(object):
         xd, yd = destination
 
         start = self.localise(xo, yo,
-                              self.topology, heading)[0]
-        end1, end2 = self.localise(xd, yd,
+                              self.topology, heading)
+        end = self.localise(xd, yd,
                                    self.topology)
 
-        route = self.graph_search(origin, start, end1, end2,
+        route = self.graph_search(start, end,
                                   self.graph, self.id_map)
         route = route[::-1]
 
@@ -74,11 +74,14 @@ class GlobalRoutePlanner(object):
 
         return None
 
-    def graph_search(self, origin, start, end1, end2, graph, idmap):
+    def graph_search(self, start, end, graph, idmap):
         """
         This function perform's a Dijsktra's search from start to
         end nodes
         """
+        
+        start1, start2 = start
+        end1, end2 = end
         q = []  # priority queue for Dijsktra's search
         visited = dict()    # visited node to through node map
         entry_lookup = dict()   # entry lookup for modifying q
@@ -87,7 +90,7 @@ class GlobalRoutePlanner(object):
         def d(a, b):
             return math.sqrt((a[0]-b[0])**2+(a[0]-b[0])**2)
 
-        cnode = graph[idmap[start]]    # current node 
+        cnode = graph[idmap[start1]]    # current node 
         for i in graph:
             node = graph[i]
             entry = [inf, [node.id, cnode.id]]
@@ -109,7 +112,7 @@ class GlobalRoutePlanner(object):
                     pre_vector = self.unit_vector(graph[via].vertex, 
                                                   cnode.vertex)
                 else:
-                    pre_vector = self.unit_vector(origin, cnode.vertex)
+                    pre_vector = self.unit_vector(start2, cnode.vertex)
                 new_vector = self.unit_vector(cnode.vertex, node.vertex)
                 if self.dot(pre_vector, new_vector) >= 0:
                     entry = entry_lookup[node.id]
@@ -131,10 +134,11 @@ class GlobalRoutePlanner(object):
         route.append(endid2)
         route.append(endid1)
         nextnode = visited[endid1][1]
-        while nextnode != idmap[start]:
+        while nextnode != idmap[start1]:
             route.append(nextnode)
             nextnode = visited[nextnode][1]
-        route.append(idmap[start])
+        route.append(idmap[start1])
+        route.append(idmap[start2])
 
         return route
 
@@ -243,7 +247,7 @@ class GlobalRoutePlanner(object):
         x1, y1 = point1
         x2, y2 = point2
         xt, yt = target
-        m = (y2-y1)/(x2-x1)
+        m = (y2-y1)/((x2-x1)+0.00001)
 
         a = m
         b = -1
