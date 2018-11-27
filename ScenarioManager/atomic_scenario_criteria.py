@@ -17,7 +17,7 @@ import weakref
 import py_trees
 import carla
 
-from ScenarioManager import timer
+from ScenarioManager.timer import GameTime
 
 
 class Criterion(py_trees.behaviour.Behaviour):
@@ -157,7 +157,9 @@ class AverageVelocityTest(Criterion):
         self.distance += location.distance(self.last_location)
         self.last_location = location
 
-        self.actual_value = self.distance / timer.GameTime.get_time()
+        elapsed_time = GameTime.get_time()
+        if elapsed_time > 0.0:
+            self.actual_value = self.distance / elapsed_time
 
         if self.actual_value > self.expected_value:
             self.test_status = "SUCCESS"
@@ -224,7 +226,8 @@ class CollisionTest(Criterion):
         """
         Cleanup sensor
         """
-        self.collision_sensor.destroy()
+        if self.collision_sensor is not None:
+            self.collision_sensor.destroy()
         self.collision_sensor = None
         self.vehicle = None
         self.logger.debug("%s.terminate()[%s->%s]" % (
@@ -283,7 +286,8 @@ class KeepLaneTest(Criterion):
         """
         Cleanup sensor
         """
-        self.lane_sensor.destroy()
+        if self.lane_sensor is not None:
+            self.lane_sensor.destroy()
         self.lane_sensor = None
         self.vehicle = None
         self.logger.debug("%s.terminate()[%s->%s]" % (

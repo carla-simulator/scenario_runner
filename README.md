@@ -28,6 +28,12 @@ Start the example scenario (follow a leading vehicle) in an extra terminal:
 python scenario_runner.py --scenario FollowLeadingVehicle
 ```
 
+If you require help or want to explore other command line parameters, start the scenario
+runner as follows:
+```
+python scenario_runner.py --help
+```
+
 To control the ego vehicle within the scenario, open another terminal and run:
 ```
 python manual_control.py

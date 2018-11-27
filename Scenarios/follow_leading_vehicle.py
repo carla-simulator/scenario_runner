@@ -19,10 +19,10 @@ import random
 import py_trees
 import carla
 
-from ScenarioManager import atomic_scenario_behavior
-from ScenarioManager import scenario_manager
-from ScenarioManager import atomic_scenario_criteria
-from ScenarioManager import timer
+from ScenarioManager.atomic_scenario_behavior import *
+from ScenarioManager.atomic_scenario_criteria import *
+from ScenarioManager.scenario_manager import Scenario
+from ScenarioManager.timer import TimeOut
 
 
 class FollowLeadingVehicle(object):
@@ -47,7 +47,7 @@ class FollowLeadingVehicle(object):
     ego_vehicle_driven_distance = 110       # Min. driven distance of ego vehicle [m]
 
     # other vehicle
-    other_vehicle = None
+    other_vehicles = []
     other_vehicle_model = 'vehicle.*'
     other_vehicle_start = carla.Transform(
         carla.Location(x=263, y=129, z=39), carla.Rotation(yaw=180))
@@ -61,22 +61,21 @@ class FollowLeadingVehicle(object):
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self.other_vehicle = self.setup_vehicle(world,
-                                                self.other_vehicle_model,
-                                                self.other_vehicle_start)
+        self.other_vehicles = [self.setup_vehicle(world,
+                                                  self.other_vehicle_model,
+                                                  self.other_vehicle_start)]
         self.ego_vehicle = self.setup_vehicle(world,
                                               self.ego_vehicle_model,
                                               self.ego_vehicle_start)
 
         # Setup scenario
-        timer.GameTime(world)
 
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
         behavior = self.create_behavior()
         criteria = self.create_test_criteria()
-        self.scenario = scenario_manager.Scenario(
+        self.scenario = Scenario(
             behavior, criteria, self.name, self.timeout)
 
     def setup_vehicle(self, world, model, spawn_point):
@@ -88,9 +87,6 @@ class FollowLeadingVehicle(object):
 
         # Get vehicle by model
         blueprint = random.choice(blueprint_library.filter(model))
-        color = random.choice(
-            blueprint.get_attribute('color').recommended_values)
-        blueprint.set_attribute('color', color)
         vehicle = world.spawn_actor(blueprint, spawn_point)
 
         # Let's put the vehicle to drive around.
@@ -113,21 +109,21 @@ class FollowLeadingVehicle(object):
         """
 
         # start condition
-        startcondition = atomic_scenario_behavior.InTimeToArrivalToLocation(
+        startcondition = InTimeToArrivalToLocation(
             self.ego_vehicle,
             4,
-            self.other_vehicle.get_location(),
+            self.other_vehicles[0].get_location(),
             name="Waiting for start position")
 
         # accelerate to target_velocity but at most for 5 seconds
         accelerate = py_trees.composites.Parallel(
             "Accelerate with timeout",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        accelerate_behavior = atomic_scenario_behavior.AccelerateToVelocity(
-            self.other_vehicle,
+        accelerate_behavior = AccelerateToVelocity(
+            self.other_vehicles[0],
             self.other_vehicle_max_throttle,
             self.other_vehicle_target_velocity)
-        accelerate_timeout = timer.TimeOut(timeout=5, name="Duration")
+        accelerate_timeout = TimeOut(timeout=5, name="Duration")
         accelerate.add_child(accelerate_behavior)
         accelerate.add_child(accelerate_timeout)
 
@@ -135,28 +131,28 @@ class FollowLeadingVehicle(object):
         keep_velocity_for_duration = py_trees.composites.Parallel(
             "Keep velocity for duration",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity = atomic_scenario_behavior.KeepVelocity(
-            self.other_vehicle,
+        keep_velocity = KeepVelocity(
+            self.other_vehicles[0],
             self.other_vehicle_target_velocity)
-        keep_velocity_duration = timer.TimeOut(timeout=2, name="Duration")
+        keep_velocity_duration = TimeOut(timeout=2, name="Duration")
         keep_velocity_for_duration.add_child(keep_velocity)
         keep_velocity_for_duration.add_child(keep_velocity_duration)
 
         # stop vehicle
-        stop = atomic_scenario_behavior.StopVehicle(
-            self.other_vehicle,
+        stop = StopVehicle(
+            self.other_vehicles[0],
             self.other_vehicle_max_brake)
 
         # end condition
         endcondition = py_trees.composites.Parallel(
             "Waiting for end position",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        endcondition_part1 = atomic_scenario_behavior.InTriggerDistanceToVehicle(
-            self.other_vehicle,
+        endcondition_part1 = InTriggerDistanceToVehicle(
+            self.other_vehicles[0],
             self.ego_vehicle,
             distance=10,
             name="FinalDistance")
-        endcondition_part2 = atomic_scenario_behavior.TriggerVelocity(
+        endcondition_part2 = TriggerVelocity(
             self.ego_vehicle, target_velocity=0, name="FinalSpeed")
         endcondition.add_child(endcondition_part1)
         endcondition.add_child(endcondition_part2)
@@ -181,16 +177,16 @@ class FollowLeadingVehicle(object):
         """
         criteria = []
 
-        max_velocity_criterion = atomic_scenario_criteria.MaxVelocityTest(
+        max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
             self.ego_vehicle_max_velocity_allowed)
-        collision_criterion = atomic_scenario_criteria.CollisionTest(
+        collision_criterion = CollisionTest(
             self.ego_vehicle)
-        keep_lane_criterion = atomic_scenario_criteria.KeepLaneTest(
+        keep_lane_criterion = KeepLaneTest(
             self.ego_vehicle)
-        driven_distance_criterion = atomic_scenario_criteria.DrivenDistanceTest(
+        driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle, self.ego_vehicle_driven_distance)
-        avg_velocity_criterion = atomic_scenario_criteria.AverageVelocityTest(
+        avg_velocity_criterion = AverageVelocityTest(
             self.ego_vehicle, self.ego_vehicle_avg_velocity_expected)
 
         criteria.append(max_velocity_criterion)
@@ -206,7 +202,7 @@ class FollowLeadingVehicle(object):
         Cleanup.
         - Removal of the vehicles
         """
-        actors = [self.ego_vehicle, self.other_vehicle]
+        actors = [self.ego_vehicle] + self.other_vehicles
         for actor in actors:
             actor.destroy()
             actor = None

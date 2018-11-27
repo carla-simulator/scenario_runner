@@ -55,8 +55,9 @@ class ResultOutputProvider(object):
         if self.junit is not None:
             self.write_to_junit()
 
-        if self.stdout or (self.filename is not None) or (self.junit is not None):
+        if self.stdout or (self.filename is not None):
             self.write_to_logger()
+            self.logger.handlers = []
 
     def write_to_logger(self):
         """
@@ -71,7 +72,12 @@ class ResultOutputProvider(object):
         self.logger.info("Duration: System Time %5.2fs --- Game Time %5.2fs" %
                          (self.data.scenario_duration_system,
                           self.data.scenario_duration_game))
+        self.logger.info("Ego vehicle:    %s" % self.data.ego_vehicle)
 
+        vehicle_string = ""
+        for vehicle in self.data.other_vehicles:
+            vehicle_string += "{}; ".format(vehicle)
+        self.logger.info("Other vehicles: %s" % vehicle_string)
         self.logger.info("\n")
         self.logger.info(
             "           Criterion           |  Result  | Actual Value | Expected Value ")
@@ -105,6 +111,11 @@ class ResultOutputProvider(object):
             if criterion.test_status != "SUCCESS":
                 failure_count += 1
 
+        # handle timeout
+        test_count += 1
+        if self.data.scenario_duration_game >= self.data.scenario.timeout:
+            failure_count += 1
+
         junit_file = open(self.junit, "w")
 
         junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
@@ -130,7 +141,7 @@ class ResultOutputProvider(object):
             result_string = ("    <testcase name=\"{}\" status=\"run\" "
                              "time=\"0\" classname=\"Scenarios.{}\">\n".format(
                                  criterion.name, self.data.scenario_tree.name))
-            if criterion.test_status == "FAILURE":
+            if criterion.test_status != "SUCCESS":
                 result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
                     criterion.name)
                 result_string += "  Actual:   {}\n".format(

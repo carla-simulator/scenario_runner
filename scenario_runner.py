@@ -20,7 +20,7 @@ from Scenarios.follow_leading_vehicle import FollowLeadingVehicle
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
-def main(stdout, filename, junit, scenario_name, debug_mode=False):
+def main(stdout, filename, junit, scenario_name, repetitions, debug_mode=False):
     """
     Main function starting a CARLA client and connecting to the world.
     """
@@ -42,26 +42,34 @@ def main(stdout, filename, junit, scenario_name, debug_mode=False):
         # Wait for the world to be ready
         world.wait_for_tick(10.0)
 
-        # Create scenario, manager and run scenario
-        if scenario_name == "FollowLeadingVehicle":
-            scenario = FollowLeadingVehicle(world, debug_mode)
-        else:
-            raise Exception(
-                "Unsupported scenario with name: {}".format(scenario_name))
-        manager = ScenarioManager(world, scenario, debug_mode)
-        manager.run_scenario()
+        # Create scenario manager
+        manager = ScenarioManager(world, debug_mode)
 
-        if not manager.analyze_scenario(stdout, filename, junit):
-            print("Success!")
-        else:
-            print("Failure!")
+        # Setup and run the scenario for repetition times
+        for i in xrange(int(repetitions)):
+            if scenario_name == "FollowLeadingVehicle":
+                scenario = FollowLeadingVehicle(world, debug_mode)
+            else:
+                raise Exception(
+                    "Unsupported scenario with name: {}".format(scenario_name))
+            manager.load_scenario(scenario)
+            manager.run_scenario()
+
+            junit_filename = None
+            if junit is not None:
+                junit_filename = junit.split(".")[0] + "_{}.xml".format(i)
+
+            if not manager.analyze_scenario(stdout, filename, junit_filename):
+                print("Success!")
+            else:
+                print("Failure!")
+
+            manager.stop_scenario()
+            del scenario
 
     finally:
         if manager is not None:
-            manager.stop_scenario()
             del manager
-        if scenario is not None:
-            del scenario
         if world is not None:
             del world
 
@@ -81,6 +89,8 @@ if __name__ == '__main__':
         '--junit', help='Write results into the given junit file')
     parser.add_argument('--scenario', required=True,
                         help='Name of the scenario to be executed')
+    parser.add_argument('--repetitions', default=1, help='Number of scenario executions')
     args = parser.parse_args()
 
-    main(args.output, args.filename, args.junit, args.scenario, args.debug)
+    main(args.output, args.filename, args.junit,
+         args.scenario, args.repetitions, args.debug)

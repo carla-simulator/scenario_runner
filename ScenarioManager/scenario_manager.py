@@ -15,8 +15,8 @@ import threading
 
 import py_trees
 
-from ScenarioManager import timer
-from ScenarioManager import result_writer
+from ScenarioManager.timer import GameTime, TimeOut
+from ScenarioManager.result_writer import ResultOutputProvider
 
 
 class Scenario(object):
@@ -48,7 +48,7 @@ class Scenario(object):
         self.criteria_tree.setup(timeout=1)
 
         # Create node for timeout
-        self.timeout_node = timer.TimeOut(self.timeout, name="TimeOut")
+        self.timeout_node = TimeOut(self.timeout, name="TimeOut")
 
         # Create overall py_tree
         self.scenario_tree = py_trees.composites.Parallel(
@@ -90,18 +90,23 @@ class ScenarioManager(object):
 
     To use the ScenarioManager:
     1. Create an object via manager = ScenarioManager()
-    2. Trigger the execution of the scenario manager.execute()
+    2. Load a scenario via manager.load_scenario()
+    3. Trigger the execution of the scenario manager.execute()
        This function is designed to explicitly control start and end of
        the scenario execution
-    3. Trigger a result evaluation with manager.analyze()
+    4. Trigger a result evaluation with manager.analyze()
+    5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, world, scenario, debug_mode):
+    scenario = None
+    scenario_tree = None
+    ego_vehicle = None
+    other_vehicles = None
+
+    def __init__(self, world, debug_mode):
         """
         Init requires scenario as input
         """
-        self.scenario = scenario.scenario
-        self.scenario_tree = self.scenario.scenario_tree
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
         self.start_system_time = None
@@ -110,17 +115,41 @@ class ScenarioManager(object):
         self.running = False
         self.timestamp_last_run = 0.0
         world.on_tick(self.tick_scenario)
+        GameTime(world)
+
+    def load_scenario(self, scenario):
+        """
+        Load a new scenario
+        """
+        self.restart()
+        self.scenario = scenario.scenario
+        self.scenario_tree = self.scenario.scenario_tree
+        self.ego_vehicle = scenario.ego_vehicle
+        self.other_vehicles = scenario.other_vehicles
 
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
+
+    def restart(self):
+        """
+        Reset all parameters
+        """
+        self.stop_scenario()
+        self.scenario_duration_system = 0.0
+        self.scenario_duration_game = 0.0
+        self.start_system_time = None
+        self.end_system_time = None
+        self.running = False
+        self.timestamp_last_run = 0.0
+        GameTime.restart()
 
     def run_scenario(self):
         """
         Trigger the start of the scenario and wait for it to finish/fail
         """
-
+        print("Running scenario {}".format(self.scenario_tree.name))
         self.start_system_time = time.time()
-        start_game_time = timer.GameTime.get_time()
+        start_game_time = GameTime.get_time()
 
         self.running = True
 
@@ -128,7 +157,7 @@ class ScenarioManager(object):
             time.sleep(0.5)
 
         self.end_system_time = time.time()
-        end_game_time = timer.GameTime.get_time()
+        end_game_time = GameTime.get_time()
 
         self.scenario_duration_system = self.end_system_time - \
             self.start_system_time
@@ -170,7 +199,8 @@ class ScenarioManager(object):
         """
         This function triggers a proper termination of a scenario
         """
-        self.scenario.terminate()
+        if self.scenario is not None:
+            self.scenario.terminate()
 
     def analyze_scenario(self, stdout, filename, junit):
         """
@@ -193,8 +223,7 @@ class ScenarioManager(object):
             timeout = True
             result = "TIMEOUT"
 
-        output = result_writer.ResultOutputProvider(
-            self, result, stdout, filename, junit)
+        output = ResultOutputProvider(self, result, stdout, filename, junit)
         output.write()
 
         return failure or timeout

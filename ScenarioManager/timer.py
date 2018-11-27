@@ -38,6 +38,13 @@ class GameTime(object):
         GameTime.current_game_time += timestamp.delta_seconds
 
     @staticmethod
+    def restart():
+        """
+        Reset game timer to 0
+        """
+        GameTime.current_game_time = 0.0
+
+    @staticmethod
     def get_time():
         """
         Returns elapsed game time
