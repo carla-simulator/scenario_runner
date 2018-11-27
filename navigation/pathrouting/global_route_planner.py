@@ -35,7 +35,7 @@ class GlobalRoutePlanner(object):
         # self.topology = self.roundoff(self.topology)
         self.graph, self.id_map = self.build_graph(self.topology)
 
-    def plan_route(self, origin, destination, heading):
+    def plan_route(self, origin, heading, destination, graph, idmap, topology):
         """
         The following function generates the route plan based on
         origin      : tuple containing x, y of the route's start position
@@ -43,36 +43,34 @@ class GlobalRoutePlanner(object):
         heading     : current heading of the vehicle in radian
 
         return      : list of turn by turn navigation decision
-        possible values are START, GO_STRAIGHT, LEFT, RIGHT,
-        CHANGE_LANE_LEFT, CHANGE_LANE_RIGHT
+        possible values (for now) are START, GO_STRAIGHT, LEFT, RIGHT,
+        STOP
         """
 
         xo, yo = origin
         xd, yd = destination
-
-        start = self.localise(xo, yo,
-                              self.topology, heading)
-        end = self.localise(xd, yd,
-                                   self.topology)
-
-        route = self.graph_search(start, end,
-                                  self.graph, self.id_map)
+        start = self.localise(xo, yo, topology, heading)
+        end = self.localise(xd, yd, topology)
+        route = self.graph_search(start, end, graph, idmap)
         route = route[::-1]
 
         plan = []
         plan.append('START')
-        cur_vector = self.unit_vector((xo, yo), route[0])
-        for i in range(len(route)):
-            if cur_vector is None:
-                cur_vector = self.unit_vector(route[i-1], route[i])
-            if i+1 < range(len(route)):
-                next_vector = self.unit_vector(route[i], route[i+1])
-            else:
-                break
-            angle = \
-                math.atan2(*next_vector[::-1]) - math.atan2(*cur_vector[::-1])
+        for i in [x for x in range(len(route)-2) if x%2 == 0]:
+            v1 = self.unit_vector(graph[route[i]].vertex,
+                                  graph[route[i+1]].vertex)
+            v2 = self.unit_vector(graph[route[i+1]].vertex,
+                                  graph[route[i+2]].vertex)
+            direction = math.atan2(*v2[::-1]) - math.atan2(*v1[::-1])
+            if abs(direction) < 0.174533:
+                plan.append('GO_STRAIGHT')
+            elif direction > 0:
+                plan.append('LEFT')
+            elif direction < 0:
+                plan.append('RIGHT')
+        plan.append('STOP')
 
-        return None
+        return plan
 
     def graph_search(self, start, end, graph, idmap):
         """

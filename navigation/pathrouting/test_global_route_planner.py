@@ -17,6 +17,23 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
     def tearDown(self):
         self.grp = None
 
+    def test_plan_route(self):
+        """
+        Run this test with a carla (0.9.1) instance running Town01
+        """
+        xo, yo = 120, -2.27
+        xd, yd = 334.7, 165
+        heading = (1, 0)
+        start = self.grp.localise(xo, yo, self.grp.topology, heading)
+        end = self.grp.localise(xd, yd, self.grp.topology)
+        graph, idmap = self.grp.build_graph(self.grp.topology)
+        route = self.grp.graph_search(start, end, graph, idmap)
+        plan = self.grp.plan_route((xo, yo), heading, (xd, yd),
+                                   graph, idmap, self.grp.topology)
+        self.assertEqual(plan, ['START', 'GO_STRAIGHT', 'GO_STRAIGHT',
+                                'LEFT', 'LEFT', 'LEFT', 'GO_STRAIGHT',
+                                'STOP'])
+
     def test_graph_search(self):
         input_topology = [[(1, 3), (1, 2)],
                           [(1, 2), (2, 2)],
@@ -35,6 +52,9 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         self.assertEqual(route, [4, 3, 2, 1, 0])
         
     def test_graph_search_town01(self):
+        """
+        Run this test with a carla (0.9.1) instance running Town01
+        """
         xo, yo = 120, -2.27
         xd, yd = 334.7, 165
         heading = (1, 0)
