@@ -17,7 +17,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
     def tearDown(self):
         self.grp = None
 
-    def test_plan_route(self):
+    def test_plan_route_town01(self):
         """
         Test for GlobalROutePlanner.plan_route()
         Run this test with a carla (0.9.1) instance running Town01
@@ -25,10 +25,7 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         xo, yo = 120, -2.27
         xd, yd = 334.7, 165
         heading = (1, 0)
-        start = self.grp.localise(xo, yo, self.grp.topology, heading)
-        end = self.grp.localise(xd, yd, self.grp.topology)
         graph, idmap = self.grp.build_graph(self.grp.topology)
-        route = self.grp.graph_search(start, end, graph, idmap)
         plan = self.grp.plan_route((xo, yo), heading, (xd, yd),
                                    graph, idmap, self.grp.topology)
         self.assertEqual(plan, ['START', 'GO_STRAIGHT', 'GO_STRAIGHT',
@@ -82,10 +79,14 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
                           [(2, 2), (3, 2)]]
         x, y = (1.2, 1.01)
         heading = (-1, 0)
-        xn, yn = self.grp.localise(x, y, input_topology, heading)[0]
-        self.assertEqual(xn, 1)
-        self.assertEqual(yn, 1)
-        # testing on Town01 map
+        nxt_vertex = self.grp.localise(x, y, input_topology, heading)[0]
+        self.assertEqual(nxt_vertex, (1, 1))
+
+    def test_localise_town01(self):
+        """
+        Test for GlobalROutePlanner.localise()
+        Run this test with a carla (0.9.1) instance running Town01
+        """
         x, y = 334.7, 25
         segment = self.grp.localise(x, y, self.grp.topology)
         self.assertEqual(segment, [(334.6214904785156, 3.790151834487915),
@@ -149,6 +150,10 @@ def suite():
     suite.addTest(Test_GlobalRoutePlanner('test_distance_to_line'))
     suite.addTest(Test_GlobalRoutePlanner('test_build_graph'))
     suite.addTest(Test_GlobalRoutePlanner('test_localise'))
+    suite.addTest(Test_GlobalRoutePlanner('test_localise_town01'))
+    suite.addTest(Test_GlobalRoutePlanner('test_graph_search'))
+    suite.addTest(Test_GlobalRoutePlanner('test_graph_search_town01'))
+    suite.addTest(Test_GlobalRoutePlanner('test_plan_route_town01'))
 
     return suite
 
