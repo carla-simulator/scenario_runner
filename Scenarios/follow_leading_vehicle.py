@@ -87,7 +87,10 @@ class FollowLeadingVehicle(object):
 
         # Get vehicle by model
         blueprint = random.choice(blueprint_library.filter(model))
-        vehicle = world.spawn_actor(blueprint, spawn_point)
+        vehicle = world.try_spawn_actor(blueprint, spawn_point)
+
+        if vehicle is None:
+            sys.exit("Error: Unable to spawn vehicle {} at {}".format(model, location))
 
         # Let's put the vehicle to drive around.
         vehicle.set_autopilot(False)

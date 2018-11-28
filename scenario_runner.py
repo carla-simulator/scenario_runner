@@ -46,7 +46,7 @@ def main(stdout, filename, junit, scenario_name, repetitions, debug_mode=False):
         manager = ScenarioManager(world, debug_mode)
 
         # Setup and run the scenario for repetition times
-        for i in xrange(int(repetitions)):
+        for i in range(int(repetitions)):
             if scenario_name == "FollowLeadingVehicle":
                 scenario = FollowLeadingVehicle(world, debug_mode)
             else:

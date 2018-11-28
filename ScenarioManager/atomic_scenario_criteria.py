@@ -65,6 +65,9 @@ class MaxVelocityTest(Criterion):
         """
         Check velocity
         """
+        if self.vehicle is None:
+            return self.status
+
         velocity = math.sqrt(
             self.vehicle.get_velocity().x**2 + self.vehicle.get_velocity().y**2)
 
@@ -109,6 +112,9 @@ class DrivenDistanceTest(Criterion):
         """
         Check distance
         """
+        if self.vehicle is None:
+            return self.status
+
         location = self.vehicle.get_location()
         self.actual_value += location.distance(self.last_location)
         self.last_location = location
@@ -153,6 +159,9 @@ class AverageVelocityTest(Criterion):
         """
         Check velocity
         """
+        if self.vehicle is None:
+            return self.status
+
         location = self.vehicle.get_location()
         self.distance += location.distance(self.last_location)
         self.last_location = location
