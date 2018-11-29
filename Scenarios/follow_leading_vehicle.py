@@ -15,6 +15,7 @@ a collision.
 """
 
 import random
+import sys
 
 import py_trees
 import carla
@@ -90,7 +91,8 @@ class FollowLeadingVehicle(object):
         vehicle = world.try_spawn_actor(blueprint, spawn_point)
 
         if vehicle is None:
-            sys.exit("Error: Unable to spawn vehicle {} at {}".format(model, location))
+            sys.exit(
+                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
 
         # Let's put the vehicle to drive around.
         vehicle.set_autopilot(False)

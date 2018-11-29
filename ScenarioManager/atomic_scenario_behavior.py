@@ -12,10 +12,10 @@ etc.
 The atomic behaviors are implemented with py_trees.
 """
 
-import math
-
 import py_trees
 import carla
+
+from ScenarioManager.carla_data_provider import CarlaDataProvider
 
 EPSILON = 0.001
 
@@ -32,16 +32,33 @@ def calculate_distance(location, other_location):
     return location.distance(other_location)
 
 
-def calculate_velocity(vehicle):
+class AtomicBehavior(py_trees.behaviour.Behaviour):
+
     """
-    Method to calculate the velocity of a vehicle
+    Base class for all atomic behaviors used to setup a scenario
+
+    Important parameters:
+    - name: Name of the atomic behavior
     """
-    velocity_squared = vehicle.get_velocity().x**2
-    velocity_squared += vehicle.get_velocity().y**2
-    return math.sqrt(velocity_squared)
+
+    def __init__(self, name):
+        super(AtomicBehavior, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.name = name
+
+    def setup(self, unused_timeout=15):
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def terminate(self, new_status):
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
 
 
-class InTriggerRegion(py_trees.behaviour.Behaviour):
+class InTriggerRegion(AtomicBehavior):
 
     """
     This class contains the trigger region (condition) of a scenario
@@ -60,23 +77,20 @@ class InTriggerRegion(py_trees.behaviour.Behaviour):
         self.min_y = min_y
         self.max_y = max_y
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Check if the vehicle location is within trigger region
         """
-        location = self.vehicle.get_location()
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self.vehicle)
+
+        if location is None:
+            return new_status
+
         not_in_region = (location.x < self.min_x or location.x > self.max_x) or (
             location.y < self.min_y or location.y > self.max_y)
-        if not_in_region:
-            new_status = py_trees.common.Status.RUNNING
-        else:
+        if not not_in_region:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -84,12 +98,8 @@ class InTriggerRegion(py_trees.behaviour.Behaviour):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
 
-
-class InTriggerDistanceToVehicle(py_trees.behaviour.Behaviour):
+class InTriggerDistanceToVehicle(AtomicBehavior):
 
     """
     This class contains the trigger distance (condition) between to vehicles
@@ -106,23 +116,19 @@ class InTriggerDistanceToVehicle(py_trees.behaviour.Behaviour):
         self.ego_vehicle = ego_vehicle
         self.distance = distance
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Check if the ego vehicle is within trigger distance to other vehicle
         """
-        ego_location = self.ego_vehicle.get_location()
-        other_location = self.other_vehicle.get_location()
+        new_status = py_trees.common.Status.RUNNING
 
-        if calculate_distance(ego_location, other_location) > self.distance:
-            new_status = py_trees.common.Status.RUNNING
-        else:
+        ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+        other_location = CarlaDataProvider.get_location(self.other_vehicle)
+
+        if ego_location is None or other_location is None:
+            return new_status
+
+        if calculate_distance(ego_location, other_location) < self.distance:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -130,12 +136,8 @@ class InTriggerDistanceToVehicle(py_trees.behaviour.Behaviour):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
 
-
-class InTriggerDistanceToLocation(py_trees.behaviour.Behaviour):
+class InTriggerDistanceToLocation(AtomicBehavior):
 
     """
     This class contains the trigger (condition) for a distance to a fixed
@@ -152,22 +154,18 @@ class InTriggerDistanceToLocation(py_trees.behaviour.Behaviour):
         self.vehicle = vehicle
         self.distance = distance
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Check if the vehicle is within trigger distance to the target location
         """
-        location = self.vehicle.get_location()
+        new_status = py_trees.common.Status.RUNNING
 
-        if calculate_distance(location, self.target_location) > self.distance:
-            new_status = py_trees.common.Status.RUNNING
-        else:
+        location = CarlaDataProvider.get_location(self.vehicle)
+
+        if location is None:
+            return new_status
+
+        if calculate_distance(location, self.target_location) < self.distance:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -175,12 +173,8 @@ class InTriggerDistanceToLocation(py_trees.behaviour.Behaviour):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
 
-
-class TriggerVelocity(py_trees.behaviour.Behaviour):
+class TriggerVelocity(AtomicBehavior):
 
     """
     This class contains the trigger velocity (condition) of a scenario
@@ -195,40 +189,29 @@ class TriggerVelocity(py_trees.behaviour.Behaviour):
         self.vehicle = vehicle
         self.target_velocity = target_velocity
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Check if the vehicle has the trigger velocity
         """
-        if (calculate_velocity(self.vehicle) - self.target_velocity) < EPSILON:
+        new_status = py_trees.common.Status.RUNNING
+
+        if (CarlaDataProvider.get_velocity(self.vehicle) - self.target_velocity) < EPSILON:
             new_status = py_trees.common.Status.SUCCESS
-        else:
-            new_status = py_trees.common.Status.RUNNING
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
 
-
-class InTimeToArrivalToLocation(py_trees.behaviour.Behaviour):
+class InTimeToArrivalToLocation(AtomicBehavior):
 
     """
     This class contains a check if a vehicle arrives within a given time
     at a given location.
     """
 
-    max_time_to_arrival = 10000
+    max_time_to_arrival = float('inf')  # time to arrival in seconds
 
     def __init__(self, vehicle, time, location, name="TimeToArrival"):
         """
@@ -240,29 +223,26 @@ class InTimeToArrivalToLocation(py_trees.behaviour.Behaviour):
         self.time = time
         self.target_location = location
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Check if the vehicle can arrive at target_location within time
         """
-        current_location = self.vehicle.get_location()
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self.vehicle)
+
+        if current_location is None:
+            return new_status
+
         distance = calculate_distance(current_location, self.target_location)
-        velocity = calculate_velocity(self.vehicle)
+        velocity = CarlaDataProvider.get_velocity(self.vehicle)
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self.max_time_to_arrival
         if velocity > EPSILON:
             time_to_arrival = distance / velocity
 
-        if time_to_arrival > self.time:
-            new_status = py_trees.common.Status.RUNNING
-        else:
+        if time_to_arrival < self.time:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -270,19 +250,15 @@ class InTimeToArrivalToLocation(py_trees.behaviour.Behaviour):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
 
-
-class InTimeToArrivalToVehicle(py_trees.behaviour.Behaviour):
+class InTimeToArrivalToVehicle(AtomicBehavior):
 
     """
     This class contains a check if a vehicle arrives within a given time
     at another vehicle.
     """
 
-    max_time_to_arrival = 10000
+    max_time_to_arrival = float('inf')  # time to arrival in seconds
 
     def __init__(self, other_vehicle, ego_vehicle, time, name="TimeToArrival"):
         """
@@ -294,32 +270,28 @@ class InTimeToArrivalToVehicle(py_trees.behaviour.Behaviour):
         self.ego_vehicle = ego_vehicle
         self.time = time
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Check if the ego vehicle can arrive at other vehicle within time
         """
-        current_location = self.ego_vehicle.get_location()
-        target_location = self.other_vehicle.get_location()
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self.ego_vehicle)
+        target_location = CarlaDataProvider.get_location(self.other_vehicle)
+
+        if current_location is None or target_location is None:
+            return new_status
 
         distance = calculate_distance(current_location, target_location)
-        current_velocity = calculate_velocity(self.ego_vehicle)
-        other_velocity = calculate_velocity(self.other_vehicle)
+        current_velocity = CarlaDataProvider.get_velocity(self.ego_vehicle)
+        other_velocity = CarlaDataProvider.get_velocity(self.other_vehicle)
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self.max_time_to_arrival
         if current_velocity > other_velocity:
             time_to_arrival = 2 * distance / (current_velocity - other_velocity)
 
-        if time_to_arrival > self.time:
-            new_status = py_trees.common.Status.RUNNING
-        else:
+        if time_to_arrival < self.time:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -327,12 +299,8 @@ class InTimeToArrivalToVehicle(py_trees.behaviour.Behaviour):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
 
-
-class AccelerateToVelocity(py_trees.behaviour.Behaviour):
+class AccelerateToVelocity(AtomicBehavior):
 
     """
     This class contains an atomic acceleration behavior. The controlled
@@ -352,19 +320,13 @@ class AccelerateToVelocity(py_trees.behaviour.Behaviour):
         self.throttle_value = throttle_value
         self.target_velocity = target_velocity
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
         """
-        if calculate_velocity(self.vehicle) < self.target_velocity:
-            new_status = py_trees.common.Status.RUNNING
+        new_status = py_trees.common.Status.RUNNING
+
+        if CarlaDataProvider.get_velocity(self.vehicle) < self.target_velocity:
             self.control.throttle = self.throttle_value
         else:
             new_status = py_trees.common.Status.SUCCESS
@@ -376,12 +338,8 @@ class AccelerateToVelocity(py_trees.behaviour.Behaviour):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
 
-
-class KeepVelocity(py_trees.behaviour.Behaviour):
+class KeepVelocity(AtomicBehavior):
 
     """
     This class contains an atomic behavior to keep the provided velocity.
@@ -405,19 +363,13 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
         self.vehicle = vehicle
         self.target_velocity = target_velocity
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
         """
         new_status = py_trees.common.Status.RUNNING
-        if calculate_velocity(self.vehicle) < self.target_velocity:
+
+        if CarlaDataProvider.get_velocity(self.vehicle) < self.target_velocity:
             self.control.throttle = 1.0
         else:
             self.control.throttle = 0.0
@@ -434,11 +386,10 @@ class KeepVelocity(py_trees.behaviour.Behaviour):
         """
         self.control.throttle = 0.0
         self.vehicle.apply_control(self.control)
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        super(KeepVelocity, self).terminate(new_status)
 
 
-class StopVehicle(py_trees.behaviour.Behaviour):
+class StopVehicle(AtomicBehavior):
 
     """
     This class contains an atomic stopping behavior. The controlled traffic
@@ -455,19 +406,13 @@ class StopVehicle(py_trees.behaviour.Behaviour):
         self.vehicle = vehicle
         self.brake_value = brake_value
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
     def update(self):
         """
         Set brake to brake_value until reaching full stop
         """
-        if calculate_velocity(self.vehicle) > EPSILON:
-            new_status = py_trees.common.Status.RUNNING
+        new_status = py_trees.common.Status.RUNNING
+
+        if CarlaDataProvider.get_velocity(self.vehicle) > EPSILON:
             self.control.brake = self.brake_value
         else:
             new_status = py_trees.common.Status.SUCCESS
@@ -478,7 +423,3 @@ class StopVehicle(py_trees.behaviour.Behaviour):
         self.vehicle.apply_control(self.control)
 
         return new_status
-
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))

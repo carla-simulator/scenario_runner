@@ -18,7 +18,7 @@ PythonAPI:
 easy_install ${CARLA_ROOT}/PythonAPI/carla-VERSION.egg
 ```
 
-Now, you can start Carla server with Town01 from ${CARLA_ROOT}
+Now, you can start CARLA server with Town01 from ${CARLA_ROOT}
 ```
 ./CarlaUE4.sh /Game/Carla/Maps/Town01
 ```

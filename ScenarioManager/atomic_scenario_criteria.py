@@ -11,12 +11,12 @@ scenario was completed successfully or failed.
 The atomic criteria are implemented with py_trees.
 """
 
-import math
 import weakref
 
 import py_trees
 import carla
 
+from ScenarioManager.carla_data_provider import CarlaDataProvider
 from ScenarioManager.timer import GameTime
 
 
@@ -47,6 +47,10 @@ class Criterion(py_trees.behaviour.Behaviour):
     def initialise(self):
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
+    def terminate(self, new_status):
+        self.logger.debug("%s.terminate()[%s->%s]" % (
+            self.__class__.__name__, self.status, new_status))
+
 
 class MaxVelocityTest(Criterion):
 
@@ -65,11 +69,12 @@ class MaxVelocityTest(Criterion):
         """
         Check velocity
         """
-        if self.vehicle is None:
-            return self.status
+        new_status = py_trees.common.Status.RUNNING
 
-        velocity = math.sqrt(
-            self.vehicle.get_velocity().x**2 + self.vehicle.get_velocity().y**2)
+        if self.vehicle is None:
+            return new_status
+
+        velocity = CarlaDataProvider.get_velocity(self.vehicle)
 
         self.actual_value = max(velocity, self.actual_value)
 
@@ -80,8 +85,6 @@ class MaxVelocityTest(Criterion):
 
         if self.terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
-        else:
-            new_status = py_trees.common.Status.RUNNING
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
@@ -90,8 +93,7 @@ class MaxVelocityTest(Criterion):
 
     def terminate(self, new_status):
         self.vehicle = None
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        super(MaxVelocityTest, self).terminate(new_status)
 
 
 class DrivenDistanceTest(Criterion):
@@ -106,16 +108,30 @@ class DrivenDistanceTest(Criterion):
         """
         super(DrivenDistanceTest, self).__init__(name, distance)
         self.vehicle = vehicle
-        self.last_location = vehicle.get_location()
+        self.last_location = None
+
+    def initialise(self):
+        self.last_location = CarlaDataProvider.get_location(self.vehicle)
+        super(DrivenDistanceTest, self).initialise()
 
     def update(self):
         """
         Check distance
         """
-        if self.vehicle is None:
-            return self.status
+        new_status = py_trees.common.Status.RUNNING
 
-        location = self.vehicle.get_location()
+        if self.vehicle is None:
+            return new_status
+
+        location = CarlaDataProvider.get_location(self.vehicle)
+
+        if location is None:
+            return new_status
+
+        if self.last_location is None:
+            self.last_location = location
+            return new_status
+
         self.actual_value += location.distance(self.last_location)
         self.last_location = location
 
@@ -126,8 +142,6 @@ class DrivenDistanceTest(Criterion):
 
         if self.terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
-        else:
-            new_status = py_trees.common.Status.RUNNING
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
@@ -136,8 +150,7 @@ class DrivenDistanceTest(Criterion):
 
     def terminate(self, new_status):
         self.vehicle = None
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        super(DrivenDistanceTest, self).terminate(new_status)
 
 
 class AverageVelocityTest(Criterion):
@@ -152,17 +165,31 @@ class AverageVelocityTest(Criterion):
         """
         super(AverageVelocityTest, self).__init__(name, avg_velocity)
         self.vehicle = vehicle
-        self.last_location = vehicle.get_location()
+        self.last_location = None
         self.distance = 0.0
+
+    def initialise(self):
+        self.last_location = CarlaDataProvider.get_location(self.vehicle)
+        super(AverageVelocityTest, self).initialise()
 
     def update(self):
         """
         Check velocity
         """
-        if self.vehicle is None:
-            return self.status
+        new_status = py_trees.common.Status.RUNNING
 
-        location = self.vehicle.get_location()
+        if self.vehicle is None:
+            return new_status
+
+        location = CarlaDataProvider.get_location(self.vehicle)
+
+        if location is None:
+            return new_status
+
+        if self.last_location is None:
+            self.last_location = location
+            return new_status
+
         self.distance += location.distance(self.last_location)
         self.last_location = location
 
@@ -177,8 +204,6 @@ class AverageVelocityTest(Criterion):
 
         if self.terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
-        else:
-            new_status = py_trees.common.Status.RUNNING
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
@@ -187,8 +212,7 @@ class AverageVelocityTest(Criterion):
 
     def terminate(self, new_status):
         self.vehicle = None
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        super(AverageVelocityTest, self).terminate(new_status)
 
 
 class CollisionTest(Criterion):
@@ -216,6 +240,8 @@ class CollisionTest(Criterion):
         """
         Check collision count
         """
+        new_status = py_trees.common.Status.RUNNING
+
         if self.actual_value > 0:
             self.test_status = "FAILURE"
         else:
@@ -223,8 +249,6 @@ class CollisionTest(Criterion):
 
         if self.terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
-        else:
-            new_status = py_trees.common.Status.RUNNING
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
@@ -239,8 +263,7 @@ class CollisionTest(Criterion):
             self.collision_sensor.destroy()
         self.collision_sensor = None
         self.vehicle = None
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        super(CollisionTest, self).terminate(new_status)
 
     @staticmethod
     def count_collisions(weak_self, event):
@@ -276,6 +299,8 @@ class KeepLaneTest(Criterion):
         """
         Check lane invasion count
         """
+        new_status = py_trees.common.Status.RUNNING
+
         if self.actual_value > 0:
             self.test_status = "FAILURE"
         else:
@@ -283,8 +308,6 @@ class KeepLaneTest(Criterion):
 
         if self.terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
-        else:
-            new_status = py_trees.common.Status.RUNNING
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
@@ -299,8 +322,7 @@ class KeepLaneTest(Criterion):
             self.lane_sensor.destroy()
         self.lane_sensor = None
         self.vehicle = None
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        super(KeepLaneTest, self).terminate(new_status)
 
     @staticmethod
     def count_lane_invasion(weak_self, event):

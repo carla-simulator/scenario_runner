@@ -15,8 +15,9 @@ import threading
 
 import py_trees
 
-from ScenarioManager.timer import GameTime, TimeOut
+from ScenarioManager.carla_data_provider import CarlaDataProvider
 from ScenarioManager.result_writer import ResultOutputProvider
+from ScenarioManager.timer import GameTime, TimeOut
 
 
 class Scenario(object):
@@ -116,6 +117,7 @@ class ScenarioManager(object):
         self.timestamp_last_run = 0.0
         world.on_tick(self.tick_scenario)
         GameTime(world)
+        CarlaDataProvider(world)
 
     def load_scenario(self, scenario):
         """
@@ -126,6 +128,9 @@ class ScenarioManager(object):
         self.scenario_tree = self.scenario.scenario_tree
         self.ego_vehicle = scenario.ego_vehicle
         self.other_vehicles = scenario.other_vehicles
+
+        CarlaDataProvider.register_vehicle(self.ego_vehicle)
+        CarlaDataProvider.register_vehicles(self.other_vehicles)
 
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
@@ -201,6 +206,8 @@ class ScenarioManager(object):
         """
         if self.scenario is not None:
             self.scenario.terminate()
+
+        CarlaDataProvider.cleanup()
 
     def analyze_scenario(self, stdout, filename, junit):
         """
