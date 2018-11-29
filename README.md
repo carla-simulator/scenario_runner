@@ -18,14 +18,20 @@ PythonAPI:
 easy_install ${CARLA_ROOT}/PythonAPI/carla-VERSION.egg
 ```
 
-Now, you can start Carla server with Town01 from ${CARLA_ROOT}
+Now, you can start CARLA server with Town01 from ${CARLA_ROOT}
 ```
 ./CarlaUE4.sh /Game/Carla/Maps/Town01
 ```
 
 Start the example scenario (follow a leading vehicle) in an extra terminal:
 ```
-python follow_vehicle_scenario.py
+python scenario_runner.py --scenario FollowLeadingVehicle
+```
+
+If you require help or want to explore other command line parameters, start the scenario
+runner as follows:
+```
+python scenario_runner.py --help
 ```
 
 To control the ego vehicle within the scenario, open another terminal and run:

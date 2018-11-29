@@ -4,17 +4,20 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-#
-# This file contains the basic scenario and scenario manager classes
-# These must not be modified and are for reference only!
-
 """
 This module provides the Scenario and ScenarioManager implementations.
+These must not be modified and are for reference only!
 """
 
+import sys
 import time
+import threading
 
 import py_trees
+
+from ScenarioManager.carla_data_provider import CarlaDataProvider
+from ScenarioManager.result_writer import ResultOutputProvider
+from ScenarioManager.timer import GameTime, TimeOut
 
 
 class Scenario(object):
@@ -23,7 +26,7 @@ class Scenario(object):
     Basic scenario class. This class holds the behavior_tree describing the
     scenario and the test criteria.
 
-    The user must not modify this function.
+    The user must not modify this class.
 
     Important parameters:
     - behavior: User defined scenario with py_tree
@@ -32,9 +35,10 @@ class Scenario(object):
     - terminate_on_failure: Terminate scenario on first failure
     """
 
-    def __init__(self, behavior, criteria, timeout=60, terminate_on_failure=False):
+    def __init__(self, behavior, criteria, name, timeout=60, terminate_on_failure=False):
         self.behavior = behavior
         self.test_criteria = criteria
+        self.timeout = timeout
 
         for criterion in self.test_criteria:
             criterion.terminate_on_failure = terminate_on_failure
@@ -45,24 +49,23 @@ class Scenario(object):
         self.criteria_tree.setup(timeout=1)
 
         # Create node for timeout
-        self.timeout_node = py_trees.timers.Timer(
-            name="TimeOut", duration=timeout)
+        self.timeout_node = TimeOut(self.timeout, name="TimeOut")
 
         # Create overall py_tree
-        self.scenario = py_trees.composites.Parallel(
-            name="Scenario with TimeOut and TestCriteria",
+        self.scenario_tree = py_trees.composites.Parallel(
+            name,
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        self.scenario.add_child(self.behavior)
-        self.scenario.add_child(self.timeout_node)
-        self.scenario.add_child(self.criteria_tree)
-        self.scenario.setup(timeout=1)
+        self.scenario_tree.add_child(self.behavior)
+        self.scenario_tree.add_child(self.timeout_node)
+        self.scenario_tree.add_child(self.criteria_tree)
+        self.scenario_tree.setup(timeout=1)
 
     def terminate(self):
         """
         This function sets the status of all leaves in the scenario tree to INVALID
         """
         # Get list of all leaves in the tree
-        node_list = [self.scenario]
+        node_list = [self.scenario_tree]
         more_nodes_exist = True
         while more_nodes_exist:
             more_nodes_exist = False
@@ -84,67 +87,150 @@ class ScenarioManager(object):
     Basic scenario manager class. This class holds all functionality
     required to start, and analyze a scenario.
 
-    The user must not modify this function.
+    The user must not modify this class.
+
+    To use the ScenarioManager:
+    1. Create an object via manager = ScenarioManager()
+    2. Load a scenario via manager.load_scenario()
+    3. Trigger the execution of the scenario manager.execute()
+       This function is designed to explicitly control start and end of
+       the scenario execution
+    4. Trigger a result evaluation with manager.analyze()
+    5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, scenario):
+    scenario = None
+    scenario_tree = None
+    ego_vehicle = None
+    other_vehicles = None
+
+    def __init__(self, world, debug_mode):
         """
         Init requires scenario as input
         """
-        self.scenario = scenario
-        self.scenario_tree = scenario.scenario
-        self.scenario_duration = 0
+        self.scenario_duration_system = 0.0
+        self.scenario_duration_game = 0.0
+        self.start_system_time = None
+        self.end_system_time = None
+        self.debug_mode = debug_mode
+        self.running = False
+        self.timestamp_last_run = 0.0
+        world.on_tick(self.tick_scenario)
+        GameTime(world)
+        CarlaDataProvider(world)
+
+    def load_scenario(self, scenario):
+        """
+        Load a new scenario
+        """
+        self.restart()
+        self.scenario = scenario.scenario
+        self.scenario_tree = self.scenario.scenario_tree
+        self.ego_vehicle = scenario.ego_vehicle
+        self.other_vehicles = scenario.other_vehicles
+
+        CarlaDataProvider.register_vehicle(self.ego_vehicle)
+        CarlaDataProvider.register_vehicles(self.other_vehicles)
 
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
 
+    def restart(self):
+        """
+        Reset all parameters
+        """
+        self.stop_scenario()
+        self.scenario_duration_system = 0.0
+        self.scenario_duration_game = 0.0
+        self.start_system_time = None
+        self.end_system_time = None
+        self.running = False
+        self.timestamp_last_run = 0.0
+        GameTime.restart()
+
     def run_scenario(self):
         """
-        Execute scenario
+        Trigger the start of the scenario and wait for it to finish/fail
         """
-        start = time.time()
-        while self.scenario_tree.status != py_trees.common.Status.SUCCESS:
-            # print("\n--------- Tick ---------\n")
-            self.scenario_tree.tick_once()
-            # print("\n")
-            # py_trees.display.print_ascii_tree(
-            #     self.scenario_tree, show_status=True)
+        print("Running scenario {}".format(self.scenario_tree.name))
+        self.start_system_time = time.time()
+        start_game_time = GameTime.get_time()
 
-            if self.scenario_tree.status == py_trees.common.Status.FAILURE:
-                print("Terminated due to failure")
-                break
+        self.running = True
 
-            # Sleep for a small time to avoid high cpu load
-            time.sleep(0.1)
+        while self.running:
+            time.sleep(0.5)
 
-        end = time.time()
-        self.scenario_duration = end - start
+        self.end_system_time = time.time()
+        end_game_time = GameTime.get_time()
+
+        self.scenario_duration_system = self.end_system_time - \
+            self.start_system_time
+        self.scenario_duration_game = end_game_time - start_game_time
+
+        if self.scenario_tree.status == py_trees.common.Status.FAILURE:
+            print("Terminated due to failure")
+
+    def tick_scenario(self, timestamp):
+        """
+        Run next tick of scenario
+        This function is a callback for world.on_tick()
+
+        Important:
+        - It hast to be ensured that the scenario has not yet completed/failed
+          and that the time moved forward.
+        - A thread lock should be used to avoid that the scenario tick is performed
+          multiple times in parallel.
+        """
+        with threading.Lock():
+            if self.running and self.timestamp_last_run < timestamp.elapsed_seconds:
+                self.timestamp_last_run = timestamp.elapsed_seconds
+
+                if self.debug_mode:
+                    print("\n--------- Tick ---------\n")
+
+                self.scenario_tree.tick_once()
+
+                if self.debug_mode:
+                    print("\n")
+                    py_trees.display.print_ascii_tree(
+                        self.scenario_tree, show_status=True)
+                    sys.stdout.flush()
+
+                if self.scenario_tree.status != py_trees.common.Status.RUNNING:
+                    self.running = False
 
     def stop_scenario(self):
         """
-        This function sets all entries in the
+        This function triggers a proper termination of a scenario
         """
-        self.scenario.terminate()
+        if self.scenario is not None:
+            self.scenario.terminate()
 
-    def analyze_scenario(self):
+        CarlaDataProvider.cleanup()
+
+    def analyze_scenario(self, stdout, filename, junit):
         """
         This function is intended to be called from outside and provide
         statistics about the scenario (human-readable, in form of a junit
         report, etc.)
         """
+
         failure = False
-        print("Scenario duration: {}".format(self.scenario_duration))
+        timeout = False
+        result = "SUCCESS"
         for criterion in self.scenario.test_criteria:
-            if criterion.get_test_status() == "FAILURE":
-                print("Criterion {} failed with {}".format(
-                    criterion.name, criterion.get_test_metric()))
+            if criterion.test_status != "SUCCESS":
                 failure = True
-            else:
-                print("Criterion {} successful with {}".format(
-                    criterion.name, criterion.get_test_metric()))
+                result = "FAILURE"
 
         if ((self.scenario.timeout_node.status == py_trees.common.Status.SUCCESS)
-                and (self.scenario_tree.tip().status != py_trees.common.Status.SUCCESS)):
-            print("Timeout")
-            failure = True
-        return failure
+                and (self.scenario_tree.tip().status != py_trees.common.Status.SUCCESS)
+                and not failure):
+            timeout = True
+            result = "TIMEOUT"
+
+        output = ResultOutputProvider(self, result, stdout, filename, junit)
+        output.write()
+
+        return failure or timeout
