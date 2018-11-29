@@ -31,10 +31,11 @@ class Criterion(py_trees.behaviour.Behaviour):
     - actual_value: Actual result after running the scenario
     """
 
-    def __init__(self, name, expected_value):
+    def __init__(self, name, vehicle, expected_value):
         super(Criterion, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.name = name
+        self.vehicle = vehicle
         self.expected_value = expected_value
         self.actual_value = 0
         self.test_status = "INIT"
@@ -62,8 +63,8 @@ class MaxVelocityTest(Criterion):
         """
         Setup vehicle and maximum allowed velovity
         """
-        super(MaxVelocityTest, self).__init__(name, max_velocity_allowed)
-        self.vehicle = vehicle
+        super(MaxVelocityTest, self).__init__(
+            name, vehicle, max_velocity_allowed)
 
     def update(self):
         """
@@ -91,10 +92,6 @@ class MaxVelocityTest(Criterion):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.vehicle = None
-        super(MaxVelocityTest, self).terminate(new_status)
-
 
 class DrivenDistanceTest(Criterion):
 
@@ -106,8 +103,7 @@ class DrivenDistanceTest(Criterion):
         """
         Setup vehicle
         """
-        super(DrivenDistanceTest, self).__init__(name, distance)
-        self.vehicle = vehicle
+        super(DrivenDistanceTest, self).__init__(name, vehicle, distance)
         self.last_location = None
 
     def initialise(self):
@@ -148,10 +144,6 @@ class DrivenDistanceTest(Criterion):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.vehicle = None
-        super(DrivenDistanceTest, self).terminate(new_status)
-
 
 class AverageVelocityTest(Criterion):
 
@@ -163,8 +155,7 @@ class AverageVelocityTest(Criterion):
         """
         Setup vehicle and average velovity expected
         """
-        super(AverageVelocityTest, self).__init__(name, avg_velocity)
-        self.vehicle = vehicle
+        super(AverageVelocityTest, self).__init__(name, vehicle, avg_velocity)
         self.last_location = None
         self.distance = 0.0
 
@@ -210,10 +201,6 @@ class AverageVelocityTest(Criterion):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.vehicle = None
-        super(AverageVelocityTest, self).terminate(new_status)
-
 
 class CollisionTest(Criterion):
 
@@ -225,9 +212,8 @@ class CollisionTest(Criterion):
         """
         Construction with sensor setup
         """
-        super(CollisionTest, self).__init__(name, 0)
+        super(CollisionTest, self).__init__(name, vehicle, 0)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self.vehicle = vehicle
 
         world = self.vehicle.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
@@ -262,7 +248,6 @@ class CollisionTest(Criterion):
         if self.collision_sensor is not None:
             self.collision_sensor.destroy()
         self.collision_sensor = None
-        self.vehicle = None
         super(CollisionTest, self).terminate(new_status)
 
     @staticmethod
@@ -283,9 +268,8 @@ class KeepLaneTest(Criterion):
         """
         Construction with sensor setup
         """
-        super(KeepLaneTest, self).__init__(name, 0)
+        super(KeepLaneTest, self).__init__(name, vehicle, 0)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self.vehicle = vehicle
 
         world = self.vehicle.get_world()
         blueprint = world.get_blueprint_library().find(
@@ -321,7 +305,6 @@ class KeepLaneTest(Criterion):
         if self.lane_sensor is not None:
             self.lane_sensor.destroy()
         self.lane_sensor = None
-        self.vehicle = None
         super(KeepLaneTest, self).terminate(new_status)
 
     @staticmethod

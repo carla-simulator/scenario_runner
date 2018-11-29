@@ -185,10 +185,8 @@ class FollowLeadingVehicle(object):
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
             self.ego_vehicle_max_velocity_allowed)
-        collision_criterion = CollisionTest(
-            self.ego_vehicle)
-        keep_lane_criterion = KeepLaneTest(
-            self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicle)
+        keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle, self.ego_vehicle_driven_distance)
         avg_velocity_criterion = AverageVelocityTest(
@@ -199,6 +197,13 @@ class FollowLeadingVehicle(object):
         criteria.append(keep_lane_criterion)
         criteria.append(driven_distance_criterion)
         criteria.append(avg_velocity_criterion)
+
+        # Add the collision and lane checks for all vehicles as well
+        for vehicle in self.other_vehicles:
+            collision_criterion = CollisionTest(vehicle)
+            keep_lane_criterion = KeepLaneTest(vehicle)
+            criteria.append(collision_criterion)
+            criteria.append(keep_lane_criterion)
 
         return criteria
 

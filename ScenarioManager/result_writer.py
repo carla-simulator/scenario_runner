@@ -80,20 +80,23 @@ class ResultOutputProvider(object):
         self.logger.info("Other vehicles: %s" % vehicle_string)
         self.logger.info("\n")
         self.logger.info(
-            "           Criterion           |  Result  | Actual Value | Expected Value ")
+            "              Vehicle             |            Criterion           |  Result  | Actual Value | Expected Value ")
         self.logger.info(
-            "--------------------------------------------------------------------------")
+            "--------------------------------------------------------------------------------------------------------------")
 
         for criterion in self.data.scenario.test_criteria:
-            self.logger.info("%30s | %8s | %12.2f | %12.2f " %
-                             (criterion.name,
+            self.logger.info("%24s (id=%3d) | %30s | %8s | %12.2f | %12.2f " %
+                             (criterion.vehicle.type_id[8:],
+                              criterion.vehicle.id,
+                              criterion.name,
                               "SUCCESS" if criterion.test_status == "SUCCESS" else "FAILURE",
                               criterion.actual_value,
                               criterion.expected_value))
 
         # Handle timeout separately
-        self.logger.info("%30s | %8s | %12.2f | %12.2f " %
-                         ("Duration",
+        self.logger.info("%33s | %30s | %8s | %12.2f | %12.2f " %
+                         ("",
+                          "Duration",
                           "SUCCESS" if self.data.scenario_duration_game < self.data.scenario.timeout else "FAILURE",
                           self.data.scenario_duration_game,
                           self.data.scenario.timeout))
@@ -138,9 +141,11 @@ class ResultOutputProvider(object):
         junit_file.write(test_suite_string)
 
         for criterion in self.data.scenario.test_criteria:
+            testcase_name = criterion.name + "_" + \
+                criterion.vehicle.type_id[8:] + "_" + str(criterion.vehicle.id)
             result_string = ("    <testcase name=\"{}\" status=\"run\" "
                              "time=\"0\" classname=\"Scenarios.{}\">\n".format(
-                                 criterion.name, self.data.scenario_tree.name))
+                                 testcase_name, self.data.scenario_tree.name))
             if criterion.test_status != "SUCCESS":
                 result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
                     criterion.name)
@@ -158,11 +163,10 @@ class ResultOutputProvider(object):
             junit_file.write(result_string)
 
         # Handle timeout separately
-        result_string = ("    <testcase name=\"{}\" status=\"run\" time=\"{}\" "
+        result_string = ("    <testcase name=\"Duration\" status=\"run\" time=\"{}\" "
                          "classname=\"Scenarios.{}\">\n".format(
-                             criterion.name,
                              self.data.scenario_duration_system,
-                             "Duration"))
+                             self.data.scenario_tree.name))
         if self.data.scenario_duration_game >= self.data.scenario.timeout:
             result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
                 "Duration")
