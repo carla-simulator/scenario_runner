@@ -41,12 +41,6 @@ class CarlaDataProvider(object):
     vehicle_velocity_map = dict()
     vehicle_location_map = dict()
 
-    def __init__(self, world):
-        """
-        Setup callback to get vehicle data from CARLA
-        """
-        world.on_tick(self.on_carla_tick)
-
     @staticmethod
     def register_vehicle(vehicle):
         """
@@ -74,7 +68,7 @@ class CarlaDataProvider(object):
             CarlaDataProvider.register_vehicle(vehicle)
 
     @staticmethod
-    def on_carla_tick(timestamp):
+    def on_carla_tick():
         """
         Callback from CARLA
         """

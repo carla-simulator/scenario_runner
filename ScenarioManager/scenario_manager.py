@@ -116,8 +116,6 @@ class ScenarioManager(object):
         self.running = False
         self.timestamp_last_run = 0.0
         world.on_tick(self.tick_scenario)
-        GameTime(world)
-        CarlaDataProvider(world)
 
     def load_scenario(self, scenario):
         """
@@ -189,6 +187,11 @@ class ScenarioManager(object):
                 if self.debug_mode:
                     print("\n--------- Tick ---------\n")
 
+                # Update game time and vehicle information
+                GameTime.on_carla_tick(timestamp)
+                CarlaDataProvider.on_carla_tick()
+
+                # Tick scenario
                 self.scenario_tree.tick_once()
 
                 if self.debug_mode:

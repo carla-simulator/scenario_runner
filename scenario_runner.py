@@ -19,6 +19,7 @@ import carla
 from Scenarios.follow_leading_vehicle import FollowLeadingVehicle
 from ScenarioManager.scenario_manager import ScenarioManager
 
+SCRIPT_VERSION = "0.1"
 
 def main(args):
     """
@@ -101,6 +102,7 @@ if __name__ == '__main__':
                         help='Name of the scenario to be executed')
     parser.add_argument(
         '--repetitions', default=1, help='Number of scenario executions')
+    parser.add_argument("--version", action="version", version="%(prog)s " + SCRIPT_VERSION)
     args = parser.parse_args()
 
     main(args)
