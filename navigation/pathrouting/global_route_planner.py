@@ -1,8 +1,6 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-# This file contains the class for global route planning
-
 """
 This module provides GlobalRoutePlanner implementation.
 """
@@ -12,31 +10,25 @@ from heapq import heappop, heapify
 import networkx as nx
 import carla
 
+
 class GlobalRoutePlanner(object):
     """
     This class provides a very high level route plan.
-    Instantiate the calss by passing a reference to carla world.
+    Instantiate the calss by passing a reference to
+    A GlobalRoutePlannerDAO object.
     """
 
-    def __init__(self, world):
+    def __init__(self, dao):
         """
-        Process the topology returned by world into a list of simple
-        co-ordinate pairs
+        Constructor
         """
-        if world is not None:
-            self.world = world
-            self.topology = []
-            # Transforming topology into list of vertex pairs
-            for segment in self.world.get_map().get_topology():
-                x1 = segment[0].transform.location.x
-                y1 = segment[0].transform.location.y
-                x2 = segment[1].transform.location.x
-                y2 = segment[1].transform.location.y
-                self.topology.append([(x1, y1), (x2, y2)])
-            pass
-            # Creating graph of the world map and also a map from 
-            # node co-ordinates to node id
-            self.graph, self.id_map = self.build_graph(self.topology)
+        self.dao = dao
+
+    def setup(self):
+        self.topology = self.dao.get_topology()
+        # Creating graph of the world map and also a map from
+        # node co-ordinates to node id
+        self.graph, self.id_map = self.build_graph()
 
     def plan_route(self, origin, heading, destination, graph, idmap, topology):
         """
@@ -47,9 +39,8 @@ class GlobalRoutePlanner(object):
 
         return      : list of turn by turn navigation decision
         possible values (for now) are START, GO_STRAIGHT, LEFT, RIGHT,
-        STOP
+        FOLLOW_LANE, STOP
         """
-
         xo, yo = origin
         xd, yd = destination
 
@@ -58,16 +49,17 @@ class GlobalRoutePlanner(object):
         start = self.align(start, self.get_direction(start))
         end = self.align(end, self.get_direction(end))
 
-        route = nx.shortest_path(graph, source=idmap[start[0]], target=idmap[end[1]],
+        route = nx.shortest_path(graph, source=idmap[start[0]],
+                                 target=idmap[end[1]],
                                  weight='distance')
 
         plan = []
         plan.append('START')
-        for i in [x for x in range(len(route)-2) if x%2 == 0]:
-            v1 = self.unit_vector(graph[route[i]].vertex,
-                                  graph[route[i+1]].vertex)
-            v2 = self.unit_vector(graph[route[i+1]].vertex,
-                                  graph[route[i+2]].vertex)
+        for i in [x for x in range(len(route)-2) if x % 2 == 0]:
+            v1 = self.unit_vector(graph.nodes[route[i]]['vertex'],
+                                  graph.nodes[route[i+1]]['vertex'])
+            v2 = self.unit_vector(graph.nodes[route[i+1]]['vertex'],
+                                  graph.nodes[route[i+2]]['vertex'])
             direction = math.atan2(*v2[::-1]) - math.atan2(*v1[::-1])
             if abs(direction) < 0.174533:
                 plan.append('GO_STRAIGHT')
@@ -79,18 +71,17 @@ class GlobalRoutePlanner(object):
 
         return plan
 
-    def build_graph(self, topology):
+    def build_graph(self):
         """
         This function builds a graph representation of topology
         get_direction : reference to function object that returns
         unit vector along the allowed direction of travel at (x, y)
         """
-
         graph = nx.DiGraph()
         # map with structure {(x,y): id, ... }
         id_map = dict()
 
-        for segment in topology:
+        for segment in self.topology:
 
             direction = self.get_direction(segment)
             segment = self.align(segment, direction)
@@ -100,8 +91,8 @@ class GlobalRoutePlanner(object):
                     id_map[vertex] = new_id
                     graph.add_node(new_id, vertex=vertex)
             p1, p2 = segment
-            n1, n2 = id_map[p1], id_map[segment[p2]]
-            graph.add_edge(n1, n2, self.distance(p1, p2))
+            n1, n2 = id_map[p1], id_map[p2]
+            graph.add_edge(n1, n2, distance=self.distance(p1, p2))
 
         return graph, id_map
 
@@ -110,10 +101,9 @@ class GlobalRoutePlanner(object):
         This function returns the segment with its vertex order
         aligned along vector input
         """
-
         direction = self.get_direction(segment)
         p1, p2 = segment
-        midpoint = ((p1[0]+p2[0])/2, (p1[1]+p2[1])/2)
+        midpoint = ((p1[0]+p2[0])/2.0, (p1[1]+p2[1])/2.0)
         v1 = self.unit_vector(midpoint, p1)
         v2 = self.unit_vector(midpoint, p2)
         if self.dot(direction, v2) < self.dot(direction, v1):
@@ -123,29 +113,23 @@ class GlobalRoutePlanner(object):
 
     def get_direction(self, segment):
         """
-        This function returns a unit vector along the allowed direction of travel
-        in the road segment
+        This function returns a unit vector along the allowed direction
+        of travel in the road segment
         """
-
         p1, p2 = segment
-        midpoint = ((p1[0]+p2[0])/2, (p1[1]+p2[1])/2)
-        x, y = midpoint
+        midpoint = ((p1[0]+p2[0])/2.0, (p1[1]+p2[1])/2.0)
         segment_length = self.distance(p1, p2)
-        waypoint = self.world.get_map().get_waypoint(carla.Location(x=x, y=y, z=0.0))
-        location = waypoint.next(0.1 * segment_length).transform.location
-        xn, yn = location.x, location.y
-
-        return self.unit_vector((x, y), (xn, yn))
+        nxt_waypoint = self.dao.get_next_waypoint(midpoint, 0.1*segment_length)
+        return self.unit_vector(midpoint, nxt_waypoint)
 
     def localise(self, x, y, topology):
         """
         This function finds the road segment closest to (x, y)
         """
-
         distance = float('inf')
         nearest_segment = (distance, (float('inf'), float('inf')))
-        # Finding the road segment with the least distance from (x, y) 
-        # and also such that (x, y) lies inside the circle formed by the 
+        # Finding the road segment with the least distance from (x, y)
+        # and also such that (x, y) lies inside the circle formed by the
         # segment as diameter
         for segment in topology:
             distance = self.distance_to_line(segment[0],
@@ -171,7 +155,6 @@ class GlobalRoutePlanner(object):
         This functions returns the distance between the target point and
         The line joining point1, point2. Accurate to 5 decimal places.
         """
-
         x1, y1 = point1
         x2, y2 = point2
         xt, yt = target
@@ -187,7 +170,6 @@ class GlobalRoutePlanner(object):
         """
         This function returns the unit vector from point1 to point2
         """
-
         x1, y1 = point1
         x2, y2 = point2
 
