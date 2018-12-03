@@ -16,10 +16,9 @@ from argparse import RawTextHelpFormatter
 
 import carla
 
-from Scenarios.follow_leading_vehicle import FollowLeadingVehicle
+from Scenarios.follow_leading_vehicle import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
-SCRIPT_VERSION = "0.1"
 
 def main(args):
     """
@@ -56,6 +55,8 @@ def main(args):
         for i in range(int(args.repetitions)):
             if args.scenario == "FollowLeadingVehicle":
                 scenario = FollowLeadingVehicle(world, args.debug)
+            elif args.scenario == "FollowLeadingVehicleWithObstacle":
+                scenario = FollowLeadingVehicleWithObstacle(world, args.debug)
             else:
                 raise Exception(
                     "Unsupported scenario with name: {}".format(args.scenario))
@@ -102,7 +103,6 @@ if __name__ == '__main__':
                         help='Name of the scenario to be executed')
     parser.add_argument(
         '--repetitions', default=1, help='Number of scenario executions')
-    parser.add_argument("--version", action="version", version="%(prog)s " + SCRIPT_VERSION)
     args = parser.parse_args()
 
     main(args)
