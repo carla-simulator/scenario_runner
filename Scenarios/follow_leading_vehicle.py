@@ -27,6 +27,32 @@ from ScenarioManager.scenario_manager import Scenario
 from ScenarioManager.timer import TimeOut
 
 
+def setup_vehicle(world, model, spawn_point, hero=False):
+    """
+    Function to setup the most relevant vehicle parameters,
+    incl. spawn point and vehicle model.
+    """
+    blueprint_library = world.get_blueprint_library()
+
+    # Get vehicle by model
+    blueprint = random.choice(blueprint_library.filter(model))
+    if hero:
+        blueprint.set_attribute('role_name', 'hero')
+    else:
+        blueprint.set_attribute('role_name', 'scenario')
+
+    vehicle = world.try_spawn_actor(blueprint, spawn_point)
+
+    if vehicle is None:
+        sys.exit(
+            "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
+
+    # Let's put the vehicle to drive around
+    vehicle.set_autopilot(False)
+
+    return vehicle
+
+
 class FollowLeadingVehicle(object):
 
     """
@@ -67,12 +93,13 @@ class FollowLeadingVehicle(object):
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self.other_vehicles = [self.setup_vehicle(world,
-                                                  self.other_vehicle_model,
-                                                  self.other_vehicle_start)]
-        self.ego_vehicle = self.setup_vehicle(world,
-                                              self.ego_vehicle_model,
-                                              self.ego_vehicle_start)
+        self.other_vehicles = [setup_vehicle(world,
+                                             self.other_vehicle_model,
+                                             self.other_vehicle_start)]
+        self.ego_vehicle = setup_vehicle(world,
+                                         self.ego_vehicle_model,
+                                         self.ego_vehicle_start,
+                                         hero=True)
 
         # Setup scenario
         if debug_mode:
@@ -82,26 +109,6 @@ class FollowLeadingVehicle(object):
         criteria = self.create_test_criteria()
         self.scenario = Scenario(
             behavior, criteria, self.name, self.timeout)
-
-    def setup_vehicle(self, world, model, spawn_point):
-        """
-        Function to setup the most relevant vehicle parameters,
-        incl. spawn point and vehicle model.
-        """
-        blueprint_library = world.get_blueprint_library()
-
-        # Get vehicle by model
-        blueprint = random.choice(blueprint_library.filter(model))
-        vehicle = world.try_spawn_actor(blueprint, spawn_point)
-
-        if vehicle is None:
-            sys.exit(
-                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-
-        # Let's put the vehicle to drive around.
-        vehicle.set_autopilot(False)
-
-        return vehicle
 
     def create_behavior(self):
         """
@@ -258,15 +265,16 @@ class FollowLeadingVehicleWithObstacle(object):
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self.other_vehicles = [self.setup_vehicle(world,
-                                                  self.other_vehicle_model,
-                                                  self.other_vehicle_start),
-                               self.setup_vehicle(world,
-                                                  self.other_vehicle_model_no2,
-                                                  self.other_vehicle_start_no2)]
-        self.ego_vehicle = self.setup_vehicle(world,
-                                              self.ego_vehicle_model,
-                                              self.ego_vehicle_start)
+        self.other_vehicles = [setup_vehicle(world,
+                                             self.other_vehicle_model,
+                                             self.other_vehicle_start),
+                               setup_vehicle(world,
+                                             self.other_vehicle_model_no2,
+                                             self.other_vehicle_start_no2)]
+        self.ego_vehicle = setup_vehicle(world,
+                                         self.ego_vehicle_model,
+                                         self.ego_vehicle_start,
+                                         hero=True)
 
         # Setup scenario
         if debug_mode:
@@ -276,26 +284,6 @@ class FollowLeadingVehicleWithObstacle(object):
         criteria = self.create_test_criteria()
         self.scenario = Scenario(
             behavior, criteria, self.name, self.timeout)
-
-    def setup_vehicle(self, world, model, spawn_point):
-        """
-        Function to setup the most relevant vehicle parameters,
-        incl. spawn point and vehicle model.
-        """
-        blueprint_library = world.get_blueprint_library()
-
-        # Get vehicle by model
-        blueprint = random.choice(blueprint_library.filter(model))
-        vehicle = world.try_spawn_actor(blueprint, spawn_point)
-
-        if vehicle is None:
-            sys.exit(
-                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-
-        # Let's put the vehicle to drive around.
-        vehicle.set_autopilot(False)
-
-        return vehicle
 
     def create_behavior(self):
         """
