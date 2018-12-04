@@ -1,40 +1,42 @@
-# scenario_runner
-Traffic scenario definition and execution engine
+ScenarioRunner for CARLA
+========================
+This repository contains traffic scenario definition and an execution engine
+for CARLA.
 
-## Disclaimer
+Disclaimer
+----------
+
 The current status is work in progress and may not reflect the final API
 
-## How To Use
-The current version is designed to be used with Ubuntu 16.04, Python 2.7 and python-py-trees.
-To install python-py-trees run:
-```
-sudo apt-get install python-py-trees
-```
+Building the ScenarioRunner
+---------------------------
 
-### Running the follow vehicle example
-First of all, you need to get latest CARLA 0.9.1 release. Then you have to install the
-PythonAPI:
-```
-easy_install ${CARLA_ROOT}/PythonAPI/carla-VERSION.egg
-```
+Use `git clone` or download the project from this page. Note that the master
+branch contains the latest fixes and features, for the latest stable code may
+be best to switch to the `stable` branch.
 
-Now, you can start CARLA server with Town01 from ${CARLA_ROOT}
-```
-./CarlaUE4.sh /Game/Carla/Maps/Town01
-```
+Currently no build is required, as all code is in Python.
 
-Start the example scenario (follow a leading vehicle) in an extra terminal:
-```
-python scenario_runner.py --scenario FollowLeadingVehicle
-```
+Using the ScenarioRunner
+------------------------
 
-If you require help or want to explore other command line parameters, start the scenario
-runner as follows:
-```
-python scenario_runner.py --help
-```
+Please take a look at our [Getting started](Docs/getting_started.md)
+documentation.
 
-To control the ego vehicle within the scenario, open another terminal and run:
-```
-python manual_control.py
-```
+Contributing
+------------
+
+Please take a look at our [Contribution guidelines][contriblink].
+
+[contriblink]: http://carla.readthedocs.io/en/latest/CONTRIBUTING
+
+F.A.Q.
+------
+
+If you run into problems, check our
+[FAQ](http://carla.readthedocs.io/en/latest/faq/).
+
+License
+-------
+
+ScenarioRunner specific code is distributed under MIT License.
