@@ -25,48 +25,19 @@ from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
 from ScenarioManager.scenario_manager import Scenario
 from ScenarioManager.timer import TimeOut
+from Scenarios.basic_scenario import *
 
 
-def setup_vehicle(world, model, spawn_point, hero=False):
-    """
-    Function to setup the most relevant vehicle parameters,
-    incl. spawn point and vehicle model.
-    """
-    blueprint_library = world.get_blueprint_library()
-
-    # Get vehicle by model
-    blueprint = random.choice(blueprint_library.filter(model))
-    if hero:
-        blueprint.set_attribute('role_name', 'hero')
-    else:
-        blueprint.set_attribute('role_name', 'scenario')
-
-    vehicle = world.try_spawn_actor(blueprint, spawn_point)
-
-    if vehicle is None:
-        sys.exit(
-            "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-
-    # Let's put the vehicle to drive around
-    vehicle.set_autopilot(False)
-
-    return vehicle
-
-
-class FollowLeadingVehicle(object):
+class FollowLeadingVehicle(BasicScenario):
 
     """
     This class holds everything required for a simple "Follow a leading vehicle"
     scenario involving two vehicles.
     """
 
-    name = "FollowVehicle"
-    criteria_list = []      # List of evaluation criteria
     timeout = 60            # Timeout of scenario in seconds
-    scenario = None
 
     # ego vehicle parameters
-    ego_vehicle = None
     ego_vehicle_model = 'vehicle.carlamotors.carlacola'
     ego_vehicle_start_x = 107
     ego_vehicle_start = carla.Transform(
@@ -76,7 +47,6 @@ class FollowLeadingVehicle(object):
     ego_vehicle_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
 
     # other vehicle
-    other_vehicles = []
     other_vehicle_model = 'vehicle.*'
     other_vehicle_start_x = ego_vehicle_start_x + ego_vehicle_distance_to_other
     other_vehicle_start = carla.Transform(
@@ -101,14 +71,8 @@ class FollowLeadingVehicle(object):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        # Setup scenario
-        if debug_mode:
-            py_trees.logging.level = py_trees.logging.Level.DEBUG
-
-        behavior = self.create_behavior()
-        criteria = self.create_test_criteria()
-        self.scenario = Scenario(
-            behavior, criteria, self.name, self.timeout)
+        super(FollowLeadingVehicle, self).__init__(name="FollowVehicle",
+                                                   debug_mode=debug_mode)
 
     def create_behavior(self):
         """
@@ -209,31 +173,17 @@ class FollowLeadingVehicle(object):
 
         return criteria
 
-    def __del__(self):
-        """
-        Cleanup.
-        - Removal of the vehicles
-        """
-        actors = [self.ego_vehicle] + self.other_vehicles
-        for actor in actors:
-            actor.destroy()
-            actor = None
 
-
-class FollowLeadingVehicleWithObstacle(object):
+class FollowLeadingVehicleWithObstacle(BasicScenario):
 
     """
     This class holds a scenario similar to FollowLeadingVehicle
     but there is a (hidden) obstacle in front of the leading vehicle
     """
 
-    name = "FollowVehicleWithObstacle"
-    criteria_list = []      # List of evaluation criteria
     timeout = 60            # Timeout of scenario in seconds
-    scenario = None
 
     # ego vehicle parameters
-    ego_vehicle = None
     ego_vehicle_model = 'vehicle.carlamotors.carlacola'
     ego_vehicle_start_x = 107
     ego_vehicle_start = carla.Transform(
@@ -276,14 +226,9 @@ class FollowLeadingVehicleWithObstacle(object):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        # Setup scenario
-        if debug_mode:
-            py_trees.logging.level = py_trees.logging.Level.DEBUG
-
-        behavior = self.create_behavior()
-        criteria = self.create_test_criteria()
-        self.scenario = Scenario(
-            behavior, criteria, self.name, self.timeout)
+        super(
+            FollowLeadingVehicleWithObstacle, self).__init__(name="FollowLeadingVehicleWithObstacle",
+                                                             debug_mode=debug_mode)
 
     def create_behavior(self):
         """
@@ -391,13 +336,3 @@ class FollowLeadingVehicleWithObstacle(object):
             criteria.append(keep_lane_criterion)
 
         return criteria
-
-    def __del__(self):
-        """
-        Cleanup.
-        - Removal of the vehicles
-        """
-        actors = [self.ego_vehicle] + self.other_vehicles
-        for actor in actors:
-            actor.destroy()
-            actor = None
