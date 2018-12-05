@@ -405,51 +405,6 @@ class KeepVelocity(AtomicBehavior):
         self._vehicle.apply_control(self._control)
         super(KeepVelocity, self).terminate(new_status)
 
-class KeepCurrentVelocity(AtomicBehavior):
-
-    """
-    This class contains an atomic behavior to maintain vehicle's 
-    current velocity.
-
-    Note: In parallel to this behavior a termination behavior has to be used
-          to keep the velocity either for a certain duration, or for a certain
-          distance, etc.
-    """
-
-    def __init__(self, vehicle, name="KeepCurrentVelocity"):
-        """
-        Setup parameters 
-        """
-        super(KeepCurrentVelocity, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self.control = carla.VehicleControl()
-        self.vehicle = vehicle
-        self.target_velocity = CarlaDataProvider.get_velocity(vehicle)
-
-    def update(self):
-        """
-        Set throttle to throttle_value, as long as velocity is < target_velocity
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        if CarlaDataProvider.get_velocity(self.vehicle) < self.target_velocity:
-            self.control.throttle = 1.0
-        else:
-            self.control.throttle = 0.0
-
-        self.vehicle.apply_control(self.control)
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
-        return new_status
-
-    def terminate(self, new_status):
-        """
-        On termination of this behavior, the throttle should be set back to 0.,
-        to avoid further acceleration.
-        """
-        self.control.throttle = 0.0
-        self.vehicle.apply_control(self.control)
-        super(KeepCurrentVelocity, self).terminate(new_status)
 
 class SyncVelocityToArrival(AtomicBehavior):
     """
@@ -457,22 +412,32 @@ class SyncVelocityToArrival(AtomicBehavior):
     set velocity of vehicle so that it reaches location at the same time as
     vehicle_reference. The behaviour assumes that the two vehicles are moving
     towards location in a straight line.
+
+    Note: In parallel to this behavior a termination behavior has to be used
+          to keep continue scynhronisation for a certain duration, or for a 
+          certain distance, etc.
     """
 
-    def __init__(self, vehicle, vehicle_reference, location, name="SyncVelocityToArrival"):
+    def __init__(self, vehicle, vehicle_reference, 
+        target_location, gain=1, name="SyncVelocityToArrival"):
         """
-        Setup parameters
+        vehicle : vehicle to be controlled
+        vehicle_ reference : reference vehicle with which arrival has to be
+            synchronised
+        gain : coefficient for vehicle's throttle and break
+            controls
         """
         super(SyncVelocityToArrival, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.control = carla.VehicleControl()
         self.vehicle = vehicle
         self.vehicle_reference = vehicle_reference
-        self.target_location = location
+        self.target_location = target_location
+        self.gain = gain
 
     def update(self):
         """
-        PID (like) update for vehicle velocity
+        Dynamic control update for vehicle velocity
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -490,7 +455,8 @@ class SyncVelocityToArrival(AtomicBehavior):
             (CarlaDataProvider.get_velocity(self.vehicle)
             + EPSILON)
 
-        control_value = (1.5)*(time - time_reference)/(time+time_reference+EPSILON)
+        control_value = (self.gain)*(time - time_reference)/\
+            (time+time_reference+EPSILON)
 
         if control_value > 0:
             self.control.throttle = control_value
