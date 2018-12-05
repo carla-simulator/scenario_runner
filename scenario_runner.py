@@ -19,6 +19,29 @@ import carla
 from Scenarios.follow_leading_vehicle import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
+"""
+List of all supported scenarios
+IMPORTANT: String has to be class name
+"""
+supported_scenarios = {
+    "FollowLeadingVehicle",
+    "FollowLeadingVehicleWithObstacle"
+}
+
+
+def get_scenario_class_or_fail(scenario):
+    """
+    Get scenario class by scenario name
+    If scenario is not supported or not found, raise an exception
+    """
+    if scenario in supported_scenarios:
+        if scenario in globals():
+            return globals()[scenario]
+        else:
+            raise Exception("No class for scenario '{}'".format(scenario))
+    else:
+        raise Exception("Scenario '{}' not supported".format(scenario))
+
 
 def main(args):
     """
@@ -52,14 +75,9 @@ def main(args):
         manager = ScenarioManager(world, args.debug)
 
         # Setup and run the scenario for repetition times
+        scenario_class = get_scenario_class_or_fail(args.scenario)
         for i in range(int(args.repetitions)):
-            if args.scenario == "FollowLeadingVehicle":
-                scenario = FollowLeadingVehicle(world, args.debug)
-            elif args.scenario == "FollowLeadingVehicleWithObstacle":
-                scenario = FollowLeadingVehicleWithObstacle(world, args.debug)
-            else:
-                raise Exception(
-                    "Unsupported scenario with name: {}".format(args.scenario))
+            scenario = scenario_class(world, args.debug)
             manager.load_scenario(scenario)
             manager.run_scenario()
 
@@ -103,6 +121,14 @@ if __name__ == '__main__':
                         help='Name of the scenario to be executed')
     parser.add_argument(
         '--repetitions', default=1, help='Number of scenario executions')
+    parser.add_argument(
+        '--list', action="store_true", help='List all supported scenarios and exit')
     args = parser.parse_args()
+
+    if args.list:
+        print("Currently the following scenarios are supported:")
+        for scenario in supported_scenarios:
+            print("  {}".format(scenario))
+        sys.exit(0)
 
     main(args)
