@@ -406,7 +406,7 @@ class KeepVelocity(AtomicBehavior):
         super(KeepVelocity, self).terminate(new_status)
 
 
-class SyncVelocityToArrival(AtomicBehavior):
+class SyncArrival(AtomicBehavior):
     """
     This class contains an atomic behavior to 
     set velocity of vehicle so that it reaches location at the same time as
@@ -419,7 +419,7 @@ class SyncVelocityToArrival(AtomicBehavior):
     """
 
     def __init__(self, vehicle, vehicle_reference, 
-        target_location, gain=1, name="SyncVelocityToArrival"):
+        target_location, gain=1, name="SyncArrival"):
         """
         vehicle : vehicle to be controlled
         vehicle_ reference : reference vehicle with which arrival has to be
@@ -427,7 +427,7 @@ class SyncVelocityToArrival(AtomicBehavior):
         gain : coefficient for vehicle's throttle and break
             controls
         """
-        super(SyncVelocityToArrival, self).__init__(name)
+        super(SyncArrival, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.control = carla.VehicleControl()
         self.vehicle = vehicle
@@ -459,9 +459,9 @@ class SyncVelocityToArrival(AtomicBehavior):
             (time+time_reference+EPSILON)
 
         if control_value > 0:
-            self.control.throttle = control_value
+            self.control.throttle = min([control_value, 1])
         else:
-            self.control.brake = abs(control_value)
+            self.control.brake = min([abs(control_value), 1])
 
         self.vehicle.apply_control(self.control)
         self.logger.debug("%s.update()[%s->%s]" %
@@ -476,7 +476,7 @@ class SyncVelocityToArrival(AtomicBehavior):
         self.control.throttle = 0.0
         self.control.brake = 0.0
         self.vehicle.apply_control(self.control)
-        super(SyncVelocityToArrival, self).terminate(new_status)
+        super(SyncArrival, self).terminate(new_status)
 
 class DriveDistance(AtomicBehavior):
 
