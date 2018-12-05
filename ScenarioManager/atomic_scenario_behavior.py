@@ -414,7 +414,7 @@ class SyncArrival(AtomicBehavior):
     towards location in a straight line.
 
     Note: In parallel to this behavior a termination behavior has to be used
-          to keep continue scynhronisation for a certain duration, or for a 
+          to keep continue synchronization for a certain duration, or for a 
           certain distance, etc.
     """
 
