@@ -100,5 +100,6 @@ class BasicScenario(object):
         """
         actors = [self.ego_vehicle] + self.other_vehicles
         for actor in actors:
-            actor.destroy()
-            actor = None
+            if actor is not None:
+                actor.destroy()
+                actor = None

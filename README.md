@@ -12,8 +12,7 @@ Building the ScenarioRunner
 ---------------------------
 
 Use `git clone` or download the project from this page. Note that the master
-branch contains the latest fixes and features, for the latest stable code may
-be best to switch to the `stable` branch.
+branch contains the latest fixes and features, and my require to use the latest features from CARLA.
 
 Currently no build is required, as all code is in Python.
 

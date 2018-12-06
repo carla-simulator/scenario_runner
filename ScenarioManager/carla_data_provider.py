@@ -47,13 +47,13 @@ class CarlaDataProvider(object):
         Add new vehicle to dictionaries
         If vehicle already exists, throw an exception
         """
-        if CarlaDataProvider.vehicle_velocity_map.has_key(vehicle):
+        if vehicle in CarlaDataProvider.vehicle_velocity_map:
             raise KeyError(
                 "Vehicle '{}' already registered. Cannot register twice!".format(vehicle))
         else:
             CarlaDataProvider.vehicle_velocity_map[vehicle] = 0.0
 
-        if CarlaDataProvider.vehicle_location_map.has_key(vehicle):
+        if vehicle in CarlaDataProvider.vehicle_location_map:
             raise KeyError(
                 "Vehicle '{}' already registered. Cannot register twice!".format(vehicle.id))
         else:
