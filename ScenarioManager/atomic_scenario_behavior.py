@@ -389,6 +389,83 @@ class KeepVelocity(AtomicBehavior):
         super(KeepVelocity, self).terminate(new_status)
 
 
+class DriveDistance(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to drive a certain distance.
+    """
+
+    def __init__(self, vehicle, distance, name="DriveDistance"):
+        """
+        Setup parameters
+        """
+        super(DriveDistance, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.target_distance = distance
+        self.distance = 0
+        self.location = None
+        self.vehicle = vehicle
+
+    def initialise(self):
+        self.location = CarlaDataProvider.get_location(self.vehicle)
+        super(DriveDistance, self).initialise()
+
+    def update(self):
+        """
+        Check driven distance
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        new_location = CarlaDataProvider.get_location(self.vehicle)
+        self.distance += calculate_distance(self.location, new_location)
+        self.location = new_location
+
+        if self.distance > self.target_distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+
+class UseAutoPilot(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to use the auto pilot.
+
+    Note: In parallel to this behavior a termination behavior has to be used
+          to terminate this behavior after a certain duration, or after a
+          certain distance, etc.
+    """
+
+    def __init__(self, vehicle, name="UseAutoPilot"):
+        """
+        Setup parameters
+        """
+        super(UseAutoPilot, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.vehicle = vehicle
+
+    def update(self):
+        """
+        Activate autopilot
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        self.vehicle.set_autopilot(True)
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        Deactivate autopilot
+        """
+        self.vehicle.set_autopilot(False)
+        super(UseAutoPilot, self).terminate(new_status)
+
+
 class StopVehicle(AtomicBehavior):
 
     """

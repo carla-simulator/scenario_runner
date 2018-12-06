@@ -1,1 +1,4 @@
 ScenarioManager/*.pyc
+ScenarioManager/__pycache__/
+Scenarios/*.pyc
+Scenarios/__pycache__/

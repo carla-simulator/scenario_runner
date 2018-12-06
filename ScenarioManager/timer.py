@@ -24,12 +24,6 @@ class GameTime(object):
 
     current_game_time = 0.0  # Elapsed game time after starting this Timer
 
-    def __init__(self, world):
-        """
-        Setup callback to get the CARLA time
-        """
-        world.on_tick(self.on_carla_tick)
-
     @staticmethod
     def on_carla_tick(timestamp):
         """

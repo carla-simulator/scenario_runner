@@ -112,13 +112,15 @@ class World(object):
         self.hud = hud
         self.world.on_tick(hud.on_world_tick)
         self.world.wait_for_tick(10.0)
-        self.vehicle_name = "vehicle.carlamotors.carlacola"
-        possible_vehicles = self.world.get_actors().filter(self.vehicle_name)
-        while len(possible_vehicles) < 1:
+        self.vehicle = None
+        while self.vehicle is None:
             print("Scenario not yet ready")
             time.sleep(1)
-            possible_vehicles = self.world.get_actors().filter(self.vehicle_name)
-        self.vehicle = possible_vehicles[0]
+            possible_vehicles = self.world.get_actors().filter('vehicle.*')
+            for vehicle in possible_vehicles:
+                if vehicle.attributes['role_name'] == "hero":
+                    self.vehicle = vehicle
+        self.vehicle_name = self.vehicle.type_id
         self.collision_sensor = CollisionSensor(self.vehicle, self.hud)
         self.lane_invasion_sensor = LaneInvasionSensor(self.vehicle, self.hud)
         self.camera_manager = CameraManager(self.vehicle, self.hud)
