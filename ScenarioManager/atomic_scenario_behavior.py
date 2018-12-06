@@ -408,24 +408,25 @@ class KeepVelocity(AtomicBehavior):
 
 class SyncArrival(AtomicBehavior):
     """
-    This class contains an atomic behavior to 
+    This class contains an atomic behavior to
     set velocity of vehicle so that it reaches location at the same time as
     vehicle_reference. The behaviour assumes that the two vehicles are moving
     towards location in a straight line.
 
     Note: In parallel to this behavior a termination behavior has to be used
-          to keep continue synchronization for a certain duration, or for a 
+          to keep continue synchronization for a certain duration, or for a
           certain distance, etc.
     """
 
-    def __init__(self, vehicle, vehicle_reference, 
-        target_location, gain=1, name="SyncArrival"):
+    def __init__(
+            self, vehicle, vehicle_reference,
+            target_location, gain=1, name="SyncArrival"):
         """
         vehicle : vehicle to be controlled
         vehicle_ reference : reference vehicle with which arrival has to be
-            synchronised
+        synchronised
         gain : coefficient for vehicle's throttle and break
-            controls
+        controls
         """
         super(SyncArrival, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -444,24 +445,30 @@ class SyncArrival(AtomicBehavior):
         distance_reference = calculate_distance(
             CarlaDataProvider.get_location(self.vehicle_reference),
             self.target_location)
-        time_reference = distance_reference /\
-            (CarlaDataProvider.get_velocity(self.vehicle_reference)
-            + EPSILON)
-
         distance = calculate_distance(
             CarlaDataProvider.get_location(self.vehicle),
             self.target_location)
-        time = distance /\
-            (CarlaDataProvider.get_velocity(self.vehicle)
-            + EPSILON)
 
-        control_value = (self.gain)*(time - time_reference)/\
-            (time+time_reference+EPSILON)
+        velocity_reference =\
+            CarlaDataProvider.get_velocity(self.vehicle_reference)
+        time_reference = float('inf')
+        if velocity_reference > 0:
+            time_reference = distance_reference / velocity_reference
+
+        velocity_current =\
+            CarlaDataProvider.get_velocity(self.vehicle)
+        time_current = float('inf')
+        if velocity_current > 0:
+            time_current = distance / velocity_current
+
+        control_value = (self.gain)*(time_current - time_reference)
 
         if control_value > 0:
             self.control.throttle = min([control_value, 1])
+            self.control.brake = 0
         else:
             self.control.brake = min([abs(control_value), 1])
+            self.control.throttle = 0
 
         self.vehicle.apply_control(self.control)
         self.logger.debug("%s.update()[%s->%s]" %
@@ -470,8 +477,9 @@ class SyncArrival(AtomicBehavior):
 
     def terminate(self, new_status):
         """
-        On termination of this behavior, the throttle should be set back to 0.,
-        to avoid further acceleration.
+        On termination of this behavior,
+        throttle and brake should be set back to 0.,
+        to avoid further active change in vehicle velocity.
         """
         self.control.throttle = 0.0
         self.control.brake = 0.0
