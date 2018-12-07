@@ -354,3 +354,45 @@ class KeepLaneTest(Criterion):
         if not self:
             return
         self.actual_value += 1
+
+
+class ReachedRegionTest(Criterion):
+
+    """
+    This class contains the reached region test
+    """
+
+    def __init__(self, vehicle, min_x, max_x, min_y,
+                 max_y, name="ReachedRegionTest"):
+        """
+        Setup trigger region (rectangle provided by
+        [min_x,min_y] and [max_x,max_y]
+        """
+        super(ReachedRegionTest, self).__init__(name, vehicle, 0)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.vehicle = vehicle
+        self.min_x = min_x
+        self.max_x = max_x
+        self.min_y = min_y
+        self.max_y = max_y
+
+    def update(self):
+        """
+        Check if the vehicle location is within trigger region
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self.vehicle)
+
+        if location is None:
+            return new_status
+
+        not_in_region = (location.x < self.min_x or location.x > self.max_x) or (
+            location.y < self.min_y or location.y > self.max_y)
+        if not not_in_region:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
