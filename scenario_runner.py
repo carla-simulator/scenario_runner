@@ -24,6 +24,7 @@ from Scenarios.opposite_vehicle_taking_priority import *
 from Scenarios.object_crash_vehicle import *
 from Scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from Scenarios.object_crash_intersection import *
+from Scenarios.control_loss import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
@@ -40,7 +41,8 @@ SCENARIOS = {
     "OppositeVehicleRunningRedLight",
     "NoSignalJunctionCrossing",
     "VehicleTurningRight",
-    "VehicleTurningLeft"
+    "VehicleTurningLeft",
+    "ControlLoss"
 }
 
 
@@ -100,7 +102,8 @@ def main(args):
             if args.junit is not None:
                 junit_filename = args.junit.split(".")[0] + "_{}.xml".format(i)
 
-            if not manager.analyze_scenario(args.output, args.filename, junit_filename):
+            if not manager.analyze_scenario(
+                    args.output, args.filename, junit_filename):
                 print("Success!")
             else:
                 print("Failure!")
