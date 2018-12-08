@@ -120,6 +120,7 @@ class NoSignalJunctionCrossing(BasicScenario):
         )
 
         root_timeout = TimeOut(self.timeout)
+        scenario_sequence_timeout = TimeOut(self.timeout)
 
         # Creating non-leaf nodes
         root = py_trees.composites.Parallel(
@@ -162,8 +163,6 @@ class NoSignalJunctionCrossing(BasicScenario):
         # Add approriate checks for other vehicles
         for vehicle in self.other_vehicles:
             collision_criterion = CollisionTest(vehicle)
-            keep_lane_criterion = KeepLaneTest(vehicle)
             criteria.append(collision_criterion)
-            criteria.append(keep_lane_criterion)
 
         return criteria
