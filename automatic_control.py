@@ -9,28 +9,11 @@
 # documented example, please take a look at tutorial.py.
 
 """
-
-Use ARROWS or WASD keys for control.
-
-    W            : throttle
-    S            : brake
-    AD           : steer
-    Q            : toggle reverse
-    Space        : hand-brake
-    P            : toggle autopilot
-
-    TAB          : change sensor position
-    `            : next sensor
-    [1-9]        : change to sensor [1-9]
-    C            : change weather (Shift+C reverse)
-    Backspace    : change vehicle
-
-    R            : toggle recording images to disk
-
     H/?          : toggle help
     ESC          : quit
 """
 from __future__ import print_function
+
 
 
 # ==============================================================================
@@ -38,8 +21,6 @@ from __future__ import print_function
 # ==============================================================================
 
 
-
-from collections import deque
 
 # ==============================================================================
 # -- imports -------------------------------------------------------------------
@@ -56,7 +37,7 @@ import random
 import re
 import weakref
 import pdb
-import pyrr
+
 
 try:
     import pygame
@@ -91,6 +72,7 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
+from Navigation.roaming_agent import *
 
 # ==============================================================================
 # -- World ---------------------------------------------------------------------
@@ -261,7 +243,7 @@ class HUD(object):
         self._notifications.render(display)
         self.help.render(display)
         fps_text = 'client: %02d FPS; server: %02d FPS' % (self.client_fps, self.server_fps)
-        fps = self._font_mono.render(fps_text, True, (60, 60, 60))
+        fps = self._font_mono.render(fps_text, True, (255, 60, 60))
         display.blit(fps, (6, 4))
 
 
@@ -451,251 +433,16 @@ class CameraManager(object):
             image.save_to_disk('_out/%08d' % image.frame_number)
 
 
-# ==============================================================================
-# -- PID Controller-------------------------------------------------------------
-# ==============================================================================
-
-import math as m
-import numpy as np
-import matplotlib.pyplot as plt
-
-class VehiclePIDController():
-    def __init__(self, vehicle,
-                 args_lateral={'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0},
-                 args_longitudinal={'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0} ):
-        self._vehicle = vehicle
-        self._long_controller = PIDLongitudinalController(self._vehicle, **args_longitudinal)
-        self._later_controller = PIDLateralController(self._vehicle, **args_lateral)
-        #self._counter = 0
-        #plt.axis([0, 10, 0.4, 1.5])
-        #plt.ion()
-        #plt.show()
-
-    def run_step(self, target_speed, waypoint):
-        throttle = self._long_controller.run_step(target_speed)
-        steering = self._later_controller.run_step(waypoint)
-
-        control = carla.VehicleControl()
-        control.steer = steering
-        control.throttle = throttle
-        control.brake = 0.0
-        control.hand_brake = False
-        self._vehicle.apply_control(control)
-
-    def run_iter(self, target_speed, waypoint, radius, max_iters):
-        _buffer = []
-        iters = 0
-        control = carla.VehicleControl()
-        vehicle_transform = self._vehicle.get_transform()
-        while not self._under(waypoint, vehicle_transform, radius) and iters < max_iters:
-            throttle = self._long_controller.run_step(target_speed)
-            steering = self._later_controller.run_step(waypoint)
-
-            control.steer = steering
-            control.throttle = throttle
-            control.brake = 0.0
-            control.hand_brake = False
-            self._vehicle.apply_control(control)
-
-            vehicle_transform = self._vehicle.get_transform()
-
-            # debug
-            loc = vehicle_transform.location
-            dx = waypoint.transform.location.x - loc.x
-            dy = waypoint.transform.location.y - loc.y
-            _error = m.sqrt(dx * dx + dy * dy)
-            _buffer.append(_error)
-            iters += 1
-
-            # self._counter += 1
-            # if self._counter % 20 == 0:
-            #     self._counter = 0
-            #     plt.plot(range(len(_buffer)), _buffer)
-            #     plt.draw()
-            #     plt.pause(0.001)
-
-    def _under(self, waypoint, vehicle_transform, radius):
-        loc = vehicle_transform.location
-        dx = waypoint.transform.location.x - loc.x
-        dy = waypoint.transform.location.y - loc.y
-
-        #print('Distance to wp = {}'.format(m.sqrt(dx*dx + dy*dy)))
-        return m.sqrt(dx*dx + dy*dy) < radius
-
-    def warmup(self):
-        vel = self._vehicle.get_velocity()
-        speed = m.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)
-        while speed < 0.5:
-            control = carla.VehicleControl()
-            control.steer = 0.0
-            control.throttle = 1.0
-            control.brake = 0.0
-            control.hand_brake = False
-            self._vehicle.apply_control(control)
-            # print('speed = {}'.format(speed))
-
-            vel = self._vehicle.get_velocity()
-            speed = m.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)
-
-        # print('speed = {}'.format(speed))
-        control = carla.VehicleControl()
-        control.steer = 0.0
-        control.throttle = 0.3
-        control.brake = 0.0
-        control.hand_brake = False
-        self._vehicle.apply_control(control)
-
-class PIDLongitudinalController():
-    def __init__(self, vehicle, K_P=1.0, K_D=0.0, K_I=0.0, dt=0.03):
-        self._vehicle = vehicle
-        self._K_P = K_P
-        self._K_D = K_D
-        self._K_I = K_I
-        self._dt = dt
-
-        self._e_buffer = deque(maxlen=5)
-
-    def run_step(self, target_speed):
-        vel = self._vehicle.get_velocity()
-        current_speed = 3.6 * m.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)
-        #print('Current speed = {}'.format(current_speed))
-        return self._pid_control(target_speed, current_speed)
-
-
-    def _pid_control(self, target_speed, current_speed):
-        _e = (target_speed - current_speed)
-        self._e_buffer.append(_e)
-
-        if len(self._e_buffer) >= 2:
-            _de = (self._e_buffer[-1] - self._e_buffer[-2]) / self._dt
-            _ie = sum(self._e_buffer) * self._dt
-        else:
-            _de = 0.0
-            _ie = 0.0
-
-        return np.clip( (self._K_P * _e) + (self._K_D * _de / self._dt) + (self._K_I * _ie * self._dt), 0.0, 1.0)
-
-
-
-class PIDLateralController():
-    def __init__(self, vehicle, K_P=1.0, K_D=0.0, K_I=0.0, dt=0.03):
-        self._vehicle = vehicle
-        self._K_P = K_P
-        self._K_D = K_D
-        self._K_I = K_I
-        self._dt = dt
-
-        self._eps = -0.1
-        self._e_buffer = deque(maxlen=5)
-
-    def run_step(self, waypoint):
-        return self._pid_control(waypoint, self._vehicle.get_transform())
-
-    def _pid_control(self, waypoint, vehicle_transform):
-        loc = vehicle_transform.location
-        yaw = -m.radians(vehicle_transform.rotation.yaw)
-        rel_v = np.array([1.0, 0.0, 0.0])
-
-        _x = waypoint.transform.location.x - loc.x
-        _y = waypoint.transform.location.y - loc.y
-        _xr = m.cos(yaw) * _x - m.sin(yaw) * _y
-        _yr = m.sin(yaw) * _x + m.cos(yaw) * _y
-        rel_w = np.array([_xr, _yr, 0.0])
-
-        _cross = np.cross(rel_v, rel_w)
-        _dot = m.acos(np.dot(rel_v, rel_w) / (np.linalg.norm(rel_v) * np.linalg.norm(rel_w)))
-        if _cross[2] < -self._eps:
-            _dot *= -1.0
-
-        self._e_buffer.append(_dot)
-        if len(self._e_buffer) >= 2:
-            _de = (self._e_buffer[-1] - self._e_buffer[-2]) / self._dt
-            _ie = sum(self._e_buffer) * self._dt
-        else:
-            _de = 0.0
-            _ie = 0.0
-
-        return np.clip( (self._K_P * _dot) + (self._K_D * _de / self._dt) + (self._K_I * _ie * self._dt), -1.0, 1.0)
 
 # ==============================================================================
 # -- game_loop() ---------------------------------------------------------------
 # ==============================================================================
-import math
-
-def draw_waypoints(world, waypoint, depth=6):
-    if depth < 0:
-        return
-    for w in waypoint.next(4.0):
-        t = w.transform
-        begin = t.location + carla.Location(z=0.5)
-        angle = math.radians(t.rotation.yaw)
-        end = begin + carla.Location(x=math.cos(angle), y=math.sin(angle))
-        world.debug.draw_arrow(begin, end, arrow_size=0.3, life_time=1.0)
-        draw_waypoints(world, w, depth - 1)
-
-from enum import Enum
-class TOPO_OPTIONS(Enum):
-        VOID = -1
-        LEFT = 1
-        RIGHT = 2
-        STRAIGHT = 3
-
-
-def retrieve_options(list_waypoints, current_waypoint, topology_table):
-    options = []
-    for next_waypoint in list_waypoints:
-        print("WP.road_id = {}".format(next_waypoint.road_id))
-        options.append(TOPO_OPTIONS(topology_table[current_waypoint.road_id, next_waypoint.road_id]))
-    return options
-
-def compute_connection(current_waypoint, next_waypoint):
-    loc = current_waypoint.transform.location
-    yaw = -m.radians(current_waypoint.transform.rotation.yaw)
-    rel_v = np.array([1.0, 0.0, 0.0])
-
-    _x = next_waypoint.transform.location.x - loc.x
-    _y = next_waypoint.transform.location.y - loc.y
-    _xr = m.cos(yaw) * _x - m.sin(yaw) * _y
-    _yr = m.sin(yaw) * _x + m.cos(yaw) * _y
-    rel_w = np.array([_xr, _yr, 0.0])
-
-    _cross = np.cross(rel_v, rel_w)
-    print("({}, {}) --> ({}, {}) = {}".format(loc.x, loc.y, next_waypoint.transform.location.x, next_waypoint.transform.location.y, _cross))
-    if _cross[2] < -1.0e-7:
-        return TOPO_OPTIONS.LEFT
-    elif _cross[2] > 1.0e-7:
-        return TOPO_OPTIONS.RIGHT
-    else:
-        return TOPO_OPTIONS.STRAIGHT
-
-def parse_topology(list_connections):
-    max_road_id = -1
-    for connection in list_connections:
-        start, end = connection
-
-        if start.road_id > max_road_id:
-            max_road_id = start.road_id
-        if end.road_id > max_road_id:
-            max_road_id = end.road_id
-
-    table_topology = -1 * np.ones((max_road_id+1, max_road_id+1))
-    for connection in list_connections:
-        start, end = connection
-        #if start.road_id == 4 and end.road_id == 100:
-        #    pass
-        table_topology[start.road_id, end.road_id] = compute_connection(start, end).value
-
-    return table_topology
-
-
 import time
 def game_loop(args):
     pygame.init()
     pygame.font.init()
     world = None
-    DT = 1.0/61.0
-    TARGET_SPEED = 10.0 # Km/h
-    NEXT_RADIUS = 6.0 #6.0 * DT * TARGET_SPEED / 3.6
+
     try:
         client = carla.Client(args.host, args.port)
         client.set_timeout(4.0)
@@ -707,28 +454,12 @@ def game_loop(args):
         hud = HUD(args.width, args.height)
         world = World(client.get_world(), hud)
         controller = KeyboardControl(world, args.autopilot)
+        local_planner = RoamingAgent(world.vehicle)
 
         time.sleep(1)
 
-        m = world.world.get_map()
-        topology_table = parse_topology(m.get_topology())
-        current_waypoint = m.get_waypoint(world.vehicle.get_location())
-        lane_id = current_waypoint.lane_id
-        road_id = current_waypoint.road_id
-
-        nexts = list(current_waypoint.next(NEXT_RADIUS))
-
         clock = pygame.time.Clock()
-        count = 0
-        vehicle_controller = VehiclePIDController(world.vehicle,
-                                                  args_lateral={'K_P': 1.7, 'K_D': 0., 'K_I': 0., 'dt':DT},
-                                                  args_longitudinal={'K_P': 0.6, 'K_D': 0.0, 'K_I': 0., 'dt':DT})
-        vehicle_controller.warmup()
-        print('======== WARMUP done =========')
-
-        random_choice_made = False
         while True:
-            #print("Next radius = {}".format(NEXT_RADIUS))
             clock.tick_busy_loop(60)
             if controller.parse_events(world, clock):
                 return
@@ -736,60 +467,9 @@ def game_loop(args):
             world.render(display)
             pygame.display.flip()
 
-            if not nexts:
-                raise RuntimeError("No more waypoints!")
-
-            if len(nexts) == 1:
-                current_waypoint = nexts[0]
-                random_choice_made = False
-
-            elif len(nexts) > 1:
-                if random_choice_made:
-                    for waypoint in nexts:
-                        if waypoint.road_id == road_id and waypoint.lane_id == lane_id:
-                            current_waypoint = waypoint
-                            break
-                else:
-                    # make random choice
-                    topo_options = retrieve_options(nexts, current_waypoint, topology_table)
-
-                    # preference to straight
-                    if TOPO_OPTIONS.STRAIGHT in topo_options:
-                        next_waypoint = nexts[topo_options.index(TOPO_OPTIONS.STRAIGHT)]
-                        print('!! SELECTED STRAIGHT')
-                    elif TOPO_OPTIONS.LEFT in topo_options:
-                        next_waypoint = nexts[topo_options.index(TOPO_OPTIONS.LEFT)]
-                        print('<<<< SELECTED LEFT')
-                    else:
-                        next_waypoint = nexts[topo_options.index(TOPO_OPTIONS.RIGHT)]
-                        print('>>>> SELECTED RIGHT')
-
-
-                    print(">>>>>>>>>>")
-                    for e in topo_options:
-                        print("{}, ".format(e))
-                    print("<<<<<<<<<<<")
-                    current_waypoint = next_waypoint
-                    random_choice_made = True
-                    #pdb.set_trace()
-
-            lane_id = current_waypoint.lane_id
-            road_id = current_waypoint.road_id
-
-            # if count % 10 == 0:
-            #     draw_waypoints(world.world, w)
-            #     count = 0
-
-            vehicle_controller.run_iter(TARGET_SPEED, current_waypoint, 0.2, 15)
-
-            # new waypoints based on current location
-            current_waypoint = m.get_waypoint(world.vehicle.get_location())
-            nexts = list(current_waypoint.next(NEXT_RADIUS))
-
-            count += 1
+            local_planner.run_step()
 
     finally:
-
         if world is not None:
             world.destroy()
 
