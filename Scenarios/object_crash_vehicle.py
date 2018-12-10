@@ -28,22 +28,22 @@ class StationaryObjectCrash(BasicScenario):
     """
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist.
-    The ego vehicle is passing through a road,and encounters a stationary cyclist.
+    The ego vehicle is passing through a road and encounters a stationary cyclist.
     """
 
     timeout = 60
 
     # ego vehicle parameters
-    ego_vehicle_model = 'vehicle.*'
-    ego_vehicle_start_x = 115
+    ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    ego_vehicle_start_x = 100
     ego_vehicle_start = carla.Transform(
         carla.Location(x=ego_vehicle_start_x, y=129, z=1), carla.Rotation(yaw=180))
     ego_vehicle_max_velocity_allowed = 20
-    ego_vehicle_distance_to_other = 20
+    ego_vehicle_distance_to_other = 15
 
     # other vehicle parameters
     other_vehicle_model = 'vehicle.diamondback.century'
-    other_vehicle_start_x = 75
+    other_vehicle_start_x = 70
     other_vehicle_start = carla.Transform(
         carla.Location(x=other_vehicle_start_x, y=129, z=0), carla.Rotation(yaw=200))
 
