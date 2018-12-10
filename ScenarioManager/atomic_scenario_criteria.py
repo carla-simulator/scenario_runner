@@ -25,21 +25,23 @@ class Criterion(py_trees.behaviour.Behaviour):
     """
     Base class for all criteria used to evaluate a scenario for success/failure
 
-    Important parameters:
+    Important parameters (PUBLIC):
     - name: Name of the criterion
     - expected_value: Result in case of success (e.g. max_speed, zero collisions, ...)
     - actual_value: Actual result after running the scenario
+    - test_status: Used to access the result of the criterion
     """
 
     def __init__(self, name, vehicle, expected_value):
         super(Criterion, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._terminate_on_failure = False
+
         self.name = name
         self.vehicle = vehicle
+        self.test_status = "INIT"
         self.expected_value = expected_value
         self.actual_value = 0
-        self.test_status = "INIT"
-        self.terminate_on_failure = False
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
@@ -84,7 +86,7 @@ class MaxVelocityTest(Criterion):
         else:
             self.test_status = "SUCCESS"
 
-        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -104,10 +106,10 @@ class DrivenDistanceTest(Criterion):
         Setup vehicle
         """
         super(DrivenDistanceTest, self).__init__(name, vehicle, distance)
-        self.last_location = None
+        self._last_location = None
 
     def initialise(self):
-        self.last_location = CarlaDataProvider.get_location(self.vehicle)
+        self._last_location = CarlaDataProvider.get_location(self.vehicle)
         super(DrivenDistanceTest, self).initialise()
 
     def update(self):
@@ -124,19 +126,19 @@ class DrivenDistanceTest(Criterion):
         if location is None:
             return new_status
 
-        if self.last_location is None:
-            self.last_location = location
+        if self._last_location is None:
+            self._last_location = location
             return new_status
 
-        self.actual_value += location.distance(self.last_location)
-        self.last_location = location
+        self.actual_value += location.distance(self._last_location)
+        self._last_location = location
 
         if self.actual_value > self.expected_value:
             self.test_status = "SUCCESS"
         else:
             self.test_status = "RUNNING"
 
-        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -156,11 +158,11 @@ class AverageVelocityTest(Criterion):
         Setup vehicle and average velovity expected
         """
         super(AverageVelocityTest, self).__init__(name, vehicle, avg_velocity)
-        self.last_location = None
-        self.distance = 0.0
+        self._last_location = None
+        self._distance = 0.0
 
     def initialise(self):
-        self.last_location = CarlaDataProvider.get_location(self.vehicle)
+        self._last_location = CarlaDataProvider.get_location(self.vehicle)
         super(AverageVelocityTest, self).initialise()
 
     def update(self):
@@ -177,23 +179,23 @@ class AverageVelocityTest(Criterion):
         if location is None:
             return new_status
 
-        if self.last_location is None:
-            self.last_location = location
+        if self._last_location is None:
+            self._last_location = location
             return new_status
 
-        self.distance += location.distance(self.last_location)
-        self.last_location = location
+        self._distance += location.distance(self._last_location)
+        self._last_location = location
 
         elapsed_time = GameTime.get_time()
         if elapsed_time > 0.0:
-            self.actual_value = self.distance / elapsed_time
+            self.actual_value = self._distance / elapsed_time
 
         if self.actual_value > self.expected_value:
             self.test_status = "SUCCESS"
         else:
             self.test_status = "RUNNING"
 
-        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -217,9 +219,9 @@ class CollisionTest(Criterion):
 
         world = self.vehicle.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
-        self.collision_sensor = world.spawn_actor(
+        self._collision_sensor = world.spawn_actor(
             blueprint, carla.Transform(), attach_to=self.vehicle)
-        self.collision_sensor.listen(
+        self._collision_sensor.listen(
             lambda event: self.count_collisions(weakref.ref(self), event))
 
     def update(self):
@@ -233,7 +235,7 @@ class CollisionTest(Criterion):
         else:
             self.test_status = "SUCCESS"
 
-        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -245,13 +247,16 @@ class CollisionTest(Criterion):
         """
         Cleanup sensor
         """
-        if self.collision_sensor is not None:
-            self.collision_sensor.destroy()
-        self.collision_sensor = None
+        if self._collision_sensor is not None:
+            self._collision_sensor.destroy()
+        self._collision_sensor = None
         super(CollisionTest, self).terminate(new_status)
 
     @staticmethod
     def count_collisions(weak_self, event):
+        """
+        Callback to update collision count
+        """
         self = weak_self()
         if not self:
             return
@@ -274,9 +279,9 @@ class KeepLaneTest(Criterion):
         world = self.vehicle.get_world()
         blueprint = world.get_blueprint_library().find(
             'sensor.other.lane_detector')
-        self.lane_sensor = world.spawn_actor(
+        self._lane_sensor = world.spawn_actor(
             blueprint, carla.Transform(), attach_to=self.vehicle)
-        self.lane_sensor.listen(
+        self._lane_sensor.listen(
             lambda event: self.count_lane_invasion(weakref.ref(self), event))
 
     def update(self):
@@ -290,7 +295,7 @@ class KeepLaneTest(Criterion):
         else:
             self.test_status = "SUCCESS"
 
-        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -302,13 +307,16 @@ class KeepLaneTest(Criterion):
         """
         Cleanup sensor
         """
-        if self.lane_sensor is not None:
-            self.lane_sensor.destroy()
-        self.lane_sensor = None
+        if self._lane_sensor is not None:
+            self._lane_sensor.destroy()
+        self._lane_sensor = None
         super(KeepLaneTest, self).terminate(new_status)
 
     @staticmethod
     def count_lane_invasion(weak_self, event):
+        """
+        Callback to update lane invasion count
+        """
         self = weak_self()
         if not self:
             return

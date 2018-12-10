@@ -16,46 +16,47 @@ import time
 class ResultOutputProvider(object):
 
     """
-    This module contains the result gatherer and write for CARLA scenarios.
+    This module contains the _result gatherer and write for CARLA scenarios.
     It shall be used from the ScenarioManager only.
     """
 
     def __init__(self, data, result, stdout=True, filename=None, junit=None):
         """
         Setup all parameters
-        - data contains all scenario-related information
-        - result is overall pass/fail info
-        - stdout (True/False) is used to (de)activate terminal output
-        - filename is used to (de)activate file output in tabular form
-        - junit is used to (de)activate file output in junit form
+        - _data contains all scenario-related information
+        - _result is overall pass/fail info
+        - _stdout (True/False) is used to (de)activate terminal output
+        - _filename is used to (de)activate file output in tabular form
+        - _junit is used to (de)activate file output in _junit form
         """
-        self.data = data
-        self.result = result
-        self.stdout = stdout
-        self.filename = filename
-        self.junit = junit
+        self._data = data
+        self._result = result
+        self._stdout = stdout
+        self._filename = filename
+        self._junit = junit
+
+        self._start_time = time.strftime('%Y-%m-%d %H:%M:%S',
+                                         time.localtime(self._data.start_system_time))
+        self._end_time = time.strftime('%Y-%m-%d %H:%M:%S',
+                                       time.localtime(self._data.end_system_time))
+
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
-
-        self.start_time = time.strftime('%Y-%m-%d %H:%M:%S',
-                                        time.localtime(self.data.start_system_time))
-        self.end_time = time.strftime('%Y-%m-%d %H:%M:%S',
-                                      time.localtime(self.data.end_system_time))
 
     def write(self):
         """
         Public write function
         """
-        if self.stdout:
+        if self._stdout:
             channel = logging.StreamHandler()
             self.logger.addHandler(channel)
-        if self.filename is not None:
-            filehandle = logging.FileHandler(self.filename)
+        if self._filename is not None:
+            filehandle = logging.FileHandler(self._filename)
             self.logger.addHandler(filehandle)
-        if self.junit is not None:
+        if self._junit is not None:
             self.write_to_junit()
 
-        if self.stdout or (self.filename is not None):
+        if self._stdout or (self._filename is not None):
             self.write_to_logger()
             self.logger.handlers = []
 
@@ -65,41 +66,45 @@ class ResultOutputProvider(object):
         i.e. stdout and file are both captured with this function
         """
         self.logger.info("\n")
-        self.logger.info("Scenario: %s --- Result: %s" %
-                         (self.data.scenario_tree.name, self.result))
-        self.logger.info("Start time: %s" % (self.start_time))
-        self.logger.info("End time: %s" % (self.end_time))
-        self.logger.info("Duration: System Time %5.2fs --- Game Time %5.2fs" %
-                         (self.data.scenario_duration_system,
-                          self.data.scenario_duration_game))
-        self.logger.info("Ego vehicle:    %s" % self.data.ego_vehicle)
+        self.logger.info("Scenario: %s --- Result: %s",
+                         self._data.scenario_tree.name, self._result)
+        self.logger.info("Start time: %s", (self._start_time))
+        self.logger.info("End time: %s", (self._end_time))
+        self.logger.info("Duration: System Time %5.2fs --- Game Time %5.2fs",
+                         self._data.scenario_duration_system,
+                         self._data.scenario_duration_game)
+        self.logger.info("Ego vehicle:    %s", self._data.ego_vehicle)
 
         vehicle_string = ""
-        for vehicle in self.data.other_vehicles:
+        for vehicle in self._data.other_vehicles:
             vehicle_string += "{}; ".format(vehicle)
-        self.logger.info("Other vehicles: %s" % vehicle_string)
+        self.logger.info("Other vehicles: %s", vehicle_string)
         self.logger.info("\n")
+        # pylint: disable=line-too-long
         self.logger.info(
             "              Vehicle             |            Criterion           |  Result  | Actual Value | Expected Value ")
         self.logger.info(
             "--------------------------------------------------------------------------------------------------------------")
+        # pylint: enable=line-too-long
 
-        for criterion in self.data.scenario.test_criteria:
-            self.logger.info("%24s (id=%3d) | %30s | %8s | %12.2f | %12.2f " %
-                             (criterion.vehicle.type_id[8:],
-                              criterion.vehicle.id,
-                              criterion.name,
-                              "SUCCESS" if criterion.test_status == "SUCCESS" else "FAILURE",
-                              criterion.actual_value,
-                              criterion.expected_value))
+        for criterion in self._data.scenario.test_criteria:
+            self.logger.info("%24s (id=%3d) | %30s | %8s | %12.2f | %12.2f ",
+                             criterion.vehicle.type_id[8:],
+                             criterion.vehicle.id,
+                             criterion.name,
+                             "SUCCESS" if criterion.test_status == "SUCCESS" else "FAILURE",
+                             criterion.actual_value,
+                             criterion.expected_value)
 
         # Handle timeout separately
-        self.logger.info("%33s | %30s | %8s | %12.2f | %12.2f " %
-                         ("",
-                          "Duration",
-                          "SUCCESS" if self.data.scenario_duration_game < self.data.scenario.timeout else "FAILURE",
-                          self.data.scenario_duration_game,
-                          self.data.scenario.timeout))
+        # pylint: disable=line-too-long
+        self.logger.info("%33s | %30s | %8s | %12.2f | %12.2f ",
+                         "",
+                         "Duration",
+                         "SUCCESS" if self._data.scenario_duration_game < self._data.scenario.timeout else "FAILURE",
+                         self._data.scenario_duration_game,
+                         self._data.scenario.timeout)
+        # pylint: enable=line-too-long
 
         self.logger.info("\n")
 
@@ -109,17 +114,17 @@ class ResultOutputProvider(object):
         """
         test_count = 0
         failure_count = 0
-        for criterion in self.data.scenario.test_criteria:
+        for criterion in self._data.scenario.test_criteria:
             test_count += 1
             if criterion.test_status != "SUCCESS":
                 failure_count += 1
 
         # handle timeout
         test_count += 1
-        if self.data.scenario_duration_game >= self.data.scenario.timeout:
+        if self._data.scenario_duration_game >= self._data.scenario.timeout:
             failure_count += 1
 
-        junit_file = open(self.junit, "w")
+        junit_file = open(self._junit, "w")
 
         junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
@@ -128,24 +133,24 @@ class ResultOutputProvider(object):
                               "name=\"Simulation\" package=\"Scenarios\">\n" %
                               (test_count,
                                failure_count,
-                               self.start_time,
-                               self.data.scenario_duration_system))
+                               self._start_time,
+                               self._data.scenario_duration_system))
         junit_file.write(test_suites_string)
 
         test_suite_string = ("  <testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" "
                              "disabled=\"0\" errors=\"0\" time=\"%5.2f\">\n" %
-                             (self.data.scenario_tree.name,
+                             (self._data.scenario_tree.name,
                               test_count,
                               failure_count,
-                              self.data.scenario_duration_system))
+                              self._data.scenario_duration_system))
         junit_file.write(test_suite_string)
 
-        for criterion in self.data.scenario.test_criteria:
+        for criterion in self._data.scenario.test_criteria:
             testcase_name = criterion.name + "_" + \
                 criterion.vehicle.type_id[8:] + "_" + str(criterion.vehicle.id)
             result_string = ("    <testcase name=\"{}\" status=\"run\" "
                              "time=\"0\" classname=\"Scenarios.{}\">\n".format(
-                                 testcase_name, self.data.scenario_tree.name))
+                                 testcase_name, self._data.scenario_tree.name))
             if criterion.test_status != "SUCCESS":
                 result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
                     criterion.name)
@@ -165,21 +170,21 @@ class ResultOutputProvider(object):
         # Handle timeout separately
         result_string = ("    <testcase name=\"Duration\" status=\"run\" time=\"{}\" "
                          "classname=\"Scenarios.{}\">\n".format(
-                             self.data.scenario_duration_system,
-                             self.data.scenario_tree.name))
-        if self.data.scenario_duration_game >= self.data.scenario.timeout:
+                             self._data.scenario_duration_system,
+                             self._data.scenario_tree.name))
+        if self._data.scenario_duration_game >= self._data.scenario.timeout:
             result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
                 "Duration")
             result_string += "  Actual:   {}\n".format(
-                self.data.scenario_duration_game)
+                self._data.scenario_duration_game)
             result_string += "  Expected: {}\n".format(
-                self.data.scenario.timeout)
+                self._data.scenario.timeout)
             result_string += "\n"
             result_string += "  Exact Value: {} = {}\]\]></failure>\n".format(
-                "Duration", self.data.scenario_duration_game)
+                "Duration", self._data.scenario_duration_game)
         else:
             result_string += "  Exact Value: {} = {}\n".format(
-                "Duration", self.data.scenario_duration_game)
+                "Duration", self._data.scenario_duration_game)
         result_string += "    </testcase>\n"
         junit_file.write(result_string)
 

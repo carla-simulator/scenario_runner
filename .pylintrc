@@ -1,0 +1,3 @@
+[MESSAGES CONTROL]
+disable=anomalous-backslash-in-string,too-many-arguments,too-few-public-methods,too-many-instance-attributes,redefined-variable-type,unused-argument,wildcard-import,unused-wildcard-import
+ignored-modules=carla

@@ -12,7 +12,6 @@ import random
 import sys
 
 import py_trees
-import carla
 
 from ScenarioManager.scenario_manager import Scenario
 
