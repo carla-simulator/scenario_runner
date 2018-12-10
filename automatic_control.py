@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
 # Copyright (c) 2018 Intel Labs.
-
+# authors: German Ros (german.ros@intel.com)
+#
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
-
-# Allows controlling a vehicle with a keyboard. For a simpler and more
-# documented example, please take a look at tutorial.py.
 
 """
     H/?          : toggle help
@@ -14,30 +12,10 @@
 """
 from __future__ import print_function
 
-
-
-# ==============================================================================
-# -- find carla module ---------------------------------------------------------
-# ==============================================================================
-
-
-
-# ==============================================================================
-# -- imports -------------------------------------------------------------------
-# ==============================================================================
-
-
-import carla
-
-from carla import ColorConverter as cc
-
 import argparse
 import logging
-import random
 import re
 import weakref
-import pdb
-
 
 try:
     import pygame
@@ -72,6 +50,8 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
+import carla
+from carla import ColorConverter as cc
 from Navigation.roaming_agent import *
 
 # ==============================================================================
@@ -148,71 +128,6 @@ class World(object):
 
 
 # ==============================================================================
-# -- KeyboardControl -----------------------------------------------------------
-# ==============================================================================
-
-
-class KeyboardControl(object):
-    def __init__(self, world, start_in_autopilot):
-        self._autopilot_enabled = start_in_autopilot
-        self._control = carla.VehicleControl()
-        self._steer_cache = 0.0
-        world.vehicle.set_autopilot(self._autopilot_enabled)
-        world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
-
-    def parse_events(self, world, clock):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return True
-            elif event.type == pygame.KEYUP:
-                if self._is_quit_shortcut(event.key):
-                    return True
-                elif event.key == K_BACKSPACE:
-                    world.restart()
-                elif event.key == K_h or (event.key == K_SLASH and pygame.key.get_mods() & KMOD_SHIFT):
-                    world.hud.help.toggle()
-                elif event.key == K_TAB:
-                    world.camera_manager.toggle_camera()
-                elif event.key == K_c and pygame.key.get_mods() & KMOD_SHIFT:
-                    world.next_weather(reverse=True)
-                elif event.key == K_c:
-                    world.next_weather()
-                elif event.key == K_BACKQUOTE:
-                    world.camera_manager.next_sensor()
-                elif event.key > K_0 and event.key <= K_9:
-                    world.camera_manager.set_sensor(event.key - 1 - K_0)
-                elif event.key == K_r:
-                    world.camera_manager.toggle_recording()
-                elif event.key == K_q:
-                    self._control.reverse = not self._control.reverse
-                elif event.key == K_p:
-                    self._autopilot_enabled = not self._autopilot_enabled
-                    world.vehicle.set_autopilot(self._autopilot_enabled)
-                    world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
-        if not self._autopilot_enabled:
-            self._parse_keys(pygame.key.get_pressed(), clock.get_time())
-            world.vehicle.apply_control(self._control)
-
-    def _parse_keys(self, keys, milliseconds):
-        self._control.throttle = 1.0 if keys[K_UP] or keys[K_w] else 0.0
-        steer_increment = 5e-4 * milliseconds
-        if keys[K_LEFT] or keys[K_a]:
-            self._steer_cache -= steer_increment
-        elif keys[K_RIGHT] or keys[K_d]:
-            self._steer_cache += steer_increment
-        else:
-            self._steer_cache = 0.0
-        self._steer_cache = min(0.7, max(-0.7, self._steer_cache))
-        self._control.steer = round(self._steer_cache, 1)
-        self._control.brake = 1.0 if keys[K_DOWN] or keys[K_s] else 0.0
-        self._control.hand_brake = keys[K_SPACE]
-
-    @staticmethod
-    def _is_quit_shortcut(key):
-        return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
-
-
-# ==============================================================================
 # -- HUD -----------------------------------------------------------------------
 # ==============================================================================
 
@@ -226,11 +141,9 @@ class HUD(object):
         self._font_mono = pygame.font.Font(mono, 14)
         self._notifications = FadingText(font, (width, 40), (0, height - 40))
         self.help = HelpText(pygame.font.Font(mono, 24), width, height)
-        self.client_fps = 0
-        self.server_fps = 0
+
 
     def tick(self, world, clock):
-        self.client_fps = clock.get_fps()
         self._notifications.tick(world, clock)
 
     def notification(self, text, seconds=2.0):
@@ -242,9 +155,7 @@ class HUD(object):
     def render(self, display):
         self._notifications.render(display)
         self.help.render(display)
-        fps_text = 'client: %02d FPS; server: %02d FPS' % (self.client_fps, self.server_fps)
-        fps = self._font_mono.render(fps_text, True, (255, 60, 60))
-        display.blit(fps, (6, 4))
+
 
 
 # ==============================================================================
@@ -453,21 +364,17 @@ def game_loop(args):
 
         hud = HUD(args.width, args.height)
         world = World(client.get_world(), hud)
-        controller = KeyboardControl(world, args.autopilot)
-        local_planner = RoamingAgent(world.vehicle)
+        agent = RoamingAgent(world.vehicle)
 
         time.sleep(1)
 
-        clock = pygame.time.Clock()
         while True:
-            clock.tick_busy_loop(60)
-            if controller.parse_events(world, clock):
-                return
-            world.tick(clock)
+            # as soon as the server is ready continue!
+            if not world.world.wait_for_tick(10.0):
+                continue
             world.render(display)
             pygame.display.flip()
-
-            local_planner.run_step()
+            agent.run_step()
 
     finally:
         if world is not None:
@@ -500,10 +407,6 @@ def main():
         default=2000,
         type=int,
         help='TCP port to listen to (default: 2000)')
-    argparser.add_argument(
-        '-a', '--autopilot',
-        action='store_true',
-        help='enable autopilot')
     argparser.add_argument(
         '--res',
         metavar='WIDTHxHEIGHT',
