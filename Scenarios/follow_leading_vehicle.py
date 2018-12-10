@@ -191,7 +191,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
     # other vehicle
     other_vehicles = []
-    other_vehicle_model = 'vehicle.*'
+    other_vehicle_model = 'vehicle.volkswagen.t2'
     other_vehicle_start_x = ego_vehicle_start_x + ego_distance_to_other
     other_vehicle_start = carla.Transform(
         carla.Location(x=other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
@@ -201,7 +201,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
     other_vehicle_distance = 40             # Distance the other vehicle should drive
 
-    other_vehicle_model_no2 = 'vehicle.*'
+    other_vehicle_model_no2 = 'vehicle.gazelle.omafiets'
     other_vehicle_start_x_no2 = other_vehicle_start_x + \
         10 + random.randint(other_vehicle_distance, 80)
     other_vehicle_start_no2 = carla.Transform(
