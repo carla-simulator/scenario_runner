@@ -61,20 +61,8 @@ def is_within_distance_ahead(target_location, current_location, orientation, max
 
 def distance_vehicle(waypoint, vehicle_transform):
     loc = vehicle_transform.location
-    dx = waypoint.transform.location.x - loc.x
-    dy = waypoint.transform.location.y - loc.y
-
-    return math.sqrt(dx * dx + dy * dy)
-
-def distance(waypointA, waypointB):
-    dx = waypointB.transform.location.x - waypointA.transform.location.x
-    dy = waypointB.transform.location.y - waypointA.transform.location.y
-
-    return math.sqrt(dx * dx + dy * dy)
+    return loc.distance(waypoint.transform.location)
 
 
 def distance_location(self, locA, locB):
-    dx = locA.x - locB.x
-    dy = locA.y - locB.y
-
-    return math.sqrt(dx * dx + dy * dy)
+    return locA.distance(locB)

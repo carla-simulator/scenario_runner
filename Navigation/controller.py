@@ -33,8 +33,8 @@ class VehiclePIDController():
         """
         self._vehicle = vehicle
         self._world = self._vehicle.get_world()
-        self._long_controller = PIDLongitudinalController(self._vehicle, **args_longitudinal)
-        self._later_controller = PIDLateralController(self._vehicle, **args_lateral)
+        self._lon_controller = PIDLongitudinalController(self._vehicle, **args_longitudinal)
+        self._lat_controller = PIDLateralController(self._vehicle, **args_lateral)
 
     def run_step(self, target_speed, waypoint):
         """
@@ -45,8 +45,8 @@ class VehiclePIDController():
         :param waypoint: target location encoded as a waypoint
         :return: distance (in meters) to the waypoint
         """
-        throttle = self._long_controller.run_step(target_speed)
-        steering = self._later_controller.run_step(waypoint)
+        throttle = self._lon_controller.run_step(target_speed)
+        steering = self._lat_controller.run_step(waypoint)
 
         control = carla.VehicleControl()
         control.steer = steering
@@ -76,8 +76,8 @@ class VehiclePIDController():
         control = carla.VehicleControl()
         vehicle_transform = self._vehicle.get_transform()
         while  distance_vehicle(waypoint, vehicle_transform) > radius and iters < max_iters:
-            throttle = self._long_controller.run_step(target_speed)
-            steering = self._later_controller.run_step(waypoint)
+            throttle = self._lon_controller.run_step(target_speed)
+            steering = self._lat_controller.run_step(waypoint)
 
             control.steer = steering
             control.throttle = throttle
@@ -102,8 +102,9 @@ class VehiclePIDController():
         Setting the vehicle to change gears and become reactive
         :return:
         """
+        eps = 0.5
         speed = get_speed(self._vehicle)
-        while speed < 0.5:
+        while speed < eps:
             if not self._world.wait_for_tick(10.0):
                 continue
 
