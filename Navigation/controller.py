@@ -6,19 +6,26 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
+""" This module contains PID controllers to perform lateral and longitudinal control. """
+
 from collections import deque
+import math
+
+import numpy as np
 
 import carla
-from Tools.misc import *
+from Tools.misc import distance_vehicle, get_speed
+
 
 class VehiclePIDController():
     """
     VehiclePIDController is the combination of two PID controllers (lateral and longitudinal) to perform the
     low level control a vehicle from client side
     """
+
     def __init__(self, vehicle,
                  args_lateral={'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0},
-                 args_longitudinal={'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0} ):
+                 args_longitudinal={'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0}):
         """
         :param vehicle: actor to apply to local planner logic onto
         :param args_lateral: dictionary of arguments to set the lateral PID controller using the following semantics:
@@ -33,8 +40,10 @@ class VehiclePIDController():
         """
         self._vehicle = vehicle
         self._world = self._vehicle.get_world()
-        self._lon_controller = PIDLongitudinalController(self._vehicle, **args_longitudinal)
-        self._lat_controller = PIDLateralController(self._vehicle, **args_lateral)
+        self._lon_controller = PIDLongitudinalController(
+            self._vehicle, **args_longitudinal)
+        self._lat_controller = PIDLateralController(
+            self._vehicle, **args_lateral)
 
     def run_step(self, target_speed, waypoint):
         """
@@ -75,7 +84,8 @@ class VehiclePIDController():
             max_iters = math.inf
         control = carla.VehicleControl()
         vehicle_transform = self._vehicle.get_transform()
-        while  distance_vehicle(waypoint, vehicle_transform) > radius and iters < max_iters:
+        while distance_vehicle(
+                waypoint, vehicle_transform) > radius and iters < max_iters:
             throttle = self._lon_controller.run_step(target_speed)
             steering = self._lat_controller.run_step(waypoint)
 
@@ -95,7 +105,6 @@ class VehiclePIDController():
 
         vehicle_transform = self._vehicle.get_transform()
         return distance_vehicle(waypoint, vehicle_transform)
-
 
     def warmup(self):
         """
@@ -122,10 +131,12 @@ class VehiclePIDController():
         control.hand_brake = False
         self._vehicle.apply_control(control)
 
+
 class PIDLongitudinalController():
     """
     PIDLongitudinalController implements longitudinal control using a PID.
     """
+
     def __init__(self, vehicle, K_P=1.0, K_D=0.0, K_I=0.0, dt=0.03):
         """
         :param vehicle: actor to apply to local planner logic onto
@@ -155,7 +166,6 @@ class PIDLongitudinalController():
 
         return self._pid_control(target_speed, current_speed)
 
-
     def _pid_control(self, target_speed, current_speed):
         """
         Estimate the throttle of the vehicle based on the PID equations
@@ -174,14 +184,14 @@ class PIDLongitudinalController():
             _de = 0.0
             _ie = 0.0
 
-        return np.clip( (self._K_P * _e) + (self._K_D * _de / self._dt) + (self._K_I * _ie * self._dt), 0.0, 1.0)
-
+        return np.clip((self._K_P * _e) + (self._K_D * _de / self._dt) + (self._K_I * _ie * self._dt), 0.0, 1.0)
 
 
 class PIDLateralController():
     """
     PIDLateralController implements lateral control using a PID.
     """
+
     def __init__(self, vehicle, K_P=1.0, K_D=0.0, K_I=0.0, dt=0.03):
         """
         :param vehicle: actor to apply to local planner logic onto
@@ -222,8 +232,11 @@ class PIDLateralController():
                                          y=math.sin(math.radians(vehicle_transform.rotation.yaw)))
 
         v_vec = np.array([v_end.x - v_begin.x, v_end.y - v_begin.y, 0.0])
-        w_vec = np.array([waypoint.transform.location.x - v_begin.x, waypoint.transform.location.y - v_begin.y, 0.0])
-        _dot = math.acos(np.dot(w_vec, v_vec) / (np.linalg.norm(w_vec) * np.linalg.norm(v_vec)))
+        w_vec = np.array([waypoint.transform.location.x -
+                          v_begin.x, waypoint.transform.location.y -
+                          v_begin.y, 0.0])
+        _dot = math.acos(np.dot(w_vec, v_vec) /
+                         (np.linalg.norm(w_vec) * np.linalg.norm(v_vec)))
         _cross = np.cross(v_vec, w_vec)
         if _cross[2] < -self._eps:
             _dot *= -1.0
@@ -236,4 +249,5 @@ class PIDLateralController():
             _de = 0.0
             _ie = 0.0
 
-        return np.clip( (self._K_P * _dot) + (self._K_D * _de / self._dt) + (self._K_I * _ie * self._dt), -1.0, 1.0)
+        return np.clip((self._K_P * _dot) + (self._K_D * _de /
+                                             self._dt) + (self._K_I * _ie * self._dt), -1.0, 1.0)

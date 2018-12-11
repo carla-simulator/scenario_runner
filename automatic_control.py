@@ -10,11 +10,13 @@
     H/?          : toggle help
     ESC          : quit
 """
+
 from __future__ import print_function
 
 import argparse
 import logging
 import re
+import time
 import weakref
 
 try:
@@ -43,26 +45,32 @@ try:
     from pygame.locals import K_s
     from pygame.locals import K_w
 except ImportError:
-    raise RuntimeError('cannot import pygame, make sure pygame package is installed')
+    raise RuntimeError(
+        'cannot import pygame, make sure pygame package is installed')
 
 try:
     import numpy as np
 except ImportError:
-    raise RuntimeError('cannot import numpy, make sure numpy package is installed')
+    raise RuntimeError(
+        'cannot import numpy, make sure numpy package is installed')
 
 import carla
 from carla import ColorConverter as cc
 from Navigation.roaming_agent import *
 
 # ==============================================================================
-# -- World ---------------------------------------------------------------------
+# -- World ---------------------------------------------------------------
 # ==============================================================================
 
 
 def find_weather_presets():
     rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
-    name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
-    presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
+
+    def name(x): return ' '.join(m.group(0) for m in rgx.finditer(x))
+    presets = [
+        x for x in dir(
+            carla.WeatherParameters) if re.match(
+            '[A-Z].+', x)]
     return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
 
 
@@ -71,10 +79,12 @@ class World(object):
         self.world = carla_world
         self.hud = hud
         blueprints = self.world.get_blueprint_library().filter('vehicle')
-        blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
+        blueprint = [e for i, e in enumerate(
+            blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
 
         spawn_points = self.world.get_map().get_spawn_points()
-        spawn_point = spawn_points[1] #random.choice(spawn_points) if spawn_points else carla.Transform()
+        # random.choice(spawn_points) if spawn_points else carla.Transform()
+        spawn_point = spawn_points[1]
         self.vehicle = self.world.spawn_actor(blueprint, spawn_point)
         self.collision_sensor = CollisionSensor(self.vehicle, self.hud)
         self.camera_manager = CameraManager(self.vehicle, self.hud)
@@ -97,7 +107,10 @@ class World(object):
         self.camera_manager = CameraManager(self.vehicle, self.hud)
         self.camera_manager._transform_index = cam_pos_index
         self.camera_manager.set_sensor(cam_index, notify=False)
-        actor_type = ' '.join(self.vehicle.type_id.replace('_', '.').title().split('.')[1:])
+        actor_type = ' '.join(
+            self.vehicle.type_id.replace(
+                '_', '.').title().split('.')[
+                1:])
         self.hud.notification(actor_type)
 
     def next_weather(self, reverse=False):
@@ -115,7 +128,8 @@ class World(object):
         self.hud.render(display)
 
     def destroy(self):
-        for actor in [self.camera_manager.sensor, self.collision_sensor.sensor, self.vehicle]:
+        for actor in [self.camera_manager.sensor,
+                      self.collision_sensor.sensor, self.vehicle]:
             if actor is not None:
                 actor.destroy()
 
@@ -128,7 +142,7 @@ class World(object):
 
 
 # ==============================================================================
-# -- HUD -----------------------------------------------------------------------
+# -- HUD -----------------------------------------------------------------
 # ==============================================================================
 
 
@@ -136,12 +150,12 @@ class HUD(object):
     def __init__(self, width, height):
         self.dim = (width, height)
         font = pygame.font.Font(pygame.font.get_default_font(), 20)
-        mono = next(x for x in pygame.font.get_fonts() if 'mono' in x) # hope for the best...
+        # hope for the best...
+        mono = next(x for x in pygame.font.get_fonts() if 'mono' in x)
         mono = pygame.font.match_font(mono, bold=True)
         self._font_mono = pygame.font.Font(mono, 14)
         self._notifications = FadingText(font, (width, 40), (0, height - 40))
         self.help = HelpText(pygame.font.Font(mono, 24), width, height)
-
 
     def tick(self, world, clock):
         self._notifications.tick(world, clock)
@@ -157,9 +171,8 @@ class HUD(object):
         self.help.render(display)
 
 
-
 # ==============================================================================
-# -- FadingText ----------------------------------------------------------------
+# -- FadingText ----------------------------------------------------------
 # ==============================================================================
 
 
@@ -188,7 +201,7 @@ class FadingText(object):
 
 
 # ==============================================================================
-# -- HelpText ------------------------------------------------------------------
+# -- HelpText ------------------------------------------------------------
 # ==============================================================================
 
 
@@ -197,7 +210,15 @@ class HelpText(object):
         lines = __doc__.split('\n')
         self.font = font
         self.dim = (680, len(lines) * 22 + 12)
-        self.pos = (0.5 * width - 0.5 * self.dim[0], 0.5 * height - 0.5 * self.dim[1])
+        self.pos = (
+            0.5 *
+            width -
+            0.5 *
+            self.dim[0],
+            0.5 *
+            height -
+            0.5 *
+            self.dim[1])
         self.seconds_left = 0
         self.surface = pygame.Surface(self.dim)
         self.surface.fill((0, 0, 0, 0))
@@ -216,7 +237,7 @@ class HelpText(object):
 
 
 # ==============================================================================
-# -- CollisionSensor -----------------------------------------------------------
+# -- CollisionSensor -----------------------------------------------------
 # ==============================================================================
 
 
@@ -227,23 +248,29 @@ class CollisionSensor(object):
         self._hud = hud
         world = self._parent.get_world()
         bp = world.get_blueprint_library().find('sensor.other.collision')
-        self.sensor = world.spawn_actor(bp, carla.Transform(), attach_to=self._parent)
+        self.sensor = world.spawn_actor(
+            bp, carla.Transform(), attach_to=self._parent)
         # We need to pass the lambda a weak reference to self to avoid circular
         # reference.
         weak_self = weakref.ref(self)
-        self.sensor.listen(lambda event: CollisionSensor._on_collision(weak_self, event))
+        self.sensor.listen(
+            lambda event: CollisionSensor._on_collision(
+                weak_self, event))
 
     @staticmethod
     def _on_collision(weak_self, event):
         self = weak_self()
         if not self:
             return
-        actor_type = ' '.join(event.other_actor.type_id.replace('_', '.').title().split('.')[1:])
+        actor_type = ' '.join(
+            event.other_actor.type_id.replace(
+                '_', '.').title().split('.')[
+                1:])
         self._hud.notification('Collision with %r' % actor_type)
 
 
 # ==============================================================================
-# -- CameraManager -------------------------------------------------------------
+# -- CameraManager -------------------------------------------------------
 # ==============================================================================
 
 
@@ -256,16 +283,22 @@ class CameraManager(object):
         self._recording = False
         self._camera_transforms = [
             carla.Transform(carla.Location(x=1.6, z=1.7)),
-            carla.Transform(carla.Location(x=24, z=28.0), carla.Rotation(roll=-90, pitch=-90)),
+            carla.Transform(
+                carla.Location(
+                    x=24, z=28.0), carla.Rotation(
+                    roll=-90, pitch=-90)),
             carla.Transform(carla.Location(x=-5.5, z=2.8), carla.Rotation(pitch=-15))]
         self._transform_index = 1
         self._sensors = [
             ['sensor.camera.rgb', cc.Raw, 'Camera RGB'],
             ['sensor.camera.depth', cc.Raw, 'Camera Depth (Raw)'],
             ['sensor.camera.depth', cc.Depth, 'Camera Depth (Gray Scale)'],
-            ['sensor.camera.depth', cc.LogarithmicDepth, 'Camera Depth (Logarithmic Gray Scale)'],
-            ['sensor.camera.semantic_segmentation', cc.Raw, 'Camera Semantic Segmentation (Raw)'],
-            ['sensor.camera.semantic_segmentation', cc.CityScapesPalette, 'Camera Semantic Segmentation (CityScapes Palette)'],
+            ['sensor.camera.depth', cc.LogarithmicDepth,
+                'Camera Depth (Logarithmic Gray Scale)'],
+            ['sensor.camera.semantic_segmentation', cc.Raw,
+                'Camera Semantic Segmentation (Raw)'],
+            ['sensor.camera.semantic_segmentation', cc.CityScapesPalette,
+                'Camera Semantic Segmentation (CityScapes Palette)'],
             ['sensor.lidar.ray_cast', None, 'Lidar (Ray-Cast)']]
         world = self._parent.get_world()
         bp_library = world.get_blueprint_library()
@@ -279,8 +312,10 @@ class CameraManager(object):
         self._server_clock = pygame.time.Clock()
 
     def toggle_camera(self):
-        self._transform_index = (self._transform_index + 1) % len(self._camera_transforms)
-        self.sensor.set_transform(self._camera_transforms[self._transform_index])
+        self._transform_index = (
+            self._transform_index + 1) % len(self._camera_transforms)
+        self.sensor.set_transform(
+            self._camera_transforms[self._transform_index])
 
     def set_sensor(self, index, notify=True):
         index = index % len(self._sensors)
@@ -297,7 +332,9 @@ class CameraManager(object):
             # We need to pass the lambda a weak reference to self to avoid
             # circular reference.
             weak_self = weakref.ref(self)
-            self.sensor.listen(lambda image: CameraManager._parse_image(weak_self, image))
+            self.sensor.listen(
+                lambda image: CameraManager._parse_image(
+                    weak_self, image))
         if notify:
             self._hud.notification(self._sensors[index][2])
         self._index = index
@@ -307,7 +344,9 @@ class CameraManager(object):
 
     def toggle_recording(self):
         self._recording = not self._recording
-        self._hud.notification('Recording %s' % ('On' if self._recording else 'Off'))
+        self._hud.notification(
+            'Recording %s' %
+            ('On' if self._recording else 'Off'))
 
     def render(self, display):
         if self._surface is not None:
@@ -322,7 +361,7 @@ class CameraManager(object):
         self._hud.server_fps = self._server_clock.get_fps()
         if self._sensors[self._index][0].startswith('sensor.lidar'):
             points = np.frombuffer(image.raw_data, dtype=np.dtype('f4'))
-            points = np.reshape(points, (int(points.shape[0]/3), 3))
+            points = np.reshape(points, (int(points.shape[0] / 3), 3))
             lidar_data = np.array(points[:, :2])
             lidar_data *= min(self._hud.dim) / 100.0
             lidar_data += (0.5 * self._hud.dim[0], 0.5 * self._hud.dim[1])
@@ -344,11 +383,11 @@ class CameraManager(object):
             image.save_to_disk('_out/%08d' % image.frame_number)
 
 
+# ==============================================================================
+# -- game_loop() ---------------------------------------------------------
+# ==============================================================================
 
-# ==============================================================================
-# -- game_loop() ---------------------------------------------------------------
-# ==============================================================================
-import time
+
 def game_loop(args):
     pygame.init()
     pygame.font.init()
@@ -384,7 +423,7 @@ def game_loop(args):
 
 
 # ==============================================================================
-# -- main() --------------------------------------------------------------------
+# -- main() --------------------------------------------------------------
 # ==============================================================================
 
 

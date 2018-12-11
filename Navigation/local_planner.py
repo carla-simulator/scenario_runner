@@ -6,21 +6,26 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
+""" This module contains a local planner to perform low-level waypoint following based on PID controllers. """
+
 from enum import Enum
+from collections import deque
 import random
 
-from Navigation.controller import *
-from Tools.misc import *
+from Navigation.controller import VehiclePIDController
+from Tools.misc import distance_vehicle, draw_waypoints
 
-class ROAD_OPTIONS(Enum):
+
+class RoadOption(Enum):
     """
-    ROAD_OPTION represents the possible topological configurations when moving from a segment of lane to other.
+    RoadOption represents the possible topological configurations when moving from a segment of lane to other.
     """
     VOID = -1
     LEFT = 1
     RIGHT = 2
     STRAIGHT = 3
     LANEFOLLOW = 4
+
 
 class LocalPlanner(object):
     """
@@ -31,7 +36,8 @@ class LocalPlanner(object):
     When multiple paths are available (intersections) this local planner makes a random choice.
     """
 
-    # minimum distance to target waypoint as a percentage (e.g. within 90% of total distance)
+    # minimum distance to target waypoint as a percentage (e.g. within 90% of
+    # total distance)
     MIN_DISTANCE_PERCENTAGE = 0.9
 
     def __init__(self, vehicle, opt_dict={}):
@@ -61,8 +67,10 @@ class LocalPlanner(object):
         self._current_waypoint = None
         self._target_road_option = None
         self._next_waypoints = None
+        self._target_waypoint = None
         self._vehicle_controller = None
-        self._waypoints_queue = deque(maxlen=200) # queue with tuples of (waypoint, ROAD_OPTIONS)
+        # queue with tuples of (waypoint, RoadOption)
+        self._waypoints_queue = deque(maxlen=200)
 
         #
         self.init_controller(opt_dict)
@@ -81,10 +89,15 @@ class LocalPlanner(object):
         # default params
         self._dt = 1.0 / 20.0
         self._target_speed = 20.0  # Km/h
-        self._sampling_radius = self._target_speed * 0.5 / 3.6 # 0.5 seconds horizon
+        self._sampling_radius = self._target_speed * 0.5 / 3.6  # 0.5 seconds horizon
         self._min_distance = self._sampling_radius * self.MIN_DISTANCE_PERCENTAGE
-        args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 0.5, 'dt': self._dt}
-        args_longitudinal_dict = {'K_P': 1.0, 'K_D': 0, 'K_I': 1, 'dt': self._dt}
+        args_lateral_dict = {
+            'K_P': 1.9,
+            'K_D': 0.0,
+            'K_I': 0.5,
+            'dt': self._dt}
+        args_longitudinal_dict = {
+            'K_P': 1.0, 'K_D': 0, 'K_I': 1, 'dt': self._dt}
 
         # parameters overload
         if 'dt' in opt_dict:
@@ -92,23 +105,29 @@ class LocalPlanner(object):
         if 'target_speed' in opt_dict:
             self._target_speed = opt_dict['target_speed']
         if 'sampling_radius' in opt_dict:
-            self._sampling_radius = self._target_speed * opt_dict['sampling_radius'] / 3.6
+            self._sampling_radius = self._target_speed * \
+                opt_dict['sampling_radius'] / 3.6
         if 'lateral_control_dict' in opt_dict:
             args_lateral_dict = opt_dict['lateral_control_dict']
         if 'longitudinal_control_dict' in opt_dict:
             args_longitudinal_dict = opt_dict['longitudinal_control_dict']
 
-        self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
+        self._current_waypoint = self._map.get_waypoint(
+            self._vehicle.get_location())
         self._vehicle_controller = VehiclePIDController(self._vehicle,
                                                         args_lateral=args_lateral_dict,
                                                         args_longitudinal=args_longitudinal_dict)
 
-        # vehicles need to be pre activated in order to compensate for the "manual gear" problem
+        # vehicles need to be pre activated in order to compensate for the
+        # "manual gear" problem
         self._vehicle_controller.warmup()
 
         # compute initial waypoints
-        self._waypoints_queue.append((self._current_waypoint.next(self._sampling_radius)[0], ROAD_OPTIONS.LANEFOLLOW))
-        self._target_road_option = ROAD_OPTIONS.LANEFOLLOW
+        self._waypoints_queue.append(
+            (self._current_waypoint.next(
+                self._sampling_radius)[0],
+             RoadOption.LANEFOLLOW))
+        self._target_road_option = RoadOption.LANEFOLLOW
 
         # fill waypoint trajectory queue
         self._compute_next_waypoints(k=200)
@@ -130,22 +149,25 @@ class LocalPlanner(object):
         :return:
         """
         # check we do not overflow the queue
-        available_entries = self._waypoints_queue.maxlen - len(self._waypoints_queue)
+        available_entries = self._waypoints_queue.maxlen - \
+            len(self._waypoints_queue)
         k = min(available_entries, k)
 
-        for i in range(k):
+        for _ in range(k):
             last_waypoint = self._waypoints_queue[-1][0]
             next_waypoints = list(last_waypoint.next(self._sampling_radius))
 
             if len(next_waypoints) == 1:
                 # only one option available ==> lanefollowing
                 next_waypoint = next_waypoints[0]
-                road_option = ROAD_OPTIONS.LANEFOLLOW
+                road_option = RoadOption.LANEFOLLOW
             else:
                 # random choice between the possible options
-                road_options_list = retrieve_options(next_waypoints, last_waypoint)
+                road_options_list = retrieve_options(
+                    next_waypoints, last_waypoint)
                 road_option = random.choice(road_options_list)
-                next_waypoint = next_waypoints[road_options_list.index(road_option)]
+                next_waypoint = next_waypoints[road_options_list.index(
+                    road_option)]
 
             self._waypoints_queue.append((next_waypoint, road_option))
 
@@ -159,38 +181,45 @@ class LocalPlanner(object):
         """
 
         # not enough waypoints in the horizon? => add more!
-        if len(self._waypoints_queue) < int(self._waypoints_queue.maxlen * 0.5):
+        if len(self._waypoints_queue) < int(
+                self._waypoints_queue.maxlen * 0.5):
             self._compute_next_waypoints(k=10)
 
         # current vehicle waypoint
-        self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
+        self._current_waypoint = self._map.get_waypoint(
+            self._vehicle.get_location())
         # target waypoint
-        self._target_waypoint, self._current_road_option = self._waypoints_queue[0]
+        self._target_waypoint, self._target_road_option = self._waypoints_queue[0]
         # move using PID controllers
-        diff = self._vehicle_controller.run_iter(self._target_speed, self._target_waypoint, self._min_distance*0.80, 1)
+        _ = self._vehicle_controller.run_iter(
+            self._target_speed, self._target_waypoint, self._min_distance * 0.80, 1)
 
         # purge the queue of obsolete waypoints
         vehicle_transform = self._vehicle.get_transform()
         max_index = -1
 
-        for i, (waypoint, road_option) in enumerate(self._waypoints_queue):
-            if distance_vehicle(waypoint, vehicle_transform) < self._min_distance:
+        for i, (waypoint, _) in enumerate(self._waypoints_queue):
+            if distance_vehicle(
+                    waypoint, vehicle_transform) < self._min_distance:
                 max_index = i
         if max_index >= 0:
             for i in range(max_index + 1):
                 self._waypoints_queue.popleft()
 
         if debug:
-            draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=40)
+            draw_waypoints(
+                self._vehicle.get_world(), [
+                    self._target_waypoint], z=40)
+
 
 def retrieve_options(list_waypoints, current_waypoint):
     """
     Compute the type of connection between the current active waypoint and the multiple waypoints present in
-    list_waypoints. The result is encoded as a list of ROAD_OPTIONS enums.
+    list_waypoints. The result is encoded as a list of RoadOption enums.
 
     :param list_waypoints: list with the possible target waypoints in case of multiple options
     :param current_waypoint: current active waypoint
-    :return: list of ROAD_OPTIONS enums representing the type of connection from the active waypoint to each
+    :return: list of RoadOption enums representing the type of connection from the active waypoint to each
              candidate in list_waypoints
     """
     options = []
@@ -204,6 +233,7 @@ def retrieve_options(list_waypoints, current_waypoint):
 
     return options
 
+
 def compute_connection(current_waypoint, next_waypoint):
     """
     Compute the type of topological connection between an active waypoint (current_waypoint) and a target waypoint
@@ -211,21 +241,21 @@ def compute_connection(current_waypoint, next_waypoint):
 
     :param current_waypoint: active waypoint
     :param next_waypoint: target waypoint
-    :return: the type of topological connection encoded as a ROAD_OPTION enum:
-             ROAD_OPTIONS.STRAIGHT
-             ROAD_OPTIONS.LEFT
-             ROAD_OPTIONS.RIGHT
+    :return: the type of topological connection encoded as a RoadOption enum:
+             RoadOption.STRAIGHT
+             RoadOption.LEFT
+             RoadOption.RIGHT
     """
-    n_ = next_waypoint.transform.rotation.yaw
-    n_ = n_ % 360.0
+    n = next_waypoint.transform.rotation.yaw
+    n = n % 360.0
 
-    c_ = current_waypoint.transform.rotation.yaw
-    c_ = c_ % 360.0
+    c = current_waypoint.transform.rotation.yaw
+    c = c % 360.0
 
-    diff_angle = (n_ - c_) % 180.0
+    diff_angle = (n - c) % 180.0
     if diff_angle < 1.0:
-        return ROAD_OPTIONS.STRAIGHT
+        return RoadOption.STRAIGHT
     elif diff_angle > 90.0:
-        return ROAD_OPTIONS.LEFT
+        return RoadOption.LEFT
     else:
-        return ROAD_OPTIONS.RIGHT
+        return RoadOption.RIGHT
