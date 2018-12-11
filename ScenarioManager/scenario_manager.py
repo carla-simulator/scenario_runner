@@ -9,6 +9,7 @@ This module provides the Scenario and ScenarioManager implementations.
 These must not be modified and are for reference only!
 """
 
+from __future__ import print_function
 import sys
 import time
 import threading
@@ -104,18 +105,20 @@ class ScenarioManager(object):
     ego_vehicle = None
     other_vehicles = None
 
-    def __init__(self, world, debug_mode):
+    def __init__(self, world, _debug_mode):
         """
         Init requires scenario as input
         """
+        self._debug_mode = _debug_mode
+        self._running = False
+        self._timestamp_last_run = 0.0
+
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
         self.start_system_time = None
         self.end_system_time = None
-        self.debug_mode = debug_mode
-        self.running = False
-        self.timestamp_last_run = 0.0
-        world.on_tick(self.tick_scenario)
+
+        world.on_tick(self._tick_scenario)
 
     def load_scenario(self, scenario):
         """
@@ -138,12 +141,12 @@ class ScenarioManager(object):
         Reset all parameters
         """
         self.stop_scenario()
+        self._running = False
+        self._timestamp_last_run = 0.0
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
         self.start_system_time = None
         self.end_system_time = None
-        self.running = False
-        self.timestamp_last_run = 0.0
         GameTime.restart()
 
     def run_scenario(self):
@@ -154,9 +157,9 @@ class ScenarioManager(object):
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
 
-        self.running = True
+        self._running = True
 
-        while self.running:
+        while self._running:
             time.sleep(0.5)
 
         self.end_system_time = time.time()
@@ -169,7 +172,7 @@ class ScenarioManager(object):
         if self.scenario_tree.status == py_trees.common.Status.FAILURE:
             print("Terminated due to failure")
 
-    def tick_scenario(self, timestamp):
+    def _tick_scenario(self, timestamp):
         """
         Run next tick of scenario
         This function is a callback for world.on_tick()
@@ -181,10 +184,10 @@ class ScenarioManager(object):
           multiple times in parallel.
         """
         with threading.Lock():
-            if self.running and self.timestamp_last_run < timestamp.elapsed_seconds:
-                self.timestamp_last_run = timestamp.elapsed_seconds
+            if self._running and self._timestamp_last_run < timestamp.elapsed_seconds:
+                self._timestamp_last_run = timestamp.elapsed_seconds
 
-                if self.debug_mode:
+                if self._debug_mode:
                     print("\n--------- Tick ---------\n")
 
                 # Update game time and vehicle information
@@ -194,14 +197,14 @@ class ScenarioManager(object):
                 # Tick scenario
                 self.scenario_tree.tick_once()
 
-                if self.debug_mode:
+                if self._debug_mode:
                     print("\n")
                     py_trees.display.print_ascii_tree(
                         self.scenario_tree, show_status=True)
                     sys.stdout.flush()
 
                 if self.scenario_tree.status != py_trees.common.Status.RUNNING:
-                    self.running = False
+                    self._running = False
 
     def stop_scenario(self):
         """
