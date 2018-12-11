@@ -6,7 +6,6 @@ This module provides GlobalRoutePlanner implementation.
 """
 
 import math
-from heapq import heappop, heapify
 import networkx as nx
 import carla
 
@@ -25,6 +24,10 @@ class GlobalRoutePlanner(object):
         self.dao = dao
 
     def setup(self):
+        """
+        Perform initial server data lookup and builds graph representation
+        of the world map.
+        """
         self.topology = self.dao.get_topology()
         # Creating graph of the world map and also a map from
         # node co-ordinates to node id
@@ -74,8 +77,6 @@ class GlobalRoutePlanner(object):
     def build_graph(self):
         """
         This function builds a graph representation of topology
-        get_direction : reference to function object that returns
-        unit vector along the allowed direction of travel at (x, y)
         """
         graph = nx.DiGraph()
         # map with structure {(x,y): id, ... }
