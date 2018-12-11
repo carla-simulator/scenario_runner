@@ -68,7 +68,7 @@ class StationaryObjectCrash(BasicScenario):
         Example of a user defined scenario behavior. This function should be
         adapted by the user for other scenarios.
         """
-        redundant = TimeOut(self.timeout)
+        redundant = TimeOut(self.timeout - 7)
         return redundant
 
     def create_test_criteria(self):
@@ -157,7 +157,7 @@ class DynamicObjectCrash(BasicScenario):
         start_other_vehicle = KeepVelocity(
             self.other_vehicles[0],
             self.other_vehicle_target_velocity)
-        timeout_stop = TimeOut(11)
+        timeout_stop = TimeOut(9)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
             self.other_vehicle_max_brake)
