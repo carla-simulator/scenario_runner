@@ -68,26 +68,24 @@ class BasicScenario(object):
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-        behavior = self.create_behavior()
-        criteria = self.create_test_criteria()
+        behavior = self._create_behavior()
+        criteria = self._create_test_criteria()
         self.scenario = Scenario(
             behavior, criteria, self.name, self.timeout)
 
-    def create_behavior(self):
+    def _create_behavior(self):
         """
         Pure virtual function to setup user-defined scenario behavior
         """
-
         raise NotImplementedError(
             "This function is re-implemented by all scenarios"
             "If this error becomes visible the class hierarchy is somehow broken")
 
-    def create_test_criteria(self):
+    def _create_test_criteria(self):
         """
         Pure virtual function to setup user-defined evaluation criteria for the
         scenario
         """
-
         raise NotImplementedError(
             "This function is re-implemented by all scenarios"
             "If this error becomes visible the class hierarchy is somehow broken")

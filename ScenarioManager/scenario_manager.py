@@ -118,7 +118,7 @@ class ScenarioManager(object):
         self.start_system_time = None
         self.end_system_time = None
 
-        world.on_tick(self.tick_scenario)
+        world.on_tick(self._tick_scenario)
 
     def load_scenario(self, scenario):
         """
@@ -172,7 +172,7 @@ class ScenarioManager(object):
         if self.scenario_tree.status == py_trees.common.Status.FAILURE:
             print("Terminated due to failure")
 
-    def tick_scenario(self, timestamp):
+    def _tick_scenario(self, timestamp):
         """
         Run next tick of scenario
         This function is a callback for world.on_tick()

@@ -222,7 +222,7 @@ class CollisionTest(Criterion):
         self._collision_sensor = world.spawn_actor(
             blueprint, carla.Transform(), attach_to=self.vehicle)
         self._collision_sensor.listen(
-            lambda event: self.count_collisions(weakref.ref(self), event))
+            lambda event: self._count_collisions(weakref.ref(self), event))
 
     def update(self):
         """
@@ -253,7 +253,7 @@ class CollisionTest(Criterion):
         super(CollisionTest, self).terminate(new_status)
 
     @staticmethod
-    def count_collisions(weak_self, event):
+    def _count_collisions(weak_self, event):
         """
         Callback to update collision count
         """
@@ -282,7 +282,7 @@ class KeepLaneTest(Criterion):
         self._lane_sensor = world.spawn_actor(
             blueprint, carla.Transform(), attach_to=self.vehicle)
         self._lane_sensor.listen(
-            lambda event: self.count_lane_invasion(weakref.ref(self), event))
+            lambda event: self._count_lane_invasion(weakref.ref(self), event))
 
     def update(self):
         """
@@ -313,7 +313,7 @@ class KeepLaneTest(Criterion):
         super(KeepLaneTest, self).terminate(new_status)
 
     @staticmethod
-    def count_lane_invasion(weak_self, event):
+    def _count_lane_invasion(weak_self, event):
         """
         Callback to update lane invasion count
         """

@@ -54,13 +54,13 @@ class ResultOutputProvider(object):
             filehandle = logging.FileHandler(self._filename)
             self.logger.addHandler(filehandle)
         if self._junit is not None:
-            self.write_to_junit()
+            self._write_to_junit()
 
         if self._stdout or (self._filename is not None):
-            self.write_to_logger()
+            self._write_to_logger()
             self.logger.handlers = []
 
-    def write_to_logger(self):
+    def _write_to_logger(self):
         """
         Writing to logger automatically writes to all handlers in parallel,
         i.e. stdout and file are both captured with this function
@@ -108,7 +108,7 @@ class ResultOutputProvider(object):
 
         self.logger.info("\n")
 
-    def write_to_junit(self):
+    def _write_to_junit(self):
         """
         Writing to Junit XML
         """

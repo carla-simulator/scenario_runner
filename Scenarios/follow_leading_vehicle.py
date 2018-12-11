@@ -71,7 +71,7 @@ class FollowLeadingVehicle(BasicScenario):
         super(FollowLeadingVehicle, self).__init__(name="FollowVehicle",
                                                    debug_mode=debug_mode)
 
-    def create_behavior(self):
+    def _create_behavior(self):
         """
         Example of a user defined scenario behavior. This function should be
         adapted by the user for other scenarios.
@@ -134,7 +134,7 @@ class FollowLeadingVehicle(BasicScenario):
 
         return sequence
 
-    def create_test_criteria(self):
+    def _create_test_criteria(self):
         """
         Example of a user defined test catalogue.
         This function should be adapted by the user.
@@ -227,7 +227,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             name="FollowLeadingVehicleWithObstacle",
             debug_mode=debug_mode)
 
-    def create_behavior(self):
+    def _create_behavior(self):
         """
         Example of a user defined scenario behavior. This function should be
         adapted by the user for other scenarios.
@@ -298,7 +298,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         return sequence
 
-    def create_test_criteria(self):
+    def _create_test_criteria(self):
         """
         Example of a user defined test catalogue.
         This function should be adapted by the user.
