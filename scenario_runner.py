@@ -116,7 +116,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--filename', help='Write results into given file')
     PARSER.add_argument(
         '--junit', help='Write results into the given junit file')
-    PARSER.add_argument('--scenario', required=True,
+    PARSER.add_argument('--scenario',
                         help='Name of the scenario to be executed')
     PARSER.add_argument(
         '--repetitions', default=1, help='Number of scenario executions')
@@ -127,6 +127,11 @@ if __name__ == '__main__':
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")
         print(*SCENARIOS, sep='\n')
+        sys.exit(0)
+
+    if ARGUMENTS.scenario is None:
+        print("Please specify a scenario using '--scenario SCENARIONAME'\n\n")
+        PARSER.print_help(sys.stdout)
         sys.exit(0)
 
     main(ARGUMENTS)
