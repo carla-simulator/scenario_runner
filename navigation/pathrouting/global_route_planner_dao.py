@@ -16,24 +16,31 @@ class GlobalRoutePlannerDAO(object):
 
     def __init__(self, wmap):
         """ Constructor """
-        self.wmap = wmap
+        self.wmap = wmap    # Carla world map
 
     def get_topology(self):
         """ Accessor for topology """
         topology = []
-        # Transforming topology into list of vertex pairs
+        # Retrieving waypoints to construct a detailed topology
         for segment in self.wmap.get_topology():
             x1 = segment[0].transform.location.x
             y1 = segment[0].transform.location.y
             x2 = segment[1].transform.location.x
             y2 = segment[1].transform.location.y
-            topology.append([(x1, y1), (x2, y2)])
-        return topology
+            seg_dict = dict()
+            seg_dict['entry'] = (x1, y1)
+            seg_dict['exit'] = (x2, y2)
+            seg_dict['path'] = []
+            wp1 = segment[0]
+            wp2 = segment[1]
+            seg_dict['intersection'] = True if wp1.is_intersection else False
+            endloc = wp2.transform.location
+            w = wp1.next(1)[0]
+            while w.transform.location.distance(endloc) > 1:
+                x = w.transform.location.x
+                y = w.transform.location.y
+                seg_dict['path'].append((x, y))
+                w = w.next(1)[0]
 
-    def get_next_waypoint(self, location, distance):
-        """ Accessor for wayponit """
-        x, y = location
-        location = carla.Location(x=x, y=y, z=0.0)
-        waypoint = self.wmap.get_waypoint(location)
-        nxt = list(waypoint.next(distance))[0].transform.location
-        return nxt.x, nxt.y
+            topology.append(seg_dict)
+        return topology
