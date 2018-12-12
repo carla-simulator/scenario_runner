@@ -502,3 +502,32 @@ class StopVehicle(AtomicBehavior):
         self._vehicle.apply_control(self._control)
 
         return new_status
+
+
+class Vanish(AtomicBehavior):
+    """
+    This class contains an atomic behaviour for destroying an actor.
+    """
+    def __init__(self, vehicle, name="vanish"):
+        """
+        Setup parameters
+        """
+        super(Vanish, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.vehicle = vehicle
+
+    def update(self):
+        """
+        check if vehicle is present and destroy it.
+        """
+        new_status = py_trees.common.Status.RUNNING
+        if self.vehicle is not None:
+            self.vehicle.destroy()
+            self.vehicle = None
+            new_status = py_trees.common.Status.RUNNING
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+       

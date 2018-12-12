@@ -45,7 +45,7 @@ class StationaryObjectCrash(BasicScenario):
     other_vehicle_model = 'vehicle.diamondback.century'
     other_vehicle_start_x = 70
     other_vehicle_start = carla.Transform(
-        carla.Location(x=other_vehicle_start_x, y=129, z=0), carla.Rotation(yaw=200))
+        carla.Location(x=other_vehicle_start_x, y=129, z=0), carla.Rotation(yaw=270))
 
     def __init__(self, world, debug_mode=False):
         """
@@ -68,8 +68,20 @@ class StationaryObjectCrash(BasicScenario):
         Example of a user defined scenario behavior. This function should be
         adapted by the user for other scenarios.
         """
-        redundant = TimeOut(self.timeout - 7)
-        return redundant
+        #leaf nodes
+        vanish_other = Vanish(self.other_vehicles[0])
+        redundant = TimeOut(15)
+        root_timeout = TimeOut(50)
+
+        #building the tree        
+        root = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        sequence_other = py_trees.composites.Sequence()
+        sequence_other.add_child(redundant)
+        sequence_other.add_child(vanish_other)
+        root.add_child(sequence_other)
+        root.add_child(root_timeout)
+        return root
 
     def create_test_criteria(self):
         """
@@ -157,11 +169,16 @@ class DynamicObjectCrash(BasicScenario):
         start_other_vehicle = KeepVelocity(
             self.other_vehicles[0],
             self.other_vehicle_target_velocity)
-        timeout_stop = TimeOut(9)
+        trigger_other = InTriggerRegion(
+            self.other_vehicles[0],
+            46,50,
+            128,129.5)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
             self.other_vehicle_max_brake)
-        timeout_other = TimeOut(20)
+        timeout_other = TimeOut(10)
+        vanish_other = Vanish(self.other_vehicles[0])
+        timeout_other_vehicle = TimeOut(5)
         root_timeout = TimeOut(self.timeout)
 
         # non leaf nodes
@@ -178,8 +195,10 @@ class DynamicObjectCrash(BasicScenario):
         scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other_vehicle)
         scenario_sequence.add_child(timeout_other)
+        scenario_sequence.add_child(vanish_other)
+        scenario_sequence.add_child(timeout_other_vehicle)
         keep_velocity_other_parallel.add_child(start_other_vehicle)
-        keep_velocity_other_parallel.add_child(timeout_stop)
+        keep_velocity_other_parallel.add_child(trigger_other)
 
         return root
 
