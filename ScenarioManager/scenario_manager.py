@@ -232,9 +232,7 @@ class ScenarioManager(object):
                 failure = True
                 result = "FAILURE"
 
-        if ((self.scenario.timeout_node.status == py_trees.common.Status.SUCCESS)
-                and (self.scenario_tree.tip().status != py_trees.common.Status.SUCCESS)
-                and not failure):
+        if self.scenario.timeout_node.timeout and not failure:
             timeout = True
             result = "TIMEOUT"
 
