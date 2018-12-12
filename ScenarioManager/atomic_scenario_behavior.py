@@ -64,7 +64,8 @@ class InTriggerRegion(AtomicBehavior):
     This class contains the trigger region (condition) of a scenario
     """
 
-    def __init__(self, vehicle, min_x, max_x, min_y, max_y, name="TriggerRegion"):
+    def __init__(self, vehicle, min_x, max_x, min_y,
+                 max_y, name="TriggerRegion"):
         """
         Setup trigger region (rectangle provided by
         [min_x,min_y] and [max_x,max_y]
@@ -106,7 +107,8 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
     of a scenario
     """
 
-    def __init__(self, other_vehicle, ego_vehicle, distance, name="TriggerDistanceToVehicle"):
+    def __init__(self, other_vehicle, ego_vehicle, distance,
+                 name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
         """
@@ -144,7 +146,8 @@ class InTriggerDistanceToLocation(AtomicBehavior):
     location of a scenario
     """
 
-    def __init__(self, vehicle, target_location, distance, name="InTriggerDistanceToLocation"):
+    def __init__(self, vehicle, target_location, distance,
+                 name="InTriggerDistanceToLocation"):
         """
         Setup trigger distance
         """
@@ -165,7 +168,8 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         if location is None:
             return new_status
 
-        if calculate_distance(location, self._target_location) < self._distance:
+        if calculate_distance(
+                location, self._target_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
@@ -291,7 +295,8 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self._max_time_to_arrival
         if current_velocity > other_velocity:
-            time_to_arrival = 2 * distance / (current_velocity - other_velocity)
+            time_to_arrival = 2 * distance / \
+                (current_velocity - other_velocity)
 
         if time_to_arrival < self._time:
             new_status = py_trees.common.Status.SUCCESS
@@ -310,7 +315,8 @@ class AccelerateToVelocity(AtomicBehavior):
     a given _target_velocity_
     """
 
-    def __init__(self, vehicle, throttle_value, target_velocity, name="Acceleration"):
+    def __init__(self, vehicle, throttle_value,
+                 target_velocity, name="Acceleration"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
@@ -323,12 +329,13 @@ class AccelerateToVelocity(AtomicBehavior):
         self._target_velocity = target_velocity
 
     def update(self):
-        """
+        """        
         Set throttle to throttle_value, as long as velocity is < target_velocity
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(self._vehicle) < self._target_velocity:
+        if CarlaDataProvider.get_velocity(
+                self._vehicle) < self._target_velocity:
             self._control.throttle = self._throttle_value
         else:
             new_status = py_trees.common.Status.SUCCESS
@@ -371,7 +378,8 @@ class KeepVelocity(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(self._vehicle) < self._target_velocity:
+        if CarlaDataProvider.get_velocity(
+                self._vehicle) < self._target_velocity:
             self._control.throttle = 1.0
         else:
             self._control.throttle = 0.0
@@ -508,6 +516,7 @@ class Vanish(AtomicBehavior):
     """
     This class contains an atomic behaviour for destroying an actor.
     """
+
     def __init__(self, vehicle, name="vanish"):
         """
         Setup parameters
@@ -530,4 +539,3 @@ class Vanish(AtomicBehavior):
                           (self.__class__.__name__, self.status, new_status))
 
         return new_status
-       

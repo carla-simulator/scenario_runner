@@ -10,15 +10,11 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encountering a cyclist ahead.
 """
 
-import random
-import sys
-
 import py_trees
 import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.scenario_manager import Scenario
 from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
@@ -28,7 +24,8 @@ class StationaryObjectCrash(BasicScenario):
     """
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist.
-    The ego vehicle is passing through a road and encounters a stationary cyclist.
+    The ego vehicle is passing through a road and encounters
+    a stationary cyclist.
     """
 
     timeout = 60
@@ -37,15 +34,17 @@ class StationaryObjectCrash(BasicScenario):
     ego_vehicle_model = 'vehicle.carlamotors.carlacola'
     ego_vehicle_start_x = 100
     ego_vehicle_start = carla.Transform(
-        carla.Location(x=ego_vehicle_start_x, y=129, z=1), carla.Rotation(yaw=180))
-    ego_vehicle_max_velocity_allowed = 20
+        carla.Location(x=ego_vehicle_start_x, y=129, z=1),
+        carla.Rotation(yaw=180))
+    ego_vehicle_velocity_allowed = 20
     ego_vehicle_distance_to_other = 15
 
     # other vehicle parameters
     other_vehicle_model = 'vehicle.diamondback.century'
     other_vehicle_start_x = 70
     other_vehicle_start = carla.Transform(
-        carla.Location(x=other_vehicle_start_x, y=129, z=0), carla.Rotation(yaw=270))
+        carla.Location(x=other_vehicle_start_x, y=129, z=0),
+        carla.Rotation(yaw=270))
 
     def __init__(self, world, debug_mode=False):
         """
@@ -60,20 +59,20 @@ class StationaryObjectCrash(BasicScenario):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        super(StationaryObjectCrash, self).__init__(name="stationaryobjectcrash",
-                                                    debug_mode=debug_mode)
+        super(StationaryObjectCrash, self).__init__(
+            name="stationaryobjectcrash",
+            debug_mode=debug_mode)
 
-    def create_behavior(self):
+    def _create_behavior(self):
         """
         Example of a user defined scenario behavior. This function should be
         adapted by the user for other scenarios.
         """
-        #leaf nodes
+        # leaf nodes
         vanish_other = Vanish(self.other_vehicles[0])
         redundant = TimeOut(15)
         root_timeout = TimeOut(50)
-
-        #building the tree        
+        # building the tree
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         sequence_other = py_trees.composites.Sequence()
@@ -83,7 +82,7 @@ class StationaryObjectCrash(BasicScenario):
         root.add_child(root_timeout)
         return root
 
-    def create_test_criteria(self):
+    def _create_test_criteria(self):
         """
         A list of all test criteria will be created
         that is later used in parallel behavior tree.
@@ -92,7 +91,7 @@ class StationaryObjectCrash(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self.ego_vehicle_max_velocity_allowed)
+            self.ego_vehicle_velocity_allowed)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
@@ -108,6 +107,7 @@ class StationaryObjectCrash(BasicScenario):
 
 
 class DynamicObjectCrash(BasicScenario):
+
     """
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist,
@@ -121,8 +121,9 @@ class DynamicObjectCrash(BasicScenario):
     ego_vehicle_model = 'vehicle.carlamotors.carlacola'
     ego_vehicle_start_x = 90
     ego_vehicle_start = carla.Transform(
-        carla.Location(x=ego_vehicle_start_x, y=129, z=1), carla.Rotation(yaw=180))
-    ego_vehicle_max_velocity_allowed = 10
+        carla.Location(x=ego_vehicle_start_x, y=129, z=1),
+        carla.Rotation(yaw=180))
+    ego_vehicle_velocity_allowed = 10
     ego_vehicle_distance_driven = 20
 
     # other vehicle parameters
@@ -130,7 +131,8 @@ class DynamicObjectCrash(BasicScenario):
     other_vehicle_model = 'vehicle.diamondback.century'
     other_vehicle_start_x = 47.5
     other_vehicle_start = carla.Transform(
-        carla.Location(x=other_vehicle_start_x, y=124, z=1), carla.Rotation(yaw=90))
+        carla.Location(x=other_vehicle_start_x, y=124, z=1),
+        carla.Rotation(yaw=90))
     other_vehicle_target_velocity = 10
     trigger_distance_from_ego_vehicle = 35
     other_vehicle_max_throttle = 1.0
@@ -149,11 +151,11 @@ class DynamicObjectCrash(BasicScenario):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        super(
-            DynamicObjectCrash, self).__init__(name="dynamicobjectcrash",
-                                               debug_mode=debug_mode)
+        super(DynamicObjectCrash, self).__init__(
+            name="dynamicobjectcrash",
+            debug_mode=debug_mode)
 
-    def create_behavior(self):
+    def _create_behavior(self):
         """
         After invoking this scenario, cyclist will wait for the user
         controlled vehicle to enter the in the trigger distance region,
@@ -171,8 +173,8 @@ class DynamicObjectCrash(BasicScenario):
             self.other_vehicle_target_velocity)
         trigger_other = InTriggerRegion(
             self.other_vehicles[0],
-            46,50,
-            128,129.5)
+            46, 50,
+            128, 129.5)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
             self.other_vehicle_max_brake)
@@ -202,7 +204,7 @@ class DynamicObjectCrash(BasicScenario):
 
         return root
 
-    def create_test_criteria(self):
+    def _create_test_criteria(self):
         """
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
@@ -211,7 +213,7 @@ class DynamicObjectCrash(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self.ego_vehicle_max_velocity_allowed)
+            self.ego_vehicle_velocity_allowed)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
