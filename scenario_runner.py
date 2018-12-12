@@ -26,8 +26,8 @@ from ScenarioManager.scenario_manager import ScenarioManager
 SCENARIOS = {
     "FollowLeadingVehicle",
     "FollowLeadingVehicleWithObstacle",
-    "StationaryObject",
-    "DynamicObject"
+    "StationaryObjectCrossing",
+    "DynamicObjectCrossing"
 }
 
 

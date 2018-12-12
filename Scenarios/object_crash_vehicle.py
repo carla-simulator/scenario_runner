@@ -19,7 +19,7 @@ from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
-class StationaryObject(BasicScenario):
+class StationaryObjectCrossing(BasicScenario):
 
     """
     This class holds everything required for a simple object crash
@@ -32,12 +32,12 @@ class StationaryObject(BasicScenario):
 
     # ego vehicle parameters
     ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    ego_vehicle_start_x = 100
+    ego_vehicle_start_x = 110
     ego_vehicle_start = carla.Transform(
         carla.Location(x=ego_vehicle_start_x, y=129, z=1),
         carla.Rotation(yaw=180))
     ego_vehicle_velocity_allowed = 20
-    ego_vehicle_distance_to_other = 15
+    ego_vehicle_distance_to_other = 30
 
     # other vehicle parameters
     other_vehicle_model = 'vehicle.diamondback.century'
@@ -59,8 +59,8 @@ class StationaryObject(BasicScenario):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        super(StationaryObject, self).__init__(
-            name="stationaryobject",
+        super(StationaryObjectCrossing, self).__init__(
+            name="stationaryobjectcrossing",
             debug_mode=debug_mode)
 
     def _create_behavior(self):
@@ -95,7 +95,7 @@ class StationaryObject(BasicScenario):
         return criteria
 
 
-class DynamicObject(BasicScenario):
+class DynamicObjectCrossing(BasicScenario):
 
     """
     This class holds everything required for a simple object crash
@@ -113,7 +113,7 @@ class DynamicObject(BasicScenario):
         carla.Location(x=ego_vehicle_start_x, y=129, z=1),
         carla.Rotation(yaw=180))
     ego_vehicle_velocity_allowed = 10
-    ego_vehicle_distance_driven = 20
+    ego_vehicle_distance_driven = 30
 
     # other vehicle parameters
     other_vehicles = []
@@ -140,8 +140,8 @@ class DynamicObject(BasicScenario):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        super(DynamicObject, self).__init__(
-            name="dynamicobject",
+        super(DynamicObjectCrossing, self).__init__(
+            name="dynamicobjectcrossing",
             debug_mode=debug_mode)
 
     def _create_behavior(self):
