@@ -37,7 +37,7 @@ class StationaryObjectCrossing(BasicScenario):
         carla.Location(x=ego_vehicle_start_x, y=129, z=1),
         carla.Rotation(yaw=180))
     ego_vehicle_velocity_allowed = 20
-    ego_vehicle_distance_to_other = 30
+    ego_vehicle_distance_to_other = 35
 
     # other vehicle parameters
     other_vehicle_model = 'vehicle.diamondback.century'
@@ -113,7 +113,7 @@ class DynamicObjectCrossing(BasicScenario):
         carla.Location(x=ego_vehicle_start_x, y=129, z=1),
         carla.Rotation(yaw=180))
     ego_vehicle_velocity_allowed = 10
-    ego_vehicle_distance_driven = 30
+    ego_vehicle_distance_driven = 50
 
     # other vehicle parameters
     other_vehicles = []
