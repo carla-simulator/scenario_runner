@@ -122,7 +122,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
 
     def update(self):
         """
-        Check if the ego _vehicle is within trigger distance to other _vehicle
+        Check if the ego vehicle is within trigger distance to other vehicle
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -161,7 +161,7 @@ class InTriggerDistanceToLocation(AtomicBehavior):
 
     def update(self):
         """
-        Check if the _vehicle is within trigger distance to the target location
+        Check if the vehicle is within trigger distance to the target location
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -197,7 +197,7 @@ class TriggerVelocity(AtomicBehavior):
 
     def update(self):
         """
-        Check if the _vehicle has the trigger velocity
+        Check if the vehicle has the trigger velocity
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -233,7 +233,7 @@ class InTimeToArrivalToLocation(AtomicBehavior):
 
     def update(self):
         """
-        Check if the _vehicle can arrive at target_location within time
+        Check if the vehicle can arrive at target_location within time
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -280,7 +280,7 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
 
     def update(self):
         """
-        Check if the ego _vehicle can arrive at other vehicle within time
+        Check if the ego vehicle can arrive at other vehicle within time
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -510,5 +510,38 @@ class StopVehicle(AtomicBehavior):
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
         self._vehicle.apply_control(self._control)
+
+        return new_status
+
+
+class WaitForTrafficLightState(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to wait for a given traffic light
+    to have the desired state.
+    """
+
+    def __init__(self, traffic_light, state, name="WaitForTrafficLightState"):
+        """
+        Setup traffic_light
+        """
+        super(WaitForTrafficLightState, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._traffic_light = traffic_light
+        self._traffic_light_state = state
+
+    def update(self):
+        """
+        Set status to SUCCESS, when traffic light state is RED
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # the next line may throw, if self._traffic_light is not a traffic
+        # light, but another actor. This is intended.
+        if str(self._traffic_light.state) == self._traffic_light_state:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
 
         return new_status
