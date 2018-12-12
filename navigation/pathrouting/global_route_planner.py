@@ -44,23 +44,31 @@ class GlobalRoutePlanner(object):
         FOLLOW_LANE, STOP
         """
 
-        threshold = 0.0872665   # 5 degrees
+        threshold = 0.0523599   # 5 degrees
         route = self.path_search(origin, destination)
         plan = []
         plan.append('START')
         # Compare current edge and next edge to decide on action
-        for i in range(len(route)-2):
-            current_edge = self.graph.edges[route[i], route[i+1]]
-            next_edge = self.graph.edges[route[i+1], route[i+2]]
+        for i in range(len(route) - 2):
+            current_edge = self.graph.edges[route[i], route[i + 1]]
+            next_edge = self.graph.edges[route[i + 1], route[i + 2]]
             if not current_edge['intersection']:
                 cv = current_edge['exit_vector']
                 nv = None
                 if next_edge['intersection']:
                     nv = next_edge['net_vector']
-                    direction = math.atan2(*nv[::-1]) - math.atan2(*cv[::-1])
-                    if abs(direction) < threshold:
+                    ca = round(math.atan2(*cv[::-1]) * 180 / math.pi)
+                    na = round(math.atan2(*nv[::-1]) * 180 / math.pi)
+                    angle_list = [ca, na]
+                    for i in range(len(angle_list)):
+                        if angle_list[i] > 0:
+                            angle_list[i] = 180 - angle_list[i]
+                        elif angle_list[i] < 0:
+                            angle_list[i] = -1 * (180 + angle_list[i])
+                    ca, na = angle_list
+                    if abs(na - ca) < threshold:
                         action = 'GO_STRAIGHT'
-                    elif direction > 0:
+                    elif na - ca > 0:
                         action = 'LEFT'
                     else:
                         action = 'RIGHT'
@@ -104,7 +112,7 @@ class GlobalRoutePlanner(object):
             entryxy = segment['entry']
             exitxy = segment['exit']
             path = segment['path']
-            for xp, yp in [entryxy]+path+[exitxy]:
+            for xp, yp in [entryxy] + path + [exitxy]:
                 new_distance = self.distance((xp, yp), (x, y))
                 if new_distance < nearest[0]:
                     nearest = (new_distance, segment)
@@ -137,7 +145,7 @@ class GlobalRoutePlanner(object):
             # Adding edge with attributes
             graph.add_edge(
                 n1, n2,
-                length=len(path)+1, path=path,
+                length=len(path) + 1, path=path,
                 entry_vector=self.unit_vector(
                     entryxy, path[0] if len(path) > 0 else exitxy),
                 exit_vector=self.unit_vector(
@@ -153,7 +161,7 @@ class GlobalRoutePlanner(object):
         """
         x1, y1 = point1
         x2, y2 = point2
-        return math.sqrt((x2-x1)**2+(y2-y1)**2)
+        return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
     def unit_vector(self, point1, point2):
         """
@@ -162,9 +170,9 @@ class GlobalRoutePlanner(object):
         x1, y1 = point1
         x2, y2 = point2
 
-        vector = (x2-x1, y2-y1)
-        vector_mag = math.sqrt(vector[0]**2+vector[1]**2)
-        vector = (vector[0]/vector_mag, vector[1]/vector_mag)
+        vector = (x2 - x1, y2 - y1)
+        vector_mag = math.sqrt(vector[0]**2 + vector[1]**2)
+        vector = (vector[0] / vector_mag, vector[1] / vector_mag)
 
         return vector
 
@@ -172,6 +180,6 @@ class GlobalRoutePlanner(object):
         """
         This function returns the dot product of vector1 with vector2
         """
-        return vector1[0]*vector2[0]+vector1[1]*vector2[1]
+        return vector1[0] * vector2[0] + vector1[1] * vector2[1]
 
     pass

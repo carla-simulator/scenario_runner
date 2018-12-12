@@ -53,15 +53,9 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         Test for GlobalROutePlanner.plan_route()
         Run this test with a carla (0.9.1) instance running Town01
         """
-        xo, yo = 120, -2.27
-        xd, yd = 334.7, 165
-        heading = (1, 0)
-        graph, idmap = self.integ_grp.build_graph()
-        plan = self.integ_grp.plan_route((xo, yo), heading, (xd, yd),
-                                         graph, idmap, self.integ_grp.topology)
-        self.assertEqual(plan, ['START', 'GO_STRAIGHT', 'GO_STRAIGHT',
-                                'LEFT', 'LEFT', 'LEFT', 'GO_STRAIGHT',
-                                'STOP'])
+        plan = self.integ_grp.plan_route((-60, -5), (-77.65, 72.72))
+        self.assertEqual(
+            plan, ['START', 'LEFT', 'LEFT', 'GO_STRAIGHT', 'LEFT', 'STOP'])
 
     def test_localise(self):
         """
@@ -116,8 +110,8 @@ class Test_GlobalRoutePlanner(unittest.TestCase):
         Test for GlobalROutePlanner.unit_vector()
         """
         vector = self.simple_grp.unit_vector((1, 1), (2, 2))
-        self.assertAlmostEquals(vector[0], 1/math.sqrt(2))
-        self.assertAlmostEquals(vector[1], 1/math.sqrt(2))
+        self.assertAlmostEquals(vector[0], 1 / math.sqrt(2))
+        self.assertAlmostEquals(vector[1], 1 / math.sqrt(2))
 
     def test_dot(self):
         """
@@ -138,10 +132,11 @@ def suite():
     suite.addTest(Test_GlobalRoutePlanner('test_distance_to_line'))
     suite.addTest(Test_GlobalRoutePlanner('test_build_graph'))
     suite.addTest(Test_GlobalRoutePlanner('test_localise'))
-    # suite.addTest(Test_GlobalRoutePlanner('test_localise_town01'))
-    # suite.addTest(Test_GlobalRoutePlanner('test_plan_route_town01'))
+    suite.addTest(Test_GlobalRoutePlanner('test_path_search'))
+    suite.addTest(Test_GlobalRoutePlanner('test_plan_route'))
 
     return suite
+
 
 if __name__ == '__main__':
     """
