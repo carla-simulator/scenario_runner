@@ -19,7 +19,7 @@ from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
-class StationaryObjectCrash(BasicScenario):
+class StationaryObject(BasicScenario):
 
     """
     This class holds everything required for a simple object crash
@@ -59,8 +59,8 @@ class StationaryObjectCrash(BasicScenario):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        super(StationaryObjectCrash, self).__init__(
-            name="stationaryobjectcrash",
+        super(StationaryObject, self).__init__(
+            name="stationaryobject",
             debug_mode=debug_mode)
 
     def _create_behavior(self):
@@ -68,19 +68,8 @@ class StationaryObjectCrash(BasicScenario):
         Example of a user defined scenario behavior. This function should be
         adapted by the user for other scenarios.
         """
-        # leaf nodes
-        vanish_other = Vanish(self.other_vehicles[0])
-        redundant = TimeOut(15)
-        root_timeout = TimeOut(50)
-        # building the tree
-        root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sequence_other = py_trees.composites.Sequence()
-        sequence_other.add_child(redundant)
-        sequence_other.add_child(vanish_other)
-        root.add_child(sequence_other)
-        root.add_child(root_timeout)
-        return root
+        redundant = TimeOut(self.timeout - 5)
+        return redundant
 
     def _create_test_criteria(self):
         """
@@ -106,7 +95,7 @@ class StationaryObjectCrash(BasicScenario):
         return criteria
 
 
-class DynamicObjectCrash(BasicScenario):
+class DynamicObject(BasicScenario):
 
     """
     This class holds everything required for a simple object crash
@@ -151,8 +140,8 @@ class DynamicObjectCrash(BasicScenario):
                                          self.ego_vehicle_start,
                                          hero=True)
 
-        super(DynamicObjectCrash, self).__init__(
-            name="dynamicobjectcrash",
+        super(DynamicObject, self).__init__(
+            name="dynamicobject",
             debug_mode=debug_mode)
 
     def _create_behavior(self):
@@ -179,7 +168,16 @@ class DynamicObjectCrash(BasicScenario):
             self.other_vehicles[0],
             self.other_vehicle_max_brake)
         timeout_other = TimeOut(10)
-        vanish_other = Vanish(self.other_vehicles[0])
+        start_vehicle = KeepVelocity(
+            self.other_vehicles[0],
+            self.other_vehicle_target_velocity)
+        trigger_other_vehicle = InTriggerRegion(
+            self.other_vehicles[0],
+            46, 50,
+            137, 139)
+        stop_vehicle = StopVehicle(
+            self.other_vehicles[0],
+            self.other_vehicle_max_brake)
         timeout_other_vehicle = TimeOut(5)
         root_timeout = TimeOut(self.timeout)
 
@@ -189,6 +187,8 @@ class DynamicObjectCrash(BasicScenario):
         scenario_sequence = py_trees.composites.Sequence()
         keep_velocity_other_parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        keep_velocity_other = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building tree
         root.add_child(scenario_sequence)
@@ -197,10 +197,13 @@ class DynamicObjectCrash(BasicScenario):
         scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other_vehicle)
         scenario_sequence.add_child(timeout_other)
-        scenario_sequence.add_child(vanish_other)
+        scenario_sequence.add_child(keep_velocity_other)
+        scenario_sequence.add_child(stop_vehicle)
         scenario_sequence.add_child(timeout_other_vehicle)
         keep_velocity_other_parallel.add_child(start_other_vehicle)
         keep_velocity_other_parallel.add_child(trigger_other)
+        keep_velocity_other.add_child(start_vehicle)
+        keep_velocity_other.add_child(trigger_other_vehicle)
 
         return root
 
