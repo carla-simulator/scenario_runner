@@ -644,8 +644,8 @@ class SyncArrival(AtomicBehavior):
 class SteerVehicle(AtomicBehavior):
 
     """
-    This class contains an atomic control loss behavior.
-    The vehicle looses control with steering angle.
+    This class contains an atomic steer behavior.
+    To set the steer value of the vehicle.
     """
 
     def __init__(self, vehicle, steer_value, name="Steering"):
@@ -662,14 +662,8 @@ class SteerVehicle(AtomicBehavior):
         """
         Set steer to steer_value until reaching full stop
         """
-        new_status = py_trees.common.Status.RUNNING
-
-        if CarlaDataProvider.get_velocity(self.vehicle) > EPSILON:
-            self.control.steer = self.steer_value
-            new_status = py_trees.common.Status.SUCCESS
-        else:
-            new_status = py_trees.common.Status.FAILURE
-            self.control.steer = 0
+        self.control.steer = self.steer_value
+        new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
