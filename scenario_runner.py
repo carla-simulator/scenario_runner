@@ -18,13 +18,16 @@ from argparse import RawTextHelpFormatter
 import carla
 
 from Scenarios.follow_leading_vehicle import *
+from Scenarios.object_crash_vehicle import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
 # List of all supported scenarios. IMPORTANT: String has to be class name
 SCENARIOS = {
     "FollowLeadingVehicle",
-    "FollowLeadingVehicleWithObstacle"
+    "FollowLeadingVehicleWithObstacle",
+    "StationaryObjectCrossing",
+    "DynamicObjectCrossing"
 }
 
 
@@ -84,7 +87,8 @@ def main(args):
             if args.junit is not None:
                 junit_filename = args.junit.split(".")[0] + "_{}.xml".format(i)
 
-            if not manager.analyze_scenario(args.output, args.filename, junit_filename):
+            if not manager.analyze_scenario(
+                    args.output, args.filename, junit_filename):
                 print("Success!")
             else:
                 print("Failure!")
@@ -97,6 +101,7 @@ def main(args):
             del manager
         if world is not None:
             del world
+
 
 if __name__ == '__main__':
 
