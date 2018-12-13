@@ -27,7 +27,7 @@ pip3 install --user py_trees # For Python 3.x
 First of all, you need to get latest master branch from CARLA. Then you have to
 install the PythonAPI:
 ```
-easy_install ${CARLA_ROOT}/PythonAPI/carla-VERSION.egg
+easy_install ${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg
 ```
 
 Now, you can start the CARLA server with Town01 from ${CARLA_ROOT}

@@ -90,7 +90,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         The other vehicle waits until the ego vehicle is close enough to the
         intersection and that its own traffic light is red. Then, it will start
         driving and 'illegally' cross the intersection. After a short distance
-        it should stop again, outside of the intersection.
+        it should stop again, outside of the intersection. The ego vehicle has
+        to avoid the crash, but continue driving after the intersection is clear.
 
         If this does not happen within 60 seconds, a timeout stops the scenario
         """
