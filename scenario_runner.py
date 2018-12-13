@@ -32,7 +32,7 @@ VERSION = 0.1
 # List of all supported scenarios. IMPORTANT: String has to be class name
 SCENARIOS = {
     "FollowLeadingVehicle",
-    "FollowLeadingVehicleWithObstacle"
+    "FollowLeadingVehicleWithObstacle",
     "StationaryObjectCrossing",
     "DynamicObjectCrossing",
     "OppositeVehicleRunningRedLight"

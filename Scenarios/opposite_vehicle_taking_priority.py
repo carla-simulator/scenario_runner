@@ -19,7 +19,6 @@ import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
