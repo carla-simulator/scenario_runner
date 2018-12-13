@@ -25,6 +25,10 @@ from Scenarios.object_crash_vehicle import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
+# Version of scenario_runner
+VERSION = 0.1
+
+
 # List of all supported scenarios. IMPORTANT: String has to be class name
 SCENARIOS = {
     "FollowLeadingVehicle",
@@ -108,7 +112,8 @@ def main(args):
 if __name__ == '__main__':
 
     DESCRIPTION = (
-        "CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n")
+        "CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
+        "Current version: " + str(VERSION))
 
     PARSER = argparse.ArgumentParser(description=DESCRIPTION,
                                      formatter_class=RawTextHelpFormatter)
@@ -129,6 +134,8 @@ if __name__ == '__main__':
         '--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument(
         '--list', action="store_true", help='List all supported scenarios and exit')
+    PARSER.add_argument(
+        '-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
 
     if ARGUMENTS.list:
