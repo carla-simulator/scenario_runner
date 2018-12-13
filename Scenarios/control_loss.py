@@ -53,7 +53,7 @@ class ControlLoss(BasicScenario):
         super(ControlLoss, self).__init__(name="ControlLoss",
                                           debug_mode=debug_mode)
 
-    def create_behavior(self):
+    def _create_behavior(self):
         """
         The scenario defined after is a "control loss vehicle" scenario. After
         invoking this scenario, it will wait for the user controlled vehicle to
@@ -94,7 +94,7 @@ class ControlLoss(BasicScenario):
         sequence.add_child(TimeOut(60))
         return sequence
 
-    def create_test_criteria(self):
+    def _create_test_criteria(self):
         """
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
