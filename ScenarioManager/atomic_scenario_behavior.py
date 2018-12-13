@@ -296,6 +296,7 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self._max_time_to_arrival
+
         if current_velocity > other_velocity:
             time_to_arrival = 2 * distance / \
                 (current_velocity - other_velocity)
@@ -545,3 +546,79 @@ class WaitForTrafficLightState(AtomicBehavior):
                           (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+    def terminate(self, new_status):
+        self._traffic_light = None
+        super(WaitForTrafficLightState, self).terminate(new_status)
+
+
+class SyncArrival(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to
+    set velocity of vehicle so that it reaches location at the same time as
+    vehicle_reference. The behaviour assumes that the two vehicles are moving
+    towards location in a straight line.
+    Note: In parallel to this behavior a termination behavior has to be used
+          to keep continue scynhronisation for a certain duration, or for a
+          certain distance, etc.
+    """
+
+    def __init__(self, vehicle, vehicle_reference, target_location, gain=1, name="SyncArrival"):
+        """
+        vehicle : vehicle to be controlled
+        vehicle_ reference : reference vehicle with which arrival has to be
+                             synchronised
+        gain : coefficient for vehicle's throttle and break
+               controls
+        """
+        super(SyncArrival, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._vehicle_reference = vehicle_reference
+        self._target_location = target_location
+        self._gain = gain
+
+    def update(self):
+        """
+        Dynamic control update for vehicle velocity
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        distance_reference = calculate_distance(
+            CarlaDataProvider.get_location(self._vehicle_reference),
+            self._target_location)
+        time_reference = distance_reference /\
+            (CarlaDataProvider.get_velocity(self._vehicle_reference)
+             + EPSILON)
+        distance = calculate_distance(
+            CarlaDataProvider.get_location(self._vehicle),
+            self._target_location)
+        time = distance /\
+            (CarlaDataProvider.get_velocity(self._vehicle)
+             + EPSILON)
+        control_value = (self._gain) * (time - time_reference) /\
+            (time + time_reference + EPSILON)
+
+        if control_value > 0:
+            self._control.throttle = min([control_value, 1])
+            self._control.brake = 0
+        else:
+            self._control.throttle = 0
+            self._control.brake = min([abs(control_value), 1])
+
+        self._vehicle.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior, the throttle should be set back to 0.,
+        to avoid further acceleration.
+        """
+        self._control.throttle = 0.0
+        self._control.brake = 0.0
+        self._vehicle.apply_control(self._control)
+        super(SyncArrival, self).terminate(new_status)

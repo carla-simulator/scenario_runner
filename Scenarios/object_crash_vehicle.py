@@ -26,6 +26,8 @@ class StationaryObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a stationary cyclist.
+
+    Location: Town03
     """
 
     timeout = 60
@@ -101,6 +103,8 @@ class DynamicObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist,
     The ego vehicle is passing through a road,
     And encounters a cyclist crossing the road.
+
+    Location: Town03
     """
 
     timeout = 60
