@@ -114,6 +114,7 @@ class ScenarioManager(object):
         self._debug_mode = _debug_mode
         self._running = False
         self._timestamp_last_run = 0.0
+        self._my_lock = threading.Lock()
 
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
@@ -185,7 +186,7 @@ class ScenarioManager(object):
         - A thread lock should be used to avoid that the scenario tick is performed
           multiple times in parallel.
         """
-        with threading.Lock():
+        with self._my_lock:
             if self._running and self._timestamp_last_run < timestamp.elapsed_seconds:
                 self._timestamp_last_run = timestamp.elapsed_seconds
 
