@@ -390,9 +390,15 @@ class ReachedRegionTest(Criterion):
         not_in_region = (location.x < self.min_x or location.x > self.max_x) or (
             location.y < self.min_y or location.y > self.max_y)
         if not not_in_region:
-            new_status = py_trees.common.Status.SUCCESS
+            self.test_status = "FAILURE"
+        else:
+            self.test_status = "SUCCESS"
+
+        if self.terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
 
+        print("Reached location criteria ", new_status)
         return new_status
