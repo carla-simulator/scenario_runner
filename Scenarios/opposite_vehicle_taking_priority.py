@@ -93,7 +93,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         it should stop again, outside of the intersection. The ego vehicle has
         to avoid the crash, but continue driving after the intersection is clear.
 
-        If this does not happen within 60 seconds, a timeout stops the scenario
+        If this does not happen within 120 seconds, a timeout stops the scenario
         """
 
         # start condition

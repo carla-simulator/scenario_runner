@@ -50,3 +50,9 @@ To control the ego vehicle within the scenario, open another terminal and run:
 ```
 python manual_control.py
 ```
+
+## Running other scenarios
+A list of supported scenarios is provided in
+[List of Supported Scenarios](list_of_scenarios.md). Please note that
+different scenarios may take place in different CARLA towns. This has to be
+respected when launching the CARLA server.
