@@ -589,17 +589,22 @@ class SyncArrival(AtomicBehavior):
         distance_reference = calculate_distance(
             CarlaDataProvider.get_location(self._vehicle_reference),
             self._target_location)
-        time_reference = distance_reference /\
-            (CarlaDataProvider.get_velocity(self._vehicle_reference)
-             + EPSILON)
         distance = calculate_distance(
             CarlaDataProvider.get_location(self._vehicle),
             self._target_location)
-        time = distance /\
-            (CarlaDataProvider.get_velocity(self._vehicle)
-             + EPSILON)
-        control_value = (self._gain) * (time - time_reference) /\
-            (time + time_reference + EPSILON)
+
+        velocity_reference = CarlaDataProvider.get_velocity(
+            self._vehicle_reference)
+        time_reference = float('inf')
+        if velocity_reference > 0:
+            time_reference = distance_reference / velocity_reference
+
+        velocity_current = CarlaDataProvider.get_velocity(self._vehicle)
+        time_current = float('inf')
+        if velocity_current > 0:
+            time_current = distance / velocity_current
+
+        control_value = (self._gain) * (time_current - time_reference)
 
         if control_value > 0:
             self._control.throttle = min([control_value, 1])
