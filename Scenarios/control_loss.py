@@ -29,16 +29,18 @@ class ControlLoss(BasicScenario):
 
     """
     Implementation of "Control Loss Vehicle" (Traffic Scenario 01)
+
+    Location : Town02
     """
 
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    ego_vehicle_start = carla.Transform(
+    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_start = carla.Transform(
         carla.Location(x=60, y=109.5, z=2.0), carla.Rotation(yaw=0))
-    no_of_jitter_actions = 20
-    ego_vehicle_driven_distance = 35
+    _no_of_jitter_actions = 20
+    _ego_vehicle_driven_distance = 35
 
     def __init__(self, world, debug_mode=False):
         """
@@ -46,8 +48,8 @@ class ControlLoss(BasicScenario):
         and instantiate scenario manager
         """
         self.ego_vehicle = setup_vehicle(world,
-                                         self.ego_vehicle_model,
-                                         self.ego_vehicle_start,
+                                         self._ego_vehicle_model,
+                                         self._ego_vehicle_start,
                                          hero=True)
 
         super(ControlLoss, self).__init__(name="ControlLoss",
@@ -70,7 +72,7 @@ class ControlLoss(BasicScenario):
             "Jitter Sequence Behavior")
         jitterTimeout = TimeOut(timeout=0.1, name="Timeout for next jitter")
 
-        for i in range(self.no_of_jitter_actions):
+        for i in range(self._no_of_jitter_actions):
             ego_vehicle_max_steer = random.gauss(0, 0.2)
 
             # turn vehicle
@@ -104,7 +106,8 @@ class ControlLoss(BasicScenario):
         collision_criterion = CollisionTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
-            self.ego_vehicle_driven_distance)
+            self._ego_vehicle_driven_distance)
+        # Region check to verify if the vehicle reached correct lane
         reached_region_criterion = ReachedRegionTest(
             self.ego_vehicle,
             115, 120,
