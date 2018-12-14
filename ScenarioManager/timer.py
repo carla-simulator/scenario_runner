@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2018 Intel Labs.
+# authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -65,6 +67,7 @@ class TimeOut(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._timeout_value = timeout
         self._start_time = 0.0
+        self.timeout = False
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
@@ -86,6 +89,7 @@ class TimeOut(py_trees.behaviour.Behaviour):
             new_status = py_trees.common.Status.RUNNING
         else:
             new_status = py_trees.common.Status.SUCCESS
+            self.timeout = True
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))

@@ -26,24 +26,26 @@ class StationaryObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a stationary cyclist.
+
+    Location: Town03
     """
 
     timeout = 60
 
     # ego vehicle parameters
-    ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    ego_vehicle_start_x = 110
-    ego_vehicle_start = carla.Transform(
-        carla.Location(x=ego_vehicle_start_x, y=129, z=1),
+    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_start_x = 110
+    _ego_vehicle_start = carla.Transform(
+        carla.Location(x=_ego_vehicle_start_x, y=129, z=1),
         carla.Rotation(yaw=180))
-    ego_vehicle_velocity_allowed = 20
-    ego_vehicle_distance_to_other = 35
+    _ego_vehicle_velocity_allowed = 20
+    _ego_vehicle_distance_to_other = 35
 
     # other vehicle parameters
-    other_vehicle_model = 'vehicle.diamondback.century'
-    other_vehicle_start_x = 70
-    other_vehicle_start = carla.Transform(
-        carla.Location(x=other_vehicle_start_x, y=129, z=0),
+    _other_vehicle_model = 'vehicle.diamondback.century'
+    _other_vehicle_start_x = 70
+    _other_vehicle_start = carla.Transform(
+        carla.Location(x=_other_vehicle_start_x, y=129, z=0),
         carla.Rotation(yaw=270))
 
     def __init__(self, world, debug_mode=False):
@@ -52,21 +54,22 @@ class StationaryObjectCrossing(BasicScenario):
         and instantiate scenario manager
         """
         self.other_vehicles = [setup_vehicle(world,
-                                             self.other_vehicle_model,
-                                             self.other_vehicle_start)]
+                                             self._other_vehicle_model,
+                                             self._other_vehicle_start)]
         self.ego_vehicle = setup_vehicle(world,
-                                         self.ego_vehicle_model,
-                                         self.ego_vehicle_start,
+                                         self._ego_vehicle_model,
+                                         self._ego_vehicle_start,
                                          hero=True)
 
         super(StationaryObjectCrossing, self).__init__(
             name="stationaryobjectcrossing",
+            town="Town03",
+            world=world,
             debug_mode=debug_mode)
 
     def _create_behavior(self):
         """
-        Example of a user defined scenario behavior. This function should be
-        adapted by the user for other scenarios.
+        Only behavior here is to wait
         """
         redundant = TimeOut(self.timeout - 5)
         return redundant
@@ -80,12 +83,12 @@ class StationaryObjectCrossing(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self.ego_vehicle_velocity_allowed)
+            self._ego_vehicle_velocity_allowed)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
-            self.ego_vehicle_distance_to_other)
+            self._ego_vehicle_distance_to_other)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
@@ -102,30 +105,31 @@ class DynamicObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist,
     The ego vehicle is passing through a road,
     And encounters a cyclist crossing the road.
+
+    Location: Town03
     """
 
     timeout = 60
 
     # ego vehicle parameters
-    ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    ego_vehicle_start_x = 90
-    ego_vehicle_start = carla.Transform(
-        carla.Location(x=ego_vehicle_start_x, y=129, z=1),
+    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_start_x = 90
+    _ego_vehicle_start = carla.Transform(
+        carla.Location(x=_ego_vehicle_start_x, y=129, z=1),
         carla.Rotation(yaw=180))
-    ego_vehicle_velocity_allowed = 10
-    ego_vehicle_distance_driven = 50
+    _ego_vehicle_velocity_allowed = 10
+    _ego_vehicle_distance_driven = 50
 
     # other vehicle parameters
-    other_vehicles = []
-    other_vehicle_model = 'vehicle.diamondback.century'
-    other_vehicle_start_x = 47.5
-    other_vehicle_start = carla.Transform(
-        carla.Location(x=other_vehicle_start_x, y=124, z=1),
+    _other_vehicle_model = 'vehicle.diamondback.century'
+    _other_vehicle_start_x = 47.5
+    _other_vehicle_start = carla.Transform(
+        carla.Location(x=_other_vehicle_start_x, y=124, z=1),
         carla.Rotation(yaw=90))
-    other_vehicle_target_velocity = 10
-    trigger_distance_from_ego_vehicle = 35
-    other_vehicle_max_throttle = 1.0
-    other_vehicle_max_brake = 1.0
+    _other_vehicle_target_velocity = 10
+    _trigger_distance_from_ego = 35
+    _other_vehicle_max_throttle = 1.0
+    _other_vehicle_max_brake = 1.0
 
     def __init__(self, world, debug_mode=False):
         """
@@ -133,15 +137,17 @@ class DynamicObjectCrossing(BasicScenario):
         and instantiate scenario manager
         """
         self.other_vehicles = [setup_vehicle(world,
-                                             self.other_vehicle_model,
-                                             self.other_vehicle_start)]
+                                             self._other_vehicle_model,
+                                             self._other_vehicle_start)]
         self.ego_vehicle = setup_vehicle(world,
-                                         self.ego_vehicle_model,
-                                         self.ego_vehicle_start,
+                                         self._ego_vehicle_model,
+                                         self._ego_vehicle_start,
                                          hero=True)
 
         super(DynamicObjectCrossing, self).__init__(
             name="dynamicobjectcrossing",
+            town="Town03",
+            world=world,
             debug_mode=debug_mode)
 
     def _create_behavior(self):
@@ -150,34 +156,33 @@ class DynamicObjectCrossing(BasicScenario):
         controlled vehicle to enter the in the trigger distance region,
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
-
         """
         # leaf nodes
         trigger_dist = InTriggerDistanceToVehicle(
             self.other_vehicles[0],
             self.ego_vehicle,
-            self.trigger_distance_from_ego_vehicle)
+            self._trigger_distance_from_ego)
         start_other_vehicle = KeepVelocity(
             self.other_vehicles[0],
-            self.other_vehicle_target_velocity)
+            self._other_vehicle_target_velocity)
         trigger_other = InTriggerRegion(
             self.other_vehicles[0],
             46, 50,
             128, 129.5)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
-            self.other_vehicle_max_brake)
+            self._other_vehicle_max_brake)
         timeout_other = TimeOut(10)
         start_vehicle = KeepVelocity(
             self.other_vehicles[0],
-            self.other_vehicle_target_velocity)
+            self._other_vehicle_target_velocity)
         trigger_other_vehicle = InTriggerRegion(
             self.other_vehicles[0],
             46, 50,
             137, 139)
         stop_vehicle = StopVehicle(
             self.other_vehicles[0],
-            self.other_vehicle_max_brake)
+            self._other_vehicle_max_brake)
         timeout_other_vehicle = TimeOut(5)
         root_timeout = TimeOut(self.timeout)
 
@@ -216,11 +221,11 @@ class DynamicObjectCrossing(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self.ego_vehicle_velocity_allowed)
+            self._ego_vehicle_velocity_allowed)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle, self.ego_vehicle_distance_driven)
+            self.ego_vehicle, self._ego_vehicle_distance_driven)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)

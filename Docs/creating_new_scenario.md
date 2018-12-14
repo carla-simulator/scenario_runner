@@ -34,6 +34,8 @@ follows:
            # Call constructor of BasicScenario
            super(NewScenario, self).__init__(
              name="NewScenario",
+             town="NameOfCarlaTown", # e.g. Town01
+             world=world,
              debug_mode=debug_mode)
 
 

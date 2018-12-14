@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2018 Intel Labs.
+# authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -30,29 +32,31 @@ class FollowLeadingVehicle(BasicScenario):
     """
     This class holds everything required for a simple "Follow a leading vehicle"
     scenario involving two vehicles.
+
+    Location: Town01
     """
 
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    ego_vehicle_start_x = 107
-    ego_vehicle_start = carla.Transform(
-        carla.Location(x=ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
-    ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
-    ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
-    ego_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
+    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_start_x = 107
+    _ego_vehicle_start = carla.Transform(
+        carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
+    _ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
+    _ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
+    _ego_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
 
     # other vehicle
-    other_vehicle_model = 'vehicle.*'
-    other_vehicle_start_x = ego_vehicle_start_x + ego_distance_to_other
-    other_vehicle_start = carla.Transform(
-        carla.Location(x=other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
-    other_vehicle_target_velocity = 15                  # Target velocity of other vehicle
-    trigger_distance_from_ego = 15              # Starting point of other vehicle maneuver
-    other_vehicle_max_throttle = 1.0                    # Maximum throttle of other vehicle
-    other_vehicle_max_brake = 1.0                       # Maximum brake of other vehicle
-    other_vehicle_distance = 50 + \
+    _other_vehicle_model = 'vehicle.*'
+    _other_vehicle_start_x = _ego_vehicle_start_x + _ego_distance_to_other
+    _other_vehicle_start = carla.Transform(
+        carla.Location(x=_other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
+    _other_vehicle_target_velocity = 15          # Target velocity of other vehicle
+    _trigger_distance_from_ego = 15              # Starting point of other vehicle maneuver
+    _other_vehicle_max_throttle = 1.0            # Maximum throttle of other vehicle
+    _other_vehicle_max_brake = 1.0               # Maximum brake of other vehicle
+    _other_vehicle_distance = 50 + \
         random.randint(0, 50)  # Distance the other vehicle should drive
 
     def __init__(self, world, debug_mode=False):
@@ -61,21 +65,20 @@ class FollowLeadingVehicle(BasicScenario):
         and instantiate scenario manager
         """
         self.other_vehicles = [setup_vehicle(world,
-                                             self.other_vehicle_model,
-                                             self.other_vehicle_start)]
+                                             self._other_vehicle_model,
+                                             self._other_vehicle_start)]
         self.ego_vehicle = setup_vehicle(world,
-                                         self.ego_vehicle_model,
-                                         self.ego_vehicle_start,
+                                         self._ego_vehicle_model,
+                                         self._ego_vehicle_start,
                                          hero=True)
 
         super(FollowLeadingVehicle, self).__init__(name="FollowVehicle",
+                                                   town="Town01",
+                                                   world=world,
                                                    debug_mode=debug_mode)
 
     def _create_behavior(self):
         """
-        Example of a user defined scenario behavior. This function should be
-        adapted by the user for other scenarios.
-
         The scenario defined after is a "follow leading vehicle" scenario. After
         invoking this scenario, it will wait for the user controlled vehicle to
         enter the start region, then make a traffic participant to accelerate
@@ -98,10 +101,10 @@ class FollowLeadingVehicle(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity = KeepVelocity(
             self.other_vehicles[0],
-            self.other_vehicle_target_velocity)
+            self._other_vehicle_target_velocity)
         keep_velocity_distance = DriveDistance(
             self.other_vehicles[0],
-            self.other_vehicle_distance,
+            self._other_vehicle_distance,
             name="Distance")
         keep_velocity_for_distance.add_child(keep_velocity)
         keep_velocity_for_distance.add_child(keep_velocity_distance)
@@ -109,7 +112,7 @@ class FollowLeadingVehicle(BasicScenario):
         # stop vehicle
         stop = StopVehicle(
             self.other_vehicles[0],
-            self.other_vehicle_max_brake)
+            self._other_vehicle_max_brake)
 
         # end condition
         endcondition = py_trees.composites.Parallel(
@@ -136,9 +139,6 @@ class FollowLeadingVehicle(BasicScenario):
 
     def _create_test_criteria(self):
         """
-        Example of a user defined test catalogue.
-        This function should be adapted by the user.
-
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
@@ -146,14 +146,14 @@ class FollowLeadingVehicle(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self.ego_max_velocity_allowed)
+            self._ego_max_velocity_allowed)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
-            self.ego_distance_to_other + self.other_vehicle_distance - 10)
+            self._ego_distance_to_other + self._other_vehicle_distance - 10)
         avg_velocity_criterion = AverageVelocityTest(
-            self.ego_vehicle, self.ego_avg_velocity_expected)
+            self.ego_vehicle, self._ego_avg_velocity_expected)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
@@ -181,31 +181,30 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    ego_vehicle_start_x = 107
-    ego_vehicle_start = carla.Transform(
-        carla.Location(x=ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
-    ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
-    ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
-    ego_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
+    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_start_x = 107
+    _ego_vehicle_start = carla.Transform(
+        carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
+    _ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
+    _ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
+    _ego_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
 
     # other vehicle
-    other_vehicles = []
-    other_vehicle_model = 'vehicle.volkswagen.t2'
-    other_vehicle_start_x = ego_vehicle_start_x + ego_distance_to_other
-    other_vehicle_start = carla.Transform(
-        carla.Location(x=other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
-    other_vehicle_target_velocity = 15      # Target velocity of other vehicle
-    trigger_distance_from_ego = 15          # Starting point of other vehicle maneuver
-    other_vehicle_max_throttle = 1.0        # Maximum throttle of other vehicle
-    other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
-    other_vehicle_distance = 40             # Distance the other vehicle should drive
+    _other_vehicle_model = 'vehicle.volkswagen.t2'
+    _other_vehicle_start_x = _ego_vehicle_start_x + _ego_distance_to_other
+    _other_vehicle_start = carla.Transform(
+        carla.Location(x=_other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
+    _other_vehicle_target_velocity = 15      # Target velocity of other vehicle
+    _trigger_distance_from_ego = 15          # Starting point of other vehicle maneuver
+    _other_vehicle_max_throttle = 1.0        # Maximum throttle of other vehicle
+    _other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
+    _other_vehicle_distance = 40             # Distance the other vehicle should drive
 
-    other_vehicle_model_no2 = 'vehicle.gazelle.omafiets'
-    other_vehicle_start_x_no2 = other_vehicle_start_x + \
-        10 + random.randint(other_vehicle_distance, 80)
-    other_vehicle_start_no2 = carla.Transform(
-        carla.Location(x=other_vehicle_start_x_no2, y=133.5, z=39), carla.Rotation(yaw=0))
+    _other_vehicle_model_no2 = 'vehicle.gazelle.omafiets'
+    _other_vehicle_start_x_no2 = _other_vehicle_start_x + \
+        10 + random.randint(_other_vehicle_distance, 80)
+    _other_vehicle_start_no2 = carla.Transform(
+        carla.Location(x=_other_vehicle_start_x_no2, y=133.5, z=39), carla.Rotation(yaw=0))
 
     def __init__(self, world, debug_mode=False):
         """
@@ -213,25 +212,24 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         and instantiate scenario manager
         """
         self.other_vehicles = [setup_vehicle(world,
-                                             self.other_vehicle_model,
-                                             self.other_vehicle_start),
+                                             self._other_vehicle_model,
+                                             self._other_vehicle_start),
                                setup_vehicle(world,
-                                             self.other_vehicle_model_no2,
-                                             self.other_vehicle_start_no2)]
+                                             self._other_vehicle_model_no2,
+                                             self._other_vehicle_start_no2)]
         self.ego_vehicle = setup_vehicle(world,
-                                         self.ego_vehicle_model,
-                                         self.ego_vehicle_start,
+                                         self._ego_vehicle_model,
+                                         self._ego_vehicle_start,
                                          hero=True)
 
         super(FollowLeadingVehicleWithObstacle, self).__init__(
             name="FollowLeadingVehicleWithObstacle",
+            town="Town01",
+            world=world,
             debug_mode=debug_mode)
 
     def _create_behavior(self):
         """
-        Example of a user defined scenario behavior. This function should be
-        adapted by the user for other scenarios.
-
         The scenario defined after is a "follow leading vehicle" scenario. After
         invoking this scenario, it will wait for the user controlled vehicle to
         enter the start region, then make a traffic participant to accelerate
@@ -254,10 +252,10 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity = KeepVelocity(
             self.other_vehicles[0],
-            self.other_vehicle_target_velocity)
+            self._other_vehicle_target_velocity)
         keep_velocity_distance = DriveDistance(
             self.other_vehicles[0],
-            self.other_vehicle_distance,
+            self._other_vehicle_distance,
             name="Distance")
         keep_velocity_for_distance.add_child(keep_velocity)
         keep_velocity_for_distance.add_child(keep_velocity_distance)
@@ -300,9 +298,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
     def _create_test_criteria(self):
         """
-        Example of a user defined test catalogue.
-        This function should be adapted by the user.
-
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
@@ -310,14 +305,14 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self.ego_max_velocity_allowed)
+            self._ego_max_velocity_allowed)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
-            self.ego_distance_to_other + self.other_vehicle_distance - 10)
+            self._ego_distance_to_other + self._other_vehicle_distance - 10)
         avg_velocity_criterion = AverageVelocityTest(
-            self.ego_vehicle, self.ego_avg_velocity_expected)
+            self.ego_vehicle, self._ego_avg_velocity_expected)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)

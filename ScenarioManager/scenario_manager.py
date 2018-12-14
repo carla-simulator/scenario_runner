@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2018 Intel Labs.
+# authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -112,6 +114,7 @@ class ScenarioManager(object):
         self._debug_mode = _debug_mode
         self._running = False
         self._timestamp_last_run = 0.0
+        self._my_lock = threading.Lock()
 
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
@@ -183,7 +186,7 @@ class ScenarioManager(object):
         - A thread lock should be used to avoid that the scenario tick is performed
           multiple times in parallel.
         """
-        with threading.Lock():
+        with self._my_lock:
             if self._running and self._timestamp_last_run < timestamp.elapsed_seconds:
                 self._timestamp_last_run = timestamp.elapsed_seconds
 
@@ -230,9 +233,7 @@ class ScenarioManager(object):
                 failure = True
                 result = "FAILURE"
 
-        if ((self.scenario.timeout_node.status == py_trees.common.Status.SUCCESS)
-                and (self.scenario_tree.tip().status != py_trees.common.Status.SUCCESS)
-                and not failure):
+        if self.scenario.timeout_node.timeout and not failure:
             timeout = True
             result = "TIMEOUT"
 

@@ -27,13 +27,15 @@ pip3 install --user py_trees # For Python 3.x
 First of all, you need to get latest master branch from CARLA. Then you have to
 install the PythonAPI:
 ```
-easy_install ${CARLA_ROOT}/PythonAPI/carla-VERSION.egg
+easy_install ${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg
 ```
 
 Now, you can start the CARLA server with Town01 from ${CARLA_ROOT}
 ```
-./CarlaUE4.sh /Game/Carla/Maps/Town01
+./CarlaUE4.sh /Game/Carla/Maps/Town01 -benchmark -fps=20 -windowed
 ```
+Please note that using the benchmark mode with a defined frame rate is very
+important to achieve a deterministic behavior.
 
 Start the example scenario (follow a leading vehicle) in an extra terminal:
 ```
@@ -50,3 +52,9 @@ To control the ego vehicle within the scenario, open another terminal and run:
 ```
 python manual_control.py
 ```
+
+## Running other scenarios
+A list of supported scenarios is provided in
+[List of Supported Scenarios](list_of_scenarios.md). Please note that
+different scenarios may take place in different CARLA towns. This has to be
+respected when launching the CARLA server.
