@@ -41,6 +41,8 @@ class ControlLoss(BasicScenario):
         carla.Location(x=60, y=109.5, z=2.0), carla.Rotation(yaw=0))
     _no_of_jitter_actions = 20
     _ego_vehicle_driven_distance = 35
+    _noise_mean = 0     # Mean value of steering noise
+    _noise_std = 0.1    # Std. deviation of steerning noise
 
     def __init__(self, world, debug_mode=False):
         """
@@ -73,7 +75,7 @@ class ControlLoss(BasicScenario):
         jitterTimeout = TimeOut(timeout=0.1, name="Timeout for next jitter")
 
         for i in range(self._no_of_jitter_actions):
-            ego_vehicle_max_steer = random.gauss(0, 0.2)
+            ego_vehicle_max_steer = random.gauss(self._noise_mean, self._noise_std)
 
             # turn vehicle
             turn = SteerVehicle(
