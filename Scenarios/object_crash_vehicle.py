@@ -63,6 +63,8 @@ class StationaryObjectCrossing(BasicScenario):
 
         super(StationaryObjectCrossing, self).__init__(
             name="stationaryobjectcrossing",
+            town="Town03",
+            world=world,
             debug_mode=debug_mode)
 
     def _create_behavior(self):
@@ -144,6 +146,8 @@ class DynamicObjectCrossing(BasicScenario):
 
         super(DynamicObjectCrossing, self).__init__(
             name="dynamicobjectcrossing",
+            town="Town03",
+            world=world,
             debug_mode=debug_mode)
 
     def _create_behavior(self):

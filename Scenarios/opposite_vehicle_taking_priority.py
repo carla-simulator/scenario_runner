@@ -19,7 +19,6 @@ import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
@@ -83,6 +82,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         super(OppositeVehicleRunningRedLight, self).__init__(
             name="OppositeVehicleRunningRedLight",
+            town="Town03",
+            world=world,
             debug_mode=debug_mode)
 
     def _create_behavior(self):

@@ -73,6 +73,8 @@ class FollowLeadingVehicle(BasicScenario):
                                          hero=True)
 
         super(FollowLeadingVehicle, self).__init__(name="FollowVehicle",
+                                                   town="Town01",
+                                                   world=world,
                                                    debug_mode=debug_mode)
 
     def _create_behavior(self):
@@ -222,6 +224,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         super(FollowLeadingVehicleWithObstacle, self).__init__(
             name="FollowLeadingVehicleWithObstacle",
+            town="Town01",
+            world=world,
             debug_mode=debug_mode)
 
     def _create_behavior(self):

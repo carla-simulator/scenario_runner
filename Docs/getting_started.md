@@ -32,8 +32,10 @@ easy_install ${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg
 
 Now, you can start the CARLA server with Town01 from ${CARLA_ROOT}
 ```
-./CarlaUE4.sh /Game/Carla/Maps/Town01
+./CarlaUE4.sh /Game/Carla/Maps/Town01 -benchmark -fps=20 -windowed
 ```
+Please note that using the benchmark mode with a defined frame rate is very
+important to achieve a deterministic behavior.
 
 Start the example scenario (follow a leading vehicle) in an extra terminal:
 ```

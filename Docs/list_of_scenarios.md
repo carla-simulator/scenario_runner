@@ -1,13 +1,13 @@
 # List of Supported Scenarios
 
 Welcome to the ScenarioRunner for CARLA! This document provides a list of all
-currently supported scenarios, and a short description for each.
+currently supported scenarios, and a short description for each one.
 
 ## Scenarios in Town01
 The following scenarios take place in Town01. Hence, the CARLA server has to be
-started with Town01, e.g.
+started with Town01, e.g. when not using manual-mode:
 ```
-CarlaUE4.sh /Game/Carla/Maps/Town01
+CarlaUE4.sh /Game/Carla/Maps/Town01 -benchmark -fps=20 -windowed
 ```
 
 ### FollowLeadingVehicle
@@ -24,9 +24,9 @@ that in front of the leading vehicle is a (hidden) obstacle that blocks the way.
 
 ## Scenarios in Town03
 The following scenarios take place in Town01. Hence, the CARLA server has to be
-started with Town03, e.g.
+started with Town03, e.g. when not using manual-mode:
 ```
-CarlaUE4.sh /Game/Carla/Maps/Town03
+CarlaUE4.sh /Game/Carla/Maps/Town03 -benchmark -fps=20 -windowed
 ```
 
 ### OppositeVehicleRunningRedLight
