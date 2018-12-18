@@ -13,7 +13,6 @@ regains control and corrects it's course.
 """
 
 import random
-import sys
 
 import py_trees
 import carla
@@ -42,7 +41,7 @@ class ControlLoss(BasicScenario):
     _no_of_jitter_actions = 20
     _ego_vehicle_driven_distance = 35
     _noise_mean = 0     # Mean value of steering noise
-    _noise_std = 0.1    # Std. deviation of steerning noise
+    _noise_std = 0.3    # Std. deviation of steerning noise
 
     def __init__(self, world, debug_mode=False):
         """
@@ -72,7 +71,7 @@ class ControlLoss(BasicScenario):
         # jitter sequence
         jitterSequence = py_trees.composites.Sequence(
             "Jitter Sequence Behavior")
-        jitterTimeout = TimeOut(timeout=0.1, name="Timeout for next jitter")
+        jitterTimeout = TimeOut(timeout=0.2, name="Timeout for next jitter")
 
         for i in range(self._no_of_jitter_actions):
             ego_vehicle_max_steer = random.gauss(self._noise_mean, self._noise_std)
@@ -91,11 +90,17 @@ class ControlLoss(BasicScenario):
             jitterAction.add_child(jitterTimeout)
             jitterSequence.add_child(jitterAction)
 
+        target_location = carla.Location(x=150, y=112, z=2.0)
+
+        # endcondition
+        endcondition = InTriggerDistanceToLocation(self.ego_vehicle, target_location, 10,
+                                                   "InDistanceLocation")
+
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(startcondition)
         sequence.add_child(jitterSequence)
-        sequence.add_child(TimeOut(60))
+        sequence.add_child(endcondition)
         return sequence
 
     def _create_test_criteria(self):
@@ -106,9 +111,6 @@ class ControlLoss(BasicScenario):
         criteria = []
 
         collision_criterion = CollisionTest(self.ego_vehicle)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
-            self._ego_vehicle_driven_distance)
         # Region check to verify if the vehicle reached correct lane
         reached_region_criterion = ReachedRegionTest(
             self.ego_vehicle,
@@ -116,7 +118,6 @@ class ControlLoss(BasicScenario):
             109, 112)
 
         criteria.append(collision_criterion)
-        criteria.append(driven_distance_criterion)
         criteria.append(reached_region_criterion)
 
         return criteria
