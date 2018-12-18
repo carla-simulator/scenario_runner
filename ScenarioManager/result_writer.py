@@ -90,10 +90,16 @@ class ResultOutputProvider(object):
         # pylint: enable=line-too-long
 
         for criterion in self._data.scenario.test_criteria:
+            name_string = criterion.name
+            if criterion.optional:
+                name_string += " (Req.)"
+            else:
+                name_string += " (Opt.)"
+
             self.logger.info("%24s (id=%3d) | %30s | %8s | %12.2f | %12.2f ",
                              criterion.vehicle.type_id[8:],
                              criterion.vehicle.id,
-                             criterion.name,
+                             name_string,
                              "SUCCESS" if criterion.test_status == "SUCCESS" else "FAILURE",
                              criterion.actual_value,
                              criterion.expected_value)

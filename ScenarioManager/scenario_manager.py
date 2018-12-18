@@ -229,7 +229,7 @@ class ScenarioManager(object):
         timeout = False
         result = "SUCCESS"
         for criterion in self.scenario.test_criteria:
-            if criterion.test_status != "SUCCESS":
+            if criterion.test_status != "SUCCESS" and not criterion.optional:
                 failure = True
                 result = "FAILURE"
 

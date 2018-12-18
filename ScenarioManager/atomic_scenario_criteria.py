@@ -32,9 +32,10 @@ class Criterion(py_trees.behaviour.Behaviour):
     - expected_value: Result in case of success (e.g. max_speed, zero collisions, ...)
     - actual_value: Actual result after running the scenario
     - test_status: Used to access the result of the criterion
+    - optional: Indicates if a criterion is optional (not used for overall analysis)
     """
 
-    def __init__(self, name, vehicle, expected_value):
+    def __init__(self, name, vehicle, expected_value, optional=False):
         super(Criterion, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._terminate_on_failure = False
@@ -44,6 +45,7 @@ class Criterion(py_trees.behaviour.Behaviour):
         self.test_status = "INIT"
         self.expected_value = expected_value
         self.actual_value = 0
+        self.optional = optional
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
