@@ -654,19 +654,19 @@ class SteerVehicle(AtomicBehavior):
         """
         super(SteerVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self.control = carla.VehicleControl()
-        self.vehicle = vehicle
-        self.steer_value = steer_value
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._steer_value = steer_value
 
     def update(self):
         """
         Set steer to steer_value until reaching full stop
         """
-        self.control.steer = self.steer_value
+        self._control.steer = self._steer_value
         new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
-        self.vehicle.apply_control(self.control)
+        self._vehicle.apply_control(self._control)
 
         return new_status

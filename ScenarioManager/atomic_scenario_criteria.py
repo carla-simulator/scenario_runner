@@ -370,11 +370,11 @@ class ReachedRegionTest(Criterion):
         """
         super(ReachedRegionTest, self).__init__(name, vehicle, 0)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self.vehicle = vehicle
-        self.min_x = min_x
-        self.max_x = max_x
-        self.min_y = min_y
-        self.max_y = max_y
+        self._vehicle = vehicle
+        self._min_x = min_x
+        self._max_x = max_x
+        self._min_y = min_y
+        self._max_y = max_y
 
     def update(self):
         """
@@ -382,13 +382,13 @@ class ReachedRegionTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        location = CarlaDataProvider.get_location(self.vehicle)
+        location = CarlaDataProvider.get_location(self._vehicle)
 
         if location is None:
             return new_status
 
-        not_in_region = (location.x < self.min_x or location.x > self.max_x) or (
-            location.y < self.min_y or location.y > self.max_y)
+        not_in_region = (location.x < self._min_x or location.x > self._max_x) or (
+            location.y < self._min_y or location.y > self._max_y)
         if not not_in_region:
             self.test_status = "FAILURE"
         else:
