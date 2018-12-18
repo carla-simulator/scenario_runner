@@ -28,7 +28,7 @@ class VehicleTurningRight(BasicScenario):
     Location: Town01
     """
 
-    timeout = 80
+    timeout = 90
 
     # ego vehicle parameters
     _ego_vehicle_model = 'vehicle.nissan.micra'
@@ -41,10 +41,10 @@ class VehicleTurningRight(BasicScenario):
     # other vehicle parameters
     _other_vehicle_model = 'vehicle.diamondback.century'
     _other_vehicle_start = carla.Transform(
-        carla.Location(x=98, y=30, z=38.5),
+        carla.Location(x=95.5, y=30, z=38.5),
         carla.Rotation(yaw=180))
     _other_vehicle_target_velocity = 10
-    _trigger_distance_from_ego = 22
+    _trigger_distance_from_ego = 19
     _other_vehicle_max_throttle = 1.0
     _other_vehicle_max_brake = 1.0
 
@@ -74,7 +74,7 @@ class VehicleTurningRight(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         ego vehicle has to avoid the crash after a right turn, but
         continue driving after the road is clear.If this does not happen
-        within 80 seconds, a timeout stops the scenario.
+        within 90 seconds, a timeout stops the scenario.
         """
         # leaf nodes
         trigger_distance = InTriggerDistanceToVehicle(
@@ -86,8 +86,8 @@ class VehicleTurningRight(BasicScenario):
             self._other_vehicle_target_velocity)
         trigger_other_vehicle = InTriggerRegion(
             self.other_vehicles[0],
-            92.5, 93,
-            30, 31)
+            91, 93,
+            29.5, 31)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
@@ -97,12 +97,12 @@ class VehicleTurningRight(BasicScenario):
             self._other_vehicle_target_velocity)
         trigger_other = InTriggerRegion(
             self.other_vehicles[0],
-            85.5, 87,
-            30, 31)
+            85.5, 86.5,
+            29, 31)
         stop_other = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
-        timeout_other = TimeOut(15)
+        timeout_other = TimeOut(20)
         root_timeout = TimeOut(self.timeout)
 
         # non leaf nodes
@@ -162,7 +162,7 @@ class VehicleTurningLeft(BasicScenario):
     Location: Town01
     """
 
-    timeout = 80
+    timeout = 90
 
     # ego vehicle parameters
     _ego_vehicle_model = 'vehicle.nissan.micra'
@@ -170,7 +170,7 @@ class VehicleTurningLeft(BasicScenario):
         carla.Location(x=130, y=55, z=38.5),
         carla.Rotation(yaw=180))
     _ego_vehicle_velocity_allowed = 30
-    _ego_driven_distance = 65
+    _ego_driven_distance = 60
 
     # other vehicle parameters
     _other_vehicle_model = 'vehicle.diamondback.century'
@@ -178,7 +178,7 @@ class VehicleTurningLeft(BasicScenario):
         carla.Location(x=85, y=78.8, z=38.5),
         carla.Rotation(yaw=0))
     _other_vehicle_target_velocity = 10
-    _trigger_distance_from_ego = 20
+    _trigger_distance_from_ego = 18
     _other_vehicle_max_throttle = 1.0
     _other_vehicle_max_brake = 1.0
 
@@ -208,7 +208,7 @@ class VehicleTurningLeft(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         ego vehicle has to avoid the crash after a left turn, but
         continue driving after the road is clear.If this does not happen
-        within 80 seconds, a timeout stops the scenario.
+        within 90 seconds, a timeout stops the scenario.
         """
         # leaf nodes
         trigger_distance = InTriggerDistanceToVehicle(
