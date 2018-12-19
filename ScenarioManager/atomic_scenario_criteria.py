@@ -360,6 +360,7 @@ class ReachedRegionTest(Criterion):
 
     """
     This class contains the reached region test
+    The test is a success if the vehicle reaches a specified region
     """
 
     def __init__(self, vehicle, min_x, max_x, min_y,
@@ -383,19 +384,20 @@ class ReachedRegionTest(Criterion):
         new_status = py_trees.common.Status.RUNNING
 
         location = CarlaDataProvider.get_location(self._vehicle)
-
         if location is None:
             return new_status
 
-        not_in_region = (location.x < self._min_x or location.x > self._max_x) or (
-            location.y < self._min_y or location.y > self._max_y)
-        if not not_in_region:
-            self.test_status = "FAILURE"
-        else:
-            self.test_status = "SUCCESS"
+        in_region = False
+        if self.test_status != "SUCCESS":
+            in_region = (location.x > self._min_x and location.x < self._max_x) and (
+                location.y > self._min_y and location.y < self._max_y)
+            if in_region:
+                self.test_status = "SUCCESS"
+            else:
+                self.test_status = "RUNNING"
 
-        if self._terminate_on_failure and (self.test_status == "FAILURE"):
-            new_status = py_trees.common.Status.FAILURE
+        if self.test_status == "SUCCESS":
+            new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
                           (self.__class__.__name__, self.status, new_status))
