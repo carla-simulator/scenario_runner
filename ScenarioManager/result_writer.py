@@ -84,29 +84,31 @@ class ResultOutputProvider(object):
         self.logger.info("\n")
         # pylint: disable=line-too-long
         self.logger.info(
-            "              Vehicle             |            Criterion           |  Result  | Actual Value | Expected Value ")
+            "              Vehicle             |            Criterion           |   Result    | Actual Value | Expected Value ")
         self.logger.info(
-            "--------------------------------------------------------------------------------------------------------------")
+            "---------------------------------------------------------------------------___-----------------------------------")
         # pylint: enable=line-too-long
 
         for criterion in self._data.scenario.test_criteria:
             name_string = criterion.name
             if criterion.optional:
-                name_string += " (Req.)"
-            else:
                 name_string += " (Opt.)"
+            else:
+                name_string += " (Req.)"
 
-            self.logger.info("%24s (id=%3d) | %30s | %8s | %12.2f | %12.2f ",
+            self.logger.info("%24s (id=%3d) | %30s | %11s | %12.2f | %12.2f ",
                              criterion.vehicle.type_id[8:],
                              criterion.vehicle.id,
                              name_string,
-                             "SUCCESS" if criterion.test_status == "SUCCESS" else "FAILURE",
+                             # pylint: disable=line-too-long
+                             "FAILURE" if criterion.test_status == "RUNNING" else criterion.test_status,
+                             # pylint: enable=line-too-long
                              criterion.actual_value,
-                             criterion.expected_value)
+                             criterion.expected_value_success)
 
         # Handle timeout separately
         # pylint: disable=line-too-long
-        self.logger.info("%33s | %30s | %8s | %12.2f | %12.2f ",
+        self.logger.info("%33s | %30s | %11s | %12.2f | %12.2f ",
                          "",
                          "Duration",
                          "SUCCESS" if self._data.scenario_duration_game < self._data.scenario.timeout else "FAILURE",
@@ -165,7 +167,7 @@ class ResultOutputProvider(object):
                 result_string += "  Actual:   {}\n".format(
                     criterion.actual_value)
                 result_string += "  Expected: {}\n".format(
-                    criterion.expected_value)
+                    criterion.expected_value_success)
                 result_string += "\n"
                 result_string += "  Exact Value: {} = {}\]\]></failure>\n".format(
                     criterion.name, criterion.actual_value)

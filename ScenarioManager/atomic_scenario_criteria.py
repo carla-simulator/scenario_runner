@@ -29,13 +29,21 @@ class Criterion(py_trees.behaviour.Behaviour):
 
     Important parameters (PUBLIC):
     - name: Name of the criterion
-    - expected_value: Result in case of success (e.g. max_speed, zero collisions, ...)
+    - expected_value_success:    Result in case of success
+                                 (e.g. max_speed, zero collisions, ...)
+    - expected_value_acceptable: Result that does not mean a failure,
+                                 but is not good enough for a success
     - actual_value: Actual result after running the scenario
     - test_status: Used to access the result of the criterion
     - optional: Indicates if a criterion is optional (not used for overall analysis)
     """
 
-    def __init__(self, name, vehicle, expected_value, optional=False):
+    def __init__(self,
+                 name,
+                 vehicle,
+                 expected_value_success,
+                 expected_value_acceptable=None,
+                 optional=False):
         super(Criterion, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._terminate_on_failure = False
@@ -43,7 +51,8 @@ class Criterion(py_trees.behaviour.Behaviour):
         self.name = name
         self.vehicle = vehicle
         self.test_status = "INIT"
-        self.expected_value = expected_value
+        self.expected_value_success = expected_value_success
+        self.expected_value_acceptable = expected_value_acceptable
         self.actual_value = 0
         self.optional = optional
 
@@ -65,12 +74,12 @@ class MaxVelocityTest(Criterion):
     This class contains an atomic test for maximum velocity.
     """
 
-    def __init__(self, vehicle, max_velocity_allowed, name="CheckMaximumVelocity"):
+    def __init__(self, vehicle, max_velocity_allowed, optional=False, name="CheckMaximumVelocity"):
         """
         Setup vehicle and maximum allowed velovity
         """
         super(MaxVelocityTest, self).__init__(
-            name, vehicle, max_velocity_allowed)
+            name, vehicle, max_velocity_allowed, None, optional)
 
     def update(self):
         """
@@ -85,7 +94,7 @@ class MaxVelocityTest(Criterion):
 
         self.actual_value = max(velocity, self.actual_value)
 
-        if velocity > self.expected_value:
+        if velocity > self.expected_value_success:
             self.test_status = "FAILURE"
         else:
             self.test_status = "SUCCESS"
@@ -105,11 +114,17 @@ class DrivenDistanceTest(Criterion):
     This class contains an atomic test to check the driven distance
     """
 
-    def __init__(self, vehicle, distance, name="CheckDrivenDistance"):
+    def __init__(self,
+                 vehicle,
+                 distance_success,
+                 distance_acceptable=None,
+                 optional=False,
+                 name="CheckDrivenDistance"):
         """
         Setup vehicle
         """
-        super(DrivenDistanceTest, self).__init__(name, vehicle, distance)
+        super(DrivenDistanceTest, self).__init__(
+            name, vehicle, distance_success, distance_acceptable, optional)
         self._last_location = None
 
     def initialise(self):
@@ -137,8 +152,11 @@ class DrivenDistanceTest(Criterion):
         self.actual_value += location.distance(self._last_location)
         self._last_location = location
 
-        if self.actual_value > self.expected_value:
+        if self.actual_value > self.expected_value_success:
             self.test_status = "SUCCESS"
+        elif (self.expected_value_acceptable is not None and
+              self.actual_value > self.expected_value_acceptable):
+            self.test_status = "ACCEPTABLE"
         else:
             self.test_status = "RUNNING"
 
@@ -157,11 +175,19 @@ class AverageVelocityTest(Criterion):
     This class contains an atomic test for average velocity.
     """
 
-    def __init__(self, vehicle, avg_velocity, name="CheckAverageVelocity"):
+    def __init__(self,
+                 vehicle,
+                 avg_velocity_success,
+                 avg_velocity_acceptable=None,
+                 optional=False,
+                 name="CheckAverageVelocity"):
         """
         Setup vehicle and average velovity expected
         """
-        super(AverageVelocityTest, self).__init__(name, vehicle, avg_velocity)
+        super(AverageVelocityTest, self).__init__(name, vehicle,
+                                                  avg_velocity_success,
+                                                  avg_velocity_acceptable,
+                                                  optional)
         self._last_location = None
         self._distance = 0.0
 
@@ -194,8 +220,11 @@ class AverageVelocityTest(Criterion):
         if elapsed_time > 0.0:
             self.actual_value = self._distance / elapsed_time
 
-        if self.actual_value > self.expected_value:
+        if self.actual_value > self.expected_value_success:
             self.test_status = "SUCCESS"
+        elif (self.expected_value_acceptable is not None and
+              self.actual_value > self.expected_value_acceptable):
+            self.test_status = "ACCEPTABLE"
         else:
             self.test_status = "RUNNING"
 
@@ -214,11 +243,11 @@ class CollisionTest(Criterion):
     This class contains an atomic test for collisions.
     """
 
-    def __init__(self, vehicle, name="CheckCollisions"):
+    def __init__(self, vehicle, optional=False, name="CheckCollisions"):
         """
         Construction with sensor setup
         """
-        super(CollisionTest, self).__init__(name, vehicle, 0)
+        super(CollisionTest, self).__init__(name, vehicle, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         world = self.vehicle.get_world()
@@ -273,11 +302,11 @@ class KeepLaneTest(Criterion):
     This class contains an atomic test for keeping lane.
     """
 
-    def __init__(self, vehicle, name="CheckKeepLane"):
+    def __init__(self, vehicle, optional=False, name="CheckKeepLane"):
         """
         Construction with sensor setup
         """
-        super(KeepLaneTest, self).__init__(name, vehicle, 0)
+        super(KeepLaneTest, self).__init__(name, vehicle, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         world = self.vehicle.get_world()
