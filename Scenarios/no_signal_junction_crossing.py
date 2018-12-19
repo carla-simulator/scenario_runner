@@ -120,7 +120,6 @@ class NoSignalJunctionCrossing(BasicScenario):
         )
 
         root_timeout = TimeOut(self.timeout)
-        scenario_sequence_timeout = TimeOut(self.timeout)
 
         # Creating non-leaf nodes
         root = py_trees.composites.Parallel(
