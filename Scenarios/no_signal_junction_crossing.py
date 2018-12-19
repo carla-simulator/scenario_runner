@@ -11,9 +11,6 @@ The hero vehicle is passing through a junction without traffic lights
 And encounters another vehicle passing across the junction.
 """
 
-import random
-import sys
-
 import py_trees
 import carla
 
@@ -30,6 +27,8 @@ class NoSignalJunctionCrossing(BasicScenario):
     Implementation class for
     'Non-signalized junctions: crossing negotiation' scenario,
     Traffic Scenario 10.
+
+    Location    :   Town03
     """
 
     # ego vehicle parameters
@@ -61,6 +60,8 @@ class NoSignalJunctionCrossing(BasicScenario):
             self._ego_vehicle_start, hero=True)
         super(NoSignalJunctionCrossing, self).__init__(
             name="NoSignalJunctionCrossing",
+            town="Town03",
+            world=world,
             debug_mode=debug_mode)
 
         # Setup scenario
@@ -68,12 +69,12 @@ class NoSignalJunctionCrossing(BasicScenario):
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-        behavior = self.create_behavior()
-        criteria = self.create_test_criteria()
+        behavior = self._create_behavior()
+        criteria = self._create_test_criteria()
         self.scenario = Scenario(
             behavior, criteria, self.name, self.timeout)
 
-    def create_behavior(self):
+    def _create_behavior(self):
         """
         After invoking this scenario, it will wait for the user
         controlled vehicle to enter the start region,
@@ -145,7 +146,7 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         return root
 
-    def create_test_criteria(self):
+    def _create_test_criteria(self):
         """
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
