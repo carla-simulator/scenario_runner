@@ -39,9 +39,9 @@ class ControlLoss(BasicScenario):
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=60, y=109.5, z=2.0), carla.Rotation(yaw=0))
     _no_of_jitter_actions = 20
-    _ego_vehicle_driven_distance = 35
     _noise_mean = 0     # Mean value of steering noise
-    _noise_std = 0.3    # Std. deviation of steerning noise
+    _noise_std = 0.02    # Std. deviation of steerning noise
+    _dynamic_mean = 0.05
 
     def __init__(self, world, debug_mode=False):
         """
@@ -53,8 +53,11 @@ class ControlLoss(BasicScenario):
                                          self._ego_vehicle_start,
                                          hero=True)
 
-        super(ControlLoss, self).__init__(name="ControlLoss",
-                                          debug_mode=debug_mode)
+        super(ControlLoss, self).__init__(
+            name="ControlLoss",
+            town="Town02",
+            world=world,
+            debug_mode=debug_mode)
 
     def _create_behavior(self):
         """
@@ -66,15 +69,20 @@ class ControlLoss(BasicScenario):
         """
 
         # start condition
-        startcondition = InTriggerRegion(self.ego_vehicle, 75, 80, 100, 110)
+        start_condition = InTriggerRegion(self.ego_vehicle, 75, 80, 100, 110)
 
         # jitter sequence
-        jitterSequence = py_trees.composites.Sequence(
+        jitter_sequence = py_trees.composites.Sequence(
             "Jitter Sequence Behavior")
-        jitterTimeout = TimeOut(timeout=0.2, name="Timeout for next jitter")
+        jitter_timeout = TimeOut(timeout=0.2, name="Timeout for next jitter")
 
         for i in range(self._no_of_jitter_actions):
-            ego_vehicle_max_steer = random.gauss(self._noise_mean, self._noise_std)
+            ego_vehicle_max_steer = random.gauss(
+                self._noise_mean, self._noise_std)
+            if ego_vehicle_max_steer > 0:
+                ego_vehicle_max_steer += self._dynamic_mean
+            elif ego_vehicle_max_steer < 0:
+                ego_vehicle_max_steer -= self._dynamic_mean
 
             # turn vehicle
             turn = SteerVehicle(
@@ -82,25 +90,25 @@ class ControlLoss(BasicScenario):
                 ego_vehicle_max_steer,
                 name='Steering ' + str(i))
 
-            jitterAction = py_trees.composites.Parallel(
+            jitter_action = py_trees.composites.Parallel(
                 "Jitter Actions with Timeouts",
                 policy=py_trees.common.
                 ParallelPolicy.SUCCESS_ON_ALL)
-            jitterAction.add_child(turn)
-            jitterAction.add_child(jitterTimeout)
-            jitterSequence.add_child(jitterAction)
+            jitter_action.add_child(turn)
+            jitter_action.add_child(jitter_timeout)
+            jitter_sequence.add_child(jitter_action)
 
         target_location = carla.Location(x=150, y=112, z=2.0)
 
         # endcondition
-        endcondition = InTriggerDistanceToLocation(self.ego_vehicle, target_location, 10,
-                                                   "InDistanceLocation")
+        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, target_location, 10,
+                                                    "InDistanceLocation")
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        sequence.add_child(startcondition)
-        sequence.add_child(jitterSequence)
-        sequence.add_child(endcondition)
+        sequence.add_child(start_condition)
+        sequence.add_child(jitter_sequence)
+        sequence.add_child(end_condition)
         return sequence
 
     def _create_test_criteria(self):
@@ -114,8 +122,8 @@ class ControlLoss(BasicScenario):
         # Region check to verify if the vehicle reached correct lane
         reached_region_criterion = ReachedRegionTest(
             self.ego_vehicle,
-            115, 120,
-            109, 112)
+            125, 130,
+            107, 111)
 
         criteria.append(collision_criterion)
         criteria.append(reached_region_criterion)
