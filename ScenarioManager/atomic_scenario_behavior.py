@@ -331,6 +331,8 @@ class AccelerateToVelocity(AtomicBehavior):
         self._throttle_value = throttle_value
         self._target_velocity = target_velocity
 
+        self._control.steering = 0
+
     def update(self):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
@@ -374,6 +376,8 @@ class KeepVelocity(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._vehicle = vehicle
         self._target_velocity = target_velocity
+
+        self._control.steering = 0
 
     def update(self):
         """
@@ -496,6 +500,8 @@ class StopVehicle(AtomicBehavior):
         self._vehicle = vehicle
         self._brake_value = brake_value
 
+        self._control.steering = 0
+
     def update(self):
         """
         Set brake to brake_value until reaching full stop
@@ -579,6 +585,8 @@ class SyncArrival(AtomicBehavior):
         self._vehicle_reference = vehicle_reference
         self._target_location = target_location
         self._gain = gain
+
+        self._control.steering = 0
 
     def update(self):
         """
