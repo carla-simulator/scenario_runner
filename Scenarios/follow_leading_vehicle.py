@@ -43,9 +43,10 @@ class FollowLeadingVehicle(BasicScenario):
     _ego_vehicle_start_x = 107
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
-    _ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
-    _ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
-    _ego_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
+    _ego_max_velocity_allowed = 20        # Maximum allowed velocity [m/s]
+    _ego_acceptable_driven_distance = 50  # The vehicle has to drive at least this distance [m]
+    _ego_avg_velocity_expected = 4        # Average expected velocity [m/s]
+    _ego_distance_to_other = 50           # Min. driven distance of ego vehicle [m]
 
     # other vehicle
     _other_vehicle_model = 'vehicle.*'
@@ -151,9 +152,10 @@ class FollowLeadingVehicle(BasicScenario):
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
-            self._ego_distance_to_other + self._other_vehicle_distance - 10)
+            self._ego_distance_to_other + self._other_vehicle_distance - 10,
+            distance_acceptable=self._ego_acceptable_driven_distance)
         avg_velocity_criterion = AverageVelocityTest(
-            self.ego_vehicle, self._ego_avg_velocity_expected)
+            self.ego_vehicle, self._ego_avg_velocity_expected, optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
