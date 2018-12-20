@@ -55,7 +55,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
     _other_vehicle_distance = 30             # Distance the other vehicle should drive
 
-    _traffic_light_location = carla.Location(x=-9.6, y=-149.0, z=0.15)
+    _traffic_light_location = carla.Location(x=-11.5, y=-125.0, z=0.15)
     _traffic_light = None
     _location_of_collision = carla.Location(x=0, y=-135, z=1)
 
@@ -77,7 +77,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                 self._traffic_light = actor
 
         if self._traffic_light is None:
-            print("No traffic light with the given ID found")
+            print("No traffic light for the given location found")
             sys.exit(-1)
 
         super(OppositeVehicleRunningRedLight, self).__init__(
