@@ -55,7 +55,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
     _other_vehicle_distance = 30             # Distance the other vehicle should drive
 
-    _traffic_light_id = 56
+    _traffic_light_location = carla.Location(x=-9.6, y=-149.0, z=0.15)
     _traffic_light = None
     _location_of_collision = carla.Location(x=0, y=-135, z=1)
 
@@ -73,7 +73,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                                          hero=True)
 
         for actor in world.get_actors().filter('traffic.traffic_light'):
-            if actor.id == self._traffic_light_id:
+            if actor.get_location().distance(self._traffic_light_location) < 1.0:
                 self._traffic_light = actor
 
         if self._traffic_light is None:

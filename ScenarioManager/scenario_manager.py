@@ -229,9 +229,13 @@ class ScenarioManager(object):
         timeout = False
         result = "SUCCESS"
         for criterion in self.scenario.test_criteria:
-            if criterion.test_status != "SUCCESS":
+            if (not criterion.optional and
+                    criterion.test_status != "SUCCESS" and
+                    criterion.test_status != "ACCEPTABLE"):
                 failure = True
                 result = "FAILURE"
+            elif criterion.test_status == "ACCEPTABLE":
+                result = "ACCEPTABLE"
 
         if self.scenario.timeout_node.timeout and not failure:
             timeout = True
