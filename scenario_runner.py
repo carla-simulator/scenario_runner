@@ -23,6 +23,7 @@ from Scenarios.follow_leading_vehicle import *
 from Scenarios.opposite_vehicle_taking_priority import *
 from Scenarios.object_crash_vehicle import *
 from Scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
+from Scenarios.object_crash_intersection import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
@@ -37,7 +38,9 @@ SCENARIOS = {
     "StationaryObjectCrossing",
     "DynamicObjectCrossing",
     "OppositeVehicleRunningRedLight",
-    "NoSignalJunctionCrossing"
+    "NoSignalJunctionCrossing",
+    "VehicleTurningRight",
+    "VehicleTurningLeft"
 }
 
 
