@@ -46,3 +46,10 @@ This is similar to 'StationaryObjectCrossing', but with the difference that the
 cyclist is dynamic. It suddenly drives into the way of the ego vehicle, which
 has to stop accordingly. After some time, the cyclist will clear the road, such
 that the ego vehicle can continue driving.
+
+### NoSignalJunctionCrossing
+This scenario tests negotiation between two vehicles crossing cross each other
+through a junction without signal.
+The ego vehicle is passing through a junction without traffic lights
+And encounters another vehicle passing across the junction. The ego vehicle has
+to avoid collision and navigate accross the junction to succeed.
