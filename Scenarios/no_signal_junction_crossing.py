@@ -98,7 +98,7 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         pass_through_trigger = InTriggerRegion(
             self.ego_vehicle,
-            -80, -70,
+            -90, -70,
             -124, -119)
 
         keep_velocity_other = KeepVelocity(
@@ -116,7 +116,7 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         end_condition = InTriggerRegion(
             self.ego_vehicle,
-            -80, -70,
+            -90, -70,
             -170, -156
         )
 

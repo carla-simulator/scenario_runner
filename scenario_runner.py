@@ -22,6 +22,7 @@ import carla
 from Scenarios.follow_leading_vehicle import *
 from Scenarios.opposite_vehicle_taking_priority import *
 from Scenarios.object_crash_vehicle import *
+from Scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
@@ -35,7 +36,8 @@ SCENARIOS = {
     "FollowLeadingVehicleWithObstacle",
     "StationaryObjectCrossing",
     "DynamicObjectCrossing",
-    "OppositeVehicleRunningRedLight"
+    "OppositeVehicleRunningRedLight",
+    "NoSignalJunctionCrossing"
 }
 
 
