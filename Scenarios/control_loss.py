@@ -29,7 +29,7 @@ class ControlLoss(BasicScenario):
     """
     Implementation of "Control Loss Vehicle" (Traffic Scenario 01)
 
-    Location : Town02
+    Location : Town03
     """
 
     timeout = 60            # Timeout of scenario in seconds
@@ -37,7 +37,7 @@ class ControlLoss(BasicScenario):
     # ego vehicle parameters
     _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
     _ego_vehicle_start = carla.Transform(
-        carla.Location(x=60, y=109.5, z=2.0), carla.Rotation(yaw=0))
+        carla.Location(x=15, y=207.2, z=2.0), carla.Rotation(yaw=0))
     _no_of_jitter_actions = 20
     _noise_mean = 0     # Mean value of steering noise
     _noise_std = 0.02    # Std. deviation of steerning noise
@@ -55,7 +55,7 @@ class ControlLoss(BasicScenario):
 
         super(ControlLoss, self).__init__(
             name="ControlLoss",
-            town="Town02",
+            town="Town03",
             world=world,
             debug_mode=debug_mode)
 
@@ -69,7 +69,7 @@ class ControlLoss(BasicScenario):
         """
 
         # start condition
-        start_condition = InTriggerRegion(self.ego_vehicle, 75, 80, 100, 110)
+        start_condition = InTriggerRegion(self.ego_vehicle, 43, 49, 190, 210)
 
         # jitter sequence
         jitter_sequence = py_trees.composites.Sequence(
@@ -98,11 +98,8 @@ class ControlLoss(BasicScenario):
             jitter_action.add_child(jitter_timeout)
             jitter_sequence.add_child(jitter_action)
 
-        target_location = carla.Location(x=150, y=112, z=2.0)
-
         # endcondition
-        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, target_location, 10,
-                                                    "InDistanceLocation")
+        end_condition = InTriggerRegion(self.ego_vehicle, 145, 150, 190, 210)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
@@ -122,8 +119,8 @@ class ControlLoss(BasicScenario):
         # Region check to verify if the vehicle reached correct lane
         reached_region_criterion = ReachedRegionTest(
             self.ego_vehicle,
-            125, 130,
-            107, 111)
+            113, 119,
+            204.2, 210.2)
 
         criteria.append(collision_criterion)
         criteria.append(reached_region_criterion)
