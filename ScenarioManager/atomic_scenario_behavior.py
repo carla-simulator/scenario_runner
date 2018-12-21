@@ -201,14 +201,9 @@ class TriggerVelocity(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-<<<<<<< 211b9fbc35138cf2a3f18736fb53036ed40447f0
         delta_velocity = CarlaDataProvider.get_velocity(
             self._vehicle) - self._target_velocity
         if delta_velocity < EPSILON:
-=======
-        if (CarlaDataProvider.get_velocity(
-                self.vehicle) - self.target_velocity) < EPSILON:
->>>>>>> * Added new scenario in control_loss.py
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" %
