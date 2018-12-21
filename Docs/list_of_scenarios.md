@@ -63,3 +63,8 @@ through a junction without signal.
 The ego vehicle is passing through a junction without traffic lights
 And encounters another vehicle passing across the junction. The ego vehicle has
 to avoid collision and navigate accross the junction to succeed.
+
+### ControlLoss
+In this scenario control loss of a vehicle is tested due to bad road conditions, etc
+and it checks whether the vehicle is regained its control and corrected its course.
+
