@@ -100,7 +100,8 @@ def main(args):
             if args.junit is not None:
                 junit_filename = args.junit.split(".")[0] + "_{}.xml".format(i)
 
-            if not manager.analyze_scenario(args.output, args.filename, junit_filename):
+            if not manager.analyze_scenario(
+                    args.output, args.filename, junit_filename):
                 print("Success!")
             else:
                 print("Failure!")
@@ -113,6 +114,7 @@ def main(args):
             del manager
         if world is not None:
             del world
+
 
 if __name__ == '__main__':
 

@@ -37,15 +37,15 @@ class VehicleTurningRight(BasicScenario):
         carla.Rotation(yaw=180))
     _ego_vehicle_velocity_allowed = 30
     _ego_driven_distance = 55
-    _ego_acceptable_distance =30 
+    _ego_acceptable_distance = 35
 
     # other vehicle parameters
     _other_vehicle_model = 'vehicle.diamondback.century'
     _other_vehicle_start = carla.Transform(
-        carla.Location(x=95.5, y=30, z=38.5),
+        carla.Location(x=95.5, y=42, z=38.5),
         carla.Rotation(yaw=180))
     _other_vehicle_target_velocity = 10
-    _trigger_distance_from_ego = 19
+    _trigger_distance_from_ego = 14
     _other_vehicle_max_throttle = 1.0
     _other_vehicle_max_brake = 1.0
 
@@ -88,7 +88,7 @@ class VehicleTurningRight(BasicScenario):
         trigger_other_vehicle = InTriggerRegion(
             self.other_vehicles[0],
             91, 93,
-            29.5, 31)
+            41, 43)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
@@ -99,7 +99,7 @@ class VehicleTurningRight(BasicScenario):
         trigger_other = InTriggerRegion(
             self.other_vehicles[0],
             85.5, 86.5,
-            29, 31)
+            41, 43)
         stop_other = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
