@@ -635,3 +635,33 @@ class SyncArrival(AtomicBehavior):
         self._control.brake = 0.0
         self._vehicle.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
+
+class SteerVehicle(AtomicBehavior):
+
+    """
+    This class contains an atomic steer behavior.
+    To set the steer value of the vehicle.
+    """
+
+    def __init__(self, vehicle, steer_value, name="Steering"):
+        """
+        Setup vehicle and maximum steer value
+        """
+        super(SteerVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._steer_value = steer_value
+
+    def update(self):
+        """
+        Set steer to steer_value until reaching full stop
+        """
+        self._control.steer = self._steer_value
+        new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        self._vehicle.apply_control(self._control)
+
+        return new_status
