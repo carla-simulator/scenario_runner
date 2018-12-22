@@ -1,7 +1,7 @@
 # Getting Started Tutorial
 
 !!! important
-    This tutorial refers to the latest versions of CARLA (at least commit bc5a3ed)
+    This tutorial refers to the latest versions of CARLA (at least 0.9.2)
 
 Welcome to the ScenarioRunner for CARLA! This tutorial provides the basic steps
 for getting started using the ScenarioRunner for CARLA.
