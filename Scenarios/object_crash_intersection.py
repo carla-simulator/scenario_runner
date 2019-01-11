@@ -49,6 +49,8 @@ class VehicleTurningRight(BasicScenario):
     _other_vehicle_max_throttle = 1.0
     _other_vehicle_max_brake = 1.0
 
+    _location_of_collision = carla.Location(x=93.1, y=44.8, z=39)
+
     def __init__(self, world, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
@@ -103,30 +105,34 @@ class VehicleTurningRight(BasicScenario):
         stop_other = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
-        timeout_other = TimeOut(20)
-        root_timeout = TimeOut(self.timeout)
+        timeout_other = TimeOut(3)
+        sync_arrival = SyncArrival(
+            self.other_vehicles[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_vehicles[0],
+                                                       self.ego_vehicle,
+                                                       6)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
-        keep_velocity_other_vehicle = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        sync_arrival_parallel = py_trees.composites.Parallel(
+            "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building the tress
         root.add_child(scenario_sequence)
-        root.add_child(root_timeout)
         scenario_sequence.add_child(trigger_distance)
-        scenario_sequence.add_child(keep_velocity_other_vehicle)
+        scenario_sequence.add_child(sync_arrival_parallel)
         scenario_sequence.add_child(stop_other_vehicle)
         scenario_sequence.add_child(timeout_other_vehicle)
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(stop_other)
         scenario_sequence.add_child(timeout_other)
-        keep_velocity_other_vehicle.add_child(start_other_vehicle)
-        keep_velocity_other_vehicle.add_child(trigger_other_vehicle)
+        sync_arrival_parallel.add_child(sync_arrival)
+        sync_arrival_parallel.add_child(sync_arrival_stop)
         keep_velocity_other.add_child(start_other)
         keep_velocity_other.add_child(trigger_other)
 
@@ -182,9 +188,11 @@ class VehicleTurningLeft(BasicScenario):
         carla.Location(x=85, y=78.8, z=38.5),
         carla.Rotation(yaw=0))
     _other_vehicle_target_velocity = 10
-    _trigger_distance_from_ego = 18
+    _trigger_distance_from_ego = 23
     _other_vehicle_max_throttle = 1.0
     _other_vehicle_max_brake = 1.0
+
+    _location_of_collision = carla.Location(x=88.6, y=75.8, z=38)
 
     def __init__(self, world, debug_mode=False):
         """
@@ -219,13 +227,6 @@ class VehicleTurningLeft(BasicScenario):
             self.other_vehicles[0],
             self.ego_vehicle,
             self._trigger_distance_from_ego)
-        start_other_vehicle = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
-        trigger_other_vehicle = InTriggerRegion(
-            self.other_vehicles[0],
-            87.5, 89,
-            78, 79)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
@@ -240,30 +241,36 @@ class VehicleTurningLeft(BasicScenario):
         stop_other = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
-        timeout_other = TimeOut(20)
-        root_timeout = TimeOut(self.timeout)
+        timeout_other = TimeOut(3)
+
+        sync_arrival = SyncArrival(
+            self.other_vehicles[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_vehicles[0],
+                                                       self.ego_vehicle,
+                                                       6)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
-        keep_velocity_other_vehicle = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
+        sync_arrival_parallel = py_trees.composites.Parallel(
+            "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building the tress
         root.add_child(scenario_sequence)
-        root.add_child(root_timeout)
         scenario_sequence.add_child(trigger_distance)
-        scenario_sequence.add_child(keep_velocity_other_vehicle)
+        scenario_sequence.add_child(sync_arrival_parallel)
         scenario_sequence.add_child(stop_other_vehicle)
         scenario_sequence.add_child(timeout_other_vehicle)
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(stop_other)
         scenario_sequence.add_child(timeout_other)
-        keep_velocity_other_vehicle.add_child(start_other_vehicle)
-        keep_velocity_other_vehicle.add_child(trigger_other_vehicle)
+        sync_arrival_parallel.add_child(sync_arrival)
+        sync_arrival_parallel.add_child(sync_arrival_stop)
         keep_velocity_other.add_child(start_other)
         keep_velocity_other.add_child(trigger_other)
 
