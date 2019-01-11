@@ -19,6 +19,7 @@ from Scenarios.basic_scenario import *
 
 
 class VehicleTurningRight(BasicScenario):
+
     """
     This class holds everything required for a simple object crash
     with prior vehicle action involving a vehicle and a cyclist.
@@ -84,13 +85,6 @@ class VehicleTurningRight(BasicScenario):
             self.other_vehicles[0],
             self.ego_vehicle,
             self._trigger_distance_from_ego)
-        start_other_vehicle = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
-        trigger_other_vehicle = InTriggerRegion(
-            self.other_vehicles[0],
-            91, 93,
-            41, 43)
         stop_other_vehicle = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
@@ -162,6 +156,7 @@ class VehicleTurningRight(BasicScenario):
 
 
 class VehicleTurningLeft(BasicScenario):
+
     """
     This class holds everything required for a simple object crash
     with prior vehicle action involving a vehicle and a cyclist.

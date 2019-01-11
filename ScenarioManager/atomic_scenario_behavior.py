@@ -636,6 +636,7 @@ class SyncArrival(AtomicBehavior):
         self._vehicle.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
 
+
 class SteerVehicle(AtomicBehavior):
 
     """
