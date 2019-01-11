@@ -32,7 +32,7 @@ class NoSignalJunctionCrossing(BasicScenario):
     """
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=-74.32, y=-50, z=0.5), carla.Rotation(yaw=270))
     _ego_vehicle_max_velocity = 20

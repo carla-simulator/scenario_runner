@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018 Intel Labs.
+# Copyright (c) 2018-2019 Intel Labs.
 # authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
@@ -36,7 +36,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     timeout = 180            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=-2.8, y=-184, z=1), carla.Rotation(yaw=90))
     _ego_max_velocity_allowed = 20       # Maximum allowed velocity [m/s]
@@ -158,7 +158,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self._ego_max_velocity_allowed)
+            self._ego_max_velocity_allowed,
+            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,

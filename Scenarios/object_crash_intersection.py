@@ -31,7 +31,7 @@ class VehicleTurningRight(BasicScenario):
     timeout = 90
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.nissan.micra'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=130, y=55, z=38.5),
         carla.Rotation(yaw=180))
@@ -168,7 +168,7 @@ class VehicleTurningLeft(BasicScenario):
     timeout = 90
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.nissan.micra'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=130, y=55, z=38.5),
         carla.Rotation(yaw=180))
