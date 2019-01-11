@@ -185,7 +185,6 @@ class DynamicObjectCrossing(BasicScenario):
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
         timeout_other_vehicle = TimeOut(3)
-        root_timeout = TimeOut(self.timeout)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -198,7 +197,6 @@ class DynamicObjectCrossing(BasicScenario):
 
         # building tree
         root.add_child(scenario_sequence)
-        root.add_child(root_timeout)
         scenario_sequence.add_child(trigger_dist)
         scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other_vehicle)

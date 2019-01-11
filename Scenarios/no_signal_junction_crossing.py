@@ -64,16 +64,6 @@ class NoSignalJunctionCrossing(BasicScenario):
             world=world,
             debug_mode=debug_mode)
 
-        # Setup scenario
-
-        if debug_mode:
-            py_trees.logging.level = py_trees.logging.Level.DEBUG
-
-        behavior = self._create_behavior()
-        criteria = self._create_test_criteria()
-        self.scenario = Scenario(
-            behavior, criteria, self.name, self.timeout)
-
     def _create_behavior(self):
         """
         After invoking this scenario, it will wait for the user
@@ -120,8 +110,6 @@ class NoSignalJunctionCrossing(BasicScenario):
             -170, -156
         )
 
-        root_timeout = TimeOut(self.timeout)
-
         # Creating non-leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -133,7 +121,6 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         # Building tree
         root.add_child(scenario_sequence)
-        root.add_child(root_timeout)
         scenario_sequence.add_child(start_other_trigger)
         scenario_sequence.add_child(sync_arrival_parallel)
         scenario_sequence.add_child(keep_velocity_other_parallel)
