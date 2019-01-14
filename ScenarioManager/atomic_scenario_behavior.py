@@ -14,6 +14,11 @@ etc.
 The atomic behaviors are implemented with py_trees.
 """
 
+import sys
+sys.path.append('/home/praveen/workspace/carla/PythonAPI/agents/navigation/')
+sys.path.append('/home/praveen/workspace/carla/PythonAPI/')
+
+import numpy as np
 import py_trees
 
 import carla
@@ -21,6 +26,7 @@ from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
 
 from ScenarioManager.carla_data_provider import CarlaDataProvider
+from controller import VehiclePIDController
 
 EPSILON = 0.001
 
@@ -758,3 +764,124 @@ class BasicAgentBehavior(AtomicBehavior):
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
         super(BasicAgentBehavior, self).terminate(new_status)
+
+
+class HandBrakeVehicle(AtomicBehavior):
+
+    """
+    This class contains an atomic brake behavior.
+    To set the brake value of the vehicle.
+    """
+
+    def __init__(self, vehicle, hand_brake_value, name="Braking"):
+        """
+        Setup vehicle control and brake value
+        """
+        super(HandBrakeVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._hand_brake_value = hand_brake_value
+
+    def update(self):
+        """
+        Set steer to steer_value until reaching full stop
+        """
+        self._control.hand_brake = self._hand_brake_value
+        new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        self._vehicle.apply_control(self._control)
+
+        return new_status
+
+
+class TurnVehicle(AtomicBehavior):
+    """
+    This atomic behaviour performs either a right or left turn
+    at the next junction
+    """
+
+    def __init__(self, vehicle, turn, name="TurnVehicle"):
+        super(TurnVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._turn = -1 if turn > 0 else 1
+        self._wp_list = []
+        current_waypoint = CarlaDataProvider.get_waypoint(self._vehicle, carla)
+        end_condition = False
+        wp = current_waypoint
+        reached_junction = False
+        while not end_condition:
+            self._wp_list.append(wp)
+            wp = wp.next(0.5)
+            if len(self._wp_list) >= 2:
+                xm1 = self._wp_list[-2].transform.location.x
+                ym1 = self._wp_list[-2].transform.location.y
+                x0 = self._wp_list[-1].transform.location.x
+                y0 = self._wp_list[-1].transform.location.y
+                x1 = wp[0].transform.location.x
+                y1 = wp[0].transform.location.y
+
+                v0 = [x0-xm1, y0-ym1]
+                v1 = [x1-x0, y1-y0]
+
+                if not reached_junction and len(wp) > 1:
+                    reached_junction = True
+                    x2 = wp[1].transform.location.x
+                    y2 = wp[1].transform.location.y
+                    v2 = [x2-x0, y2-y0]
+
+                    if self._turn < 0:
+                        if np.cross(v0, v1) < 0:
+                            wp = wp[0]
+                        elif np.cross(v0, v2) < 0:
+                            wp = wp[1]
+                    else:
+                        if np.cross(v0, v1) > 0:
+                            wp = wp[0]
+                        elif np.cross(v0, v2) > 0:
+                            wp = wp[1]
+
+                elif reached_junction:
+                    wp = wp[0]
+                    if np.linalg.norm(np.cross(v0, v1)) < 0.01745:
+                        break
+            else:
+                wp = wp[0]
+
+        self._dt = 1.0 / 20.0
+        self._target_speed = 20.0  # Km/h
+        args_lateral_dict = {
+            'K_P': 1.95,
+            'K_D': 0.01,
+            'K_I': 1.4,
+            'dt': self._dt}
+        args_longitudinal_dict = {
+            'K_P': 1.0,
+            'K_D': 0,
+            'K_I': 1,
+            'dt': self._dt}
+
+        self._vehicle_controller = VehiclePIDController(
+            self._vehicle,
+            args_lateral=args_lateral_dict,
+            args_longitudinal=args_longitudinal_dict)
+
+    def update(self):
+        """
+        Follow waypoints to a junction and choose path based on turn input
+        """
+
+        while not self._wp_list:
+            target_waypoint = self._wp_list.pop(0)
+            while CarlaDataProvider.get_location(
+                    self._vehicle).distance(
+                        target_waypoint.transform.location) > 0.5:
+                control = self._vehicle_controller.run_step(
+                    self._target_speed, target_waypoint)
+                self._vehicle.apply_control(control)
+
+        return py_trees.common.Status.SUCCESS

@@ -29,6 +29,7 @@ from Scenarios.no_signal_junction_crossing import *
 from Scenarios.object_crash_intersection import *
 from Scenarios.control_loss import *
 from Scenarios.config_parser import *
+from Scenarios.vehicle_turning_right_at_signal import VehicleTurningRightAtSignal
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
