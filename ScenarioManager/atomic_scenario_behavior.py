@@ -15,8 +15,6 @@ The atomic behaviors are implemented with py_trees.
 """
 
 import math
-import sys
-sys.path.append('/home/praveen/workspace/carla/PythonAPI/')
 
 import numpy as np
 import py_trees
@@ -26,8 +24,6 @@ from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
 
 from ScenarioManager.carla_data_provider import CarlaDataProvider
-from agents.navigation.controller import VehiclePIDController
-from agents.tools.misc import draw_waypoints
 
 EPSILON = 0.001
 
@@ -813,31 +809,20 @@ class TurnVehicle(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._vehicle = vehicle
         self._turn = turn
-        self._wp_list = []
         self._reached_junction = False
         self._previous_wp = None
         self.threshold = 0.08727 # 5 degree
-        self.next_wp = None
-
+        self._next_wp = None
         self._target_speed = 10.0  # Km/h
-        self._dt = 1.0 / self._target_speed
         self._sampling_radius = self._target_speed * 0.5 / 3.6
         self._minimum_distance = 0.9 * self._sampling_radius
-        args_lateral_dict = {
-            'K_P': 0.1,
-            'K_D': 0,
-            'K_I': 0,
-            'dt': self._dt}
-        args_longitudinal_dict = {
-            'K_P': 0.1,
-            'K_D': 0,
-            'K_I': 0,
-            'dt': self._dt}
 
-        self._vehicle_controller = VehiclePIDController(
-            self._vehicle,
-            args_lateral=args_lateral_dict,
-            args_longitudinal=args_longitudinal_dict)
+    def _vector(self, wp1, wp2):
+        x1 = wp1.transform.location.x
+        y1 = wp1.transform.location.y
+        x2 = wp2.transform.location.x
+        y2 = wp2.transform.location.y
+        return [x2-x1, y2-y1, 0]
 
     def update(self):
         """
@@ -845,53 +830,56 @@ class TurnVehicle(AtomicBehavior):
         """
 
         new_status = py_trees.common.Status.RUNNING
-        v0, v1 = None, None
-        current_wp = CarlaDataProvider.get_waypoint(
-            self._vehicle, carla)
-        if self.next_wp is None:
-            self.next_wp = current_wp.next(self._sampling_radius)[0]
-        elif self.next_wp.transform.location.distance(current_wp.transform.location) < self._minimum_distance:
-            print "Generating new waypoint"
-            wp_choice = self.next_wp.next(self._sampling_radius)
-            temp = self.next_wp
+        current_wp = CarlaDataProvider.get_waypoint(self._vehicle)
+        if self._next_wp is None:
+            self._next_wp = current_wp.next(self._sampling_radius)[0]
+        elif self._next_wp.transform.location.distance(current_wp.transform.location) < self._minimum_distance:
+            wp_choice = self._next_wp.next(self._sampling_radius)
+            temp = self._next_wp
+
             if self._previous_wp is not None:
-                xp = self._previous_wp.transform.location.x
-                yp = self._previous_wp.transform.location.y
-                x0 = self.next_wp.transform.location.x
-                y0 = self.next_wp.transform.location.y
-                x1 = wp_choice[0].transform.location.x
-                y1 = wp_choice[0].transform.location.y
-                v0 = [x0-xp, y0-xp, 0]
-                v1 = [x1-x0, y1-y0, 0]
+                v0 = self._vector(self._previous_wp, self._next_wp)
+                v1 = self._vector(self._next_wp, wp_choice[0])
                 cross1 = 1 if np.cross(v0, v1)[-1] > 0 else -1
                 if not self._reached_junction and len(wp_choice) > 1:
-                    print "Junction found"
                     self._reached_junction = True
-                    x2 = wp_choice[1].transform.location.x
-                    y2 = wp_choice[1].transform.location.y
-                    v2 = [x2-x0, y2-y0, 0]
+                    v2 = self._vector(self._next_wp, wp_choice[-1])
                     cross2 = 1 if np.cross(v0, v2)[-1] > 0 else -1
-                    if self._turn*cross1 > self._turn*cross2:
-                        self.next_wp = wp_choice[0]
+                    if self._turn*cross1 < self._turn*cross2:
+                        self._next_wp = wp_choice[0]
                     else:
-                        self.next_wp = wp_choice[1]
+                        self._next_wp = wp_choice[-1]
                 else:
-                    self.next_wp = wp_choice[0]
+                    self._next_wp = wp_choice[0]
+            else:
+                self._next_wp = wp_choice[0]
+
             self._previous_wp = temp
+
+        current_location = current_wp.transform.location
+        projected_location = current_location + \
+            carla.Location(x=math.cos(math.radians(current_wp.transform.rotation.yaw)), \
+                y=math.sin(math.radians(current_wp.transform.rotation.yaw)))
+        projected_wp = self._vehicle.get_world().get_map().get_waypoint(projected_location)
+
+        v_target = self._vector(current_wp, self._next_wp)
+        v_actual = self._vector(current_wp, projected_wp)
+
+        kS, kT = 1.5, 1
+        angle = math.acos(np.dot(v_target, v_actual)/(np.linalg.norm(v_target)*np.linalg.norm(v_actual)))
+        direction = 1 if np.cross(v_actual, v_target)[1] > 0 else -1
+        current_speed = CarlaDataProvider.get_velocity(self._vehicle)
+        speed_control = np.clip(kT*(self._target_speed - current_speed*3.6 )/self._target_speed, -1, 1)
+        if speed_control > 0:
+            self._control.throttle = speed_control
+            self._control.brake = 0
         else:
-            pass
+            self._control.brake = abs(speed_control)
+            self._control.throttle = 0
+        self._control.steer = np.clip(kS*(-1*direction*angle)*2/3.14, -1, 1)
+        self._vehicle.apply_control(self._control)
 
-        control = self._vehicle_controller.run_step(
-            self._target_speed, self.next_wp)
-        self._vehicle.apply_control(control)
-
-        if self._reached_junction and v0 is not None and v1 is not None:
-            angle = math.acos(
-                np.dot(v0, v1)/(np.linalg.norm(v0)*np.linalg.norm(v1)))
-            if angle < self.threshold:
-                print "Success"
-                new_status = py_trees.common.Status.SUCCESS
-
+        print self._control.steer, self._control.throttle, angle
 
         return new_status
 
