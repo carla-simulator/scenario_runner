@@ -14,8 +14,8 @@ etc.
 The atomic behaviors are implemented with py_trees.
 """
 
+import math
 import sys
-sys.path.append('/home/praveen/workspace/carla/PythonAPI/agents/navigation/')
 sys.path.append('/home/praveen/workspace/carla/PythonAPI/')
 
 import numpy as np
@@ -26,7 +26,8 @@ from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
 
 from ScenarioManager.carla_data_provider import CarlaDataProvider
-from controller import VehiclePIDController
+from agents.navigation.controller import VehiclePIDController
+from agents.tools.misc import draw_waypoints
 
 EPSILON = 0.001
 
@@ -804,65 +805,33 @@ class TurnVehicle(AtomicBehavior):
     """
 
     def __init__(self, vehicle, turn, name="TurnVehicle"):
+        """
+        write doc string
+        """
         super(TurnVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
         self._vehicle = vehicle
-        self._turn = -1 if turn > 0 else 1
+        self._turn = turn
         self._wp_list = []
-        current_waypoint = CarlaDataProvider.get_waypoint(self._vehicle, carla)
-        end_condition = False
-        wp = current_waypoint
-        reached_junction = False
-        while not end_condition:
-            self._wp_list.append(wp)
-            wp = wp.next(0.5)
-            if len(self._wp_list) >= 2:
-                xm1 = self._wp_list[-2].transform.location.x
-                ym1 = self._wp_list[-2].transform.location.y
-                x0 = self._wp_list[-1].transform.location.x
-                y0 = self._wp_list[-1].transform.location.y
-                x1 = wp[0].transform.location.x
-                y1 = wp[0].transform.location.y
+        self._reached_junction = False
+        self._previous_wp = None
+        self.threshold = 0.08727 # 5 degree
+        self.next_wp = None
 
-                v0 = [x0-xm1, y0-ym1]
-                v1 = [x1-x0, y1-y0]
-
-                if not reached_junction and len(wp) > 1:
-                    reached_junction = True
-                    x2 = wp[1].transform.location.x
-                    y2 = wp[1].transform.location.y
-                    v2 = [x2-x0, y2-y0]
-
-                    if self._turn < 0:
-                        if np.cross(v0, v1) < 0:
-                            wp = wp[0]
-                        elif np.cross(v0, v2) < 0:
-                            wp = wp[1]
-                    else:
-                        if np.cross(v0, v1) > 0:
-                            wp = wp[0]
-                        elif np.cross(v0, v2) > 0:
-                            wp = wp[1]
-
-                elif reached_junction:
-                    wp = wp[0]
-                    if np.linalg.norm(np.cross(v0, v1)) < 0.01745:
-                        break
-            else:
-                wp = wp[0]
-
-        self._dt = 1.0 / 20.0
-        self._target_speed = 20.0  # Km/h
+        self._target_speed = 10.0  # Km/h
+        self._dt = 1.0 / self._target_speed
+        self._sampling_radius = self._target_speed * 0.5 / 3.6
+        self._minimum_distance = 0.9 * self._sampling_radius
         args_lateral_dict = {
-            'K_P': 1.95,
-            'K_D': 0.01,
-            'K_I': 1.4,
+            'K_P': 0.1,
+            'K_D': 0,
+            'K_I': 0,
             'dt': self._dt}
         args_longitudinal_dict = {
-            'K_P': 1.0,
+            'K_P': 0.1,
             'K_D': 0,
-            'K_I': 1,
+            'K_I': 0,
             'dt': self._dt}
 
         self._vehicle_controller = VehiclePIDController(
@@ -875,13 +844,63 @@ class TurnVehicle(AtomicBehavior):
         Follow waypoints to a junction and choose path based on turn input
         """
 
-        while not self._wp_list:
-            target_waypoint = self._wp_list.pop(0)
-            while CarlaDataProvider.get_location(
-                    self._vehicle).distance(
-                        target_waypoint.transform.location) > 0.5:
-                control = self._vehicle_controller.run_step(
-                    self._target_speed, target_waypoint)
-                self._vehicle.apply_control(control)
+        new_status = py_trees.common.Status.RUNNING
+        v0, v1 = None, None
+        current_wp = CarlaDataProvider.get_waypoint(
+            self._vehicle, carla)
+        if self.next_wp is None:
+            self.next_wp = current_wp.next(self._sampling_radius)[0]
+        elif self.next_wp.transform.location.distance(current_wp.transform.location) < self._minimum_distance:
+            print "Generating new waypoint"
+            wp_choice = self.next_wp.next(self._sampling_radius)
+            temp = self.next_wp
+            if self._previous_wp is not None:
+                xp = self._previous_wp.transform.location.x
+                yp = self._previous_wp.transform.location.y
+                x0 = self.next_wp.transform.location.x
+                y0 = self.next_wp.transform.location.y
+                x1 = wp_choice[0].transform.location.x
+                y1 = wp_choice[0].transform.location.y
+                v0 = [x0-xp, y0-xp, 0]
+                v1 = [x1-x0, y1-y0, 0]
+                cross1 = 1 if np.cross(v0, v1)[-1] > 0 else -1
+                if not self._reached_junction and len(wp_choice) > 1:
+                    print "Junction found"
+                    self._reached_junction = True
+                    x2 = wp_choice[1].transform.location.x
+                    y2 = wp_choice[1].transform.location.y
+                    v2 = [x2-x0, y2-y0, 0]
+                    cross2 = 1 if np.cross(v0, v2)[-1] > 0 else -1
+                    if self._turn*cross1 > self._turn*cross2:
+                        self.next_wp = wp_choice[0]
+                    else:
+                        self.next_wp = wp_choice[1]
+                else:
+                    self.next_wp = wp_choice[0]
+            self._previous_wp = temp
+        else:
+            pass
 
-        return py_trees.common.Status.SUCCESS
+        control = self._vehicle_controller.run_step(
+            self._target_speed, self.next_wp)
+        self._vehicle.apply_control(control)
+
+        if self._reached_junction and v0 is not None and v1 is not None:
+            angle = math.acos(
+                np.dot(v0, v1)/(np.linalg.norm(v0)*np.linalg.norm(v1)))
+            if angle < self.threshold:
+                print "Success"
+                new_status = py_trees.common.Status.SUCCESS
+
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior, the throttle should be set back to 0.,
+        to avoid further acceleration.
+        """
+        self._control.throttle = 0.0
+        self._control.brake = 0.0
+        self._vehicle.apply_control(self._control)
+        super(TurnVehicle, self).terminate(new_status)
