@@ -806,23 +806,15 @@ class TurnVehicle(AtomicBehavior):
         """
         super(TurnVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._control = carla.VehicleControl()
         self._vehicle = vehicle
+        self._map = self._vehicle.get_world().get_map()
         self._turn = turn
         self._reached_junction = False
-        self._previous_wp = None
         self.threshold = 0.08727 # 5 degree
         self._next_wp = None
-        self._target_speed = 10.0  # Km/h
-        self._sampling_radius = self._target_speed * 0.5 / 3.6
+        self._target_speed = 30.0  # Km/h
+        self._sampling_radius = 0.25 * self._target_speed / 3.6
         self._minimum_distance = 0.9 * self._sampling_radius
-
-    def _vector(self, wp1, wp2):
-        x1 = wp1.transform.location.x
-        y1 = wp1.transform.location.y
-        x2 = wp2.transform.location.x
-        y2 = wp2.transform.location.y
-        return [x2-x1, y2-y1, 0]
 
     def update(self):
         """
@@ -830,65 +822,100 @@ class TurnVehicle(AtomicBehavior):
         """
 
         new_status = py_trees.common.Status.RUNNING
-        current_wp = CarlaDataProvider.get_waypoint(self._vehicle)
+
+        current_transform = self._vehicle.get_transform()
+        current_wp = self._map.get_waypoint(current_transform.location)
+        current_location = current_wp.transform.location
+        projected_location = current_location + \
+            carla.Location(
+                x=math.cos(math.radians(current_wp.transform.rotation.yaw)),
+                y=math.sin(math.radians(current_wp.transform.rotation.yaw)))
+        projected_wp = self._map.get_waypoint(projected_location)
+        v_actual = self._vector(current_wp, projected_wp)
+
         if self._next_wp is None:
             self._next_wp = current_wp.next(self._sampling_radius)[0]
-        elif self._next_wp.transform.location.distance(current_wp.transform.location) < self._minimum_distance:
-            wp_choice = self._next_wp.next(self._sampling_radius)
-            temp = self._next_wp
+        elif self._next_wp.transform.location.distance(
+                current_wp.transform.location) < self._minimum_distance:
 
-            if self._previous_wp is not None:
-                v0 = self._vector(self._previous_wp, self._next_wp)
-                v1 = self._vector(self._next_wp, wp_choice[0])
-                cross1 = 1 if np.cross(v0, v1)[-1] > 0 else -1
-                if not self._reached_junction and len(wp_choice) > 1:
-                    self._reached_junction = True
-                    v2 = self._vector(self._next_wp, wp_choice[-1])
-                    cross2 = 1 if np.cross(v0, v2)[-1] > 0 else -1
-                    if self._turn*cross1 < self._turn*cross2:
-                        self._next_wp = wp_choice[0]
-                    else:
-                        self._next_wp = wp_choice[-1]
-                else:
-                    self._next_wp = wp_choice[0]
+            # wp_choice = current_wp.next(self._sampling_radius)
+            wp_choice = self._next_wp.next(self._sampling_radius)
+            if not self._reached_junction and len(wp_choice) > 1:
+                self._reached_junction = True
+                for wp_select in wp_choice:
+                    v_select = self._vector(current_wp, wp_select)
+                    cross_select = 1 if np.cross(v_actual, v_select)[-1] > 0 else -1
+                    angle = math.acos(np.dot(v_actual, v_select)/\
+                        (np.linalg.norm(v_actual)*np.linalg.norm(v_select)))
+                    if angle > self.threshold and self._turn*cross_select > 0:
+                        self._next_wp = wp_select
             else:
                 self._next_wp = wp_choice[0]
 
-            self._previous_wp = temp
-
-        current_location = current_wp.transform.location
-        projected_location = current_location + \
-            carla.Location(x=math.cos(math.radians(current_wp.transform.rotation.yaw)), \
-                y=math.sin(math.radians(current_wp.transform.rotation.yaw)))
-        projected_wp = self._vehicle.get_world().get_map().get_waypoint(projected_location)
-
         v_target = self._vector(current_wp, self._next_wp)
-        v_actual = self._vector(current_wp, projected_wp)
+        speed_actual = self._vehicle.get_velocity()
+        speed_actual = np.linalg.norm([speed_actual.x, speed_actual.y, speed_actual.z])
+        control = self._controller(
+            0.8, 1,
+            self._vehicle.get_transform(), self._next_wp,
+            speed_actual, self._target_speed)
+        self._vehicle.apply_control(control)
 
-        kS, kT = 1.5, 1
-        angle = math.acos(np.dot(v_target, v_actual)/(np.linalg.norm(v_target)*np.linalg.norm(v_actual)))
-        direction = 1 if np.cross(v_actual, v_target)[1] > 0 else -1
-        current_speed = CarlaDataProvider.get_velocity(self._vehicle)
-        speed_control = np.clip(kT*(self._target_speed - current_speed*3.6 )/self._target_speed, -1, 1)
-        if speed_control > 0:
-            self._control.throttle = speed_control
-            self._control.brake = 0
-        else:
-            self._control.brake = abs(speed_control)
-            self._control.throttle = 0
-        self._control.steer = np.clip(kS*(-1*direction*angle)*2/3.14, -1, 1)
-        self._vehicle.apply_control(self._control)
-
-        print self._control.steer, self._control.throttle, angle
+        self._draw(current_wp, self._next_wp)
 
         return new_status
+
+    def _controller(self, k_s, k_t, vehicle_transform, waypoint, speed_actual, speed_target):
+
+        speed_control = np.clip(k_t*(speed_target - speed_actual*3.6)/speed_target, -1, 1)
+        control = carla.VehicleControl()
+        if speed_control > 0:
+            control.throttle = speed_control
+            control.brake = 0
+        else:
+            control.brake = abs(speed_control)
+            control.throttle = 0
+
+        v_begin = vehicle_transform.location
+        v_end = v_begin + carla.Location(x=math.cos(math.radians(vehicle_transform.rotation.yaw)),
+                                         y=math.sin(math.radians(vehicle_transform.rotation.yaw)))
+
+        v_vec = np.array([v_end.x - v_begin.x, v_end.y - v_begin.y, 0.0])
+        w_vec = np.array([waypoint.transform.location.x -
+                          v_begin.x, waypoint.transform.location.y -
+                          v_begin.y, 0.0])
+        _dot = math.acos(np.clip(np.dot(w_vec, v_vec) /\
+                (np.linalg.norm(w_vec) * np.linalg.norm(v_vec)), -1.0, 1.0))
+
+        _cross = np.cross(v_vec, w_vec)
+        if _cross[2] < 0:
+            _dot *= -1.0
+
+        control.steer = np.clip(k_s * _dot, -1.0, 1.0)
+
+        return control
+
+    def _vector(self, wp1, wp2):
+        x_1 = wp1.transform.location.x
+        y_1 = wp1.transform.location.y
+        x_2 = wp2.transform.location.x
+        y_2 = wp2.transform.location.y
+        return [x_2-x_1, y_2-y_1, 0]
+
+    def _draw(self, begin, end):
+        begin = begin.transform.location
+        end = end.transform.location
+        world = self._vehicle.get_world()
+        world.debug.draw_arrow(begin, end, arrow_size=0.3, life_time=1.0)
 
     def terminate(self, new_status):
         """
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-        self._control.throttle = 0.0
-        self._control.brake = 0.0
-        self._vehicle.apply_control(self._control)
+
+        control = carla.VehicleControl()
+        control.throttle = 0.0
+        control.brake = 0.0
+        self._vehicle.apply_control(control)
         super(TurnVehicle, self).terminate(new_status)

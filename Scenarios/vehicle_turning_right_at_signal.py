@@ -39,7 +39,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
     # other vehicle
     _other_vehicle_model = 'vehicle.tesla.model3'
     _other_vehicle_start = carla.Transform(
-        carla.Location(x=82.33, y=-160, z=10), carla.Rotation(yaw=90))
+        carla.Location(x=82.33, y=-180, z=3), carla.Rotation(yaw=90))
 
     def __init__(self, world, debug_mode=False):
         """
@@ -93,7 +93,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
             75, 85,
             -165, -150)
 
-        turn_right = TurnVehicle(self.other_vehicles[0], -1)
+        turn_right = TurnVehicle(self.other_vehicles[0], 1)
 
         end_condition = InTriggerRegion(
             self.ego_vehicle,
