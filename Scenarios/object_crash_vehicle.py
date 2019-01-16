@@ -33,7 +33,7 @@ class StationaryObjectCrossing(BasicScenario):
     timeout = 60
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start_x = 110
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=_ego_vehicle_start_x, y=129, z=1),
@@ -83,9 +83,10 @@ class StationaryObjectCrossing(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed)
+            self._ego_vehicle_velocity_allowed,
+            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
-        keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
+        keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
             self._ego_vehicle_distance_to_other)
@@ -112,7 +113,7 @@ class DynamicObjectCrossing(BasicScenario):
     timeout = 60
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start_x = 90
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=_ego_vehicle_start_x, y=129, z=1),
@@ -183,8 +184,7 @@ class DynamicObjectCrossing(BasicScenario):
         stop_vehicle = StopVehicle(
             self.other_vehicles[0],
             self._other_vehicle_max_brake)
-        timeout_other_vehicle = TimeOut(5)
-        root_timeout = TimeOut(self.timeout)
+        timeout_other_vehicle = TimeOut(3)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -197,7 +197,6 @@ class DynamicObjectCrossing(BasicScenario):
 
         # building tree
         root.add_child(scenario_sequence)
-        root.add_child(root_timeout)
         scenario_sequence.add_child(trigger_dist)
         scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other_vehicle)
@@ -221,9 +220,10 @@ class DynamicObjectCrossing(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed)
+            self._ego_vehicle_velocity_allowed,
+            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
-        keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
+        keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle, self._ego_vehicle_distance_driven)
 

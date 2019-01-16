@@ -35,7 +35,7 @@ class ControlLoss(BasicScenario):
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=15, y=207.2, z=2.0), carla.Rotation(yaw=0))
     _no_of_jitter_actions = 20

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018 Intel Labs.
+# Copyright (c) 2018-2019 Intel Labs.
 # authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
@@ -39,7 +39,7 @@ class FollowLeadingVehicle(BasicScenario):
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start_x = 107
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
@@ -147,7 +147,8 @@ class FollowLeadingVehicle(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self._ego_max_velocity_allowed)
+            self._ego_max_velocity_allowed,
+            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
@@ -183,7 +184,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start_x = 107
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
@@ -307,14 +308,15 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self._ego_max_velocity_allowed)
+            self._ego_max_velocity_allowed,
+            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
             self._ego_distance_to_other + self._other_vehicle_distance - 10)
         avg_velocity_criterion = AverageVelocityTest(
-            self.ego_vehicle, self._ego_avg_velocity_expected)
+            self.ego_vehicle, self._ego_avg_velocity_expected, optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)

@@ -16,8 +16,6 @@ import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.scenario_manager import Scenario
-from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
@@ -32,7 +30,7 @@ class NoSignalJunctionCrossing(BasicScenario):
     """
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
+    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
     _ego_vehicle_start = carla.Transform(
         carla.Location(x=-74.32, y=-50, z=0.5), carla.Rotation(yaw=270))
     _ego_vehicle_max_velocity = 20
@@ -63,16 +61,6 @@ class NoSignalJunctionCrossing(BasicScenario):
             town="Town03",
             world=world,
             debug_mode=debug_mode)
-
-        # Setup scenario
-
-        if debug_mode:
-            py_trees.logging.level = py_trees.logging.Level.DEBUG
-
-        behavior = self._create_behavior()
-        criteria = self._create_test_criteria()
-        self.scenario = Scenario(
-            behavior, criteria, self.name, self.timeout)
 
     def _create_behavior(self):
         """
@@ -120,8 +108,6 @@ class NoSignalJunctionCrossing(BasicScenario):
             -170, -156
         )
 
-        root_timeout = TimeOut(self.timeout)
-
         # Creating non-leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -133,7 +119,6 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         # Building tree
         root.add_child(scenario_sequence)
-        root.add_child(root_timeout)
         scenario_sequence.add_child(start_other_trigger)
         scenario_sequence.add_child(sync_arrival_parallel)
         scenario_sequence.add_child(keep_velocity_other_parallel)
