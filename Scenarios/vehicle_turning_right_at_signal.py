@@ -93,7 +93,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
             75, 85,
             -165, -150)
 
-        turn_right = TurnVehicle(self.other_vehicles[0], 1)
+        turn_right = TurnVehicle(self.other_vehicles[0], -1)
 
         end_condition = InTriggerRegion(
             self.ego_vehicle,

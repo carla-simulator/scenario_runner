@@ -823,41 +823,44 @@ class TurnVehicle(AtomicBehavior):
 
         new_status = py_trees.common.Status.RUNNING
 
+        #   Retrieve vehicle state
         current_transform = self._vehicle.get_transform()
-        current_wp = self._map.get_waypoint(current_transform.location)
-        current_location = current_wp.transform.location
+        current_location = current_transform.location
+        current_wp = self._map.get_waypoint(current_location)
         projected_location = current_location + \
             carla.Location(
-                x=math.cos(math.radians(current_wp.transform.rotation.yaw)),
-                y=math.sin(math.radians(current_wp.transform.rotation.yaw)))
-        projected_wp = self._map.get_waypoint(projected_location)
-        v_actual = self._vector(current_wp, projected_wp)
+                x=math.cos(math.radians(current_transform.rotation.yaw)),
+                y=math.sin(math.radians(current_transform.rotation.yaw)))
+        v_actual = self._vector(current_location, projected_location)
 
-        if self._next_wp is None:
+        #   Generate next waypoint
+        if self._next_wp is None:   #   First iteration
             self._next_wp = current_wp.next(self._sampling_radius)[0]
+        #   Get next waypoint when close to target waypoint
         elif self._next_wp.transform.location.distance(
-                current_wp.transform.location) < self._minimum_distance:
-
-            # wp_choice = current_wp.next(self._sampling_radius)
+                current_location) < self._minimum_distance:
             wp_choice = self._next_wp.next(self._sampling_radius)
+            #   Choose path at intersection
             if not self._reached_junction and len(wp_choice) > 1:
                 self._reached_junction = True
                 for wp_select in wp_choice:
-                    v_select = self._vector(current_wp, wp_select)
+                    v_select = self._vector(
+                        current_location, wp_select.transform.location)
                     cross_select = 1 if np.cross(v_actual, v_select)[-1] > 0 else -1
                     angle = math.acos(np.dot(v_actual, v_select)/\
                         (np.linalg.norm(v_actual)*np.linalg.norm(v_select)))
                     if angle > self.threshold and self._turn*cross_select > 0:
+                        print "Selected path"
                         self._next_wp = wp_select
             else:
                 self._next_wp = wp_choice[0]
 
-        v_target = self._vector(current_wp, self._next_wp)
+        v_target = self._vector(current_location, self._next_wp.transform.location)
         speed_actual = self._vehicle.get_velocity()
         speed_actual = np.linalg.norm([speed_actual.x, speed_actual.y, speed_actual.z])
         control = self._controller(
             0.8, 1,
-            self._vehicle.get_transform(), self._next_wp,
+            v_actual, v_target,
             speed_actual, self._target_speed)
         self._vehicle.apply_control(control)
 
@@ -865,9 +868,14 @@ class TurnVehicle(AtomicBehavior):
 
         return new_status
 
-    def _controller(self, k_s, k_t, vehicle_transform, waypoint, speed_actual, speed_target):
+    def _controller(self, k_s, k_t, v_actual, v_target, speed_actual, speed_target):
 
+        angle = math.acos(
+            np.dot(v_target, v_actual) / \
+                (np.linalg.norm(v_target)*np.linalg.norm(v_actual)))
+        direction = 1 if np.cross(v_actual, v_target)[-1] > 0 else -1
         speed_control = np.clip(k_t*(speed_target - speed_actual*3.6)/speed_target, -1, 1)
+
         control = carla.VehicleControl()
         if speed_control > 0:
             control.throttle = speed_control
@@ -875,32 +883,12 @@ class TurnVehicle(AtomicBehavior):
         else:
             control.brake = abs(speed_control)
             control.throttle = 0
-
-        v_begin = vehicle_transform.location
-        v_end = v_begin + carla.Location(x=math.cos(math.radians(vehicle_transform.rotation.yaw)),
-                                         y=math.sin(math.radians(vehicle_transform.rotation.yaw)))
-
-        v_vec = np.array([v_end.x - v_begin.x, v_end.y - v_begin.y, 0.0])
-        w_vec = np.array([waypoint.transform.location.x -
-                          v_begin.x, waypoint.transform.location.y -
-                          v_begin.y, 0.0])
-        _dot = math.acos(np.clip(np.dot(w_vec, v_vec) /\
-                (np.linalg.norm(w_vec) * np.linalg.norm(v_vec)), -1.0, 1.0))
-
-        _cross = np.cross(v_vec, w_vec)
-        if _cross[2] < 0:
-            _dot *= -1.0
-
-        control.steer = np.clip(k_s * _dot, -1.0, 1.0)
+        control.steer = np.clip(k_s*direction*math.sin(angle), -1, 1)
 
         return control
 
-    def _vector(self, wp1, wp2):
-        x_1 = wp1.transform.location.x
-        y_1 = wp1.transform.location.y
-        x_2 = wp2.transform.location.x
-        y_2 = wp2.transform.location.y
-        return [x_2-x_1, y_2-y_1, 0]
+    def _vector(self, l_1, l_2):
+        return [l_2.x-l_1.x, l_2.y-l_1.y, 0]
 
     def _draw(self, begin, end):
         begin = begin.transform.location
