@@ -782,7 +782,7 @@ class HandBrakeVehicle(AtomicBehavior):
 
     def update(self):
         """
-        Set steer to steer_value until reaching full stop
+        Set handbrake
         """
         self._control.hand_brake = self._hand_brake_value
         new_status = py_trees.common.Status.SUCCESS
@@ -800,9 +800,12 @@ class TurnVehicle(AtomicBehavior):
     at the next junction
     """
 
-    def __init__(self, vehicle, turn, name="TurnVehicle"):
+    def __init__(self, vehicle, speed, turn, name="TurnVehicle"):
         """
-        write doc string
+        Setting initialization parameters.
+        vehicle     :   Vehicle to be turned
+        speed       :   Speed at which to execute the turn in kmph
+        turn        :   Turn index. LEFT -> 1, RIGHT -> -1
         """
         super(TurnVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -810,15 +813,18 @@ class TurnVehicle(AtomicBehavior):
         self._map = self._vehicle.get_world().get_map()
         self._turn = turn
         self._reached_junction = False
-        self.threshold = 0.08727 # 5 degree
         self._next_wp = None
-        self._target_speed = 30.0  # Km/h
-        self._sampling_radius = 0.25 * self._target_speed / 3.6
+        self._previous_wp = None
+        self._wp_list = []
+        self._threshold = 1 #   degree
+        self._target_speed = speed
+        self._sampling_radius = 0.5 * self._target_speed / 3.6
         self._minimum_distance = 0.9 * self._sampling_radius
 
     def update(self):
         """
-        Follow waypoints to a junction and choose path based on turn input
+        Follow waypoints to a junction and choose path based on turn input,
+        then execute the turn
         """
 
         new_status = py_trees.common.Status.RUNNING
@@ -843,33 +849,57 @@ class TurnVehicle(AtomicBehavior):
             #   Choose path at intersection
             if not self._reached_junction and len(wp_choice) > 1:
                 self._reached_junction = True
+                select_criteria = float('inf')
                 for wp_select in wp_choice:
                     v_select = self._vector(
                         current_location, wp_select.transform.location)
-                    cross_select = 1 if np.cross(v_actual, v_select)[-1] > 0 else -1
-                    angle = math.acos(np.dot(v_actual, v_select)/\
-                        (np.linalg.norm(v_actual)*np.linalg.norm(v_select)))
-                    if angle > self.threshold and self._turn*cross_select > 0:
-                        print "Selected path"
+                    cross = self._turn*np.cross(v_actual, v_select)[-1]
+                    if cross < select_criteria:
+                        select_criteria = cross
                         self._next_wp = wp_select
             else:
                 self._next_wp = wp_choice[0]
+            self._wp_list.append(self._next_wp)
 
+        #   End condition for the behaviour
+        if len(self._wp_list) >= 3:
+            v_1 = self._vector(
+                self._wp_list[-2].transform.location,
+                self._wp_list[-1].transform.location)
+            v_2 = self._vector(
+                self._wp_list[-3].transform.location,
+                self._wp_list[-2].transform.location)
+            angle_wp = math.acos(
+                np.dot(v_1, v_2)/\
+                    (np.linalg.norm(v_1)*np.linalg.norm(v_2)))
+            angle_actual = math.acos(
+                np.dot(v_actual, v_1)/\
+                    (np.linalg.norm(v_actual)*np.linalg.norm(v_1)))
+            if angle_wp < np.radians(self._threshold) and \
+                angle_actual < np.radians(self._threshold):
+                new_status = py_trees.common.Status.SUCCESS
+
+        #   Generate controls and apply
         v_target = self._vector(current_location, self._next_wp.transform.location)
         speed_actual = self._vehicle.get_velocity()
         speed_actual = np.linalg.norm([speed_actual.x, speed_actual.y, speed_actual.z])
         control = self._controller(
-            0.8, 1,
+            1, 1,
             v_actual, v_target,
             speed_actual, self._target_speed)
         self._vehicle.apply_control(control)
 
-        self._draw(current_wp, self._next_wp)
-
         return new_status
 
     def _controller(self, k_s, k_t, v_actual, v_target, speed_actual, speed_target):
-
+        """
+        Proportional controller for throttle and steering
+        k_s, kt     :   steer and throttle control gain
+        v_actual    :   vector along current heading
+        v_target    :   target heading vector
+        speed_actual:   current vehicle speed
+        speed_target:   target speed for the vehicle
+        """
         angle = math.acos(
             np.dot(v_target, v_actual) / \
                 (np.linalg.norm(v_target)*np.linalg.norm(v_actual)))
@@ -888,9 +918,19 @@ class TurnVehicle(AtomicBehavior):
         return control
 
     def _vector(self, l_1, l_2):
-        return [l_2.x-l_1.x, l_2.y-l_1.y, 0]
+        """
+        Returns the unit vector from l_1 to l_2
+        l_1, l_2    :   carla.Location objects
+        """
+        x = l_2.x-l_1.x
+        y = l_2.y-l_1.y
+        norm = np.linalg.norm([x, y])
+        return [x/norm, y/norm, 0]
 
     def _draw(self, begin, end):
+        """
+        Function to draw arrows in the simulator for debugging
+        """
         begin = begin.transform.location
         end = end.transform.location
         world = self._vehicle.get_world()
@@ -901,9 +941,9 @@ class TurnVehicle(AtomicBehavior):
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-
         control = carla.VehicleControl()
         control.throttle = 0.0
         control.brake = 0.0
+        control.steer = 0.0
         self._vehicle.apply_control(control)
         super(TurnVehicle, self).terminate(new_status)

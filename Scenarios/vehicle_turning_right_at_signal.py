@@ -39,7 +39,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
     # other vehicle
     _other_vehicle_model = 'vehicle.tesla.model3'
     _other_vehicle_start = carla.Transform(
-        carla.Location(x=82.33, y=-180, z=3), carla.Rotation(yaw=90))
+        carla.Location(x=82.33, y=-160, z=8), carla.Rotation(yaw=90))
 
     def __init__(self, world, debug_mode=False):
         """
@@ -72,7 +72,10 @@ class VehicleTurningRightAtSignal(BasicScenario):
 
     def _create_behavior(self):
         """
-        Write doc string
+        The ego vehicle is passing through a junction and a traffic participant
+        takes a right turn on to the ego vehicle's lane. The ego vehicle has to
+        navigate the scenario without collision with the participant and cross
+        the junction.
         """
 
         # Creating leaf nodes
@@ -91,13 +94,13 @@ class VehicleTurningRightAtSignal(BasicScenario):
         right_turn_trigger = InTriggerRegion(
             self.other_vehicles[0],
             75, 85,
-            -165, -150)
+            -150, -145)
 
-        turn_right = TurnVehicle(self.other_vehicles[0], -1)
+        turn_right = TurnVehicle(self.other_vehicles[0], 30, -1)
 
         end_condition = InTriggerRegion(
             self.ego_vehicle,
-            45, 50,
+            65, 68,
             -140, -135)
 
         root_timeout = TimeOut(self.timeout)
@@ -132,14 +135,15 @@ class VehicleTurningRightAtSignal(BasicScenario):
 
         # Adding checks for ego vehicle
         collision_criterion_ego = CollisionTest(self.ego_vehicle)
-        # driven_distance_criterion = DrivenDistanceTest(
-        #     self.ego_vehicle, self._ego_vehicle_driven_distance)
+        region_check_ego = ReachedRegionTest(
+            self.ego_vehicle,
+            68, 72, -140, -135)
         criteria.append(collision_criterion_ego)
-        # criteria.append(driven_distance_criterion)
+        criteria.append(region_check_ego)
 
         # Add approriate checks for other vehicles
-        # for vehicle in self.other_vehicles:
-        #     collision_criterion = CollisionTest(vehicle)
-        #     criteria.append(collision_criterion)
+        for vehicle in self.other_vehicles:
+            collision_criterion = CollisionTest(vehicle)
+            criteria.append(collision_criterion)
 
         return criteria
