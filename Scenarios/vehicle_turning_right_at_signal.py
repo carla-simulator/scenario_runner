@@ -101,7 +101,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
         end_condition = InTriggerRegion(
             self.ego_vehicle,
             65, 68,
-            -140, -135)
+            -145, -125)
 
         root_timeout = TimeOut(self.timeout)
 
@@ -137,7 +137,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
         collision_criterion_ego = CollisionTest(self.ego_vehicle)
         region_check_ego = ReachedRegionTest(
             self.ego_vehicle,
-            68, 72, -140, -135)
+            68, 72, -145, -135)
         criteria.append(collision_criterion_ego)
         criteria.append(region_check_ego)
 
