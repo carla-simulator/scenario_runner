@@ -16,6 +16,8 @@ The atomic behaviors are implemented with py_trees.
 
 import py_trees
 import carla
+from agents.navigation.roaming_agent import *
+from agents.navigation.basic_agent import *
 
 from ScenarioManager.carla_data_provider import CarlaDataProvider
 
@@ -666,3 +668,48 @@ class SteerVehicle(AtomicBehavior):
         self._vehicle.apply_control(self._control)
 
         return new_status
+
+
+class BasicAgentBehavior(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior, which uses the
+    basic_agent from CARLA to control the vehicle until
+    reaching a target location.
+    """
+
+    _acceptable_target_distance = 2
+
+    def __init__(self, vehicle, target_location, name="BasicAgentBehavior"):
+        """
+        Setup vehicle and maximum steer value
+        """
+        super(BasicAgentBehavior, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._agent = BasicAgent(vehicle)
+        self._agent.set_destination(
+            (target_location.x, target_location.y, target_location.z))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._target_location = target_location
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        self._control = self._agent.run_step()
+
+        location = CarlaDataProvider.get_location(self._vehicle)
+        if calculate_distance(location, self._target_location) < self._acceptable_target_distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        self._vehicle.apply_control(self._control)
+
+        return new_status
+
+    def terminate(self, new_status):
+        self._control.throttle = 0.0
+        self._control.brake = 0.0
+        self._vehicle.apply_control(self._control)
+        super(BasicAgentBehavior, self).terminate(new_status)

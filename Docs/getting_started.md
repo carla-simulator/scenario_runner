@@ -29,7 +29,7 @@ Note: py-trees newer than v0.8 is *NOT* supported.
 First of all, you need to get latest master branch from CARLA. Then you have to
 include CARLA Python API to the Python path:
 ```
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI
 ```
 
 Now, you can start the CARLA server with Town01 from ${CARLA_ROOT}
