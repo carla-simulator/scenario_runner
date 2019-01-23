@@ -108,13 +108,13 @@ class VehicleTurningRight(BasicScenario):
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         scenario_sequence = py_trees.composites.Sequence()
         keep_velocity_other = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         # building the tress
         root.add_child(scenario_sequence)
@@ -246,14 +246,14 @@ class VehicleTurningLeft(BasicScenario):
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         scenario_sequence = py_trees.composites.Sequence()
         keep_velocity_other = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         # building the tress
         root.add_child(scenario_sequence)

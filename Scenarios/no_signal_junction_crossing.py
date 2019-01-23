@@ -110,12 +110,12 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         # Creating non-leaf nodes
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         scenario_sequence = py_trees.composites.Sequence()
         sync_arrival_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         keep_velocity_other_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         # Building tree
         root.add_child(scenario_sequence)

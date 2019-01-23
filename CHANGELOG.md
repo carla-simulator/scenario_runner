@@ -1,3 +1,8 @@
+## Latest Changes
+
+* Support of py_trees 1.0
+* Drop support of Python 2
+
 ## CARLA Scenario_Runner 0.9.2
 
 * Added Traffic Scenarios engine to reproduce complex traffic situations for training and evaluating driving agents

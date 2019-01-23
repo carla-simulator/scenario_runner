@@ -110,7 +110,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         sync_arrival = SyncArrival(
             self.other_vehicles[0], self.ego_vehicle, self._location_of_collision)
         sync_arrival_stop = InTriggerDistanceToVehicle(self.other_vehicles[0],
@@ -121,7 +121,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         keep_velocity_for_distance = py_trees.composites.Parallel(
             "Keep velocity for distance",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         keep_velocity = KeepVelocity(
             self.other_vehicles[0],
             self._other_vehicle_target_velocity)

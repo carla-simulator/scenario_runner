@@ -99,7 +99,7 @@ class FollowLeadingVehicle(BasicScenario):
         # get to velocity and keep it for certain distance
         keep_velocity_for_distance = py_trees.composites.Parallel(
             "Keep velocity for distance",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         keep_velocity = KeepVelocity(
             self.other_vehicles[0],
             self._other_vehicle_target_velocity)
@@ -118,7 +118,7 @@ class FollowLeadingVehicle(BasicScenario):
         # end condition
         endcondition = py_trees.composites.Parallel(
             "Waiting for end position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+            policy=py_trees.common.ParallelPolicy.SuccessOnAll())
         endcondition_part1 = InTriggerDistanceToVehicle(
             self.other_vehicles[0],
             self.ego_vehicle,
@@ -252,7 +252,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         # get to velocity and keep it for certain distance
         keep_velocity_for_distance = py_trees.composites.Parallel(
             "Keep velocity for duration",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         keep_velocity = KeepVelocity(
             self.other_vehicles[0],
             self._other_vehicle_target_velocity)
@@ -266,7 +266,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         # use autopilot
         use_autopilot = py_trees.composites.Parallel(
             "Use autopilot for distance",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         autopilot = UseAutoPilot(self.other_vehicles[0])
         endcondition = InTriggerDistanceToVehicle(
             self.other_vehicles[1],
@@ -279,7 +279,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         # end condition
         endcondition = py_trees.composites.Parallel(
             "Waiting for end position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+            policy=py_trees.common.ParallelPolicy.SuccessOnAll())
         endcondition_part1 = InTriggerDistanceToVehicle(
             self.other_vehicles[0],
             self.ego_vehicle,

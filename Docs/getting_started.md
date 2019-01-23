@@ -15,11 +15,10 @@ The release package contains the following
   * A few example scenarios written in Python.
 
 ## Installing prerequisites
-The current version is designed to be used with Ubuntu 16.04, Python 2.7 (or
-Python 3.5) and python-py-trees. To install python-py-trees select one of the
-following commands, depending on your Python version.
+The current version is designed to be used with Ubuntu 16.04 and Python 3.5.
+Python 2.X is no longer supported. In addition, python-py-trees 1.x is required.
+To install python-py-trees run:
 ```
-pip2 install --user py_trees # For Python 2.x
 pip3 install --user py_trees # For Python 3.x
 ```
 

@@ -93,7 +93,7 @@ class ControlLoss(BasicScenario):
             jitter_action = py_trees.composites.Parallel(
                 "Jitter Actions with Timeouts",
                 policy=py_trees.common.
-                ParallelPolicy.SUCCESS_ON_ALL)
+                ParallelPolicy.SuccessOnAll())
             jitter_action.add_child(turn)
             jitter_action.add_child(jitter_timeout)
             jitter_sequence.add_child(jitter_action)
