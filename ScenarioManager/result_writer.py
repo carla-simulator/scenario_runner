@@ -75,16 +75,16 @@ class ResultOutputProvider(object):
         self.logger.info("Duration: System Time %5.2fs --- Game Time %5.2fs",
                          self._data.scenario_duration_system,
                          self._data.scenario_duration_game)
-        self.logger.info("Ego vehicle:    %s", self._data.ego_vehicle)
+        self.logger.info("Ego vehicle:  %s", self._data.ego_vehicle)
 
-        vehicle_string = ""
-        for vehicle in self._data.other_vehicles:
-            vehicle_string += "{}; ".format(vehicle)
-        self.logger.info("Other vehicles: %s", vehicle_string)
+        actor_string = ""
+        for actor in self._data.other_actors:
+            actor_string += "{}; ".format(actor)
+        self.logger.info("Other actors: %s", actor_string)
         self.logger.info("\n")
         # pylint: disable=line-too-long
         self.logger.info(
-            "              Vehicle             |            Criterion           |   Result    | Actual Value | Expected Value ")
+            "                Actor             |            Criterion           |   Result    | Actual Value | Expected Value ")
         self.logger.info(
             "-----------------------------------------------------------------------------------------------------------------")
         # pylint: enable=line-too-long
@@ -97,8 +97,8 @@ class ResultOutputProvider(object):
                 name_string += " (Req.)"
 
             self.logger.info("%24s (id=%3d) | %30s | %11s | %12.2f | %12.2f ",
-                             criterion.vehicle.type_id[8:],
-                             criterion.vehicle.id,
+                             criterion.actor.type_id[8:],
+                             criterion.actor.id,
                              name_string,
                              # pylint: disable=line-too-long
                              "FAILURE" if criterion.test_status == "RUNNING" else criterion.test_status,
@@ -157,7 +157,7 @@ class ResultOutputProvider(object):
 
         for criterion in self._data.scenario.test_criteria:
             testcase_name = criterion.name + "_" + \
-                criterion.vehicle.type_id[8:] + "_" + str(criterion.vehicle.id)
+                criterion.actor.type_id[8:] + "_" + str(criterion.actor.id)
             result_string = ("    <testcase name=\"{}\" status=\"run\" "
                              "time=\"0\" classname=\"Scenarios.{}\">\n".format(
                                  testcase_name, self._data.scenario_tree.name))

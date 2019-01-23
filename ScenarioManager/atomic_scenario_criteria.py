@@ -40,7 +40,7 @@ class Criterion(py_trees.behaviour.Behaviour):
 
     def __init__(self,
                  name,
-                 vehicle,
+                 actor,
                  expected_value_success,
                  expected_value_acceptable=None,
                  optional=False):
@@ -49,7 +49,7 @@ class Criterion(py_trees.behaviour.Behaviour):
         self._terminate_on_failure = False
 
         self.name = name
-        self.vehicle = vehicle
+        self.actor = actor
         self.test_status = "INIT"
         self.expected_value_success = expected_value_success
         self.expected_value_acceptable = expected_value_acceptable
@@ -74,12 +74,12 @@ class MaxVelocityTest(Criterion):
     This class contains an atomic test for maximum velocity.
     """
 
-    def __init__(self, vehicle, max_velocity_allowed, optional=False, name="CheckMaximumVelocity"):
+    def __init__(self, actor, max_velocity_allowed, optional=False, name="CheckMaximumVelocity"):
         """
-        Setup vehicle and maximum allowed velovity
+        Setup actor and maximum allowed velovity
         """
         super(MaxVelocityTest, self).__init__(
-            name, vehicle, max_velocity_allowed, None, optional)
+            name, actor, max_velocity_allowed, None, optional)
 
     def update(self):
         """
@@ -87,10 +87,10 @@ class MaxVelocityTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if self.vehicle is None:
+        if self.actor is None:
             return new_status
 
-        velocity = CarlaDataProvider.get_velocity(self.vehicle)
+        velocity = CarlaDataProvider.get_velocity(self.actor)
 
         self.actual_value = max(velocity, self.actual_value)
 
@@ -115,20 +115,20 @@ class DrivenDistanceTest(Criterion):
     """
 
     def __init__(self,
-                 vehicle,
+                 actor,
                  distance_success,
                  distance_acceptable=None,
                  optional=False,
                  name="CheckDrivenDistance"):
         """
-        Setup vehicle
+        Setup actor
         """
         super(DrivenDistanceTest, self).__init__(
-            name, vehicle, distance_success, distance_acceptable, optional)
+            name, actor, distance_success, distance_acceptable, optional)
         self._last_location = None
 
     def initialise(self):
-        self._last_location = CarlaDataProvider.get_location(self.vehicle)
+        self._last_location = CarlaDataProvider.get_location(self.actor)
         super(DrivenDistanceTest, self).initialise()
 
     def update(self):
@@ -137,10 +137,10 @@ class DrivenDistanceTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if self.vehicle is None:
+        if self.actor is None:
             return new_status
 
-        location = CarlaDataProvider.get_location(self.vehicle)
+        location = CarlaDataProvider.get_location(self.actor)
 
         if location is None:
             return new_status
@@ -176,15 +176,15 @@ class AverageVelocityTest(Criterion):
     """
 
     def __init__(self,
-                 vehicle,
+                 actor,
                  avg_velocity_success,
                  avg_velocity_acceptable=None,
                  optional=False,
                  name="CheckAverageVelocity"):
         """
-        Setup vehicle and average velovity expected
+        Setup actor and average velovity expected
         """
-        super(AverageVelocityTest, self).__init__(name, vehicle,
+        super(AverageVelocityTest, self).__init__(name, actor,
                                                   avg_velocity_success,
                                                   avg_velocity_acceptable,
                                                   optional)
@@ -192,7 +192,7 @@ class AverageVelocityTest(Criterion):
         self._distance = 0.0
 
     def initialise(self):
-        self._last_location = CarlaDataProvider.get_location(self.vehicle)
+        self._last_location = CarlaDataProvider.get_location(self.actor)
         super(AverageVelocityTest, self).initialise()
 
     def update(self):
@@ -201,10 +201,10 @@ class AverageVelocityTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if self.vehicle is None:
+        if self.actor is None:
             return new_status
 
-        location = CarlaDataProvider.get_location(self.vehicle)
+        location = CarlaDataProvider.get_location(self.actor)
 
         if location is None:
             return new_status
@@ -243,17 +243,17 @@ class CollisionTest(Criterion):
     This class contains an atomic test for collisions.
     """
 
-    def __init__(self, vehicle, optional=False, name="CheckCollisions"):
+    def __init__(self, actor, optional=False, name="CheckCollisions"):
         """
         Construction with sensor setup
         """
-        super(CollisionTest, self).__init__(name, vehicle, 0, None, optional)
+        super(CollisionTest, self).__init__(name, actor, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-        world = self.vehicle.get_world()
+        world = self.actor.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self._collision_sensor = world.spawn_actor(
-            blueprint, carla.Transform(), attach_to=self.vehicle)
+            blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(
             lambda event: self._count_collisions(weakref.ref(self), event))
 
@@ -302,18 +302,18 @@ class KeepLaneTest(Criterion):
     This class contains an atomic test for keeping lane.
     """
 
-    def __init__(self, vehicle, optional=False, name="CheckKeepLane"):
+    def __init__(self, actor, optional=False, name="CheckKeepLane"):
         """
         Construction with sensor setup
         """
-        super(KeepLaneTest, self).__init__(name, vehicle, 0, None, optional)
+        super(KeepLaneTest, self).__init__(name, actor, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-        world = self.vehicle.get_world()
+        world = self.actor.get_world()
         blueprint = world.get_blueprint_library().find(
             'sensor.other.lane_detector')
         self._lane_sensor = world.spawn_actor(
-            blueprint, carla.Transform(), attach_to=self.vehicle)
+            blueprint, carla.Transform(), attach_to=self.actor)
         self._lane_sensor.listen(
             lambda event: self._count_lane_invasion(weakref.ref(self), event))
 
@@ -360,18 +360,18 @@ class ReachedRegionTest(Criterion):
 
     """
     This class contains the reached region test
-    The test is a success if the vehicle reaches a specified region
+    The test is a success if the actor reaches a specified region
     """
 
-    def __init__(self, vehicle, min_x, max_x, min_y,
+    def __init__(self, actor, min_x, max_x, min_y,
                  max_y, name="ReachedRegionTest"):
         """
         Setup trigger region (rectangle provided by
         [min_x,min_y] and [max_x,max_y]
         """
-        super(ReachedRegionTest, self).__init__(name, vehicle, 0)
+        super(ReachedRegionTest, self).__init__(name, actor, 0)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._vehicle = vehicle
+        self._actor = actor
         self._min_x = min_x
         self._max_x = max_x
         self._min_y = min_y
@@ -379,11 +379,11 @@ class ReachedRegionTest(Criterion):
 
     def update(self):
         """
-        Check if the vehicle location is within trigger region
+        Check if the actor location is within trigger region
         """
         new_status = py_trees.common.Status.RUNNING
 
-        location = CarlaDataProvider.get_location(self._vehicle)
+        location = CarlaDataProvider.get_location(self._actor)
         if location is None:
             return new_status
 

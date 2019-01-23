@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="ControlLoss" town="Town03">
+        <ego_vehicle x="15" y="207.2" z="2" yaw="0" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+</scenarios>

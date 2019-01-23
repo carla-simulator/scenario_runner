@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="VehicleTurningRight" town="Town01">
+        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="95.5" y="42" z="38.5" yaw="180" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningLeft" town="Town01">
+        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="85" y="78.8" z="38.5" yaw="0" model="vehicle.diamondback.century" />
+    </scenario>
+</scenarios>

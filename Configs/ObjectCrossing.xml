@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="StationaryObjectCrossing" town="Town03">
+        <ego_vehicle x="110" y="129" z="1" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="70" y="129" z="0" yaw="270" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="DynamicObjectCrossing" town="Town03">
+        <ego_vehicle x="90" y="129" z="1" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="47.5" y="124" z="0" yaw="90" model="vehicle.diamondback.century" />
+    </scenario>
+</scenarios>

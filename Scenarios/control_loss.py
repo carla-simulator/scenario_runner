@@ -15,49 +15,41 @@ regains control and corrects it's course.
 import random
 
 import py_trees
-import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.scenario_manager import Scenario
 from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
+
+CONTROL_LOSS_SCENARIOS = [
+    "ControlLoss"
+]
 
 
 class ControlLoss(BasicScenario):
 
     """
     Implementation of "Control Loss Vehicle" (Traffic Scenario 01)
-
-    Location : Town03
     """
 
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=15, y=207.2, z=2.0), carla.Rotation(yaw=0))
     _no_of_jitter_actions = 20
     _noise_mean = 0     # Mean value of steering noise
     _noise_std = 0.02    # Std. deviation of steerning noise
     _dynamic_mean = 0.05
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
-
-        super(ControlLoss, self).__init__(
-            name="ControlLoss",
-            town="Town03",
-            world=world,
-            debug_mode=debug_mode)
+        super(ControlLoss, self).__init__("ControlLoss",
+                                          ego_vehicle,
+                                          other_actors,
+                                          town,
+                                          world,
+                                          debug_mode)
 
     def _create_behavior(self):
         """

@@ -1,3 +1,4 @@
 [MESSAGES CONTROL]
-disable=anomalous-backslash-in-string,too-many-arguments,too-few-public-methods,too-many-instance-attributes,redefined-variable-type,unused-argument,wildcard-import,unused-wildcard-import
+max-line-length=120
+disable=anomalous-backslash-in-string,too-many-arguments,too-few-public-methods,too-many-instance-attributes,redefined-variable-type,unused-argument,wildcard-import,unused-wildcard-import,bare-except
 ignored-modules=carla

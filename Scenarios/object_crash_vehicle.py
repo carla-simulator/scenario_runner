@@ -11,12 +11,17 @@ moving along the road and encountering a cyclist ahead.
 """
 
 import py_trees
-import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
 from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
+
+
+OBJECT_CROSSING_SCENARIOS = [
+    "StationaryObjectCrossing",
+    "DynamicObjectCrossing"
+]
 
 
 class StationaryObjectCrossing(BasicScenario):
@@ -26,46 +31,25 @@ class StationaryObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a stationary cyclist.
-
-    Location: Town03
     """
 
     timeout = 60
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start_x = 110
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=_ego_vehicle_start_x, y=129, z=1),
-        carla.Rotation(yaw=180))
     _ego_vehicle_velocity_allowed = 20
     _ego_vehicle_distance_to_other = 35
 
-    # other vehicle parameters
-    _other_vehicle_model = 'vehicle.diamondback.century'
-    _other_vehicle_start_x = 70
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x, y=129, z=0),
-        carla.Rotation(yaw=270))
-
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
 
-        super(StationaryObjectCrossing, self).__init__(
-            name="stationaryobjectcrossing",
-            town="Town03",
-            world=world,
-            debug_mode=debug_mode)
+        super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
+                                                       ego_vehicle,
+                                                       other_actors,
+                                                       town,
+                                                       world,
+                                                       debug_mode)
 
     def _create_behavior(self):
         """
@@ -106,50 +90,31 @@ class DynamicObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist,
     The ego vehicle is passing through a road,
     And encounters a cyclist crossing the road.
-
-    Location: Town03
     """
 
     timeout = 60
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start_x = 90
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=_ego_vehicle_start_x, y=129, z=1),
-        carla.Rotation(yaw=180))
     _ego_vehicle_velocity_allowed = 10
     _ego_vehicle_distance_driven = 50
 
     # other vehicle parameters
-    _other_vehicle_model = 'vehicle.diamondback.century'
-    _other_vehicle_start_x = 47.5
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x, y=124, z=1),
-        carla.Rotation(yaw=90))
-    _other_vehicle_target_velocity = 10
+    _other_actor_target_velocity = 10
     _trigger_distance_from_ego = 35
-    _other_vehicle_max_throttle = 1.0
-    _other_vehicle_max_brake = 1.0
+    _other_actor_max_throttle = 1.0
+    _other_actor_max_brake = 1.0
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
 
-        super(DynamicObjectCrossing, self).__init__(
-            name="dynamicobjectcrossing",
-            town="Town03",
-            world=world,
-            debug_mode=debug_mode)
+        super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
+                                                    ego_vehicle,
+                                                    other_actors,
+                                                    town,
+                                                    world,
+                                                    debug_mode)
 
     def _create_behavior(self):
         """
@@ -160,31 +125,31 @@ class DynamicObjectCrossing(BasicScenario):
         """
         # leaf nodes
         trigger_dist = InTriggerDistanceToVehicle(
-            self.other_vehicles[0],
+            self.other_actors[0],
             self.ego_vehicle,
             self._trigger_distance_from_ego)
-        start_other_vehicle = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
+        start_other_actor = KeepVelocity(
+            self.other_actors[0],
+            self._other_actor_target_velocity)
         trigger_other = InTriggerRegion(
-            self.other_vehicles[0],
+            self.other_actors[0],
             46, 50,
             128, 129.5)
-        stop_other_vehicle = StopVehicle(
-            self.other_vehicles[0],
-            self._other_vehicle_max_brake)
+        stop_other_actor = StopVehicle(
+            self.other_actors[0],
+            self._other_actor_max_brake)
         timeout_other = TimeOut(10)
         start_vehicle = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
-        trigger_other_vehicle = InTriggerRegion(
-            self.other_vehicles[0],
+            self.other_actors[0],
+            self._other_actor_target_velocity)
+        trigger_other_actor = InTriggerRegion(
+            self.other_actors[0],
             46, 50,
             137, 139)
         stop_vehicle = StopVehicle(
-            self.other_vehicles[0],
-            self._other_vehicle_max_brake)
-        timeout_other_vehicle = TimeOut(3)
+            self.other_actors[0],
+            self._other_actor_max_brake)
+        timeout_other_actor = TimeOut(3)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -199,15 +164,15 @@ class DynamicObjectCrossing(BasicScenario):
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_dist)
         scenario_sequence.add_child(keep_velocity_other_parallel)
-        scenario_sequence.add_child(stop_other_vehicle)
+        scenario_sequence.add_child(stop_other_actor)
         scenario_sequence.add_child(timeout_other)
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(stop_vehicle)
-        scenario_sequence.add_child(timeout_other_vehicle)
-        keep_velocity_other_parallel.add_child(start_other_vehicle)
+        scenario_sequence.add_child(timeout_other_actor)
+        keep_velocity_other_parallel.add_child(start_other_actor)
         keep_velocity_other_parallel.add_child(trigger_other)
         keep_velocity_other.add_child(start_vehicle)
-        keep_velocity_other.add_child(trigger_other_vehicle)
+        keep_velocity_other.add_child(trigger_other_actor)
 
         return root
 
