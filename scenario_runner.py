@@ -26,6 +26,8 @@ from Scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from Scenarios.object_crash_intersection import *
 from Scenarios.control_loss import *
 from ScenarioManager.scenario_manager import ScenarioManager
+from ScenarioManager.config_parser import *
+from Scenarios.basic_scenario import setup_vehicle
 
 
 # Version of scenario_runner
@@ -74,6 +76,9 @@ def main(args):
     scenario = None
     manager = None
 
+    ego_vehicle = None
+    other_actors = []
+
     try:
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
@@ -92,26 +97,65 @@ def main(args):
         manager = ScenarioManager(world, args.debug)
 
         # Setup and run the scenario for repetition times
-        scenario_class = get_scenario_class_or_fail(args.scenario)
         for i in range(int(args.repetitions)):
-            scenario = scenario_class(world, args.debug)
-            manager.load_scenario(scenario)
-            manager.run_scenario()
 
-            junit_filename = None
-            if args.junit is not None:
-                junit_filename = args.junit.split(".")[0] + "_{}.xml".format(i)
+            scenario_configurations = prepare_scenario_actors(
+                world, args.scenario)
 
-            if not manager.analyze_scenario(
-                    args.output, args.filename, junit_filename):
-                print("Success!")
-            else:
-                print("Failure!")
+            print(scenario_configurations)
 
-            manager.stop_scenario()
-            del scenario
+            for config in scenario_configurations:
+
+                print("Running: " + config.name)
+
+                try:
+                    scenario_class = get_scenario_class_or_fail(config.name)
+                except:
+                    print("Unsupported scenario: " + config.name)
+                    continue
+
+                ego_vehicle = setup_vehicle(
+                    world, config.ego_vehicle.model, config.ego_vehicle.transform, hero=True)
+
+                for other_vehicle in config.other_vehicles:
+                    print("Spawning: " + other_vehicle.model)
+                    other_actors.append(
+                        setup_vehicle(world, other_vehicle.model, other_vehicle.transform))
+
+                scenario = scenario_class(
+                    world, ego_vehicle, other_actors, config.town, args.debug)
+                manager.load_scenario(scenario)
+                manager.run_scenario()
+
+                junit_filename = None
+                if args.junit is not None:
+                    junit_filename = args.junit.split(
+                        ".")[0] + "_{}.xml".format(i)
+
+                if not manager.analyze_scenario(
+                        args.output, args.filename, junit_filename):
+                    print("Success!")
+                else:
+                    print("Failure!")
+
+                manager.stop_scenario()
+                del scenario
+
+                for actor in other_actors + [ego_vehicle]:
+                    print(actor)
+                    if actor is not None:
+                        actor.destroy()
+                        actor = None
+
+                other_actors = []
+
+            print("No more scenarios .... Exiting")
 
     finally:
+        for actor in other_actors + [ego_vehicle]:
+            if actor is not None:
+                actor.destroy()
+                actor = None
         if manager is not None:
             del manager
         if world is not None:

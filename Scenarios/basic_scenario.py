@@ -36,11 +36,11 @@ def setup_vehicle(world, model, spawn_point, hero=False):
     vehicle = world.try_spawn_actor(blueprint, spawn_point)
 
     if vehicle is None:
-        sys.exit(
+        raise Exception(
             "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-
-    # Let's put the vehicle to drive around
-    vehicle.set_autopilot(False)
+    else:
+        # Let's deactivate the autopilot of the vehicle
+        vehicle.set_autopilot(False)
 
     return vehicle
 
@@ -60,7 +60,7 @@ class BasicScenario(object):
     ego_vehicle = None
     other_vehicles = []
 
-    def __init__(self, name, town, world, debug_mode=False):
+    def __init__(self, name, ego_vehicle, other_vehicles, town, world, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -70,6 +70,8 @@ class BasicScenario(object):
         self._town = town
         self._check_town(world)
 
+        self.ego_vehicle = ego_vehicle
+        self.other_vehicles = other_vehicles
         self.name = name
 
         # Setup scenario
@@ -78,8 +80,7 @@ class BasicScenario(object):
 
         behavior = self._create_behavior()
         criteria = self._create_test_criteria()
-        self.scenario = Scenario(
-            behavior, criteria, self.name, self.timeout)
+        self.scenario = Scenario(behavior, criteria, self.name, self.timeout)
 
     def _create_behavior(self):
         """
@@ -103,14 +104,3 @@ class BasicScenario(object):
             print("The CARLA server uses the wrong map!")
             print("This scenario requires to use map {}".format(self._town))
             sys.exit(-1)
-
-    def __del__(self):
-        """
-        Cleanup.
-        - Removal of the vehicles
-        """
-        actors = [self.ego_vehicle] + self.other_vehicles
-        for actor in actors:
-            if actor is not None:
-                actor.destroy()
-                actor = None

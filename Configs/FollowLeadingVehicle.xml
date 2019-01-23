@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="FollowLeadingVehicle" town="Town01">
+        <ego_vehicle x="107" y="133" z="39" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_vehicle x="157" y="133" z="39" yaw="0" model="vehicle.*" />
+    </scenario>
+    <scenario name="FollowLeadingVehicleWithObstacle" town="Town01">
+        <ego_vehicle x="107" y="133" z="39" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_vehicle x="157" y="133" z="39" yaw="0" model="vehicle.volkswagen.t2" />
+        <other_vehicle x="227" y="133" z="39" yaw="0" model="vehicle.gazelle.omafiets" />
+    </scenario>
+</scenarios>

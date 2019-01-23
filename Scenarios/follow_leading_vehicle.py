@@ -32,27 +32,17 @@ class FollowLeadingVehicle(BasicScenario):
     """
     This class holds everything required for a simple "Follow a leading vehicle"
     scenario involving two vehicles.
-
-    Location: Town01
     """
 
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start_x = 107
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
     _ego_max_velocity_allowed = 20        # Maximum allowed velocity [m/s]
     _ego_acceptable_driven_distance = 50  # The vehicle has to drive at least this distance [m]
     _ego_avg_velocity_expected = 4        # Average expected velocity [m/s]
     _ego_distance_to_other = 50           # Min. driven distance of ego vehicle [m]
 
     # other vehicle
-    _other_vehicle_model = 'vehicle.*'
-    _other_vehicle_start_x = _ego_vehicle_start_x + _ego_distance_to_other
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
     _other_vehicle_target_velocity = 15          # Target velocity of other vehicle
     _trigger_distance_from_ego = 15              # Starting point of other vehicle maneuver
     _other_vehicle_max_throttle = 1.0            # Maximum throttle of other vehicle
@@ -60,23 +50,16 @@ class FollowLeadingVehicle(BasicScenario):
     _other_vehicle_distance = 50 + \
         random.randint(0, 50)  # Distance the other vehicle should drive
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_vehicles, town, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
-
-        super(FollowLeadingVehicle, self).__init__(name="FollowVehicle",
-                                                   town="Town01",
-                                                   world=world,
-                                                   debug_mode=debug_mode)
+        super(FollowLeadingVehicle, self).__init__("FollowVehicle",
+                                                   ego_vehicle,
+                                                   other_vehicles,
+                                                   town,
+                                                   world,
+                                                   debug_mode)
 
     def _create_behavior(self):
         """
@@ -184,52 +167,28 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start_x = 107
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
     _ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
     _ego_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
 
     # other vehicle
-    _other_vehicle_model = 'vehicle.volkswagen.t2'
-    _other_vehicle_start_x = _ego_vehicle_start_x + _ego_distance_to_other
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
     _other_vehicle_target_velocity = 15      # Target velocity of other vehicle
     _trigger_distance_from_ego = 15          # Starting point of other vehicle maneuver
     _other_vehicle_max_throttle = 1.0        # Maximum throttle of other vehicle
     _other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
     _other_vehicle_distance = 40             # Distance the other vehicle should drive
 
-    _other_vehicle_model_no2 = 'vehicle.gazelle.omafiets'
-    _other_vehicle_start_x_no2 = _other_vehicle_start_x + \
-        10 + random.randint(_other_vehicle_distance, 80)
-    _other_vehicle_start_no2 = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x_no2, y=133.5, z=39), carla.Rotation(yaw=0))
-
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_vehicles, town, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start),
-                               setup_vehicle(world,
-                                             self._other_vehicle_model_no2,
-                                             self._other_vehicle_start_no2)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
-
-        super(FollowLeadingVehicleWithObstacle, self).__init__(
-            name="FollowLeadingVehicleWithObstacle",
-            town="Town01",
-            world=world,
-            debug_mode=debug_mode)
+        super(
+            FollowLeadingVehicleWithObstacle, self).__init__("FollowLeadingVehicleWithObstacle",
+                                                             ego_vehicle,
+                                                             other_vehicles,
+                                                             town,
+                                                             world,
+                                                             debug_mode)
 
     def _create_behavior(self):
         """
