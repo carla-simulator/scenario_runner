@@ -17,6 +17,7 @@ and finally triggers the scenario execution.
 from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
+from datetime import datetime
 import random
 import sys
 
@@ -178,13 +179,16 @@ def main(args):
                 manager.run_scenario()
 
                 # Provide outputs if required
+                current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
                 junit_filename = None
                 if args.junit is not None:
-                    junit_filename = args.junit.split(
-                        ".")[0] + "_{}.xml".format(i)
+                    junit_filename = config.name + current_time  + ".xml"
+                filename = None
+                if args.file is not None:
+                    filename = config.name + current_time + ".txt"
 
                 if not manager.analyze_scenario(
-                        args.output, args.filename, junit_filename):
+                        args.output, filename, junit_filename):
                     print("Success!")
                 else:
                     print("Failure!")
@@ -219,8 +223,8 @@ if __name__ == '__main__':
                         help='TCP port to listen to (default: 2000)')
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
     PARSER.add_argument('--output', action="store_true", help='Provide results on stdout')
-    PARSER.add_argument('--filename', help='Write results into given file')
-    PARSER.add_argument('--junit', help='Write results into the given junit file')
+    PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
+    PARSER.add_argument('--junit', action="store_true", help='Write results into a junit file')
     PARSER.add_argument('--scenario', help='Name of the scenario to be executed')
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
