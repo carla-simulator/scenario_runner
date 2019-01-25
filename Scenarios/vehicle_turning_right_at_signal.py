@@ -98,7 +98,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
 
         turn_right = BasicAgentBehavior(
             self.other_vehicles[0],
-            carla.Location(x=70.5, y=-136.7, z=10))
+            carla.Location(x=65, y=-136.7, z=8))
 
         end_condition = InTriggerRegion(
             self.ego_vehicle,
