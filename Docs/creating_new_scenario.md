@@ -22,19 +22,17 @@ follows:
        # some ego vehicle parameters
        # some parameters for the other vehicles
 
-       def __init__(self, world, debug_mode=False):
+       def __init__(self, world, ego_vehice, other_actors, town, debug_mode=False):
            """
            Initialize all parameters required for NewScenario
            """
 
-           # Setup vehicles
-           self.ego_vehicle = ...
-           self.other_vehicles = [...]
-
            # Call constructor of BasicScenario
            super(NewScenario, self).__init__(
              name="NewScenario",
-             town="NameOfCarlaTown", # e.g. Town01
+             ego_vehicle=ego_vehicle,
+             other_actors=other_actors,
+             town=town,
              world=world,
              debug_mode=debug_mode)
 

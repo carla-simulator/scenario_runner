@@ -7,7 +7,7 @@ General
 
   * Use spaces, not tabs.
   * Avoid adding trailing whitespace as it creates noise in the diffs.
-  * Comments should not exceed 80 columns, code may exceed this limit a bit in
+  * Comments should not exceed 120 columns, code may exceed this limit a bit in
     rare occasions if it results in clearer code.
 
 Python
