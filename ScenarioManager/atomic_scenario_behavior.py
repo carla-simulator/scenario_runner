@@ -10,13 +10,9 @@
 This module provides all atomic scenario behaviors required to realize
 complex, realistic scenarios such as "follow a leading vehicle", "lane change",
 etc.
-
 The atomic behaviors are implemented with py_trees.
 """
 
-import math
-
-import numpy as np
 import py_trees
 
 import carla
@@ -31,7 +27,6 @@ EPSILON = 0.001
 def calculate_distance(location, other_location):
     """
     Method to calculate the distance between to locations
-
     Note: It uses the direct distance between the current location and the
           target location to estimate the time to arrival.
           To be accurate, it would have to use the distance along the
@@ -44,7 +39,6 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
 
     """
     Base class for all atomic behaviors used to setup a scenario
-
     Important parameters:
     - name: Name of the atomic behavior
     """
@@ -423,7 +417,6 @@ class KeepVelocity(AtomicBehavior):
     The controlled traffic participant will accelerate as fast as possible
     until reaching a given _target_velocity_, which is then maintained for
     as long as this behavior is active.
-
     Note: In parallel to this behavior a termination behavior has to be used
           to keep the velocity either for a certain duration, or for a certain
           distance, etc.
@@ -509,7 +502,6 @@ class UseAutoPilot(AtomicBehavior):
 
     """
     This class contains an atomic behavior to use the auto pilot.
-
     Note: In parallel to this behavior a termination behavior has to be used
           to terminate this behavior after a certain duration, or after a
           certain distance, etc.
@@ -724,22 +716,23 @@ class BasicAgentBehavior(AtomicBehavior):
 
     """
     This class contains an atomic behavior, which uses the
-    basic_agent from CARLA to control the actor until
+    basic_agent from CARLA to control the vehicle until
     reaching a target location.
     """
 
     _acceptable_target_distance = 2
 
-    def __init__(self, actor, target_location, name="BasicAgentBehavior"):
+    def __init__(self, vehicle, target_location, name="BasicAgentBehavior"):
         """
-        Setup actor and maximum steer value
+        Setup vehicle and maximum steer value
         """
         super(BasicAgentBehavior, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._agent = BasicAgent(actor)
-        self._agent.set_destination((target_location.x, target_location.y, target_location.z))
+        self._agent = BasicAgent(vehicle)
+        self._agent.set_destination(
+            (target_location.x, target_location.y, target_location.z))
         self._control = carla.VehicleControl()
-        self._actor = actor
+        self._vehicle = vehicle
         self._target_location = target_location
 
     def update(self):
@@ -747,19 +740,20 @@ class BasicAgentBehavior(AtomicBehavior):
 
         self._control = self._agent.run_step()
 
-        location = CarlaDataProvider.get_location(self._actor)
+        location = CarlaDataProvider.get_location(self._vehicle)
         if calculate_distance(location, self._target_location) < self._acceptable_target_distance:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-        self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        self._vehicle.apply_control(self._control)
 
         return new_status
 
     def terminate(self, new_status):
         self._control.throttle = 0.0
         self._control.brake = 0.0
-        self._actor.apply_control(self._control)
+        self._vehicle.apply_control(self._control)
         super(BasicAgentBehavior, self).terminate(new_status)
 
 
@@ -792,158 +786,3 @@ class HandBrakeVehicle(AtomicBehavior):
         self._vehicle.apply_control(self._control)
 
         return new_status
-
-
-class TurnVehicle(AtomicBehavior):
-    """
-    This atomic behaviour performs either a right or left turn
-    at the next junction
-    """
-
-    def __init__(self, vehicle, speed, turn, name="TurnVehicle"):
-        """
-        Setting initialization parameters.
-        vehicle     :   Vehicle to be turned
-        speed       :   Speed at which to execute the turn in kmph
-        turn        :   Turn index. LEFT -> 1, RIGHT -> -1
-        """
-        super(TurnVehicle, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._vehicle = vehicle
-        self._map = self._vehicle.get_world().get_map()
-        self._turn = turn
-        self._reached_junction = False
-        self._next_wp = None
-        self._previous_wp = None
-        self._wp_list = []
-        self._threshold = 1 #   degree
-        self._target_speed = speed
-        self._sampling_radius = 0.5 * self._target_speed / 3.6
-        self._minimum_distance = 0.9 * self._sampling_radius
-
-    def update(self):
-        """
-        Follow waypoints to a junction and choose path based on turn input,
-        then execute the turn
-        """
-
-        new_status = py_trees.common.Status.RUNNING
-
-        #   Retrieve vehicle state
-        current_transform = self._vehicle.get_transform()
-        current_location = current_transform.location
-        current_wp = self._map.get_waypoint(current_location)
-        projected_location = current_location + \
-            carla.Location(
-                x=math.cos(math.radians(current_transform.rotation.yaw)),
-                y=math.sin(math.radians(current_transform.rotation.yaw)))
-        v_actual = self._vector(current_location, projected_location)
-
-        #   Generate next waypoint
-        if self._next_wp is None:   #   First iteration
-            self._next_wp = current_wp.next(self._sampling_radius)[0]
-        #   Get next waypoint when close to target waypoint
-        elif self._next_wp.transform.location.distance(
-                current_location) < self._minimum_distance:
-            wp_choice = self._next_wp.next(self._sampling_radius)
-            #   Choose path at intersection
-            if not self._reached_junction and len(wp_choice) > 1:
-                self._reached_junction = True
-                select_criteria = float('inf')
-                for wp_select in wp_choice:
-                    v_select = self._vector(
-                        current_location, wp_select.transform.location)
-                    cross = self._turn*np.cross(v_actual, v_select)[-1]
-                    if cross < select_criteria:
-                        select_criteria = cross
-                        self._next_wp = wp_select
-            else:
-                self._next_wp = wp_choice[0]
-            self._wp_list.append(self._next_wp)
-
-        #   End condition for the behaviour
-        if len(self._wp_list) >= 3:
-            v_1 = self._vector(
-                self._wp_list[-2].transform.location,
-                self._wp_list[-1].transform.location)
-            v_2 = self._vector(
-                self._wp_list[-3].transform.location,
-                self._wp_list[-2].transform.location)
-            angle_wp = math.acos(
-                np.dot(v_1, v_2)/\
-                    (np.linalg.norm(v_1)*np.linalg.norm(v_2)))
-            angle_actual = math.acos(
-                np.dot(v_actual, v_1)/\
-                    (np.linalg.norm(v_actual)*np.linalg.norm(v_1)))
-            if angle_wp < np.radians(self._threshold) and \
-                angle_actual < np.radians(self._threshold):
-                new_status = py_trees.common.Status.SUCCESS
-
-        #   Generate controls and apply
-        v_target = self._vector(current_location, self._next_wp.transform.location)
-        speed_actual = self._vehicle.get_velocity()
-        speed_actual = np.linalg.norm([speed_actual.x, speed_actual.y, speed_actual.z])
-        control = self._controller(
-            1, 1,
-            v_actual, v_target,
-            speed_actual, self._target_speed)
-        self._vehicle.apply_control(control)
-
-        return new_status
-
-    def _controller(self, k_s, k_t, v_actual, v_target, speed_actual, speed_target):
-        """
-        Proportional controller for throttle and steering
-        k_s, kt     :   steer and throttle control gain
-        v_actual    :   vector along current heading
-        v_target    :   target heading vector
-        speed_actual:   current vehicle speed
-        speed_target:   target speed for the vehicle
-        """
-        angle = math.acos(
-            np.dot(v_target, v_actual) / \
-                (np.linalg.norm(v_target)*np.linalg.norm(v_actual)))
-        direction = 1 if np.cross(v_actual, v_target)[-1] > 0 else -1
-        speed_control = np.clip(k_t*(speed_target - speed_actual*3.6)/speed_target, -1, 1)
-
-        control = carla.VehicleControl()
-        if speed_control > 0:
-            control.throttle = speed_control
-            control.brake = 0
-        else:
-            control.brake = abs(speed_control)
-            control.throttle = 0
-        control.steer = np.clip(k_s*direction*math.sin(angle), -1, 1)
-
-        return control
-
-    def _vector(self, l_1, l_2):
-        """
-        Returns the unit vector from l_1 to l_2
-        l_1, l_2    :   carla.Location objects
-        """
-        x = l_2.x-l_1.x
-        y = l_2.y-l_1.y
-        norm = np.linalg.norm([x, y])
-        return [x/norm, y/norm, 0]
-
-    def _draw(self, begin, end):
-        """
-        Function to draw arrows in the simulator for debugging
-        """
-        begin = begin.transform.location
-        end = end.transform.location
-        world = self._vehicle.get_world()
-        world.debug.draw_arrow(begin, end, arrow_size=0.3, life_time=1.0)
-
-    def terminate(self, new_status):
-        """
-        On termination of this behavior, the throttle should be set back to 0.,
-        to avoid further acceleration.
-        """
-        control = carla.VehicleControl()
-        control.throttle = 0.0
-        control.brake = 0.0
-        control.steer = 0.0
-        self._vehicle.apply_control(control)
-        super(TurnVehicle, self).terminate(new_status)
