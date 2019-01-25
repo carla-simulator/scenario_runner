@@ -16,18 +16,20 @@ The release package contains the following
 
 ## Installing prerequisites
 The current version is designed to be used with Ubuntu 16.04, Python 2.7 (or
-Python 3.5) and python-py-trees. To install python-py-trees select one of the
-following commands, depending on your Python version.
+Python 3.5) and python-py-trees (v0.8.3). To install python-py-trees select one
+of the following commands, depending on your Python version.
 ```
-pip2 install --user py_trees # For Python 2.x
-pip3 install --user py_trees # For Python 3.x
+pip2 install --user py_trees==0.8.3 # For Python 2.x
+pip3 install --user py_trees==0.8.3 # For Python 3.x
 ```
+
+Note: py-trees newer than v0.8 is *NOT* supported.
 
 ## Running the follow vehicle example
 First of all, you need to get latest master branch from CARLA. Then you have to
 include CARLA Python API to the Python path:
 ```
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI
 ```
 
 Now, you can start the CARLA server with Town01 from ${CARLA_ROOT}

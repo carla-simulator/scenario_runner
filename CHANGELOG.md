@@ -1,3 +1,8 @@
+## Lastest changes
+
+* Added new atomic behaviors using py_trees behavior tree library
+    - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
+
 ## CARLA Scenario_Runner 0.9.2
 
 * Added Traffic Scenarios engine to reproduce complex traffic situations for training and evaluating driving agents

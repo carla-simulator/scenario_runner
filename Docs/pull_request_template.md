@@ -9,6 +9,7 @@ Checklist:
   - [ ] Extended the README / documentation, if necessary
   - [ ] Code compiles correctly and runs
   - [ ] Code is formatted and checked with Utilities/code_check_and_formatting.sh
+  - [ ] Changelog is updated
 
 -->
 
