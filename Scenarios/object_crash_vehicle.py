@@ -41,7 +41,7 @@ class StationaryObjectCrossing(BasicScenario):
     _ego_vehicle_velocity_allowed = 20
     _ego_vehicle_distance_to_other = 35
 
-    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -108,7 +108,7 @@ class DynamicObjectCrossing(BasicScenario):
     _other_actor_max_throttle = 1.0
     _other_actor_max_brake = 1.0
 
-    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """

@@ -17,6 +17,8 @@ a collision. The scenario ends either via a timeout, or if the ego
 vehicle stopped close enough to the leading vehicle
 """
 
+import random
+
 import py_trees
 
 from ScenarioManager.atomic_scenario_behavior import *
@@ -45,14 +47,17 @@ class FollowLeadingVehicle(BasicScenario):
     # ego vehicle parameters
     _ego_max_velocity_allowed = 20        # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4        # Average expected velocity [m/s]
+    _ego_other_distance_start = 4         # time to arrival that triggers scenario starts
 
     # other vehicle
     _other_actor_max_brake = 1.0                  # Maximum brake of other actor
     _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
 
-    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
+
+        If randomize is True, the scenario parameters are randomized
         """
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
                                                    ego_vehicle,
@@ -60,6 +65,16 @@ class FollowLeadingVehicle(BasicScenario):
                                                    town,
                                                    world,
                                                    debug_mode)
+
+        if randomize:
+            self._ego_other_distance_start = random.randint(4, 8)
+
+            # Example code how to randomize start location
+            # distance = random.randint(20, 80)
+            # new_location, _ = get_location_in_distance(self.ego_vehicle, distance)
+            # waypoint = world.get_map().get_waypoint(new_location)
+            # waypoint.transform.location.z += 39
+            # self.other_actors[0].set_transform(waypoint.transform)
 
     def _create_behavior(self):
         """
@@ -72,10 +87,16 @@ class FollowLeadingVehicle(BasicScenario):
         """
 
         # start condition
-        startcondition = InTimeToArrivalToLocation(self.ego_vehicle,
-                                                   4,
-                                                   self.other_actors[0].get_location(),
-                                                   name="Waiting for start position")
+        startcondition = py_trees.composites.Parallel(
+            "Waiting for start position",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
+        startcondition.add_child(InTimeToArrivalToLocation(self.ego_vehicle,
+                                                           self._ego_other_distance_start,
+                                                           self.other_actors[0].get_location()))
+        startcondition.add_child(InTriggerDistanceToVehicle(self.ego_vehicle,
+                                                            self.other_actors[0],
+                                                            10))
 
         # let the other actor drive until next intersection
         # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
@@ -152,12 +173,13 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     # ego vehicle parameters
     _ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
+    _ego_other_distance_start = 4    # time to arrival that triggers scenario starts
 
     # other vehicle
     _other_actor_max_brake = 1.0                  # Maximum brake of other vehicle
     _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
 
-    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -168,6 +190,9 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
                                                                town,
                                                                world,
                                                                debug_mode)
+
+        if randomize:
+            self._ego_other_distance_start = random.randint(2, 8)
 
     def _create_behavior(self):
         """
@@ -181,7 +206,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         # start condition
         startcondition = InTimeToArrivalToLocation(self.ego_vehicle,
-                                                   4,
+                                                   self._ego_other_distance_start,
                                                    self.other_actors[0].get_location(),
                                                    name="Waiting for start position")
 

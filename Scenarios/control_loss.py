@@ -45,7 +45,7 @@ class ControlLoss(BasicScenario):
     _start_distance = 20
     _end_distance = 80
 
-    def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """

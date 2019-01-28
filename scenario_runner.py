@@ -225,7 +225,12 @@ class ScenarioRunner(object):
                 scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.name)
                 try:
                     self.prepare_actors(config)
-                    scenario = scenario_class(self.world, self.ego_vehicle, self.actors, config.town, args.debug)
+                    scenario = scenario_class(self.world,
+                                              self.ego_vehicle,
+                                              self.actors,
+                                              config.town,
+                                              args.randomize,
+                                              args.debug)
                 except Exception as exception:
                     print("The scenario cannot be loaded")
                     print(exception)
@@ -267,6 +272,7 @@ if __name__ == '__main__':
     PARSER.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     # pylint: enable=line-too-long
+    PARSER.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     PARSER.add_argument('--list_class', action="store_true", help='List all supported scenario classes and exit')
