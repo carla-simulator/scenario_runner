@@ -33,6 +33,8 @@ class StationaryObjectCrossing(BasicScenario):
     a stationary cyclist.
     """
 
+    category = "ObjectCrossing"
+
     timeout = 60
 
     # ego vehicle parameters
@@ -91,6 +93,8 @@ class DynamicObjectCrossing(BasicScenario):
     The ego vehicle is passing through a road,
     And encounters a cyclist crossing the road.
     """
+
+    category = "ObjectCrossing"
 
     timeout = 60
 

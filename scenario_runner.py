@@ -45,7 +45,7 @@ SCENARIOS = {
     "ObjectCrossing": OBJECT_CROSSING_SCENARIOS,
     "RunningRedLight": RUNNING_RED_LIGHT_SCENARIOS,
     "NoSignalJunction": NO_SIGNAL_JUNCTION_SCENARIOS,
-    "VehicleTurning": TURNING_SCENARIOS,
+    "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
     "ControlLoss": CONTROL_LOSS_SCENARIOS
 }
 
@@ -138,13 +138,17 @@ def main(args):
         manager = ScenarioManager(world, args.debug)
 
         # Setup and run the scenarios for repetition times
-        for i in range(int(args.repetitions)):
+        for _ in range(int(args.repetitions)):
 
             # Load the scenario configurations provided in the config file
-            scenario_configurations = parse_scenario_configuration(world, args.scenario)
+            scenario_configurations = None
+            if args.scenario.startswith("group:"):
+                scenario_configurations = parse_scenario_configuration(world, args.scenario)
+            else:
+                scenario_class = get_scenario_class_or_fail(args.scenario)
+                scenario_configurations = parse_scenario_configuration(world, scenario_class.category)
 
             # Execute each configuration
-            # TODO: Also allow execution of single scenarios
             for config in scenario_configurations:
                 print("Preparing scenario: " + config.name)
 
@@ -182,7 +186,7 @@ def main(args):
                 current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
                 junit_filename = None
                 if args.junit is not None:
-                    junit_filename = config.name + current_time  + ".xml"
+                    junit_filename = config.name + current_time + ".xml"
                 filename = None
                 if args.file is not None:
                     filename = config.name + current_time + ".txt"
@@ -225,14 +229,23 @@ if __name__ == '__main__':
     PARSER.add_argument('--output', action="store_true", help='Provide results on stdout')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
     PARSER.add_argument('--junit', action="store_true", help='Write results into a junit file')
-    PARSER.add_argument('--scenario', help='Name of the scenario to be executed')
+    # pylint: disable=line-too-long
+    PARSER.add_argument(
+        '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
+    # pylint: enable=line-too-long
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
+    PARSER.add_argument('--list_class', action="store_true", help='List all supported scenario classes and exit')
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
 
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")
+        print(*SCENARIOS.values(), sep='\n')
+        sys.exit(0)
+
+    if ARGUMENTS.list_class:
+        print("Currently the following scenario classes are supported:")
         print(*SCENARIOS.keys(), sep='\n')
         sys.exit(0)
 

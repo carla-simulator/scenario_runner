@@ -36,6 +36,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     vehicle has green)
     """
 
+    category = "RunningRedLight"
+
     timeout = 180            # Timeout of scenario in seconds
 
     # ego vehicle parameters

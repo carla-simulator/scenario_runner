@@ -32,6 +32,8 @@ class ControlLoss(BasicScenario):
     Implementation of "Control Loss Vehicle" (Traffic Scenario 01)
     """
 
+    category = "ControlLoss"
+
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters

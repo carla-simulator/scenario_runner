@@ -32,6 +32,8 @@ class NoSignalJunctionCrossing(BasicScenario):
     Traffic Scenario 10.
     """
 
+    category = "NoSignalJunction"
+
     # ego vehicle parameters
     _ego_vehicle_max_velocity = 20
     _ego_vehicle_driven_distance = 105

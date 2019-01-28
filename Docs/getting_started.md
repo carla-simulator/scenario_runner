@@ -55,6 +55,15 @@ To control the ego vehicle within the scenario, open another terminal and run:
 python manual_control.py
 ```
 
+## Running all scenarios of one scenario class
+Similar to the previous example, it is also possible to execute a sequence of scenarios,
+that belong to the same class, e.g. the "FollowLeadingVehicle" class.
+
+The only difference is, that you start the scenario_runner as follows:
+```
+python scenario_runner.py --scenario group:FollowLeadingVehicle
+```
+
 ## Running other scenarios
 A list of supported scenarios is provided in
 [List of Supported Scenarios](list_of_scenarios.md). Please note that

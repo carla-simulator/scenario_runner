@@ -18,7 +18,7 @@ from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
-TURNING_SCENARIOS = [
+VEHICLE_TURNING_SCENARIOS = [
     "VehicleTurningRight",
     "VehicleTurningLeft"
 ]
@@ -32,6 +32,8 @@ class VehicleTurningRight(BasicScenario):
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a right turn.
     """
+
+    category = "VehicleTurning"
 
     timeout = 90
 
@@ -152,6 +154,8 @@ class VehicleTurningLeft(BasicScenario):
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a left turn.
     """
+
+    category = "VehicleTurning"
 
     timeout = 90
 

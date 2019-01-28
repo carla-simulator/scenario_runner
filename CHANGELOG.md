@@ -4,8 +4,8 @@
     - Every scenario has to have a configuration provided as XML file.
       Currently there is one XML file for each scenario class
     - The scenario runner is now responsible for spawning/destroying all actors.
-    - Only a scenario class can be executed by the scenario runner, which may mean that several scenarios are executed, one after another
     - Renamed vehicle -> actor
+    - If all scenarios in one coniguration file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
 * Added new atomic behaviors using py_trees behavior tree library
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
 

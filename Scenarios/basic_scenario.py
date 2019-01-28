@@ -24,6 +24,7 @@ class BasicScenario(object):
     """
 
     _town = None            # Name of the map that is used
+    category = None         # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
     name = None             # Name of the scenario
     criteria_list = []      # List of evaluation criteria
     timeout = 60            # Timeout of scenario in seconds

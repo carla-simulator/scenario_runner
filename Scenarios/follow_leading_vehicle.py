@@ -39,6 +39,8 @@ class FollowLeadingVehicle(BasicScenario):
     scenario involving two vehicles.
     """
 
+    category = "FollowLeadingVehicle"
+
     timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
@@ -168,6 +170,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     This class holds a scenario similar to FollowLeadingVehicle
     but there is a (hidden) obstacle in front of the leading vehicle
     """
+
+    category = "FollowLeadingVehicle"
 
     timeout = 60            # Timeout of scenario in seconds
 

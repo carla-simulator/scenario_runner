@@ -64,7 +64,16 @@ def parse_scenario_configuration(world, scenario_name):
     """
     Parse scenario configuration file and provide a list of
     ScenarioConfigurations @return
+
+    If scenario_name starts with "group:" all scenarios within
+    the config file will be returned. Otherwise only the scenario,
+    that matches the scenario_name.
     """
+
+    single_scenario_only = True
+    if scenario_name.startswith("group:"):
+        single_scenario_only = False
+        scenario_name = scenario_name[6:]
 
     scenario_config_file = "Configs/" + scenario_name + ".xml"
     tree = ET.parse(scenario_config_file)
@@ -84,6 +93,10 @@ def parse_scenario_configuration(world, scenario_name):
         for other_actor in scenario.iter("other_actor"):
             new_config.other_actors.append(ActorConfiguration(other_actor))
 
-        scenario_configurations.append(new_config)
+        if single_scenario_only:
+            if new_config.name == scenario_name:
+                scenario_configurations.append(new_config)
+        else:
+            scenario_configurations.append(new_config)
 
     return scenario_configurations
