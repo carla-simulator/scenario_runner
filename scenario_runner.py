@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # Copyright (c) 2018-2019 Intel Labs.
 # authors: Fabian Oboril (fabian.oboril@intel.com)
 #
@@ -50,62 +49,20 @@ SCENARIOS = {
 }
 
 
-def setup_vehicle(world, model, spawn_point, hero=False):
+class ScenarioRunner(object):
+
     """
-    Function to setup the most relevant vehicle parameters,
-    incl. spawn point and vehicle model.
-    """
-    blueprint_library = world.get_blueprint_library()
+    This is the core scenario runner module. It is responsible for
+    running (and repeating) a single scenario or a list of scenarios.
 
-    # Get vehicle by model
-    blueprint = random.choice(blueprint_library.filter(model))
-    if hero:
-        blueprint.set_attribute('role_name', 'hero')
-    else:
-        blueprint.set_attribute('role_name', 'scenario')
-
-    vehicle = world.try_spawn_actor(blueprint, spawn_point)
-
-    if vehicle is None:
-        raise Exception(
-            "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-    else:
-        # Let's deactivate the autopilot of the vehicle
-        vehicle.set_autopilot(False)
-
-    return vehicle
-
-
-def get_scenario_class_or_fail(scenario):
-    """
-    Get scenario class by scenario name
-    If scenario is not supported or not found, raise an exception
+    Usage:
+    scenario_runner = ScenarioRunner(args)
+    scenario_runner.run(args)
+    del scenario_runner
     """
 
-    for scenarios in SCENARIOS.values():
-        if scenario in scenarios:
-            if scenario in globals():
-                return globals()[scenario]
-
-    raise Exception("Scenario '{}' not supported".format(scenario))
-
-
-def cleanup(actors):
-    """
-    Remove and destroy all actors
-    """
-
-    for actor in actors:
-        if actor is not None:
-            actor.destroy()
-            actor = None
-
-
-# TODO: Convert to class
-def main(args):
-    """
-    Main function starting a CARLA client and connecting to the world.
-    """
+    ego_vehicle = None
+    actors = []
 
     # Tunable parameters
     client_timeout = 2.0   # in seconds
@@ -113,29 +70,139 @@ def main(args):
 
     # CARLA world and scenario handlers
     world = None
-    scenario = None
     manager = None
 
-    # CARLA actors
-    ego_vehicle = None
-    other_actors = []
+    def __init__(self, args):
+        """
+        Setup CARLA client and world
+        Setup ScenarioManager
+        """
 
-    try:
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
         # requests in the localhost at port 2000.
         client = carla.Client(args.host, int(args.port))
-        client.set_timeout(client_timeout)
+        client.set_timeout(self.client_timeout)
 
         # Once we have a client we can retrieve the world that is currently
         # running.
-        world = client.get_world()
+        self.world = client.get_world()
 
         # Wait for the world to be ready
-        world.wait_for_tick(wait_for_world)
+        self.world.wait_for_tick(self.wait_for_world)
 
         # Create scenario manager
-        manager = ScenarioManager(world, args.debug)
+        self.manager = ScenarioManager(self.world, args.debug)
+
+    def __del__(self):
+        """
+        Cleanup and delete actors, ScenarioManager and CARLA world
+        """
+
+        self.cleanup(True)
+        if self.manager is not None:
+            del self.manager
+        if self.world is not None:
+            del self.world
+
+    @staticmethod
+    def get_scenario_class_or_fail(scenario):
+        """
+        Get scenario class by scenario name
+        If scenario is not supported or not found, exit script
+        """
+
+        for scenarios in SCENARIOS.values():
+            if scenario in scenarios:
+                if scenario in globals():
+                    return globals()[scenario]
+
+        print("Scenario '{}' not supported ... Exiting".format(scenario))
+        sys.exit(-1)
+
+    def cleanup(self, ego=False):
+        """
+        Remove and destroy all actors
+        """
+
+        # We need enumerate here, otherwise the actors are not properly removed
+        for i, _ in enumerate(self.actors):
+            if self.actors[i] is not None:
+                self.actors[i].destroy()
+                self.actors[i] = None
+
+        self.actors = []
+
+        if ego and self.ego_vehicle is not None:
+            self.ego_vehicle.destroy()
+            self.ego_vehicle = None
+
+    def setup_vehicle(self, model, spawn_point, hero=False):
+        """
+        Function to setup the most relevant vehicle parameters,
+        incl. spawn point and vehicle model.
+        """
+
+        blueprint_library = self.world.get_blueprint_library()
+
+        # Get vehicle by model
+        blueprint = random.choice(blueprint_library.filter(model))
+        if hero:
+            blueprint.set_attribute('role_name', 'hero')
+        else:
+            blueprint.set_attribute('role_name', 'scenario')
+
+        vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
+
+        if vehicle is None:
+            raise Exception(
+                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
+        else:
+            # Let's deactivate the autopilot of the vehicle
+            vehicle.set_autopilot(False)
+
+        return vehicle
+
+    def prepare_actors(self, config):
+        """
+        Spawn or update all scenario actors according to
+        their parameters provided in config
+        """
+
+        # If ego_vehicle already exists, just update location
+        # Otherwise spawn ego vehicle
+        if self.ego_vehicle is None:
+            self.ego_vehicle = self.setup_vehicle(config.ego_vehicle.model, config.ego_vehicle.transform, True)
+        else:
+            self.ego_vehicle.set_transform(config.ego_vehicle.transform)
+
+        # spawn all other actors
+        for actor in config.other_actors:
+            new_actor = self.setup_vehicle(actor.model, actor.transform)
+            self.actors.append(new_actor)
+
+    def analyze_scenario(self, args, config):
+        """
+        Provide feedback about success/failure of a scenario
+        """
+
+        current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
+        junit_filename = None
+        if args.junit:
+            junit_filename = config.name + current_time + ".xml"
+        filename = None
+        if args.file:
+            filename = config.name + current_time + ".txt"
+
+        if not self.manager.analyze_scenario(args.output, filename, junit_filename):
+            print("Success!")
+        else:
+            print("Failure!")
+
+    def run(self, args):
+        """
+        Run all scenarios according to provided commandline args
+        """
 
         # Setup and run the scenarios for repetition times
         for _ in range(int(args.repetitions)):
@@ -143,75 +210,39 @@ def main(args):
             # Load the scenario configurations provided in the config file
             scenario_configurations = None
             if args.scenario.startswith("group:"):
-                scenario_configurations = parse_scenario_configuration(world, args.scenario)
+                scenario_configurations = parse_scenario_configuration(self.world, args.scenario)
             else:
-                scenario_class = get_scenario_class_or_fail(args.scenario)
-                scenario_configurations = parse_scenario_configuration(world, scenario_class.category)
+                scenario_class = ScenarioRunner.get_scenario_class_or_fail(args.scenario)
+                scenario_configurations = parse_scenario_configuration(self.world, scenario_class.category)
 
             # Execute each configuration
             for config in scenario_configurations:
+
+                # Prepare scenario
                 print("Preparing scenario: " + config.name)
-
+                scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.name)
                 try:
-                    scenario_class = get_scenario_class_or_fail(config.name)
-                except:
-                    print("Unsupported scenario: " + config.name)
-                    continue
-
-                # spawn all required actors
-                if ego_vehicle is None:
-                    ego_vehicle = setup_vehicle(
-                        world, config.ego_vehicle.model, config.ego_vehicle.transform, hero=True)
-                else:
-                    ego_vehicle.set_transform(config.ego_vehicle.transform)
-
-                for other_actor in config.other_actors:
-                    other_actors.append(
-                        setup_vehicle(world, other_actor.model, other_actor.transform))
-
-                # Get scenario
-                try:
-                    scenario = scenario_class(world, ego_vehicle, other_actors, config.town, args.debug)
+                    self.prepare_actors(config)
+                    scenario = scenario_class(self.world, self.ego_vehicle, self.actors, config.town, args.debug)
                 except:
                     print("The scenario cannot be loaded")
-                    cleanup(other_actors)
-                    other_actors = []
+                    self.cleanup()
                     continue
 
                 # Load scenario and run it
-                manager.load_scenario(scenario)
-                manager.run_scenario()
+                self.manager.load_scenario(scenario)
+                self.manager.run_scenario()
 
                 # Provide outputs if required
-                current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-                junit_filename = None
-                if args.junit is not None:
-                    junit_filename = config.name + current_time + ".xml"
-                filename = None
-                if args.file is not None:
-                    filename = config.name + current_time + ".txt"
-
-                if not manager.analyze_scenario(
-                        args.output, filename, junit_filename):
-                    print("Success!")
-                else:
-                    print("Failure!")
+                self.analyze_scenario(args, config)
 
                 # Stop scenario and cleanup
-                manager.stop_scenario()
+                self.manager.stop_scenario()
                 del scenario
 
-                cleanup(other_actors)
-                other_actors = []
+                self.cleanup()
 
             print("No more scenarios .... Exiting")
-
-    finally:
-        cleanup(other_actors + [ego_vehicle])
-        if manager is not None:
-            del manager
-        if world is not None:
-            del world
 
 
 if __name__ == '__main__':
@@ -254,4 +285,9 @@ if __name__ == '__main__':
         PARSER.print_help(sys.stdout)
         sys.exit(0)
 
-    main(ARGUMENTS)
+    try:
+        SCENARIORUNNER = ScenarioRunner(ARGUMENTS)
+        SCENARIORUNNER.run(ARGUMENTS)
+    finally:
+        SCENARIORUNNER.cleanup()
+        del SCENARIORUNNER
