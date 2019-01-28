@@ -15,6 +15,7 @@ The atomic behaviors are implemented with py_trees.
 """
 
 import py_trees
+
 import carla
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
@@ -58,8 +59,37 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+
+class StandStill(AtomicBehavior):
+
+    """
+    This class contains a standstill behavior of a scenario
+    """
+
+    def __init__(self, actor, name):
+        """
+        Setup actor
+        """
+        super(StandStill, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+
+    def update(self):
+        """
+        Check if the _actor stands still (v=0)
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        velocity = CarlaDataProvider.get_velocity(self._actor)
+
+        if velocity < EPSILON:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
 
 
 class InTriggerRegion(AtomicBehavior):
@@ -68,8 +98,7 @@ class InTriggerRegion(AtomicBehavior):
     This class contains the trigger region (condition) of a scenario
     """
 
-    def __init__(self, actor, min_x, max_x, min_y,
-                 max_y, name="TriggerRegion"):
+    def __init__(self, actor, min_x, max_x, min_y, max_y, name="TriggerRegion"):
         """
         Setup trigger region (rectangle provided by
         [min_x,min_y] and [max_x,max_y]
@@ -110,8 +139,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
     of a scenario
     """
 
-    def __init__(self, other_actor, actor, distance,
-                 name="TriggerDistanceToVehicle"):
+    def __init__(self, other_actor, actor, distance, name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
         """
@@ -148,8 +176,7 @@ class InTriggerDistanceToLocation(AtomicBehavior):
     location of a scenario
     """
 
-    def __init__(self, actor, target_location, distance,
-                 name="InTriggerDistanceToLocation"):
+    def __init__(self, actor, target_location, distance, name="InTriggerDistanceToLocation"):
         """
         Setup trigger distance
         """
@@ -209,8 +236,10 @@ class InTriggerDistanceToNextIntersection(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         current_waypoint = self._map.get_waypoint(CarlaDataProvider.get_location(self._actor))
-
         distance = calculate_distance(current_waypoint.transform.location, self._final_location)
+        
+        if distance < self._distance:
+            new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -352,8 +381,7 @@ class AccelerateToVelocity(AtomicBehavior):
     a given _target_velocity_
     """
 
-    def __init__(self, actor, throttle_value,
-                 target_velocity, name="Acceleration"):
+    def __init__(self, actor, throttle_value, target_velocity, name="Acceleration"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity

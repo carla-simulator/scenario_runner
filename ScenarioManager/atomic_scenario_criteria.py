@@ -64,8 +64,7 @@ class Criterion(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
 
 class MaxVelocityTest(Criterion):
@@ -78,8 +77,7 @@ class MaxVelocityTest(Criterion):
         """
         Setup actor and maximum allowed velovity
         """
-        super(MaxVelocityTest, self).__init__(
-            name, actor, max_velocity_allowed, None, optional)
+        super(MaxVelocityTest, self).__init__(name, actor, max_velocity_allowed, None, optional)
 
     def update(self):
         """
@@ -102,8 +100,7 @@ class MaxVelocityTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -123,8 +120,7 @@ class DrivenDistanceTest(Criterion):
         """
         Setup actor
         """
-        super(DrivenDistanceTest, self).__init__(
-            name, actor, distance_success, distance_acceptable, optional)
+        super(DrivenDistanceTest, self).__init__(name, actor, distance_success, distance_acceptable, optional)
         self._last_location = None
 
     def initialise(self):
@@ -163,8 +159,7 @@ class DrivenDistanceTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -231,8 +226,7 @@ class AverageVelocityTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -252,10 +246,8 @@ class CollisionTest(Criterion):
 
         world = self.actor.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
-        self._collision_sensor = world.spawn_actor(
-            blueprint, carla.Transform(), attach_to=self.actor)
-        self._collision_sensor.listen(
-            lambda event: self._count_collisions(weakref.ref(self), event))
+        self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
+        self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
 
     def update(self):
         """
@@ -271,8 +263,7 @@ class CollisionTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -310,12 +301,9 @@ class KeepLaneTest(Criterion):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         world = self.actor.get_world()
-        blueprint = world.get_blueprint_library().find(
-            'sensor.other.lane_detector')
-        self._lane_sensor = world.spawn_actor(
-            blueprint, carla.Transform(), attach_to=self.actor)
-        self._lane_sensor.listen(
-            lambda event: self._count_lane_invasion(weakref.ref(self), event))
+        blueprint = world.get_blueprint_library().find('sensor.other.lane_detector')
+        self._lane_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
+        self._lane_sensor.listen(lambda event: self._count_lane_invasion(weakref.ref(self), event))
 
     def update(self):
         """
@@ -331,8 +319,7 @@ class KeepLaneTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -363,8 +350,7 @@ class ReachedRegionTest(Criterion):
     The test is a success if the actor reaches a specified region
     """
 
-    def __init__(self, actor, min_x, max_x, min_y,
-                 max_y, name="ReachedRegionTest"):
+    def __init__(self, actor, min_x, max_x, min_y, max_y, name="ReachedRegionTest"):
         """
         Setup trigger region (rectangle provided by
         [min_x,min_y] and [max_x,max_y]
@@ -399,7 +385,6 @@ class ReachedRegionTest(Criterion):
         if self.test_status == "SUCCESS":
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
