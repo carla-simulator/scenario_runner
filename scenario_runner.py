@@ -210,10 +210,12 @@ class ScenarioRunner(object):
             # Load the scenario configurations provided in the config file
             scenario_configurations = None
             if args.scenario.startswith("group:"):
-                scenario_configurations = parse_scenario_configuration(self.world, args.scenario)
+                scenario_configurations = parse_scenario_configuration(self.world, args.scenario, args.scenario)
             else:
                 scenario_class = ScenarioRunner.get_scenario_class_or_fail(args.scenario)
-                scenario_configurations = parse_scenario_configuration(self.world, scenario_class.category)
+                scenario_configurations = parse_scenario_configuration(self.world,
+                                                                       scenario_class.category,
+                                                                       args.scenario)
 
             # Execute each configuration
             for config in scenario_configurations:
@@ -224,8 +226,9 @@ class ScenarioRunner(object):
                 try:
                     self.prepare_actors(config)
                     scenario = scenario_class(self.world, self.ego_vehicle, self.actors, config.town, args.debug)
-                except:
+                except Exception as exception:
                     print("The scenario cannot be loaded")
+                    print(exception)
                     self.cleanup()
                     continue
 
@@ -289,5 +292,4 @@ if __name__ == '__main__':
         SCENARIORUNNER = ScenarioRunner(ARGUMENTS)
         SCENARIORUNNER.run(ARGUMENTS)
     finally:
-        SCENARIORUNNER.cleanup()
         del SCENARIORUNNER

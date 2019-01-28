@@ -60,7 +60,7 @@ def set_attrib(node, key, default):
     return node.attrib[key] if node.attrib.has_key(key) else default
 
 
-def parse_scenario_configuration(world, scenario_name):
+def parse_scenario_configuration(world, file_name, scenario_name):
     """
     Parse scenario configuration file and provide a list of
     ScenarioConfigurations @return
@@ -75,7 +75,7 @@ def parse_scenario_configuration(world, scenario_name):
         single_scenario_only = False
         scenario_name = scenario_name[6:]
 
-    scenario_config_file = "Configs/" + scenario_name + ".xml"
+    scenario_config_file = "Configs/" + file_name + ".xml"
     tree = ET.parse(scenario_config_file)
 
     scenario_configurations = []

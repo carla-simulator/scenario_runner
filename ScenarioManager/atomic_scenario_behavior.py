@@ -237,7 +237,7 @@ class InTriggerDistanceToNextIntersection(AtomicBehavior):
 
         current_waypoint = self._map.get_waypoint(CarlaDataProvider.get_location(self._actor))
         distance = calculate_distance(current_waypoint.transform.location, self._final_location)
-        
+
         if distance < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 
