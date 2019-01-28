@@ -38,9 +38,12 @@ class ControlLoss(BasicScenario):
 
     # ego vehicle parameters
     _no_of_jitter_actions = 20
-    _noise_mean = 0     # Mean value of steering noise
+    _noise_mean = 0      # Mean value of steering noise
     _noise_std = 0.02    # Std. deviation of steerning noise
     _dynamic_mean = 0.05
+    _abort_distance_to_intersection = 20
+    _start_distance = 20
+    _end_distance = 80
 
     def __init__(self, world, ego_vehicle, other_actors, town, debug_mode=False):
         """
@@ -56,49 +59,52 @@ class ControlLoss(BasicScenario):
     def _create_behavior(self):
         """
         The scenario defined after is a "control loss vehicle" scenario. After
-        invoking this scenario, it will wait for the user controlled vehicle to
-        enter the start region, then it performs a jitter action. Finally,
-        the user-controlled vehicle has to reach a target region.
-        If this does not happen within 60 seconds, a timeout stops the scenario
+        invoking this scenario, it will wait until the vehicle drove a few meters
+        (_start_distance), and then perform a jitter action. Finally, the vehicle
+        has to reach a target point (_end_distance). If this does not happen within
+        60 seconds, a timeout stops the scenario
         """
 
         # start condition
-        start_condition = InTriggerRegion(self.ego_vehicle, 43, 49, 190, 210)
+        location, _ = get_location_in_distance(self.ego_vehicle, self._start_distance)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
 
         # jitter sequence
-        jitter_sequence = py_trees.composites.Sequence(
-            "Jitter Sequence Behavior")
+        jitter_sequence = py_trees.composites.Sequence("Jitter Sequence Behavior")
         jitter_timeout = TimeOut(timeout=0.2, name="Timeout for next jitter")
 
         for i in range(self._no_of_jitter_actions):
-            ego_vehicle_max_steer = random.gauss(
-                self._noise_mean, self._noise_std)
+            ego_vehicle_max_steer = random.gauss(self._noise_mean, self._noise_std)
             if ego_vehicle_max_steer > 0:
                 ego_vehicle_max_steer += self._dynamic_mean
             elif ego_vehicle_max_steer < 0:
                 ego_vehicle_max_steer -= self._dynamic_mean
 
             # turn vehicle
-            turn = SteerVehicle(
-                self.ego_vehicle,
-                ego_vehicle_max_steer,
-                name='Steering ' + str(i))
+            turn = SteerVehicle(self.ego_vehicle, ego_vehicle_max_steer, name='Steering ' + str(i))
 
-            jitter_action = py_trees.composites.Parallel(
-                "Jitter Actions with Timeouts",
-                policy=py_trees.common.
-                ParallelPolicy.SUCCESS_ON_ALL)
+            jitter_action = py_trees.composites.Parallel("Jitter Actions with Timeouts",
+                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
             jitter_action.add_child(turn)
             jitter_action.add_child(jitter_timeout)
             jitter_sequence.add_child(jitter_action)
 
-        # endcondition
-        end_condition = InTriggerRegion(self.ego_vehicle, 145, 150, 190, 210)
+        # Abort jitter_sequence, if the vehicle is approaching an intersection
+        jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
+
+        jitter = py_trees.composites.Parallel("Jitter",
+                                              policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        jitter.add_child(jitter_sequence)
+        jitter.add_child(jitter_abort)
+
+        # endcondition: Check if vehicle reached waypoint _end_distance from here:
+        location, _ = get_location_in_distance(self.ego_vehicle, self._end_distance)
+        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(start_condition)
-        sequence.add_child(jitter_sequence)
+        sequence.add_child(jitter)
         sequence.add_child(end_condition)
         return sequence
 
@@ -110,13 +116,6 @@ class ControlLoss(BasicScenario):
         criteria = []
 
         collision_criterion = CollisionTest(self.ego_vehicle)
-        # Region check to verify if the vehicle reached correct lane
-        reached_region_criterion = ReachedRegionTest(
-            self.ego_vehicle,
-            113, 119,
-            204.2, 210.2)
-
         criteria.append(collision_criterion)
-        criteria.append(reached_region_criterion)
 
         return criteria

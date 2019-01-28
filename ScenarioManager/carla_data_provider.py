@@ -74,13 +74,11 @@ class CarlaDataProvider(object):
         """
         for actor in CarlaDataProvider._actor_velocity_map:
             if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_velocity_map[
-                    actor] = calculate_velocity(actor)
+                CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
 
         for actor in CarlaDataProvider._actor_location_map:
             if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_location_map[
-                    actor] = actor.get_location()
+                CarlaDataProvider._actor_location_map[actor] = actor.get_location()
 
     @staticmethod
     def get_velocity(actor):

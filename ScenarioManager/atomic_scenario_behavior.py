@@ -240,10 +240,6 @@ class TriggerVelocity(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        print(CarlaDataProvider.get_velocity(self._actor))
-        print(CarlaDataProvider.get_location(self._actor))
-        print(self._target_velocity)
-
         delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
         if delta_velocity < EPSILON:
             new_status = py_trees.common.Status.SUCCESS
