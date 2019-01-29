@@ -77,6 +77,7 @@ def parse_scenario_configuration(world, file_name, scenario_name):
     if scenario_name.startswith("group:"):
         single_scenario_only = False
         scenario_name = scenario_name[6:]
+        file_name = scenario_name
 
     scenario_config_file = "Configs/" + file_name + ".xml"
     tree = ET.parse(scenario_config_file)

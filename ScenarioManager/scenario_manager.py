@@ -143,7 +143,6 @@ class ScenarioManager(object):
         """
         Reset all parameters
         """
-        self.stop_scenario()
         self._running = False
         self._timestamp_last_run = 0.0
         self.scenario_duration_system = 0.0

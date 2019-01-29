@@ -278,7 +278,7 @@ class HUD(object):
             return
         t = world.vehicle.get_transform()
         v = world.vehicle.get_velocity()
-        c = world.vehicle.get_vehicle_control()
+        c = world.vehicle.get_control()
         heading = 'N' if abs(t.rotation.yaw) < 89.5 else ''
         heading += 'S' if abs(t.rotation.yaw) > 90.5 else ''
         heading += 'E' if 179.5 > t.rotation.yaw > 0.5 else ''
