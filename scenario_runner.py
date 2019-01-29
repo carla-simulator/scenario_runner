@@ -212,9 +212,12 @@ class ScenarioRunner(object):
             if args.scenario.startswith("group:"):
                 scenario_configurations = parse_scenario_configuration(self.world, args.scenario, args.scenario)
             else:
-                scenario_class = ScenarioRunner.get_scenario_class_or_fail(args.scenario)
+                scenario_config_file = find_scenario_config(args.scenario)
+                if scenario_config_file is None:
+                    print("Configuration for scenario {} cannot be found!".format(args.scenario))
+                    continue
                 scenario_configurations = parse_scenario_configuration(self.world,
-                                                                       scenario_class.category,
+                                                                       scenario_config_file,
                                                                        args.scenario)
 
             # Execute each configuration
@@ -222,7 +225,7 @@ class ScenarioRunner(object):
 
                 # Prepare scenario
                 print("Preparing scenario: " + config.name)
-                scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.name)
+                scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.type)
                 try:
                     self.prepare_actors(config)
                     scenario = scenario_class(self.world,
@@ -281,7 +284,7 @@ if __name__ == '__main__':
 
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")
-        print(*SCENARIOS.values(), sep='\n')
+        print(*get_list_of_scenarios(), sep='\n')
         sys.exit(0)
 
     if ARGUMENTS.list_class:

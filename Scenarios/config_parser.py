@@ -10,6 +10,7 @@
 This module provides a parser for scenario configuration files
 """
 
+import glob
 import xml.etree.ElementTree as ET
 
 import carla
@@ -43,13 +44,15 @@ class ScenarioConfiguration(object):
     This class provides a basic scenario configuration incl.:
     - configurations for all actors
     - town, where the scenario should be executed
-    - name of the scenario
+    - name of the scenario (e.g. ControlLoss_1)
+    - type is the class of scenario (e.g. ControlLoss)
     """
 
     ego_vehicle = None
     other_actors = []
     town = None
     name = None
+    type = None
 
 
 def set_attrib(node, key, default):
@@ -85,6 +88,7 @@ def parse_scenario_configuration(world, file_name, scenario_name):
         new_config = ScenarioConfiguration()
         new_config.town = set_attrib(scenario, 'town', None)
         new_config.name = set_attrib(scenario, 'name', None)
+        new_config.type = set_attrib(scenario, 'type', None)
         new_config.other_actors = []
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
@@ -100,3 +104,35 @@ def parse_scenario_configuration(world, file_name, scenario_name):
             scenario_configurations.append(new_config)
 
     return scenario_configurations
+
+
+def get_list_of_scenarios():
+    """
+    Parse *all* config files and provide a list with all scenarios @return
+    """
+
+    list_of_config_files = glob.glob("Configs/*.xml")
+
+    scenarios = []
+    for file_name in list_of_config_files:
+        tree = ET.parse(file_name)
+        for scenario in tree.iter("scenario"):
+            scenarios.append(set_attrib(scenario, 'name', None))
+
+    return scenarios
+
+
+def find_scenario_config(scenario_name):
+    """
+    Parse *all* config files and find first match for scenario config
+    """
+
+    list_of_config_files = glob.glob("Configs/*.xml")
+
+    for file_name in list_of_config_files:
+        tree = ET.parse(file_name)
+        for scenario in tree.iter("scenario"):
+            if set_attrib(scenario, 'name', None) == scenario_name:
+                return file_name[8:-4]
+
+    return None
