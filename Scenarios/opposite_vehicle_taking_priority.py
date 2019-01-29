@@ -22,6 +22,11 @@ from ScenarioManager.atomic_scenario_criteria import *
 from Scenarios.basic_scenario import *
 
 
+RUNNING_RED_LIGHT_SCENARIOS = [
+    "OppositeVehicleRunningRedLight"
+]
+
+
 class OppositeVehicleRunningRedLight(BasicScenario):
 
     """
@@ -29,16 +34,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     in which an other vehicle takes priority from the ego
     vehicle, by running a red traffic light (while the ego
     vehicle has green)
-
-    Location: Town03
     """
+
+    category = "RunningRedLight"
 
     timeout = 180            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=-2.8, y=-184, z=1), carla.Rotation(yaw=90))
     _ego_max_velocity_allowed = 20       # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4       # Average expected velocity [m/s]
     _ego_expected_driven_distance = 88   # Expected driven distance [m]
@@ -48,29 +50,19 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _intersection_location = carla.Location(x=-3, y=-150, z=0)
 
     # other vehicle
-    _other_vehicle_model = 'vehicle.tesla.model3'
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=-13.3, y=-133, z=1), carla.Rotation(yaw=0))
-    _other_vehicle_target_velocity = 15      # Target velocity of other vehicle
-    _other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
-    _other_vehicle_distance = 30             # Distance the other vehicle should drive
+    _other_actor_target_velocity = 15      # Target velocity of other vehicle
+    _other_actor_max_brake = 1.0           # Maximum brake of other vehicle
+    _other_actor_distance = 30             # Distance the other vehicle should drive
 
     _traffic_light_location = carla.Location(x=-11.5, y=-125.0, z=0.15)
     _traffic_light = None
     _location_of_collision = carla.Location(x=0, y=-135, z=1)
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
 
         for actor in world.get_actors().filter('traffic.traffic_light'):
             if actor.get_location().distance(self._traffic_light_location) < 1.0:
@@ -80,11 +72,12 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             print("No traffic light for the given location found")
             sys.exit(-1)
 
-        super(OppositeVehicleRunningRedLight, self).__init__(
-            name="OppositeVehicleRunningRedLight",
-            town="Town03",
-            world=world,
-            debug_mode=debug_mode)
+        super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
+                                                             ego_vehicle,
+                                                             other_actors,
+                                                             town,
+                                                             world,
+                                                             debug_mode)
 
     def _create_behavior(self):
         """
@@ -112,8 +105,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         sync_arrival = SyncArrival(
-            self.other_vehicles[0], self.ego_vehicle, self._location_of_collision)
-        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_vehicles[0],
+            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
                                                        15)
         sync_arrival_parallel.add_child(sync_arrival)
@@ -123,11 +116,11 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             "Keep velocity for distance",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
+            self.other_actors[0],
+            self._other_actor_target_velocity)
         keep_velocity_distance = DriveDistance(
-            self.other_vehicles[0],
-            self._other_vehicle_distance,
+            self.other_actors[0],
+            self._other_actor_distance,
             name="Distance")
         keep_velocity_for_distance.add_child(keep_velocity)
         keep_velocity_for_distance.add_child(keep_velocity_distance)
@@ -170,7 +163,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         criteria.append(driven_distance_criterion)
 
         # Add the collision and lane checks for all vehicles as well
-        for vehicle in self.other_vehicles:
+        for vehicle in self.other_actors:
             collision_criterion = CollisionTest(vehicle)
             criteria.append(collision_criterion)
 
@@ -178,4 +171,3 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     def __del__(self):
         self._traffic_light = None
-        super(OppositeVehicleRunningRedLight, self).__del__()

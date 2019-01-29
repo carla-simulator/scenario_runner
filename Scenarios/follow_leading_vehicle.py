@@ -20,11 +20,17 @@ vehicle stopped close enough to the leading vehicle
 import random
 
 import py_trees
-import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
+from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
+
+
+FOLLOW_LEADING_VEHICLE_SCENARIOS = [
+    "FollowLeadingVehicle",
+    "FollowLeadingVehicleWithObstacle"
+]
 
 
 class FollowLeadingVehicle(BasicScenario):
@@ -32,107 +38,93 @@ class FollowLeadingVehicle(BasicScenario):
     """
     This class holds everything required for a simple "Follow a leading vehicle"
     scenario involving two vehicles.
-
-    Location: Town01
     """
 
-    timeout = 60            # Timeout of scenario in seconds
+    category = "FollowLeadingVehicle"
+
+    timeout = 120            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start_x = 107
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
     _ego_max_velocity_allowed = 20        # Maximum allowed velocity [m/s]
-    _ego_acceptable_driven_distance = 50  # The vehicle has to drive at least this distance [m]
     _ego_avg_velocity_expected = 4        # Average expected velocity [m/s]
-    _ego_distance_to_other = 50           # Min. driven distance of ego vehicle [m]
+    _ego_other_distance_start = 4         # time to arrival that triggers scenario starts
 
     # other vehicle
-    _other_vehicle_model = 'vehicle.*'
-    _other_vehicle_start_x = _ego_vehicle_start_x + _ego_distance_to_other
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
-    _other_vehicle_target_velocity = 15          # Target velocity of other vehicle
-    _trigger_distance_from_ego = 15              # Starting point of other vehicle maneuver
-    _other_vehicle_max_throttle = 1.0            # Maximum throttle of other vehicle
-    _other_vehicle_max_brake = 1.0               # Maximum brake of other vehicle
-    _other_vehicle_distance = 50 + \
-        random.randint(0, 50)  # Distance the other vehicle should drive
+    _other_actor_max_brake = 1.0                  # Maximum brake of other actor
+    _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
-        """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
 
-        super(FollowLeadingVehicle, self).__init__(name="FollowVehicle",
-                                                   town="Town01",
-                                                   world=world,
-                                                   debug_mode=debug_mode)
+        If randomize is True, the scenario parameters are randomized
+        """
+        super(FollowLeadingVehicle, self).__init__("FollowVehicle",
+                                                   ego_vehicle,
+                                                   other_actors,
+                                                   town,
+                                                   world,
+                                                   debug_mode)
+
+        if randomize:
+            self._ego_other_distance_start = random.randint(4, 8)
+
+            # Example code how to randomize start location
+            # distance = random.randint(20, 80)
+            # new_location, _ = get_location_in_distance(self.ego_vehicle, distance)
+            # waypoint = world.get_map().get_waypoint(new_location)
+            # waypoint.transform.location.z += 39
+            # self.other_actors[0].set_transform(waypoint.transform)
 
     def _create_behavior(self):
         """
         The scenario defined after is a "follow leading vehicle" scenario. After
         invoking this scenario, it will wait for the user controlled vehicle to
-        enter the start region, then make a traffic participant to accelerate
-        until reaching a certain speed, then keep this speed for 2 seconds,
-        before initiating a stopping maneuver. Finally, the user-controlled
-        vehicle has to reach a target region.
+        enter the start region, then make the other actor to drive until reaching
+        the next intersection. Finally, the user-controlled vehicle has to be close
+        enough to the other actor to end the scenario.
         If this does not happen within 60 seconds, a timeout stops the scenario
         """
 
         # start condition
-        startcondition = InTimeToArrivalToLocation(
-            self.ego_vehicle,
-            4,
-            self.other_vehicles[0].get_location(),
-            name="Waiting for start position")
-
-        # get to velocity and keep it for certain distance
-        keep_velocity_for_distance = py_trees.composites.Parallel(
-            "Keep velocity for distance",
+        startcondition = py_trees.composites.Parallel(
+            "Waiting for start position",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
-        keep_velocity_distance = DriveDistance(
-            self.other_vehicles[0],
-            self._other_vehicle_distance,
-            name="Distance")
-        keep_velocity_for_distance.add_child(keep_velocity)
-        keep_velocity_for_distance.add_child(keep_velocity_distance)
+
+        startcondition.add_child(InTimeToArrivalToLocation(self.ego_vehicle,
+                                                           self._ego_other_distance_start,
+                                                           self.other_actors[0].get_location()))
+        startcondition.add_child(InTriggerDistanceToVehicle(self.ego_vehicle,
+                                                            self.other_actors[0],
+                                                            10))
+
+        # let the other actor drive until next intersection
+        # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
+        driving_to_next_intersection = py_trees.composites.Parallel(
+            "Waiting for end position",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        driving_to_next_intersection.add_child(UseAutoPilot(self.other_actors[0]))
+        driving_to_next_intersection.add_child(InTriggerDistanceToNextIntersection(
+            self.other_actors[0], self._other_actor_stop_in_front_intersection))
 
         # stop vehicle
-        stop = StopVehicle(
-            self.other_vehicles[0],
-            self._other_vehicle_max_brake)
+        stop = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
 
         # end condition
-        endcondition = py_trees.composites.Parallel(
-            "Waiting for end position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        endcondition_part1 = InTriggerDistanceToVehicle(
-            self.other_vehicles[0],
-            self.ego_vehicle,
-            distance=10,
-            name="FinalDistance")
-        endcondition_part2 = TriggerVelocity(
-            self.ego_vehicle, target_velocity=0, name="FinalSpeed")
+        endcondition = py_trees.composites.Parallel("Waiting for end position",
+                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+        endcondition_part1 = InTriggerDistanceToVehicle(self.other_actors[0],
+                                                        self.ego_vehicle,
+                                                        distance=20,
+                                                        name="FinalDistance")
+        endcondition_part2 = StandStill(self.ego_vehicle, name="StandStill")
         endcondition.add_child(endcondition_part1)
         endcondition.add_child(endcondition_part2)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(startcondition)
-        sequence.add_child(keep_velocity_for_distance)
+        sequence.add_child(driving_to_next_intersection)
         sequence.add_child(stop)
         sequence.add_child(endcondition)
 
@@ -145,27 +137,20 @@ class FollowLeadingVehicle(BasicScenario):
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_max_velocity_allowed,
-            optional=True)
+        max_velocity_criterion = MaxVelocityTest(self.ego_vehicle,
+                                                 self._ego_max_velocity_allowed,
+                                                 optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
-            self._ego_distance_to_other + self._other_vehicle_distance - 10,
-            distance_acceptable=self._ego_acceptable_driven_distance)
-        avg_velocity_criterion = AverageVelocityTest(
-            self.ego_vehicle, self._ego_avg_velocity_expected, optional=True)
+        avg_velocity_criterion = AverageVelocityTest(self.ego_vehicle, self._ego_avg_velocity_expected, optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
         criteria.append(keep_lane_criterion)
-        criteria.append(driven_distance_criterion)
         criteria.append(avg_velocity_criterion)
 
         # Add the collision and lane checks for all vehicles as well
-        for vehicle in self.other_vehicles:
+        for vehicle in self.other_actors:
             collision_criterion = CollisionTest(vehicle)
             keep_lane_criterion = KeepLaneTest(vehicle)
             criteria.append(collision_criterion)
@@ -181,120 +166,97 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     but there is a (hidden) obstacle in front of the leading vehicle
     """
 
-    timeout = 60            # Timeout of scenario in seconds
+    category = "FollowLeadingVehicle"
+
+    timeout = 120            # Timeout of scenario in seconds
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start_x = 107
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=_ego_vehicle_start_x, y=133, z=39), carla.Rotation(yaw=0))
     _ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
-    _ego_distance_to_other = 50      # Min. driven distance of ego vehicle [m]
+    _ego_other_distance_start = 4    # time to arrival that triggers scenario starts
 
     # other vehicle
-    _other_vehicle_model = 'vehicle.volkswagen.t2'
-    _other_vehicle_start_x = _ego_vehicle_start_x + _ego_distance_to_other
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x, y=133.5, z=39), carla.Rotation(yaw=0))
-    _other_vehicle_target_velocity = 15      # Target velocity of other vehicle
-    _trigger_distance_from_ego = 15          # Starting point of other vehicle maneuver
-    _other_vehicle_max_throttle = 1.0        # Maximum throttle of other vehicle
-    _other_vehicle_max_brake = 1.0           # Maximum brake of other vehicle
-    _other_vehicle_distance = 40             # Distance the other vehicle should drive
+    _other_actor_max_brake = 1.0                  # Maximum brake of other vehicle
+    _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
 
-    _other_vehicle_model_no2 = 'vehicle.gazelle.omafiets'
-    _other_vehicle_start_x_no2 = _other_vehicle_start_x + \
-        10 + random.randint(_other_vehicle_distance, 80)
-    _other_vehicle_start_no2 = carla.Transform(
-        carla.Location(x=_other_vehicle_start_x_no2, y=133.5, z=39), carla.Rotation(yaw=0))
-
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start),
-                               setup_vehicle(world,
-                                             self._other_vehicle_model_no2,
-                                             self._other_vehicle_start_no2)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
 
-        super(FollowLeadingVehicleWithObstacle, self).__init__(
-            name="FollowLeadingVehicleWithObstacle",
-            town="Town01",
-            world=world,
-            debug_mode=debug_mode)
+        super(FollowLeadingVehicleWithObstacle, self).__init__("FollowLeadingVehicleWithObstacle",
+                                                               ego_vehicle,
+                                                               other_actors,
+                                                               town,
+                                                               world,
+                                                               debug_mode)
+
+        if randomize:
+            self._ego_other_distance_start = random.randint(2, 8)
 
     def _create_behavior(self):
         """
         The scenario defined after is a "follow leading vehicle" scenario. After
         invoking this scenario, it will wait for the user controlled vehicle to
-        enter the start region, then make a traffic participant to accelerate
-        until reaching a certain speed, then keep this speed for 2 seconds,
-        before initiating a stopping maneuver. Finally, the user-controlled
-        vehicle has to reach a target region.
+        enter the start region, then make the other actor to drive until reaching
+        the next intersection. Finally, the user-controlled vehicle has to be close
+        enough to the other actor to end the scenario.
         If this does not happen within 60 seconds, a timeout stops the scenario
         """
 
         # start condition
-        startcondition = InTimeToArrivalToLocation(
-            self.ego_vehicle,
-            4,
-            self.other_vehicles[0].get_location(),
-            name="Waiting for start position")
+        startcondition = InTimeToArrivalToLocation(self.ego_vehicle,
+                                                   self._ego_other_distance_start,
+                                                   self.other_actors[0].get_location(),
+                                                   name="Waiting for start position")
 
-        # get to velocity and keep it for certain distance
-        keep_velocity_for_distance = py_trees.composites.Parallel(
-            "Keep velocity for duration",
+        # let the other actor drive until next intersection
+        # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
+        driving_to_next_intersection = py_trees.composites.Parallel(
+            "Waiting for end position",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
-        keep_velocity_distance = DriveDistance(
-            self.other_vehicles[0],
-            self._other_vehicle_distance,
-            name="Distance")
-        keep_velocity_for_distance.add_child(keep_velocity)
-        keep_velocity_for_distance.add_child(keep_velocity_distance)
 
-        # use autopilot
-        use_autopilot = py_trees.composites.Parallel(
-            "Use autopilot for distance",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        autopilot = UseAutoPilot(self.other_vehicles[0])
-        endcondition = InTriggerDistanceToVehicle(
-            self.other_vehicles[1],
-            self.other_vehicles[0],
-            distance=8,
-            name="AutoPilotEnd")
-        use_autopilot.add_child(autopilot)
-        use_autopilot.add_child(endcondition)
+        driving_considering_bike = py_trees.composites.Parallel(
+            "Drive with AutoPilot",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+        driving_considering_bike.add_child(UseAutoPilot(self.other_actors[0]))
+        obstacle_sequence = py_trees.composites.Sequence("Obstacle sequence behavior")
+        obstacle_sequence.add_child(InTriggerDistanceToVehicle(self.other_actors[0],
+                                                               self.other_actors[1],
+                                                               10))
+        obstacle_sequence.add_child(TimeOut(5))
+        obstacle_clear_road = py_trees.composites.Parallel("Obstalce clearing road",
+                                                           policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        obstacle_clear_road.add_child(DriveDistance(self.other_actors[1], 4))
+        obstacle_clear_road.add_child(KeepVelocity(self.other_actors[1], 5))
+
+        obstacle_sequence.add_child(obstacle_clear_road)
+        obstacle_sequence.add_child(StopVehicle(self.other_actors[1], self._other_actor_max_brake))
+        driving_considering_bike.add_child(obstacle_sequence)
+
+        driving_to_next_intersection.add_child(InTriggerDistanceToNextIntersection(
+            self.other_actors[0], self._other_actor_stop_in_front_intersection))
+        driving_to_next_intersection.add_child(driving_considering_bike)
+
+        # stop vehicle
+        stop = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
 
         # end condition
-        endcondition = py_trees.composites.Parallel(
-            "Waiting for end position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        endcondition_part1 = InTriggerDistanceToVehicle(
-            self.other_vehicles[0],
-            self.ego_vehicle,
-            distance=10,
-            name="FinalDistance")
-        endcondition_part2 = TriggerVelocity(
-            self.ego_vehicle, target_velocity=0, name="FinalSpeed")
+        endcondition = py_trees.composites.Parallel("Waiting for end position",
+                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+        endcondition_part1 = InTriggerDistanceToVehicle(self.other_actors[0],
+                                                        self.ego_vehicle,
+                                                        distance=20,
+                                                        name="FinalDistance")
+        endcondition_part2 = StandStill(self.ego_vehicle, name="FinalSpeed")
         endcondition.add_child(endcondition_part1)
         endcondition.add_child(endcondition_part2)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(startcondition)
-        sequence.add_child(keep_velocity_for_distance)
-        sequence.add_child(use_autopilot)
+        sequence.add_child(driving_to_next_intersection)
+        sequence.add_child(stop)
         sequence.add_child(endcondition)
 
         return sequence
@@ -306,26 +268,20 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_max_velocity_allowed,
-            optional=True)
+        max_velocity_criterion = MaxVelocityTest(self.ego_vehicle,
+                                                 self._ego_max_velocity_allowed,
+                                                 optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
-            self._ego_distance_to_other + self._other_vehicle_distance - 10)
-        avg_velocity_criterion = AverageVelocityTest(
-            self.ego_vehicle, self._ego_avg_velocity_expected, optional=True)
+        avg_velocity_criterion = AverageVelocityTest(self.ego_vehicle, self._ego_avg_velocity_expected, optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
         criteria.append(keep_lane_criterion)
-        criteria.append(driven_distance_criterion)
         criteria.append(avg_velocity_criterion)
 
         # Add the collision and lane checks for all vehicles as well
-        for vehicle in self.other_vehicles:
+        for vehicle in self.other_actors:
             collision_criterion = CollisionTest(vehicle)
             keep_lane_criterion = KeepLaneTest(vehicle)
             criteria.append(collision_criterion)

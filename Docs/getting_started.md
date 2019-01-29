@@ -22,8 +22,15 @@ of the following commands, depending on your Python version.
 pip2 install --user py_trees==0.8.3 # For Python 2.x
 pip3 install --user py_trees==0.8.3 # For Python 3.x
 ```
-
 Note: py-trees newer than v0.8 is *NOT* supported.
+
+Other dependencies:
+In addition, you have to install Python networkx. You can install it via:
+```
+sudo apt-get install python-networkx
+```
+Please make sure that you install networkx for the Python version you want to use.
+
 
 ## Running the follow vehicle example
 First of all, you need to get latest master branch from CARLA. Then you have to
@@ -31,6 +38,10 @@ include CARLA Python API to the Python path:
 ```
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI
 ```
+NOTE: ${CARLA_ROOT} needs to be replaced with your CARLA installation directory,
+      and <VERSION> needs to be replaced with the correct string.
+      If you build CARLA from source, the egg files maybe located in:
+      ${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI.
 
 Now, you can start the CARLA server with Town01 from ${CARLA_ROOT}
 ```
@@ -53,6 +64,15 @@ python scenario_runner.py --help
 To control the ego vehicle within the scenario, open another terminal and run:
 ```
 python manual_control.py
+```
+
+## Running all scenarios of one scenario class
+Similar to the previous example, it is also possible to execute a sequence of scenarios,
+that belong to the same class, e.g. the "FollowLeadingVehicle" class.
+
+The only difference is, that you start the scenario_runner as follows:
+```
+python scenario_runner.py --scenario group:FollowLeadingVehicle
 ```
 
 ## Running other scenarios

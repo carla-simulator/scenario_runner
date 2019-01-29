@@ -18,6 +18,12 @@ from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
+VEHICLE_TURNING_SCENARIOS = [
+    "VehicleTurningRight",
+    "VehicleTurningLeft"
+]
+
+
 class VehicleTurningRight(BasicScenario):
 
     """
@@ -25,51 +31,36 @@ class VehicleTurningRight(BasicScenario):
     with prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a right turn.
-
-    Location: Town01
     """
+
+    category = "VehicleTurning"
 
     timeout = 90
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=130, y=55, z=38.5),
-        carla.Rotation(yaw=180))
     _ego_vehicle_velocity_allowed = 30
     _ego_driven_distance = 55
     _ego_acceptable_distance = 35
 
     # other vehicle parameters
-    _other_vehicle_model = 'vehicle.diamondback.century'
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=95.5, y=42, z=38.5),
-        carla.Rotation(yaw=180))
-    _other_vehicle_target_velocity = 10
+    _other_actor_target_velocity = 10
     _trigger_distance_from_ego = 14
-    _other_vehicle_max_throttle = 1.0
-    _other_vehicle_max_brake = 1.0
+    _other_actor_max_throttle = 1.0
+    _other_actor_max_brake = 1.0
 
     _location_of_collision = carla.Location(x=93.1, y=44.8, z=39)
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
 
-        super(VehicleTurningRight, self).__init__(
-            name="vehicleturningright",
-            town="Town01",
-            world=world,
-            debug_mode=debug_mode)
+        super(VehicleTurningRight, self).__init__("VehicleTurningRight",
+                                                  ego_vehicle,
+                                                  other_actors,
+                                                  town,
+                                                  world,
+                                                  debug_mode)
 
     def _create_behavior(self):
         """
@@ -82,27 +73,27 @@ class VehicleTurningRight(BasicScenario):
         """
         # leaf nodes
         trigger_distance = InTriggerDistanceToVehicle(
-            self.other_vehicles[0],
+            self.other_actors[0],
             self.ego_vehicle,
             self._trigger_distance_from_ego)
-        stop_other_vehicle = StopVehicle(
-            self.other_vehicles[0],
-            self._other_vehicle_max_brake)
-        timeout_other_vehicle = TimeOut(5)
+        stop_other_actor = StopVehicle(
+            self.other_actors[0],
+            self._other_actor_max_brake)
+        timeout_other_actor = TimeOut(5)
         start_other = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
+            self.other_actors[0],
+            self._other_actor_target_velocity)
         trigger_other = InTriggerRegion(
-            self.other_vehicles[0],
+            self.other_actors[0],
             85.5, 86.5,
             41, 43)
         stop_other = StopVehicle(
-            self.other_vehicles[0],
-            self._other_vehicle_max_brake)
+            self.other_actors[0],
+            self._other_actor_max_brake)
         timeout_other = TimeOut(3)
         sync_arrival = SyncArrival(
-            self.other_vehicles[0], self.ego_vehicle, self._location_of_collision)
-        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_vehicles[0],
+            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
                                                        6)
 
@@ -120,8 +111,8 @@ class VehicleTurningRight(BasicScenario):
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_distance)
         scenario_sequence.add_child(sync_arrival_parallel)
-        scenario_sequence.add_child(stop_other_vehicle)
-        scenario_sequence.add_child(timeout_other_vehicle)
+        scenario_sequence.add_child(stop_other_actor)
+        scenario_sequence.add_child(timeout_other_actor)
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(stop_other)
         scenario_sequence.add_child(timeout_other)
@@ -162,51 +153,36 @@ class VehicleTurningLeft(BasicScenario):
     with prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a left turn.
-
-    Location: Town01
     """
+
+    category = "VehicleTurning"
 
     timeout = 90
 
     # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.lincoln.mkz2017'
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=130, y=55, z=38.5),
-        carla.Rotation(yaw=180))
     _ego_vehicle_velocity_allowed = 30
     _ego_driven_distance = 60
     _ego_acceptable_distance = 40
 
     # other vehicle parameters
-    _other_vehicle_model = 'vehicle.diamondback.century'
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=85, y=78.8, z=38.5),
-        carla.Rotation(yaw=0))
-    _other_vehicle_target_velocity = 10
+    _other_actor_target_velocity = 10
     _trigger_distance_from_ego = 23
-    _other_vehicle_max_throttle = 1.0
-    _other_vehicle_max_brake = 1.0
+    _other_actor_max_throttle = 1.0
+    _other_actor_max_brake = 1.0
 
     _location_of_collision = carla.Location(x=88.6, y=75.8, z=38)
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
-        and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(world,
-                                             self._other_vehicle_model,
-                                             self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(world,
-                                         self._ego_vehicle_model,
-                                         self._ego_vehicle_start,
-                                         hero=True)
 
-        super(VehicleTurningLeft, self).__init__(
-            name="vehicleturningleft",
-            town="Town01",
-            world=world,
-            debug_mode=debug_mode)
+        super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
+                                                 ego_vehicle,
+                                                 other_actors,
+                                                 town,
+                                                 world,
+                                                 debug_mode)
 
     def _create_behavior(self):
         """
@@ -219,28 +195,28 @@ class VehicleTurningLeft(BasicScenario):
         """
         # leaf nodes
         trigger_distance = InTriggerDistanceToVehicle(
-            self.other_vehicles[0],
+            self.other_actors[0],
             self.ego_vehicle,
             self._trigger_distance_from_ego)
-        stop_other_vehicle = StopVehicle(
-            self.other_vehicles[0],
-            self._other_vehicle_max_brake)
-        timeout_other_vehicle = TimeOut(5)
+        stop_other_actor = StopVehicle(
+            self.other_actors[0],
+            self._other_actor_max_brake)
+        timeout_other_actor = TimeOut(5)
         start_other = KeepVelocity(
-            self.other_vehicles[0],
-            self._other_vehicle_target_velocity)
+            self.other_actors[0],
+            self._other_actor_target_velocity)
         trigger_other = InTriggerRegion(
-            self.other_vehicles[0],
+            self.other_actors[0],
             95, 96,
             78, 79)
         stop_other = StopVehicle(
-            self.other_vehicles[0],
-            self._other_vehicle_max_brake)
+            self.other_actors[0],
+            self._other_actor_max_brake)
         timeout_other = TimeOut(3)
 
         sync_arrival = SyncArrival(
-            self.other_vehicles[0], self.ego_vehicle, self._location_of_collision)
-        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_vehicles[0],
+            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
                                                        6)
 
@@ -259,8 +235,8 @@ class VehicleTurningLeft(BasicScenario):
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_distance)
         scenario_sequence.add_child(sync_arrival_parallel)
-        scenario_sequence.add_child(stop_other_vehicle)
-        scenario_sequence.add_child(timeout_other_vehicle)
+        scenario_sequence.add_child(stop_other_actor)
+        scenario_sequence.add_child(timeout_other_actor)
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(stop_other)
         scenario_sequence.add_child(timeout_other)

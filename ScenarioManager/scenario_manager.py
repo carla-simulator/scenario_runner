@@ -105,7 +105,7 @@ class ScenarioManager(object):
     scenario = None
     scenario_tree = None
     ego_vehicle = None
-    other_vehicles = None
+    other_actors = None
 
     def __init__(self, world, _debug_mode):
         """
@@ -131,10 +131,10 @@ class ScenarioManager(object):
         self.scenario = scenario.scenario
         self.scenario_tree = self.scenario.scenario_tree
         self.ego_vehicle = scenario.ego_vehicle
-        self.other_vehicles = scenario.other_vehicles
+        self.other_actors = scenario.other_actors
 
-        CarlaDataProvider.register_vehicle(self.ego_vehicle)
-        CarlaDataProvider.register_vehicles(self.other_vehicles)
+        CarlaDataProvider.register_actor(self.ego_vehicle)
+        CarlaDataProvider.register_actors(self.other_actors)
 
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
@@ -143,7 +143,6 @@ class ScenarioManager(object):
         """
         Reset all parameters
         """
-        self.stop_scenario()
         self._running = False
         self._timestamp_last_run = 0.0
         self.scenario_duration_system = 0.0
@@ -156,7 +155,7 @@ class ScenarioManager(object):
         """
         Trigger the start of the scenario and wait for it to finish/fail
         """
-        print("Running scenario {}".format(self.scenario_tree.name))
+        print("ScenarioManager: Running scenario {}".format(self.scenario_tree.name))
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
 
@@ -173,7 +172,7 @@ class ScenarioManager(object):
         self.scenario_duration_game = end_game_time - start_game_time
 
         if self.scenario_tree.status == py_trees.common.Status.FAILURE:
-            print("Terminated due to failure")
+            print("ScenarioManager: Terminated due to failure")
 
     def _tick_scenario(self, timestamp):
         """
@@ -193,7 +192,7 @@ class ScenarioManager(object):
                 if self._debug_mode:
                     print("\n--------- Tick ---------\n")
 
-                # Update game time and vehicle information
+                # Update game time and actor information
                 GameTime.on_carla_tick(timestamp)
                 CarlaDataProvider.on_carla_tick()
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018 Intel Labs.
+# Copyright (c) 2018-2019 Intel Labs.
 # authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
@@ -15,6 +15,7 @@ The atomic behaviors are implemented with py_trees.
 """
 
 import py_trees
+
 import carla
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
@@ -58,8 +59,37 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+
+class StandStill(AtomicBehavior):
+
+    """
+    This class contains a standstill behavior of a scenario
+    """
+
+    def __init__(self, actor, name):
+        """
+        Setup actor
+        """
+        super(StandStill, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+
+    def update(self):
+        """
+        Check if the _actor stands still (v=0)
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        velocity = CarlaDataProvider.get_velocity(self._actor)
+
+        if velocity < EPSILON:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
 
 
 class InTriggerRegion(AtomicBehavior):
@@ -68,15 +98,14 @@ class InTriggerRegion(AtomicBehavior):
     This class contains the trigger region (condition) of a scenario
     """
 
-    def __init__(self, vehicle, min_x, max_x, min_y,
-                 max_y, name="TriggerRegion"):
+    def __init__(self, actor, min_x, max_x, min_y, max_y, name="TriggerRegion"):
         """
         Setup trigger region (rectangle provided by
         [min_x,min_y] and [max_x,max_y]
         """
         super(InTriggerRegion, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._vehicle = vehicle
+        self._actor = actor
         self._min_x = min_x
         self._max_x = max_x
         self._min_y = min_y
@@ -84,11 +113,11 @@ class InTriggerRegion(AtomicBehavior):
 
     def update(self):
         """
-        Check if the _vehicle location is within trigger region
+        Check if the _actor location is within trigger region
         """
         new_status = py_trees.common.Status.RUNNING
 
-        location = CarlaDataProvider.get_location(self._vehicle)
+        location = CarlaDataProvider.get_location(self._actor)
 
         if location is None:
             return new_status
@@ -98,8 +127,7 @@ class InTriggerRegion(AtomicBehavior):
         if not not_in_region:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -107,29 +135,28 @@ class InTriggerRegion(AtomicBehavior):
 class InTriggerDistanceToVehicle(AtomicBehavior):
 
     """
-    This class contains the trigger distance (condition) between to vehicles
+    This class contains the trigger distance (condition) between to actors
     of a scenario
     """
 
-    def __init__(self, other_vehicle, ego_vehicle, distance,
-                 name="TriggerDistanceToVehicle"):
+    def __init__(self, other_actor, actor, distance, name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
         """
         super(InTriggerDistanceToVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._other_vehicle = other_vehicle
-        self._ego_vehicle = ego_vehicle
+        self._other_actor = other_actor
+        self._actor = actor
         self._distance = distance
 
     def update(self):
         """
-        Check if the ego vehicle is within trigger distance to other vehicle
+        Check if the ego vehicle is within trigger distance to other actor
         """
         new_status = py_trees.common.Status.RUNNING
 
-        ego_location = CarlaDataProvider.get_location(self._ego_vehicle)
-        other_location = CarlaDataProvider.get_location(self._other_vehicle)
+        ego_location = CarlaDataProvider.get_location(self._actor)
+        other_location = CarlaDataProvider.get_location(self._other_actor)
 
         if ego_location is None or other_location is None:
             return new_status
@@ -137,8 +164,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         if calculate_distance(ego_location, other_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -150,24 +176,23 @@ class InTriggerDistanceToLocation(AtomicBehavior):
     location of a scenario
     """
 
-    def __init__(self, vehicle, target_location, distance,
-                 name="InTriggerDistanceToLocation"):
+    def __init__(self, actor, target_location, distance, name="InTriggerDistanceToLocation"):
         """
         Setup trigger distance
         """
         super(InTriggerDistanceToLocation, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._target_location = target_location
-        self._vehicle = vehicle
+        self._actor = actor
         self._distance = distance
 
     def update(self):
         """
-        Check if the vehicle is within trigger distance to the target location
+        Check if the actor is within trigger distance to the target location
         """
         new_status = py_trees.common.Status.RUNNING
 
-        location = CarlaDataProvider.get_location(self._vehicle)
+        location = CarlaDataProvider.get_location(self._actor)
 
         if location is None:
             return new_status
@@ -176,8 +201,47 @@ class InTriggerDistanceToLocation(AtomicBehavior):
                 location, self._target_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class InTriggerDistanceToNextIntersection(AtomicBehavior):
+
+    """
+    This class contains the trigger (condition) for a distance to the
+    next intersection of a scenario
+    """
+
+    def __init__(self, actor, distance, name="InTriggerDistanceToNextIntersection"):
+        """
+        Setup trigger distance
+        """
+        super(InTriggerDistanceToNextIntersection, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._distance = distance
+        self._map = self._actor.get_world().get_map()
+
+        waypoint = self._map.get_waypoint(self._actor.get_location())
+        while not waypoint.is_intersection:
+            waypoint = waypoint.next(1)[-1]
+
+        self._final_location = waypoint.transform.location
+
+    def update(self):
+        """
+        Check if the actor is within trigger distance to the intersection
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        current_waypoint = self._map.get_waypoint(CarlaDataProvider.get_location(self._actor))
+        distance = calculate_distance(current_waypoint.transform.location, self._final_location)
+
+        if distance < self._distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -186,30 +250,30 @@ class TriggerVelocity(AtomicBehavior):
 
     """
     This class contains the trigger velocity (condition) of a scenario
+
+    The behavior is successful, if the actor is at least as fast as requested
     """
 
-    def __init__(self, vehicle, target_velocity, name="TriggerVelocity"):
+    def __init__(self, actor, target_velocity, name="TriggerVelocity"):
         """
         Setup trigger velocity
         """
         super(TriggerVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._vehicle = vehicle
+        self._actor = actor
         self._target_velocity = target_velocity
 
     def update(self):
         """
-        Check if the vehicle has the trigger velocity
+        Check if the actor has the trigger velocity
         """
         new_status = py_trees.common.Status.RUNNING
 
-        delta_velocity = CarlaDataProvider.get_velocity(
-            self._vehicle) - self._target_velocity
+        delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
         if delta_velocity < EPSILON:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -217,35 +281,35 @@ class TriggerVelocity(AtomicBehavior):
 class InTimeToArrivalToLocation(AtomicBehavior):
 
     """
-    This class contains a check if a vehicle arrives within a given time
+    This class contains a check if a actor arrives within a given time
     at a given location.
     """
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, vehicle, time, location, name="TimeToArrival"):
+    def __init__(self, actor, time, location, name="TimeToArrival"):
         """
         Setup parameters
         """
         super(InTimeToArrivalToLocation, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._vehicle = vehicle
+        self._actor = actor
         self._time = time
         self._target_location = location
 
     def update(self):
         """
-        Check if the vehicle can arrive at target_location within time
+        Check if the actor can arrive at target_location within time
         """
         new_status = py_trees.common.Status.RUNNING
 
-        current_location = CarlaDataProvider.get_location(self._vehicle)
+        current_location = CarlaDataProvider.get_location(self._actor)
 
         if current_location is None:
             return new_status
 
         distance = calculate_distance(current_location, self._target_location)
-        velocity = CarlaDataProvider.get_velocity(self._vehicle)
+        velocity = CarlaDataProvider.get_velocity(self._actor)
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self._max_time_to_arrival
@@ -255,8 +319,7 @@ class InTimeToArrivalToLocation(AtomicBehavior):
         if time_to_arrival < self._time:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -264,50 +327,48 @@ class InTimeToArrivalToLocation(AtomicBehavior):
 class InTimeToArrivalToVehicle(AtomicBehavior):
 
     """
-    This class contains a check if a vehicle arrives within a given time
-    at another vehicle.
+    This class contains a check if a actor arrives within a given time
+    at another actor.
     """
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, other_vehicle, ego_vehicle, time, name="TimeToArrival"):
+    def __init__(self, other_actor, actor, time, name="TimeToArrival"):
         """
         Setup parameters
         """
         super(InTimeToArrivalToVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._other_vehicle = other_vehicle
-        self._ego_vehicle = ego_vehicle
+        self._other_actor = other_actor
+        self._actor = actor
         self._time = time
 
     def update(self):
         """
-        Check if the ego vehicle can arrive at other vehicle within time
+        Check if the ego vehicle can arrive at other actor within time
         """
         new_status = py_trees.common.Status.RUNNING
 
-        current_location = CarlaDataProvider.get_location(self._ego_vehicle)
-        target_location = CarlaDataProvider.get_location(self._other_vehicle)
+        current_location = CarlaDataProvider.get_location(self._actor)
+        target_location = CarlaDataProvider.get_location(self._other_actor)
 
         if current_location is None or target_location is None:
             return new_status
 
         distance = calculate_distance(current_location, target_location)
-        current_velocity = CarlaDataProvider.get_velocity(self._ego_vehicle)
-        other_velocity = CarlaDataProvider.get_velocity(self._other_vehicle)
+        current_velocity = CarlaDataProvider.get_velocity(self._actor)
+        other_velocity = CarlaDataProvider.get_velocity(self._other_actor)
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self._max_time_to_arrival
 
         if current_velocity > other_velocity:
-            time_to_arrival = 2 * distance / \
-                (current_velocity - other_velocity)
+            time_to_arrival = 2 * distance / (current_velocity - other_velocity)
 
         if time_to_arrival < self._time:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -320,8 +381,7 @@ class AccelerateToVelocity(AtomicBehavior):
     a given _target_velocity_
     """
 
-    def __init__(self, vehicle, throttle_value,
-                 target_velocity, name="Acceleration"):
+    def __init__(self, actor, throttle_value, target_velocity, name="Acceleration"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
@@ -329,7 +389,7 @@ class AccelerateToVelocity(AtomicBehavior):
         super(AccelerateToVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
-        self._vehicle = vehicle
+        self._actor = actor
         self._throttle_value = throttle_value
         self._target_velocity = target_velocity
 
@@ -341,16 +401,14 @@ class AccelerateToVelocity(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(
-                self._vehicle) < self._target_velocity:
+        if CarlaDataProvider.get_velocity(self._actor) < self._target_velocity:
             self._control.throttle = self._throttle_value
         else:
             new_status = py_trees.common.Status.SUCCESS
             self._control.throttle = 0
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
-        self._vehicle.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(self._control)
 
         return new_status
 
@@ -368,7 +426,7 @@ class KeepVelocity(AtomicBehavior):
           distance, etc.
     """
 
-    def __init__(self, vehicle, target_velocity, name="KeepVelocity"):
+    def __init__(self, actor, target_velocity, name="KeepVelocity"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
@@ -376,7 +434,7 @@ class KeepVelocity(AtomicBehavior):
         super(KeepVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
-        self._vehicle = vehicle
+        self._actor = actor
         self._target_velocity = target_velocity
 
         self._control.steering = 0
@@ -387,15 +445,13 @@ class KeepVelocity(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(
-                self._vehicle) < self._target_velocity:
+        if CarlaDataProvider.get_velocity(self._actor) < self._target_velocity:
             self._control.throttle = 1.0
         else:
             self._control.throttle = 0.0
 
-        self._vehicle.apply_control(self._control)
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
     def terminate(self, new_status):
@@ -404,7 +460,7 @@ class KeepVelocity(AtomicBehavior):
         to avoid further acceleration.
         """
         self._control.throttle = 0.0
-        self._vehicle.apply_control(self._control)
+        self._actor.apply_control(self._control)
         super(KeepVelocity, self).terminate(new_status)
 
 
@@ -414,7 +470,7 @@ class DriveDistance(AtomicBehavior):
     This class contains an atomic behavior to drive a certain distance.
     """
 
-    def __init__(self, vehicle, distance, name="DriveDistance"):
+    def __init__(self, actor, distance, name="DriveDistance"):
         """
         Setup parameters
         """
@@ -423,10 +479,10 @@ class DriveDistance(AtomicBehavior):
         self._target_distance = distance
         self._distance = 0
         self._location = None
-        self._vehicle = vehicle
+        self._actor = actor
 
     def initialise(self):
-        self._location = CarlaDataProvider.get_location(self._vehicle)
+        self._location = CarlaDataProvider.get_location(self._actor)
         super(DriveDistance, self).initialise()
 
     def update(self):
@@ -435,15 +491,14 @@ class DriveDistance(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        new_location = CarlaDataProvider.get_location(self._vehicle)
+        new_location = CarlaDataProvider.get_location(self._actor)
         self._distance += calculate_distance(self._location, new_location)
         self._location = new_location
 
         if self._distance > self._target_distance:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
 
@@ -457,13 +512,13 @@ class UseAutoPilot(AtomicBehavior):
           certain distance, etc.
     """
 
-    def __init__(self, vehicle, name="UseAutoPilot"):
+    def __init__(self, actor, name="UseAutoPilot"):
         """
         Setup parameters
         """
         super(UseAutoPilot, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._vehicle = vehicle
+        self._actor = actor
 
     def update(self):
         """
@@ -471,17 +526,16 @@ class UseAutoPilot(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        self._vehicle.set_autopilot(True)
+        self._actor.set_autopilot(True)
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
     def terminate(self, new_status):
         """
         Deactivate autopilot
         """
-        self._vehicle.set_autopilot(False)
+        self._actor.set_autopilot(False)
         super(UseAutoPilot, self).terminate(new_status)
 
 
@@ -492,14 +546,14 @@ class StopVehicle(AtomicBehavior):
     participant will decelerate with _bake_value_ until reaching a full stop.
     """
 
-    def __init__(self, vehicle, brake_value, name="Stopping"):
+    def __init__(self, actor, brake_value, name="Stopping"):
         """
-        Setup _vehicle and maximum braking value
+        Setup _actor and maximum braking value
         """
         super(StopVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
-        self._vehicle = vehicle
+        self._actor = actor
         self._brake_value = brake_value
 
         self._control.steering = 0
@@ -510,15 +564,14 @@ class StopVehicle(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(self._vehicle) > EPSILON:
+        if CarlaDataProvider.get_velocity(self._actor) > EPSILON:
             self._control.brake = self._brake_value
         else:
             new_status = py_trees.common.Status.SUCCESS
             self._control.brake = 0
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
-        self._vehicle.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(self._control)
 
         return new_status
 
@@ -550,8 +603,7 @@ class WaitForTrafficLightState(AtomicBehavior):
         if str(self._traffic_light.state) == self._traffic_light_state:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -564,27 +616,27 @@ class SyncArrival(AtomicBehavior):
 
     """
     This class contains an atomic behavior to
-    set velocity of vehicle so that it reaches location at the same time as
-    vehicle_reference. The behaviour assumes that the two vehicles are moving
+    set velocity of actor so that it reaches location at the same time as
+    actor_reference. The behaviour assumes that the two actors are moving
     towards location in a straight line.
     Note: In parallel to this behavior a termination behavior has to be used
           to keep continue scynhronisation for a certain duration, or for a
           certain distance, etc.
     """
 
-    def __init__(self, vehicle, vehicle_reference, target_location, gain=1, name="SyncArrival"):
+    def __init__(self, actor, actor_reference, target_location, gain=1, name="SyncArrival"):
         """
-        vehicle : vehicle to be controlled
-        vehicle_ reference : reference vehicle with which arrival has to be
+        actor : actor to be controlled
+        actor_ reference : reference actor with which arrival has to be
                              synchronised
-        gain : coefficient for vehicle's throttle and break
+        gain : coefficient for actor's throttle and break
                controls
         """
         super(SyncArrival, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
-        self._vehicle = vehicle
-        self._vehicle_reference = vehicle_reference
+        self._actor = actor
+        self._actor_reference = actor_reference
         self._target_location = target_location
         self._gain = gain
 
@@ -592,24 +644,21 @@ class SyncArrival(AtomicBehavior):
 
     def update(self):
         """
-        Dynamic control update for vehicle velocity
+        Dynamic control update for actor velocity
         """
         new_status = py_trees.common.Status.RUNNING
 
-        distance_reference = calculate_distance(
-            CarlaDataProvider.get_location(self._vehicle_reference),
-            self._target_location)
-        distance = calculate_distance(
-            CarlaDataProvider.get_location(self._vehicle),
-            self._target_location)
+        distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
+                                                self._target_location)
+        distance = calculate_distance(CarlaDataProvider.get_location(self._actor),
+                                      self._target_location)
 
-        velocity_reference = CarlaDataProvider.get_velocity(
-            self._vehicle_reference)
+        velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
         time_reference = float('inf')
         if velocity_reference > 0:
             time_reference = distance_reference / velocity_reference
 
-        velocity_current = CarlaDataProvider.get_velocity(self._vehicle)
+        velocity_current = CarlaDataProvider.get_velocity(self._actor)
         time_current = float('inf')
         if velocity_current > 0:
             time_current = distance / velocity_current
@@ -623,9 +672,8 @@ class SyncArrival(AtomicBehavior):
             self._control.throttle = 0
             self._control.brake = min([abs(control_value), 1])
 
-        self._vehicle.apply_control(self._control)
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
     def terminate(self, new_status):
@@ -635,7 +683,7 @@ class SyncArrival(AtomicBehavior):
         """
         self._control.throttle = 0.0
         self._control.brake = 0.0
-        self._vehicle.apply_control(self._control)
+        self._actor.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
 
 
@@ -643,17 +691,17 @@ class SteerVehicle(AtomicBehavior):
 
     """
     This class contains an atomic steer behavior.
-    To set the steer value of the vehicle.
+    To set the steer value of the actor.
     """
 
-    def __init__(self, vehicle, steer_value, name="Steering"):
+    def __init__(self, actor, steer_value, name="Steering"):
         """
-        Setup vehicle and maximum steer value
+        Setup actor and maximum steer value
         """
         super(SteerVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
-        self._vehicle = vehicle
+        self._actor = actor
         self._steer_value = steer_value
 
     def update(self):
@@ -663,9 +711,8 @@ class SteerVehicle(AtomicBehavior):
         self._control.steer = self._steer_value
         new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
-        self._vehicle.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(self._control)
 
         return new_status
 
@@ -674,23 +721,22 @@ class BasicAgentBehavior(AtomicBehavior):
 
     """
     This class contains an atomic behavior, which uses the
-    basic_agent from CARLA to control the vehicle until
+    basic_agent from CARLA to control the actor until
     reaching a target location.
     """
 
     _acceptable_target_distance = 2
 
-    def __init__(self, vehicle, target_location, name="BasicAgentBehavior"):
+    def __init__(self, actor, target_location, name="BasicAgentBehavior"):
         """
-        Setup vehicle and maximum steer value
+        Setup actor and maximum steer value
         """
         super(BasicAgentBehavior, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._agent = BasicAgent(vehicle)
-        self._agent.set_destination(
-            (target_location.x, target_location.y, target_location.z))
+        self._agent = BasicAgent(actor)
+        self._agent.set_destination((target_location.x, target_location.y, target_location.z))
         self._control = carla.VehicleControl()
-        self._vehicle = vehicle
+        self._actor = actor
         self._target_location = target_location
 
     def update(self):
@@ -698,18 +744,17 @@ class BasicAgentBehavior(AtomicBehavior):
 
         self._control = self._agent.run_step()
 
-        location = CarlaDataProvider.get_location(self._vehicle)
+        location = CarlaDataProvider.get_location(self._actor)
         if calculate_distance(location, self._target_location) < self._acceptable_target_distance:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
-        self._vehicle.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(self._control)
 
         return new_status
 
     def terminate(self, new_status):
         self._control.throttle = 0.0
         self._control.brake = 0.0
-        self._vehicle.apply_control(self._control)
+        self._actor.apply_control(self._control)
         super(BasicAgentBehavior, self).terminate(new_status)

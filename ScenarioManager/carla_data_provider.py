@@ -14,19 +14,19 @@ local buffers to avoid blocking calls to CARLA
 import math
 
 
-def calculate_velocity(vehicle):
+def calculate_velocity(actor):
     """
-    Method to calculate the velocity of a vehicle
+    Method to calculate the velocity of a actor
     """
-    velocity_squared = vehicle.get_velocity().x**2
-    velocity_squared += vehicle.get_velocity().y**2
+    velocity_squared = actor.get_velocity().x**2
+    velocity_squared += actor.get_velocity().y**2
     return math.sqrt(velocity_squared)
 
 
 class CarlaDataProvider(object):
 
     """
-    This class provides access to various data of all registered vehicles
+    This class provides access to various data of all registered actors
     It buffers the data and updates it on every CARLA tick
 
     Currently available data:
@@ -38,78 +38,76 @@ class CarlaDataProvider(object):
     - Transform
     """
 
-    _vehicle_velocity_map = dict()
-    _vehicle_location_map = dict()
+    _actor_velocity_map = dict()
+    _actor_location_map = dict()
 
     @staticmethod
-    def register_vehicle(vehicle):
+    def register_actor(actor):
         """
-        Add new vehicle to dictionaries
-        If vehicle already exists, throw an exception
+        Add new actor to dictionaries
+        If actor already exists, throw an exception
         """
-        if vehicle in CarlaDataProvider._vehicle_velocity_map:
+        if actor in CarlaDataProvider._actor_velocity_map:
             raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(vehicle))
+                "Vehicle '{}' already registered. Cannot register twice!".format(actor))
         else:
-            CarlaDataProvider._vehicle_velocity_map[vehicle] = 0.0
+            CarlaDataProvider._actor_velocity_map[actor] = 0.0
 
-        if vehicle in CarlaDataProvider._vehicle_location_map:
+        if actor in CarlaDataProvider._actor_location_map:
             raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(vehicle.id))
+                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
         else:
-            CarlaDataProvider._vehicle_location_map[vehicle] = None
+            CarlaDataProvider._actor_location_map[actor] = None
 
     @staticmethod
-    def register_vehicles(vehicles):
+    def register_actors(actors):
         """
-        Add new set of vehicles to dictionaries
+        Add new set of actors to dictionaries
         """
-        for vehicle in vehicles:
-            CarlaDataProvider.register_vehicle(vehicle)
+        for actor in actors:
+            CarlaDataProvider.register_actor(actor)
 
     @staticmethod
     def on_carla_tick():
         """
         Callback from CARLA
         """
-        for vehicle in CarlaDataProvider._vehicle_velocity_map:
-            if vehicle is not None and vehicle.is_alive:
-                CarlaDataProvider._vehicle_velocity_map[
-                    vehicle] = calculate_velocity(vehicle)
+        for actor in CarlaDataProvider._actor_velocity_map:
+            if actor is not None and actor.is_alive:
+                CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
 
-        for vehicle in CarlaDataProvider._vehicle_location_map:
-            if vehicle is not None and vehicle.is_alive:
-                CarlaDataProvider._vehicle_location_map[
-                    vehicle] = vehicle.get_location()
+        for actor in CarlaDataProvider._actor_location_map:
+            if actor is not None and actor.is_alive:
+                CarlaDataProvider._actor_location_map[actor] = actor.get_location()
 
     @staticmethod
-    def get_velocity(vehicle):
+    def get_velocity(actor):
         """
-        returns the absolute velocity for the given vehicle
+        returns the absolute velocity for the given actor
         """
-        if vehicle not in CarlaDataProvider._vehicle_velocity_map.keys():
+        if actor not in CarlaDataProvider._actor_velocity_map.keys():
             # We are initentionally not throwing here
             # This may cause exception loops in py_trees
             return 0.0
         else:
-            return CarlaDataProvider._vehicle_velocity_map[vehicle]
+            return CarlaDataProvider._actor_velocity_map[actor]
 
     @staticmethod
-    def get_location(vehicle):
+    def get_location(actor):
         """
-        returns the location for the given vehicle
+        returns the location for the given actor
         """
-        if vehicle not in CarlaDataProvider._vehicle_location_map.keys():
+        if actor not in CarlaDataProvider._actor_location_map.keys():
             # We are initentionally not throwing here
             # This may cause exception loops in py_trees
             return None
         else:
-            return CarlaDataProvider._vehicle_location_map[vehicle]
+            return CarlaDataProvider._actor_location_map[actor]
 
     @staticmethod
     def cleanup():
         """
         Cleanup and remove all entries from all dictionaries
         """
-        CarlaDataProvider._vehicle_velocity_map.clear()
-        CarlaDataProvider._vehicle_location_map.clear()
+        CarlaDataProvider._actor_velocity_map.clear()
+        CarlaDataProvider._actor_location_map.clear()

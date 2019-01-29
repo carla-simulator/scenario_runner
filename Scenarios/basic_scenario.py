@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018 Intel Labs.
+# Copyright (c) 2018-2019 Intel Labs.
 # authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
@@ -11,38 +11,27 @@ This module provide the basic class for all user-defined scenarios.
 """
 
 from __future__ import print_function
-import random
-import sys
 
 import py_trees
 
 from ScenarioManager.scenario_manager import Scenario
 
 
-def setup_vehicle(world, model, spawn_point, hero=False):
+def get_location_in_distance(actor, distance):
     """
-    Function to setup the most relevant vehicle parameters,
-    incl. spawn point and vehicle model.
+    Obtain a location in a given distance from the current actor's location.
+    Note: Search is stopped on first intersection.
+
+    @return obtained location and the traveled distance
     """
-    blueprint_library = world.get_blueprint_library()
+    waypoint = actor.get_world().get_map().get_waypoint(actor.get_location())
+    traveled_distance = 0
+    while not waypoint.is_intersection and traveled_distance < distance:
+        waypoint_new = waypoint.next(1.0)[-1]
+        traveled_distance += waypoint_new.transform.location.distance(waypoint.transform.location)
+        waypoint = waypoint_new
 
-    # Get vehicle by model
-    blueprint = random.choice(blueprint_library.filter(model))
-    if hero:
-        blueprint.set_attribute('role_name', 'hero')
-    else:
-        blueprint.set_attribute('role_name', 'scenario')
-
-    vehicle = world.try_spawn_actor(blueprint, spawn_point)
-
-    if vehicle is None:
-        sys.exit(
-            "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-
-    # Let's put the vehicle to drive around
-    vehicle.set_autopilot(False)
-
-    return vehicle
+    return waypoint.transform.location, traveled_distance
 
 
 class BasicScenario(object):
@@ -52,15 +41,16 @@ class BasicScenario(object):
     """
 
     _town = None            # Name of the map that is used
+    category = None         # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
     name = None             # Name of the scenario
     criteria_list = []      # List of evaluation criteria
     timeout = 60            # Timeout of scenario in seconds
     scenario = None
 
     ego_vehicle = None
-    other_vehicles = []
+    other_actors = []
 
-    def __init__(self, name, town, world, debug_mode=False):
+    def __init__(self, name, ego_vehicle, other_actors, town, world, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -70,6 +60,8 @@ class BasicScenario(object):
         self._town = town
         self._check_town(world)
 
+        self.ego_vehicle = ego_vehicle
+        self.other_actors = other_actors
         self.name = name
 
         # Setup scenario
@@ -78,8 +70,7 @@ class BasicScenario(object):
 
         behavior = self._create_behavior()
         criteria = self._create_test_criteria()
-        self.scenario = Scenario(
-            behavior, criteria, self.name, self.timeout)
+        self.scenario = Scenario(behavior, criteria, self.name, self.timeout)
 
     def _create_behavior(self):
         """
@@ -102,15 +93,4 @@ class BasicScenario(object):
         if world.map_name != self._town:
             print("The CARLA server uses the wrong map!")
             print("This scenario requires to use map {}".format(self._town))
-            sys.exit(-1)
-
-    def __del__(self):
-        """
-        Cleanup.
-        - Removal of the vehicles
-        """
-        actors = [self.ego_vehicle] + self.other_vehicles
-        for actor in actors:
-            if actor is not None:
-                actor.destroy()
-                actor = None
+            raise Exception("The CARLA server uses the wrong map!")

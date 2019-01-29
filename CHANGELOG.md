@@ -1,7 +1,17 @@
 ## Lastest changes
 
+* Reworked scenario execution
+    - Every scenario has to have a configuration provided as XML file.
+      Currently there is one XML file for each scenario class
+    - The scenario runner is now responsible for spawning/destroying all actors.
+    - Renamed vehicle -> actor
+    - If all scenarios in one coniguration file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
+    - Generalized ControlLoss and FollowLeadingVehicle scenarios
+    - Added randomization option to scenario_runner and scenarios
 * Added new atomic behaviors using py_trees behavior tree library
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
+    - StandStill: check if a vehicle stands still
+    - InTriggerDistanceToNextIntersection: check if a vehicle is within certain distance with respect to the next intersection
 
 ## CARLA Scenario_Runner 0.9.2
 
