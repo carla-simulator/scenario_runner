@@ -39,16 +39,12 @@ class VehicleTurningRight(BasicScenario):
 
     # ego vehicle parameters
     _ego_vehicle_velocity_allowed = 30
-    _ego_driven_distance = 55
-    _ego_acceptable_distance = 35
+    _ego_vehicle_distance_driven = 55
 
     # other vehicle parameters
     _other_actor_target_velocity = 10
     _trigger_distance_from_ego = 14
-    _other_actor_max_throttle = 1.0
     _other_actor_max_brake = 1.0
-
-    _location_of_collision = carla.Location(x=93.1, y=44.8, z=39)
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -76,50 +72,49 @@ class VehicleTurningRight(BasicScenario):
             self.other_actors[0],
             self.ego_vehicle,
             self._trigger_distance_from_ego)
+        start_other_actor = KeepVelocity(
+            self.other_actors[0],
+            self._other_actor_target_velocity)
+        trigger_other = DriveDistance(
+            self.other_actors[0],
+            3)
         stop_other_actor = StopVehicle(
             self.other_actors[0],
             self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(5)
-        start_other = KeepVelocity(
+        timeout_other = TimeOut(5)
+        start_actor = KeepVelocity(
             self.other_actors[0],
             self._other_actor_target_velocity)
-        trigger_other = InTriggerRegion(
+        trigger_other_actor = DriveDistance(
             self.other_actors[0],
-            85.5, 86.5,
-            41, 43)
-        stop_other = StopVehicle(
+            6)
+        stop_actor = StopVehicle(
             self.other_actors[0],
             self._other_actor_max_brake)
-        timeout_other = TimeOut(3)
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
-        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
-                                                       self.ego_vehicle,
-                                                       6)
+        timeout_other_actor = TimeOut(5)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
+        keep_velocity_other_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sync_arrival_parallel = py_trees.composites.Parallel(
-            "Synchronize arrival times",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        # building the tress
+        # building tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_distance)
-        scenario_sequence.add_child(sync_arrival_parallel)
+        scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other_actor)
-        scenario_sequence.add_child(timeout_other_actor)
-        scenario_sequence.add_child(keep_velocity_other)
-        scenario_sequence.add_child(stop_other)
         scenario_sequence.add_child(timeout_other)
-        sync_arrival_parallel.add_child(sync_arrival)
-        sync_arrival_parallel.add_child(sync_arrival_stop)
-        keep_velocity_other.add_child(start_other)
-        keep_velocity_other.add_child(trigger_other)
+        scenario_sequence.add_child(keep_velocity_other)
+        scenario_sequence.add_child(stop_actor)
+        scenario_sequence.add_child(timeout_other_actor)
+        keep_velocity_other_parallel.add_child(start_other_actor)
+        keep_velocity_other_parallel.add_child(trigger_other)
+        keep_velocity_other.add_child(start_actor)
+        keep_velocity_other.add_child(trigger_other_actor)
 
         return root
 
@@ -132,19 +127,22 @@ class VehicleTurningRight(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed)
+            self._ego_vehicle_velocity_allowed,
+            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
+        keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
-            self._ego_driven_distance,
-            distance_acceptable=self._ego_acceptable_distance)
+            self._ego_vehicle_distance_driven,
+            distance_acceptable=35,
+            optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
+        criteria.append(keep_lane_criterion)
         criteria.append(driven_distance_criterion)
 
         return criteria
-
 
 class VehicleTurningLeft(BasicScenario):
 
@@ -161,16 +159,12 @@ class VehicleTurningLeft(BasicScenario):
 
     # ego vehicle parameters
     _ego_vehicle_velocity_allowed = 30
-    _ego_driven_distance = 60
-    _ego_acceptable_distance = 40
+    _ego_vehicle_distance_driven = 60
 
     # other vehicle parameters
     _other_actor_target_velocity = 10
     _trigger_distance_from_ego = 23
-    _other_actor_max_throttle = 1.0
     _other_actor_max_brake = 1.0
-
-    _location_of_collision = carla.Location(x=88.6, y=75.8, z=38)
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -198,52 +192,49 @@ class VehicleTurningLeft(BasicScenario):
             self.other_actors[0],
             self.ego_vehicle,
             self._trigger_distance_from_ego)
+        start_other_actor = KeepVelocity(
+            self.other_actors[0],
+            self._other_actor_target_velocity)
+        trigger_other = DriveDistance(
+            self.other_actors[0],
+            3)
         stop_other_actor = StopVehicle(
             self.other_actors[0],
             self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(5)
-        start_other = KeepVelocity(
+        timeout_other = TimeOut(5)
+        start_actor = KeepVelocity(
             self.other_actors[0],
             self._other_actor_target_velocity)
-        trigger_other = InTriggerRegion(
+        trigger_other_actor = DriveDistance(
             self.other_actors[0],
-            95, 96,
-            78, 79)
-        stop_other = StopVehicle(
+            6)
+        stop_actor = StopVehicle(
             self.other_actors[0],
             self._other_actor_max_brake)
-        timeout_other = TimeOut(3)
-
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
-        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
-                                                       self.ego_vehicle,
-                                                       6)
+        timeout_other_actor = TimeOut(5)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
+        keep_velocity_other_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        sync_arrival_parallel = py_trees.composites.Parallel(
-            "Synchronize arrival times",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        # building the tress
+        # building tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_distance)
-        scenario_sequence.add_child(sync_arrival_parallel)
+        scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other_actor)
-        scenario_sequence.add_child(timeout_other_actor)
-        scenario_sequence.add_child(keep_velocity_other)
-        scenario_sequence.add_child(stop_other)
         scenario_sequence.add_child(timeout_other)
-        sync_arrival_parallel.add_child(sync_arrival)
-        sync_arrival_parallel.add_child(sync_arrival_stop)
-        keep_velocity_other.add_child(start_other)
-        keep_velocity_other.add_child(trigger_other)
+        scenario_sequence.add_child(keep_velocity_other)
+        scenario_sequence.add_child(stop_actor)
+        scenario_sequence.add_child(timeout_other_actor)
+        keep_velocity_other_parallel.add_child(start_other_actor)
+        keep_velocity_other_parallel.add_child(trigger_other)
+        keep_velocity_other.add_child(start_actor)
+        keep_velocity_other.add_child(trigger_other_actor)
 
         return root
 
@@ -256,15 +247,21 @@ class VehicleTurningLeft(BasicScenario):
 
         max_velocity_criterion = MaxVelocityTest(
             self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed)
+            self._ego_vehicle_velocity_allowed,
+            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
+        keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
         driven_distance_criterion = DrivenDistanceTest(
             self.ego_vehicle,
-            self._ego_driven_distance,
-            distance_acceptable=self._ego_acceptable_distance)
+            self._ego_vehicle_distance_driven,
+            distance_acceptable=35,
+            optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
+        criteria.append(keep_lane_criterion)
         criteria.append(driven_distance_criterion)
 
         return criteria
+        
+        
