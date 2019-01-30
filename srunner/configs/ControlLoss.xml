@@ -1,6 +1,24 @@
 <?xml version="1.0"?>
 <scenarios>
-    <scenario name="ControlLoss" type="ControlLoss" town="Town03">
+    <scenario name="ControlLoss_1" type="ControlLoss" town="Town01">
+        <ego_vehicle x="392.5" y="195" z="38.11" yaw="90" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+    <scenario name="ControlLoss_2" type="ControlLoss" town="Town01">
+        <ego_vehicle x="-1.7" y="160" z="38.11" yaw="90" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+    <scenario name="ControlLoss_3" type="ControlLoss" town="Town02">
+        <ego_vehicle x="27" y="109" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+    <scenario name="ControlLoss_4" type="ControlLoss" town="Town02">
+        <ego_vehicle x="57.6" y="306.3" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+    <scenario name="ControlLoss_5" type="ControlLoss" town="Town03">
         <ego_vehicle x="15" y="207.2" z="2" yaw="0" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+    <scenario name="ControlLoss_6" type="ControlLoss" town="Town03">
+        <ego_vehicle x="-77.8" y="-10.2" z="0.1" yaw="270" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+    <scenario name="ControlLoss_7" type="ControlLoss" town="Town03">
+        <ego_vehicle x="16.5" y="135.5" z="0.1" yaw="0" model="vehicle.lincoln.mkz2017" />
     </scenario>
 </scenarios>

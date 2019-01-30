@@ -197,6 +197,8 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         if location is None:
             return new_status
 
+        self._target_location.z = location.z
+
         if calculate_distance(
                 location, self._target_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
