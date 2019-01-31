@@ -29,7 +29,7 @@ from Scenarios.no_signal_junction_crossing import *
 from Scenarios.object_crash_intersection import *
 from Scenarios.control_loss import *
 from Scenarios.config_parser import *
-from Scenarios.vehicle_turning_right_at_signal import VehicleTurningRightAtSignal
+from Scenarios.vehicle_turning_right_at_signal import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
 
@@ -46,7 +46,8 @@ SCENARIOS = {
     "RunningRedLight": RUNNING_RED_LIGHT_SCENARIOS,
     "NoSignalJunction": NO_SIGNAL_JUNCTION_SCENARIOS,
     "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
-    "ControlLoss": CONTROL_LOSS_SCENARIOS
+    "ControlLoss": CONTROL_LOSS_SCENARIOS,
+    "VehicleTurningRightAtSignal": VEHICLE_TURNING_SIGNAL_SCENARIOS
 }
 
 

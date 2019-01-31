@@ -12,14 +12,13 @@ And encounters another vehicle passing across the junction.
 """
 
 import py_trees
-import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.scenario_manager import Scenario
 from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
+VEHICLE_TURNING_SIGNAL_SCENARIOS = ["VehicleTurningRightAtSignal"]
 
 class VehicleTurningRightAtSignal(BasicScenario):
 
@@ -27,48 +26,25 @@ class VehicleTurningRightAtSignal(BasicScenario):
     Implementation class for
     'Vehicle turning right at signalized junction' scenario,
     Traffic Scenario 09.
-
-    Location    :   Town03
     """
 
-    # ego vehicle parameters
-    _ego_vehicle_model = 'vehicle.carlamotors.carlacola'
-    _ego_vehicle_start = carla.Transform(
-        carla.Location(x=135, y=-136.5, z=10), carla.Rotation(yaw=180))
-
-    # other vehicle
-    _other_vehicle_model = 'vehicle.tesla.model3'
-    _other_vehicle_start = carla.Transform(
-        carla.Location(x=82.33, y=-160, z=8), carla.Rotation(yaw=90))
-
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self.other_vehicles = [setup_vehicle(
-            world,
-            self._other_vehicle_model,
-            self._other_vehicle_start)]
-        self.ego_vehicle = setup_vehicle(
-            world,
-            self._ego_vehicle_model,
-            self._ego_vehicle_start, hero=True)
-        super(VehicleTurningRightAtSignal, self).__init__(
-            name="VehicleTurningRightAtSignal",
-            town="Town03",
-            world=world,
-            debug_mode=debug_mode)
 
-        # Setup scenario
+        super(VehicleTurningRightAtSignal, self).__init__(
+            "VehicleTurningRightAtSignal",
+            ego_vehicle,
+            other_actors,
+            town,
+            world,
+            debug_mode)
 
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-        behavior = self._create_behavior()
-        criteria = self._create_test_criteria()
-        self.scenario = Scenario(
-            behavior, criteria, self.name, self.timeout)
 
     def _create_behavior(self):
         """
@@ -79,31 +55,18 @@ class VehicleTurningRightAtSignal(BasicScenario):
         """
 
         # Creating leaf nodes
-        start_other_trigger = InTriggerRegion(
-            self.ego_vehicle,
-            130, 132,
-            -140, -130)
+        start_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 38)
+        start_other_trigger = InTriggerDistanceToLocation(
+            self.ego_vehicle, start_trigger_location, 2.0)
 
-        sync_arrival = SyncArrival(
-            self.other_vehicles[0], self.ego_vehicle,
-            carla.Location(x=81.8, y=-136.52), gain=1.5)
+        apply_hand_brake = HandBrakeVehicle(self.other_actors[0], True)
+        release_hand_brake = HandBrakeVehicle(self.other_actors[0], False)
 
-        apply_hand_brake = HandBrakeVehicle(self.other_vehicles[0], True)
-        release_hand_brake = HandBrakeVehicle(self.other_vehicles[0], False)
+        turn_right = TurnVehicle(self.other_actors[0], 30, -1)
 
-        right_turn_trigger = InTriggerRegion(
-            self.other_vehicles[0],
-            75, 85,
-            -150, -145)
-
-        turn_right = BasicAgentBehavior(
-            self.other_vehicles[0],
-            carla.Location(x=65, y=-136.7, z=8))
-
-        end_condition = InTriggerRegion(
-            self.ego_vehicle,
-            65, 68,
-            -145, -125)
+        end_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 100)
+        end_condition = InTriggerDistanceToLocation(
+            self.ego_vehicle, end_trigger_location, 10.0)
 
         root_timeout = TimeOut(self.timeout)
 
@@ -111,8 +74,6 @@ class VehicleTurningRightAtSignal(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
-        sync_arrival_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # Building tree
         root.add_child(scenario_sequence)
@@ -120,11 +81,8 @@ class VehicleTurningRightAtSignal(BasicScenario):
         scenario_sequence.add_child(apply_hand_brake)
         scenario_sequence.add_child(start_other_trigger)
         scenario_sequence.add_child(release_hand_brake)
-        scenario_sequence.add_child(sync_arrival_parallel)
         scenario_sequence.add_child(turn_right)
         scenario_sequence.add_child(end_condition)
-        sync_arrival_parallel.add_child(sync_arrival)
-        sync_arrival_parallel.add_child(right_turn_trigger)
 
         return root
 
@@ -144,7 +102,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
         criteria.append(region_check_ego)
 
         # Add approriate checks for other vehicles
-        for vehicle in self.other_vehicles:
+        for vehicle in self.other_actors:
             collision_criterion = CollisionTest(vehicle)
             criteria.append(collision_criterion)
 

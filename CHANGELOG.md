@@ -1,4 +1,4 @@
-## Lastest changes
+## Latest changes
 
 * Added NHTSA Traffic Scenarios
     - VehicleTurningRightAtSignal: hero vehicle must react to a vehicle turning right onto it's lane at junction
