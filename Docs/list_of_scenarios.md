@@ -3,13 +3,6 @@
 Welcome to the ScenarioRunner for CARLA! This document provides a list of all
 currently supported scenarios, and a short description for each one.
 
-## Scenarios in Town01
-The following scenarios take place in Town01. Hence, the CARLA server has to be
-started with Town01, e.g. when not using manual-mode:
-```
-CarlaUE4.sh /Game/Carla/Maps/Town01 -benchmark -fps=20 -windowed
-```
-
 ### FollowLeadingVehicle
 The scenario realizes a common driving behavior, in which the user-controlled
 ego vehicle follows a leading car driving down a given road in Town01. At some
@@ -30,14 +23,6 @@ can continue driving.
 ###VehicleTurningLeft
 This scenario is similar to 'VehicleTurningRight'. The differnce is that the ego
 vehicle takes a left turn from an intersection.
-
-
-## Scenarios in Town03
-The following scenarios take place in Town01. Hence, the CARLA server has to be
-started with Town03, e.g. when not using manual-mode:
-```
-CarlaUE4.sh /Game/Carla/Maps/Town03 -benchmark -fps=20 -windowed
-```
 
 ### OppositeVehicleRunningRedLight
 In this scenario an illegal behavior at an intersection is tested. An other
