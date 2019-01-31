@@ -60,7 +60,7 @@ def set_attrib(node, key, default):
     Parse XML key for a given node
     If key does not exist, use default value
     """
-    return node.attrib[key] if node.attrib.has_key(key) else default
+    return node.attrib[key] if key in node.attrib else default
 
 
 def parse_scenario_configuration(world, file_name, scenario_name):
