@@ -1,4 +1,4 @@
-## Lastest changes
+## Latest changes
 
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
@@ -12,6 +12,8 @@
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
     - StandStill: check if a vehicle stands still
     - InTriggerDistanceToNextIntersection: check if a vehicle is within certain distance with respect to the next intersection
+* Fixes
+    - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 
 ## CARLA Scenario_Runner 0.9.2
 

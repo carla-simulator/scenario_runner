@@ -708,6 +708,7 @@ class SteerVehicle(AtomicBehavior):
         """
         Set steer to steer_value until reaching full stop
         """
+        self._control = self._actor.get_control()
         self._control.steer = self._steer_value
         new_status = py_trees.common.Status.SUCCESS
 
