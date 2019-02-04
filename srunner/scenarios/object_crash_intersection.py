@@ -74,7 +74,6 @@ class VehicleTurningRight(BasicScenario):
         trigger_other_actor = DriveDistance(self.other_actors[0], 6)
         stop_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(5)
-
         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -83,7 +82,6 @@ class VehicleTurningRight(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
         # building tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_distance)
@@ -176,7 +174,6 @@ class VehicleTurningLeft(BasicScenario):
         trigger_other_actor = DriveDistance(self.other_actors[0], 6)
         stop_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(5)
-
         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -185,7 +182,6 @@ class VehicleTurningLeft(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
         # building tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_distance)
