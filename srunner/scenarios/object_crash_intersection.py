@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-#
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 """
@@ -35,15 +33,14 @@ class VehicleTurningRight(BasicScenario):
 
     category = "VehicleTurning"
 
-    timeout = 90
+    timeout = 60
 
     # ego vehicle parameters
     _ego_vehicle_velocity_allowed = 30
     _ego_vehicle_distance_driven = 55
 
     # other vehicle parameters
-    _other_actor_target_velocity = 10
-    _trigger_distance_from_ego = 14
+    _other_actor_target_velocity = 15
     _other_actor_max_brake = 1.0
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
@@ -68,29 +65,14 @@ class VehicleTurningRight(BasicScenario):
         within 90 seconds, a timeout stops the scenario.
         """
         # leaf nodes
-        trigger_distance = InTriggerDistanceToVehicle(
-            self.other_actors[0],
-            self.ego_vehicle,
-            self._trigger_distance_from_ego)
-        start_other_actor = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other = DriveDistance(
-            self.other_actors[0],
-            3)
-        stop_other_actor = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
+        trigger_distance = InTriggerDistanceToNextIntersection(self.ego_vehicle, 8)
+        start_other_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
+        trigger_other = DriveDistance(self.other_actors[0], 3)
+        stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other = TimeOut(5)
-        start_actor = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other_actor = DriveDistance(
-            self.other_actors[0],
-            6)
-        stop_actor = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
+        start_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
+        trigger_other_actor = DriveDistance(self.other_actors[0], 6)
+        stop_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(5)
 
         # non leaf nodes
@@ -125,17 +107,15 @@ class VehicleTurningRight(BasicScenario):
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed,
-            optional=True)
+        max_velocity_criterion = MaxVelocityTest(self.ego_vehicle,
+                                                 self._ego_vehicle_velocity_allowed,
+                                                 optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
-            self._ego_vehicle_distance_driven,
-            distance_acceptable=35,
-            optional=True)
+        driven_distance_criterion = DrivenDistanceTest(self.ego_vehicle,
+                                                       self._ego_vehicle_distance_driven,
+                                                       distance_acceptable=35,
+                                                       optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
@@ -155,15 +135,14 @@ class VehicleTurningLeft(BasicScenario):
 
     category = "VehicleTurning"
 
-    timeout = 90
+    timeout = 60
 
     # ego vehicle parameters
     _ego_vehicle_velocity_allowed = 30
     _ego_vehicle_distance_driven = 60
 
     # other vehicle parameters
-    _other_actor_target_velocity = 10
-    _trigger_distance_from_ego = 23
+    _other_actor_target_velocity = 15
     _other_actor_max_brake = 1.0
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
@@ -188,29 +167,14 @@ class VehicleTurningLeft(BasicScenario):
         within 90 seconds, a timeout stops the scenario.
         """
         # leaf nodes
-        trigger_distance = InTriggerDistanceToVehicle(
-            self.other_actors[0],
-            self.ego_vehicle,
-            self._trigger_distance_from_ego)
-        start_other_actor = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other = DriveDistance(
-            self.other_actors[0],
-            3)
-        stop_other_actor = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
+        trigger_distance = InTriggerDistanceToNextIntersection(self.ego_vehicle, 8)
+        start_other_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
+        trigger_other = DriveDistance(self.other_actors[0], 3)
+        stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other = TimeOut(5)
-        start_actor = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other_actor = DriveDistance(
-            self.other_actors[0],
-            6)
-        stop_actor = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
+        start_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
+        trigger_other_actor = DriveDistance(self.other_actors[0], 6)
+        stop_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(5)
 
         # non leaf nodes
@@ -245,17 +209,15 @@ class VehicleTurningLeft(BasicScenario):
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed,
-            optional=True)
+        max_velocity_criterion = MaxVelocityTest(self.ego_vehicle,
+                                                 self._ego_vehicle_velocity_allowed,
+                                                 optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
-            self._ego_vehicle_distance_driven,
-            distance_acceptable=35,
-            optional=True)
+        driven_distance_criterion = DrivenDistanceTest(self.ego_vehicle,
+                                                       self._ego_vehicle_distance_driven,
+                                                       distance_acceptable=35,
+                                                       optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
@@ -263,5 +225,4 @@ class VehicleTurningLeft(BasicScenario):
         criteria.append(driven_distance_criterion)
 
         return criteria
-        
-        
+    
