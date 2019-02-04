@@ -99,7 +99,7 @@ class ControlLoss(BasicScenario):
 
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
         location, _ = get_location_in_distance(self.ego_vehicle, self._end_distance)
-        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
+        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 10.0)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
