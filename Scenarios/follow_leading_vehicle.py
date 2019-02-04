@@ -283,8 +283,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         # Add the collision and lane checks for all vehicles as well
         for vehicle in self.other_actors:
             collision_criterion = CollisionTest(vehicle)
-            keep_lane_criterion = KeepLaneTest(vehicle)
             criteria.append(collision_criterion)
-            criteria.append(keep_lane_criterion)
 
         return criteria
