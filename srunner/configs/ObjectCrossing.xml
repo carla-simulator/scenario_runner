@@ -14,15 +14,15 @@
     </scenario>
     <scenario name="DynamicObjectCrossing_2" type="DynamicObjectCrossing" town="Town01">
         <ego_vehicle x="290" y="-2" z="38.11" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="220" y="-5.5" z="38.11" yaw="90" model="vehicle.diamondback.century" />
+        <other_actor x="217" y="-6.5" z="38.11" yaw="90" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="StationaryObjectCrossing_3" type="StationaryObjectCrossing" town="Town01">
         <ego_vehicle x="200" y="330.5" z="38.11" yaw="0" model="vehicle.lincoln.mkz2017" />
         <other_actor x="245" y="330.5" z="38.11" yaw="270" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="DynamicObjectCrossing_3" type="DynamicObjectCrossing" town="Town01">
-        <ego_vehicle x="200" y="330.5" z="38.11" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="270" y="334" z="38.11" yaw="270" model="vehicle.diamondback.century" />
+        <ego_vehicle x="188" y="330.5" z="38.11" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="251" y="334" z="38.11" yaw="270" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="StationaryObjectCrossing_4" type="StationaryObjectCrossing" town="Town02">
         <ego_vehicle x="57" y="191.5" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
@@ -30,7 +30,7 @@
     </scenario>
     <scenario name="DynamicObjectCrossing_4" type="DynamicObjectCrossing" town="Town02">
         <ego_vehicle x="53" y="191.5" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="113.8" y="195" z="0.22" yaw="270" model="vehicle.diamondback.century" />
+        <other_actor x="108" y="195.5" z="0.22" yaw="270" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="StationaryObjectCrossing_5" type="StationaryObjectCrossing" town="Town03">
         <ego_vehicle x="110" y="129" z="1" yaw="180" model="vehicle.lincoln.mkz2017" />
@@ -38,7 +38,7 @@
     </scenario>
     <scenario name="DynamicObjectCrossing_5" type="DynamicObjectCrossing" town="Town03">
         <ego_vehicle x="95" y="127.5" z="1" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="31" y="124" z="0" yaw="90" model="vehicle.diamondback.century" />
+        <other_actor x="31" y="124.5" z="0" yaw="90" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="StationaryObjectCrossing_6" type="StationaryObjectCrossing" town="Town03">
         <ego_vehicle x="92.8" y="65.3" z="0.1" yaw="0" model="vehicle.lincoln.mkz2017" />
@@ -46,6 +46,6 @@
     </scenario>
     <scenario name="DynamicObjectCrossing_6" type="DynamicObjectCrossing" town="Town03">
         <ego_vehicle x="92.8" y="66.3" z="0.1" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="140" y="69" z="0.1" yaw="270" model="vehicle.diamondback.century" />
+        <other_actor x="140.3" y="69.3" z="0.1" yaw="270" model="vehicle.diamondback.century" />
     </scenario>
 </scenarios>
