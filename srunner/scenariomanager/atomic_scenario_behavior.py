@@ -19,6 +19,7 @@ import py_trees
 import carla
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
+from Scenarios.basic_scenario import get_intersection
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
@@ -624,7 +625,7 @@ class SyncArrival(AtomicBehavior):
           certain distance, etc.
     """
 
-    def __init__(self, actor, actor_reference, target_location, gain=1, name="SyncArrival"):
+    def __init__(self, actor, actor_reference, gain=1, name="SyncArrival"):
         """
         actor : actor to be controlled
         actor_ reference : reference actor with which arrival has to be
@@ -637,10 +638,15 @@ class SyncArrival(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._actor = actor
         self._actor_reference = actor_reference
-        self._target_location = target_location
         self._gain = gain
-
         self._control.steering = 0
+        self._poi = None
+
+    def setup(self, name="SyncArrival"):
+
+        self._poi = get_intersection(self._actor_reference, self._actor)
+        return True
+
 
     def update(self):
         """
@@ -649,9 +655,9 @@ class SyncArrival(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
-                                                self._target_location)
+                                                carla.Location(x=self._poi[0], y=self._poi[1]))
         distance = calculate_distance(CarlaDataProvider.get_location(self._actor),
-                                      self._target_location)
+                                      carla.Location(x=self._poi[0], y=self._poi[1]))
 
         velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
         time_reference = float('inf')

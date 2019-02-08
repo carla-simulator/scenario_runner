@@ -48,8 +48,6 @@ class VehicleTurningRight(BasicScenario):
     _other_actor_max_throttle = 1.0
     _other_actor_max_brake = 1.0
 
-    _location_of_collision = carla.Location(x=93.1, y=44.8, z=39)
-
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
@@ -91,8 +89,7 @@ class VehicleTurningRight(BasicScenario):
             self.other_actors[0],
             self._other_actor_max_brake)
         timeout_other = TimeOut(3)
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle)
         sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
                                                        6)
@@ -170,8 +167,6 @@ class VehicleTurningLeft(BasicScenario):
     _other_actor_max_throttle = 1.0
     _other_actor_max_brake = 1.0
 
-    _location_of_collision = carla.Location(x=88.6, y=75.8, z=38)
-
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
@@ -214,8 +209,7 @@ class VehicleTurningLeft(BasicScenario):
             self._other_actor_max_brake)
         timeout_other = TimeOut(3)
 
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle)
         sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
                                                        6)

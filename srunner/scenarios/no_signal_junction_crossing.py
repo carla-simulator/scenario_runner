@@ -12,7 +12,6 @@ And encounters another vehicle passing across the junction.
 """
 
 import py_trees
-import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
@@ -40,7 +39,7 @@ class NoSignalJunctionCrossing(BasicScenario):
 
     # other vehicle
     _other_actor_max_brake = 1.0
-    _other_actor_target_velocity = 15
+    _other_actor_target_velocity = 20
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -49,7 +48,7 @@ class NoSignalJunctionCrossing(BasicScenario):
         super(NoSignalJunctionCrossing, self).__init__("NoSignalJunctionCrossing",
                                                        ego_vehicle,
                                                        other_actors,
-                                                       "Town03",
+                                                       town,
                                                        world,
                                                        debug_mode)
 
@@ -66,38 +65,21 @@ class NoSignalJunctionCrossing(BasicScenario):
         """
 
         # Creating leaf nodes
-        start_other_trigger = InTriggerRegion(
-            self.ego_vehicle,
-            -80, -70,
-            -75, -60)
+        location, _ = get_location_in_distance(self.ego_vehicle, 10)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 5.0)
 
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle,
-            carla.Location(x=-74.63, y=-136.34))
-
-        pass_through_trigger = InTriggerRegion(
-            self.ego_vehicle,
-            -90, -70,
-            -124, -119)
+        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle)
+        pass_through_trigger = InTriggerDistanceToNextIntersection(self.ego_vehicle, 8)
 
         keep_velocity_other = KeepVelocity(
             self.other_actors[0],
             self._other_actor_target_velocity)
-
-        stop_other_trigger = InTriggerRegion(
-            self.other_actors[0],
-            -45, -35,
-            -140, -130)
+        stop_other_trigger = DriveDistance(self.other_actors[0], 50)
 
         stop_other = StopVehicle(
             self.other_actors[0],
             self._other_actor_max_brake)
-
-        end_condition = InTriggerRegion(
-            self.ego_vehicle,
-            -90, -70,
-            -170, -156
-        )
+        end_condition = DriveDistance(self.ego_vehicle, 20)
 
         # Creating non-leaf nodes
         root = py_trees.composites.Parallel(
@@ -110,7 +92,7 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         # Building tree
         root.add_child(scenario_sequence)
-        scenario_sequence.add_child(start_other_trigger)
+        scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(sync_arrival_parallel)
         scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other)
@@ -131,8 +113,10 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         # Adding checks for ego vehicle
         collision_criterion_ego = CollisionTest(self.ego_vehicle)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle, self._ego_vehicle_driven_distance)
+        driven_distance_criterion = DrivenDistanceTest(self.ego_vehicle,
+                                                       self._ego_vehicle_driven_distance,
+                                                       distance_acceptable=70,
+                                                       optional=True)
         criteria.append(collision_criterion_ego)
         criteria.append(driven_distance_criterion)
 

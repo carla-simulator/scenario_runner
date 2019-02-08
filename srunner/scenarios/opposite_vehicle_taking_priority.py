@@ -56,7 +56,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     _traffic_light_location = carla.Location(x=-11.5, y=-125.0, z=0.15)
     _traffic_light = None
-    _location_of_collision = carla.Location(x=0, y=-135, z=1)
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -104,8 +103,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
+        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle)
         sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
                                                        15)
