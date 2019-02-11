@@ -655,9 +655,9 @@ class SyncArrival(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
-                                                carla.Location(x=self._poi[0], y=self._poi[1]))
+                                                carla.Location(self._poi[0], self._poi[1]))
         distance = calculate_distance(CarlaDataProvider.get_location(self._actor),
-                                      carla.Location(x=self._poi[0], y=self._poi[1]))
+                                      carla.Location(self._poi[0], self._poi[1]))
 
         velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
         time_reference = float('inf')

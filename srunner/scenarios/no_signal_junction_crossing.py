@@ -74,7 +74,7 @@ class NoSignalJunctionCrossing(BasicScenario):
         keep_velocity_other = KeepVelocity(
             self.other_actors[0],
             self._other_actor_target_velocity)
-        stop_other_trigger = DriveDistance(self.other_actors[0], 50)
+        stop_other_trigger = DriveDistance(self.other_actors[0], 40)
 
         stop_other = StopVehicle(
             self.other_actors[0],

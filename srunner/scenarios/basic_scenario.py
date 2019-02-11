@@ -11,8 +11,6 @@ This module provide the basic class for all user-defined scenarios.
 """
 
 from __future__ import print_function
-import math
-import numpy as np
 
 import py_trees
 
@@ -26,18 +24,14 @@ def get_intersection(ego_actor, other_actor):
     """
     waypoint = ego_actor.get_world().get_map().get_waypoint(ego_actor.get_location())
     waypoint_other = other_actor.get_world().get_map().get_waypoint(other_actor.get_location())
-    x_1 = waypoint.transform.location.x
-    y_1 = waypoint.transform.location.y
-    m_1 = math.tan(math.radians(waypoint.transform.rotation.yaw))
-    x_2 = waypoint_other.transform.location.x
-    y_2 = waypoint_other.transform.location.y
-    m_2 = math.tan(math.radians(waypoint_other.transform.rotation.yaw))
-    c_1 = (m_1*x_1) - y_1
-    c_2 = (m_2*x_2) - y_2
-    _a = np.array([[m_1, -1], [m_2, -1]])
-    _b = np.array([c_1, c_2])
-    _x, _y = np.linalg.solve(_a, _b)
-    return _x, _y
+    flag = float("inf")
+    while True:
+        waypoint = waypoint.next(1).pop()
+        distance = waypoint.transform.location.distance(waypoint_other.transform.location)
+        if distance > flag:
+            break
+        flag = distance
+    return waypoint.transform.location.x, waypoint.transform.location.y
 
 def get_location_in_distance(actor, distance):
     """
