@@ -30,7 +30,10 @@ In addition, you have to install Python networkx. You can install it via:
 sudo apt-get install python-networkx
 ```
 Please make sure that you install networkx for the Python version you want to use.
-
+You have to install Python numpy. You can install it via:
+```
+sudo apt-get install python-numpy
+```
 
 ## Running the follow vehicle example
 First of all, you need to get latest master branch from CARLA. Then you have to

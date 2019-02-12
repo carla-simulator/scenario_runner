@@ -10,7 +10,7 @@
     </scenario>
     <scenario name="NoSignalJunctionCrossing_3" type="NoSignalJunctionCrossing" town="Town04">
         <ego_vehicle x="255.2" y="-300.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="230" y="-246.2" z="0.5" yaw="0" model="vehicle.tesla.model3" />
+        <other_actor x="232" y="-246.2" z="0.5" yaw="0" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="NoSignalJunctionCrossing_4" type="NoSignalJunctionCrossing" town="Town05">
         <ego_vehicle x="-191.8" y="17.2" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
@@ -18,7 +18,7 @@
     </scenario>
     <scenario name="NoSignalJunctionCrossing_5" type="NoSignalJunctionCrossing" town="Town05">
         <ego_vehicle x="-188.1" y="-22.6" z="0.5" yaw="270" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-213.2" y="-88" z="0.5" yaw="0" model="vehicle.tesla.model3" />
+        <other_actor x="-150" y="-91.7" z="0.5" yaw="180" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="NoSignalJunctionCrossing_6" type="NoSignalJunctionCrossing" town="Town05">
         <ego_vehicle x="96" y="-52" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
