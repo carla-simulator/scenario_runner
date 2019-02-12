@@ -40,10 +40,14 @@ class ControlLoss(BasicScenario):
     _no_of_jitter_actions = 20
     _noise_mean = 0      # Mean value of steering noise
     _noise_std = 0.02    # Std. deviation of steerning noise
-    _dynamic_mean = 0.05
+    _dynamic_mean_for_steer = 0.01
+    _dynamic_mean_for_throttle = 0.75
     _abort_distance_to_intersection = 20
     _start_distance = 20
     _end_distance = 80
+    _ego_vehicle_max_steer = 0.0
+    _ego_vehicle_max_throttle = 1.0
+    _ego_vehicle_target_velocity = 15
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -74,14 +78,13 @@ class ControlLoss(BasicScenario):
         jitter_timeout = TimeOut(timeout=0.2, name="Timeout for next jitter")
 
         for i in range(self._no_of_jitter_actions):
-            ego_vehicle_max_steer = random.gauss(self._noise_mean, self._noise_std)
-            if ego_vehicle_max_steer > 0:
-                ego_vehicle_max_steer += self._dynamic_mean
-            elif ego_vehicle_max_steer < 0:
-                ego_vehicle_max_steer -= self._dynamic_mean
+            noise = random.gauss(self._noise_mean, self._noise_std)
+            noise = abs(noise)
+            self._ego_vehicle_max_steer = -(noise - self._dynamic_mean_for_steer)
+            self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
 
             # turn vehicle
-            turn = SteerVehicle(self.ego_vehicle, ego_vehicle_max_steer, name='Steering ' + str(i))
+            turn = SteerVehicle(self.ego_vehicle, self._ego_vehicle_max_steer, self._ego_vehicle_max_throttle, name='Steering ' + str(i))
 
             jitter_action = py_trees.composites.Parallel("Jitter Actions with Timeouts",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
