@@ -697,7 +697,7 @@ class SteerVehicle(AtomicBehavior):
     To set the steer value of the actor.
     """
 
-    def __init__(self, actor, steer_value, name="Steering"):
+    def __init__(self, actor, steer_value, throttle_value, name="Steering"):
         """
         Setup actor and maximum steer value
         """
@@ -706,6 +706,7 @@ class SteerVehicle(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._actor = actor
         self._steer_value = steer_value
+        self._throttle_value = throttle_value
 
     def update(self):
         """
@@ -713,6 +714,7 @@ class SteerVehicle(AtomicBehavior):
         """
         self._control = self._actor.get_control()
         self._control.steer = self._steer_value
+        self._control.throttle = self._throttle_value
         new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
