@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<scenarios>
-    <scenario name="OppositeVehicleRunningRedLight" type="OppositeVehicleRunningRedLight" town="Town03">
-        <ego_vehicle x="-2.8" y="-184" z="1" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-13.3" y="-133" z="1" yaw="0" model="vehicle.tesla.model3" />
-    </scenario>
-</scenarios>

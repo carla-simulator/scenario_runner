@@ -20,7 +20,7 @@ import carla
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
 
-from ScenarioManager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 EPSILON = 0.001
 

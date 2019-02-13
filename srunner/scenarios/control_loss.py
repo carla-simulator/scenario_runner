@@ -16,10 +16,10 @@ import random
 
 import py_trees
 
-from ScenarioManager.atomic_scenario_behavior import *
-from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.timer import TimeOut
-from Scenarios.basic_scenario import *
+from srunner.scenariomanager.atomic_scenario_behavior import *
+from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.timer import TimeOut
+from srunner.scenarios.basic_scenario import *
 
 CONTROL_LOSS_SCENARIOS = [
     "ControlLoss"

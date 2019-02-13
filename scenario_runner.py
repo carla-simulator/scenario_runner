@@ -17,19 +17,17 @@ from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-import random
-import sys
 
 import carla
 
-from Scenarios.follow_leading_vehicle import *
-from Scenarios.opposite_vehicle_taking_priority import *
-from Scenarios.object_crash_vehicle import *
-from Scenarios.no_signal_junction_crossing import *
-from Scenarios.object_crash_intersection import *
-from Scenarios.control_loss import *
-from Scenarios.config_parser import *
-from ScenarioManager.scenario_manager import ScenarioManager
+from srunner.scenarios.follow_leading_vehicle import *
+from srunner.scenarios.opposite_vehicle_taking_priority import *
+from srunner.scenarios.object_crash_vehicle import *
+from srunner.scenarios.no_signal_junction_crossing import *
+from srunner.scenarios.object_crash_intersection import *
+from srunner.scenarios.control_loss import *
+from srunner.scenarios.config_parser import *
+from srunner.scenariomanager.scenario_manager import ScenarioManager
 
 
 # Version of scenario_runner

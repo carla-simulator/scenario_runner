@@ -18,8 +18,8 @@ import weakref
 import py_trees
 import carla
 
-from ScenarioManager.carla_data_provider import CarlaDataProvider
-from ScenarioManager.timer import GameTime
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.timer import GameTime
 
 
 class Criterion(py_trees.behaviour.Behaviour):
