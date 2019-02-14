@@ -2,7 +2,7 @@ import scipy.misc
 
 import carla
 
-from challenge.autonomous_agent import AutonomousAgent
+from Challenge.agents.autonomous_agent import AutonomousAgent
 
 class MyAgent(AutonomousAgent):
     def setup(self):

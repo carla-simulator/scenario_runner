@@ -18,6 +18,8 @@ import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 
+import sys
+
 import carla
 
 from srunner.scenarios.follow_leading_vehicle import *
