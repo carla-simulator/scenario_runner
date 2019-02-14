@@ -79,7 +79,7 @@ def parse_scenario_configuration(world, file_name, scenario_name):
         scenario_name = scenario_name[6:]
         file_name = scenario_name
 
-    scenario_config_file = "Configs/" + file_name + ".xml"
+    scenario_config_file = "srunner/configs/" + file_name + ".xml"
     tree = ET.parse(scenario_config_file)
 
     scenario_configurations = []
@@ -112,7 +112,7 @@ def get_list_of_scenarios():
     Parse *all* config files and provide a list with all scenarios @return
     """
 
-    list_of_config_files = glob.glob("Configs/*.xml")
+    list_of_config_files = glob.glob("srunner/configs/*.xml")
 
     scenarios = []
     for file_name in list_of_config_files:
@@ -128,7 +128,7 @@ def find_scenario_config(scenario_name):
     Parse *all* config files and find first match for scenario config
     """
 
-    list_of_config_files = glob.glob("Configs/*.xml")
+    list_of_config_files = glob.glob("srunner/configs/*.xml")
 
     for file_name in list_of_config_files:
         tree = ET.parse(file_name)
