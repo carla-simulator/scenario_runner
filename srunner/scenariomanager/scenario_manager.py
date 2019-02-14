@@ -42,6 +42,7 @@ class Scenario(object):
         self.behavior = behavior
         self.test_criteria = criteria
         self.timeout = timeout
+        self.agent = None
 
         for criterion in self.test_criteria:
             criterion.terminate_on_failure = terminate_on_failure
@@ -198,6 +199,10 @@ class ScenarioManager(object):
 
                 # Tick scenario
                 self.scenario_tree.tick_once()
+
+                # Invoke agent
+                action = self.scenario.agent()
+                self.ego_vehicle.apply_control(action)
 
                 if self._debug_mode:
                     print("\n")

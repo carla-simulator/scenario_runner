@@ -1,6 +1,6 @@
 import carla
 
-from challenge.data_provider import DataProvider
+from Challenge.envs.data_provider import DataProvider
 
 class AutonomousAgent():
     def __init__(self):
