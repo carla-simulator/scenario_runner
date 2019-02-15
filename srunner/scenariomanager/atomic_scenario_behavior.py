@@ -19,6 +19,7 @@ import py_trees
 
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
+from Scenarios.basic_scenario import get_intersection
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 

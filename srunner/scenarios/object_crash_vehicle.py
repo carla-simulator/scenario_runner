@@ -127,7 +127,7 @@ class DynamicObjectCrossing(BasicScenario):
         lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
         start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, 13)
         sync_actor = SyncArrival(self.other_actors[0], self.ego_vehicle)
-        sync_till = DriveDistance(self.other_actors[0], 4)
+        sync_till = DriveDistance(self.other_actors[0], lane_width)
         stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other = TimeOut(6)
         start_vehicle = AccelerateToVelocity(self.other_actors[0], 1.0,
