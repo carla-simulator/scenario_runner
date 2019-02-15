@@ -196,7 +196,9 @@ class InTriggerDistanceToLocation(AtomicBehavior):
 
         if location is None:
             return new_status
-
+        
+        self._target_location.z = location.z
+        
         if calculate_distance(
                 location, self._target_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
@@ -624,7 +626,7 @@ class SyncArrival(AtomicBehavior):
           certain distance, etc.
     """
 
-    def __init__(self, actor, actor_reference, target_location, gain=1, name="SyncArrival"):
+    def __init__(self, actor, actor_reference, gain=1, name="SyncArrival"):
         """
         actor : actor to be controlled
         actor_ reference : reference actor with which arrival has to be
@@ -637,10 +639,15 @@ class SyncArrival(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._actor = actor
         self._actor_reference = actor_reference
-        self._target_location = target_location
         self._gain = gain
-
         self._control.steering = 0
+        self._poi = None
+
+    def setup(self, name="SyncArrival"):
+
+        self._poi = get_intersection(self._actor_reference, self._actor)
+        return True
+
 
     def update(self):
         """
@@ -649,9 +656,9 @@ class SyncArrival(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
-                                                self._target_location)
+                                                self._poi)
         distance = calculate_distance(CarlaDataProvider.get_location(self._actor),
-                                      self._target_location)
+                                      self._poi)
 
         velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
         time_reference = float('inf')
