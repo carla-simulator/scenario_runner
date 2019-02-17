@@ -63,7 +63,7 @@ def set_attrib(node, key, default):
     return node.attrib[key] if key in node.attrib else default
 
 
-def parse_scenario_configuration(world, file_name, scenario_name):
+def parse_scenario_configuration(file_name, scenario_name):
     """
     Parse scenario configuration file and provide a list of
     ScenarioConfigurations @return

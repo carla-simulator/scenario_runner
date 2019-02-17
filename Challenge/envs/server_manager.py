@@ -1,5 +1,8 @@
 from enum import Enum
+import fcntl
 import logging
+import os
+import psutil
 import random
 import string
 import subprocess
@@ -21,17 +24,33 @@ class ServerManager():
         self._outs = None
         self._errs = None
 
-    def reset(self, map_id, track_id=Track.SENSORS, port=2000, human_flag=False):
+    def reset(self, map_id, track_id=Track.SENSORS, host="127.0.0.1", port=2000, human_flag=False):
         raise NotImplementedError("This function is to be implemented")
 
 
     def wait_until_ready(self):
         ready = False
+        threshold = 5000
+        no_lines = 0
+
+        fd = self._proc.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
         while not ready:
-            line = str(self._proc.stdout.readline())
-            if 'Bringing World' in line:
+            try:
+                line = self._proc.stdout.readline()
+                time.sleep(0.0005)
+                if str(line) == "b''":
+                    no_lines += 1
+                else:
+                    no_lines = 0
+            except:
+               pass
+
+            if no_lines > threshold:
                 ready = True
-        time.sleep(1.0)
+                continue
 
 
 class ServerManagerBinary(ServerManager):
@@ -43,7 +62,7 @@ class ServerManagerBinary(ServerManager):
         else:
             logging.error('CARLA_SERVER binary not provided!')
 
-    def reset(self, map_id, track_id=Track.SENSORS, port=2000, human_flag=False):
+    def reset(self, map_id, track_id=Track.SENSORS, host="127.0.0.1", port=2000, human_flag=False):
         # first we check if there is need to clean up
         if self._proc is not None:
             logging.info('Stoppoing previous server [PID=%s]', self._proc.pid)
@@ -71,12 +90,14 @@ class ServerManagerBinary(ServerManager):
             exec_command.append('-carla-settings={}'.format(conf_file))
 
         print(exec_command)
-        self._proc = subprocess.Popen(exec_command, stdout=subprocess.PIPE,
-                                      bufsize=1)
+        self._proc = subprocess.Popen(exec_command, stdout=subprocess.PIPE, bufsize=1)
 
     def stop(self):
-        self._proc.kill()
-        self._outs, self._errs = self._proc.communicate()
+        parent = psutil.Process(self._proc.pid)
+        for child in parent.children(recursive=True):
+            child.kill()
+        parent.kill()
+        #self._outs, self._errs = self._proc.communicate()
 
 
 class ServerManagerDocker(ServerManager):
@@ -91,8 +112,8 @@ class ServerManagerDocker(ServerManager):
         self._docker_id = ''
 
 
-    def reset(self, map_id, track_id=Track.SENSORS, port=2000,
-              human_flag=False):
+    def reset(self, map_id, track_id=Track.SENSORS, host="127.0.0.1", port=2000, human_flag=False):
+
         # first we check if there is need to clean up
         if self._proc is not None and self._docker_id is not '':
             logging.info('Stoppoing previous server [PID=%s]', self._proc.pid)
