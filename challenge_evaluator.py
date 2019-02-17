@@ -148,7 +148,7 @@ class ChallengeEvaluator(object):
             self.ego_vehicle.destroy()
             self.ego_vehicle = None
 
-    def setup_vehicle(self, model, spawn_point, hero=False):
+    def setup_vehicle(self, model, spawn_point, hero=False, autopilot=False, random_location=False):
         """
         Function to setup the most relevant vehicle parameters,
         incl. spawn point and vehicle model.
@@ -163,14 +163,22 @@ class ChallengeEvaluator(object):
         else:
             blueprint.set_attribute('role_name', 'scenario')
 
-        vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
+        if random_location:
+            spawn_points = list(self.world.get_map().get_spawn_points())
+            random.shuffle(spawn_points)
+            for spawn_point in spawn_points:
+                vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
+                if vehicle:
+                    break
+        else:
+            vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
 
         if vehicle is None:
             raise Exception(
                 "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
         else:
             # Let's deactivate the autopilot of the vehicle
-            vehicle.set_autopilot(False)
+            vehicle.set_autopilot(autopilot)
 
         return vehicle
 
@@ -214,7 +222,7 @@ class ChallengeEvaluator(object):
         # If ego_vehicle already exists, just update location
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
-            self.ego_vehicle = self.setup_vehicle(config.ego_vehicle.model, config.ego_vehicle.transform, True)
+            self.ego_vehicle = self.setup_vehicle(config.ego_vehicle.model, config.ego_vehicle.transform, hero=True)
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
@@ -223,7 +231,8 @@ class ChallengeEvaluator(object):
 
         # spawn all other actors
         for actor in config.other_actors:
-            new_actor = self.setup_vehicle(actor.model, actor.transform)
+            new_actor = self.setup_vehicle(actor.model, actor.transform, hero=False, autopilot=actor.autopilot,
+                                           random_location=actor.random_location)
             self.actors.append(new_actor)
 
 
