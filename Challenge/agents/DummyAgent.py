@@ -4,7 +4,7 @@ import carla
 
 from Challenge.agents.autonomous_agent import AutonomousAgent
 
-class MyAgent(AutonomousAgent):
+class DummyAgent(AutonomousAgent):
     def setup(self):
         pass
 
