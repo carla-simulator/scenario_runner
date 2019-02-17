@@ -52,6 +52,7 @@ class HumanInterface():
                 throttle += self.THROTTLE_DELTA
             elif keys[K_DOWN] or keys[K_s]:
                 brake += 4*self.THROTTLE_DELTA
+                throttle = 0.0
             else:
                 throttle -= self.THROTTLE_DELTA / 5.0
                 brake = 0.0
