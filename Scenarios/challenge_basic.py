@@ -35,18 +35,8 @@ class ChallengeBasic(BasicScenario):
 
     category = "ChallengeBasic"
 
-    timeout = 100000            # Timeout of scenario in seconds
-
-    # ego vehicle parameters
-    _no_of_jitter_actions = 20
-    _noise_mean = 0      # Mean value of steering noise
-    _noise_std = 0.02    # Std. deviation of steerning noise
-    _dynamic_mean = 0.05
-    _abort_distance_to_intersection = 20
-    _start_distance = 20
-    _end_distance = 80
-
-    _agent_path = "/home/grossanc/Projects/scenario_runner/Challenge/agents/MyAgent.py"
+    timeout = 10            # Timeout of scenario in seconds
+    _end_distance = 800
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -54,23 +44,20 @@ class ChallengeBasic(BasicScenario):
         """
         super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, other_actors, town, world, debug_mode)
 
-        self.agent = None
-
     def _create_behavior(self):
         """
         """
 
-        # first we instantiate the Agent
-        module_name = os.path.basename(self._agent_path).split('.')[0]
-        module_spec = importlib.util.spec_from_file_location(module_name, self._agent_path)
-        foo = importlib.util.module_from_spec(module_spec)
-        module_spec.loader.exec_module(foo)
-        self.agent = getattr(foo, foo.__name__)()
-
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
 
-        import pdb; pdb.set_trace()
+        # endcondition: Check if vehicle reached waypoint _end_distance from here:
+        location, _ = get_location_in_distance(self.ego_vehicle, self._end_distance)
+        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
+
+        # Build behavior tree
+        sequence.add_child(end_condition)
+
         return sequence
 
     def _create_test_criteria(self):

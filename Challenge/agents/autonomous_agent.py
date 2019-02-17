@@ -1,6 +1,5 @@
-import carla
 
-from Challenge.envs.data_provider import DataProvider
+from Challenge.envs.sensor_interface import SensorInterface
 
 class AutonomousAgent():
     def __init__(self):
@@ -9,7 +8,7 @@ class AutonomousAgent():
         self._waypoints_plan = None
 
         # this data structure will contain all sensor data
-        self.data_provider = DataProvider()
+        self.sensor_interface  = SensorInterface()
 
         # agent's initialization
         self.setup()
@@ -20,7 +19,7 @@ class AutonomousAgent():
         """
         pass
 
-    def sensors_setup(self):
+    def sensors(self):
         """
         Define the sensor suite required by the agent
 
@@ -51,7 +50,7 @@ class AutonomousAgent():
         pass
 
     def __call__(self):
-        input_data = self.data_provider.get_data()
+        input_data = self.sensor_interface.get_data()
 
         control = self.run_step(input_data)
         control.manual_gear_shift = False
@@ -59,7 +58,7 @@ class AutonomousAgent():
         return control
 
     def all_sensors_ready(self):
-        return self.data_provider.all_sensors_ready()
+        return self.sensor_interface.all_sensors_ready()
 
     def set_global_plan(self, topological_plan, waypoints_plan):
         self._topological_plan = topological_plan,

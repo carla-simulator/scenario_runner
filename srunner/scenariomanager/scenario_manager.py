@@ -42,7 +42,6 @@ class Scenario(object):
         self.behavior = behavior
         self.test_criteria = criteria
         self.timeout = timeout
-        self.agent = None
 
         for criterion in self.test_criteria:
             criterion.terminate_on_failure = terminate_on_failure
@@ -108,11 +107,13 @@ class ScenarioManager(object):
     ego_vehicle = None
     other_actors = None
 
-    def __init__(self, world, _debug_mode):
+    def __init__(self, world, debug_mode=False):
         """
         Init requires scenario as input
         """
-        self._debug_mode = _debug_mode
+        self._debug_mode = debug_mode
+        self.agent = None
+        self._autonomous_agent_plugged = False
         self._running = False
         self._timestamp_last_run = 0.0
         self._my_lock = threading.Lock()
@@ -152,10 +153,11 @@ class ScenarioManager(object):
         self.end_system_time = None
         GameTime.restart()
 
-    def run_scenario(self):
+    def run_scenario(self, agent=None):
         """
         Trigger the start of the scenario and wait for it to finish/fail
         """
+        self.agent = agent
         print("ScenarioManager: Running scenario {}".format(self.scenario_tree.name))
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
@@ -200,9 +202,10 @@ class ScenarioManager(object):
                 # Tick scenario
                 self.scenario_tree.tick_once()
 
-                # Invoke agent
-                action = self.scenario.agent()
-                self.ego_vehicle.apply_control(action)
+                if self.agent:
+                    # Invoke agent
+                    action = self.agent()
+                    self.ego_vehicle.apply_control(action)
 
                 if self._debug_mode:
                     print("\n")

@@ -43,7 +43,7 @@ class CallBack(object):
         self._data_provider.update_sensor(tag, array, gnss_data.frame_number)
 
 
-class DataProvider(object):
+class SensorInterface(object):
     def __init__(self):
         self._sensors_objects = {}
         self._data_buffers = {}
