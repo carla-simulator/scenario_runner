@@ -30,12 +30,12 @@ CHALLENGE_BASIC_SCENARIOS = [
 class ChallengeBasic(BasicScenario):
 
     """
-    Implementation of "Control Loss Vehicle" (Traffic Scenario 01)
+    Implementation of a dummy scenario
     """
 
     category = "ChallengeBasic"
 
-    timeout = 10            # Timeout of scenario in seconds
+    timeout = 10000000            # Timeout of scenario in seconds
     _end_distance = 800
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
