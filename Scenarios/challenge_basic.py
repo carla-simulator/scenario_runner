@@ -5,12 +5,9 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-Control Loss Vehicle scenario:
-
-The scenario realizes that the vehicle looses control due to
-bad road conditions, etc. and checks to see if the vehicle
-regains control and corrects it's course.
+Basic CARLA Autonomous Driving training scenario
 """
+
 import importlib
 import random
 import os
@@ -22,9 +19,7 @@ from ScenarioManager.timer import TimeOut
 from Scenarios.basic_scenario import *
 
 
-CHALLENGE_BASIC_SCENARIOS = [
-    "ChallengeBasic"
-]
+CHALLENGE_BASIC_SCENARIOS = ["ChallengeBasic"]
 
 
 class ChallengeBasic(BasicScenario):
@@ -35,7 +30,7 @@ class ChallengeBasic(BasicScenario):
 
     category = "ChallengeBasic"
 
-    timeout = 10000000            # Timeout of scenario in seconds
+    timeout = 2 * 60            # Timeout of scenario in seconds
     _end_distance = 800
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):

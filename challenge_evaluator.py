@@ -85,9 +85,8 @@ class ChallengeEvaluator(object):
         # first we instantiate the Agent
         module_name = os.path.basename(args.agent).split('.')[0]
         module_spec = importlib.util.spec_from_file_location(module_name, args.agent)
-        module = importlib.util.module_from_spec(module_spec)
-        module_spec.loader.exec_module(module)
-        self.agent_instance = getattr(module, module.__name__)()
+        self.module_agent = importlib.util.module_from_spec(module_spec)
+        module_spec.loader.exec_module(self.module_agent)
 
         self._sensors_list = []
         self._hop_resolution = 2.0
@@ -276,6 +275,8 @@ class ChallengeEvaluator(object):
 
             # Execute each configuration
             for config in scenario_configurations:
+                # create agent instance
+                self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)()
 
                 # Prepare scenario
                 print("Preparing scenario: " + config.name)
@@ -328,10 +329,10 @@ class ChallengeEvaluator(object):
                 del scenario
 
                 self.cleanup(ego=True)
+                self.agent_instance.destroy()
 
                 # stop CARLA server
                 self._carla_server.stop()
-                self._carla_server = None
 
             print("No more scenarios .... Exiting")
 

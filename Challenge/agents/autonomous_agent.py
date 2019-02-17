@@ -48,6 +48,13 @@ class AutonomousAgent():
         """
         pass
 
+    def destroy(self):
+        """
+        Destroy (clean-up) the agent
+        :return:
+        """
+        pass
+
     def __call__(self):
         input_data = self.sensor_interface.get_data()
 
