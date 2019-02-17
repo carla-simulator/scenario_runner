@@ -20,16 +20,6 @@ import sys
 import carla
 import py_trees
 
-try:
-    CARLA_ROOT = os.environ.get('CARLA_ROOT')
-
-    if CARLA_ROOT:
-        sys.path.append(glob.glob('{}/PythonAPI'.format(CARLA_ROOT))[0])
-    else:
-        print('Warning! Define environment variable CARLA_ROOT pointing to the CARLA base folder.')
-except IndexError:
-    pass
-
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
 

@@ -4,8 +4,7 @@ from Challenge.envs.sensor_interface import SensorInterface
 class AutonomousAgent():
     def __init__(self):
         #  current global plans to reach a destination
-        self._topological_plan = None,
-        self._waypoints_plan = None
+        self._global_plan = None,
 
         # this data structure will contain all sensor data
         self.sensor_interface  = SensorInterface()
@@ -60,6 +59,5 @@ class AutonomousAgent():
     def all_sensors_ready(self):
         return self.sensor_interface.all_sensors_ready()
 
-    def set_global_plan(self, topological_plan, waypoints_plan):
-        self._topological_plan = topological_plan,
-        self._waypoints_plan = waypoints_plan
+    def set_global_plan(self, global_plan):
+        self._global_plan = global_plan

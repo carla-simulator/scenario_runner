@@ -16,6 +16,22 @@ import xml.etree.ElementTree as ET
 import carla
 
 
+class TargetConfiguration(object):
+
+    """
+    This class provides the basic  configuration for a target location
+    """
+
+    transform = None
+
+    def __init__(self, node):
+        pos_x = float(set_attrib(node, 'x', 0))
+        pos_y = float(set_attrib(node, 'y', 0))
+        pos_z = float(set_attrib(node, 'z', 0))
+
+        self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z))
+
+
 class ActorConfiguration(object):
 
     """
@@ -53,6 +69,7 @@ class ScenarioConfiguration(object):
     town = None
     name = None
     type = None
+    target = None
 
 
 def set_attrib(node, key, default):
@@ -94,6 +111,9 @@ def parse_scenario_configuration(file_name, scenario_name):
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
             new_config.ego_vehicle = ActorConfiguration(ego_vehicle)
+
+        for target in scenario.iter("target"):
+            new_config.target = TargetConfiguration(target)
 
         for other_actor in scenario.iter("other_actor"):
             new_config.other_actors.append(ActorConfiguration(other_actor))
