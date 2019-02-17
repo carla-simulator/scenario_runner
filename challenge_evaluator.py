@@ -15,21 +15,36 @@ from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
+import xml.etree.ElementTree as ET
+import glob
+import math
+import numpy as np
+import os
+import sys
 import time
 
 import carla
 
+try:
+    CARLA_ROOT = os.environ.get('CARLA_ROOT')
+    if not CARLA_ROOT:
+        print('Warning! Define environment variable CARLA_ROOT pointing to the CARLA base folder.')
+
+    sys.path.append(glob.glob('{}/PythonAPI'.format(CARLA_ROOT))[0])
+except IndexError:
+    pass
+
+from agents.navigation.local_planner import compute_connection, RoadOption
+from agents.navigation.global_route_planner import GlobalRoutePlanner
+from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
+from agents.tools.misc import vector
+
+
+
 from Challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker, Track
 from Challenge.envs.sensor_interface import CallBack, SensorInterface
 
-
 from Scenarios.challenge_basic import *
-from Scenarios.follow_leading_vehicle import *
-from Scenarios.opposite_vehicle_taking_priority import *
-from Scenarios.object_crash_vehicle import *
-from Scenarios.no_signal_junction_crossing import *
-from Scenarios.object_crash_intersection import *
-from Scenarios.control_loss import *
 from Scenarios.config_parser import *
 from ScenarioManager.scenario_manager import ScenarioManager
 
@@ -75,6 +90,7 @@ class ChallengeEvaluator(object):
         self.agent_instance = getattr(module, module.__name__)()
 
         self._sensors_list = []
+        self._hop_resolution = 2.0
 
         # instantiate a CARLA server manager
         if args.use_docker:
@@ -156,9 +172,6 @@ class ChallengeEvaluator(object):
             # Let's deactivate the autopilot of the vehicle
             vehicle.set_autopilot(False)
 
-        # setup sensors
-        self.setup_sensors(self.agent_instance.sensors(), vehicle)
-
         return vehicle
 
     def setup_sensors(self, sensors, vehicle):
@@ -205,10 +218,14 @@ class ChallengeEvaluator(object):
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
+        # setup sensors
+        self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
+
         # spawn all other actors
         for actor in config.other_actors:
             new_actor = self.setup_vehicle(actor.model, actor.transform)
             self.actors.append(new_actor)
+
 
 
     def analyze_scenario(self, args, config):
@@ -288,6 +305,10 @@ class ChallengeEvaluator(object):
 
                 # Load scenario and run it
                 self.manager.load_scenario(scenario)
+                lat_ref, lon_ref = self._get_latlon_ref(args.carla_root, config.town)
+                self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
+
+
                 self.manager.run_scenario(self.agent_instance)
 
                 # Provide outputs if required
@@ -304,6 +325,122 @@ class ChallengeEvaluator(object):
                 self._carla_server = None
 
             print("No more scenarios .... Exiting")
+
+    def _get_latlon_ref(self, carla_root, town):
+        xodr_path = '{}/CarlaUE4/Content/Carla/Maps/OpenDrive/{}.xodr'.format(carla_root, town)
+
+        lat_ref = 0
+        lon_ref = 0
+
+        tree = ET.parse(xodr_path)
+        for opendrive in tree.iter("OpenDRIVE"):
+            for header in opendrive.iter("header"):
+                for georef in header.iter("geoReference"):
+                    str_list = georef.text.split(' ')
+                    lat_ref = float(str_list[0].split('=')[1])
+                    lon_ref = float(str_list[1].split('=')[1])
+
+        return lat_ref, lon_ref
+
+    def retrieve_route(self, actor_configuration, target_configuration, lat_ref, lon_ref):
+        start_waypoint = self.world.get_map().get_waypoint(actor_configuration.transform.location)
+        end_waypoint = self.world.get_map().get_waypoint(target_configuration.transform.location)
+
+        solution = []
+
+        # Setting up global router
+        dao = GlobalRoutePlannerDAO(self.world.get_map())
+        grp = GlobalRoutePlanner(dao)
+        grp.setup()
+
+        # Obtain route plan
+        x1 = start_waypoint.transform.location.x
+        y1 = start_waypoint.transform.location.y
+        x2 = end_waypoint.transform.location.x
+        y2 = end_waypoint.transform.location.y
+        route = grp.plan_route((x1, y1), (x2, y2))
+
+        current_waypoint = start_waypoint
+        route.append(RoadOption.VOID)
+        for action in route:
+
+            #   Generate waypoints to next junction
+            wp_choice = current_waypoint.next(self._hop_resolution)
+            while len(wp_choice) == 1:
+                current_waypoint = wp_choice[0]
+                gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
+
+                solution.append((gps_point, RoadOption.LANEFOLLOW))
+                wp_choice = current_waypoint.next(self._hop_resolution)
+                #   Stop at destination
+                if current_waypoint.transform.location.distance(
+                        end_waypoint.transform.location) < self._hop_resolution: break
+            if action == RoadOption.VOID: break
+
+            #   Select appropriate path at the junction
+            if len(wp_choice) > 1:
+
+                # Current heading vector
+                current_transform = current_waypoint.transform
+                current_location = current_transform.location
+                projected_location = current_location + \
+                                     carla.Location(
+                                         x=math.cos(math.radians(
+                                             current_transform.rotation.yaw)),
+                                         y=math.sin(math.radians(
+                                             current_transform.rotation.yaw)))
+                v_current = vector(current_location, projected_location)
+
+                direction = 0
+                if action == RoadOption.LEFT:
+                    direction = 1
+                elif action == RoadOption.RIGHT:
+                    direction = -1
+                elif action == RoadOption.STRAIGHT:
+                    direction = 0
+                select_criteria = float('inf')
+
+                #   Choose correct path
+                for wp_select in wp_choice:
+                    v_select = vector(
+                        current_location, wp_select.transform.location)
+                    cross = float('inf')
+                    if direction == 0:
+                        cross = abs(np.cross(v_current, v_select)[-1])
+                    else:
+                        cross = direction * np.cross(v_current, v_select)[-1]
+                    if cross < select_criteria:
+                        select_criteria = cross
+                        current_waypoint = wp_select
+
+                # Generate all waypoints within the junction
+                #   along selected path
+                gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
+                solution.append((gps_point, action))
+                current_waypoint = current_waypoint.next(self._hop_resolution)[0]
+                while current_waypoint.is_intersection:
+                    gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
+                    solution.append((gps_point, action))
+                    current_waypoint = \
+                        current_waypoint.next(self._hop_resolution)[0]
+
+        # send plan to agent
+        self.agent_instance.set_global_plan(solution)
+
+    def _location_to_gps(self, lat_ref, lon_ref, location):
+        EARTH_RADIUS_EQUA = 6378137.0
+
+        scale = math.cos(lat_ref * math.pi / 180.0)
+        mx = scale * lon_ref * math.pi * EARTH_RADIUS_EQUA / 180.0
+        my = scale * EARTH_RADIUS_EQUA * math.log(math.tan((90.0 + lat_ref) * math.pi / 360.0))
+        mx += location.x
+        my += location.y
+
+        lon = mx * 180.0 / (math.pi * EARTH_RADIUS_EQUA * scale)
+        lat = 360.0 * math.atan(math.exp(my / (EARTH_RADIUS_EQUA * scale))) / math.pi - 90.0
+        z = location.z
+
+        return {'lat':lat, 'lon':lon, 'z':z}
 
 
 if __name__ == '__main__':
