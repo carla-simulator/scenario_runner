@@ -1,4 +1,18 @@
 ## Latest changes
+* Added new Traffic Scenarios
+    - PassingFromOppositeDirections: Scenario used to calibrating and testing sensor models: ego vehicle passes other vehicle from opposite direction on a long straight.
+    - OvertakingSlowTarget: Scenario used for testing a simple overtake maneuver. Ego car should overtake other vehicle with safe margin on a long straight.
+    - FollowingAcceleratingTarget: Scenario used for testing whether ego car follows a slowly accelerating other vehicle correctly on a long straight.
+    - FollowingDeceleratingTarget: Scenario used for testing whether ego car follows a slowly decelerating other vehicle correctly on a long straight.
+    - FollowingChangingLanesTarget: Scenario used for testing a cut off situation where other vehicle is slowly changing lane to one occupied by ego.
+    - DrivingOffDriveway: Scenario used for testing a situation where other vehicle is merging from covered driveway right in front of ego.
+    - OncomingTargetDriftsOntoEgoLane: Scenario where oncoming other vehicle is slowly drifting from its lane onto one occupied by ego.
+* Added new behaviors
+    - DriveVehicleContinuous: Controlled vehicle will have the specified control values applied to itself with optional max_speed parameter to limit acceleration once desired speed is achieved.
+    - DriveToLocationContinuous: Similar to DriveVehicleContinuous but with lateral control so that vehicle will point to target_location
+    - FollowVehicleContinuous: Similar to DriveVehicleContinuous but with lateral control so that vehicle will steer towards target_vehicle
+    - TriggerOnLocation: check if a vehicle is within certain distance to a target location
+    - TriggerOnStatusChange: check if a vehicle status value(s) have passed target value(s) (x, y, z, roll, pitch, yaw)
 * Updated folder structure and naming convention in lowecase
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.

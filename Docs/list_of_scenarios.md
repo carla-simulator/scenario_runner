@@ -31,6 +31,55 @@ can continue driving.
 This scenario is similar to 'VehicleTurningRight'. The differnce is that the ego
 vehicle takes a left turn from an intersection.
 
+### PassingFromOppositeDirections
+Scenario used to calibrating and testing sensor models: ego vehicle passes other vehicle from opposite direction on a long straight.
+Available configurations:
+PassingFromOppositeDirectionsCar
+PassingFromOppositeDirectionsTruck
+PassingFromOppositeDirectionsMotorcycle
+PassingFromOppositeDirectionsBicycle
+
+### OvertakingSlowTarget
+Scenario used for testing a simple overtake maneuver. Ego car should overtake other vehicle with safe margin on a long straight.
+Available configurations:
+OvertakingSlowTargetCar
+OvertakingSlowTargetTruck
+OvertakingSlowTargetMotorcycle
+OvertakingSlowTargetBicycle
+
+### FollowingAcceleratingTarget
+Scenario used for testing whether ego car follows a slowly accelerating other vehicle correctly on a long straight.
+Available configurations:
+FollowingAcceleratingTargetCar
+FollowingAcceleratingTargetTruck
+FollowingAcceleratingTargetMotorcycle
+FollowingAcceleratingTargetBicycle
+
+### FollowingDeceleratingTarget
+Scenario used for testing whether ego car follows a slowly decelerating other vehicle correctly on a long straight.
+Available configurations:
+FollowingDeceleratingTargetCar
+FollowingDeceleratingTargetTruck
+FollowingDeceleratingTargetMotorcycle
+FollowingDeceleratingTargetBicycle
+
+### FollowingChangingLanesTarget
+Scenario used for testing a cut off situation where other vehicle is slowly changing lane to one occupied by ego.
+Available configurations:
+FollowingChangingLanesCar
+FollowingChangingLanesTruck
+FollowingChangingLanesMotorcycle
+FollowingChangingLanesBicycle
+
+### DrivingOffDriveway
+Scenario used for testing a situation where other vehicle is merging from covered driveway right in front of ego.
+
+### OncomingTargetDriftsOntoEgoLane
+Scenario where oncoming other vehicle is slowly drifting from its lane onto one occupied by ego. Once ego applies countermeasure(s) to avoid oncoming traffic, it will veer off onto its proper lane.
+Available configurations:
+OncomingTargetDriftsOntoEgoLaneCar
+OncomingTargetDriftsOntoEgoLaneTruck
+OncomingTargetDriftsOntoEgoLaneMotorcycle
 
 ## Scenarios in Town03
 The following scenarios take place in Town01. Hence, the CARLA server has to be

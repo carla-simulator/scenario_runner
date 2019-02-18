@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario type="PassingFromOppositeDirections" name="PassingFromOppositeDirectionsCar" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.tesla.model3" />
+    </scenario>
+    <scenario type="PassingFromOppositeDirections" name="PassingFromOppositeDirectionsTruck" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="PassingFromOppositeDirections" name="PassingFromOppositeDirectionsMotorcycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.yamaha.yzf" />
+    </scenario>
+    <scenario type="PassingFromOppositeDirections" name="PassingFromOppositeDirectionsBicycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.gazelle.omafiets" />
+    </scenario>
+
+    <scenario type="OvertakingSlowTarget" name="OvertakingSlowTargetCar" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="58" z="39" yaw="90" model="vehicle.tesla.model3" />
+    </scenario>
+    <scenario type="OvertakingSlowTarget" name="OvertakingSlowTargetTruck" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="58" z="39" yaw="90" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="OvertakingSlowTarget" name="OvertakingSlowTargetMotorcycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="58" z="39" yaw="90" model="vehicle.yamaha.yzf" />
+    </scenario>
+    <scenario type="OvertakingSlowTarget" name="OvertakingSlowTargetBicycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="58" z="39" yaw="90" model="vehicle.gazelle.omafiets" />
+    </scenario>
+
+    <scenario type="FollowingAcceleratingTarget" name="FollowingAcceleratingTargetCar" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.tesla.model3" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="FollowingAcceleratingTarget" name="FollowingAcceleratingTargetTruck" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="FollowingAcceleratingTarget" name="FollowingAcceleratingTargetMotorcycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.yamaha.yzf" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="FollowingAcceleratingTarget" name="FollowingAcceleratingTargetBicycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.gazelle.omafiets" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+
+    <scenario type="FollowingDeceleratingTarget" name="FollowingDeceleratingTargetCar" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.tesla.model3" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="FollowingDeceleratingTarget" name="FollowingDeceleratingTargetTruck" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="FollowingDeceleratingTarget" name="FollowingDeceleratingTargetMotorcycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.yamaha.yzf" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="FollowingDeceleratingTarget" name="FollowingDeceleratingTargetBicycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="392" y="108" z="39" yaw="90" model="vehicle.gazelle.omafiets" />
+        <other_actor x="396" y="108" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="288" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="298" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="308" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+        <other_actor x="396" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+
+    <scenario type="FollowingChangingLanesTarget" name="FollowingChangingLanesCar" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="397" y="60" z="39" yaw="90" model="vehicle.tesla.model3" />
+    </scenario>
+    <scenario type="FollowingChangingLanesTarget" name="FollowingChangingLanesTruck" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="397" y="60" z="39" yaw="90" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="FollowingChangingLanesTarget" name="FollowingChangingLanesMotorcycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="397" y="60" z="39" yaw="90" model="vehicle.yamaha.yzf" />
+    </scenario>
+    <scenario type="FollowingChangingLanesTarget" name="FollowingChangingLanesBicycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="397" y="60" z="39" yaw="90" model="vehicle.gazelle.omafiets" />
+    </scenario>
+
+    <scenario type="BackingUpOntoEgoLane" name="BackingUpOntoEgoLane" town="Town01">
+        <ego_vehicle x="210" y="60" z="39" yaw="0" model="vehicle.ford.mustang" />
+        <other_actor x="271.5" y="80" z="39" yaw="270" model="vehicle.tesla.model3" />
+        <other_actor x="310" y="56" z="39" yaw="180" model="vehicle.ford.mustang" />
+    </scenario>
+
+    <scenario type="OncomingTargetDriftsOntoEgoLane" name="OncomingTargetDriftsOntoEgoLaneCar" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="397" y="318" z="39" yaw="270" model="vehicle.tesla.model3" />
+    </scenario>
+    <scenario type="OncomingTargetDriftsOntoEgoLane" name="OncomingTargetDriftsOntoEgoLaneTruck" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="397" y="318" z="39" yaw="270" model="vehicle.carlamotors.carlacola" />
+    </scenario>
+    <scenario type="OncomingTargetDriftsOntoEgoLane" name="OncomingTargetDriftsOntoEgoLaneMotorcycle" town="Town01">
+        <ego_vehicle x="392" y="8" z="39" yaw="90" model="vehicle.ford.mustang" />
+        <other_actor x="397" y="318" z="39" yaw="270" model="vehicle.yamaha.yzf" />
+    </scenario>
+
+</scenarios>
