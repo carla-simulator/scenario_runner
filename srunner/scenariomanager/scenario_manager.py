@@ -18,9 +18,9 @@ import threading
 
 import py_trees
 
-from ScenarioManager.carla_data_provider import CarlaDataProvider
-from ScenarioManager.result_writer import ResultOutputProvider
-from ScenarioManager.timer import GameTime, TimeOut
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.result_writer import ResultOutputProvider
+from srunner.scenariomanager.timer import GameTime, TimeOut
 
 
 class Scenario(object):

@@ -17,9 +17,9 @@ import sys
 import py_trees
 import carla
 
-from ScenarioManager.atomic_scenario_behavior import *
-from ScenarioManager.atomic_scenario_criteria import *
-from Scenarios.basic_scenario import *
+from srunner.scenariomanager.atomic_scenario_behavior import *
+from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenarios.basic_scenario import *
 
 
 RUNNING_RED_LIGHT_SCENARIOS = [

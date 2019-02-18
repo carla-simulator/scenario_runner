@@ -12,10 +12,10 @@ moving along the road and encounters a cyclist ahead after taking a right and a 
 import py_trees
 import carla
 
-from ScenarioManager.atomic_scenario_behavior import *
-from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.timer import TimeOut
-from Scenarios.basic_scenario import *
+from srunner.scenariomanager.atomic_scenario_behavior import *
+from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.timer import TimeOut
+from srunner.scenarios.basic_scenario import *
 
 
 VEHICLE_TURNING_SCENARIOS = [

@@ -14,7 +14,7 @@ from __future__ import print_function
 
 import py_trees
 
-from ScenarioManager.scenario_manager import Scenario
+from srunner.scenariomanager.scenario_manager import Scenario
 
 
 def get_location_in_distance(actor, distance):
