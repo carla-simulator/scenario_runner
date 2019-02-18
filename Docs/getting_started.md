@@ -80,3 +80,22 @@ A list of supported scenarios is provided in
 [List of Supported Scenarios](list_of_scenarios.md). Please note that
 different scenarios may take place in different CARLA towns. This has to be
 respected when launching the CARLA server.
+
+
+### Challenge evaluator
+
+define the carla root variable, where your carla instalation is located
+
+    export CARLA_ROOT=<path_to_carla_root_folder>
+
+
+
+Dependencies ??
+
+    psutil
+    
+I will try a clean conda environment
+
+
+Change for carla root to not be necessary after you already pass it as a
+parameter

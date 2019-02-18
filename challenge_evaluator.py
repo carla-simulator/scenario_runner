@@ -22,6 +22,7 @@ import numpy as np
 import os
 import sys
 import time
+import random
 
 import carla
 
@@ -48,6 +49,7 @@ from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 
+import importlib
 
 # Version of scenario_runner
 VERSION = 0.3
@@ -61,6 +63,7 @@ SCENARIOS = {
 
 
 class ChallengeEvaluator(object):
+
 
     """
     TODO
