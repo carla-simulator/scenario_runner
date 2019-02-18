@@ -35,11 +35,11 @@ class StationaryObjectCrossing(BasicScenario):
 
     category = "ObjectCrossing"
 
-    timeout = 60
+    timeout = 30
 
     # ego vehicle parameters
     _ego_vehicle_velocity_allowed = 20
-    _ego_vehicle_distance_to_other = 35
+    _ego_vehicle_distance_driven = 35
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -62,20 +62,20 @@ class StationaryObjectCrossing(BasicScenario):
 
     def _create_test_criteria(self):
         """
-        A list of all test criteria will be created
-        that is later used in parallel behavior tree.
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed,
-            optional=True)
+        max_velocity_criterion = MaxVelocityTest(self.ego_vehicle,
+                                                 self._ego_vehicle_velocity_allowed,
+                                                 optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
-            self._ego_vehicle_distance_to_other)
+        driven_distance_criterion = DrivenDistanceTest(self.ego_vehicle,
+                                                       self._ego_vehicle_distance_driven,
+                                                       distance_acceptable=30,
+                                                       optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
@@ -103,9 +103,7 @@ class DynamicObjectCrossing(BasicScenario):
     _ego_vehicle_distance_driven = 50
 
     # other vehicle parameters
-    _other_actor_target_velocity = 10
-    _trigger_distance_from_ego = 35
-    _other_actor_max_throttle = 1.0
+    _other_actor_target_velocity = 15
     _other_actor_max_brake = 1.0
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
@@ -127,54 +125,38 @@ class DynamicObjectCrossing(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
         """
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
         # leaf nodes
-        trigger_dist = InTriggerDistanceToVehicle(
-            self.other_actors[0],
-            self.ego_vehicle,
-            self._trigger_distance_from_ego)
-        start_other_actor = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other = InTriggerRegion(
-            self.other_actors[0],
-            46, 50,
-            128, 129.5)
-        stop_other_actor = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
-        timeout_other = TimeOut(10)
-        start_vehicle = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other_actor = InTriggerRegion(
-            self.other_actors[0],
-            46, 50,
-            137, 139)
-        stop_vehicle = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(3)
+        start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, 13)
+        sync_actor = SyncArrival(self.other_actors[0], self.ego_vehicle)
+        sync_till = DriveDistance(self.other_actors[0], lane_width)
+        stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
+        timeout_other = TimeOut(6)
+        start_vehicle = AccelerateToVelocity(self.other_actors[0], 1.0,
+                                             self._other_actor_target_velocity)
+        trigger_other_actor = DriveDistance(self.other_actors[0], 3*lane_width)
+        stop_vehicle = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
+        timeout_other_actor = TimeOut(5)
 
-        # non leaf nodes
+         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
-        keep_velocity_other_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
+        sync_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         # building tree
         root.add_child(scenario_sequence)
-        scenario_sequence.add_child(trigger_dist)
-        scenario_sequence.add_child(keep_velocity_other_parallel)
+        scenario_sequence.add_child(start_condition)
+        scenario_sequence.add_child(sync_parallel)
         scenario_sequence.add_child(stop_other_actor)
         scenario_sequence.add_child(timeout_other)
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(stop_vehicle)
         scenario_sequence.add_child(timeout_other_actor)
-        keep_velocity_other_parallel.add_child(start_other_actor)
-        keep_velocity_other_parallel.add_child(trigger_other)
+        sync_parallel.add_child(sync_actor)
+        sync_parallel.add_child(sync_till)
         keep_velocity_other.add_child(start_vehicle)
         keep_velocity_other.add_child(trigger_other_actor)
 
@@ -187,18 +169,17 @@ class DynamicObjectCrossing(BasicScenario):
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed,
-            optional=True)
+        max_velocity_criterion = MaxVelocityTest(self.ego_vehicle,
+                                                 self._ego_vehicle_velocity_allowed,
+                                                 optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
         keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle, self._ego_vehicle_distance_driven)
+        driven_distance_criterion = DrivenDistanceTest(self.ego_vehicle,
+                                                       self._ego_vehicle_distance_driven,
+                                                       distance_acceptable=30,
+                                                       optional=True)
 
         criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
-        criteria.append(keep_lane_criterion)
-        criteria.append(driven_distance_criterion)
 
         return criteria
