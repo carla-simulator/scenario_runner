@@ -160,7 +160,7 @@ def find_scenario_config(scenario_name):
     print (list_of_config_files)
     for file_name in list_of_config_files:
         tree = ET.parse(file_name)
-        print (tree)
+        print (file_name)
         for scenario in tree.iter("scenario"):
             print (scenario)
             print ('set_attrib ', set_attrib(scenario, 'name', None))
