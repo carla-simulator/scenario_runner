@@ -214,7 +214,6 @@ class ChallengeEvaluator(object):
             time.sleep(0.1)
 
 
-
     def prepare_actors(self, config):
         """
         Spawn or update all scenario actors according to
@@ -266,7 +265,7 @@ class ChallengeEvaluator(object):
         for _ in range(int(args.repetitions)):
 
             # Load the scenario configurations provided in the config file
-            scenario_configurations = None
+
             if args.scenario.startswith("group:"):
                 scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
             else:
@@ -274,7 +273,8 @@ class ChallengeEvaluator(object):
                 if scenario_config_file is None:
                     print("Configuration for scenario {} cannot be found!".format(args.scenario))
                     continue
-                scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
+                scenario_configurations = parse_scenario_configuration(scenario_config_file,
+                                                                       args.scenario)
 
             # Execute each configuration
             for config in scenario_configurations:
@@ -321,7 +321,6 @@ class ChallengeEvaluator(object):
                 self.manager.load_scenario(scenario)
                 lat_ref, lon_ref = self._get_latlon_ref(args.carla_root, config.town)
                 self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
-
 
                 self.manager.run_scenario(self.agent_instance)
 
