@@ -26,15 +26,17 @@ def get_intersection(ego_actor, other_actor):
     waypoint = ego_actor.get_world().get_map().get_waypoint(ego_actor.get_location())
     waypoint_other = other_actor.get_world().get_map().get_waypoint(other_actor.get_location())
     max_dist = float("inf")
-    while True:
+    distance = float("inf")
+    while distance <= max_dist:
+        max_dist = distance
         current_location = waypoint.transform.location
         waypoint_choice = waypoint.next(1)
         #   Select the straighter path at intersection
         if len(waypoint_choice) > 1:
+            max_dot = -1*float('inf')
             loc_projection = current_location + carla.Location(
                 x=math.cos(math.radians(waypoint.transform.rotation.yaw)),
                 y=math.sin(math.radians(waypoint.transform.rotation.yaw)))
-            max_dot = -1*float('inf')
             v_current = vector(current_location, loc_projection)
             for wp_select in waypoint_choice:
                 v_select = vector(current_location, wp_select.transform.location)
@@ -44,11 +46,8 @@ def get_intersection(ego_actor, other_actor):
                     waypoint = wp_select
         else:
             waypoint = waypoint_choice[0]
-
         distance = current_location.distance(waypoint_other.transform.location)
-        if distance > max_dist:
-            break
-        max_dist = distance
+
     return current_location
 
 

@@ -200,7 +200,6 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         if calculate_distance(
                 location, self._target_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
-
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
