@@ -306,7 +306,8 @@ class ChallengeEvaluator(object):
                                               self.actors,
                                               config.town,
                                               args.randomize,
-                                              args.debug)
+                                              args.debug,
+                                              config)
                 except Exception as exception:
                     print("The scenario cannot be loaded")
                     print(exception)

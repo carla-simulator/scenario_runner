@@ -58,7 +58,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _traffic_light = None
     _location_of_collision = carla.Location(x=0, y=-135, z=1)
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager

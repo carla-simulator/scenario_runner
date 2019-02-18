@@ -762,3 +762,22 @@ class BasicAgentBehavior(AtomicBehavior):
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
         super(BasicAgentBehavior, self).terminate(new_status)
+
+
+class Idle(AtomicBehavior):
+
+    """
+    This class contains an idle behavior scenario
+    """
+
+    def __init__(self, name="Idle"):
+        """
+        Setup actor
+        """
+        super(Idle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        return new_status

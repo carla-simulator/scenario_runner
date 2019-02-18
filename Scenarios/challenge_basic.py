@@ -29,29 +29,25 @@ class ChallengeBasic(BasicScenario):
     """
 
     category = "ChallengeBasic"
+    radius = 10.0           # meters
+    timeout = 1000            # Timeout of scenario in seconds
 
-    timeout = 2 * 60            # Timeout of scenario in seconds
-    _end_distance = 800
-
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
         """
         Setup all relevant parameters and create scenario
         """
-        super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, other_actors, town, world, debug_mode)
+        self.config = config
+        self.target = self.config.target
+
+        super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, other_actors, town, world, debug_mode, True)
 
     def _create_behavior(self):
         """
         """
-
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-
-        # endcondition: Check if vehicle reached waypoint _end_distance from here:
-        location, _ = get_location_in_distance(self.ego_vehicle, self._end_distance)
-        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
-
-        # Build behavior tree
-        sequence.add_child(end_condition)
+        idle_behavior = Idle()
+        sequence.add_child(idle_behavior)
 
         return sequence
 
@@ -63,6 +59,13 @@ class ChallengeBasic(BasicScenario):
         criteria = []
 
         collision_criterion = CollisionTest(self.ego_vehicle)
+        target_criterion = ReachedRegionTest(self.ego_vehicle,
+                                             min_x=self.target.transform.location.x - self.radius,
+                                             max_x=self.target.transform.location.x + self.radius,
+                                             min_y=self.target.transform.location.y - self.radius,
+                                             max_y=self.target.transform.location.y + self.radius)
+
         criteria.append(collision_criterion)
+        criteria.append(target_criterion)
 
         return criteria

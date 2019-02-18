@@ -50,7 +50,7 @@ class BasicScenario(object):
     ego_vehicle = None
     other_actors = []
 
-    def __init__(self, name, ego_vehicle, other_actors, town, world, debug_mode=False):
+    def __init__(self, name, ego_vehicle, other_actors, town, world, debug_mode=False, terminate_on_failure=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -63,6 +63,7 @@ class BasicScenario(object):
         self.ego_vehicle = ego_vehicle
         self.other_actors = other_actors
         self.name = name
+        self.terminate_on_failure = terminate_on_failure
 
         # Setup scenario
         if debug_mode:
@@ -70,7 +71,7 @@ class BasicScenario(object):
 
         behavior = self._create_behavior()
         criteria = self._create_test_criteria()
-        self.scenario = Scenario(behavior, criteria, self.name, self.timeout)
+        self.scenario = Scenario(behavior, criteria, self.name, self.timeout, self.terminate_on_failure)
 
     def _create_behavior(self):
         """
