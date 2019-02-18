@@ -84,7 +84,7 @@ respected when launching the CARLA server.
 
 ### Challenge evaluator
 
-define the carla root variable, where your carla instalation is located
+Define the carla root variable, where your carla instalation is located
 
     export CARLA_ROOT=<path_to_carla_root_folder>
 
@@ -93,33 +93,28 @@ define the carla root variable, where your carla instalation is located
 Dependencies ??
 
     psutil , pytree 
-    
-I will try a clean conda environment
+   
 
 
 TODO:
-Change for carla root to not be necessary after you already pass it as a
-parameter.
-
-
+Since you already set CARLA_ROOT why do you
+ need to send carla-root as a parameter ?
+ 
 You can see the list of supported scenarios before you run the evaluation:
 
     python3 challenge_evaluator.py --list -a srunner/challenge/agents/DummyAgent.py
      --carla-root /home/felipe/Carla93
  
-TODO: it should be just a list, no extra parameters should be needed
+TODO: it should be just  --list ? Why do we need extra parameters on this case.
 
 
 To run for instance the dummy agent on the basic scenario you should
-run the following 
+run the following command: 
 
 
-python3 challenge_evaluator.py --scenario FollowLeadingVehicle
- -a srunner/challenge/agents/DummyAgent.py --carla-root /home/felipe/Carla93
+python3 challenge_evaluator.py --scenario ChallengeBasic
+ -a srunner/challenge/agents/DummyAgent.py --carla-root <path_to_carla_root>
 
-
-
-carla_challenge_felipe_changes
 
 
 
