@@ -157,13 +157,9 @@ def find_scenario_config(scenario_name):
     """
 
     list_of_config_files = glob.glob("srunner/configs/*.xml")
-    print (list_of_config_files)
     for file_name in list_of_config_files:
         tree = ET.parse(file_name)
-        print (file_name)
         for scenario in tree.iter("scenario"):
-            print (scenario)
-            print ('set_attrib ', set_attrib(scenario, 'name', None))
             if set_attrib(scenario, 'name', None) == scenario_name:
                 return file_name[16:-4]
 
