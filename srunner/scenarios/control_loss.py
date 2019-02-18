@@ -80,7 +80,7 @@ class ControlLoss(BasicScenario):
         for i in range(self._no_of_jitter_actions):
             noise = random.gauss(self._noise_mean, self._noise_std)
             noise = abs(noise)
-            self._ego_vehicle_max_steer = -(noise - self._dynamic_mean_for_steer)
+            self._ego_vehicle_max_steer = min(0, -(noise - self._dynamic_mean_for_steer))
             self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
 
             # turn vehicle
