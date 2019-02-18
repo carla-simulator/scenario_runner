@@ -1,5 +1,5 @@
 
-from Challenge.envs.sensor_interface import SensorInterface
+from srunner.challenge.envs.sensor_interface import SensorInterface
 
 class AutonomousAgent():
     def __init__(self):
