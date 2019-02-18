@@ -41,12 +41,12 @@ from agents.tools.misc import vector
 
 
 
-from Challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker, Track
-from Challenge.envs.sensor_interface import CallBack, SensorInterface
+from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker, Track
+from srunner.challenge.envs.sensor_interface import CallBack, SensorInterface
 
-from Scenarios.challenge_basic import *
-from Scenarios.config_parser import *
-from ScenarioManager.scenario_manager import ScenarioManager
+from srunner.scenarios.challenge_basic import *
+from srunner.scenarios.config_parser import *
+from srunner.scenariomanager.scenario_manager import ScenarioManager
 
 
 # Version of scenario_runner

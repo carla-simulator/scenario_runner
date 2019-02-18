@@ -8,15 +8,11 @@
 Basic CARLA Autonomous Driving training scenario
 """
 
-import importlib
-import random
-import os
 import py_trees
 
-from ScenarioManager.atomic_scenario_behavior import *
-from ScenarioManager.atomic_scenario_criteria import *
-from ScenarioManager.timer import TimeOut
-from Scenarios.basic_scenario import *
+from srunner.scenariomanager.atomic_scenario_behavior import *
+from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenarios.basic_scenario import *
 
 
 CHALLENGE_BASIC_SCENARIOS = ["ChallengeBasic"]
