@@ -50,7 +50,7 @@ class VehicleTurningRight(BasicScenario):
 
     _location_of_collision = carla.Location(x=93.1, y=44.8, z=39)
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
         """
         Setup all relevant parameters and create scenario
         """
