@@ -104,6 +104,9 @@ def parse_scenario_configuration(file_name, scenario_name):
         scenario_name = scenario_name[6:]
         file_name = scenario_name
 
+    print (file_name)
+    print (scenario_name)
+
     scenario_config_file = "srunner/configs/" + file_name + ".xml"
     tree = ET.parse(scenario_config_file)
 
