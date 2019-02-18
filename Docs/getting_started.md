@@ -92,10 +92,34 @@ define the carla root variable, where your carla instalation is located
 
 Dependencies ??
 
-    psutil
+    psutil , pytree 
     
 I will try a clean conda environment
 
 
+TODO:
 Change for carla root to not be necessary after you already pass it as a
-parameter
+parameter.
+
+
+You can see the list of supported scenarios before you run the evaluation:
+
+    python3 challenge_evaluator.py --list -a srunner/challenge/agents/DummyAgent.py
+     --carla-root /home/felipe/Carla93
+ 
+TODO: it should be just a list, no extra parameters should be needed
+
+
+To run for instance the dummy agent on the basic scenario you should
+run the following 
+
+
+python3 challenge_evaluator.py --scenario FollowLeadingVehicle
+ -a srunner/challenge/agents/DummyAgent.py --carla-root /home/felipe/Carla93
+
+
+
+carla_challenge_felipe_changes
+
+
+
