@@ -43,21 +43,23 @@ class Scenario(object):
         self.test_criteria = criteria
         self.timeout = timeout
 
-        for criterion in self.test_criteria:
-            criterion.terminate_on_failure = terminate_on_failure
+        if not isinstance(self.test_criteria, py_trees.composites.Parallel):
+        # list of nodes
+            for criterion in self.test_criteria:
+                criterion.terminate_on_failure = terminate_on_failure
 
-        # Create py_tree for test criteria
-        self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria")
-        self.criteria_tree.add_children(self.test_criteria)
-        self.criteria_tree.setup(timeout=1)
+            # Create py_tree for test criteria
+            self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria")
+            self.criteria_tree.add_children(self.test_criteria)
+            self.criteria_tree.setup(timeout=1)
+        else:
+            self.criteria_tree = criteria
 
         # Create node for timeout
         self.timeout_node = TimeOut(self.timeout, name="TimeOut")
 
         # Create overall py_tree
-        self.scenario_tree = py_trees.composites.Parallel(
-            name,
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         self.scenario_tree.add_child(self.behavior)
         self.scenario_tree.add_child(self.timeout_node)
         self.scenario_tree.add_child(self.criteria_tree)
@@ -235,14 +237,55 @@ class ScenarioManager(object):
         failure = False
         timeout = False
         result = "SUCCESS"
-        for criterion in self.scenario.test_criteria:
-            if (not criterion.optional and
-                    criterion.test_status != "SUCCESS" and
-                    criterion.test_status != "ACCEPTABLE"):
+
+        if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
+            if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
                 failure = True
                 result = "FAILURE"
-            elif criterion.test_status == "ACCEPTABLE":
-                result = "ACCEPTABLE"
+        else:
+            for criterion in self.scenario.test_criteria:
+                if (not criterion.optional and
+                        criterion.test_status != "SUCCESS" and
+                        criterion.test_status != "ACCEPTABLE"):
+                    failure = True
+                    result = "FAILURE"
+                elif criterion.test_status == "ACCEPTABLE":
+                    result = "ACCEPTABLE"
+
+
+        if self.scenario.timeout_node.timeout and not failure:
+            timeout = True
+            result = "TIMEOUT"
+
+        output = ResultOutputProvider(self, result, stdout, filename, junit)
+        output.write()
+
+        return failure or timeout
+
+    def analyze_scenario_challenge(self, stdout, filename, junit):
+        """
+        This function is intended to be called from outside and provide
+        statistics about the scenario (human-readable, for the CARLA challenge.)
+        """
+
+        failure = False
+        timeout = False
+        result = "SUCCESS"
+
+        if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
+            if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
+                failure = True
+                result = "FAILURE"
+        else:
+            for criterion in self.scenario.test_criteria:
+                if (not criterion.optional and
+                        criterion.test_status != "SUCCESS" and
+                        criterion.test_status != "ACCEPTABLE"):
+                    failure = True
+                    result = "FAILURE"
+                elif criterion.test_status == "ACCEPTABLE":
+                    result = "ACCEPTABLE"
+
 
         if self.scenario.timeout_node.timeout and not failure:
             timeout = True

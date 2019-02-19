@@ -15,11 +15,13 @@ from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-import xml.etree.ElementTree as ET
+import importlib
 import glob
+import xml.etree.ElementTree as ET
 import math
 import numpy as np
 import os
+import random
 import sys
 import time
 
@@ -249,7 +251,7 @@ class ChallengeEvaluator(object):
         if args.file:
             filename = config.name + current_time + ".txt"
 
-        if not self.manager.analyze_scenario(args.output, filename, junit_filename):
+        if not self.manager.analyze_scenario_challenge(args.output, filename, junit_filename):
             print("Success!")
         else:
             print("Failure!")
@@ -301,6 +303,10 @@ class ChallengeEvaluator(object):
 
                 try:
                     self.prepare_actors(config)
+                    lat_ref, lon_ref = self._get_latlon_ref()
+                    global_route, _ = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
+                    config.route = global_route
+
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
                                               self.actors,
@@ -316,9 +322,11 @@ class ChallengeEvaluator(object):
 
                 # Load scenario and run it
                 self.manager.load_scenario(scenario)
-                lat_ref, lon_ref = self._get_latlon_ref(args.carla_root, config.town)
-                self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
 
+                # debug
+                waypoint_list, _ = zip(*global_route)
+                self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
+                # end debug
 
                 self.manager.run_scenario(self.agent_instance)
 
@@ -337,13 +345,25 @@ class ChallengeEvaluator(object):
 
             print("No more scenarios .... Exiting")
 
-    def _get_latlon_ref(self, carla_root, town):
-        xodr_path = '{}/CarlaUE4/Content/Carla/Maps/OpenDrive/{}.xodr'.format(carla_root, town)
+    def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
+        """
+        Draw a list of waypoints at a certain height given in vertical_shift.
+
+        :param waypoints: list or iterable container with the waypoints to draw
+        :param vertical_shift: height in meters
+        :return:
+        """
+        for w in waypoints:
+            wp = w + carla.Location(z=vertical_shift)
+            self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
+
+
+    def _get_latlon_ref(self):
+        xodr = self.world.get_map().to_opendrive()
+        tree = ET.ElementTree(ET.fromstring(xodr))
 
         lat_ref = 0
         lon_ref = 0
-
-        tree = ET.parse(xodr_path)
         for opendrive in tree.iter("OpenDRIVE"):
             for header in opendrive.iter("header"):
                 for georef in header.iter("geoReference"):
@@ -358,6 +378,7 @@ class ChallengeEvaluator(object):
         end_waypoint = self.world.get_map().get_waypoint(target_configuration.transform.location)
 
         solution = []
+        solution_gps = []
 
         # Setting up global router
         dao = GlobalRoutePlannerDAO(self.world.get_map())
@@ -381,7 +402,8 @@ class ChallengeEvaluator(object):
                 current_waypoint = wp_choice[0]
                 gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
 
-                solution.append((gps_point, RoadOption.LANEFOLLOW))
+                solution.append((current_waypoint.transform.location, RoadOption.LANEFOLLOW))
+                solution_gps.append((gps_point, RoadOption.LANEFOLLOW))
                 wp_choice = current_waypoint.next(self._hop_resolution)
                 #   Stop at destination
                 if current_waypoint.transform.location.distance(
@@ -427,16 +449,21 @@ class ChallengeEvaluator(object):
                 # Generate all waypoints within the junction
                 #   along selected path
                 gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
-                solution.append((gps_point, action))
+                solution.append((current_waypoint.transform.location, action))
+                solution_gps.append((gps_point, action))
                 current_waypoint = current_waypoint.next(self._hop_resolution)[0]
                 while current_waypoint.is_intersection:
                     gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
-                    solution.append((gps_point, action))
+                    solution.append((current_waypoint.transform.location, action))
+                    solution_gps.append((gps_point, action))
+
                     current_waypoint = \
                         current_waypoint.next(self._hop_resolution)[0]
 
         # send plan to agent
-        self.agent_instance.set_global_plan(solution)
+        self.agent_instance.set_global_plan(solution_gps)
+
+        return solution, solution_gps
 
     def _location_to_gps(self, lat_ref, lon_ref, location):
         EARTH_RADIUS_EQUA = 6378137.0

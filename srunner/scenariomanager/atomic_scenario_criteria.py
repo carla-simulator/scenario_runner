@@ -14,7 +14,8 @@ The atomic criteria are implemented with py_trees.
 """
 
 import weakref
-
+import copy
+import math
 import py_trees
 import carla
 
@@ -43,10 +44,11 @@ class Criterion(py_trees.behaviour.Behaviour):
                  actor,
                  expected_value_success,
                  expected_value_acceptable=None,
-                 optional=False):
+                 optional=False,
+                 terminate_on_failure=False):
         super(Criterion, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._terminate_on_failure = False
+        self._terminate_on_failure = terminate_on_failure
 
         self.name = name
         self.actor = actor
@@ -237,11 +239,11 @@ class CollisionTest(Criterion):
     This class contains an atomic test for collisions.
     """
 
-    def __init__(self, actor, optional=False, name="CheckCollisions"):
+    def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
         """
         Construction with sensor setup
         """
-        super(CollisionTest, self).__init__(name, actor, 0, None, optional)
+        super(CollisionTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         world = self.actor.get_world()
@@ -388,3 +390,100 @@ class ReachedRegionTest(Criterion):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+class InRadiusRegionTest(Criterion):
+
+    """
+    The test is a success if the actor is within a given radius of a specified region
+    """
+
+    def __init__(self, actor, x, y, radius, name="InRadiusRegionTest"):
+        """
+        """
+        super(InRadiusRegionTest, self).__init__(name, actor, 0)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._x = x
+        self._y = y
+        self._radius = radius
+
+    def update(self):
+        """
+        Check if the actor location is within trigger region
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self._actor)
+        if location is None:
+            return new_status
+
+        in_radius = False
+        if self.test_status != "SUCCESS":
+            in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
+            if in_radius:
+                self.test_status = "SUCCESS"
+            else:
+                self.test_status = "RUNNING"
+
+        if self.test_status == "SUCCESS":
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class InRouteTest(Criterion):
+
+        """
+        The test is a success if the actor is never outside route
+        """
+
+        def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
+            """
+            """
+            super(InRouteTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
+            self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+            self._actor = actor
+            self._radius = radius
+            self._route = route
+            self._offroad_max = offroad_max
+
+            self._counter_off_route = 0
+            self._waypoints, _ = zip(*self._route)
+            self._pending_waypoints = copy.copy(self._waypoints)
+
+        def update(self):
+            """
+            Check if the actor location is within trigger region
+            """
+            new_status = py_trees.common.Status.RUNNING
+
+            location = CarlaDataProvider.get_location(self._actor)
+            if location is None:
+                return new_status
+
+            if self._terminate_on_failure and (self.test_status == "FAILURE"):
+                new_status = py_trees.common.Status.FAILURE
+
+            elif self.test_status == "RUNNING" or self.test_status == "INIT":
+                # are we too far away from the route waypoints (i.e., off route)?
+                off_route = True
+                for waypoint in self._waypoints:
+                    distance = math.sqrt(((location.x - waypoint.x) ** 2) + ((location.y - waypoint.y) ** 2))
+                    if distance < self._radius:
+                        off_route = False
+                        break
+                if off_route:
+                    self._counter_off_route += 1
+
+                if self._counter_off_route > self._offroad_max:
+                    self.test_status = "FAILURE"
+                    new_status = py_trees.common.Status.FAILURE
+
+            if self.test_status == "SUCCESS":
+                new_status = py_trees.common.Status.SUCCESS
+
+            self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+            return new_status

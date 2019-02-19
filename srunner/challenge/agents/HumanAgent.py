@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import time
 from threading import Thread
 
@@ -79,9 +80,17 @@ class HumanInterface():
 
 
             input_data = self._parent.sensor_interface.get_data()
-            image = input_data['Center'][1]
+            image_center = input_data['Center'][1]
+            image_left = input_data['Left'][1]
+            image_right = input_data['Right'][1]
+            image_rear = input_data['Rear'][1]
+
+            top_row = np.hstack((image_left, image_center, image_right))
+            bottom_row = np.hstack((0*image_rear, image_rear, 0*image_rear))
+            comp_image = np.vstack((top_row, bottom_row))
+
             # resize image
-            image_rescaled = cv2.resize(image, dsize=(self.WIDTH, self.HEIGHT), interpolation=cv2.INTER_CUBIC)
+            image_rescaled = cv2.resize(comp_image, dsize=(self.WIDTH, self.HEIGHT), interpolation=cv2.INTER_CUBIC)
 
             # display image
             self._surface = pygame.surfarray.make_surface(image_rescaled.swapaxes(0, 1))
@@ -132,6 +141,23 @@ class HumanAgent(AutonomousAgent):
         sensors = [['sensor.camera.rgb',
                    {'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0, 'width':800, 'height':600, 'fov':100},
                    'Center'],
+
+                   ['sensor.camera.rgb',
+                    {'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': -45.0, 'width': 800,
+                     'height': 600,
+                     'fov': 100},
+                    'Left'],
+
+                   ['sensor.camera.rgb',
+                    {'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 45.0, 'width': 800, 'height': 600,
+                     'fov': 100},
+                    'Right'],
+
+                   ['sensor.camera.rgb',
+                    {'x': -1.8, 'y': 0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 180.0, 'width': 800,
+                     'height': 600,
+                     'fov': 130},
+                    'Rear'],
 
                     ['sensor.other.gnss', {'x': 0.7, 'y': -0.4, 'z': 1.60},
                      'GPS'],

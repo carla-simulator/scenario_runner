@@ -1,5 +1,30 @@
 <?xml version="1.0"?>
 <scenarios>
+     <scenario name="CB_00" type="ChallengeBasic" town="Town03">
+        <ego_vehicle x="163.9" y="-197.4" z="1.0" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <target x="235.3" y="-17.0" z="1.0" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+        <other_actor random_location="True" autopilot="True" model="vehicle.*" />
+    </scenario>
+
     <scenario name="CB_01" type="ChallengeBasic" town="Town03">
         <ego_vehicle x="201.7" y="64.4" z="1.0" yaw="0" model="vehicle.lincoln.mkz2017" />
         <target x="-73.7" y="105.2" z="1.0" />

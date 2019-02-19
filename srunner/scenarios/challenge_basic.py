@@ -33,7 +33,13 @@ class ChallengeBasic(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self.config = config
-        self.target = self.config.target
+        self.target = None
+        self.route = None
+
+        if hasattr(self.config, 'target'):
+            self.target = self.config.target
+        if hasattr(self.config, 'route'):
+            self.route = self.config.route
 
         super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, other_actors, town, world, debug_mode, True)
 
@@ -54,14 +60,23 @@ class ChallengeBasic(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
-        target_criterion = ReachedRegionTest(self.ego_vehicle,
-                                             min_x=self.target.transform.location.x - self.radius,
-                                             max_x=self.target.transform.location.x + self.radius,
-                                             min_y=self.target.transform.location.y - self.radius,
-                                             max_y=self.target.transform.location.y + self.radius)
+        collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
+        target_criterion = InRadiusRegionTest(self.ego_vehicle,
+                                             x=self.target.transform.location.x ,
+                                             y=self.target.transform.location.y,
+                                             radius=self.radius)
 
-        criteria.append(collision_criterion)
-        criteria.append(target_criterion)
+        route_criterion = InRouteTest(self.ego_vehicle,
+                                      radius=self.radius,
+                                      route=self.route,
+                                      offroad_max=20,
+                                      terminate_on_failure=True)
 
-        return criteria
+        parallel_criteria = py_trees.composites.Parallel("group_criteria",
+                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
+        parallel_criteria.add_child(collision_criterion)
+        parallel_criteria.add_child(target_criterion)
+        parallel_criteria.add_child(route_criterion)
+
+        return parallel_criteria
