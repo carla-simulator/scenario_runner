@@ -1,59 +1,83 @@
 <?xml version="1.0"?>
 <scenarios>
-    <scenario name="VehicleTurningRight_1" type="VehicleTurningRight" town="Town01">
-        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="95.5" y="42" z="38.5" yaw="180" model="vehicle.diamondback.century" />
+    <scenario name="VehicleTurningRight_1" type="VehicleTurningRight" town="Town04">
+        <ego_vehicle x="254.9" y="-150.3" z="0.22" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="228.9" y="-126.5" z="0.22" yaw="90" model="vehicle.diamondback.century" />
     </scenario>
-    <scenario name="VehicleTurningLeft_1" type="VehicleTurningLeft" town="Town01">
-        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="85" y="78.8" z="38.5" yaw="0" model="vehicle.diamondback.century" />
+    <scenario name="VehicleTurningLeft_1" type="VehicleTurningLeft" town="Town04">
+        <ego_vehicle x="254.9" y="-150.3" z="0.22" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="281.6" y="-115.9" z="0.22" yaw="250" model="vehicle.diamondback.century" />
     </scenario>
-     <scenario name="VehicleTurningRight_2" type="VehicleTurningRight" town="Town01">
-        <ego_vehicle x="132" y="195.5" z="38.11" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="95.2" y="178.3" z="38.11" yaw="180" model="vehicle.diamondback.century" />
+    <scenario name="VehicleTurningRight_2" type="VehicleTurningRight" town="Town01">
+        <ego_vehicle x="118.3" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="95.7" y="30" z="38.5" yaw="180" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="VehicleTurningLeft_2" type="VehicleTurningLeft" town="Town01">
-        <ego_vehicle x="132" y="195.5" z="38.11" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="84.8" y="217" z="38.11" yaw="0" model="vehicle.diamondback.century" />
-    </scenario> 
-    <scenario name="VehicleTurningRight_3" type="VehicleTurningRight" town="Town01">
-        <ego_vehicle x="282.5" y="199.4" z="38.5" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="331.5" y="215.7" z="38.5" yaw="0" model="vehicle.diamondback.century" />
+        <ego_vehicle x="119.3" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="85.2" y="78.8" z="38.5" yaw="0" model="vehicle.diamondback.century" />
+    </scenario>
+     <scenario name="VehicleTurningRight_3" type="VehicleTurningRight" town="Town01">
+        <ego_vehicle x="112.3" y="195.5" z="38.11" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="95.6" y="171.5" z="38.11" yaw="180" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="VehicleTurningLeft_3" type="VehicleTurningLeft" town="Town01">
-        <ego_vehicle x="282.5" y="199.4" z="38.5" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="117.5" y="195.5" z="38.11" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="85.0" y="217" z="38.11" yaw="0" model="vehicle.diamondback.century" />
+    </scenario> 
+    <scenario name="VehicleTurningRight_4" type="VehicleTurningRight" town="Town01">
+        <ego_vehicle x="316.1" y="199.4" z="38.5" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="331.5" y="219.7" z="38.5" yaw="0" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningLeft_4" type="VehicleTurningLeft" town="Town01">
+        <ego_vehicle x="311.5" y="199.4" z="38.5" yaw="0" model="vehicle.lincoln.mkz2017" />
         <other_actor x="342.2" y="178.1" z="38.5" yaw="180" model="vehicle.diamondback.century" />
     </scenario>   
-    <scenario name="VehicleTurningRight_4" type="VehicleTurningRight" town="Town02">
-        <ego_vehicle x="30.1" y="187.4" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-0.8" y="171.6" z="0.22" yaw="180" model="vehicle.diamondback.century" />
-    </scenario>
-    <scenario name="VehicleTurningLeft_4" type="VehicleTurningLeft" town="Town02">
-        <ego_vehicle x="30.1" y="187.4" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-10.5" y="207.5" z="0.22" yaw="0" model="vehicle.diamondback.century" />
-    </scenario>
     <scenario name="VehicleTurningRight_5" type="VehicleTurningRight" town="Town02">
-        <ego_vehicle x="90" y="237.1" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="48.6" y="220.1" z="0.22" yaw="180" model="vehicle.diamondback.century" />
+        <ego_vehicle x="15.7" y="187.4" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="0.0 " y="162.6" z="0.22" yaw="180" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="VehicleTurningLeft_5" type="VehicleTurningLeft" town="Town02">
-        <ego_vehicle x="87.5" y="237.1" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="39" y="261.3" z="0.22" yaw="0" model="vehicle.diamondback.century" />
+        <ego_vehicle x="20.7" y="187.4" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-10.8" y="207.5" z="0.22" yaw="0" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="VehicleTurningRight_6" type="VehicleTurningRight" town="Town02">
-        <ego_vehicle x="146.2" y="191.7" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="186.7" y="208.9" z="0.22" yaw="0" model="vehicle.diamondback.century" />
+        <ego_vehicle x="73.5" y="237.1" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="49.0" y="212.1" z="0.22" yaw="180" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="VehicleTurningLeft_6" type="VehicleTurningLeft" town="Town02">
-        <ego_vehicle x="146.2" y="191.7" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="196.7" y="168.1" z="0.22" yaw="180" model="vehicle.diamondback.century" />
+        <ego_vehicle x="73.5" y="237.1" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="38.6" y="261.3" z="0.22" yaw="0" model="vehicle.diamondback.century" />
     </scenario>
-    <scenario name="VehicleTurningRight_7" type="VehicleTurningRight" town="Town03">
-        <ego_vehicle x="149.0" y="-69.0" z="8.0" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="128.0" y="-9.2" z="0.22" yaw="90" model="vehicle.diamondback.century" />
+    <scenario name="VehicleTurningRight_7" type="VehicleTurningRight" town="Town02">
+        <ego_vehicle x="170" y="191.7" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="186.5" y="212.9" z="0.22" yaw="0" model="vehicle.diamondback.century" />
     </scenario>
-    <scenario name="VehicleTurningLeft_7" type="VehicleTurningLeft" town="Town03">
-        <ego_vehicle x="149.0" y="-69.0" z="8.0" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="175.0" y="1.4" z="0.22" yaw="270" model="vehicle.diamondback.century" />
-    </scenario>     
+    <scenario name="VehicleTurningLeft_7" type="VehicleTurningLeft" town="Town02">
+        <ego_vehicle x="168" y="191.7" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="197.3" y="168.1" z="0.22" yaw="180" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningRight_8" type="VehicleTurningRight" town="Town03">
+        <ego_vehicle x="149.0" y="-27.5" z="1.4" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="128.0" y="-9.7" z="0.22" yaw="90" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningLeft_8" type="VehicleTurningLeft" town="Town03">
+        <ego_vehicle x="149.0" y="-27.5" z="1.4" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="175.0" y="0.5" z="0.22" yaw="270" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningRight_9" type="VehicleTurningRight" town="Town05">
+        <ego_vehicle x="55.3" y="-149.6" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="41.8" y="-162.4" z="0.22" yaw="180" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningLeft_9" type="VehicleTurningLeft" town="Town05">
+        <ego_vehicle x="55.3" y="-149.6" z="0.22" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="24.8" y="-123.0" z="0.22" yaw="0" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningRight_10" type="VehicleTurningRight" town="Town05">
+        <ego_vehicle x="128.5" y="2.0" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="148.1" y="30.4" z="0.22" yaw="0" model="vehicle.diamondback.century" />
+    </scenario>
+    <scenario name="VehicleTurningLeft_10" type="VehicleTurningLeft" town="Town05">
+        <ego_vehicle x="128.5" y="2.0" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="157.9" y="-23.8" z="0.22" yaw="180" model="vehicle.diamondback.century" />
+    </scenario>
 </scenarios>

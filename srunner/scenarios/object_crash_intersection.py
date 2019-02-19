@@ -6,9 +6,9 @@ Object crash with prior vehicle action scenario:
 The scenario realizes the user controlled ego vehicle
 moving along the road and encounters a cyclist ahead after taking a right and a left turn.
 """
+import carla
 
 import py_trees
-import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
@@ -34,11 +34,10 @@ class VehicleTurningRight(BasicScenario):
     category = "VehicleTurning"
 
     timeout = 60
-
+    _time_to_reach = 7
     # ego vehicle parameters
     _ego_vehicle_velocity_allowed = 30
     _ego_vehicle_distance_driven = 55
-
     # other vehicle parameters
     _other_actor_target_velocity = 15
     _other_actor_max_brake = 1.0
@@ -62,16 +61,19 @@ class VehicleTurningRight(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         ego vehicle has to avoid the crash after a right turn, but
         continue driving after the road is clear.If this does not happen
-        within 90 seconds, a timeout stops the scenario.
+        within 60 seconds, a timeout stops the scenario.
         """
+
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_id = self.other_actors[0].get_world().get_map().get_waypoint(self.other_actors[0].get_location()).lane_id
         # leaf nodes
-        trigger_distance = InTriggerDistanceToNextIntersection(self.ego_vehicle, 8)
+        trigger_distance = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
         start_other_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
-        trigger_other = DriveDistance(self.other_actors[0], 3)
+        trigger_other = DriveDistance(self.other_actors[0], lane_width)
         stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other = TimeOut(5)
         start_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
-        trigger_other_actor = DriveDistance(self.other_actors[0], 6)
+        trigger_other_actor = DriveDistance(self.other_actors[0], 2*lane_width*abs(lane_id))
         stop_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(5)
         # non leaf nodes
@@ -134,11 +136,10 @@ class VehicleTurningLeft(BasicScenario):
     category = "VehicleTurning"
 
     timeout = 60
-
+    _time_to_reach = 7
     # ego vehicle parameters
     _ego_vehicle_velocity_allowed = 30
     _ego_vehicle_distance_driven = 60
-
     # other vehicle parameters
     _other_actor_target_velocity = 15
     _other_actor_max_brake = 1.0
@@ -162,16 +163,19 @@ class VehicleTurningLeft(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         ego vehicle has to avoid the crash after a left turn, but
         continue driving after the road is clear.If this does not happen
-        within 90 seconds, a timeout stops the scenario.
+        within 60 seconds, a timeout stops the scenario.
         """
+
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_id = self.other_actors[0].get_world().get_map().get_waypoint(self.other_actors[0].get_location()).lane_id
         # leaf nodes
-        trigger_distance = InTriggerDistanceToNextIntersection(self.ego_vehicle, 8)
+        trigger_distance = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
         start_other_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
-        trigger_other = DriveDistance(self.other_actors[0], 3)
+        trigger_other = DriveDistance(self.other_actors[0], lane_width)
         stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other = TimeOut(5)
         start_actor = AccelerateToVelocity(self.other_actors[0], 1.0, self._other_actor_target_velocity)
-        trigger_other_actor = DriveDistance(self.other_actors[0], 6)
+        trigger_other_actor = DriveDistance(self.other_actors[0], 2*lane_width*abs(lane_id))
         stop_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(5)
         # non leaf nodes
