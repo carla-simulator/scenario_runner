@@ -57,6 +57,8 @@ class Criterion(py_trees.behaviour.Behaviour):
         self.expected_value_acceptable = expected_value_acceptable
         self.actual_value = 0
         self.optional = optional
+        self.score = 0
+        self.return_message = None
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
@@ -453,6 +455,8 @@ class InRouteTest(Criterion):
             self._waypoints, _ = zip(*self._route)
             self._pending_waypoints = copy.copy(self._waypoints)
 
+            self.score = 100.0
+
         def update(self):
             """
             Check if the actor location is within trigger region
@@ -476,6 +480,7 @@ class InRouteTest(Criterion):
                         break
                 if off_route:
                     self._counter_off_route += 1
+                    self.score -= 10.0
 
                 if self._counter_off_route > self._offroad_max:
                     self.test_status = "FAILURE"

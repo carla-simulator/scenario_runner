@@ -251,10 +251,16 @@ class ChallengeEvaluator(object):
         if args.file:
             filename = config.name + current_time + ".txt"
 
-        if not self.manager.analyze_scenario_challenge(args.output, filename, junit_filename):
-            print("Success!")
-        else:
-            print("Failure!")
+        result, score, return_message = self.manager.analyze_scenario_challenge(args.output,
+                                                                                    filename,
+                                                                                   junit_filename)
+
+        return_message_str = ""
+        for msg in return_message:
+            return_message_str += ("\n" + msg)
+
+        report_string = "==[{}] [Score = {}] [Comments={}] ".format(result, score, return_message_str)
+        print(report_string)
 
     def run(self, args):
         """

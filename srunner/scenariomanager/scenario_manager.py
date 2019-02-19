@@ -271,13 +271,25 @@ class ScenarioManager(object):
         failure = False
         timeout = False
         result = "SUCCESS"
+        score = 0.0
+        return_message = []
 
         if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
             if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
                 failure = True
                 result = "FAILURE"
+
+            for node in self.scenario.test_criteria.children:
+                score += node.score
+                if node.return_message:
+                    return_message.append(node.return_message)
+
         else:
             for criterion in self.scenario.test_criteria:
+                score += criterion.score
+                if criterion.return_message:
+                    return_message.append(criterion.return_message)
+
                 if (not criterion.optional and
                         criterion.test_status != "SUCCESS" and
                         criterion.test_status != "ACCEPTABLE"):
@@ -291,7 +303,5 @@ class ScenarioManager(object):
             timeout = True
             result = "TIMEOUT"
 
-        output = ResultOutputProvider(self, result, stdout, filename, junit)
-        output.write()
 
-        return failure or timeout
+        return result, score, return_message
