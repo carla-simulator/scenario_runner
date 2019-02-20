@@ -55,15 +55,13 @@ class VehicleTurningRightAtSignal(BasicScenario):
         """
 
         # Creating leaf nodes
-        start_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 38)
+        start_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 1)
         start_other_trigger = InTriggerDistanceToLocation(
             self.ego_vehicle, start_trigger_location, 2.0)
-
-        apply_hand_brake = HandBrakeVehicle(self.other_actors[0], True)
-        release_hand_brake = HandBrakeVehicle(self.other_actors[0], False)
-
-        turn_right = TurnVehicle(self.other_actors[0], 30, -1)
-
+        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle, carla.Location(x=85, y=-136))
+        pass_through_trigger = InTriggerDistanceToNextIntersection(self.other_actors[0], 1)
+        keep_velocity_other = KeepVelocity(self.other_actors[0], 15)
+        other_end_trigger = DriveDistance(self.other_actors[0], 10)
         end_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 100)
         end_condition = InTriggerDistanceToLocation(
             self.ego_vehicle, end_trigger_location, 10.0)
@@ -74,15 +72,22 @@ class VehicleTurningRightAtSignal(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
+        sync_arrival_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        keep_velocity_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # Building tree
         root.add_child(scenario_sequence)
         root.add_child(root_timeout)
-        scenario_sequence.add_child(apply_hand_brake)
         scenario_sequence.add_child(start_other_trigger)
-        scenario_sequence.add_child(release_hand_brake)
-        scenario_sequence.add_child(turn_right)
+        scenario_sequence.add_child(sync_arrival_parallel)
+        scenario_sequence.add_child(keep_velocity_parallel)
         scenario_sequence.add_child(end_condition)
+        sync_arrival_parallel.add_child(sync_arrival)
+        sync_arrival_parallel.add_child(pass_through_trigger)
+        keep_velocity_parallel.add_child(keep_velocity_other)
+        keep_velocity_parallel.add_child(other_end_trigger)
 
         return root
 
@@ -95,11 +100,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
 
         # Adding checks for ego vehicle
         collision_criterion_ego = CollisionTest(self.ego_vehicle)
-        region_check_ego = ReachedRegionTest(
-            self.ego_vehicle,
-            68, 72, -145, -135)
         criteria.append(collision_criterion_ego)
-        criteria.append(region_check_ego)
 
         # Add approriate checks for other vehicles
         for vehicle in self.other_actors:
