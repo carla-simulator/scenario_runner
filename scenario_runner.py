@@ -164,7 +164,7 @@ class ScenarioRunner(object):
 
         return vehicle
 
-    def prepare_actors(self, config):
+    def prepare_actors(self, config, scenario_class):
         """
         Spawn or update all scenario actors according to
         their parameters provided in config
@@ -177,10 +177,17 @@ class ScenarioRunner(object):
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
+        actor_parameters = scenario_class.initialize_actors(self.ego_vehicle)
+
         # spawn all other actors
-        for actor in config.other_actors:
-            new_actor = self.setup_vehicle(actor.model, actor.transform)
+        for actor_model, actor_transform in actor_parameters:
+            new_actor = self.setup_vehicle(actor_model, actor_transform)
             self.actors.append(new_actor)
+
+        # spawn all other actors
+        # for actor in config.other_actors:
+        #     new_actor = self.setup_vehicle(actor.model, actor.transform)
+        #     self.actors.append(new_actor)
 
     def analyze_scenario(self, args, config):
         """
@@ -226,7 +233,7 @@ class ScenarioRunner(object):
                 print("Preparing scenario: " + config.name)
                 scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.type)
                 try:
-                    self.prepare_actors(config)
+                    self.prepare_actors(config, scenario_class)
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
                                               self.actors,

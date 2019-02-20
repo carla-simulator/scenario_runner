@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <scenarios>
-    <scenario name="FollowLeadingVehicle" type="FollowLeadingVehicle" town="Town01">
+    <scenario name="FollowLeadingVehicle" type="FollowLeadingVehicle" town="Town04">
         <ego_vehicle x="107" y="133" z="39" yaw="0" model="vehicle.lincoln.mkz2017" />
         <other_actor x="157" y="133" z="39" yaw="0" model="vehicle.*" />
     </scenario>
