@@ -72,7 +72,7 @@ class ChallengeEvaluator(object):
     actors = []
 
     # Tunable parameters
-    client_timeout = 2.0   # in seconds
+    client_timeout = 15.0   # in seconds
     wait_for_world = 10.0  # in seconds
 
     # CARLA world and scenario handlers
