@@ -100,6 +100,25 @@ class FollowLeadingVehicle(BasicScenario):
             # waypoint.transform.location.z += 39
             # self.other_actors[0].set_transform(waypoint.transform)
 
+    @staticmethod
+    def initialize_actors(ego_vehicle):
+        """
+        This method returns the list of participant actors and their initial positions for the scenario
+        """
+        parameter_list = []
+
+        #   Other vehicle 1
+        model = 'vehicle.tesla.model3'
+        spawn_location, _ = get_location_in_distance(ego_vehicle, 50)
+        spawn_location.z = 40
+        print spawn_location
+        spawn_transform = carla.Transform(
+            spawn_location,
+            ego_vehicle.get_transform().rotation)
+        parameter_list.append((model, spawn_transform))
+
+        return parameter_list
+
     def _create_behavior(self):
         """
         The scenario defined after is a "follow leading vehicle" scenario. After
