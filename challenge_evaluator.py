@@ -257,9 +257,9 @@ class ChallengeEvaluator(object):
 
         return_message_str = ""
         for msg in return_message:
-            return_message_str += ("\n" + msg)
+            return_message_str += ("\n========== " + msg)
 
-        report_string = "==[{}] [Score = {}] [Comments={}] ".format(result, score, return_message_str)
+        report_string = "==[{}] [Score = {:.2f}] \n==[Comments:] {}".format(result, score, return_message_str)
         print(report_string)
 
     def run(self, args):

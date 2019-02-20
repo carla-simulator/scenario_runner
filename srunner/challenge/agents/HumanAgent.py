@@ -139,23 +139,24 @@ class HumanAgent(AutonomousAgent):
 
         """
         sensors = [['sensor.camera.rgb',
-                   {'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0, 'width':800, 'height':600, 'fov':100},
+                   {'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0, 'width':300, 'height':200,
+                    'fov':100},
                    'Center'],
 
                    ['sensor.camera.rgb',
-                    {'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': -45.0, 'width': 800,
-                     'height': 600,
+                    {'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': -45.0, 'width': 300,
+                     'height': 200,
                      'fov': 100},
                     'Left'],
 
                    ['sensor.camera.rgb',
-                    {'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 45.0, 'width': 800, 'height': 600,
+                    {'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 45.0, 'width': 300, 'height': 200,
                      'fov': 100},
                     'Right'],
 
                    ['sensor.camera.rgb',
-                    {'x': -1.8, 'y': 0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 180.0, 'width': 800,
-                     'height': 600,
+                    {'x': -1.8, 'y': 0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 180.0, 'width': 300,
+                     'height': 200,
                      'fov': 130},
                     'Rear'],
 
@@ -169,9 +170,9 @@ class HumanAgent(AutonomousAgent):
     def run_step(self, input_data):
         self.agent_engaged = True
 
-        print("=== steering = {}, throttle = {}, brake = {}".format(self.current_control.steer,
-                                                              self.current_control.throttle,
-                                                                    self.current_control.brake))
+        # print("=== steering = {}, throttle = {}, brake = {}".format(self.current_control.steer,
+        #                                                       self.current_control.throttle,
+        #                                                             self.current_control.brake))
         return self.current_control
 
     def destroy(self):

@@ -58,7 +58,6 @@ class ChallengeBasic(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        criteria = []
 
         collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
         target_criterion = InRadiusRegionTest(self.ego_vehicle,
@@ -67,14 +66,17 @@ class ChallengeBasic(BasicScenario):
                                              radius=self.radius)
 
         route_criterion = InRouteTest(self.ego_vehicle,
-                                      radius=self.radius,
+                                      radius=30.0,
                                       route=self.route,
                                       offroad_max=20,
                                       terminate_on_failure=True)
 
+        completion_criterion = RouteCompletionTest(self.ego_vehicle, route=self.route)
+
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
+        parallel_criteria.add_child(completion_criterion)
         parallel_criteria.add_child(collision_criterion)
         parallel_criteria.add_child(target_criterion)
         parallel_criteria.add_child(route_criterion)

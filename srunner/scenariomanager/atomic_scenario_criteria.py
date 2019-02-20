@@ -261,8 +261,10 @@ class CollisionTest(Criterion):
 
         if self.actual_value > 0:
             self.test_status = "FAILURE"
+            self.return_message = "[Agent collided]"
         else:
             self.test_status = "SUCCESS"
+            self.return_message = "[No collisions detected]"
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
@@ -424,8 +426,11 @@ class InRadiusRegionTest(Criterion):
             in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
             if in_radius:
                 self.test_status = "SUCCESS"
+                self.return_message = "[Destination was successfully reached]"
             else:
                 self.test_status = "RUNNING"
+                self.return_message = "[Destination was never reached]"
+
 
         if self.test_status == "SUCCESS":
             new_status = py_trees.common.Status.SUCCESS
@@ -453,9 +458,6 @@ class InRouteTest(Criterion):
 
             self._counter_off_route = 0
             self._waypoints, _ = zip(*self._route)
-            self._pending_waypoints = copy.copy(self._waypoints)
-
-            self.score = 100.0
 
         def update(self):
             """
@@ -471,6 +473,7 @@ class InRouteTest(Criterion):
                 new_status = py_trees.common.Status.FAILURE
 
             elif self.test_status == "RUNNING" or self.test_status == "INIT":
+                self.return_message = "[Agent is in route]"
                 # are we too far away from the route waypoints (i.e., off route)?
                 off_route = True
                 for waypoint in self._waypoints:
@@ -480,10 +483,10 @@ class InRouteTest(Criterion):
                         break
                 if off_route:
                     self._counter_off_route += 1
-                    self.score -= 10.0
 
                 if self._counter_off_route > self._offroad_max:
                     self.test_status = "FAILURE"
+                    self.return_message = "[Agent deviated from the route]"
                     new_status = py_trees.common.Status.FAILURE
 
             if self.test_status == "SUCCESS":
@@ -492,3 +495,52 @@ class InRouteTest(Criterion):
             self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
             return new_status
+
+
+class RouteCompletionTest(Criterion):
+    """
+    Check at which stage of the route is the actor at each tick
+    """
+
+    def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
+        """
+        """
+        super(RouteCompletionTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._route = route
+
+        self._current_index = 0
+        self._route_length = len(self._route)
+        self.score = 0
+        self._waypoints, _ = zip(*self._route)
+
+    def update(self):
+        """
+        Check if the actor location is within trigger region
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self._actor)
+        if location is None:
+            return new_status
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        elif self.test_status == "RUNNING" or self.test_status == "INIT":
+            best_distance = float("inf")
+            best_index = self._current_index
+            for index in range(self._current_index, self._route_length):
+                ref_waypoint = self._waypoints[index]
+                distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
+                if distance < best_distance:
+                    best_distance = distance
+                    best_index = index
+            self._current_index = best_index
+            self.score = 100.0*float(self._current_index) / float(self._route_length)
+            self.return_message = "[Agent has completed > {:.2f}% of the route]".format(self.score)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
