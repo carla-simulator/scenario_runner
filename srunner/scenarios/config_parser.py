@@ -134,6 +134,6 @@ def find_scenario_config(scenario_name):
         tree = ET.parse(file_name)
         for scenario in tree.iter("scenario"):
             if set_attrib(scenario, 'name', None) == scenario_name:
-                return file_name[8:-4]
+                return file_name[16:-4]
 
     return None

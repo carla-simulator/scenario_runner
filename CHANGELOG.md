@@ -15,7 +15,6 @@
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
     - Added get_intersection() to generate point of intersection between two actor's position.
-    - Generalized SyncArival behavior, removed location_of_collsion parameter.
 
 ## CARLA Scenario_Runner 0.9.2
 

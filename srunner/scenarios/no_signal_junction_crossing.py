@@ -68,7 +68,8 @@ class NoSignalJunctionCrossing(BasicScenario):
         location, _ = get_location_in_distance(self.ego_vehicle, 10)
         start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 5.0)
 
-        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle)
+        target_location = get_intersection(self.ego_vehicle, self.other_actors[0])
+        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle, target_location)
         pass_through_trigger = InTriggerDistanceToNextIntersection(self.ego_vehicle, 8)
 
         keep_velocity_other = KeepVelocity(
