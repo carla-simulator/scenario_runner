@@ -29,6 +29,11 @@ In addition, you have to install Python networkx. You can install it via:
 ```
 sudo apt-get install python-networkx
 ```
+
+Also psutil is needed:
+    
+    pip3 install psutil
+
 Please make sure that you install networkx for the Python version you want to use.
 
 
