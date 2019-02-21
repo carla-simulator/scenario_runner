@@ -33,6 +33,21 @@ def get_location_in_distance(actor, distance):
 
     return waypoint.transform.location, traveled_distance
 
+def set_junction_traffic_lights(ego_vehicle, state):
+    """
+    Sets the state of all traffic light at the next junction
+    """
+    waypoint = ego_vehicle.get_world().get_map().get_waypoint(ego_vehicle.get_location())
+    while not waypoint.is_intersection:
+        waypoint = waypoint.next(1.0)[0]
+    traffic_lights = []
+    for actor in ego_vehicle.get_world().get_actors().filter('traffic.traffic_light'):
+        if actor.get_location().distance(waypoint.transform.location) < 30:
+            traffic_lights.append(actor)
+    for tlight in traffic_lights:
+        tlight.set_state(state)
+        tlight.freeze(True)
+        print('set traffic light at', tlight.get_location().x, tlight.get_location().y)
 
 class BasicScenario(object):
 

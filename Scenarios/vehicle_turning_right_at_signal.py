@@ -12,6 +12,7 @@ And encounters another vehicle passing across the junction.
 """
 
 import py_trees
+import carla
 
 from ScenarioManager.atomic_scenario_behavior import *
 from ScenarioManager.atomic_scenario_criteria import *
@@ -45,6 +46,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
+        set_junction_traffic_lights(ego_vehicle, carla.TrafficLightState.Green)
 
     def _create_behavior(self):
         """
@@ -55,13 +57,14 @@ class VehicleTurningRightAtSignal(BasicScenario):
         """
 
         # Creating leaf nodes
+        
         start_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 1)
         start_other_trigger = InTriggerDistanceToLocation(
             self.ego_vehicle, start_trigger_location, 2.0)
         sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle, carla.Location(x=85, y=-136))
         pass_through_trigger = InTriggerDistanceToNextIntersection(self.other_actors[0], 1)
         keep_velocity_other = KeepVelocity(self.other_actors[0], 15)
-        other_end_trigger = DriveDistance(self.other_actors[0], 10)
+        # other_end_trigger = DriveDistance(self.other_actors[0], 10)
         end_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 100)
         end_condition = InTriggerDistanceToLocation(
             self.ego_vehicle, end_trigger_location, 10.0)
@@ -87,7 +90,7 @@ class VehicleTurningRightAtSignal(BasicScenario):
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(pass_through_trigger)
         keep_velocity_parallel.add_child(keep_velocity_other)
-        keep_velocity_parallel.add_child(other_end_trigger)
+        # keep_velocity_parallel.add_child(other_end_trigger)
 
         return root
 
