@@ -26,7 +26,7 @@ class ChallengeBasic(BasicScenario):
 
     category = "ChallengeBasic"
     radius = 10.0           # meters
-    timeout = 1000            # Timeout of scenario in seconds
+    timeout = 300           # Timeout of scenario in seconds
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
         """
@@ -45,7 +45,9 @@ class ChallengeBasic(BasicScenario):
 
     def _create_behavior(self):
         """
+        Basic behavior do nothing, i.e. Idle
         """
+
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         idle_behavior = Idle()

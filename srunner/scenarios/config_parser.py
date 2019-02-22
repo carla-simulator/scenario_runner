@@ -11,6 +11,7 @@ This module provides a parser for scenario configuration files
 """
 
 import glob
+import os
 import xml.etree.ElementTree as ET
 
 import carla
@@ -104,7 +105,7 @@ def parse_scenario_configuration(file_name, scenario_name):
         scenario_name = scenario_name[6:]
         file_name = scenario_name
 
-    scenario_config_file = "srunner/configs/" + file_name + ".xml"
+    scenario_config_file = os.getenv('ROOT_SCENARIO_RUNNER', "./") + "/srunner/configs/" + file_name + ".xml"
     tree = ET.parse(scenario_config_file)
 
     scenario_configurations = []
@@ -140,7 +141,7 @@ def get_list_of_scenarios():
     Parse *all* config files and provide a list with all scenarios @return
     """
 
-    list_of_config_files = glob.glob("srunner/configs/*.xml")
+    list_of_config_files = glob.glob("{}/srunner/configs/*.xml".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
 
     scenarios = []
     for file_name in list_of_config_files:
@@ -156,12 +157,12 @@ def find_scenario_config(scenario_name):
     Parse *all* config files and find first match for scenario config
     """
 
-    list_of_config_files = glob.glob("srunner/configs/*.xml")
+    list_of_config_files = glob.glob("{}/srunner/configs/*.xml".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
 
     for file_name in list_of_config_files:
         tree = ET.parse(file_name)
         for scenario in tree.iter("scenario"):
             if set_attrib(scenario, 'name', None) == scenario_name:
-                return file_name[16:-4]
+                return os.path.basename(file_name).split(".")[0]
 
     return None

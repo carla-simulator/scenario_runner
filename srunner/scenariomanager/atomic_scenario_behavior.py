@@ -13,9 +13,6 @@ etc.
 
 The atomic behaviors are implemented with py_trees.
 """
-import glob
-import os
-import sys
 
 import carla
 import py_trees

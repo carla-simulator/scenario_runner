@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2018-2019 Intel Labs.
-# authors: Fabian Oboril (fabian.oboril@intel.com)
+# authors: German Ros (german.ros@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -8,7 +8,7 @@
 """
 CARLA Challenge Evaluator
 
-TODO
+Provisional code to evaluate Autonomous Agents for the CARLA Autonomous Driving challenge
 """
 
 from __future__ import print_function
@@ -16,46 +16,26 @@ import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 import importlib
-import glob
-import xml.etree.ElementTree as ET
-import math
 import numpy as np
-import os
 import random
 import sys
 import time
 
 import carla
 
-try:
-    CARLA_ROOT = os.environ.get('CARLA_ROOT')
-    if not CARLA_ROOT:
-        print('Warning! Define environment variable CARLA_ROOT pointing to the CARLA base folder.')
-
-    sys.path.append(glob.glob('{}/PythonAPI'.format(CARLA_ROOT))[0])
-except IndexError:
-    pass
-
 from agents.navigation.local_planner import compute_connection, RoadOption
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 from agents.tools.misc import vector
 
-
-
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker, Track
-from srunner.challenge.envs.sensor_interface import CallBack, SensorInterface
-
+from srunner.challenge.envs.sensor_interface import CallBack
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 
-
-# Version of scenario_runner
-VERSION = 0.3
-
-# Dictionary of all supported scenarios.
-# key = Name of config file in Configs/
+# Dictionary of supported scenarios.
+# key = Name of config file in configs/
 # value = List as defined in the scenario module
 SCENARIOS = {
     "ChallengeBasic": CHALLENGE_BASIC_SCENARIOS
@@ -65,7 +45,7 @@ SCENARIOS = {
 class ChallengeEvaluator(object):
 
     """
-    TODO
+    Provisional code to evaluate AutonomousAgent performance
     """
 
     ego_vehicle = None
@@ -80,9 +60,6 @@ class ChallengeEvaluator(object):
     manager = None
 
     def __init__(self, args):
-        """
-
-        """
 
         # first we instantiate the Agent
         module_name = os.path.basename(args.agent).split('.')[0]
@@ -184,6 +161,12 @@ class ChallengeEvaluator(object):
         return vehicle
 
     def setup_sensors(self, sensors, vehicle):
+        """
+        Create the sensors defined by the user and attach them to the ego-vehicle
+        :param sensors: list of sensors
+        :param vehicle: ego vehicle
+        :return:
+        """
         bp_library = self.world.get_blueprint_library()
         for item in sensors:
             bp = bp_library.find(item[0])
@@ -242,25 +225,22 @@ class ChallengeEvaluator(object):
         """
         Provide feedback about success/failure of a scenario
         """
+        result, score, return_message = self.manager.analyze_scenario_challenge()
 
-        current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-        junit_filename = None
-        if args.junit:
-            junit_filename = config.name + current_time + ".xml"
-        filename = None
-        if args.file:
-            filename = config.name + current_time + ".txt"
-
-        result, score, return_message = self.manager.analyze_scenario_challenge(args.output,
-                                                                                    filename,
-                                                                                   junit_filename)
-
+        # show results stoud
         return_message_str = ""
         for msg in return_message:
             return_message_str += ("\n========== " + msg)
-
         report_string = "==[{}] [Score = {:.2f}] \n==[Comments:] {}".format(result, score, return_message_str)
         print(report_string)
+
+        # save results in file
+        current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
+        filename = None
+        if args.file:
+            filename = config.name + current_time + ".txt"
+            with open(filename, "a+") as fd:
+                fd.write(report_string)
 
     def run(self, args):
         """
@@ -310,7 +290,7 @@ class ChallengeEvaluator(object):
                 try:
                     self.prepare_actors(config)
                     lat_ref, lon_ref = self._get_latlon_ref()
-                    global_route, _ = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
+                    global_route, gps_route = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
                     config.route = global_route
 
                     scenario = scenario_class(self.world,
@@ -365,6 +345,10 @@ class ChallengeEvaluator(object):
 
 
     def _get_latlon_ref(self):
+        """
+        Convert from waypoints world coordinates to CARLA GPS coordinates
+        :return: tuple with lat and lon coordinates
+        """
         xodr = self.world.get_map().to_opendrive()
         tree = ET.ElementTree(ET.fromstring(xodr))
 
@@ -380,6 +364,17 @@ class ChallengeEvaluator(object):
         return lat_ref, lon_ref
 
     def retrieve_route(self, actor_configuration, target_configuration, lat_ref, lon_ref):
+        """
+        Estimate a route from a starting position to a target position.
+
+        :param actor_configuration: ActorConfiguration object representing the ego vehicle
+        :param target_configuration: TargetConfiguration object representing the target point
+        :param lat_ref: map reference latitude
+        :param lon_ref: map reference longitude
+        :return: a tuple with two lists. Both lists represent the route.
+            The first one in world coordinates.
+            The second one in GPS coordinates.
+        """
         start_waypoint = self.world.get_map().get_waypoint(actor_configuration.transform.location)
         end_waypoint = self.world.get_map().get_waypoint(target_configuration.transform.location)
 
@@ -472,6 +467,13 @@ class ChallengeEvaluator(object):
         return solution, solution_gps
 
     def _location_to_gps(self, lat_ref, lon_ref, location):
+        """
+        Convert from world coordinates to GPS coordinates
+        :param lat_ref: latitude reference for the current map
+        :param lon_ref: longitude reference for the current map
+        :param location: location to translate
+        :return: dictionary with lat, lon and height
+        """
         EARTH_RADIUS_EQUA = 6378137.0
 
         scale = math.cos(lat_ref * math.pi / 180.0)
@@ -489,8 +491,7 @@ class ChallengeEvaluator(object):
 
 if __name__ == '__main__':
 
-    DESCRIPTION = ("CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
-                   "Current version: " + str(VERSION))
+    DESCRIPTION = ("CARLA AD Challenge evaluation: evaluate your Agent in CARLA scenarios\n")
 
     PARSER = argparse.ArgumentParser(description=DESCRIPTION,
                                      formatter_class=RawTextHelpFormatter)
@@ -498,16 +499,11 @@ if __name__ == '__main__':
                         help='IP of the host server (default: localhost)')
     PARSER.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
-    PARSER.add_argument('--carla-root', help='Absolute path to CARLA root', required=True)
     PARSER.add_argument("--use-docker", type=bool, help="Use docker to run CARLA?", default=False)
     PARSER.add_argument('--docker-version', type=str, help='Docker version to use for CARLA server', default="0.9.3")
-
-    PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate", required=True)
-
+    PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
-    PARSER.add_argument('--output', action="store_true", help='Provide results on stdout')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
-    PARSER.add_argument('--junit', action="store_true", help='Write results into a junit file')
     # pylint: disable=line-too-long
     PARSER.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
@@ -516,8 +512,20 @@ if __name__ == '__main__':
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     PARSER.add_argument('--list_class', action="store_true", help='List all supported scenario classes and exit')
-    PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
+
+    CARLA_ROOT = os.environ.get('CARLA_ROOT')
+    ROOT_SCENARIO_RUNNER = os.environ.get('ROOT_SCENARIO_RUNNER')
+
+    if not CARLA_ROOT:
+        print("Error. CARLA_ROOT not found. Please run setup_environment.sh first.")
+        sys.exit(0)
+
+    if not ROOT_SCENARIO_RUNNER:
+        print("Error. ROOT_SCENARIO_RUNNER not found. Please run setup_environment.sh first.")
+        sys.exit(0)
+
+    ARGUMENTS.carla_root = CARLA_ROOT
 
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")

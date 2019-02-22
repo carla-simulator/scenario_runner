@@ -489,9 +489,6 @@ class InRouteTest(Criterion):
                     self.return_message = "[Agent deviated from the route]"
                     new_status = py_trees.common.Status.FAILURE
 
-            if self.test_status == "SUCCESS":
-                new_status = py_trees.common.Status.SUCCESS
-
             self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
             return new_status

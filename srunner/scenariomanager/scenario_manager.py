@@ -263,7 +263,7 @@ class ScenarioManager(object):
 
         return failure or timeout
 
-    def analyze_scenario_challenge(self, stdout, filename, junit):
+    def analyze_scenario_challenge(self):
         """
         This function is intended to be called from outside and provide
         statistics about the scenario (human-readable, for the CARLA challenge.)
