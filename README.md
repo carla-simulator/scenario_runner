@@ -1,8 +1,8 @@
 ScenarioRunner for CARLA
 ========================
 This repository contains traffic scenario definition and an execution engine
-for CARLA. It also allows for the execution of a simulation of the carla challenge.
-You can add your agent here 
+for CARLA. It also allows  the execution of a simulation of the carla challenge.
+You can use this system to prepare your agent for the CARLA challenge.
 
 Disclaimer
 ----------
