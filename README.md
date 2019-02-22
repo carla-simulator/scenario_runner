@@ -27,7 +27,7 @@ documentation.
 Challenge Evaluation
 ---------------------
 
-You can evaluate your own agents into a simulation
+You can evaluate your own agents using a reproduction
  of the CARLA challenge by following [this tutorial](Docs/challenge_evaluation.md)
 
 
