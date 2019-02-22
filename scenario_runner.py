@@ -26,6 +26,7 @@ from srunner.scenarios.object_crash_vehicle import *
 from srunner.scenarios.no_signal_junction_crossing import *
 from srunner.scenarios.object_crash_intersection import *
 from srunner.scenarios.control_loss import *
+from srunner.scenarios.leading_vehicle_decelerate import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 
@@ -43,7 +44,8 @@ SCENARIOS = {
     "RunningRedLight": RUNNING_RED_LIGHT_SCENARIOS,
     "NoSignalJunction": NO_SIGNAL_JUNCTION_SCENARIOS,
     "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
-    "ControlLoss": CONTROL_LOSS_SCENARIOS
+    "ControlLoss": CONTROL_LOSS_SCENARIOS,
+    "LeadingVehicleDecelerate": LEADING_VEHICLE_DECELERATE_SCENARIOS
 }
 
 
