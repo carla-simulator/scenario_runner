@@ -48,6 +48,8 @@
     - VehicleTurningRight: hero vehicle must react to a cyclist or pedestrian crossing ahead after a right turn
     - VehicleTurningLeft: hero vehicle must react to a cyclist or pedestrian crossing ahead after a left turn
     - ControlLoss: Hero vehicle must react to a control loss and regain its control
+    - LeadingVehicleDecelerate: hero vehicle must react to the deceleration of leading vehicle and change lane to avoid collision and follow
+      the vehicle in changed lane
 * Added atomic behaviors using py_trees behavior trees library
     - InTriggerRegion: new behavior to check if an object is within a trigger region
     - InTriggerDistanceToVehicle: check if a vehicle is within certain distance with respect to a reference vehicle
