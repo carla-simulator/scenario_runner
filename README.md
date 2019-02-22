@@ -17,7 +17,6 @@ branch contains the latest fixes and features, and my require to use the latest 
 
 Currently no build is required, as all code is in Python.
 
-Installation
 
 Using the ScenarioRunner
 ------------------------
@@ -27,6 +26,9 @@ documentation.
 
 Challenge Evaluation
 ---------------------
+
+You can evaluate your own agents into a simulation
+ of the CARLA challenge by following [this tutorial](Docs/challenge_evaluation.md)
 
 
 
