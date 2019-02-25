@@ -18,6 +18,8 @@ import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 
+import sys
+
 import carla
 
 from srunner.scenarios.follow_leading_vehicle import *
@@ -63,7 +65,7 @@ class ScenarioRunner(object):
     actors = []
 
     # Tunable parameters
-    client_timeout = 2.0   # in seconds
+    client_timeout = 10.0   # in seconds
     wait_for_world = 10.0  # in seconds
 
     # CARLA world and scenario handlers
@@ -208,15 +210,13 @@ class ScenarioRunner(object):
             # Load the scenario configurations provided in the config file
             scenario_configurations = None
             if args.scenario.startswith("group:"):
-                scenario_configurations = parse_scenario_configuration(self.world, args.scenario, args.scenario)
+                scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
             else:
                 scenario_config_file = find_scenario_config(args.scenario)
                 if scenario_config_file is None:
                     print("Configuration for scenario {} cannot be found!".format(args.scenario))
                     continue
-                scenario_configurations = parse_scenario_configuration(self.world,
-                                                                       scenario_config_file,
-                                                                       args.scenario)
+                scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
 
             # Execute each configuration
             for config in scenario_configurations:

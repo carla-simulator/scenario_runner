@@ -18,6 +18,7 @@ import threading
 
 import py_trees
 
+import srunner
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
@@ -43,21 +44,23 @@ class Scenario(object):
         self.test_criteria = criteria
         self.timeout = timeout
 
-        for criterion in self.test_criteria:
-            criterion.terminate_on_failure = terminate_on_failure
+        if not isinstance(self.test_criteria, py_trees.composites.Parallel):
+        # list of nodes
+            for criterion in self.test_criteria:
+                criterion.terminate_on_failure = terminate_on_failure
 
-        # Create py_tree for test criteria
-        self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria")
-        self.criteria_tree.add_children(self.test_criteria)
-        self.criteria_tree.setup(timeout=1)
+            # Create py_tree for test criteria
+            self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria")
+            self.criteria_tree.add_children(self.test_criteria)
+            self.criteria_tree.setup(timeout=1)
+        else:
+            self.criteria_tree = criteria
 
         # Create node for timeout
         self.timeout_node = TimeOut(self.timeout, name="TimeOut")
 
         # Create overall py_tree
-        self.scenario_tree = py_trees.composites.Parallel(
-            name,
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         self.scenario_tree.add_child(self.behavior)
         self.scenario_tree.add_child(self.timeout_node)
         self.scenario_tree.add_child(self.criteria_tree)
@@ -107,11 +110,13 @@ class ScenarioManager(object):
     ego_vehicle = None
     other_actors = None
 
-    def __init__(self, world, _debug_mode):
+    def __init__(self, world, debug_mode=False):
         """
         Init requires scenario as input
         """
-        self._debug_mode = _debug_mode
+        self._debug_mode = debug_mode
+        self.agent = None
+        self._autonomous_agent_plugged = False
         self._running = False
         self._timestamp_last_run = 0.0
         self._my_lock = threading.Lock()
@@ -151,10 +156,11 @@ class ScenarioManager(object):
         self.end_system_time = None
         GameTime.restart()
 
-    def run_scenario(self):
+    def run_scenario(self, agent=None):
         """
         Trigger the start of the scenario and wait for it to finish/fail
         """
+        self.agent = agent
         print("ScenarioManager: Running scenario {}".format(self.scenario_tree.name))
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
@@ -199,6 +205,11 @@ class ScenarioManager(object):
                 # Tick scenario
                 self.scenario_tree.tick_once()
 
+                if self.agent:
+                    # Invoke agent
+                    action = self.agent()
+                    self.ego_vehicle.apply_control(action)
+
                 if self._debug_mode:
                     print("\n")
                     py_trees.display.print_ascii_tree(
@@ -227,14 +238,21 @@ class ScenarioManager(object):
         failure = False
         timeout = False
         result = "SUCCESS"
-        for criterion in self.scenario.test_criteria:
-            if (not criterion.optional and
-                    criterion.test_status != "SUCCESS" and
-                    criterion.test_status != "ACCEPTABLE"):
+
+        if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
+            if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
                 failure = True
                 result = "FAILURE"
-            elif criterion.test_status == "ACCEPTABLE":
-                result = "ACCEPTABLE"
+        else:
+            for criterion in self.scenario.test_criteria:
+                if (not criterion.optional and
+                        criterion.test_status != "SUCCESS" and
+                        criterion.test_status != "ACCEPTABLE"):
+                    failure = True
+                    result = "FAILURE"
+                elif criterion.test_status == "ACCEPTABLE":
+                    result = "ACCEPTABLE"
+
 
         if self.scenario.timeout_node.timeout and not failure:
             timeout = True
@@ -244,3 +262,45 @@ class ScenarioManager(object):
         output.write()
 
         return failure or timeout
+
+    def analyze_scenario_challenge(self):
+        """
+        This function is intended to be called from outside and provide
+        statistics about the scenario (human-readable, for the CARLA challenge.)
+        """
+
+        failure = False
+        result = "SUCCESS"
+        score = 0.0
+        return_message = []
+
+        if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
+            if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
+                failure = True
+                result = "FAILURE"
+
+            target_reached = False
+            collisions = False
+            for node in self.scenario.test_criteria.children:
+                if node.return_message:
+                    return_message.append(node.return_message)
+                if isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.RouteCompletionTest):
+                    percentage_completed_route = node.score
+                elif isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.CollisionTest):
+                    collisions = (node.test_status == "FAILURE")
+                elif isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.InRadiusRegionTest):
+                    target_reached = (node.test_status == "SUCCESS")
+                elif isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.InRouteTest):
+                    offroute = (node.test_status == "FAILURE")
+
+            if target_reached:
+                score = 100.0
+            else:
+                score = percentage_completed_route
+
+
+        if self.scenario.timeout_node.timeout and not failure:
+            result = "TIMEOUT"
+
+
+        return result, score, return_message

@@ -11,9 +11,26 @@ This module provides a parser for scenario configuration files
 """
 
 import glob
+import os
 import xml.etree.ElementTree as ET
 
 import carla
+
+
+class TargetConfiguration(object):
+
+    """
+    This class provides the basic  configuration for a target location
+    """
+
+    transform = None
+
+    def __init__(self, node):
+        pos_x = float(set_attrib(node, 'x', 0))
+        pos_y = float(set_attrib(node, 'y', 0))
+        pos_z = float(set_attrib(node, 'z', 0))
+
+        self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z))
 
 
 class ActorConfiguration(object):
@@ -27,12 +44,20 @@ class ActorConfiguration(object):
 
     transform = None
     model = None
+    autopilot = False
+    random_location = False
 
     def __init__(self, node):
         pos_x = float(set_attrib(node, 'x', 0))
         pos_y = float(set_attrib(node, 'y', 0))
         pos_z = float(set_attrib(node, 'z', 0))
         yaw = float(set_attrib(node, 'yaw', 0))
+
+        if 'random_location' in node.keys():
+            self.random_location = True
+
+        if 'autopilot' in node.keys():
+            self.autopilot = True
 
         self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw))
         self.model = set_attrib(node, 'model', 'vehicle.*')
@@ -53,6 +78,7 @@ class ScenarioConfiguration(object):
     town = None
     name = None
     type = None
+    target = None
 
 
 def set_attrib(node, key, default):
@@ -63,7 +89,7 @@ def set_attrib(node, key, default):
     return node.attrib[key] if key in node.attrib else default
 
 
-def parse_scenario_configuration(world, file_name, scenario_name):
+def parse_scenario_configuration(file_name, scenario_name):
     """
     Parse scenario configuration file and provide a list of
     ScenarioConfigurations @return
@@ -79,7 +105,7 @@ def parse_scenario_configuration(world, file_name, scenario_name):
         scenario_name = scenario_name[6:]
         file_name = scenario_name
 
-    scenario_config_file = "srunner/configs/" + file_name + ".xml"
+    scenario_config_file = os.getenv('ROOT_SCENARIO_RUNNER', "./") + "/srunner/configs/" + file_name + ".xml"
     tree = ET.parse(scenario_config_file)
 
     scenario_configurations = []
@@ -94,6 +120,9 @@ def parse_scenario_configuration(world, file_name, scenario_name):
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
             new_config.ego_vehicle = ActorConfiguration(ego_vehicle)
+
+        for target in scenario.iter("target"):
+            new_config.target = TargetConfiguration(target)
 
         for other_actor in scenario.iter("other_actor"):
             new_config.other_actors.append(ActorConfiguration(other_actor))
@@ -112,7 +141,7 @@ def get_list_of_scenarios():
     Parse *all* config files and provide a list with all scenarios @return
     """
 
-    list_of_config_files = glob.glob("srunner/configs/*.xml")
+    list_of_config_files = glob.glob("{}/srunner/configs/*.xml".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
 
     scenarios = []
     for file_name in list_of_config_files:
@@ -128,12 +157,12 @@ def find_scenario_config(scenario_name):
     Parse *all* config files and find first match for scenario config
     """
 
-    list_of_config_files = glob.glob("srunner/configs/*.xml")
+    list_of_config_files = glob.glob("{}/srunner/configs/*.xml".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
 
     for file_name in list_of_config_files:
         tree = ET.parse(file_name)
         for scenario in tree.iter("scenario"):
             if set_attrib(scenario, 'name', None) == scenario_name:
-                return file_name[16:-4]
+                return os.path.basename(file_name).split(".")[0]
 
     return None
