@@ -105,7 +105,7 @@ class HumanInterface():
 
 class HumanAgent(AutonomousAgent):
 
-    def setup(self):
+    def setup(self, path_to_conf_file):
         self.agent_engaged = False
         self.current_control = carla.VehicleControl()
         self.current_control.steer = 0.0
@@ -138,41 +138,26 @@ class HumanAgent(AutonomousAgent):
         ]
 
         """
-        sensors = [['sensor.camera.rgb',
-                   {'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0, 'width':300, 'height':200,
-                    'fov':100},
-                   'Center'],
+        sensors = [{'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0,
+                    'width':300, 'height':200, 'fov':100, 'id': 'Center'},
 
-                   ['sensor.camera.rgb',
-                    {'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': -45.0, 'width': 300,
-                     'height': 200,
-                     'fov': 100},
-                    'Left'],
+                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':-0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
+                    'yaw': -45.0, 'width': 300, 'height': 200, 'fov': 100, 'id': 'Left'},
 
-                   ['sensor.camera.rgb',
-                    {'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 45.0, 'width': 300, 'height': 200,
-                     'fov': 100},
-                    'Right'],
+                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0,
+                    'width':300, 'height':200, 'fov':100, 'id': 'Right'},
 
-                   ['sensor.camera.rgb',
-                    {'x': -1.8, 'y': 0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 180.0, 'width': 300,
-                     'height': 200,
-                     'fov': 130},
-                    'Rear'],
+                   {'type': 'sensor.camera.rgb', 'x': -1.8, 'y': 0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
+                    'yaw': 180.0, 'width': 300, 'height': 200, 'fov': 130, 'id': 'Rear'},
 
-                    ['sensor.other.gnss', {'x': 0.7, 'y': -0.4, 'z': 1.60},
-                     'GPS'],
-                   ]
-
+                   {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'}
+                  ]
 
         return sensors
 
     def run_step(self, input_data):
         self.agent_engaged = True
 
-        # print("=== steering = {}, throttle = {}, brake = {}".format(self.current_control.steer,
-        #                                                       self.current_control.throttle,
-        #                                                             self.current_control.brake))
         return self.current_control
 
     def destroy(self):

@@ -2,7 +2,7 @@
 from srunner.challenge.envs.sensor_interface import SensorInterface
 
 class AutonomousAgent():
-    def __init__(self):
+    def __init__(self, path_to_conf_file):
         #  current global plans to reach a destination
         self._global_plan = None,
 
@@ -10,9 +10,9 @@ class AutonomousAgent():
         self.sensor_interface  = SensorInterface()
 
         # agent's initialization
-        self.setup()
+        self.setup(path_to_conf_file)
 
-    def setup(self):
+    def setup(self, path_to_conf_file):
         """
         Initialize everything needed by your agent.
         """
@@ -25,15 +25,14 @@ class AutonomousAgent():
         :return: a list containing the required sensors in the following format:
 
         [
-            ['sensor.camera.rgb', {'x':x_rel, 'y': y_rel, 'z': z_rel,
-                                   'yaw': yaw, 'pitch': pitch, 'roll': roll,
-                                   'width': width, 'height': height, 'fov': fov}, 'Sensor01'],
-            ['sensor.camera.rgb', {'x':x_rel, 'y': y_rel, 'z': z_rel,
-                                   'yaw': yaw, 'pitch': pitch, 'roll': roll,
-                                   'width': width, 'height': height, 'fov': fov}, 'Sensor02'],
+            {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                      'width': 300, 'height': 200, 'fov': 100, 'id': 'Left'},
 
-            ['sensor.lidar.ray_cast', {'x':x_rel, 'y': y_rel, 'z': z_rel,
-                                       'yaw': yaw, 'pitch': pitch, 'roll': roll}, 'Sensor03']
+            {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                      'width': 300, 'height': 200, 'fov': 100, 'id': 'Right'},
+
+            {'type': 'sensor.lidar.ray_cast', 'x': 0.7, 'y': 0.0, 'z': 1.60, 'yaw': 0.0, 'pitch': 0.0, 'roll': 0.0,
+             'id': 'LIDAR'}
         ]
 
         """

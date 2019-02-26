@@ -91,7 +91,7 @@ class BasicScenario(object):
             "If this error becomes visible the class hierarchy is somehow broken")
 
     def _check_town(self, world):
-        if world.map_name != self._town:
+        if world.get_map().name != self._town:
             print("The CARLA server uses the wrong map!")
             print("This scenario requires to use map {}".format(self._town))
             raise Exception("The CARLA server uses the wrong map!")

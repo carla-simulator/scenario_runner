@@ -168,27 +168,29 @@ class ChallengeEvaluator(object):
         :return:
         """
         bp_library = self.world.get_blueprint_library()
-        for item in sensors:
-            bp = bp_library.find(item[0])
-            if item[0].startswith('sensor.camera'):
-                bp.set_attribute('image_size_x', str(item[1]['width']))
-                bp.set_attribute('image_size_y', str(item[1]['height']))
-                bp.set_attribute('fov', str(item[1]['fov']))
-                sensor_location = carla.Location(x=item[1]['x'], y=item[1]['y'], z=item[1]['z'])
-                sensor_rotation = carla.Rotation(pitch=item[1]['pitch'], roll=item[1]['roll'], yaw=item[1]['yaw'])
-            elif item[0].startswith('sensor.lidar'):
+        for sensor_spec in sensors:
+            bp = bp_library.find(sensor_spec['type'])
+            if sensor_spec['type'].startswith('sensor.camera'):
+                bp.set_attribute('image_size_x', str(sensor_spec['width']))
+                bp.set_attribute('image_size_y', str(sensor_spec['height']))
+                bp.set_attribute('fov', str(sensor_spec['fov']))
+                sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'], z=sensor_spec['z'])
+                sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'], roll=sensor_spec['roll'],
+                                                 yaw=sensor_spec['yaw'])
+            elif sensor_spec['type'].startswith('sensor.lidar'):
                 bp.set_attribute('range', '5000')
-                sensor_location = carla.Location(x=item[1]['x'], y=item[1]['y'], z=item[1]['z'])
-                sensor_rotation = carla.Rotation(pitch=item[1]['pitch'], roll=item[1]['roll'], yaw=item[1]['yaw'])
-            elif item[0].startswith('sensor.other.gnss'):
-                sensor_location = carla.Location(x=item[1]['x'], y=item[1]['y'], z=item[1]['z'])
+                sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'], z=sensor_spec['z'])
+                sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'], roll=sensor_spec['roll'],
+                                                 yaw=sensor_spec['yaw'])
+            elif sensor_spec['type'].startswith('sensor.other.gnss'):
+                sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'], z=sensor_spec['z'])
                 sensor_rotation = carla.Rotation()
 
             # create sensor
             sensor_transform = carla.Transform(sensor_location, sensor_rotation)
             sensor = self.world.spawn_actor(bp, sensor_transform, vehicle)
             # setup callback
-            sensor.listen(CallBack(item[2], sensor, self.agent_instance.sensor_interface))
+            sensor.listen(CallBack(sensor_spec['id'], sensor, self.agent_instance.sensor_interface))
             self._sensors_list.append(sensor)
 
         # check that all sensors have initialized their data structure
@@ -264,7 +266,7 @@ class ChallengeEvaluator(object):
             # Execute each configuration
             for config in scenario_configurations:
                 # create agent instance
-                self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)()
+                self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
 
                 # Prepare scenario
                 print("Preparing scenario: " + config.name)
@@ -502,6 +504,8 @@ if __name__ == '__main__':
     PARSER.add_argument("--use-docker", type=bool, help="Use docker to run CARLA?", default=False)
     PARSER.add_argument('--docker-version', type=str, help='Docker version to use for CARLA server', default="0.9.3")
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
+    PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
+
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
     # pylint: disable=line-too-long
