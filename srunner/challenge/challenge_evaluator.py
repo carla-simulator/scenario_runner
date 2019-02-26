@@ -29,7 +29,7 @@ from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 from agents.tools.misc import vector
 
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker, Track
-from srunner.challenge.envs.sensor_interface import CallBack
+from srunner.challenge.envs.sensor_interface import CallBack, Speedometer
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
@@ -169,26 +169,38 @@ class ChallengeEvaluator(object):
         """
         bp_library = self.world.get_blueprint_library()
         for sensor_spec in sensors:
-            bp = bp_library.find(sensor_spec['type'])
-            if sensor_spec['type'].startswith('sensor.camera'):
-                bp.set_attribute('image_size_x', str(sensor_spec['width']))
-                bp.set_attribute('image_size_y', str(sensor_spec['height']))
-                bp.set_attribute('fov', str(sensor_spec['fov']))
-                sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'], z=sensor_spec['z'])
-                sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'], roll=sensor_spec['roll'],
-                                                 yaw=sensor_spec['yaw'])
-            elif sensor_spec['type'].startswith('sensor.lidar'):
-                bp.set_attribute('range', '5000')
-                sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'], z=sensor_spec['z'])
-                sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'], roll=sensor_spec['roll'],
-                                                 yaw=sensor_spec['yaw'])
-            elif sensor_spec['type'].startswith('sensor.other.gnss'):
-                sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'], z=sensor_spec['z'])
-                sensor_rotation = carla.Rotation()
+            # These are the pseudosensors (not spawned)
+            if sensor_spec['type'].startswith('sensor.speedometer'):
+                # The speedometer pseudo sensor is created directly here
+                sensor = Speedometer(vehicle, sensor_spec['reading_frequency'])
+            # These are the sensors spawned on the carla world
+            else:
+                bp = bp_library.find(sensor_spec['type'])
+                if sensor_spec['type'].startswith('sensor.camera'):
+                    bp.set_attribute('image_size_x', str(sensor_spec['width']))
+                    bp.set_attribute('image_size_y', str(sensor_spec['height']))
+                    bp.set_attribute('fov', str(sensor_spec['fov']))
+                    sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'],
+                                                     z=sensor_spec['z'])
+                    sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'],
+                                                     roll=sensor_spec['roll'],
+                                                     yaw=sensor_spec['yaw'])
+                elif sensor_spec['type'].startswith('sensor.lidar'):
+                    bp.set_attribute('range', '5000')
+                    sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'],
+                                                     z=sensor_spec['z'])
+                    sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'],
+                                                     roll=sensor_spec['roll'],
+                                                     yaw=sensor_spec['yaw'])
+                elif sensor_spec['type'].startswith('sensor.other.gnss'):
+                    sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'],
+                                                     z=sensor_spec['z'])
+                    sensor_rotation = carla.Rotation()
 
-            # create sensor
-            sensor_transform = carla.Transform(sensor_location, sensor_rotation)
-            sensor = self.world.spawn_actor(bp, sensor_transform, vehicle)
+                # create sensor
+                sensor_transform = carla.Transform(sensor_location, sensor_rotation)
+                sensor = self.world.spawn_actor(bp, sensor_transform,
+                                                vehicle)
             # setup callback
             sensor.listen(CallBack(sensor_spec['id'], sensor, self.agent_instance.sensor_interface))
             self._sensors_list.append(sensor)
@@ -196,8 +208,6 @@ class ChallengeEvaluator(object):
         # check that all sensors have initialized their data structure
         while not self.agent_instance.all_sensors_ready():
             time.sleep(0.1)
-
-
 
     def prepare_actors(self, config):
         """

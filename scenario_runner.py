@@ -17,6 +17,7 @@ from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
+import traceback
 
 import sys
 
@@ -234,6 +235,7 @@ class ScenarioRunner(object):
                                               args.debug)
                 except Exception as exception:
                     print("The scenario cannot be loaded")
+                    traceback.print_exc()
                     print(exception)
                     self.cleanup()
                     continue
