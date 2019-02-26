@@ -5,7 +5,7 @@ import carla
 from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent
 
 class DummyAgent(AutonomousAgent):
-    def setup(self):
+    def setup(self, path_to_conf_file):
         pass
 
     def sensors(self):
@@ -15,41 +15,31 @@ class DummyAgent(AutonomousAgent):
         :return: a list containing the required sensors in the following format:
 
         [
-            ['sensor.camera.rgb', {'x':x_rel, 'y': y_rel, 'z': z_rel,
-                                   'yaw': yaw, 'pitch': pitch, 'roll': roll,
-                                   'width': width, 'height': height, 'fov': fov}, 'Sensor01'],
-            ['sensor.camera.rgb', {'x':x_rel, 'y': y_rel, 'z': z_rel,
-                                   'yaw': yaw, 'pitch': pitch, 'roll': roll,
-                                   'width': width, 'height': height, 'fov': fov}, 'Sensor02'],
+            {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                      'width': 300, 'height': 200, 'fov': 100, 'id': 'Left'},
 
-            ['sensor.lidar.ray_cast', {'x':x_rel, 'y': y_rel, 'z': z_rel,
-                                       'yaw': yaw, 'pitch': pitch, 'roll': roll}, 'Sensor03']
+            {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                      'width': 300, 'height': 200, 'fov': 100, 'id': 'Right'},
+
+            {'type': 'sensor.lidar.ray_cast', 'x': 0.7, 'y': 0.0, 'z': 1.60, 'yaw': 0.0, 'pitch': 0.0, 'roll': 0.0,
+             'id': 'LIDAR'}
         ]
 
         """
-        sensors = [['sensor.camera.rgb',
-                   {'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0, 'width':800, 'height':600, 'fov':100},
-                   'Center'],
+        sensors = [{'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0,
+                    'width':800, 'height':600, 'fov':100, 'id': 'Center'},
 
-                   ['sensor.camera.rgb',
-                    {'x':0.7, 'y':-0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': -45.0, 'width': 800, 'height': 600,
-                     'fov': 100},
-                    'Left'],
+                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':-0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
+                    'yaw': -45.0, 'width': 800, 'height': 600, 'fov': 100, 'id': 'Left'},
 
-                   ['sensor.camera.rgb',
-                    {'x':0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0, 'width':800, 'height':600,
-                     'fov':100},
-                    'Right'],
+                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0,
+                    'width':800, 'height':600, 'fov':100, 'id': 'Right'},
 
-                   ['sensor.lidar.ray_cast',
-                    {'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
-                     'yaw': -45.0},
-                    'LIDAR'],
+                   {'type': 'sensor.lidar.ray_cast', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
+                    'yaw': -45.0, 'id': 'LIDAR'},
 
-                    ['sensor.other.gnss', {'x': 0.7, 'y': -0.4, 'z': 1.60},
-                     'GPS'],
-                   ]
-
+                   {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'}
+                  ]
 
         return sensors
 
