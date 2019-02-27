@@ -50,15 +50,9 @@ class ServerManagerBinary(ServerManager):
             self._proc.kill()
             self._outs, self._errs = self._proc.communicate()
 
-        exec_command = []
-        exec_command.append(self._carla_server_binary)
-        exec_command.append('-world-port={}'.format(port))
-        exec_command.append('-benchmark')
-        exec_command.append('-fps=20')
-        exec_command.append('-quiet')
-
+        exec_command = "{} -world-port={} -benchmark -fps=20 >/dev/null".format(self._carla_server_binary, port)
         print(exec_command)
-        self._proc = subprocess.Popen(exec_command)
+        self._proc = subprocess.Popen(exec_command, shell=True)
 
     def stop(self):
         parent = psutil.Process(self._proc.pid)
@@ -97,17 +91,9 @@ class ServerManagerDocker(ServerManager):
         self._docker_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(64))
         # temporary config file
 
-        exec_command = [ 'docker', 'run', '--name',
-                         '{}'.format(self._docker_id), '-p',
-                         '{}-{}:{}-{}'.format(port, port+2, port, port+2),
-                         '--runtime=nvidia', '-e', 'NVIDIA_VISIBLE_DEVICES=0',
-                         'carlasim/carla:{}'.format(self._docker_string),
-                         '/bin/bash', 'CarlaUE4.sh']
-
-        exec_command.append('-world-port={}'.format(port))
-        exec_command.append('-benchmark')
-        exec_command.append('-fps=20')
-        exec_command.append('-quiet')
+        exec_command = "docker run --name {} -p {}-{}:{}-{} --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=0 " \
+                       "carlasim/carla:{} /bin/bash CarlaUE4.sh > -world-port={} -benchmark -fps=20 /dev/null".format(
+            self._docker_id, port, port+2, port, port+2, self._docker_string, port)
 
         print(exec_command)
         self._proc = subprocess.Popen(exec_command)
