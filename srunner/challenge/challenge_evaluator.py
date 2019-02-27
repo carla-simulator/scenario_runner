@@ -259,6 +259,10 @@ class ChallengeEvaluator(object):
         Run all scenarios according to provided commandline args
         """
 
+        # Prepare CARLA server
+        self._carla_server.reset( args.host, args.port)
+        self._carla_server.wait_until_ready()
+
         # Setup and run the scenarios for repetition times
         for _ in range(int(args.repetitions)):
 
@@ -282,16 +286,12 @@ class ChallengeEvaluator(object):
                 print("Preparing scenario: " + config.name)
                 scenario_class = ChallengeEvaluator.get_scenario_class_or_fail(config.type)
 
-                # Prepare CARLA server
-                self._carla_server.reset(config.town, Track.SENSORS, args.host, args.port, False)
-                self._carla_server.wait_until_ready()
-
-                client = carla.Client(args.host, int(args.port))
+                client = carla.Client(args.host, int(args.port), 1)
                 client.set_timeout(self.client_timeout)
 
                 # Once we have a client we can retrieve the world that is currently
                 # running.
-                self.world = client.get_world()
+                self.world = client.load_world(config.town)
 
                 # Wait for the world to be ready
                 self.world.wait_for_tick(self.wait_for_world)
@@ -339,9 +339,9 @@ class ChallengeEvaluator(object):
                 self.agent_instance.destroy()
 
                 # stop CARLA server
-                self._carla_server.stop()
+        self._carla_server.stop()
 
-            print("No more scenarios .... Exiting")
+        print("No more scenarios .... Exiting")
 
     def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
         """

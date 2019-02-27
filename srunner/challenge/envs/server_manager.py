@@ -24,33 +24,12 @@ class ServerManager():
         self._outs = None
         self._errs = None
 
-    def reset(self, map_id, track_id=Track.SENSORS, host="127.0.0.1", port=2000, human_flag=False):
+    def reset(self, host="127.0.0.1", port=2000):
         raise NotImplementedError("This function is to be implemented")
 
 
     def wait_until_ready(self):
-        ready = False
-        threshold = 5000
-        no_lines = 0
-
-        fd = self._proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-
-        while not ready:
-            try:
-                line = self._proc.stdout.readline()
-                time.sleep(0.0005)
-                if str(line) == "b''":
-                    no_lines += 1
-                else:
-                    no_lines = 0
-            except:
-               pass
-
-            if no_lines > threshold:
-                ready = True
-                continue
+        time.sleep(10.0)
 
 
 class ServerManagerBinary(ServerManager):
@@ -62,43 +41,37 @@ class ServerManagerBinary(ServerManager):
         else:
             logging.error('CARLA_SERVER binary not provided!')
 
-    def reset(self, map_id, track_id=Track.SENSORS, host="127.0.0.1", port=2000, human_flag=False):
+
+    def reset(self, host="127.0.0.1", port=2000):
+        self._i = 0
         # first we check if there is need to clean up
         if self._proc is not None:
             logging.info('Stoppoing previous server [PID=%s]', self._proc.pid)
             self._proc.kill()
             self._outs, self._errs = self._proc.communicate()
 
-        # temporary config file
-        conf_file = '.tempconf.ini'
-
         exec_command = []
         exec_command.append(self._carla_server_binary)
-        exec_command.append(map_id)
-
         exec_command.append('-world-port={}'.format(port))
-        if not human_flag:
-            exec_command.append('-benchmark')
-            exec_command.append('-fps=20')
-
-        if track_id == Track.NO_RENDERING:
-            # create ini file
-            with open(conf_file, 'w') as fd:
-                fd.write('[CARLA / Server]\n')
-                fd.write('DisableRendering = true\n')
-
-            exec_command.append('-carla-settings={}'.format(conf_file))
+        exec_command.append('-benchmark')
+        exec_command.append('-fps=20')
+        exec_command.append('-quiet')
 
         print(exec_command)
-        self._proc = subprocess.Popen(exec_command, stdout=subprocess.PIPE, bufsize=1)
+        self._proc = subprocess.Popen(exec_command)
 
     def stop(self):
         parent = psutil.Process(self._proc.pid)
         for child in parent.children(recursive=True):
             child.kill()
         parent.kill()
-        #self._outs, self._errs = self._proc.communicate()
+        self._outs, self._errs = self._proc.communicate()
 
+    def check_input(self):
+        while True:
+            _ = self._proc.stdout.readline()
+            print(self._i)
+            self._i += 1
 
 class ServerManagerDocker(ServerManager):
     def __init__(self, opt_dict):
@@ -112,7 +85,7 @@ class ServerManagerDocker(ServerManager):
         self._docker_id = ''
 
 
-    def reset(self, map_id, track_id=Track.SENSORS, host="127.0.0.1", port=2000, human_flag=False):
+    def reset(self, host="127.0.0.1", port=2000):
 
         # first we check if there is need to clean up
         if self._proc is not None and self._docker_id is not '':
@@ -121,11 +94,8 @@ class ServerManagerDocker(ServerManager):
             self._proc.kill()
             self._outs, self._errs = self._proc.communicate()
 
-        self._docker_id = ''.join(random.choice(string.ascii_uppercase +
-                                                string.digits) for _ in
-                                  range(64))
+        self._docker_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(64))
         # temporary config file
-        conf_file = '.tempconf.ini'
 
         exec_command = [ 'docker', 'run', '--name',
                          '{}'.format(self._docker_id), '-p',
@@ -134,18 +104,13 @@ class ServerManagerDocker(ServerManager):
                          'carlasim/carla:{}'.format(self._docker_string),
                          '/bin/bash', 'CarlaUE4.sh']
 
-        exec_command.append(map_id)
-
         exec_command.append('-world-port={}'.format(port))
-        if not human_flag:
-            exec_command.append('-benchmark')
-            exec_command.append('-fps=20')
-
-
+        exec_command.append('-benchmark')
+        exec_command.append('-fps=20')
+        exec_command.append('-quiet')
 
         print(exec_command)
-        self._proc = subprocess.Popen(exec_command, stdout=subprocess.PIPE,
-                                      bufsize=1)
+        self._proc = subprocess.Popen(exec_command)
 
     def stop(self):
         exec_command = ['docker', 'kill', '{}'.format(self._docker_id)]
