@@ -260,7 +260,7 @@ class ChallengeEvaluator(object):
         """
 
         # Prepare CARLA server
-        self._carla_server.reset( args.host, args.port)
+        self._carla_server.reset(args.host, args.port)
         self._carla_server.wait_until_ready()
 
         # Setup and run the scenarios for repetition times
@@ -286,7 +286,7 @@ class ChallengeEvaluator(object):
                 print("Preparing scenario: " + config.name)
                 scenario_class = ChallengeEvaluator.get_scenario_class_or_fail(config.type)
 
-                client = carla.Client(args.host, int(args.port), 1)
+                client = carla.Client(args.host, int(args.port))
                 client.set_timeout(self.client_timeout)
 
                 # Once we have a client we can retrieve the world that is currently

@@ -28,8 +28,8 @@ class ServerManager():
         raise NotImplementedError("This function is to be implemented")
 
 
-    def wait_until_ready(self):
-        time.sleep(10.0)
+    def wait_until_ready(self, wait=10.0):
+        time.sleep(wait)
 
 
 class ServerManagerBinary(ServerManager):
@@ -46,7 +46,7 @@ class ServerManagerBinary(ServerManager):
         self._i = 0
         # first we check if there is need to clean up
         if self._proc is not None:
-            logging.info('Stoppoing previous server [PID=%s]', self._proc.pid)
+            logging.info('Stopping previous server [PID=%s]', self._proc.pid)
             self._proc.kill()
             self._outs, self._errs = self._proc.communicate()
 
@@ -83,7 +83,7 @@ class ServerManagerDocker(ServerManager):
 
         # first we check if there is need to clean up
         if self._proc is not None and self._docker_id is not '':
-            logging.info('Stoppoing previous server [PID=%s]', self._proc.pid)
+            logging.info('Stopping previous server [PID=%s]', self._proc.pid)
             self.stop()
             self._proc.kill()
             self._outs, self._errs = self._proc.communicate()
