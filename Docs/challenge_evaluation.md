@@ -29,14 +29,14 @@ the scenario runner repository](getting_started.md/#install_prerequisites)
 Run the setup environment script in order to point where the root folder of
  the CARLA 0.9.3 release is located:
 
-    ./setup_environment.sh --carl-root <path_to_the_CARLA_root_folder>
+    ./setup_environment.sh --carla-root <path_to_the_CARLA_root_folder>
 
 
 #### Running sample agents
 
 You can see the list of supported scenarios before you run the evaluation:
 
-    python3 challenge_evaluator.py --list
+    python3 srunner/challenge/challenge_evaluator.py --list
  
 
 To control, using the keyboard, an agent running a basic scenario run:
@@ -47,7 +47,7 @@ To control, using the keyboard, an agent running a basic scenario run:
 You can also execute the challenge evaluator manually, the following
 example runs a dummy agent that basically goes forward:
 
-    python srunner/challenge/challenge_evaluator.py --scenario group:ChallengeBasic -a srunner/challenge/agents/DummyAgent.py --carla-root <path_to_carla_root>
+    python srunner/challenge/challenge_evaluator.py --scenario group:ChallengeBasic -a srunner/challenge/autoagents/DummyAgent.py
 
 
 After running the evaluator, either manually or using the script, you should see the CARLA simulator being started
