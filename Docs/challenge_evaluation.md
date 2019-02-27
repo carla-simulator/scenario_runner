@@ -65,6 +65,9 @@ and the following type of output should continuously  appear on the terminal scr
 
 This output shows the sensor data received by the sample agent.
 
+You can add --file option to save logs with respect to the challenge
+evaluation results.
+
 
 Finally, you can also add your own agent 
 into the system by following [this tutorial](Docs/agent_evaluation.md)
