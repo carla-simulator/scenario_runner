@@ -2,6 +2,9 @@ Challenge evaluator
 =================
 
 
+ *This tutorial shows how to put some sample   agent to run the 
+ challenge evaluation.*
+ 
 The idea of the evaluation for the challenge is to put 
  the hero agent to perform on several scenarios described in a XML file.
  A scenario is defined by a certain trajectory that the hero
@@ -13,7 +16,6 @@ The idea of the evaluation for the challenge is to put
  At the end of a route, the system gives a result (fail or success)
  and a final score (numeric).
  
- This tutorial shows how to put a sample  dummy agent to run the tutorial.
 
 
 ### Getting started
@@ -68,8 +70,7 @@ Finally, you can also add your own agent
 into the system by following [this tutorial](Docs/agent_evaluation.md)
 
 
-#### Baselines
 
-The
+
 
 

@@ -2,7 +2,7 @@
 
 To have your agent evaluated by the challenge evaluation system 
 you must define an Agent class that inherit the 
-[AutonomousAgent](../srunner/challenge/agents/autonomous_agent.py) base class.
+[AutonomousAgent](../srunner/challenge/autoagents/autonomous_agent.py) base class.
 
 On your agent class there are three main functions to be overwritten
 that need to be defined in order to set your agent to run.
@@ -11,6 +11,19 @@ initially set as a variable.
 
 
 ##### The "setup" function:
+
+This is the function where you should make all the necessary setup
+for the your agent.
+
+This function receives as a parameter the path to a configuration
+file to be parsed by the user.
+
+When executing the "challenge_evaluator.py" you should pass the
+configuration file path as a parameter. For example:
+
+
+    python srunner/challenge/challenge_evaluator.py  -a <path_to_my_agent> --config myconfigfilename.format
+
 
 
 ##### The "sensors" function:
@@ -21,37 +34,34 @@ For instance, on the [dummy agent sample class](../srunner/challenge/agents/Dumm
 ```
     def sensors(self):
         
-        sensors = [['sensor.camera.rgb',
-           {'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0, 'width':800, 'height':600, 'fov':100},
-           'Center'],
+        sensors = [{'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0,
+                    'width':800, 'height': 600, 'fov':100, 'id': 'Center'},
+                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':-0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
+                    'yaw': -45.0, 'width': 800, 'height': 600, 'fov': 100, 'id': 'Left'},
+                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0,
+                    'width':800, 'height':600, 'fov':100, 'id': 'Right'},
+                   {'type': 'sensor.lidar.ray_cast', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
+                    'yaw': -45.0, 'id': 'LIDAR'},
+                   {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'},
+                   {'type': 'sensor.speedometer','reading_frequency': 25, 'id': 'speed'}
 
-           ['sensor.camera.rgb',
-            {'x':0.7, 'y':-0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': -45.0, 'width': 800, 'height': 600,
-             'fov': 100},
-            'Left'],
-
-           ['sensor.camera.rgb',
-            {'x':0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0, 'width':800, 'height':600,
-             'fov':100},
-            'Right'],
-
-           ['sensor.lidar.ray_cast',
-            {'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
-             'yaw': -45.0},
-            'LIDAR'],
-
-            ['sensor.other.gnss', {'x': 0.7, 'y': -0.4, 'z': 1.60},
-             'GPS'],
+                  ]'],
            ]
         return sensors
 ```
 
-Every sensor is a list of three positions.
-The first position specifies the type of sensor. 
-The second position specifies the sensor parameters
- such as location and orientation with respect to the vehicle.
- The third position is the label given to  the sensor.
 
+Every sensor is a dictionary where you should
+specify:
+
+    * type: basically which is the sensor to be added, for example:  'sensor.camera.rgb' for
+    an rgb camera or 'sensor.lidar.ray_cast' for a ray casting lidar.
+    * id: the label that will be given to the sensor in order for it
+     to be accessed later.
+    * other parameters: these are sensor dependent, such as position, 'x' and 'y',
+    or the field of view for a camera, 'fov'
+    
+    
 
 
 ##### The "run_step" function:
@@ -59,7 +69,7 @@ The second position specifies the sensor parameters
 This function is called on every step of the simulation from the challenge evaluation
 an receives some input data as parameter.
 
-This input data is a dictionary with all the sensors specified on the "setup" function.
+This input data is a dictionary with all the sensors specified on the "sensors" function.
 
 This function should return a [vehicle control](https://carla.readthedocs.io/en/latest/python_api_tutorial/#vehicles)
  to be applied into the ego vehicle.
@@ -80,6 +90,6 @@ should travel is set on  the "self.global_plan" variable:
  ```
  
  It is represented as a list of tuples, containing the route waypoints, expressed in latitude
- and longitude and the current road option recommended. For an intersection the option can
+ and longitude and the current road option recommended. For an intersection, the option can
  be go straight, turn left or turn right. For the rest of the route the recommended option
  is lane follow.
