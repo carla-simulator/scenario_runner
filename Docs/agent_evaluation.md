@@ -4,14 +4,16 @@ To have your agent evaluated by the challenge evaluation system
 you must define an Agent class that inherit the 
 [AutonomousAgent](../srunner/challenge/agents/autonomous_agent.py) base class.
 
-On your agent class there are two main functions to be overwritten
+On your agent class there are three main functions to be overwritten
 that need to be defined in order to set your agent to run.
 Further you also should consider the route to the goal that is
 initially set as a variable.
 
 
-
 ##### The "setup" function:
+
+
+##### The "sensors" function:
 
 This function is where you set all the sensors required by your agent.
 For instance, on the [dummy agent sample class](../srunner/challenge/agents/DummyAgent.py) the following sensors are defined:

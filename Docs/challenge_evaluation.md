@@ -12,6 +12,8 @@ The idea of the evaluation for the challenge is to put
  
  At the end of a route, the system gives a result (fail or success)
  and a final score (numeric).
+ 
+ This tutorial shows how to put a sample  dummy agent to run the tutorial.
 
 
 ### Getting started
@@ -39,17 +41,16 @@ You can see the list of supported scenarios before you run the evaluation:
 
 To control, using the keyboard, an agent running a basic scenario run:
 
-    ...
+    bash srunner/challenge/run_evaluator.sh
+    
 
-To run for instance the dummy agent on the basic scenario you should
-run the following command: 
+You can also execute the challenge evaluator manually, the following
+example runs a dummy agent that basically goes forward:
+
+    python srunner/challenge/challenge_evaluator.py --scenario group:ChallengeBasic -a srunner/challenge/agents/DummyAgent.py --carla-root <path_to_carla_root>
 
 
-    python3 srunner/challenge/challenge_evaluator.py --scenario group:ChallengeBasic -a srunner/challenge/agents/DummyAgent.py --carla-root <path_to_carla_root>
-
-
-
-After running this command you should see the CARLA simulator being started
+After running the evaluator, either manually or using the script, you should see the CARLA simulator being started
 and the following type of output should continuously  appear on the terminal screen:
 
     =====================>
@@ -63,15 +64,12 @@ and the following type of output should continuously  appear on the terminal scr
 This output shows the sensor data received by the sample agent.
 
 
-You can also try to complete the basic scenario as a human driver.
+Finally, you can also add your own agent 
+into the system by following [this tutorial](Docs/agent_evaluation.md)
 
 
-    python3 challenge_evaluator.py --scenario config:ChallengeBasic -a srunner/challenge/agents/HumanAgent.py --carla-root <path_to_carla_root>
+#### Baselines
 
-
-
-Finally, you can also add your own agent into the system by following [this tutorial](Docs/agent_evaluation.md)
-
-
+The
 
 
