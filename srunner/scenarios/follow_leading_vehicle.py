@@ -87,7 +87,6 @@ class FollowLeadingVehicle(BasicScenario):
         model = 'vehicle.tesla.model3'
         spawn_location, _ = get_location_in_distance(ego_vehicle, 50)
         spawn_location.z = 40
-        print spawn_location
         spawn_transform = carla.Transform(
             spawn_location,
             ego_vehicle.get_transform().rotation)

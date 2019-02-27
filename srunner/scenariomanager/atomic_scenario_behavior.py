@@ -615,6 +615,7 @@ class WaitForTrafficLightState(AtomicBehavior):
         super(WaitForTrafficLightState, self).terminate(new_status)
 
 
+
 class SyncArrival(AtomicBehavior):
 
     """
@@ -627,7 +628,7 @@ class SyncArrival(AtomicBehavior):
           certain distance, etc.
     """
 
-    def __init__(self, actor, actor_reference, gain=1, name="SyncArrival"):
+    def __init__(self, actor, actor_reference, target_location, gain=1, name="SyncArrival"):
         """
         actor : actor to be controlled
         actor_ reference : reference actor with which arrival has to be
@@ -640,15 +641,10 @@ class SyncArrival(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._actor = actor
         self._actor_reference = actor_reference
+        self._target_location = target_location
         self._gain = gain
+
         self._control.steering = 0
-        self._poi = None
-
-    def setup(self, name="SyncArrival"):
-
-        self._poi = get_intersection(self._actor_reference, self._actor)
-        return True
-
 
     def update(self):
         """
@@ -657,9 +653,9 @@ class SyncArrival(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
-                                                self._poi)
+                                                self._target_location)
         distance = calculate_distance(CarlaDataProvider.get_location(self._actor),
-                                      self._poi)
+                                      self._target_location)
 
         velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
         time_reference = float('inf')
@@ -784,5 +780,36 @@ class Idle(AtomicBehavior):
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
+
+        return new_status
+        
+
+class HandBrakeVehicle(AtomicBehavior):
+
+    """
+    This class contains an atomic brake behavior.
+    To set the brake value of the vehicle.
+    """
+
+    def __init__(self, vehicle, hand_brake_value, name="Braking"):
+        """
+        Setup vehicle control and brake value
+        """
+        super(HandBrakeVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._hand_brake_value = hand_brake_value
+
+    def update(self):
+        """
+        Set handbrake
+        """
+        self._control.hand_brake = self._hand_brake_value
+        new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        self._vehicle.apply_control(self._control)
 
         return new_status
