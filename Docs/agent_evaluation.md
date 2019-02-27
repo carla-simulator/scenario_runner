@@ -1,7 +1,7 @@
 #### Setting up your agent for evaluation.
 
 To have your agent evaluated by the challenge evaluation system 
-you must define an Agent class that inherit the 
+you must define an Agent class that inherits the 
 [AutonomousAgent](../srunner/challenge/autoagents/autonomous_agent.py) base class.
 
 On your agent class there are three main functions to be overwritten

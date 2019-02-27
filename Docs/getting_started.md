@@ -25,14 +25,15 @@ pip3 install --user py_trees==0.8.3 # For Python 3.x
 Note: py-trees newer than v0.8 is *NOT* supported.
 
 Other dependencies:
+
 In addition, you have to install Python networkx. You can install it via:
 ```
 sudo apt-get install python-networkx
 ```
 
-Also psutil is needed:
+Also psutil is needed for running the challenge evaluation.
     
-    pip3 install psutil
+    pip install psutil
 
 Please make sure that you install networkx for the Python version you want to use.
 
