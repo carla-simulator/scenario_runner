@@ -16,6 +16,7 @@ The atomic criteria are implemented with py_trees.
 import weakref
 import copy
 import math
+import numpy as np
 import py_trees
 import carla
 
@@ -347,6 +348,82 @@ class KeepLaneTest(Criterion):
         if not self:
             return
         self.actual_value += 1
+
+
+class WrongLaneTest(Criterion):
+
+    """
+    This class contains an atomic test to detect invasions to wrong direction lanes.
+    """
+
+    score_penalty = 5
+
+    def __init__(self, actor, optional=False, name="WrongLaneTest"):
+        """
+        Construction with sensor setup
+        """
+        super(WrongLaneTest, self).__init__(name, actor, 0, None, optional)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._world = self.actor.get_world()
+        self._actor = actor
+        self._map = self._world.get_map()
+        self._infractions = 0
+
+        blueprint = self._world.get_blueprint_library().find('sensor.other.lane_detector')
+        self._lane_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
+        self._lane_sensor.listen(lambda event: self._lane_change(weakref.ref(self), event))
+
+    def update(self):
+        """
+        Check lane invasion count
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        Cleanup sensor
+        """
+        if self._lane_sensor is not None:
+            self._lane_sensor.destroy()
+        self._lane_sensor = None
+        super(WrongLaneTest, self).terminate(new_status)
+
+    @staticmethod
+    def _lane_change(weak_self, event):
+        """
+        Callback to update lane invasion count
+        """
+        self = weak_self()
+        if not self:
+            return
+
+        # check the lane direction
+        lane_waypoint = self._map.get_waypoint(self._actor.get_location())
+        next_waypoint = lane_waypoint.next(2.0)[0]
+
+        vector_wp = np.array([next_waypoint.transform.location.x - lane_waypoint.transform.location.x,
+                              next_waypoint.transform.location.y - lane_waypoint.transform.location.y])
+
+        vector_actor = np.array([math.cos(math.radians(self._actor.get_transform().rotation.yaw)),
+                                 math.sin(math.radians(self._actor.get_transform().rotation.yaw))])
+
+        ang = math.degrees(math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
+
+        if ang > 100:
+            # is there a different of orientation greater than 100 deg with respect of the lane direction?
+            self._infractions += 1
+            self.score -= self.score_penalty
+
+
+
 
 
 class ReachedRegionTest(Criterion):
