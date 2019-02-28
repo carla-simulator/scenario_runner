@@ -687,18 +687,18 @@ class SyncArrival(AtomicBehavior):
         super(SyncArrival, self).terminate(new_status)
 
 
-class SteerVehicle(AtomicBehavior):
+class AddNoiseToVehicle(AtomicBehavior):
 
     """
-    This class contains an atomic steer behavior.
-    To set the steer value of the actor.
+    This class contains an atomic jitter behavior.
+    To add noise to steer as well as throttle of the vehicle.
     """
 
-    def __init__(self, actor, steer_value, throttle_value, name="Steering"):
+    def __init__(self, actor, steer_value, throttle_value, name="Jittering"):
         """
-        Setup actor and maximum steer value
+        Setup actor , maximum steer value and throttle value
         """
-        super(SteerVehicle, self).__init__(name)
+        super(AddNoiseToVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
         self._actor = actor
@@ -707,7 +707,7 @@ class SteerVehicle(AtomicBehavior):
 
     def update(self):
         """
-        Set steer to steer_value until reaching full stop
+        Set steer to steer_value and throttle to throttle_value until reaching full stop
         """
         self._control = self._actor.get_control()
         self._control.steer = self._steer_value
