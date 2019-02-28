@@ -1,4 +1,5 @@
 ## Latest changes
+* New WrongLane criterion 
 * Added running red light test
 * Updated folder structure and naming convention in lowecase
 * Reworked scenario execution
