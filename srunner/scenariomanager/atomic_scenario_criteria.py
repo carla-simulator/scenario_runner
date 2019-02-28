@@ -418,6 +418,8 @@ class WrongLaneTest(Criterion):
         ang = math.degrees(math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
 
         if ang > 100:
+            self.test_status = "FAILURE"
+
             # is there a different of orientation greater than 100 deg with respect of the lane direction?
             self._infractions += 1
             self.score -= self.score_penalty
