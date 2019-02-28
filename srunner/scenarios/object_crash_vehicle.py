@@ -146,14 +146,40 @@ class DynamicObjectCrossing(BasicScenario):
         model = 'vehicle.diamondback.century'
         if ego_vehicle.get_world().map_name == 'Town01':
             location.z += 39
-        waypoint = wmap.get_waypoint(location)
-        target_yaw = waypoint.transform.rotation.yaw+90
-
-        new_loc = location + carla.Location(
-            0.6*lane_width*math.cos(target_yaw), 0.6*lane_width*math.sin(target_yaw))
-        print(math.cos(target_yaw), math.sin(target_yaw))
-        transform = carla.Transform(new_loc, carla.Rotation(yaw=target_yaw+180))
-        actor_parameters.append((model, transform))
+            waypoint = wmap.get_waypoint(location)
+            target_yaw = waypoint.transform.rotation.yaw+90
+            location.x += 0.6*lane_width*math.cos(target_yaw)
+            location.y += 0.6*lane_width*math.sin(target_yaw)
+            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
+            actor_parameters.append((model, transform))
+        elif ego_vehicle.get_world().map_name == 'Town02':
+            waypoint = wmap.get_waypoint(location)
+            target_yaw = waypoint.transform.rotation.yaw+90
+            location.x += 2.2*lane_width*math.cos(target_yaw)
+            location.y += 2.2*lane_width*math.sin(target_yaw)
+            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
+            actor_parameters.append((model, transform))
+        elif ego_vehicle.get_world().map_name == 'Town03':
+            waypoint = wmap.get_waypoint(location)
+            target_yaw = waypoint.transform.rotation.yaw+90
+            location.x += 1.6*lane_width*math.cos(target_yaw)
+            location.y += 1.6*lane_width*math.sin(target_yaw)
+            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
+            actor_parameters.append((model, transform))
+        elif ego_vehicle.get_world().map_name == 'Town04':
+            waypoint = wmap.get_waypoint(location)
+            target_yaw = waypoint.transform.rotation.yaw+90
+            location.x += 0.2*lane_width*math.cos(target_yaw)
+            location.y += 0.2*lane_width*math.sin(target_yaw)
+            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
+            actor_parameters.append((model, transform))
+        else:
+            waypoint = wmap.get_waypoint(location)
+            target_yaw = waypoint.transform.rotation.yaw+90
+            location.x += lane_width*math.cos(target_yaw)
+            location.y += lane_width*math.sin(target_yaw)
+            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
+            actor_parameters.append((model, transform))
 
         return actor_parameters
 

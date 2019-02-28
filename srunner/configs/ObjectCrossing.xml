@@ -61,7 +61,7 @@
         <other_actor x="130" y="65.3" z="0.1" yaw="270" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="DynamicObjectCrossing_6" type="DynamicObjectCrossing" town="Town03">
-        <ego_vehicle x="92.8" y="65.3" z="0.1" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="105" y="65.3" z="0.1" yaw="0" model="vehicle.lincoln.mkz2017" />
         <other_actor x="140.3" y="68.3" z="0.1" yaw="270" model="vehicle.diamondback.century" />
     </scenario>
     <scenario name="StationaryObjectCrossing_9" type="StationaryObjectCrossing" town="Town05">
