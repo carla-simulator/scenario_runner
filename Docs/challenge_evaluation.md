@@ -29,7 +29,7 @@ the scenario runner repository](getting_started.md/#install_prerequisites)
 
 
 Run the setup environment script in order to point where the root folder of
-the CARLA 0.9.3 release is located:
+the CARLA latest release is located:
 
     ./setup_environment.sh --carla-root <path_to_the_CARLA_root_folder>
 
