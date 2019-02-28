@@ -43,7 +43,6 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        print("Cycle location : ", other_actors[0].get_location().x, other_actors[0].get_location().y)
         super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
                                                        ego_vehicle,
                                                        other_actors,
@@ -60,8 +59,6 @@ class StationaryObjectCrossing(BasicScenario):
         actor_parameters = []
         location, _ = get_location_in_distance(ego_vehicle, _start_distance)
         model = 'vehicle.diamondback.century'
-        if ego_vehicle.get_world().map_name == 'Town01':
-            location.z += 39
         waypoint = ego_vehicle.get_world().get_map().get_waypoint(location)
         transform = carla.Transform(location, carla.Rotation(yaw=waypoint.transform.rotation.yaw+90))
         actor_parameters.append((model, transform))
@@ -145,7 +142,6 @@ class DynamicObjectCrossing(BasicScenario):
         location, _ = get_location_in_distance(ego_vehicle, _start_distance)
         model = 'vehicle.diamondback.century'
         if ego_vehicle.get_world().map_name == 'Town01':
-            location.z += 39
             waypoint = wmap.get_waypoint(location)
             target_yaw = waypoint.transform.rotation.yaw+90
             location.x += 0.6*lane_width*math.cos(target_yaw)
@@ -252,4 +248,3 @@ class DynamicObjectCrossing(BasicScenario):
         criteria.append(driven_distance_criterion)
 
         return criteria
-
