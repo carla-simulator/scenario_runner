@@ -61,8 +61,6 @@ class StationaryObjectCrossing(BasicScenario):
         model = 'vehicle.diamondback.century'
         world = ego_vehicle.get_world()
         waypoint = world.get_map().get_waypoint(location)
-        if world.get_map().name == 'Town01':
-            location.z += 39
         transform = carla.Transform(location, carla.Rotation(yaw=waypoint.transform.rotation.yaw+90))
         actor_parameters.append((model, transform))
 
@@ -118,8 +116,9 @@ class DynamicObjectCrossing(BasicScenario):
     _ego_vehicle_distance_driven = 50
 
     # other vehicle parameters
-    _other_actor_target_velocity = 15
+    _other_actor_target_velocity = 10
     _other_actor_max_brake = 1.0
+    _time_to_reach = 12
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
@@ -143,29 +142,17 @@ class DynamicObjectCrossing(BasicScenario):
         wmap = ego_vehicle.get_world().get_map()
         lane_width = wmap.get_waypoint(ego_vehicle.get_location()).lane_width
         location, _ = get_location_in_distance(ego_vehicle, _start_distance)
-        model = 'vehicle.diamondback.century'
-
-        offset = {
-            "Town01" : {"orientation": 270, "position": 90, "z": 39, "coefficient": 0.6},
-            "Town02" : {"orientation": 270, "position": 90, "z": 0, "coefficient": 2.2},
-            "Town03" : {"orientation": -90, "position": 90, "z": 0, "coefficient": 0.1},
-            "Town04" : {"orientation": 270, "position": 90, "z": 0, "coefficient": 0.1},
-            "Town05" : {"orientation": 270, "position": 90, "z": 0, "coefficient": 1}
-        }
-
-        if wmap.name == "Town01": offset = offset["Town01"]
-        elif wmap.name == "Town02": offset = offset["Town02"]
-        elif wmap.name == "Town03": offset = offset["Town03"]
-        elif wmap.name == "Town04": offset = offset["Town04"]
-        elif wmap.name == "Town05": offset = offset["Town05"]
-        else:
-              print("No Town found")
         waypoint = wmap.get_waypoint(location)
-        position_yaw = waypoint.transform.rotation.yaw+ offset['position']
-        location.x += offset['coefficient']*lane_width*math.cos(position_yaw)
-        location.y += offset['coefficient']*lane_width*math.sin(position_yaw)
+        model = 'vehicle.diamondback.century'
+        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 1}
+        position_yaw = waypoint.transform.rotation.yaw + offset['position']
+        orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
+        offset_location = carla.Location(
+            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
+            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+        location += offset_location
         location.z += offset['z']
-        transform = carla.Transform(location, carla.Rotation(yaw=offset['orientation']))
+        transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
         actor_parameters.append((model, transform))
 
         return actor_parameters
@@ -177,16 +164,16 @@ class DynamicObjectCrossing(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
         """
-        # leaf nodes
         lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, 12)
-        keep_vel = KeepVelocity(self.other_actors[0], 3)
-        keep_till = DriveDistance(self.other_actors[0], 0.3*lane_width)
+        # leaf nodes
+        start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
+        keep_vel = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
+        keep_till = DriveDistance(self.other_actors[0], 0.6*lane_width)
         stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other = TimeOut(6)
         start_vehicle = AccelerateToVelocity(self.other_actors[0], 1.0,
                                              self._other_actor_target_velocity)
-        trigger_other_actor = DriveDistance(self.other_actors[0], lane_width)
+        trigger_other_actor = DriveDistance(self.other_actors[0], 1.5*lane_width)
         stop_vehicle = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(5)
 

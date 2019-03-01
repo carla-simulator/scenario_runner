@@ -1,5 +1,6 @@
 ## Latest changes
-* Updated folder structure and naming convention in lowecase
+* Generalized Object Crash Vehicle scenario
+* Updated folder structure and naming convention in lowercase
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
       Currently there is one XML file for each scenario class
