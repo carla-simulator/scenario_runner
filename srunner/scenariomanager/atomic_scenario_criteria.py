@@ -421,6 +421,7 @@ class WrongLaneTest(Criterion):
             # is there a different of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane direction?
             self._infractions += 1
             self.score -= self.SCORE_PENALTY
+            self.return_message = "[Agent invaded a lane in opposite direction {} time(s)]".format(self._infractions)
 
 
 class ReachedRegionTest(Criterion):
