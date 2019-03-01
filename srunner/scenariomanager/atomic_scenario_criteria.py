@@ -355,8 +355,8 @@ class WrongLaneTest(Criterion):
     """
     This class contains an atomic test to detect invasions to wrong direction lanes.
     """
-
-    score_penalty = 5
+    MAX_ALLOWED_ANGLE = 140.0
+    SCORE_PENALTY = 5
 
     def __init__(self, actor, optional=False, name="WrongLaneTest"):
         """
@@ -416,16 +416,11 @@ class WrongLaneTest(Criterion):
                                  math.sin(math.radians(self._actor.get_transform().rotation.yaw))])
 
         ang = math.degrees(math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
-
-        if ang > 100:
+        if ang > self.MAX_ALLOWED_ANGLE:
             self.test_status = "FAILURE"
-
-            # is there a different of orientation greater than 100 deg with respect of the lane direction?
+            # is there a different of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane direction?
             self._infractions += 1
-            self.score -= self.score_penalty
-
-
-
+            self.score -= self.SCORE_PENALTY
 
 
 class ReachedRegionTest(Criterion):
