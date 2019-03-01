@@ -2,28 +2,29 @@
 <scenarios>
     <scenario name="LeadingVehicleDecelerate_1" type="LeadingVehicleDecelerate" town="Town04">
         <ego_vehicle x="388.5" y="-180" z="0" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="388.4" y="-130" z="0" yaw="90" model="vehicle.volkswagen.t2" />
-        <other_actor x="391.7" y="-130" z="0" yaw="90" model="vehicle.nissan.micra" />        
+        <!-- <other_actor x="388.4" y="-130" z="0" yaw="90" model="vehicle.volkswagen.t2" />
+        <other_actor x="391.7" y="-130" z="0" yaw="90" model="vehicle.nissan.micra" />         -->
     </scenario>
     <scenario name="LeadingVehicleDecelerate_2" type="LeadingVehicleDecelerate" town="Town04">
         <ego_vehicle x="-496.6" y="49.3" z="0" yaw="121" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-510.5" y="95" z="0" yaw="90" model="vehicle.volkswagen.t2" />
-        <other_actor x="-506.8" y="95" z="0" yaw="90" model="vehicle.nissan.micra" />        
+        <!-- <other_actor x="-510.5" y="95" z="0" yaw="90" model="vehicle.volkswagen.t2" />
+        <other_actor x="-506.8" y="95" z="0" yaw="90" model="vehicle.nissan.micra" />   -->
     </scenario>    
     <scenario name="LeadingVehicleDecelerate_5" type="LeadingVehicleDecelerate" town="Town04">
         <ego_vehicle x="-142" y="5.7" z="8" yaw="180" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-185" y="5.7" z="5.7" yaw="180" model="vehicle.volkswagen.t2" />
-        <other_actor x="-185" y="9.2" z="5.7" yaw="180" model="vehicle.nissan.micra" />        
+        <!-- <other_actor x="-185" y="5.7" z="5.7" yaw="180" model="vehicle.volkswagen.t2" />
+        <other_actor x="-185" y="9.2" z="5.7" yaw="180" model="vehicle.nissan.micra" />         -->
     </scenario>
     <scenario name="LeadingVehicleDecelerate_6" type="LeadingVehicleDecelerate" town="Town04">
-        <ego_vehicle x="-12.5" y="-17" z="0" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-11.9" y="45" z="0" yaw="90" model="vehicle.volkswagen.t2" />
-        <other_actor x="-9" y="45" z="0" yaw="90" model="vehicle.nissan.micra" />        
+        <ego_vehicle x="-12.5" y="-17" z="0" yaw="90" model="vehicle.tesla.model3" />
+        <!-- <ego_vehicle x="-12.5" y="-17" z="0" yaw="90" model="vehicle.lincoln.mkz2017" /> -->
+        <!-- <other_actor x="-11.9" y="45" z="0" yaw="90" model="vehicle.volkswagen.t2" />
+        <other_actor x="-9" y="45" z="0" yaw="90" model="vehicle.nissan.micra" />         -->
     </scenario>
     <scenario name="LeadingVehicleDecelerate_10" type="LeadingVehicleDecelerate" town="Town05">
         <ego_vehicle x="188.9" y="-100" z="0" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="189.2" y="-60" z="0" yaw="90" model="vehicle.volkswagen.t2" />
-        <other_actor x="193" y="-60" z="0" yaw="90" model="vehicle.nissan.micra" />        
+        <!-- <other_actor x="189.2" y="-60" z="0" yaw="90" model="vehicle.volkswagen.t2" />
+        <other_actor x="193" y="-60" z="0" yaw="90" model="vehicle.nissan.micra" />         -->
     </scenario>
 </scenarios>
 

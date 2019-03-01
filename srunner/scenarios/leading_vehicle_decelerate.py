@@ -39,6 +39,34 @@ class LeadingVehicleDecelerate(BasicScenario):
     # other vehicle parameters
     _other_target_vel = 65      # Target velocity of other vehicle
 
+    @staticmethod
+    def initialize_actors(ego_vehicle):
+        """
+        This method returns the list of participant actors and their initial positions for the scenario
+        """
+        parameter_list = []
+
+        model_1 = 'vehicle.volkswagen.t2'
+        model_2 = 'vehicle.nissan.patrol'
+        model_1, model_2 = model_2, model_1
+
+        spawn_location_1, _ = get_location_in_distance(ego_vehicle, 25)
+        spawn_waypoint_1 = ego_vehicle.get_world().get_map().get_waypoint(spawn_location_1)
+
+        if spawn_waypoint_1.lane_change & carla.LaneChange.Left:
+            spawn_waypoint_2 = spawn_waypoint_1.get_left_lane()
+        elif spawn_waypoint_1.lane_change & carla.LaneChange.Right:
+            spawn_waypoint_2 = spawn_waypoint_1.get_right_lane()
+
+        spawn_transform_1 = carla.Transform(spawn_location_1, spawn_waypoint_1.transform.rotation)
+        spawn_transform_2 = carla.Transform(
+            spawn_waypoint_2.transform.location, spawn_waypoint_2.transform.rotation)
+        parameter_list.append((model_1, spawn_transform_1))
+        parameter_list.append((model_2, spawn_transform_2))
+
+        return parameter_list
+
+
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
@@ -61,6 +89,7 @@ class LeadingVehicleDecelerate(BasicScenario):
         drives certain distance and stops the scenario.
         """
 
+        self._map = self.ego_vehicle.get_world().get_map()
         # start condition
         root = py_trees.composites.Parallel(
             "Both actors driving in same direction",
@@ -71,34 +100,28 @@ class LeadingVehicleDecelerate(BasicScenario):
         keep_velocity_parallel = py_trees.composites.Parallel(
             "Trigger condition for deceleration",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity_parallel.add_child(AccelerateToVelocity(self.other_actors[0], 0.6, self._other_target_vel))
-        keep_velocity_parallel.add_child(DriveDistance(self.other_actors[0], 20))
-
-        trigger_parallel = py_trees.composites.Parallel(
-            "Trigger condition for deceleration",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        trigger_parallel.add_child(InTimeToArrivalToLocation(self.ego_vehicle, 8, self.other_actors[0].get_location()))
-        trigger_parallel.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 50))
+        keep_velocity_parallel.add_child(WaypointFollower(self.other_actors[0], self._other_target_vel))
+        keep_velocity_parallel.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 15))
 
         deceleration = py_trees.composites.Parallel(
             "Deceleration of leading actor",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        decelerate_velocity = self._other_target_vel / 4
-        decelerate = AccelerateToVelocity(self.other_actors[0], 0.4, decelerate_velocity)
+        decelerate_velocity = self._other_target_vel / 3
+        decelerate = WaypointFollower(self.other_actors[0], decelerate_velocity)
         deceleration.add_child(decelerate)
-        deceleration.add_child(DriveDistance(self.other_actors[0], 35))
+        deceleration.add_child(DriveDistance(self.other_actors[0], 30))
 
         leading_actor_sequence_behavior.add_child(keep_velocity_parallel)
-        leading_actor_sequence_behavior.add_child(trigger_parallel)
         leading_actor_sequence_behavior.add_child(deceleration)
-        leading_actor_sequence_behavior.add_child(UseAutoPilot(self.other_actors[0]))
-        
+        leading_actor_sequence_behavior.add_child(WaypointFollower(self.other_actors[0], self._other_target_vel))
+
+
         # end condition
-        endcondition = DriveDistance(self.ego_vehicle, 950)
+        endcondition = DriveDistance(self.ego_vehicle, 350)
 
         # Build behavior tree
         root.add_child(leading_actor_sequence_behavior)
-        root.add_child(UseAutoPilot(self.other_actors[1]))
+        root.add_child(WaypointFollower(self.other_actors[1], self._other_target_vel))
         root.add_child(endcondition)
 
         return root
@@ -119,5 +142,3 @@ class LeadingVehicleDecelerate(BasicScenario):
             criteria.append(collision_criterion)
 
         return criteria
-
-
