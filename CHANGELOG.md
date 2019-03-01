@@ -1,4 +1,5 @@
 ## Latest changes
+* Added running red light test
 * Updated folder structure and naming convention in lowecase
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
