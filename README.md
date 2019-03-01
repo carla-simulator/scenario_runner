@@ -1,7 +1,8 @@
 ScenarioRunner for CARLA
 ========================
 This repository contains traffic scenario definition and an execution engine
-for CARLA.
+for CARLA. It also allows  the execution of a simulation of the carla challenge.
+You can use this system to prepare your agent for the CARLA challenge.
 
 Disclaimer
 ----------
@@ -16,11 +17,20 @@ branch contains the latest fixes and features, and my require to use the latest 
 
 Currently no build is required, as all code is in Python.
 
+
 Using the ScenarioRunner
 ------------------------
 
 Please take a look at our [Getting started](Docs/getting_started.md)
 documentation.
+
+Challenge Evaluation
+---------------------
+
+You can evaluate your own agents using a reproduction
+ of the CARLA challenge by following [this tutorial](Docs/challenge_evaluation.md)
+
+
 
 Contributing
 ------------
