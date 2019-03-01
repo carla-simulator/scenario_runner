@@ -141,41 +141,29 @@ class DynamicObjectCrossing(BasicScenario):
         lane_width = wmap.get_waypoint(ego_vehicle.get_location()).lane_width
         location, _ = get_location_in_distance(ego_vehicle, _start_distance)
         model = 'vehicle.diamondback.century'
-        if ego_vehicle.get_world().map_name == 'Town01':
-            waypoint = wmap.get_waypoint(location)
-            target_yaw = waypoint.transform.rotation.yaw+90
-            location.x += 0.6*lane_width*math.cos(target_yaw)
-            location.y += 0.6*lane_width*math.sin(target_yaw)
-            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
-            actor_parameters.append((model, transform))
-        elif ego_vehicle.get_world().map_name == 'Town02':
-            waypoint = wmap.get_waypoint(location)
-            target_yaw = waypoint.transform.rotation.yaw+90
-            location.x += 2.2*lane_width*math.cos(target_yaw)
-            location.y += 2.2*lane_width*math.sin(target_yaw)
-            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
-            actor_parameters.append((model, transform))
-        elif ego_vehicle.get_world().map_name == 'Town03':
-            waypoint = wmap.get_waypoint(location)
-            target_yaw = waypoint.transform.rotation.yaw+90
-            location.x += 1.6*lane_width*math.cos(target_yaw)
-            location.y += 1.6*lane_width*math.sin(target_yaw)
-            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
-            actor_parameters.append((model, transform))
-        elif ego_vehicle.get_world().map_name == 'Town04':
-            waypoint = wmap.get_waypoint(location)
-            target_yaw = waypoint.transform.rotation.yaw+90
-            location.x += 0.2*lane_width*math.cos(target_yaw)
-            location.y += 0.2*lane_width*math.sin(target_yaw)
-            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
-            actor_parameters.append((model, transform))
+
+        offset = {
+            "Town01" : {"orientation": 270, "position": 90, "z": 39, "coefficient": 0.6},
+            "Town02" : {"orientation": 270, "position": 90, "z": 0, "coefficient": 2.2},
+            "Town03" : {"orientation": -90, "position": 90, "z": 0, "coefficient": 0.1},
+            "Town04" : {"orientation": 270, "position": 90, "z": 0, "coefficient": 0.1},
+            "Town05" : {"orientation": 270, "position": 90, "z": 0, "coefficient": 1}
+        }
+
+        if wmap.name == "Town01": offset = offset["Town01"]
+        elif wmap.name == "Town02": offset = offset["Town02"]
+        elif wmap.name == "Town03": offset = offset["Town03"]
+        elif wmap.name == "Town04": offset = offset["Town04"]
+        elif wmap.name == "Town05": offset = offset["Town05"]
         else:
-            waypoint = wmap.get_waypoint(location)
-            target_yaw = waypoint.transform.rotation.yaw+90
-            location.x += lane_width*math.cos(target_yaw)
-            location.y += lane_width*math.sin(target_yaw)
-            transform = carla.Transform(location, carla.Rotation(yaw=target_yaw+180))
-            actor_parameters.append((model, transform))
+              print("No Town found")
+        waypoint = wmap.get_waypoint(location)
+        position_yaw = waypoint.transform.rotation.yaw+ offset['position']
+        location.x += offset['coefficient']*lane_width*math.cos(position_yaw)
+        location.y += offset['coefficient']*lane_width*math.sin(position_yaw)
+        location.z += offset['z']
+        transform = carla.Transform(location, carla.Rotation(yaw=offset['orientation']))
+        actor_parameters.append((model, transform))
 
         return actor_parameters
 
