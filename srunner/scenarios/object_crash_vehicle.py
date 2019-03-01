@@ -59,7 +59,10 @@ class StationaryObjectCrossing(BasicScenario):
         actor_parameters = []
         location, _ = get_location_in_distance(ego_vehicle, _start_distance)
         model = 'vehicle.diamondback.century'
-        waypoint = ego_vehicle.get_world().get_map().get_waypoint(location)
+        world = ego_vehicle.get_world()
+        waypoint = world.get_map().get_waypoint(location)
+        if world.get_map().name == 'Town01':
+            location.z += 39
         transform = carla.Transform(location, carla.Rotation(yaw=waypoint.transform.rotation.yaw+90))
         actor_parameters.append((model, transform))
 
@@ -176,7 +179,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         # leaf nodes
         lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, 13)
+        start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, 12)
         keep_vel = KeepVelocity(self.other_actors[0], 3)
         keep_till = DriveDistance(self.other_actors[0], 0.3*lane_width)
         stop_other_actor = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
