@@ -24,6 +24,13 @@ pip3 install --user py_trees==0.8.3 # For Python 3.x
 ```
 Note: py-trees newer than v0.8 is *NOT* supported.
 
+You also need to install numpy:
+
+```
+pip2 install --user numpy # Python 2.x
+pip3 install --user numpy # For Python 3.x
+```
+
 Other dependencies:
 
 In addition, you have to install Python networkx. You can install it via:
@@ -41,6 +48,14 @@ Please make sure that you install networkx for the Python version you want to us
 ## Running the follow vehicle example
 First of all, you need to get latest master branch from CARLA. Then you have to
 include CARLA Python API to the Python path:
+```
+bash setup_environment.sh --carla-root <PATH-TO-CARLA-ROOT-FOLDER>
+```
+
+This will also create some environment variables in your local .bashrc file.
+
+ As an alternative you can manually run the following commands:
+
 ```
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI
 ```
