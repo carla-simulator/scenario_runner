@@ -541,3 +541,94 @@ class RouteCompletionTest(Criterion):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+
+class RunningRedLightTest(Criterion):
+    """
+    Check if an actor is running a red light
+    """
+
+    SCORE_PENALTY = 10
+
+    def __init__(self, actor, name="RunningRedLightTest", terminate_on_failure=False):
+        """
+        """
+        super(RunningRedLightTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._world = actor.get_world()
+        self.score = 0
+        self._list_traffic_lights = []
+        self._target_traffic_light = None
+        self._in_red_light = False
+
+        all_actors = self._world.get_actors()
+        for actor in all_actors:
+            if 'traffic_light' in actor.type_id:
+                self._list_traffic_lights.append(actor)
+
+    @staticmethod
+    def length(v):
+      return math.sqrt(v.x**2 + v.y**2 + v.z**2)
+
+    def update(self):
+        """
+        Check if the actor is running a red light
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = self._actor.get_transform().location
+        if location is None:
+            return new_status
+
+        # were you in affected by a red traffic light and just decided to ignore it?
+        if self._in_red_light:
+            if self._target_traffic_light.state != carla.TrafficLightState.Red:
+                # it is safe now!
+                self._in_red_light = False
+                self._target_traffic_light = None
+
+            else:
+                # still red
+                tl_t = self._target_traffic_light.get_transform()
+                transformed_tv = tl_t.transform(self._target_traffic_light.trigger_volume.location)
+                distance = carla.Location(transformed_tv).distance(location)
+                s = self.length(self._target_traffic_light.trigger_volume.extent) + self.length(self._actor.bounding_box.extent)
+
+                if distance > s and self._target_traffic_light.state == carla.TrafficLightState.Red:
+                    # you are running a red light
+                    self.test_status = "FAILURE"
+                    self.score -= self.SCORE_PENALTY
+                    self.return_message = "[Agent ran a red light at (x={}, y={}, x={})]".format(location.x,
+                                                                                                 location.y,
+                                                                                                 location.z)
+
+                    # state reset
+                    self._in_red_light = False
+                    self._target_traffic_light = None
+
+
+        # scan for red traffic lights
+        for traffic_light in self._list_traffic_lights:
+            if hasattr(traffic_light, 'trigger_volume'):
+                tl_t = traffic_light.get_transform()
+
+                transformed_tv = tl_t.transform(traffic_light.trigger_volume.location)
+                distance = carla.Location(transformed_tv).distance(location)
+                s = self.length(traffic_light.trigger_volume.extent) + self.length(self._actor.bounding_box.extent)
+                if distance <= s:
+                    # this traffic light is affecting the vehicle
+                    if traffic_light.state == carla.TrafficLightState.Red:
+                        self._target_traffic_light = traffic_light
+                        self._in_red_light = True
+                        break
+
+
+
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
