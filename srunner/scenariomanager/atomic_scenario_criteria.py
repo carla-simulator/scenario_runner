@@ -418,7 +418,8 @@ class WrongLaneTest(Criterion):
         ang = math.degrees(math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
         if ang > self.MAX_ALLOWED_ANGLE:
             self.test_status = "FAILURE"
-            # is there a different of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane direction?
+            # is there a difference of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane
+            # direction?
             self._infractions += 1
             self.score -= self.SCORE_PENALTY
             self.return_message = "[Agent invaded a lane in opposite direction {} time(s)]".format(self._infractions)
