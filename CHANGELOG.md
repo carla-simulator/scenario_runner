@@ -1,4 +1,5 @@
 ## Latest changes
+* Added wrong way test
 * Added new traffic event logger
 * Added running red light test
 * Updated folder structure and naming convention in lowecase
