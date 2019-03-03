@@ -35,7 +35,8 @@ class DummyAgent(AutonomousAgent):
                    {'type': 'sensor.lidar.ray_cast', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
                     'yaw': -45.0, 'id': 'LIDAR'},
                    {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'},
-                   {'type': 'sensor.speedometer','reading_frequency': 25, 'id': 'speed'}
+                   {'type': 'sensor.speedometer','reading_frequency': 25, 'id': 'speed'},
+                   {'type': 'sensor.hd_map', 'reading_frequency': 1, 'id': 'hdmap'}
 
                   ]
 
@@ -45,8 +46,9 @@ class DummyAgent(AutonomousAgent):
 
         print("=====================>")
         for key, val in input_data.items():
-            shape = val[1].shape
-            print("[{} -- {:06d}] with shape {}".format(key, val[0], shape))
+            if hasattr(val[1], 'shape'):
+                shape = val[1].shape
+                print("[{} -- {:06d}] with shape {}".format(key, val[0], shape))
         print("<=====================")
 
         # DO SOMETHING SMART
