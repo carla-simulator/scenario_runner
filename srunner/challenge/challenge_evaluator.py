@@ -60,6 +60,7 @@ class ChallengeEvaluator(object):
     manager = None
 
     def __init__(self, args):
+        self.output_scenario = []
 
         # first we instantiate the Agent
         module_name = os.path.basename(args.agent).split('.')[0]
@@ -233,26 +234,41 @@ class ChallengeEvaluator(object):
 
 
 
-    def analyze_scenario(self, args, config):
+    def analyze_scenario(self, args, config, final_summary=False):
         """
         Provide feedback about success/failure of a scenario
         """
         result, score, return_message = self.manager.analyze_scenario_challenge()
+        self.output_scenario.append((result, score, return_message))
 
         # show results stoud
-        return_message_str = ""
-        for msg in return_message:
-            return_message_str += ("\n========== " + msg)
-        report_string = "==[{}] [Score = {:.2f}] \n==[Comments:] {}".format(result, score, return_message_str)
-        print(report_string)
-
+        print(return_message)
         # save results in file
         current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-        filename = None
         if args.file:
             filename = config.name + current_time + ".txt"
             with open(filename, "a+") as fd:
-                fd.write(report_string)
+                fd.write(return_message)
+
+    def final_summary(self, args):
+        return_message = ""
+
+        total_scenarios = len(self.output_scenario)
+        total_score = 0.0
+        for item in self.output_scenario:
+            total_score += item[1] / float(total_scenarios)
+            return_message += ("\n" + item[2])
+
+        avg_message = "\n==================================\n==[Avg. score = {:.2f}]".format(total_score)
+        avg_message += "\n=================================="
+        return_message = avg_message + return_message
+        print(avg_message)
+
+        if args.file:
+            filename = "results.txt"
+            with open(filename, "a+") as fd:
+                fd.write(return_message)
+
 
     def run(self, args):
         """
@@ -322,9 +338,9 @@ class ChallengeEvaluator(object):
                 self.manager.load_scenario(scenario)
 
                 # debug
-                waypoint_list, _ = zip(*global_route)
-                self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
-                # end debug
+                if args.route_visible:
+                    waypoint_list, _ = zip(*global_route)
+                    self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
 
                 self.manager.run_scenario(self.agent_instance)
 
@@ -338,10 +354,10 @@ class ChallengeEvaluator(object):
                 self.cleanup(ego=True)
                 self.agent_instance.destroy()
 
-                # stop CARLA server
-        self._carla_server.stop()
+        self.final_summary(args)
 
-        print("No more scenarios .... Exiting")
+        # stop CARLA server
+        self._carla_server.stop()
 
     def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
         """
@@ -515,7 +531,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--docker-version', type=str, help='Docker version to use for CARLA server', default="0.9.3")
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
-
+    PARSER.add_argument('--route-visible', action="store_true", help='Run with a visible route')
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
     # pylint: disable=line-too-long
