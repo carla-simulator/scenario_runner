@@ -21,6 +21,7 @@ import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
+from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
 
 
 class Criterion(py_trees.behaviour.Behaviour):
@@ -57,8 +58,7 @@ class Criterion(py_trees.behaviour.Behaviour):
         self.expected_value_acceptable = expected_value_acceptable
         self.actual_value = 0
         self.optional = optional
-        self.score = 0
-        self.return_message = None
+        self.list_traffic_events = []
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
@@ -261,10 +261,8 @@ class CollisionTest(Criterion):
 
         if self.actual_value > 0:
             self.test_status = "FAILURE"
-            self.return_message = "[Agent collided]"
         else:
             self.test_status = "SUCCESS"
-            self.return_message = "[No collisions detected]"
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
@@ -290,6 +288,21 @@ class CollisionTest(Criterion):
         self = weak_self()
         if not self:
             return
+
+        actor_type = None
+        if 'static' in event.other_actor.type_id:
+            actor_type = TrafficEventType.COLLISION_STATIC
+        elif 'vehicle' in event.other_actor.type_id:
+            actor_type = TrafficEventType.COLLISION_VEHICLE
+        elif 'walker' in event.other_actor.type_id:
+            actor_type = TrafficEventType.COLLISION_PEDESTRIAN
+
+        collision_event = TrafficEvent(type=actor_type)
+        collision_event.set_dict({'type':event.other_actor.type_id, 'id': event.other_actor.id})
+        collision_event.set_message("Agent collided against object with type={} and id={}".format(
+            event.other_actor.type_id, event.other_actor.id))
+
+        self.list_traffic_events.append(collision_event)
         self.actual_value += 1
 
 
@@ -421,15 +434,15 @@ class InRadiusRegionTest(Criterion):
         if location is None:
             return new_status
 
-        in_radius = False
         if self.test_status != "SUCCESS":
             in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
             if in_radius:
+                route_completion_event = TrafficEvent(type=TrafficEventType.ROUTE_COMPLETED)
+                route_completion_event.set_message("Destination was successfully reached")
+                self.list_traffic_events.append(route_completion_event)
                 self.test_status = "SUCCESS"
-                self.return_message = "[Destination was successfully reached]"
             else:
                 self.test_status = "RUNNING"
-                self.return_message = "[Destination was never reached]"
 
 
         if self.test_status == "SUCCESS":
@@ -473,7 +486,6 @@ class InRouteTest(Criterion):
                 new_status = py_trees.common.Status.FAILURE
 
             elif self.test_status == "RUNNING" or self.test_status == "INIT":
-                self.return_message = "[Agent is in route]"
                 # are we too far away from the route waypoints (i.e., off route)?
                 off_route = True
                 for waypoint in self._waypoints:
@@ -485,8 +497,13 @@ class InRouteTest(Criterion):
                     self._counter_off_route += 1
 
                 if self._counter_off_route > self._offroad_max:
+                    route_deviation_event = TrafficEvent(type=TrafficEventType.ROUTE_DEVIATION)
+                    route_deviation_event.set_message("Agent deviated from the route at (x={}, y={}, z={})".format(
+                        location.x, location.y, location.z))
+                    route_deviation_event.set_dict({'x':location.x, 'y':location.y, 'z':location.z})
+                    self.list_traffic_events.append(route_deviation_event)
+
                     self.test_status = "FAILURE"
-                    self.return_message = "[Agent deviated from the route]"
                     new_status = py_trees.common.Status.FAILURE
 
             self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -509,8 +526,11 @@ class RouteCompletionTest(Criterion):
 
         self._current_index = 0
         self._route_length = len(self._route)
-        self.score = 0
         self._waypoints, _ = zip(*self._route)
+
+        self._traffic_event = TrafficEvent(type=TrafficEventType.ROUTE_COMPLETION)
+        self.list_traffic_events.append(self._traffic_event)
+        self._percentage_route_completed = 0.0
 
     def update(self):
         """
@@ -535,9 +555,9 @@ class RouteCompletionTest(Criterion):
                     best_distance = distance
                     best_index = index
             self._current_index = best_index
-            self.score = 100.0*float(self._current_index) / float(self._route_length)
-            self.return_message = "[Agent has completed > {:.2f}% of the route]".format(self.score)
-
+            self._percentage_route_completed = 100.0*float(self._current_index) / float(self._route_length)
+            self._traffic_event.set_dict({'route_completed': self._percentage_route_completed})
+            self._traffic_event.set_message("[Agent has completed > {:.2f}% of the route]".format(self._percentage_route_completed))
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
@@ -547,9 +567,6 @@ class RunningRedLightTest(Criterion):
     """
     Check if an actor is running a red light
     """
-
-    SCORE_PENALTY = 10
-
     def __init__(self, actor, name="RunningRedLightTest", terminate_on_failure=False):
         """
         """
@@ -557,7 +574,6 @@ class RunningRedLightTest(Criterion):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._world = actor.get_world()
-        self.score = 0
         self._list_traffic_lights = []
         self._target_traffic_light = None
         self._in_red_light = False
@@ -598,10 +614,14 @@ class RunningRedLightTest(Criterion):
                 if distance > s and self._target_traffic_light.state == carla.TrafficLightState.Red:
                     # you are running a red light
                     self.test_status = "FAILURE"
-                    self.score -= self.SCORE_PENALTY
-                    self.return_message = "[Agent ran a red light at (x={}, y={}, x={})]".format(location.x,
+
+                    red_light_event = TrafficEvent(type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
+                    red_light_event.set_message("Agent ran a red light at (x={}, y={}, x={})".format(location.x,
                                                                                                  location.y,
-                                                                                                 location.z)
+                                                                                                 location.z))
+                    red_light_event.set_dict({'location': (location.x, location.y, location.z)})
+                    self.list_traffic_events.append(red_light_event)
+
 
                     # state reset
                     self._in_red_light = False

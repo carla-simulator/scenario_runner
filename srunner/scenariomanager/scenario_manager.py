@@ -22,6 +22,7 @@ import srunner
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
+from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
 
 
 class Scenario(object):
@@ -268,39 +269,108 @@ class ScenarioManager(object):
         This function is intended to be called from outside and provide
         statistics about the scenario (human-readable, for the CARLA challenge.)
         """
+        PENALTY_COLLISION_STATIC = 10
+        PENALTY_COLLISION_VEHICLE = 10
+        PENALTY_COLLISION_PEDESTRIAN = 30
+        PENALTY_TRAFFIC_LIGHT = 10
+        PENALTY_WRONG_WAY = 5
 
+        target_reached = False
         failure = False
         result = "SUCCESS"
-        score = 0.0
-        return_message = []
+        final_score = 0.0
+        score_penalty = 0.0
+        score_route = 0.0
+        return_message = ""
 
         if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
             if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
                 failure = True
                 result = "FAILURE"
+            if self.scenario.timeout_node.timeout and not failure:
+                result = "TIMEOUT"
 
-            target_reached = False
-            collisions = False
+            list_traffic_events = []
             for node in self.scenario.test_criteria.children:
-                if node.return_message:
-                    return_message.append(node.return_message)
-                if isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.RouteCompletionTest):
-                    percentage_completed_route = node.score
-                elif isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.CollisionTest):
-                    collisions = (node.test_status == "FAILURE")
-                elif isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.InRadiusRegionTest):
-                    target_reached = (node.test_status == "SUCCESS")
-                elif isinstance(node, srunner.scenariomanager.atomic_scenario_criteria.InRouteTest):
-                    offroute = (node.test_status == "FAILURE")
+                if  node.list_traffic_events:
+                    list_traffic_events.extend(node.list_traffic_events)
 
-            if target_reached:
-                score = 100.0
-            else:
-                score = percentage_completed_route
+            list_collisions = []
+            list_red_lights = []
+            list_wrong_way = []
+            list_route_dev = []
+            # analyze all traffic events
+            for event in list_traffic_events:
+                if event.get_type() == TrafficEventType.COLLISION_STATIC:
+                    score_penalty += PENALTY_COLLISION_STATIC
+                    msg = event.get_message()
+                    if msg:
+                        list_collisions.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.COLLISION_VEHICLE:
+                    score_penalty += PENALTY_COLLISION_VEHICLE
+                    msg = event.get_message()
+                    if msg:
+                        list_collisions.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.COLLISION_PEDESTRIAN:
+                    score_penalty += PENALTY_COLLISION_PEDESTRIAN
+                    msg = event.get_message()
+                    if msg:
+                        list_collisions.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.TRAFFIC_LIGHT_INFRACTION:
+                    score_penalty += PENALTY_TRAFFIC_LIGHT
+                    msg = event.get_message()
+                    if msg:
+                        list_red_lights.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.WRONG_WAY_INFRACTION:
+                    score_penalty += PENALTY_WRONG_WAY
+                    msg = event.get_message()
+                    if msg:
+                        list_wrong_way.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.ROUTE_DEVIATION:
+                    msg = event.get_message()
+                    if msg:
+                        list_route_dev.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.ROUTE_COMPLETED:
+                    score_route = 100.0
+                    target_reached = True
+                elif event.get_type() == TrafficEventType.ROUTE_COMPLETION:
+                    if not target_reached:
+                        score_route = event.get_dict()['route_completed']
+
+            final_score = max(score_route - score_penalty, 0)
+
+            return_message += "\n=================================="
+            return_message += "\n==[{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(result,
+                                                                                                   final_score,
+                                                                                                   score_route,
+                                                                                                   score_penalty)
+            if list_collisions:
+                return_message += "\n===== Collisions:"
+                for item in list_collisions:
+                    return_message += "\n========== {}".format(item)
+
+            if list_red_lights:
+                return_message += "\n===== Red lights:"
+                for item in list_red_lights:
+                    return_message += "\n========== {}".format(item)
+
+            if list_wrong_way:
+                return_message += "\n===== Wrong way:"
+                for item in list_wrong_way:
+                    return_message += "\n========== {}".format(item)
+
+            if list_route_dev:
+                return_message += "\n===== Route deviation:"
+                for item in list_route_dev:
+                    return_message += "\n========== {}".format(item)
+
+            return_message += "\n=================================="
 
 
-        if self.scenario.timeout_node.timeout and not failure:
-            result = "TIMEOUT"
-
-
-        return result, score, return_message
+        return result, final_score, return_message

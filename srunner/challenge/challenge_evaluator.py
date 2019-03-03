@@ -60,6 +60,7 @@ class ChallengeEvaluator(object):
     manager = None
 
     def __init__(self, args):
+        self.output_scenario = []
 
         # first we instantiate the Agent
         module_name = os.path.basename(args.agent).split('.')[0]
@@ -233,115 +234,130 @@ class ChallengeEvaluator(object):
 
 
 
-    def analyze_scenario(self, args, config):
+    def analyze_scenario(self, args, config, final_summary=False):
         """
         Provide feedback about success/failure of a scenario
         """
         result, score, return_message = self.manager.analyze_scenario_challenge()
+        self.output_scenario.append((result, score, return_message))
 
         # show results stoud
-        return_message_str = ""
-        for msg in return_message:
-            return_message_str += ("\n========== " + msg)
-        report_string = "==[{}] [Score = {:.2f}] \n==[Comments:] {}".format(result, score, return_message_str)
-        print(report_string)
-
+        print(return_message)
         # save results in file
         current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-        filename = None
         if args.file:
             filename = config.name + current_time + ".txt"
             with open(filename, "a+") as fd:
-                fd.write(report_string)
+                fd.write(return_message)
+
+    def final_summary(self, args):
+        return_message = ""
+
+        total_scenarios = len(self.output_scenario)
+        total_score = 0.0
+        for item in self.output_scenario:
+            total_score += item[1] / float(total_scenarios)
+            return_message += ("\n" + item[2])
+
+        avg_message = "\n==================================\n==[Avg. score = {:.2f}]".format(total_score)
+        avg_message += "\n=================================="
+        return_message = avg_message + return_message
+        print(avg_message)
+
+        if args.file:
+            filename = "results.txt"
+            with open(filename, "a+") as fd:
+                fd.write(return_message)
+
 
     def run(self, args):
-        """
-        Run all scenarios according to provided commandline args
-        """
+            """
+            Run all scenarios according to provided commandline args
+            """
 
-        # Prepare CARLA server
-        self._carla_server.reset(args.host, args.port)
-        self._carla_server.wait_until_ready()
+            # Prepare CARLA server
+            self._carla_server.reset(args.host, args.port)
+            self._carla_server.wait_until_ready()
 
-        # Setup and run the scenarios for repetition times
-        for _ in range(int(args.repetitions)):
+            # Setup and run the scenarios for repetition times
+            for _ in range(int(args.repetitions)):
 
-            # Load the scenario configurations provided in the config file
-            scenario_configurations = None
-            if args.scenario.startswith("group:"):
-                scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
-            else:
-                scenario_config_file = find_scenario_config(args.scenario)
-                if scenario_config_file is None:
-                    print("Configuration for scenario {} cannot be found!".format(args.scenario))
-                    continue
-                scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
+                # Load the scenario configurations provided in the config file
+                scenario_configurations = None
+                if args.scenario.startswith("group:"):
+                    scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
+                else:
+                    scenario_config_file = find_scenario_config(args.scenario)
+                    if scenario_config_file is None:
+                        print("Configuration for scenario {} cannot be found!".format(args.scenario))
+                        continue
+                    scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
 
-            # Execute each configuration
-            for config in scenario_configurations:
-                # create agent instance
-                self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
+                # Execute each configuration
+                for config in scenario_configurations:
+                    # create agent instance
+                    self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
 
-                # Prepare scenario
-                print("Preparing scenario: " + config.name)
-                scenario_class = ChallengeEvaluator.get_scenario_class_or_fail(config.type)
+                    # Prepare scenario
+                    print("Preparing scenario: " + config.name)
+                    scenario_class = ChallengeEvaluator.get_scenario_class_or_fail(config.type)
 
-                client = carla.Client(args.host, int(args.port))
-                client.set_timeout(self.client_timeout)
+                    client = carla.Client(args.host, int(args.port))
+                    client.set_timeout(self.client_timeout)
 
-                # Once we have a client we can retrieve the world that is currently
-                # running.
-                self.world = client.load_world(config.town)
+                    # Once we have a client we can retrieve the world that is currently
+                    # running.
+                    self.world = client.load_world(config.town)
 
-                # Wait for the world to be ready
-                self.world.wait_for_tick(self.wait_for_world)
+                    # Wait for the world to be ready
+                    self.world.wait_for_tick(self.wait_for_world)
 
-                # Create scenario manager
-                self.manager = ScenarioManager(self.world, args.debug)
+                    # Create scenario manager
+                    self.manager = ScenarioManager(self.world, args.debug)
 
-                try:
-                    self.prepare_actors(config)
-                    lat_ref, lon_ref = self._get_latlon_ref()
-                    global_route, gps_route = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
-                    config.route = global_route
+                    try:
+                        self.prepare_actors(config)
+                        lat_ref, lon_ref = self._get_latlon_ref()
+                        global_route, gps_route = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
+                        config.route = global_route
 
-                    scenario = scenario_class(self.world,
-                                              self.ego_vehicle,
-                                              self.actors,
-                                              config.town,
-                                              args.randomize,
-                                              args.debug,
-                                              config)
-                except Exception as exception:
-                    print("The scenario cannot be loaded")
-                    print(exception)
+                        scenario = scenario_class(self.world,
+                                                  self.ego_vehicle,
+                                                  self.actors,
+                                                  config.town,
+                                                  args.randomize,
+                                                  args.debug,
+                                                  config)
+                    except Exception as exception:
+                        print("The scenario cannot be loaded")
+                        print(exception)
+                        self.cleanup(ego=True)
+                        continue
+
+                    # Load scenario and run it
+                    self.manager.load_scenario(scenario)
+
+                    # debug
+                    if args.route_visible:
+                        waypoint_list, _ = zip(*global_route)
+                        self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
+
+                    self.manager.run_scenario(self.agent_instance)
+
+                    # Provide outputs if required
+                    self.analyze_scenario(args, config)
+
+                    # Stop scenario and cleanup
+                    self.manager.stop_scenario()
+                    del scenario
+
                     self.cleanup(ego=True)
-                    continue
+                    self.agent_instance.destroy()
 
-                # Load scenario and run it
-                self.manager.load_scenario(scenario)
+            self.final_summary(args)
 
-                # debug
-                waypoint_list, _ = zip(*global_route)
-                self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
-                # end debug
-
-                self.manager.run_scenario(self.agent_instance)
-
-                # Provide outputs if required
-                self.analyze_scenario(args, config)
-
-                # Stop scenario and cleanup
-                self.manager.stop_scenario()
-                del scenario
-
-                self.cleanup(ego=True)
-                self.agent_instance.destroy()
-
-                # stop CARLA server
-        self._carla_server.stop()
-
-        print("No more scenarios .... Exiting")
+            # stop CARLA server
+            self._carla_server.stop()
 
     def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
         """
@@ -515,7 +531,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--docker-version', type=str, help='Docker version to use for CARLA server', default="0.9.3")
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
-
+    PARSER.add_argument('--route-visible', action="store_true", help='Run with a visible route')
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
     # pylint: disable=line-too-long
