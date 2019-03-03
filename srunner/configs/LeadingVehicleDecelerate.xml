@@ -7,10 +7,10 @@
         <ego_vehicle x="-510" y="88" z="0" yaw="91" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="LeadingVehicleDecelerate_5" type="LeadingVehicleDecelerate" town="Town04">
-        <ego_vehicle x="-142" y="9.5" z="8" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="-110" y="9.1" z="9.5" yaw="180" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="LeadingVehicleDecelerate_6" type="LeadingVehicleDecelerate" town="Town04">
-        <ego_vehicle x="-12.5" y="-17" z="0" yaw="90" model="vehicle.tesla.model3" />
+        <ego_vehicle x="-12.5" y="-17" z="0" yaw="90" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="LeadingVehicleDecelerate_10" type="LeadingVehicleDecelerate" town="Town05">
         <ego_vehicle x="188.9" y="-100" z="0" yaw="90" model="vehicle.lincoln.mkz2017" />
