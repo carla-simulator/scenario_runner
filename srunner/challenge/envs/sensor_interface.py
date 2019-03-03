@@ -1,6 +1,7 @@
 import copy
 import logging
 import numpy as np
+import os
 import time
 from threading import Thread
 
@@ -15,6 +16,55 @@ def threaded(fn):
 
         return thread
     return wrapper
+
+class HDMapMeasurement(object):
+    def __init__(self, data, frame_number):
+        self.data = data
+        self.frame_number = frame_number
+
+
+class HDMapReader(object):
+    def __init__(self, vehicle, reading_frequency=1.0):
+        self._vehicle = vehicle
+        self._reading_frequency = reading_frequency
+        self._CARLA_ROOT = os.getenv('CARLA_ROOT', "./")
+        self._callback = None
+        self._frame_number = 0
+        self._run_ps = True
+        self.run()
+
+    def __call__(self):
+        map_name = os.path.basename(self._vehicle.get_world().get_map().name)
+        transform = self._vehicle.get_transform()
+
+        return {'map_file': "{}/HDMaps/{}.ply".format(self._CARLA_ROOT, map_name),
+                'transform': {'x': transform.location.x,
+                              'y': transform.location.y,
+                              'z': transform.location.z,
+                              'yaw': transform.rotation.yaw,
+                              'pitch': transform.rotation.pitch,
+                              'roll': transform.rotation.roll}
+                }
+
+    @threaded
+    def run(self):
+        latest_read = time.time()
+        while self._run_ps:
+            if self._callback is not None:
+                capture = time.time()
+                if capture - latest_read > (1 / self._reading_frequency):
+                    self._callback(HDMapMeasurement(self.__call__(), self._frame_number))
+                    self._frame_number += 1
+                    latest_read = time.time()
+                else:
+                    time.sleep(0.001)
+
+    def listen(self, callback):
+        # Tell that this function receives what the producer does.
+        self._callback = callback
+
+    def destroy(self):
+        self._run_ps = False
 
 
 class SpeedMeasurement(object):
@@ -49,8 +99,7 @@ class Speedometer(object):
         vel_np = np.array([velocity.x, velocity.y, velocity.z])
         pitch = np.deg2rad(transform.rotation.pitch)
         yaw = np.deg2rad(transform.rotation.yaw)
-        orientation = np.array(
-            [np.cos(pitch) * np.cos(yaw), np.cos(pitch) * np.sin(yaw), np.sin(pitch)])
+        orientation = np.array([np.cos(pitch) * np.cos(yaw), np.cos(pitch) * np.sin(yaw), np.sin(pitch)])
         speed = np.dot(vel_np, orientation)
         return speed
 
@@ -91,6 +140,8 @@ class CallBack(object):
             self._parse_gnss_cb(data, self._tag)
         elif isinstance(data, SpeedMeasurement):
             self._parse_speedometer(data, self._tag)
+        elif isinstance(data, HDMapMeasurement):
+            self._parse_hdmap(data, self._tag)
         else:
             logging.error('No callback method for this sensor.')
 
@@ -117,6 +168,9 @@ class CallBack(object):
     def _parse_speedometer(self, speed, tag):
         self._data_provider.update_sensor(tag, speed.data, speed.frame_number)
 
+    def _parse_hdmap(self, hd_package, tag):
+        self._data_provider.update_sensor(tag, hd_package.data, hd_package.frame_number)
+
 
 class SensorInterface(object):
     def __init__(self):
@@ -134,8 +188,7 @@ class SensorInterface(object):
 
     def update_sensor(self, tag, data, timestamp):
         if tag  not in self._sensors_objects:
-            raise ValueError("The sensor with tag [{}] has not been "
-                             "created!".format(tag))
+            raise ValueError("The sensor with tag [{}] has not been created!".format(tag))
         self._data_buffers[tag] = data
         self._timestamps[tag] = timestamp
 
@@ -149,6 +202,5 @@ class SensorInterface(object):
         data_dict = {}
 
         for key in self._sensors_objects.keys():
-            data_dict[key] = (self._timestamps[key],
-                              copy.deepcopy(self._data_buffers[key]))
+            data_dict[key] = (self._timestamps[key], copy.deepcopy(self._data_buffers[key]))
         return data_dict

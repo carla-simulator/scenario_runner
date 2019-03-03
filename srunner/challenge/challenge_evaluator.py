@@ -29,7 +29,7 @@ from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 from agents.tools.misc import vector
 
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker, Track
-from srunner.challenge.envs.sensor_interface import CallBack, Speedometer
+from srunner.challenge.envs.sensor_interface import CallBack, Speedometer, HDMapReader
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
@@ -174,6 +174,9 @@ class ChallengeEvaluator(object):
             if sensor_spec['type'].startswith('sensor.speedometer'):
                 # The speedometer pseudo sensor is created directly here
                 sensor = Speedometer(vehicle, sensor_spec['reading_frequency'])
+            elif sensor_spec['type'].startswith('sensor.hd_map'):
+                # The HDMap pseudo sensor is created directly here
+                sensor = HDMapReader(vehicle, sensor_spec['reading_frequency'])
             # These are the sensors spawned on the carla world
             else:
                 bp = bp_library.find(sensor_spec['type'])
