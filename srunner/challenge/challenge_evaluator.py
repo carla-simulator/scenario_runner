@@ -271,93 +271,93 @@ class ChallengeEvaluator(object):
 
 
     def run(self, args):
-            """
-            Run all scenarios according to provided commandline args
-            """
+        """
+        Run all scenarios according to provided commandline args
+        """
 
-            # Prepare CARLA server
-            self._carla_server.reset(args.host, args.port)
-            self._carla_server.wait_until_ready()
+        # Prepare CARLA server
+        self._carla_server.reset(args.host, args.port)
+        self._carla_server.wait_until_ready()
 
-            # Setup and run the scenarios for repetition times
-            for _ in range(int(args.repetitions)):
+        # Setup and run the scenarios for repetition times
+        for _ in range(int(args.repetitions)):
 
-                # Load the scenario configurations provided in the config file
-                scenario_configurations = None
-                if args.scenario.startswith("group:"):
-                    scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
-                else:
-                    scenario_config_file = find_scenario_config(args.scenario)
-                    if scenario_config_file is None:
-                        print("Configuration for scenario {} cannot be found!".format(args.scenario))
-                        continue
-                    scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
+            # Load the scenario configurations provided in the config file
+            scenario_configurations = None
+            if args.scenario.startswith("group:"):
+                scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
+            else:
+                scenario_config_file = find_scenario_config(args.scenario)
+                if scenario_config_file is None:
+                    print("Configuration for scenario {} cannot be found!".format(args.scenario))
+                    continue
+                scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
 
-                # Execute each configuration
-                for config in scenario_configurations:
-                    # create agent instance
-                    self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
+            # Execute each configuration
+            for config in scenario_configurations:
+                # create agent instance
+                self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
 
-                    # Prepare scenario
-                    print("Preparing scenario: " + config.name)
-                    scenario_class = ChallengeEvaluator.get_scenario_class_or_fail(config.type)
+                # Prepare scenario
+                print("Preparing scenario: " + config.name)
+                scenario_class = ChallengeEvaluator.get_scenario_class_or_fail(config.type)
 
-                    client = carla.Client(args.host, int(args.port))
-                    client.set_timeout(self.client_timeout)
+                client = carla.Client(args.host, int(args.port))
+                client.set_timeout(self.client_timeout)
 
-                    # Once we have a client we can retrieve the world that is currently
-                    # running.
-                    self.world = client.load_world(config.town)
+                # Once we have a client we can retrieve the world that is currently
+                # running.
+                self.world = client.load_world(config.town)
 
-                    # Wait for the world to be ready
-                    self.world.wait_for_tick(self.wait_for_world)
+                # Wait for the world to be ready
+                self.world.wait_for_tick(self.wait_for_world)
 
-                    # Create scenario manager
-                    self.manager = ScenarioManager(self.world, args.debug)
+                # Create scenario manager
+                self.manager = ScenarioManager(self.world, args.debug)
 
-                    try:
-                        self.prepare_actors(config)
-                        lat_ref, lon_ref = self._get_latlon_ref()
-                        global_route, gps_route = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
-                        config.route = global_route
+                try:
+                    self.prepare_actors(config)
+                    lat_ref, lon_ref = self._get_latlon_ref()
+                    global_route, gps_route = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
+                    config.route = global_route
 
-                        scenario = scenario_class(self.world,
-                                                  self.ego_vehicle,
-                                                  self.actors,
-                                                  config.town,
-                                                  args.randomize,
-                                                  args.debug,
-                                                  config)
-                    except Exception as exception:
-                        print("The scenario cannot be loaded")
-                        print(exception)
-                        self.cleanup(ego=True)
-                        continue
-
-                    # Load scenario and run it
-                    self.manager.load_scenario(scenario)
-
-                    # debug
-                    if args.route_visible:
-                        waypoint_list, _ = zip(*global_route)
-                        self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
-
-                    self.manager.run_scenario(self.agent_instance)
-
-                    # Provide outputs if required
-                    self.analyze_scenario(args, config)
-
-                    # Stop scenario and cleanup
-                    self.manager.stop_scenario()
-                    del scenario
-
+                    scenario = scenario_class(self.world,
+                                              self.ego_vehicle,
+                                              self.actors,
+                                              config.town,
+                                              args.randomize,
+                                              args.debug,
+                                              config)
+                except Exception as exception:
+                    print("The scenario cannot be loaded")
+                    print(exception)
                     self.cleanup(ego=True)
-                    self.agent_instance.destroy()
+                    continue
 
-            self.final_summary(args)
+                # Load scenario and run it
+                self.manager.load_scenario(scenario)
 
-            # stop CARLA server
-            self._carla_server.stop()
+                # debug
+                if args.route_visible:
+                    waypoint_list, _ = zip(*global_route)
+                    self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
+
+                self.manager.run_scenario(self.agent_instance)
+
+                # Provide outputs if required
+                self.analyze_scenario(args, config)
+
+                # Stop scenario and cleanup
+                self.manager.stop_scenario()
+                del scenario
+
+                self.cleanup(ego=True)
+                self.agent_instance.destroy()
+
+        self.final_summary(args)
+
+        # stop CARLA server
+        self._carla_server.stop()
 
     def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
         """
