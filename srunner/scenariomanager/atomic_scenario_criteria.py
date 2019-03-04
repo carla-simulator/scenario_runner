@@ -14,8 +14,8 @@ The atomic criteria are implemented with py_trees.
 """
 
 import weakref
-import copy
 import math
+import numpy as np
 import py_trees
 import carla
 
@@ -408,6 +408,93 @@ class ReachedRegionTest(Criterion):
 
         return new_status
 
+class WrongLaneTest(Criterion):
+
+    """
+    This class contains an atomic test to detect invasions to wrong direction lanes.
+    """
+    MAX_ALLOWED_ANGLE = 140.0
+
+    def __init__(self, actor, optional=False, name="WrongLaneTest"):
+        """
+        Construction with sensor setup
+        """
+        super(WrongLaneTest, self).__init__(name, actor, 0, None, optional)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._world = self.actor.get_world()
+        self._actor = actor
+        self._map = self._world.get_map()
+        self._infractions = 0
+        self._last_lane_id = None
+        self._last_road_id = None
+
+        blueprint = self._world.get_blueprint_library().find('sensor.other.lane_detector')
+        self._lane_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
+        self._lane_sensor.listen(lambda event: self._lane_change(weakref.ref(self), event))
+
+    def update(self):
+        """
+        Check lane invasion count
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        Cleanup sensor
+        """
+        if self._lane_sensor is not None:
+            self._lane_sensor.destroy()
+        self._lane_sensor = None
+        super(WrongLaneTest, self).terminate(new_status)
+
+    @staticmethod
+    def _lane_change(weak_self, event):
+        """
+        Callback to update lane invasion count
+        """
+        self = weak_self()
+        if not self:
+            return
+
+        # check the lane direction
+        lane_waypoint = self._map.get_waypoint(self._actor.get_location())
+        current_lane_id = lane_waypoint.lane_id
+        current_road_id = lane_waypoint.road_id
+
+        if not (self._last_road_id == current_road_id and self._last_lane_id == current_lane_id):
+            next_waypoint = lane_waypoint.next(2.0)[0]
+
+            vector_wp = np.array([next_waypoint.transform.location.x - lane_waypoint.transform.location.x,
+                                  next_waypoint.transform.location.y - lane_waypoint.transform.location.y])
+
+            vector_actor = np.array([math.cos(math.radians(self._actor.get_transform().rotation.yaw)),
+                                     math.sin(math.radians(self._actor.get_transform().rotation.yaw))])
+
+            ang = math.degrees(math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
+            if ang > self.MAX_ALLOWED_ANGLE:
+                self.test_status = "FAILURE"
+                # is there a difference of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane
+                # direction?
+                self._infractions += 1
+
+                wrong_way_event = TrafficEvent(type=TrafficEventType.WRONG_WAY_INFRACTION)
+                wrong_way_event.set_message('Agent invaded a lane in opposite direction: road_id={}, lane_id={}'.format(
+                    current_road_id, current_lane_id))
+                wrong_way_event.set_dict({'road_id':current_road_id, 'lane_id':current_lane_id})
+                self.list_traffic_events.append(wrong_way_event)
+
+        # remember the current lane and road
+        self._last_lane_id = current_lane_id
+        self._last_road_id = current_road_id
+
 class InRadiusRegionTest(Criterion):
 
     """
@@ -557,7 +644,7 @@ class RouteCompletionTest(Criterion):
             self._current_index = best_index
             self._percentage_route_completed = 100.0*float(self._current_index) / float(self._route_length)
             self._traffic_event.set_dict({'route_completed': self._percentage_route_completed})
-            self._traffic_event.set_message("[Agent has completed > {:.2f}% of the route]".format(self._percentage_route_completed))
+            self._traffic_event.set_message("Agent has completed > {:.2f}% of the route".format(self._percentage_route_completed))
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
@@ -616,10 +703,13 @@ class RunningRedLightTest(Criterion):
                     self.test_status = "FAILURE"
 
                     red_light_event = TrafficEvent(type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
-                    red_light_event.set_message("Agent ran a red light at (x={}, y={}, x={})".format(location.x,
-                                                                                                 location.y,
-                                                                                                 location.z))
-                    red_light_event.set_dict({'location': (location.x, location.y, location.z)})
+                    red_light_event.set_message("Agent ran a red light {} at (x={}, y={}, x={})".format(
+                        self._target_traffic_light.id,
+                        location.x,
+                        location.y,
+                        location.z))
+                    red_light_event.set_dict({'id':self._target_traffic_light.id, 'x': location.x,
+                                              'y':location.y, 'z':location.z})
                     self.list_traffic_events.append(red_light_event)
 
 

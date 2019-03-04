@@ -1,4 +1,7 @@
 ## Latest changes
+* Added track identification for autonomous_agent.py
+* Added HDMap pseudo-sensor
+* Added wrong way test
 * Added new traffic event logger
 * Added running red light test
 * Updated folder structure and naming convention in lowecase

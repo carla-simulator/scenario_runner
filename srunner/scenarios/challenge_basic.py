@@ -39,7 +39,7 @@ class ChallengeBasic(BasicScenario):
         if hasattr(self.config, 'target'):
             self.target = self.config.target
         if hasattr(self.config, 'route'):
-            self.route = self.config.route
+            self.route = self.config.route.data
 
         super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, other_actors, town, world, debug_mode, True)
 
@@ -73,7 +73,12 @@ class ChallengeBasic(BasicScenario):
                                       offroad_max=20,
                                       terminate_on_failure=True)
 
+
         completion_criterion = RouteCompletionTest(self.ego_vehicle, route=self.route)
+
+        wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
+
+        red_light_criterion = RunningRedLightTest(self.ego_vehicle)
 
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -82,5 +87,8 @@ class ChallengeBasic(BasicScenario):
         parallel_criteria.add_child(collision_criterion)
         parallel_criteria.add_child(target_criterion)
         parallel_criteria.add_child(route_criterion)
+        parallel_criteria.add_child(wrong_way_criterion)
+        parallel_criteria.add_child(red_light_criterion)
+
 
         return parallel_criteria
