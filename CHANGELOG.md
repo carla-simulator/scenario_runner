@@ -1,4 +1,5 @@
 ## Latest changes
+
 * Added new Traffic Scenarios
     - PassingFromOppositeDirections: Scenario used to calibrating and testing sensor models: ego vehicle passes other vehicle from opposite direction on a long straight.
     - OvertakingSlowTarget: Scenario used for testing a simple overtake maneuver. Ego car should overtake other vehicle with safe margin on a long straight.
@@ -13,6 +14,11 @@
     - FollowVehicleContinuous: Similar to DriveVehicleContinuous but with lateral control so that vehicle will steer towards target_vehicle
     - TriggerOnLocation: check if a vehicle is within certain distance to a target location
     - TriggerOnStatusChange: check if a vehicle status value(s) have passed target value(s) (x, y, z, roll, pitch, yaw)
+* Added track identification for autonomous_agent.py
+* Added HDMap pseudo-sensor
+* Added wrong way test
+* Added new traffic event logger
+* Added running red light test
 * Updated folder structure and naming convention in lowecase
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
