@@ -15,7 +15,26 @@ import os
 import xml.etree.ElementTree as ET
 
 import carla
+from agents.navigation.local_planner import RoadOption
 
+
+class RouteConfiguration(object):
+
+    """
+    This class provides the basic  configuration for a route
+    """
+
+    def __init__(self, node):
+        self.data = []
+
+        for waypoint in node.iter("waypoint"):
+            x = float(set_attrib(waypoint, 'x', 0))
+            y = float(set_attrib(waypoint, 'y', 0))
+            z = float(set_attrib(waypoint, 'z', 0))
+            c = set_attrib(waypoint, 'connection', '')
+            connection = RoadOption[c.split('.')[1]]
+
+            self.data.append((carla.Location(x, y, z), connection))
 
 class TargetConfiguration(object):
 
@@ -79,6 +98,7 @@ class ScenarioConfiguration(object):
     name = None
     type = None
     target = None
+    route = None
 
 
 def set_attrib(node, key, default):
@@ -123,6 +143,9 @@ def parse_scenario_configuration(file_name, scenario_name):
 
         for target in scenario.iter("target"):
             new_config.target = TargetConfiguration(target)
+
+        for route in scenario.iter("route"):
+            new_config.route = RouteConfiguration(route)
 
         for other_actor in scenario.iter("other_actor"):
             new_config.other_actors.append(ActorConfiguration(other_actor))
