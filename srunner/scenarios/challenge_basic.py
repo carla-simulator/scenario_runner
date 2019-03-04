@@ -39,7 +39,7 @@ class ChallengeBasic(BasicScenario):
         if hasattr(self.config, 'target'):
             self.target = self.config.target
         if hasattr(self.config, 'route'):
-            self.route = self.config.route
+            self.route = self.config.route.data
 
         super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, other_actors, town, world, debug_mode, True)
 

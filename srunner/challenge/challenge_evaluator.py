@@ -16,19 +16,14 @@ import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 import importlib
-import numpy as np
 import random
 import sys
 import time
 
 import carla
+from agents.navigation.local_planner import RoadOption
 
-from agents.navigation.local_planner import compute_connection, RoadOption
-from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
-from agents.tools.misc import vector
-
-from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker, Track
+from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker
 from srunner.challenge.envs.sensor_interface import CallBack, Speedometer, HDMapReader
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
@@ -273,6 +268,91 @@ class ChallengeEvaluator(object):
                 fd.write(return_message)
 
 
+    def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
+        """
+        Draw a list of waypoints at a certain height given in vertical_shift.
+
+        :param waypoints: list or iterable container with the waypoints to draw
+        :param vertical_shift: height in meters
+        :return:
+        """
+        for w in waypoints:
+            wp = w + carla.Location(z=vertical_shift)
+            self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
+
+
+    def _get_latlon_ref(self):
+        """
+        Convert from waypoints world coordinates to CARLA GPS coordinates
+        :return: tuple with lat and lon coordinates
+        """
+        xodr = self.world.get_map().to_opendrive()
+        tree = ET.ElementTree(ET.fromstring(xodr))
+
+        lat_ref = 0
+        lon_ref = 0
+        for opendrive in tree.iter("OpenDRIVE"):
+            for header in opendrive.iter("header"):
+                for georef in header.iter("geoReference"):
+                    if georef:
+                        str_list = georef.text.split(' ')
+                        lat_ref = float(str_list[0].split('=')[1])
+                        lon_ref = float(str_list[1].split('=')[1])
+                    else:
+                        lat_ref = 42.0
+                        lon_ref = 2.0
+
+        return lat_ref, lon_ref
+
+    def _location_to_gps(self, lat_ref, lon_ref, location):
+        """
+        Convert from world coordinates to GPS coordinates
+        :param lat_ref: latitude reference for the current map
+        :param lon_ref: longitude reference for the current map
+        :param location: location to translate
+        :return: dictionary with lat, lon and height
+        """
+        EARTH_RADIUS_EQUA = 6378137.0
+
+        scale = math.cos(lat_ref * math.pi / 180.0)
+        mx = scale * lon_ref * math.pi * EARTH_RADIUS_EQUA / 180.0
+        my = scale * EARTH_RADIUS_EQUA * math.log(math.tan((90.0 + lat_ref) * math.pi / 360.0))
+        mx += location.x
+        my += location.y
+
+        lon = mx * 180.0 / (math.pi * EARTH_RADIUS_EQUA * scale)
+        lat = 360.0 * math.atan(math.exp(my / (EARTH_RADIUS_EQUA * scale))) / math.pi - 90.0
+        z = location.z
+
+        return {'lat':lat, 'lon':lon, 'z':z}
+
+    def compress_route(self, route, start, end, threshold=10.0):
+        compressed_route = []
+
+        compressed_route.append((start, RoadOption.LANEFOLLOW))
+
+        current_waypoint = start
+        current_connection = RoadOption.LANEFOLLOW
+        for next_waypoint, next_connection in route:
+            if next_connection != current_connection or current_waypoint.distance(next_waypoint) > threshold:
+                compressed_route.append((next_waypoint, next_connection))
+
+            current_waypoint = next_waypoint
+            current_connection = next_connection
+        compressed_route.append((end, RoadOption.LANEFOLLOW))
+
+        return compressed_route
+
+    def location_route_to_gps(self, route, lat_ref, lon_ref):
+        gps_route = []
+
+        for location, connection in route:
+            gps_coord = self._location_to_gps(lat_ref, lon_ref, location)
+            gps_route.append((gps_coord, connection))
+
+        return gps_route
+
+
     def run(self, args):
         """
         Run all scenarios according to provided commandline args
@@ -321,8 +401,12 @@ class ChallengeEvaluator(object):
                 try:
                     self.prepare_actors(config)
                     lat_ref, lon_ref = self._get_latlon_ref()
-                    global_route, gps_route = self.retrieve_route(config.ego_vehicle, config.target, lat_ref, lon_ref)
-                    config.route = global_route
+                    compact_route = self.compress_route(config.route.data,
+                                                        config.ego_vehicle.transform.location,
+                                                        config.target.transform.location)
+                    gps_route = self.location_route_to_gps(compact_route, lat_ref, lon_ref)
+
+                    self.agent_instance.set_global_plan(gps_route)
 
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
@@ -342,8 +426,8 @@ class ChallengeEvaluator(object):
 
                 # debug
                 if args.route_visible:
-                    waypoint_list, _ = zip(*global_route)
-                    self.draw_waypoints(waypoint_list, vertical_shift=1.0, persistency=scenario.timeout)
+                    locations_route, _ = zip(*config.route.data)
+                    self.draw_waypoints(locations_route, vertical_shift=1.0, persistency=scenario.timeout)
 
                 self.manager.run_scenario(self.agent_instance)
 
@@ -361,163 +445,6 @@ class ChallengeEvaluator(object):
 
         # stop CARLA server
         self._carla_server.stop()
-
-    def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
-        """
-        Draw a list of waypoints at a certain height given in vertical_shift.
-
-        :param waypoints: list or iterable container with the waypoints to draw
-        :param vertical_shift: height in meters
-        :return:
-        """
-        for w in waypoints:
-            wp = w + carla.Location(z=vertical_shift)
-            self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
-
-
-    def _get_latlon_ref(self):
-        """
-        Convert from waypoints world coordinates to CARLA GPS coordinates
-        :return: tuple with lat and lon coordinates
-        """
-        xodr = self.world.get_map().to_opendrive()
-        tree = ET.ElementTree(ET.fromstring(xodr))
-
-        lat_ref = 0
-        lon_ref = 0
-        for opendrive in tree.iter("OpenDRIVE"):
-            for header in opendrive.iter("header"):
-                for georef in header.iter("geoReference"):
-                    str_list = georef.text.split(' ')
-                    lat_ref = float(str_list[0].split('=')[1])
-                    lon_ref = float(str_list[1].split('=')[1])
-
-        return lat_ref, lon_ref
-
-    def retrieve_route(self, actor_configuration, target_configuration, lat_ref, lon_ref):
-        """
-        Estimate a route from a starting position to a target position.
-
-        :param actor_configuration: ActorConfiguration object representing the ego vehicle
-        :param target_configuration: TargetConfiguration object representing the target point
-        :param lat_ref: map reference latitude
-        :param lon_ref: map reference longitude
-        :return: a tuple with two lists. Both lists represent the route.
-            The first one in world coordinates.
-            The second one in GPS coordinates.
-        """
-        start_waypoint = self.world.get_map().get_waypoint(actor_configuration.transform.location)
-        end_waypoint = self.world.get_map().get_waypoint(target_configuration.transform.location)
-
-        solution = []
-        solution_gps = []
-
-        # Setting up global router
-        dao = GlobalRoutePlannerDAO(self.world.get_map())
-        grp = GlobalRoutePlanner(dao)
-        grp.setup()
-
-        # Obtain route plan
-        x1 = start_waypoint.transform.location.x
-        y1 = start_waypoint.transform.location.y
-        x2 = end_waypoint.transform.location.x
-        y2 = end_waypoint.transform.location.y
-        route = grp.plan_route((x1, y1), (x2, y2))
-
-        current_waypoint = start_waypoint
-        route.append(RoadOption.VOID)
-        for action in route:
-
-            #   Generate waypoints to next junction
-            wp_choice = current_waypoint.next(self._hop_resolution)
-            while len(wp_choice) == 1:
-                current_waypoint = wp_choice[0]
-                gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
-
-                solution.append((current_waypoint.transform.location, RoadOption.LANEFOLLOW))
-                solution_gps.append((gps_point, RoadOption.LANEFOLLOW))
-                wp_choice = current_waypoint.next(self._hop_resolution)
-                #   Stop at destination
-                if current_waypoint.transform.location.distance(
-                        end_waypoint.transform.location) < self._hop_resolution: break
-            if action == RoadOption.VOID: break
-
-            #   Select appropriate path at the junction
-            if len(wp_choice) > 1:
-
-                # Current heading vector
-                current_transform = current_waypoint.transform
-                current_location = current_transform.location
-                projected_location = current_location + \
-                                     carla.Location(
-                                         x=math.cos(math.radians(
-                                             current_transform.rotation.yaw)),
-                                         y=math.sin(math.radians(
-                                             current_transform.rotation.yaw)))
-                v_current = vector(current_location, projected_location)
-
-                direction = 0
-                if action == RoadOption.LEFT:
-                    direction = 1
-                elif action == RoadOption.RIGHT:
-                    direction = -1
-                elif action == RoadOption.STRAIGHT:
-                    direction = 0
-                select_criteria = float('inf')
-
-                #   Choose correct path
-                for wp_select in wp_choice:
-                    v_select = vector(
-                        current_location, wp_select.transform.location)
-                    cross = float('inf')
-                    if direction == 0:
-                        cross = abs(np.cross(v_current, v_select)[-1])
-                    else:
-                        cross = direction * np.cross(v_current, v_select)[-1]
-                    if cross < select_criteria:
-                        select_criteria = cross
-                        current_waypoint = wp_select
-
-                # Generate all waypoints within the junction
-                #   along selected path
-                gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
-                solution.append((current_waypoint.transform.location, action))
-                solution_gps.append((gps_point, action))
-                current_waypoint = current_waypoint.next(self._hop_resolution)[0]
-                while current_waypoint.is_intersection:
-                    gps_point = self._location_to_gps(lat_ref, lon_ref, current_waypoint.transform.location)
-                    solution.append((current_waypoint.transform.location, action))
-                    solution_gps.append((gps_point, action))
-
-                    current_waypoint = \
-                        current_waypoint.next(self._hop_resolution)[0]
-
-        # send plan to agent
-        self.agent_instance.set_global_plan(solution_gps)
-
-        return solution, solution_gps
-
-    def _location_to_gps(self, lat_ref, lon_ref, location):
-        """
-        Convert from world coordinates to GPS coordinates
-        :param lat_ref: latitude reference for the current map
-        :param lon_ref: longitude reference for the current map
-        :param location: location to translate
-        :return: dictionary with lat, lon and height
-        """
-        EARTH_RADIUS_EQUA = 6378137.0
-
-        scale = math.cos(lat_ref * math.pi / 180.0)
-        mx = scale * lon_ref * math.pi * EARTH_RADIUS_EQUA / 180.0
-        my = scale * EARTH_RADIUS_EQUA * math.log(math.tan((90.0 + lat_ref) * math.pi / 360.0))
-        mx += location.x
-        my += location.y
-
-        lon = mx * 180.0 / (math.pi * EARTH_RADIUS_EQUA * scale)
-        lat = 360.0 * math.atan(math.exp(my / (EARTH_RADIUS_EQUA * scale))) / math.pi - 90.0
-        z = location.z
-
-        return {'lat':lat, 'lon':lon, 'z':z}
 
 
 if __name__ == '__main__':
