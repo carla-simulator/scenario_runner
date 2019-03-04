@@ -295,7 +295,7 @@ class TriggerOnStatusChange(AtomicBehavior):
                 current_rotation.pitch-self.target_pitch)*(self.old_rotation.pitch-self.target_pitch) <= 0)
 
             # Trigger on any car parameter passing target value
-            if any(changed_x, changed_y, changed_z, changed_yaw, changed_roll, changed_pitch):
+            if any([changed_x, changed_y, changed_z, changed_yaw, changed_roll, changed_pitch]):
                 return py_trees.common.Status.SUCCESS
 
         self.old_location = current_location

@@ -587,7 +587,7 @@ class OncomingTargetDriftsOntoEgoLane(BasicScenario):
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=self.destination_x, y=158)))
-        parallel.add_child(TriggerOnStatusChange(self.other_actors[0], carla.Transform(carla.Location(y=315))))
+        parallel.add_child(InTriggerRegion(self.other_actors[0], 390, 400, 300, 315))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)

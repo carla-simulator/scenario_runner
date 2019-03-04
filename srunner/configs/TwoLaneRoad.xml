@@ -125,7 +125,7 @@
         <other_actor x="397" y="60" z="39" yaw="90" model="vehicle.gazelle.omafiets" />
     </scenario>
 
-    <scenario type="BackingUpOntoEgoLane" name="BackingUpOntoEgoLane" town="Town01">
+    <scenario type="DrivingOffDriveway" name="DrivingOffDriveway" town="Town01">
         <ego_vehicle x="210" y="60" z="39" yaw="0" model="vehicle.ford.mustang" />
         <other_actor x="271.5" y="80" z="39" yaw="270" model="vehicle.tesla.model3" />
         <other_actor x="310" y="56" z="39" yaw="180" model="vehicle.ford.mustang" />
