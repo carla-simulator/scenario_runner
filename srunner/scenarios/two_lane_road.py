@@ -88,7 +88,7 @@ class PassingFromOppositeDirections(BasicScenario):
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=396, y=8), max_speed=self.target_speed))
-        parallel.add_child(TriggerOnLocation(self.ego_vehicle, 392, 315, 5))
+        parallel.add_child(InTriggerDistanceToLocation(self.ego_vehicle, carla.Location(x=392, y=315, z=38.5), 5))
         sequence.add_child(parallel)
 
         return sequence
@@ -162,15 +162,16 @@ class OvertakingSlowTarget(BasicScenario):
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(self.other_actors[0], carla.Location(x=392, y=300),
                                                      max_speed=self.target_speed))
-        parallel.add_child(TriggerOnStatusChange(
-            self.ego_vehicle, x=392+self.ego_veh_width/2+self.min_lateral_distance+self.target_veh_width/2))
+        transform_location_x_to_pass = carla.Transform(
+            carla.Location(x=392+self.ego_veh_width/2+self.min_lateral_distance+self.target_veh_width/2))
+        parallel.add_child(TriggerOnStatusChange(self.ego_vehicle, transform_location_x_to_pass))
         sequence.add_child(parallel)
 
         # if target reaches end of straight, end scenario
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(self.other_actors[0], carla.Location(x=392, y=300),
                                                      max_speed=self.target_speed))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 300, 1))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=300, z=38.5), 1))
         sequence.add_child(parallel)
 
         return sequence
@@ -257,7 +258,7 @@ class FollowingAcceleratingTarget(BasicScenario):
             self.other_actors[5], self.other_actors[4], max_speed=kmh_to_ms(7), max_throttle=0.7))
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=392, y=308), max_throttle=0.75, max_speed=self.target_speed/1.5))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 200, 1))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=200, z=38.5), 1))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -267,7 +268,7 @@ class FollowingAcceleratingTarget(BasicScenario):
         parallel.add_child(UseAutoPilot(self.other_actors[5]))
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=392, y=308), max_throttle=1, max_speed=self.target_speed))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 300, 1))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=300, z=38.5), 1))
         sequence.add_child(parallel)
 
         return sequence
@@ -345,28 +346,28 @@ class FollowingDeceleratingTarget(BasicScenario):
         parallel.add_child(UseAutoPilot(self.other_actors[5]))
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=392, y=308), max_speed=self.target_speed))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 150, 1))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=150, z=38.5), 1))            
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=392, y=308), max_braking=0.01, max_throttle=0.5,
             max_speed=self.target_speed/1.5))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 170, 1))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=170, z=38.5), 1))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=392, y=308), max_braking=0.01, max_throttle=0.4,
             max_speed=self.target_speed/2))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 180, 1))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=180, z=38.5), 1))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=392, y=308), max_braking=0.01, max_throttle=0.3,
             max_speed=self.target_speed/4))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 185, 1))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=185, z=38.5), 1))
         sequence.add_child(parallel)
 
         sequence.add_child(StopVehicle(self.other_actors[0], 0.1))
@@ -433,19 +434,20 @@ class FollowingChangingLanesTarget(BasicScenario):
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=389, y=158), max_speed=kmh_to_ms(5)))
-        parallel.add_child(TriggerOnStatusChange(self.other_actors[0], y=62))
+        parallel.add_child(TriggerOnStatusChange(self.other_actors[0], carla.Transform(carla.Location(y=62))))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(SyncArrival(self.other_actors[0], self.ego_vehicle, carla.Location(x=392, y=158, z=38.5)))
-        parallel.add_child(TriggerOnStatusChange(self.other_actors[0], x=392+self.ego_veh_width/2))
+        transform_location_x_to_pass = carla.Transform(carla.Location(x=392+self.ego_veh_width/2))
+        parallel.add_child(TriggerOnStatusChange(self.other_actors[0], transform_location_x_to_pass))
         parallel.add_child(InTriggerDistanceToVehicle(self.ego_vehicle, self.other_actors[0], 10))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=392, y=308), max_braking=0.01, max_speed=self.target_speed))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 392, 208, 3))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=392, y=208, z=38.5), 3))
         sequence.add_child(parallel)
 
         return sequence
@@ -500,7 +502,7 @@ class DrivingOffDriveway(BasicScenario):
             self.other_actors[0], self.ego_vehicle, carla.Location(x=268, y=59, z=38.5)))
         parallel.add_child(SyncArrival(
             self.other_actors[1], self.ego_vehicle, carla.Location(x=260, y=55, z=38.5)))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 271.5, 60, 2))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=271.5, y=60, z=38.5), 2))
         sequence.add_child(parallel)
 
         sequence.add_child(StopVehicle(self.other_actors[0], 1))
@@ -509,13 +511,13 @@ class DrivingOffDriveway(BasicScenario):
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=290, y=60), max_speed=6, use_reverse=False))
         parallel.add_child(UseAutoPilot(self.other_actors[1]))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 290, 60, 2))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=290, y=60, z=38.5), 2))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(UseAutoPilot(self.other_actors[0]))
         parallel.add_child(UseAutoPilot(self.other_actors[1]))
-        parallel.add_child(TriggerOnLocation(self.ego_vehicle, 310, 60, 5))
+        parallel.add_child(InTriggerDistanceToLocation(self.ego_vehicle, carla.Location(x=310, y=60, z=38.5), 5))
         sequence.add_child(parallel)
 
         return sequence
@@ -585,26 +587,27 @@ class OncomingTargetDriftsOntoEgoLane(BasicScenario):
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=self.destination_x, y=158)))
-        parallel.add_child(TriggerOnStatusChange(self.other_actors[0], y=315))
+        parallel.add_child(TriggerOnStatusChange(self.other_actors[0], carla.Transform(carla.Location(y=315))))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(SyncArrival(
             self.other_actors[0], self.ego_vehicle, carla.Location(x=self.destination_x, y=158, z=38.5)))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], self.destination_x, 158, 20))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0],
+                                                       carla.Location(x=self.destination_x, y=158, z=38.5), 20))
         parallel.add_child(InTriggerDistanceToVehicle(self.ego_vehicle, self.other_actors[0], 30))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=397, y=148), max_braking=0.01, max_speed=self.target_speed))
-        parallel.add_child(TriggerOnLocation(self.other_actors[0], 397, 148, 3))
+        parallel.add_child(InTriggerDistanceToLocation(self.other_actors[0], carla.Location(x=397, y=148, z=38.5), 3))
         sequence.add_child(parallel)
 
         parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel.add_child(DriveToLocationContinuous(
             self.other_actors[0], carla.Location(x=396, y=8), max_braking=0.01, max_speed=self.target_speed))
-        parallel.add_child(TriggerOnLocation(self.ego_vehicle, 392, 258, 2))
+        parallel.add_child(InTriggerDistanceToLocation(self.ego_vehicle, carla.Location(x=392, y=258, z=38.5), 2))
         sequence.add_child(parallel)
 
         return sequence

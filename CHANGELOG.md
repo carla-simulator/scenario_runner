@@ -12,8 +12,7 @@
     - DriveVehicleContinuous: Controlled vehicle will have the specified control values applied to itself with optional max_speed parameter to limit acceleration once desired speed is achieved.
     - DriveToLocationContinuous: Similar to DriveVehicleContinuous but with lateral control so that vehicle will point to target_location
     - FollowVehicleContinuous: Similar to DriveVehicleContinuous but with lateral control so that vehicle will steer towards target_vehicle
-    - TriggerOnLocation: check if a vehicle is within certain distance to a target location
-    - TriggerOnStatusChange: check if a vehicle status value(s) have passed target value(s) (x, y, z, roll, pitch, yaw)
+    - TriggerOnStatusChange: check if a vehicle transform value(s) have passed target transform value(s) (x, y, z, roll, pitch, yaw)
 * Added track identification for autonomous_agent.py
 * Added HDMap pseudo-sensor
 * Added wrong way test

@@ -7,9 +7,9 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-This module provides extended scenario behaviors required to implement atypical
-traffic movement like "drifting onto oncoming lane" or "driving out of driveway"
-not covered by atomic_scenario_behavior
+This module provides extended scenario behaviors required to implement traffic
+movement like "drifting onto oncoming lane" or "driving out of driveway" not
+covered by atomic_scenario_behavior
 
 All the actions found in this module are continuous - i.e. they do not reset car
 controls on termination by design
@@ -247,70 +247,29 @@ class FollowVehicleContinuous(AtomicBehavior):
             "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
-
-class TriggerOnLocation(AtomicBehavior):
-    """
-    This class contains the trigger location (condition) of a scenario
-
-    The behavior is successful, if the actor is in distance or closer to
-    specified location and distance in XY-pane
-    """
-
-    def __init__(self, vehicle, target_x, target_y, radius, name="TriggerOnLocation"):
-        """
-        Setup trigger location
-        """
-        super(TriggerOnLocation, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self.vehicle = vehicle
-        self.target_x = target_x
-        self.target_y = target_y
-        self.radius = radius
-
-    def update(self):
-        """
-        Check if the actor is in distance or closer to location
-        """
-        location = CarlaDataProvider.get_location(self.vehicle)
-
-        if location is None:
-            return py_trees.common.Status.RUNNING
-
-        is_in_region = math.hypot(
-            location.x-self.target_x, location.y-self.target_y) < self.radius
-        if is_in_region:
-            return py_trees.common.Status.SUCCESS
-
-        self.logger.debug(
-            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, py_trees.common.Status.RUNNING))
-
-        return py_trees.common.Status.RUNNING
-
-
 class TriggerOnStatusChange(AtomicBehavior):
     """
     This class contains the status change trigger (condition) of a scenario
 
-    The behavior is successful, if the actors properties has passed of the
-    specified values. Those include: x, y, z position or roll, pitch, yaw
+    The behavior is successful, if any of the actor properties has passed
+    specified transform values. Those include: location.x, location.y,
+    location.z, rotation.roll, rotation.pitch, rotation.yaw
     """
 
-    def __init__(self, vehicle, x=None, y=None, z=None, roll=None, pitch=None, yaw=None, name="TriggerOnStatusChange"):
+    def __init__(self, vehicle, transform, name="TriggerOnStatusChange"):
         """
         Setup trigger values
         """
         super(TriggerOnStatusChange, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.vehicle = vehicle
-        self.target_x = x
-        self.target_y = y
-        self.target_z = z
-        self.target_roll = roll
-        self.target_pitch = pitch
-        self.target_yaw = yaw
+        self.target_x = None if transform.location is None else transform.location.x
+        self.target_y = None if transform.location is None else transform.location.y
+        self.target_z = None if transform.location is None else transform.location.z
+        self.target_roll = None if transform.rotation is None else transform.rotation.roll
+        self.target_pitch = None if transform.rotation is None else transform.rotation.pitch
+        self.target_yaw = None if transform.rotation is None else transform.rotation.yaw
 
-        self.location = None
-        self.rotation = None
         self.old_location = None
         self.old_rotation = None
 
@@ -318,29 +277,29 @@ class TriggerOnStatusChange(AtomicBehavior):
         """
         Check if previous rotation or location values passed one of the parameters
         """
-        self.location = CarlaDataProvider.get_location(self.vehicle)
-        self.rotation = self.vehicle.get_transform().rotation
+        current_location = CarlaDataProvider.get_location(self.vehicle)
+        current_rotation = self.vehicle.get_transform().rotation
 
         if (self.old_location is not None) and (self.old_rotation is not None):
             changed_x = ((self.target_x is not None) and (
-                self.location.x - self.target_x)*(self.old_location.x-self.target_x) <= 0)
+                current_location.x - self.target_x)*(self.old_location.x-self.target_x) <= 0)
             changed_y = ((self.target_y is not None) and (
-                self.location.y-self.target_y)*(self.old_location.y-self.target_y) <= 0)
+                current_location.y-self.target_y)*(self.old_location.y-self.target_y) <= 0)
             changed_z = ((self.target_z is not None) and (
-                self.location.z-self.target_z)*(self.old_location.z-self.target_z) <= 0)
+                current_location.z-self.target_z)*(self.old_location.z-self.target_z) <= 0)
             changed_yaw = ((self.target_yaw is not None) and (
-                self.rotation.yaw-self.target_yaw)*(self.old_rotation.yaw-self.target_yaw) <= 0)
+                current_rotation.yaw-self.target_yaw)*(self.old_rotation.yaw-self.target_yaw) <= 0)
             changed_roll = ((self.target_roll is not None) and (
-                self.rotation.roll-self.target_roll)*(self.old_rotation.roll-self.target_roll) <= 0)
+                current_rotation.roll-self.target_roll)*(self.old_rotation.roll-self.target_roll) <= 0)
             changed_pitch = ((self.target_pitch is not None) and (
-                self.rotation.pitch-self.target_pitch)*(self.old_rotation.pitch-self.target_pitch) <= 0)
+                current_rotation.pitch-self.target_pitch)*(self.old_rotation.pitch-self.target_pitch) <= 0)
 
             # Trigger on any car parameter passing target value
             if any(changed_x, changed_y, changed_z, changed_yaw, changed_roll, changed_pitch):
                 return py_trees.common.Status.SUCCESS
 
-        self.old_location = self.location
-        self.old_rotation = self.rotation
+        self.old_location = current_location
+        self.old_rotation = current_rotation
 
         self.logger.debug(
             "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, py_trees.common.Status.RUNNING))
