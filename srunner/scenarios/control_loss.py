@@ -34,15 +34,15 @@ class ControlLoss(BasicScenario):
 
     category = "ControlLoss"
 
-    timeout = 120            # Timeout of scenario in seconds
+    timeout = 60            # Timeout of scenario in seconds
 
     # ego vehicle parameters
     _no_of_jitter_actions = 20
     _noise_mean = 0      # Mean value of steering noise
-    _noise_std = 0.02    # Std. deviation of steerning noise
+    _noise_std = 0.02    # Std. deviation of steering noise
     _dynamic_mean_for_steer = 0.01
     _dynamic_mean_for_throttle = 0.75
-    _abort_distance_to_intersection = 20
+    _abort_distance_to_intersection = 10
     _start_distance = 20
     _end_distance = 80
     _ego_vehicle_max_steer = 0.0
@@ -71,7 +71,7 @@ class ControlLoss(BasicScenario):
 
         # start condition
         location, _ = get_location_in_distance(self.ego_vehicle, self._start_distance)
-        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 10.0)
 
         # jitter sequence
         jitter_sequence = py_trees.composites.Sequence("Jitter Sequence Behavior")
@@ -101,8 +101,7 @@ class ControlLoss(BasicScenario):
         jitter.add_child(jitter_abort)
 
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
-        location, _ = get_location_in_distance(self.ego_vehicle, self._end_distance)
-        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 10.0)
+        end_condition = DriveDistance(self.ego_vehicle, self._end_distance)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")

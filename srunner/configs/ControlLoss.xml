@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <scenarios>
     <scenario name="ControlLoss_1" type="ControlLoss" town="Town01">
-        <ego_vehicle x="392.5" y="195" z="38.11" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="392.5" y="195" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="ControlLoss_2" type="ControlLoss" town="Town01">
-        <ego_vehicle x="-2.0" y="160" z="38.11" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="-2.0" y="160" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="ControlLoss_3" type="ControlLoss" town="Town01">
-        <ego_vehicle x="168.9" y="59.8" z="38.11" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="168.9" y="59.8" z="0.5" yaw="0" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="ControlLoss_4" type="ControlLoss" town="Town02">
         <ego_vehicle x="27" y="110" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
