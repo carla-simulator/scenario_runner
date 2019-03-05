@@ -20,6 +20,7 @@ import carla
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
 RUNNING_RED_LIGHT_SCENARIOS = [
@@ -54,7 +55,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _other_actor_max_brake = 1.0           # Maximum brake of other vehicle
     _other_actor_distance = 30             # Distance the other vehicle should drive
 
-    _traffic_light_location = carla.Location(x=-11.5, y=-125.0, z=0.15)
     _traffic_light = None
     _location_of_collision = carla.Location(x=0, y=-135, z=1)
 
@@ -64,13 +64,14 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         and instantiate scenario manager
         """
 
-        for actor in world.get_actors().filter('traffic.traffic_light'):
-            if actor.get_location().distance(self._traffic_light_location) < 1.0:
-                self._traffic_light = actor
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(ego_vehicle, False)
 
         if self._traffic_light is None:
             print("No traffic light for the given location found")
             sys.exit(-1)
+
+        self._traffic_light.set_state(carla.TrafficLightState.Green)
+        self._traffic_light.set_green_time(self.timeout)
 
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
                                                              ego_vehicle,

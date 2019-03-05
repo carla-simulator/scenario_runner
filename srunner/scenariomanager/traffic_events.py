@@ -1,6 +1,8 @@
 from enum import Enum
 
+
 class TrafficEventType(Enum):
+
     """
     This enum represents different traffic events that occur during driving.
     """
@@ -16,6 +18,7 @@ class TrafficEventType(Enum):
 
 
 class TrafficEvent(object):
+
     def __init__(self, type, message=None, dict=None):
         """
         Initialize object

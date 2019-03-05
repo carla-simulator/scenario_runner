@@ -63,16 +63,15 @@ class ChallengeBasic(BasicScenario):
 
         collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
         target_criterion = InRadiusRegionTest(self.ego_vehicle,
-                                             x=self.target.transform.location.x ,
-                                             y=self.target.transform.location.y,
-                                             radius=self.radius)
+                                              x=self.target.transform.location.x,
+                                              y=self.target.transform.location.y,
+                                              radius=self.radius)
 
         route_criterion = InRouteTest(self.ego_vehicle,
                                       radius=30.0,
                                       route=self.route,
                                       offroad_max=20,
                                       terminate_on_failure=True)
-
 
         completion_criterion = RouteCompletionTest(self.ego_vehicle, route=self.route)
 
@@ -89,6 +88,5 @@ class ChallengeBasic(BasicScenario):
         parallel_criteria.add_child(route_criterion)
         parallel_criteria.add_child(wrong_way_criterion)
         parallel_criteria.add_child(red_light_criterion)
-
 
         return parallel_criteria

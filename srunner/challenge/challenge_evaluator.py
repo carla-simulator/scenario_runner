@@ -73,7 +73,6 @@ class ChallengeEvaluator(object):
         else:
             self._carla_server = ServerManagerBinary({'CARLA_SERVER': "{}/CarlaUE4.sh".format(args.carla_root)})
 
-
     def __del__(self):
         """
         Cleanup and delete actors, ScenarioManager and CARLA world
@@ -230,8 +229,6 @@ class ChallengeEvaluator(object):
                                            random_location=actor.random_location)
             self.actors.append(new_actor)
 
-
-
     def analyze_scenario(self, args, config, final_summary=False):
         """
         Provide feedback about success/failure of a scenario
@@ -267,7 +264,6 @@ class ChallengeEvaluator(object):
             with open(filename, "a+") as fd:
                 fd.write(return_message)
 
-
     def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
         """
         Draw a list of waypoints at a certain height given in vertical_shift.
@@ -279,7 +275,6 @@ class ChallengeEvaluator(object):
         for w in waypoints:
             wp = w + carla.Location(z=vertical_shift)
             self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
-
 
     def _get_latlon_ref(self):
         """
@@ -324,7 +319,7 @@ class ChallengeEvaluator(object):
         lat = 360.0 * math.atan(math.exp(my / (EARTH_RADIUS_EQUA * scale))) / math.pi - 90.0
         z = location.z
 
-        return {'lat':lat, 'lon':lon, 'z':z}
+        return {'lat': lat, 'lon': lon, 'z': z}
 
     def compress_route(self, route, start, end, threshold=10.0):
         compressed_route = []
@@ -351,7 +346,6 @@ class ChallengeEvaluator(object):
             gps_route.append((gps_coord, connection))
 
         return gps_route
-
 
     def run(self, args):
         """
