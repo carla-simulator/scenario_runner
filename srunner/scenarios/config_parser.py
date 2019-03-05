@@ -113,7 +113,6 @@ def parse_scenario_configuration(file_name, scenario_name):
     """
     Parse scenario configuration file and provide a list of
     ScenarioConfigurations @return
-
     If scenario_name starts with "group:" all scenarios within
     the config file will be returned. Otherwise only the scenario,
     that matches the scenario_name.

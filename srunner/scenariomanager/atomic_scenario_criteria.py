@@ -8,7 +8,6 @@
 """
 This module provides all atomic evaluation criteria required to analyze if a
 scenario was completed successfully or failed.
-
 The atomic criteria are implemented with py_trees.
 """
 
@@ -27,7 +26,6 @@ class Criterion(py_trees.behaviour.Behaviour):
 
     """
     Base class for all criteria used to evaluate a scenario for success/failure
-
     Important parameters (PUBLIC):
     - name: Name of the criterion
     - expected_value_success:    Result in case of success

@@ -14,11 +14,14 @@ The ego vehicle has to react accordingly by changing lane to avoid a
 collision and follow the leading car in other lane. The scenario ends
 either via a timeout, or if the ego vehicle drives some distance.
 """
+
 import py_trees
+import sys
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 LEADING_VEHICLE_DECELERATE_SCENARIOS = [
     "LeadingVehicleDecelerate"
@@ -49,7 +52,7 @@ class LeadingVehicleDecelerate(BasicScenario):
         model_1 = 'vehicle.volkswagen.t2'
         model_2 = 'vehicle.nissan.patrol'
 
-        spawn_location_1, _ = get_location_in_distance(ego_vehicle, 25)
+        spawn_location_1, _ = get_location_in_distance(ego_vehicle, 30)
         spawn_waypoint_1 = ego_vehicle.get_world().get_map().get_waypoint(spawn_location_1)
 
         if spawn_waypoint_1.lane_change & carla.LaneChange.Left:
@@ -65,11 +68,18 @@ class LeadingVehicleDecelerate(BasicScenario):
 
         return parameter_list
 
-
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(ego_vehicle, False)
+
+        if self._traffic_light is None:
+            print("No traffic light for the given location found")
+            sys.exit(-1)
+
+        self._traffic_light.set_state(carla.TrafficLightState.Green)
+        self._traffic_light.set_green_time(self.timeout)
 
         super(LeadingVehicleDecelerate, self).__init__("LeadingVehicleDeceleratingInMultiLaneSetUp",
                                                        ego_vehicle,
@@ -77,6 +87,7 @@ class LeadingVehicleDecelerate(BasicScenario):
                                                        town,
                                                        world,
                                                        debug_mode)
+
     def _create_behavior(self):
         """
         The scenario defined after is a "leading vehicle decelerate" scenario. After
@@ -113,15 +124,15 @@ class LeadingVehicleDecelerate(BasicScenario):
             "Trigger condition for deceleration",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_parallel.add_child(WaypointFollower(self.other_actors[0], self._other_target_vel))
-        keep_velocity_parallel.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25))
+        keep_velocity_parallel.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 35))
 
         deceleration = py_trees.composites.Parallel(
             "Deceleration of leading actor",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        decelerate_velocity = self._other_target_vel / 3
+        decelerate_velocity = self._other_target_vel / 3.2
         decelerate = WaypointFollower(self.other_actors[0], decelerate_velocity)
         deceleration.add_child(decelerate)
-        deceleration.add_child(DriveDistance(self.other_actors[0], 35))
+        deceleration.add_child(DriveDistance(self.other_actors[0], 55))
         leading_actor_sequence_behavior.add_child(brake)
         leading_actor_sequence_behavior.add_child(keep_velocity_parallel)
         leading_actor_sequence_behavior.add_child(deceleration)

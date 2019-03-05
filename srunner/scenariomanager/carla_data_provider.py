@@ -30,15 +30,12 @@ class CarlaDataProvider(object):
     """
     This class provides access to various data of all registered actors
     It buffers the data and updates it on every CARLA tick
-
     Currently available data:
     - Absolute velocity
     - Location
-
     Potential additions:
     - Acceleration
     - Transform
-
     In addition it provides access to the map and the transform of all traffic lights
     """
 
