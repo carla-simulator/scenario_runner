@@ -22,7 +22,6 @@ class TrafficEvent(object):
     def __init__(self, type, message=None, dict=None):
         """
         Initialize object
-
         :param type: TrafficEventType defining the type of traffic event
         :param message: optional message to inform users of the event
         :param dict: optional dictionary with arbitrary keys and values

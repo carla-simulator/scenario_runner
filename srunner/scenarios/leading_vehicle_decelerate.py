@@ -72,7 +72,7 @@ class LeadingVehicleDecelerate(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(ego_vehicle, False)
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(other_actors[0], False)
 
         if self._traffic_light is None:
             print("No traffic light for the given location found")
@@ -124,7 +124,7 @@ class LeadingVehicleDecelerate(BasicScenario):
             "Trigger condition for deceleration",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_parallel.add_child(WaypointFollower(self.other_actors[0], self._other_target_vel))
-        keep_velocity_parallel.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 35))
+        keep_velocity_parallel.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 30))
 
         deceleration = py_trees.composites.Parallel(
             "Deceleration of leading actor",
