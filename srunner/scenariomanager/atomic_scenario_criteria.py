@@ -408,6 +408,7 @@ class ReachedRegionTest(Criterion):
 
         return new_status
 
+
 class WrongLaneTest(Criterion):
 
     """
@@ -494,6 +495,7 @@ class WrongLaneTest(Criterion):
         # remember the current lane and road
         self._last_lane_id = current_lane_id
         self._last_road_id = current_road_id
+
 
 class InRadiusRegionTest(Criterion):
 
@@ -732,9 +734,6 @@ class RunningRedLightTest(Criterion):
                         self._target_traffic_light = traffic_light
                         self._in_red_light = True
                         break
-
-
-
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
