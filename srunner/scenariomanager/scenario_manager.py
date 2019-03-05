@@ -254,7 +254,6 @@ class ScenarioManager(object):
                 elif criterion.test_status == "ACCEPTABLE":
                     result = "ACCEPTABLE"
 
-
         if self.scenario.timeout_node.timeout and not failure:
             timeout = True
             result = "TIMEOUT"
@@ -292,7 +291,7 @@ class ScenarioManager(object):
 
             list_traffic_events = []
             for node in self.scenario.test_criteria.children:
-                if  node.list_traffic_events:
+                if node.list_traffic_events:
                     list_traffic_events.extend(node.list_traffic_events)
 
             list_collisions = []
@@ -347,9 +346,9 @@ class ScenarioManager(object):
 
             return_message += "\n=================================="
             return_message += "\n==[{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(result,
-                                                                                                   final_score,
-                                                                                                   score_route,
-                                                                                                   score_penalty)
+                                                                                                     final_score,
+                                                                                                     score_route,
+                                                                                                     score_penalty)
             if list_collisions:
                 return_message += "\n===== Collisions:"
                 for item in list_collisions:
@@ -371,6 +370,5 @@ class ScenarioManager(object):
                     return_message += "\n========== {}".format(item)
 
             return_message += "\n=================================="
-
 
         return result, final_score, return_message
