@@ -1,4 +1,5 @@
 ## Latest changes
+* Extended CarlaDataProvider with method to get next relevant traffic light
 * Added track identification for autonomous_agent.py
 * Added HDMap pseudo-sensor
 * Added wrong way test
