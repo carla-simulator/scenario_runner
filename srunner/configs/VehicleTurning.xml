@@ -41,11 +41,9 @@
     </scenario>
     <scenario name="VehicleTurningLeft_7" type="VehicleTurningLeft" town="Town03">
         <ego_vehicle x="-74.32" y="-50" z="0.5" yaw="270" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-102" y="-136" z="0.5" yaw="0" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="VehicleTurningRight_8" type="VehicleTurningRight" town="Town04">
         <ego_vehicle x="199.9" y="-236.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="222.3" y="-173.0" z="0.5" yaw="180" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="VehicleTurningLeft_8" type="VehicleTurningLeft" town="Town04">
         <ego_vehicle x="199.9" y="-236.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
@@ -55,18 +53,5 @@
     </scenario>
     <scenario name="VehicleTurningLeft_9" type="VehicleTurningLeft" town="Town04">
         <ego_vehicle x="255.2" y="-300.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="232" y="-246.2" z="0.5" yaw="0" model="vehicle.tesla.model3" />
-    </scenario>
-    <scenario name="VehicleTurningRight_10" type="VehicleTurningRight" town="Town05">
-        <ego_vehicle x="-191.8" y="17.2" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
-    </scenario>
-    <scenario name="VehicleTurningLeft_10" type="VehicleTurningLeft" town="Town05">
-        <ego_vehicle x="-191.8" y="17.2" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
-    </scenario>
-    <scenario name="VehicleTurningRight_11" type="VehicleTurningRight" town="Town05">
-        <ego_vehicle x="-188.1" y="-22.6" z="0.5" yaw="270" model="vehicle.lincoln.mkz2017" />
-    </scenario>
-    <scenario name="VehicleTurningLeft_11" type="VehicleTurningLeft" town="Town05">
-        <ego_vehicle x="-188.1" y="-22.6" z="0.5" yaw="270" model="vehicle.lincoln.mkz2017" />
     </scenario>
 </scenarios>
