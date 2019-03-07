@@ -84,6 +84,12 @@ class StationaryObjectCrossing(BasicScenario):
 
         return criteria
 
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()
+
 
 class DynamicObjectCrossing(BasicScenario):
 
@@ -202,3 +208,9 @@ class DynamicObjectCrossing(BasicScenario):
         criteria.append(driven_distance_criterion)
 
         return criteria
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()

@@ -27,6 +27,7 @@ from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerMan
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
+from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 
 # Dictionary of supported scenarios.
@@ -44,7 +45,6 @@ class ChallengeEvaluator(object):
     """
 
     ego_vehicle = None
-    actors = []
 
     # Tunable parameters
     client_timeout = 15.0   # in seconds
@@ -104,12 +104,7 @@ class ChallengeEvaluator(object):
         Remove and destroy all actors
         """
 
-        # We need enumerate here, otherwise the actors are not properly removed
-        for i, _ in enumerate(self.actors):
-            if self.actors[i] is not None:
-                self.actors[i].destroy()
-                self.actors[i] = None
-        self.actors = []
+        CarlaActorPool.cleanup()
 
         for i, _ in enumerate(self._sensors_list):
             if self._sensors_list[i] is not None:
@@ -120,40 +115,6 @@ class ChallengeEvaluator(object):
         if ego and self.ego_vehicle is not None:
             self.ego_vehicle.destroy()
             self.ego_vehicle = None
-
-    def setup_vehicle(self, model, spawn_point, hero=False, autopilot=False, random_location=False):
-        """
-        Function to setup the most relevant vehicle parameters,
-        incl. spawn point and vehicle model.
-        """
-
-        blueprint_library = self.world.get_blueprint_library()
-
-        # Get vehicle by model
-        blueprint = random.choice(blueprint_library.filter(model))
-        if hero:
-            blueprint.set_attribute('role_name', 'hero')
-        else:
-            blueprint.set_attribute('role_name', 'scenario')
-
-        if random_location:
-            spawn_points = list(self.world.get_map().get_spawn_points())
-            random.shuffle(spawn_points)
-            for spawn_point in spawn_points:
-                vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
-                if vehicle:
-                    break
-        else:
-            vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
-
-        if vehicle is None:
-            raise Exception(
-                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-        else:
-            # Let's deactivate the autopilot of the vehicle
-            vehicle.set_autopilot(autopilot)
-
-        return vehicle
 
     def setup_sensors(self, sensors, vehicle):
         """
@@ -207,10 +168,10 @@ class ChallengeEvaluator(object):
         while not self.agent_instance.all_sensors_ready():
             time.sleep(0.1)
 
-    def prepare_actors(self, config):
+    def prepare_ego_vehicle(self, config):
         """
-        Spawn or update all scenario actors according to
-        their parameters provided in config
+        Spawn or update the ego vehicle according to
+        its parameters provided in config
         """
 
         # If ego_vehicle already exists, just update location
@@ -222,12 +183,6 @@ class ChallengeEvaluator(object):
 
         # setup sensors
         self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
-
-        # spawn all other actors
-        for actor in config.other_actors:
-            new_actor = self.setup_vehicle(actor.model, actor.transform, hero=False, autopilot=actor.autopilot,
-                                           random_location=actor.random_location)
-            self.actors.append(new_actor)
 
     def analyze_scenario(self, args, config, final_summary=False):
         """
@@ -393,7 +348,7 @@ class ChallengeEvaluator(object):
                 self.manager = ScenarioManager(self.world, args.debug)
 
                 try:
-                    self.prepare_actors(config)
+                    self.prepare_ego_vehicle(config)
                     lat_ref, lon_ref = self._get_latlon_ref()
                     compact_route = self.compress_route(config.route.data,
                                                         config.ego_vehicle.transform.location,
@@ -404,7 +359,7 @@ class ChallengeEvaluator(object):
 
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
-                                              self.actors,
+                                              config.other_actors,
                                               config.town,
                                               args.randomize,
                                               args.debug,

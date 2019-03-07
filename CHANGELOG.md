@@ -9,7 +9,8 @@
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
       Currently there is one XML file for each scenario class
-    - The scenario runner is now responsible for spawning/destroying all actors.
+    - The scenario runner is now responsible for spawning/destroying the ego vehicle
+    - Added a CarlaActorPool to share scenario-related actors between scenarios and the scenario_runner
     - Renamed vehicle -> actor
     - If all scenarios in one coniguration file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
     - Generalized ControlLoss and FollowLeadingVehicle scenarios

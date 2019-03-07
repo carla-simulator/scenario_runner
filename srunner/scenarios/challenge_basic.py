@@ -90,3 +90,9 @@ class ChallengeBasic(BasicScenario):
         parallel_criteria.add_child(red_light_criterion)
 
         return parallel_criteria
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()

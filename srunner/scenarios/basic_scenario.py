@@ -15,6 +15,7 @@ from __future__ import print_function
 import py_trees
 
 from srunner.scenariomanager.scenario_manager import Scenario
+from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 
 
 def get_location_in_distance(actor, distance):
@@ -61,9 +62,14 @@ class BasicScenario(object):
         self._check_town(world)
 
         self.ego_vehicle = ego_vehicle
-        self.other_actors = other_actors
         self.name = name
         self.terminate_on_failure = terminate_on_failure
+
+        for actor in other_actors:
+            new_actor = CarlaActorPool.request_new_actor(actor.model, actor.transform)
+            if new_actor is None:
+                raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
+            self.other_actors.append(new_actor)
 
         # Setup scenario
         if debug_mode:
@@ -95,3 +101,13 @@ class BasicScenario(object):
             print("The CARLA server uses the wrong map!")
             print("This scenario requires to use map {}".format(self._town))
             raise Exception("The CARLA server uses the wrong map!")
+
+    def remove_all_actors(self):
+        """
+        Remove all actors
+        """
+        for i, _ in enumerate(self.other_actors):
+            if self.other_actors[i] is not None:
+                CarlaActorPool.remove_actor_by_id(self.other_actors[i].id)
+                self.other_actors[i] = None
+        self.other_actors = []

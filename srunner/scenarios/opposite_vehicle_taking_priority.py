@@ -171,4 +171,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         return criteria
 
     def __del__(self):
+        """
+        Remove all actors and traffic lights upon deletion
+        """
         self._traffic_light = None
+        self.remove_all_actors()
