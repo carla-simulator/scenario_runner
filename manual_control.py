@@ -292,7 +292,7 @@ class HUD(object):
             'Client:  % 16d FPS' % clock.get_fps(),
             '',
             'Vehicle: % 20s' % get_actor_display_name(world.vehicle, truncate=20),
-            'Map:     % 20s' % world.world.map_name,
+            'Map:     % 20s' % world.world.get_map().name,
             'Simulation time: % 12s' % datetime.timedelta(seconds=int(self.simulation_time)),
             '',
             'Speed:   % 15.0f km/h' % (3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2)),

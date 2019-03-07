@@ -66,7 +66,7 @@ class ScenarioRunner(object):
     actors = []
 
     # Tunable parameters
-    client_timeout = 10.0   # in seconds
+    client_timeout = 10.0  # in seconds
     wait_for_world = 10.0  # in seconds
 
     # CARLA world and scenario handlers
@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
     PARSER = argparse.ArgumentParser(description=DESCRIPTION,
                                      formatter_class=RawTextHelpFormatter)
-    PARSER.add_argument('--host', default='localhost',
+    PARSER.add_argument('--host', default='127.0.0.1',
                         help='IP of the host server (default: localhost)')
     PARSER.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
