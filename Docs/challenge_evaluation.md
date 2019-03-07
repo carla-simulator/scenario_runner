@@ -70,7 +70,7 @@ evaluation results.
 
 
 Finally, you can also add your own agent 
-into the system by following [this tutorial](Docs/agent_evaluation.md)
+into the system by following [this tutorial](agent_evaluation.md)
 
 
 
