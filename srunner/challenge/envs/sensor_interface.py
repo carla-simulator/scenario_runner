@@ -19,7 +19,6 @@ def threaded(fn):
 
 class HDMapMeasurement(object):
     def __init__(self, data, frame_number):
-
         self.data = data
         self.frame_number = frame_number
 
@@ -70,7 +69,6 @@ class HDMapReader(object):
 
 class CANBusMeasurement(object):
     def __init__(self, data, frame_number):
-
         self.data = data
         self.frame_number = frame_number
 
@@ -92,8 +90,6 @@ class CANBusSensor(object):
         self._frame_number = 0
         self._run_ps = True
         self.read_CAN_Bus()
-
-
 
     def _get_forward_speed(self):
         """ Convert the vehicle transform directly to forward speed """
