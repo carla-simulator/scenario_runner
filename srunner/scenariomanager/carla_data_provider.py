@@ -131,6 +131,16 @@ class CarlaDataProvider(object):
                         "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
 
     @staticmethod
+    def get_map(world):
+        """
+        Get the current map
+        """
+        if CarlaDataProvider._map is None:
+            CarlaDataProvider._map = world.get_map()
+
+        return CarlaDataProvider._map
+
+    @staticmethod
     def get_next_traffic_light(actor, use_cached_location=True):
         """
         returns the next relevant traffic light for the provided actor
@@ -217,7 +227,7 @@ class CarlaActorPool(object):
             blueprint.set_attribute('role_name', 'scenario')
 
         if random_location:
-            spawn_points = list(CarlaActorPool._world.get_map().get_spawn_points())
+            spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
             random.shuffle(spawn_points)
             for spawn_point in spawn_points:
                 vehicle = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)

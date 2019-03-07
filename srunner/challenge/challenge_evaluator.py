@@ -348,6 +348,7 @@ class ChallengeEvaluator(object):
                 self.manager = ScenarioManager(self.world, args.debug)
 
                 try:
+                    CarlaActorPool.set_world(self.world)
                     self.prepare_ego_vehicle(config)
                     lat_ref, lon_ref = self._get_latlon_ref()
                     compact_route = self.compress_route(config.route.data,
