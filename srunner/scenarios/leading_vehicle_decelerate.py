@@ -52,7 +52,7 @@ class LeadingVehicleDecelerate(BasicScenario):
         model_1 = 'vehicle.volkswagen.t2'
         model_2 = 'vehicle.nissan.patrol'
 
-        spawn_location_1, _ = get_location_in_distance(ego_vehicle, 30)
+        spawn_location_1, _ = get_location_in_distance(ego_vehicle, 35)
         spawn_waypoint_1 = ego_vehicle.get_world().get_map().get_waypoint(spawn_location_1)
 
         if spawn_waypoint_1.lane_change & carla.LaneChange.Left:
@@ -118,32 +118,29 @@ class LeadingVehicleDecelerate(BasicScenario):
             "Both actors driving in same direction",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        leading_actor_sequence_behavior = py_trees.composites.Sequence("Decelerating actor sequence behavior")
-
-        keep_velocity_parallel = py_trees.composites.Parallel(
+        keep_velocity = py_trees.composites.Parallel(
             "Trigger condition for deceleration",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity_parallel.add_child(WaypointFollower(self.other_actors[0], self._other_target_vel))
-        keep_velocity_parallel.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 30))
+        keep_velocity.add_child(WaypointFollower(self.other_actors[0], self._other_target_vel))
+        keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 30))
 
         deceleration = py_trees.composites.Parallel(
             "Deceleration of leading actor",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        decelerate_velocity = self._other_target_vel / 3.2
-        decelerate = WaypointFollower(self.other_actors[0], decelerate_velocity)
-        deceleration.add_child(decelerate)
-        deceleration.add_child(DriveDistance(self.other_actors[0], 55))
+        decelerate = self._other_target_vel / 3.2
+        deceleration.add_child(WaypointFollower(self.other_actors[0], decelerate))
+        deceleration.add_child(DriveDistance(self.other_actors[0], 200))
+
+        leading_actor_sequence_behavior = py_trees.composites.Sequence("Decelerating actor sequence behavior")
         leading_actor_sequence_behavior.add_child(brake)
-        leading_actor_sequence_behavior.add_child(keep_velocity_parallel)
+        leading_actor_sequence_behavior.add_child(keep_velocity)
         leading_actor_sequence_behavior.add_child(deceleration)
         leading_actor_sequence_behavior.add_child(WaypointFollower(self.other_actors[0], self._other_target_vel))
 
-
         # end condition
-        endcondition = DriveDistance(self.ego_vehicle, 300)
+        endcondition = DriveDistance(self.ego_vehicle, 400)
 
         # Build behavior tree
-
         root.add_child(leading_actor_sequence_behavior)
         root.add_child(WaypointFollower(self.other_actors[1], self._other_target_vel))
         root.add_child(endcondition)
@@ -159,10 +156,5 @@ class LeadingVehicleDecelerate(BasicScenario):
 
         collision_criterion = CollisionTest(self.ego_vehicle)
         criteria.append(collision_criterion)
-
-        # Add the collision checks for all vehicles as well
-        for vehicle in self.other_actors:
-            collision_criterion = CollisionTest(vehicle)
-            criteria.append(collision_criterion)
 
         return criteria
