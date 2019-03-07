@@ -24,7 +24,7 @@ import carla
 from agents.navigation.local_planner import RoadOption
 
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker
-from srunner.challenge.envs.sensor_interface import CallBack, Speedometer, HDMapReader
+from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
@@ -165,9 +165,9 @@ class ChallengeEvaluator(object):
         bp_library = self.world.get_blueprint_library()
         for sensor_spec in sensors:
             # These are the pseudosensors (not spawned)
-            if sensor_spec['type'].startswith('sensor.speedometer'):
+            if sensor_spec['type'].startswith('sensor.can_bus'):
                 # The speedometer pseudo sensor is created directly here
-                sensor = Speedometer(vehicle, sensor_spec['reading_frequency'])
+                sensor = CANBusSensor(vehicle, sensor_spec['reading_frequency'])
             elif sensor_spec['type'].startswith('sensor.hd_map'):
                 # The HDMap pseudo sensor is created directly here
                 sensor = HDMapReader(vehicle, sensor_spec['reading_frequency'])

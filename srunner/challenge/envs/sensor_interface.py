@@ -19,6 +19,7 @@ def threaded(fn):
 
 class HDMapMeasurement(object):
     def __init__(self, data, frame_number):
+
         self.data = data
         self.frame_number = frame_number
 
@@ -67,15 +68,16 @@ class HDMapReader(object):
         self._run_ps = False
 
 
-class SpeedMeasurement(object):
+class CANBusMeasurement(object):
     def __init__(self, data, frame_number):
+
         self.data = data
         self.frame_number = frame_number
 
 
-class Speedometer(object):
+class CANBusSensor(object):
     """
-    Speed pseudo sensor that gets the current speed of the vehicle.
+    Speed pseudo sensor that gets to read all the vehicle proprieties including speed.
     This sensor is not placed at the CARLA environment. It is
     only an asynchronous interface to the forward speed.
     """
@@ -89,7 +91,9 @@ class Speedometer(object):
         #  Counts the frames
         self._frame_number = 0
         self._run_ps = True
-        self.produce_speed()
+        self.read_CAN_Bus()
+
+
 
     def _get_forward_speed(self):
         """ Convert the vehicle transform directly to forward speed """
@@ -103,14 +107,64 @@ class Speedometer(object):
         speed = np.dot(vel_np, orientation)
         return speed
 
+    def __call__(self):
+
+        """ We convert the vehicle physics information into a convenient dictionary """
+
+        vehicle_physics = self._vehicle.get_physics_control()
+        wheels_list_dict = []
+        for wheel in vehicle_physics.wheels:
+            wheels_list_dict.append(
+                {'tire_friction': wheel.tire_friction,
+                 'damping_rate': wheel.damping_rate,
+                 'steer_angle': wheel.steer_angle,
+                 'disable_steering': wheel.disable_steering
+
+                 }
+            )
+
+        torque_curve = []
+        for point in vehicle_physics.torque_curve:
+            torque_curve.append({'x': point.x,
+                                'y': point.y
+                                })
+        steering_curve = []
+        for point in vehicle_physics.steering_curve:
+            steering_curve.append({'x': point.x,
+                                'y': point.y
+                                })
+
+        return {
+            'speed': self._get_forward_speed(),
+            'torque_curve': torque_curve,
+            'max_rpm': vehicle_physics.max_rpm,
+            'moi': vehicle_physics.moi,
+            'damping_rate_full_throttle': vehicle_physics.damping_rate_full_throttle,
+            'damping_rate_zero_throttle_clutch_disengaged':
+                vehicle_physics.damping_rate_zero_throttle_clutch_disengaged,
+            'use_gear_autobox': vehicle_physics.use_gear_autobox,
+            'clutch_strength': vehicle_physics.clutch_strength,
+            'mass': vehicle_physics.mass,
+            'drag_coefficient': vehicle_physics.drag_coefficient,
+            'center_of_mass': {'x': vehicle_physics.center_of_mass.x,
+                               'y': vehicle_physics.center_of_mass.x,
+                               'z': vehicle_physics.center_of_mass.x
+                               },
+            'steering_curve': steering_curve,
+            'wheels': wheels_list_dict
+        }
+
+
+
+
     @threaded
-    def produce_speed(self):
+    def read_CAN_Bus(self):
         latest_speed_read = time.time()
         while self._run_ps:
             if self._callback is not None:
                 capture = time.time()
                 if capture - latest_speed_read > (1 / self._reading_frequency):
-                    self._callback(SpeedMeasurement(self._get_forward_speed(), self._frame_number))
+                    self._callback(CANBusMeasurement(self.__call__(), self._frame_number))
                     self._frame_number += 1
                     latest_speed_read = time.time()
                 else:
@@ -138,7 +192,7 @@ class CallBack(object):
             self._parse_lidar_cb(data, self._tag)
         elif isinstance(data, carla.GnssEvent):
             self._parse_gnss_cb(data, self._tag)
-        elif isinstance(data, SpeedMeasurement):
+        elif isinstance(data, CANBusMeasurement):
             self._parse_speedometer(data, self._tag)
         elif isinstance(data, HDMapMeasurement):
             self._parse_hdmap(data, self._tag)
