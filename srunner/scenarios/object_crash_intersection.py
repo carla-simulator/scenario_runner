@@ -24,16 +24,13 @@ VEHICLE_TURNING_SCENARIOS = [
 
 
 class VehicleTurningRight(BasicScenario):
-
     """
     This class holds everything required for a simple object crash
     with prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a right turn.
     """
-
     category = "VehicleTurning"
-
     timeout = 90
 
     # other vehicle parameters
@@ -170,7 +167,7 @@ class VehicleTurningLeft(BasicScenario):
                                                  config,
                                                  world,
                                                  debug_mode)
-                                                    
+
     @staticmethod
     def initialize_actors(ego_vehicle):
         """
