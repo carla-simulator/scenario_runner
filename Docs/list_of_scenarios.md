@@ -21,13 +21,13 @@ the ego vehicle stopped close enough to the leading vehicle
 This scenario is very similar to 'FollowLeadingVehicle'. The only difference is,
 that in front of the leading vehicle is a (hidden) obstacle that blocks the way.
 
-###VehicleTurningRight
+### VehicleTurningRight
 In this scenario the ego vehicle takes a right turn from an intersection where
 a cyclist suddenly drives into the way of the ego vehicle,which has to stop
 accordingly. After some time, the cyclist clears the road, such that ego vehicle
 can continue driving.
 
-###VehicleTurningLeft
+### VehicleTurningLeft
 This scenario is similar to 'VehicleTurningRight'. The differnce is that the ego
 vehicle takes a left turn from an intersection.
 
