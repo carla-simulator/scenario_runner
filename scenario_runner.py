@@ -68,7 +68,7 @@ class ScenarioRunner(object):
     ego_vehicle = None
 
     # Tunable parameters
-    client_timeout = 10.0  # in seconds
+    client_timeout = 10.0   # in seconds
     wait_for_world = 10.0  # in seconds
 
     # CARLA world and scenario handlers
@@ -137,8 +137,39 @@ class ScenarioRunner(object):
 
     def prepare_ego_vehicle(self, config):
         """
+<<<<<<< HEAD
         Spawn or update the ego vehicle according to
         its parameters provided in config
+=======
+        Function to setup the most relevant vehicle parameters,
+        incl. spawn point and vehicle model.
+        """
+
+        blueprint_library = self.world.get_blueprint_library()
+
+        # Get vehicle by model
+        blueprint = random.choice(blueprint_library.filter(model))
+        if hero:
+            blueprint.set_attribute('role_name', 'hero')
+        else:
+            blueprint.set_attribute('role_name', 'scenario')
+
+        vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
+
+        if vehicle is None:
+            raise Exception(
+                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
+        else:
+            # Let's deactivate the autopilot of the vehicle
+            vehicle.set_autopilot(False)
+
+        return vehicle
+
+    def prepare_actors(self, config, scenario_class):
+        """
+        Spawn or update all scenario actors according to
+        their parameters provided in config
+>>>>>>> changed required scenario runner.
         """
 
         # If ego_vehicle already exists, just update location
@@ -148,6 +179,21 @@ class ScenarioRunner(object):
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
+<<<<<<< HEAD
+=======
+        actor_parameters = scenario_class.initialize_actors(self.ego_vehicle)
+
+        # spawn all other actors
+        for actor_model, actor_transform in actor_parameters:
+            new_actor = self.setup_vehicle(actor_model, actor_transform)
+            self.actors.append(new_actor)
+
+        # spawn all other actors
+        # for actor in config.other_actors:
+        #     new_actor = self.setup_vehicle(actor.model, actor.transform)
+        #     self.actors.append(new_actor)
+
+>>>>>>> changed required scenario runner.
     def analyze_scenario(self, args, config):
         """
         Provide feedback about success/failure of a scenario
@@ -192,8 +238,12 @@ class ScenarioRunner(object):
                 print("Preparing scenario: " + config.name)
                 scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.type)
                 try:
+<<<<<<< HEAD
                     CarlaActorPool.set_world(self.world)
                     self.prepare_ego_vehicle(config)
+=======
+                    self.prepare_actors(config, scenario_class)
+>>>>>>> changed required scenario runner.
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
                                               config,
@@ -230,7 +280,7 @@ if __name__ == '__main__':
 
     PARSER = argparse.ArgumentParser(description=DESCRIPTION,
                                      formatter_class=RawTextHelpFormatter)
-    PARSER.add_argument('--host', default='127.0.0.1',
+    PARSER.add_argument('--host', default='localhost',
                         help='IP of the host server (default: localhost)')
     PARSER.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
