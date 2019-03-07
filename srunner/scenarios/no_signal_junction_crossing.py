@@ -35,12 +35,11 @@ class NoSignalJunctionCrossing(BasicScenario):
     category = "NoSignalJunction"
 
     # ego vehicle parameters
-    _ego_vehicle_max_velocity = 20
-    _ego_vehicle_driven_distance = 105
+    _ego_vehicle_driven_distance = 100
 
     # other vehicle
     _other_actor_max_brake = 1.0
-    _other_actor_target_velocity = 15
+    _other_actor_target_velocity = 50
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
@@ -82,10 +81,8 @@ class NoSignalJunctionCrossing(BasicScenario):
         """
 
         # Creating leaf nodes
-        start_other_trigger = InTriggerRegion(
-            self.ego_vehicle,
-            -80, -70,
-            -75, -60)
+        location, _ = get_location_in_distance(self.ego_vehicle, 10)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 15.0)
 
         sync_arrival = SyncArrival(
             self.other_actors[0], self.ego_vehicle,
