@@ -117,7 +117,6 @@ class ChallengeEvaluator(object):
                 self._sensors_list[i] = None
         self._sensors_list = []
 
-
     def setup_vehicle(self, model, spawn_point, hero=False, autopilot=False, random_location=False):
         """
         Function to setup the most relevant vehicle parameters,
