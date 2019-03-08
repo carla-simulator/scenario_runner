@@ -230,8 +230,8 @@ class CarlaActorPool(object):
             spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
             random.shuffle(spawn_points)
             for spawn_point in spawn_points:
-                vehicle = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
-                if vehicle:
+                actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
+                if actor:
                     break
         else:
             actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
@@ -246,12 +246,12 @@ class CarlaActorPool(object):
         return actor
 
     @staticmethod
-    def request_new_actor(model, spawn_point):
+    def request_new_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
         """
-        actor = CarlaActorPool.setup_actor(model, spawn_point)
+        actor = CarlaActorPool.setup_actor(model, spawn_point, hero, autopilot, random_location)
 
         if actor is not None:
             CarlaActorPool._carla_actor_pool[actor.id] = actor
@@ -288,9 +288,9 @@ class CarlaActorPool(object):
         """
         Cleanup the actor pool, i.e. remove and destroy all actors
         """
-        for actor_id in CarlaActorPool._carla_actor_pool:
+        for actor_id in CarlaActorPool._carla_actor_pool.copy():
             CarlaActorPool._carla_actor_pool[actor_id].destroy()
-            CarlaActorPool._carla_actor_pool[actor_id] = None
+            CarlaActorPool._carla_actor_pool.pop(actor_id)
 
         CarlaActorPool._carla_actor_pool = dict()
         CarlaActorPool._world = None
@@ -301,10 +301,10 @@ class CarlaActorPool(object):
         Remove all actors from the pool that are closer than distance to the
         provided location
         """
-        for actor_id in CarlaActorPool._carla_actor_pool:
+        for actor_id in CarlaActorPool._carla_actor_pool.copy():
             if CarlaActorPool._carla_actor_pool[actor_id].get_location().distance(location) < distance:
                 CarlaActorPool._carla_actor_pool[actor_id].destroy()
-                CarlaActorPool._carla_actor_pool[actor_id] = None
+                CarlaActorPool._carla_actor_pool.pop(actor_id)
 
         # Remove all keys with None values
         CarlaActorPool._carla_actor_pool = dict({k: v for k, v in CarlaActorPool._carla_actor_pool.items() if v})

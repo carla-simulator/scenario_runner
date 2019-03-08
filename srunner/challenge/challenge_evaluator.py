@@ -27,7 +27,6 @@ from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerMan
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 
 # Dictionary of supported scenarios.
@@ -45,10 +44,11 @@ class ChallengeEvaluator(object):
     """
 
     ego_vehicle = None
+    actors = []
 
     # Tunable parameters
-    client_timeout = 15.0   # in seconds
-    wait_for_world = 10.0  # in seconds
+    client_timeout = 65.0   # in seconds
+    wait_for_world = 60.0  # in seconds
 
     # CARLA world and scenario handlers
     world = None
@@ -103,8 +103,12 @@ class ChallengeEvaluator(object):
         """
         Remove and destroy all actors
         """
-
         CarlaActorPool.cleanup()
+        CarlaDataProvider.cleanup()
+
+        if ego and self.ego_vehicle is not None:
+            self.ego_vehicle.destroy()
+            self.ego_vehicle = None
 
         for i, _ in enumerate(self._sensors_list):
             if self._sensors_list[i] is not None:
@@ -112,9 +116,40 @@ class ChallengeEvaluator(object):
                 self._sensors_list[i] = None
         self._sensors_list = []
 
-        if ego and self.ego_vehicle is not None:
-            self.ego_vehicle.destroy()
-            self.ego_vehicle = None
+
+    def setup_vehicle(self, model, spawn_point, hero=False, autopilot=False, random_location=False):
+        """
+        Function to setup the most relevant vehicle parameters,
+        incl. spawn point and vehicle model.
+        """
+
+        blueprint_library = self.world.get_blueprint_library()
+
+        # Get vehicle by model
+        blueprint = random.choice(blueprint_library.filter(model))
+        if hero:
+            blueprint.set_attribute('role_name', 'hero')
+        else:
+            blueprint.set_attribute('role_name', 'scenario')
+
+        if random_location:
+            spawn_points = list(self.world.get_map().get_spawn_points())
+            random.shuffle(spawn_points)
+            for spawn_point in spawn_points:
+                vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
+                if vehicle:
+                    break
+        else:
+            vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
+
+        if vehicle is None:
+            raise Exception(
+                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
+        else:
+            # Let's deactivate the autopilot of the vehicle
+            vehicle.set_autopilot(autopilot)
+
+        return vehicle
 
     def setup_sensors(self, sensors, vehicle):
         """
@@ -168,6 +203,28 @@ class ChallengeEvaluator(object):
         while not self.agent_instance.all_sensors_ready():
             time.sleep(0.1)
 
+    def prepare_actors(self, config):
+        """
+        Spawn or update all scenario actors according to
+        their parameters provided in config
+        """
+
+        # If ego_vehicle already exists, just update location
+        # Otherwise spawn ego vehicle
+        if self.ego_vehicle is None:
+            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model, config.ego_vehicle.transform, True)
+        else:
+            self.ego_vehicle.set_transform(config.ego_vehicle.transform)
+
+        # setup sensors
+        self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
+
+        # # spawn all other actors
+        # for actor in config.other_actors:
+        #     new_actor = CarlaActorPool.setup_actor(actor.model, actor.transform,  hero=False, autopilot=actor.autopilot,
+        #                                    random_location=actor.random_location)
+        #     self.actors.append(new_actor)
+
     def prepare_ego_vehicle(self, config):
         """
         Spawn or update the ego vehicle according to
@@ -177,7 +234,7 @@ class ChallengeEvaluator(object):
         # If ego_vehicle already exists, just update location
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
-            self.ego_vehicle = self.setup_vehicle(config.ego_vehicle.model, config.ego_vehicle.transform, hero=True)
+            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model, config.ego_vehicle.transform, True)
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
@@ -216,7 +273,7 @@ class ChallengeEvaluator(object):
 
         if args.file:
             filename = "results.txt"
-            with open(filename, "a+") as fd:
+            with open(filename, "w+") as fd:
                 fd.write(return_message)
 
     def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
@@ -307,6 +364,7 @@ class ChallengeEvaluator(object):
         Run all scenarios according to provided commandline args
         """
 
+        iter = 0
         # Prepare CARLA server
         self._carla_server.reset(args.host, args.port)
         self._carla_server.wait_until_ready()
@@ -340,6 +398,7 @@ class ChallengeEvaluator(object):
                 # Once we have a client we can retrieve the world that is currently
                 # running.
                 self.world = client.load_world(config.town)
+                CarlaActorPool.set_world(self.world)
 
                 # Wait for the world to be ready
                 self.world.wait_for_tick(self.wait_for_world)
@@ -348,8 +407,7 @@ class ChallengeEvaluator(object):
                 self.manager = ScenarioManager(self.world, args.debug)
 
                 try:
-                    CarlaActorPool.set_world(self.world)
-                    self.prepare_ego_vehicle(config)
+                    self.prepare_actors(config)
                     lat_ref, lon_ref = self._get_latlon_ref()
                     compact_route = self.compress_route(config.route.data,
                                                         config.ego_vehicle.transform.location,
@@ -373,7 +431,6 @@ class ChallengeEvaluator(object):
 
                 # Load scenario and run it
                 self.manager.load_scenario(scenario)
-
                 # debug
                 if args.route_visible:
                     locations_route, _ = zip(*config.route.data)
@@ -390,6 +447,7 @@ class ChallengeEvaluator(object):
 
                 self.cleanup(ego=True)
                 self.agent_instance.destroy()
+                iter += 1
 
         self.final_summary(args)
 
