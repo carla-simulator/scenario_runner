@@ -62,7 +62,14 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         and instantiate scenario manager
         """
 
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(ego_vehicle, False)
+        super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
+                                                             ego_vehicle,
+                                                             other_actors,
+                                                             town,
+                                                             world,
+                                                             debug_mode)
+
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
 
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
@@ -72,7 +79,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._traffic_light.set_green_time(self.timeout)
 
         # other vehicle's traffic light
-        traffic_light_other = CarlaDataProvider.get_next_traffic_light(other_actors[0], False)
+        traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
 
         if traffic_light_other is None:
             print("No traffic light for the given location of the other vehicle found")
@@ -81,12 +88,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         traffic_light_other.set_state(carla.TrafficLightState.Red)
         traffic_light_other.set_red_time(self.timeout)
 
-        super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
-                                                             ego_vehicle,
-                                                             other_actors,
-                                                             town,
-                                                             world,
-                                                             debug_mode)
+
 
     def _create_behavior(self):
         """
@@ -108,8 +110,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             self._ego_distance_to_traffic_light,
             name="Waiting for start position")
 
-        # wait until traffic light for ego vehicle is green
-        wait_for_green = WaitForTrafficLightState(self._traffic_light, "Green")
 
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
@@ -149,7 +149,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(startcondition)
-        sequence.add_child(wait_for_green)
         sequence.add_child(sync_arrival_parallel)
         sequence.add_child(keep_velocity_for_distance)
         sequence.add_child(wait)
