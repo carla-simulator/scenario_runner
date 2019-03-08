@@ -1,8 +1,13 @@
 <?xml version="1.0"?>
 <scenarios>
     <scenario name="FollowLeadingVehicle" type="FollowLeadingVehicle" town="Town01">
+<<<<<<< HEAD
         <ego_vehicle x="107" y="133" z="1" yaw="0" model="vehicle.lincoln.mkz2017" />
         <other_actor x="157" y="133" z="1" yaw="0" model="vehicle.*" />
+=======
+        <ego_vehicle x="107" y="133" z="39" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <!-- <other_actor x="157" y="133" z="39" yaw="0" model="vehicle.*" /> -->
+>>>>>>> * Created a barebone super class for ActorConfiguration
     </scenario>
     <scenario name="FollowLeadingVehicleWithObstacle" type="FollowLeadingVehicleWithObstacle" town="Town01">
         <ego_vehicle x="107" y="133" z="1" yaw="0" model="vehicle.lincoln.mkz2017" />

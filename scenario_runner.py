@@ -262,8 +262,10 @@ if __name__ == '__main__':
         PARSER.print_help(sys.stdout)
         sys.exit(0)
 
+    SCENARIORUNNER = None
     try:
         SCENARIORUNNER = ScenarioRunner(ARGUMENTS)
         SCENARIORUNNER.run(ARGUMENTS)
     finally:
-        del SCENARIORUNNER
+        if SCENARIORUNNER is not None:
+            del SCENARIORUNNER
