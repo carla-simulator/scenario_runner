@@ -22,7 +22,8 @@ import time
 
 import carla
 from agents.navigation.local_planner import RoadOption
-
+from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.scenarios.challenge_basic import *
@@ -218,12 +219,6 @@ class ChallengeEvaluator(object):
 
         # setup sensors
         self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
-
-        # # spawn all other actors
-        # for actor in config.other_actors:
-        #     new_actor = CarlaActorPool.setup_actor(actor.model, actor.transform,  hero=False, autopilot=actor.autopilot,
-        #                                    random_location=actor.random_location)
-        #     self.actors.append(new_actor)
 
     def prepare_ego_vehicle(self, config):
         """
