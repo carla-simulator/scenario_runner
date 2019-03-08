@@ -84,7 +84,8 @@ class ControlLoss(BasicScenario):
             self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
 
             # turn vehicle
-            turn = AddNoiseToVehicle(self.ego_vehicle, self._ego_vehicle_max_steer, self._ego_vehicle_max_throttle, name='Jittering ' + str(i))
+            turn = AddNoiseToVehicle(
+                self.ego_vehicle, self._ego_vehicle_max_steer, self._ego_vehicle_max_throttle, name='Jittering ' + str(i))
 
             jitter_action = py_trees.composites.Parallel("Jitter Actions with Timeouts",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)

@@ -158,6 +158,12 @@ class FollowLeadingVehicle(BasicScenario):
 
         return criteria
 
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()
+
 
 class FollowLeadingVehicleWithObstacle(BasicScenario):
 
@@ -288,3 +294,9 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             criteria.append(keep_lane_criterion)
 
         return criteria
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()

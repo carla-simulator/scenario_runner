@@ -145,6 +145,12 @@ class VehicleTurningRight(BasicScenario):
 
         return criteria
 
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()
+
 
 class VehicleTurningLeft(BasicScenario):
 
@@ -268,3 +274,9 @@ class VehicleTurningLeft(BasicScenario):
         criteria.append(driven_distance_criterion)
 
         return criteria
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()

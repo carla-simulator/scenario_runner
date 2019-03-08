@@ -142,3 +142,9 @@ class NoSignalJunctionCrossing(BasicScenario):
             criteria.append(collision_criterion)
 
         return criteria
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()

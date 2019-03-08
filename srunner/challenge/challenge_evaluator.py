@@ -22,7 +22,8 @@ import time
 
 import carla
 from agents.navigation.local_planner import RoadOption
-
+from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.scenarios.challenge_basic import *
@@ -47,8 +48,8 @@ class ChallengeEvaluator(object):
     actors = []
 
     # Tunable parameters
-    client_timeout = 15.0   # in seconds
-    wait_for_world = 10.0  # in seconds
+    client_timeout = 65.0   # in seconds
+    wait_for_world = 60.0  # in seconds
 
     # CARLA world and scenario handlers
     world = None
@@ -103,13 +104,12 @@ class ChallengeEvaluator(object):
         """
         Remove and destroy all actors
         """
+        CarlaActorPool.cleanup()
+        CarlaDataProvider.cleanup()
 
-        # We need enumerate here, otherwise the actors are not properly removed
-        for i, _ in enumerate(self.actors):
-            if self.actors[i] is not None:
-                self.actors[i].destroy()
-                self.actors[i] = None
-        self.actors = []
+        if ego and self.ego_vehicle is not None:
+            self.ego_vehicle.destroy()
+            self.ego_vehicle = None
 
         for i, _ in enumerate(self._sensors_list):
             if self._sensors_list[i] is not None:
@@ -117,9 +117,6 @@ class ChallengeEvaluator(object):
                 self._sensors_list[i] = None
         self._sensors_list = []
 
-        if ego and self.ego_vehicle is not None:
-            self.ego_vehicle.destroy()
-            self.ego_vehicle = None
 
     def setup_vehicle(self, model, spawn_point, hero=False, autopilot=False, random_location=False):
         """
@@ -216,18 +213,28 @@ class ChallengeEvaluator(object):
         # If ego_vehicle already exists, just update location
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
-            self.ego_vehicle = self.setup_vehicle(config.ego_vehicle.model, config.ego_vehicle.transform, hero=True)
+            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model, config.ego_vehicle.transform, True)
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
         # setup sensors
         self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
 
-        # spawn all other actors
-        for actor in config.other_actors:
-            new_actor = self.setup_vehicle(actor.model, actor.transform, hero=False, autopilot=actor.autopilot,
-                                           random_location=actor.random_location)
-            self.actors.append(new_actor)
+    def prepare_ego_vehicle(self, config):
+        """
+        Spawn or update the ego vehicle according to
+        its parameters provided in config
+        """
+
+        # If ego_vehicle already exists, just update location
+        # Otherwise spawn ego vehicle
+        if self.ego_vehicle is None:
+            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model, config.ego_vehicle.transform, True)
+        else:
+            self.ego_vehicle.set_transform(config.ego_vehicle.transform)
+
+        # setup sensors
+        self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
 
     def analyze_scenario(self, args, config, final_summary=False):
         """
@@ -261,7 +268,7 @@ class ChallengeEvaluator(object):
 
         if args.file:
             filename = "results.txt"
-            with open(filename, "a+") as fd:
+            with open(filename, "w+") as fd:
                 fd.write(return_message)
 
     def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
@@ -351,7 +358,6 @@ class ChallengeEvaluator(object):
         """
         Run all scenarios according to provided commandline args
         """
-
         # Prepare CARLA server
         self._carla_server.reset(args.host, args.port)
         self._carla_server.wait_until_ready()
@@ -385,6 +391,7 @@ class ChallengeEvaluator(object):
                 # Once we have a client we can retrieve the world that is currently
                 # running.
                 self.world = client.load_world(config.town)
+                CarlaActorPool.set_world(self.world)
 
                 # Wait for the world to be ready
                 self.world.wait_for_tick(self.wait_for_world)
@@ -404,7 +411,7 @@ class ChallengeEvaluator(object):
 
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
-                                              self.actors,
+                                              config.other_actors,
                                               config.town,
                                               args.randomize,
                                               args.debug,
@@ -417,7 +424,6 @@ class ChallengeEvaluator(object):
 
                 # Load scenario and run it
                 self.manager.load_scenario(scenario)
-
                 # debug
                 if args.route_visible:
                     locations_route, _ = zip(*config.route.data)

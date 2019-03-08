@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018 Intel Labs.
+# Copyright (c) 2018-2019 Intel Labs.
 # authors: Fabian Oboril (fabian.oboril@intel.com)
 #
 # This work is licensed under the terms of the MIT license.
@@ -12,6 +12,7 @@ local buffers to avoid blocking calls to CARLA
 """
 
 import math
+import random
 
 import carla
 
@@ -130,6 +131,16 @@ class CarlaDataProvider(object):
                         "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
 
     @staticmethod
+    def get_map(world):
+        """
+        Get the current map
+        """
+        if CarlaDataProvider._map is None:
+            CarlaDataProvider._map = world.get_map()
+
+        return CarlaDataProvider._map
+
+    @staticmethod
     def get_next_traffic_light(actor, use_cached_location=True):
         """
         returns the next relevant traffic light for the provided actor
@@ -175,3 +186,125 @@ class CarlaDataProvider(object):
         CarlaDataProvider._actor_location_map.clear()
         CarlaDataProvider._traffic_light_map.clear()
         CarlaDataProvider._map = None
+
+
+class CarlaActorPool(object):
+
+    """
+    The CarlaActorPool caches all scenario relevant actors.
+    It works similar to a singelton.
+
+    An actor can be created via "request_actor", and access
+    is possible via "get_actor_by_id".
+
+    Using CarlaActorPool, actors can be shared between scenarios.
+    """
+
+    _world = None
+    _carla_actor_pool = dict()
+
+    @staticmethod
+    def set_world(world):
+        """
+        Set the CARLA world
+        """
+        CarlaActorPool._world = world
+
+    @staticmethod
+    def setup_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
+        """
+        Function to setup the most relevant actor parameters,
+        incl. spawn point and vehicle model.
+        """
+
+        blueprint_library = CarlaActorPool._world.get_blueprint_library()
+
+        # Get vehicle by model
+        blueprint = random.choice(blueprint_library.filter(model))
+        if hero:
+            blueprint.set_attribute('role_name', 'hero')
+        else:
+            blueprint.set_attribute('role_name', 'scenario')
+
+        if random_location:
+            spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
+            random.shuffle(spawn_points)
+            for spawn_point in spawn_points:
+                actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
+                if actor:
+                    break
+        else:
+            actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
+
+        if actor is None:
+            raise Exception(
+                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
+        else:
+            # Let's deactivate the autopilot of the actor
+            actor.set_autopilot(autopilot)
+
+        return actor
+
+    @staticmethod
+    def request_new_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
+        """
+        This method tries to create a new actor. If this was
+        successful, the new actor is returned, None otherwise.
+        """
+        actor = CarlaActorPool.setup_actor(model, spawn_point, hero, autopilot, random_location)
+
+        if actor is not None:
+            CarlaActorPool._carla_actor_pool[actor.id] = actor
+            return actor
+        else:
+            return None
+
+    @staticmethod
+    def get_actor_by_id(actor_id):
+        """
+        Get an actor from the pool by using its ID. If the actor
+        does not exist, None is returned.
+        """
+        if actor_id in CarlaActorPool._carla_actor_pool:
+            return CarlaActorPool._carla_actor_pool[actor_id]
+        else:
+            print("Non-existing actor id {}".format(actor_id))
+            return None
+
+    @staticmethod
+    def remove_actor_by_id(actor_id):
+        """
+        Remove an actor from the pool using its ID
+        """
+        if actor_id in CarlaActorPool._carla_actor_pool:
+            CarlaActorPool._carla_actor_pool[actor_id].destroy()
+            CarlaActorPool._carla_actor_pool[actor_id] = None
+            CarlaActorPool._carla_actor_pool.pop(actor_id)
+        else:
+            print("Trying to remove a non-existing actor id {}".format(actor_id))
+
+    @staticmethod
+    def cleanup():
+        """
+        Cleanup the actor pool, i.e. remove and destroy all actors
+        """
+        for actor_id in CarlaActorPool._carla_actor_pool.copy():
+            CarlaActorPool._carla_actor_pool[actor_id].destroy()
+            CarlaActorPool._carla_actor_pool.pop(actor_id)
+
+        CarlaActorPool._carla_actor_pool = dict()
+        CarlaActorPool._world = None
+
+    @staticmethod
+    def remove_all_actors_in_surrounding(location, distance):
+        """
+        Remove all actors from the pool that are closer than distance to the
+        provided location
+        """
+        for actor_id in CarlaActorPool._carla_actor_pool.copy():
+            if CarlaActorPool._carla_actor_pool[actor_id].get_location().distance(location) < distance:
+                CarlaActorPool._carla_actor_pool[actor_id].destroy()
+                CarlaActorPool._carla_actor_pool.pop(actor_id)
+
+        # Remove all keys with None values
+        CarlaActorPool._carla_actor_pool = dict({k: v for k, v in CarlaActorPool._carla_actor_pool.items() if v})
