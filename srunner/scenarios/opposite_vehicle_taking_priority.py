@@ -17,10 +17,12 @@ import sys
 import py_trees
 import carla
 
+from srunner.scenarios.basic_scenario import *
+from srunner.scenarios.scenario_helper import *
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenarios.basic_scenario import *
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.timer import TimeOut
 
 
 RUNNING_RED_LIGHT_SCENARIOS = [
@@ -45,10 +47,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _ego_max_velocity_allowed = 20       # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4       # Average expected velocity [m/s]
     _ego_expected_driven_distance = 88   # Expected driven distance [m]
-    _ego_distance_to_traffic_light = 15  # Trigger distance to traffic light [m]
-    _ego_end_position = carla.Location(x=-3, y=-90, z=0)   # End position
-    _ego_distance_to_end_position = 5    # Allowed distance to end position [m]
-    _intersection_location = carla.Location(x=-3, y=-150, z=0)
+    _ego_distance_to_traffic_light = 53  # Trigger distance to traffic light [m]
+    _ego_distance_to_drive = 35          # Allowed distance to drive
 
     # other vehicle
     _other_actor_target_velocity = 15      # Target velocity of other vehicle
@@ -56,7 +56,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _other_actor_distance = 30             # Distance the other vehicle should drive
 
     _traffic_light = None
-    _location_of_collision = carla.Location(x=0, y=-135, z=1)
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
         """
@@ -67,11 +66,23 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(ego_vehicle, False)
 
         if self._traffic_light is None:
-            print("No traffic light for the given location found")
+            print("No traffic light for the given location of the ego vehicle found")
             sys.exit(-1)
 
         self._traffic_light.set_state(carla.TrafficLightState.Green)
         self._traffic_light.set_green_time(self.timeout)
+        
+        
+        # other vehicle's traffic light
+        traffic_light_other = CarlaDataProvider.get_next_traffic_light(other_actors[0], False)
+
+        if traffic_light_other is None:
+            print("No traffic light for the given location of the other vehicle found")
+            sys.exit(-1)
+        
+
+        traffic_light_other.set_state(carla.TrafficLightState.Red)
+        traffic_light_other.set_red_time(self.timeout)
 
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
                                                              ego_vehicle,
@@ -91,11 +102,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         If this does not happen within 120 seconds, a timeout stops the scenario
         """
-
+        #crossing_point_dynamic = carla.Location(x=0, y=-135, z=1)
+        crossing_point_dynamic = get_crossing_point(self.ego_vehicle)
+        
         # start condition
         startcondition = InTriggerDistanceToLocation(
             self.ego_vehicle,
-            self._intersection_location,
+            crossing_point_dynamic,
             self._ego_distance_to_traffic_light,
             name="Waiting for start position")
 
@@ -105,8 +118,12 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        
+  
+        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
+        
         sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, self._location_of_collision)
+            self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
         sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
                                                        15)
@@ -123,15 +140,16 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             self.other_actors[0],
             self._other_actor_distance,
             name="Distance")
+        keep_velocity_timeout = TimeOut(5)
         keep_velocity_for_distance.add_child(keep_velocity)
         keep_velocity_for_distance.add_child(keep_velocity_distance)
-
-        # finally wait that ego vehicle reached target position
-        wait = InTriggerDistanceToLocation(
+        keep_velocity_for_distance.add_child(keep_velocity_timeout)
+        
+        # finally wait that ego vehicle drove a specific distance
+        wait = DriveDistance(
             self.ego_vehicle,
-            self._ego_end_position,
-            self._ego_distance_to_end_position,
-            name="Waiting for end position")
+            self._ego_distance_to_drive,
+            name="DriveDistance")
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
