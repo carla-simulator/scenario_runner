@@ -200,7 +200,7 @@ class ScenarioRunner(object):
                                               args.debug)
                 except Exception as exception:
                     print("The scenario cannot be loaded")
-                    if (args.debug):
+                    if args.debug:
                         traceback.print_exc()
                     print(exception)
                     self.cleanup()

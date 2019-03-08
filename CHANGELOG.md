@@ -5,6 +5,7 @@
 * Added wrong way test
 * Added new traffic event logger
 * Added running red light test
+* Added various helper methods to allow generic scenario execution
 * Updated folder structure and naming convention in lowecase
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
@@ -21,6 +22,8 @@
     - InTriggerDistanceToNextIntersection: check if a vehicle is within certain distance with respect to the next intersection
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
+* Updated NHTSA Traffic Scenarios
+    - OppositeVehicleRunningRedLight: Updated to allow execution at different locations
 
 ## CARLA Scenario_Runner 0.9.2
 
