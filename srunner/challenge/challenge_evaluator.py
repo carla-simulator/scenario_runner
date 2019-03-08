@@ -358,8 +358,6 @@ class ChallengeEvaluator(object):
         """
         Run all scenarios according to provided commandline args
         """
-
-        iter = 0
         # Prepare CARLA server
         self._carla_server.reset(args.host, args.port)
         self._carla_server.wait_until_ready()
@@ -442,7 +440,6 @@ class ChallengeEvaluator(object):
 
                 self.cleanup(ego=True)
                 self.agent_instance.destroy()
-                iter += 1
 
         self.final_summary(args)
 
