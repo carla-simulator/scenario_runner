@@ -66,6 +66,7 @@ def get_geometric_linear_intersection(ego_actor, other_actor):
 
     return intersection
 
+
 def get_location_in_distance(actor, distance):
     """
     Obtain a location in a given distance from the current actor's location.
