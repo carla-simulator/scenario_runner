@@ -179,8 +179,6 @@ class ScenarioRunner(object):
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
-<<<<<<< HEAD
-=======
         actor_parameters = scenario_class.initialize_actors(self.ego_vehicle)
 
         # spawn all other actors
@@ -193,7 +191,6 @@ class ScenarioRunner(object):
         #     new_actor = self.setup_vehicle(actor.model, actor.transform)
         #     self.actors.append(new_actor)
 
->>>>>>> changed required scenario runner.
     def analyze_scenario(self, args, config):
         """
         Provide feedback about success/failure of a scenario
