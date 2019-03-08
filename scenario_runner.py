@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (c) 2018-2019 Intel Labs.
-# authors: Fabian Oboril (fabian.oboril@intel.com)
+
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -30,7 +30,7 @@ from srunner.scenarios.no_signal_junction_crossing import *
 from srunner.scenarios.object_crash_intersection import *
 from srunner.scenarios.control_loss import *
 from srunner.scenarios.config_parser import *
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 
 
@@ -126,6 +126,7 @@ class ScenarioRunner(object):
         Remove and destroy all actors
         """
 
+        CarlaDataProvider.cleanup()
         CarlaActorPool.cleanup()
 
         if ego and self.ego_vehicle is not None:
@@ -199,7 +200,8 @@ class ScenarioRunner(object):
                                               args.debug)
                 except Exception as exception:
                     print("The scenario cannot be loaded")
-                    traceback.print_exc()
+                    if (args.debug):
+                        traceback.print_exc()
                     print(exception)
                     self.cleanup()
                     continue
