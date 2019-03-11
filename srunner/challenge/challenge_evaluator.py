@@ -16,6 +16,7 @@ import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 import importlib
+import os.path
 import random
 import sys
 import time
@@ -60,9 +61,8 @@ class ChallengeEvaluator(object):
 
         # first we instantiate the Agent
         module_name = os.path.basename(args.agent).split('.')[0]
-        module_spec = importlib.util.spec_from_file_location(module_name, args.agent)
-        self.module_agent = importlib.util.module_from_spec(module_spec)
-        module_spec.loader.exec_module(self.module_agent)
+        sys.path.insert(0,os.path.dirname(args.agent))
+        self.module_agent = importlib.import_module(module_name)
 
         self._sensors_list = []
         self._hop_resolution = 2.0
@@ -116,40 +116,6 @@ class ChallengeEvaluator(object):
                 self._sensors_list[i].destroy()
                 self._sensors_list[i] = None
         self._sensors_list = []
-
-    def setup_vehicle(self, model, spawn_point, hero=False, autopilot=False, random_location=False):
-        """
-        Function to setup the most relevant vehicle parameters,
-        incl. spawn point and vehicle model.
-        """
-
-        blueprint_library = self.world.get_blueprint_library()
-
-        # Get vehicle by model
-        blueprint = random.choice(blueprint_library.filter(model))
-        if hero:
-            blueprint.set_attribute('role_name', 'hero')
-        else:
-            blueprint.set_attribute('role_name', 'scenario')
-
-        if random_location:
-            spawn_points = list(self.world.get_map().get_spawn_points())
-            random.shuffle(spawn_points)
-            for spawn_point in spawn_points:
-                vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
-                if vehicle:
-                    break
-        else:
-            vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
-
-        if vehicle is None:
-            raise Exception(
-                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-        else:
-            # Let's deactivate the autopilot of the vehicle
-            vehicle.set_autopilot(autopilot)
-
-        return vehicle
 
     def setup_sensors(self, sensors, vehicle):
         """
@@ -207,22 +173,6 @@ class ChallengeEvaluator(object):
         """
         Spawn or update all scenario actors according to
         their parameters provided in config
-        """
-
-        # If ego_vehicle already exists, just update location
-        # Otherwise spawn ego vehicle
-        if self.ego_vehicle is None:
-            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model, config.ego_vehicle.transform, True)
-        else:
-            self.ego_vehicle.set_transform(config.ego_vehicle.transform)
-
-        # setup sensors
-        self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
-
-    def prepare_ego_vehicle(self, config):
-        """
-        Spawn or update the ego vehicle according to
-        its parameters provided in config
         """
 
         # If ego_vehicle already exists, just update location
@@ -501,8 +451,8 @@ if __name__ == '__main__':
         PARSER.print_help(sys.stdout)
         sys.exit(0)
 
+    challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
     try:
-        challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
     finally:
         del challenge_evaluator
