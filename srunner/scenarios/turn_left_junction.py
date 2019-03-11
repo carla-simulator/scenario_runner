@@ -31,6 +31,7 @@ class VehicleTurnLeftAtJunction(BasicScenario):
         """
         self.category = "VehicleTurnLeftAtJunction"
         self.timeout = 60     #Timeout of scenario in seconds
+        self._target_vel = 23
         self._traffic_light = None
         super(VehicleTurnLeftAtJunction, self).__init__("VehicleTurnLeftAtJunction",
                                                         ego_vehicle,
@@ -55,7 +56,7 @@ class VehicleTurnLeftAtJunction(BasicScenario):
             print("No traffic light for the given location of the other vehicle found")
             sys.exit(-1)
 
-        traffic_light_other.set_state(carla.TrafficLightState.green)
+        traffic_light_other.set_state(carla.TrafficLightState.Green)
         traffic_light_other.set_green_time(self.timeout)
 
     def _create_behavior(self):
@@ -65,7 +66,17 @@ class VehicleTurnLeftAtJunction(BasicScenario):
         start_other_trigger = InTriggerDistanceToLocation(self.ego_vehicle, start_trigger_location, 8)
         move_other_actor = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        trigger_other_actor = KeepVelocity(self.other_actors[0], 25)
+        # Generating waypoint list till next intersection
+        plan = []
+        target_waypoint = generate_target_waypoint(
+            self.other_actors[0].get_world().get_map().get_waypoint(
+                self.other_actors[0].get_location()), 0)
+        wp_choice = target_waypoint.next(1.0)
+        while len(wp_choice) == 1:
+            target_waypoint = wp_choice[0]
+            plan.append((target_waypoint, RoadOption.LANEFOLLOW))
+            wp_choice = target_waypoint.next(5.0)
+        trigger_other_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan = plan)
         stop_other = InTriggerDistanceToNextIntersection(self.other_actors[0], 1)
         move_other_actor.add_child(trigger_other_actor)
         move_other_actor.add_child(stop_other)
