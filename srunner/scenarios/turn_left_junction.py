@@ -12,6 +12,7 @@ import py_trees
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
+from srunner.scenarios.scenario_helper import *
 
 TURN_LEFT_JUNCTION_SCENARIOS = [
     "VehicleTurnLeftAtJunction"
@@ -24,21 +25,38 @@ class VehicleTurnLeftAtJunction(BasicScenario):
     'Vehicle turning left at signalized junction scenario,
     Traffic Scenario 08.
     """
-    category = "VehicleTurnLeftAtJunction"
-
-    timeout = 60     #Timeout of scenario in seconds
-
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
+        self.category = "VehicleTurnLeftAtJunction"
+        self.timeout = 60     #Timeout of scenario in seconds
+        self._traffic_light = None
         super(VehicleTurnLeftAtJunction, self).__init__("VehicleTurnLeftAtJunction",
                                                         ego_vehicle,
                                                         other_actors,
                                                         town,
                                                         world,
                                                         debug_mode)
-        set_traffic_lights_state(ego_vehicle, carla.TrafficLightState.Green)
+
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
+
+        if self._traffic_light is None:
+            print("No traffic light for the given location of the ego vehicle found")
+            sys.exit(-1)
+
+        self._traffic_light.set_state(carla.TrafficLightState.Green)
+        self._traffic_light.set_green_time(self.timeout)
+
+        # other vehicle's traffic light
+        traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
+
+        if traffic_light_other is None:
+            print("No traffic light for the given location of the other vehicle found")
+            sys.exit(-1)
+
+        traffic_light_other.set_state(carla.TrafficLightState.green)
+        traffic_light_other.set_green_time(self.timeout)
 
     def _create_behavior(self):
         """
