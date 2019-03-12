@@ -79,7 +79,7 @@ class FollowLeadingVehicle(BasicScenario):
         #   Other vehicle 1
         model = 'vehicle.tesla.model3'
         spawn_location, _ = get_location_in_distance(ego_vehicle, 20)
-        spawn_location.z += 10
+        spawn_location.z += 1
         spawn_waypoint = ego_vehicle.get_world().get_map().get_waypoint(spawn_location)
         spawn_transform = carla.Transform(spawn_location, spawn_waypoint.transform.rotation)
         parameter_list.append(ActorConfigurationData(model, spawn_transform))
@@ -100,24 +100,6 @@ class FollowLeadingVehicle(BasicScenario):
             # waypoint.transform.location.z += 39
             # self.other_actors[0].set_transform(waypoint.transform)
 
-    @staticmethod
-    def initialize_actors(ego_vehicle):
-        """
-        This method returns the list of participant actors and their initial positions for the scenario
-        """
-        parameter_list = []
-
-        #   Other vehicle 1
-        model = 'vehicle.tesla.model3'
-        spawn_location, _ = get_location_in_distance(ego_vehicle, 50)
-        spawn_location.z = 40
-        print spawn_location
-        spawn_transform = carla.Transform(
-            spawn_location,
-            ego_vehicle.get_transform().rotation)
-        parameter_list.append((model, spawn_transform))
-
-        return parameter_list
 
     def _create_behavior(self):
         """
@@ -188,10 +170,8 @@ class FollowLeadingVehicle(BasicScenario):
         criteria = []
 
         collision_criterion = CollisionTest(self.ego_vehicle)
-        keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
 
         criteria.append(collision_criterion)
-        criteria.append(keep_lane_criterion)
 
         return criteria
 
@@ -339,10 +319,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         criteria = []
 
         collision_criterion = CollisionTest(self.ego_vehicle)
-        keep_lane_criterion = KeepLaneTest(self.ego_vehicle)
 
         criteria.append(collision_criterion)
-        criteria.append(keep_lane_criterion)
 
         return criteria
 
