@@ -4,10 +4,11 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-import carla
 import sys
 
 import py_trees
+
+import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
@@ -31,7 +32,12 @@ class VehicleTurnLeftAtJunction(BasicScenario):
         """
         self.category = "VehicleTurnLeftAtJunction"
         self.timeout = 60     #Timeout of scenario in seconds
-        self._target_vel = 23
+        self._target_vel = 25
+        self._drive_distance = 30
+        self._trigger_distance = 1
+        self._trigger_dist_loc = 8
+        self._brake_value = 0.02
+        self._ego_distance = 20
         self._traffic_light = None
         super(VehicleTurnLeftAtJunction, self).__init__("VehicleTurnLeftAtJunction",
                                                         ego_vehicle,
@@ -62,36 +68,28 @@ class VehicleTurnLeftAtJunction(BasicScenario):
     def _create_behavior(self):
         """
         """
-        start_trigger_location, _ = get_location_in_distance(self.ego_vehicle, 10)
-        start_other_trigger = InTriggerDistanceToLocation(self.ego_vehicle, start_trigger_location, 8)
+        start_trigger_loc, _ = get_location_in_distance(self.ego_vehicle, 10)
+        start_other_trigger = InTriggerDistanceToLocation(self.ego_vehicle, start_trigger_loc, self._trigger_dist_loc)
         move_other_actor = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        # Generating waypoint list till next intersection
-        plan = []
-        target_waypoint = generate_target_waypoint(
-            self.other_actors[0].get_world().get_map().get_waypoint(
-                self.other_actors[0].get_location()), 0)
-        wp_choice = target_waypoint.next(1.0)
-        while len(wp_choice) == 1:
-            target_waypoint = wp_choice[0]
-            plan.append((target_waypoint, RoadOption.LANEFOLLOW))
-            wp_choice = target_waypoint.next(5.0)
-        trigger_other_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan = plan)
-        stop_other = InTriggerDistanceToNextIntersection(self.other_actors[0], 1)
+        trigger_other_actor = WaypointFollower(self.other_actors[0], self._target_vel)
+        stop_other = InTriggerDistanceToNextIntersection(self.other_actors[0], self._trigger_distance)
         move_other_actor.add_child(trigger_other_actor)
         move_other_actor.add_child(stop_other)
         stop_parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        stop_other_actor = KeepVelocity(self.other_actors[0], 20)
-        drive_further = DriveDistance(self.other_actors[0], 25)
+        stop_other_actor = KeepVelocity(self.other_actors[0], self._target_vel)
+        drive_further = DriveDistance(self.other_actors[0], self._drive_distance)
         stop_parallel.add_child(stop_other_actor)
         stop_parallel.add_child(drive_further)
-        brake_other_actor = StopVehicle(self.other_actors[0], 0.02)
+        brake_other_actor = StopVehicle(self.other_actors[0], self._brake_value)
+        end_condition = DriveDistance(self.ego_vehicle, self._ego_distance)
         sequence = py_trees.composites.Sequence()
         sequence.add_child(start_other_trigger)
         sequence.add_child(move_other_actor)
         sequence.add_child(stop_parallel)
         sequence.add_child(brake_other_actor)
+        sequence.add_child(end_condition)
 
         return sequence
 
