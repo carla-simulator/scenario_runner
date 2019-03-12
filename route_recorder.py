@@ -88,6 +88,7 @@ try:
     from pygame.locals import K_1
     from pygame.locals import K_2
     from pygame.locals import K_3
+    from pygame.locals import K_4
     from pygame.locals import K_9
     from pygame.locals import K_BACKQUOTE
     from pygame.locals import K_BACKSPACE
@@ -325,17 +326,17 @@ class KeyboardControl(object):
                 elif event.key == K_BACKSPACE:
                     world.restart()
                 elif event.key == K_1:
-                    if active_route:
-                        list_routes.append(active_route)
-
-                    current_wp = self.map.get_waypoint(self.player.get_transform().location)
-                    active_route = [current_wp]
+                    active_route = []
 
                 elif event.key == K_2:
                     current_wp = self.map.get_waypoint(self.player.get_transform().location)
                     active_route.append(current_wp)
 
                 elif event.key == K_3:
+                    if active_route:
+                        list_routes.append(active_route)
+
+                elif event.key == K_4:
                     self.save_routes(self.route_name, list_routes, self.expand_routes)
 
                 elif event.key == K_F1:
