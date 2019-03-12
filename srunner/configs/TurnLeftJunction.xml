@@ -6,7 +6,7 @@
      </scenario>
     <scenario name="VehicleTurnLeftAtJunction_2" type="VehicleTurnLeftAtJunction" town="Town04">
         <ego_vehicle x="273.4" y="-168.9" z="0.3" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="341.1" y="-172.4" z="0.3" yaw="-180" model="vehicle.tesla.model3" />   
+        <other_actor x="323.6" y="-172.4" z="0.3" yaw="-180" model="vehicle.tesla.model3" />   
     </scenario> 
     <scenario name="VehicleTurnLeftAtJunction_3" type="VehicleTurnLeftAtJunction" town="Town04">
         <ego_vehicle x="274.1" y="-246.2" z="0.3" yaw="0" model="vehicle.lincoln.mkz2017" />
