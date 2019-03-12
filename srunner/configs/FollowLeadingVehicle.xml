@@ -12,11 +12,10 @@
     <scenario name="FollowLeadingVehicleWithObstacle_2" type="FollowLeadingVehicleWithObstacle" town="Town01">
         <ego_vehicle x="105" y="199.1" z="0" yaw="0" model="vehicle.lincoln.mkz2017" />
     </scenario>
-    <!-- TODO: Fix spawning issue in Town 02 -->
     <scenario name="FollowLeadingVehicle_3" type="FollowLeadingVehicle" town="Town02">
         <ego_vehicle x="-3.5" y="295" z="0.3" yaw="-88" model="vehicle.lincoln.mkz2017" />
     </scenario>
-    <scenario name="FollowLeadingVehicleWithObstacle_3" type="FollowLeadingVehicle" town="Town02">
+    <scenario name="FollowLeadingVehicleWithObstacle_3" type="FollowLeadingVehicleWithObstacle" town="Town02">
         <ego_vehicle x="-3.5" y="295" z="0.3" yaw="-88" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="FollowLeadingVehicle_4" type="FollowLeadingVehicle" town="Town03">
