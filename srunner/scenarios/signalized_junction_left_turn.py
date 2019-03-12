@@ -15,22 +15,22 @@ from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
 
-TURN_LEFT_JUNCTION_SCENARIOS = [
-    "VehicleTurnLeftAtJunction"
+TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS = [
+    "SignalizedJunctionLeftTurn"
 ]
 
-class VehicleTurnLeftAtJunction(BasicScenario):
+class SignalizedJunctionLeftTurn(BasicScenario):
 
     """
-    Implementation class for
-    'Vehicle turning left at signalized junction scenario,
+    Implementation class for Hero
+    Vehicle turning left at signalized junction scenario,
     Traffic Scenario 08.
     """
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
-        self.category = "VehicleTurnLeftAtJunction"
+        self.category = "SignalizedJunctionLeftTurn"
         self.timeout = 80     #Timeout of scenario in seconds
         self._target_vel = 35
         self._drive_distance = 50
@@ -39,12 +39,12 @@ class VehicleTurnLeftAtJunction(BasicScenario):
         self._ego_distance = 20
         self._traffic_light = None
 
-        super(VehicleTurnLeftAtJunction, self).__init__("VehicleTurnLeftAtJunction",
-                                                        ego_vehicle,
-                                                        other_actors,
-                                                        town,
-                                                        world,
-                                                        debug_mode)
+        super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
+                                                         ego_vehicle,
+                                                         other_actors,
+                                                         town,
+                                                         world,
+                                                         debug_mode)
 
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
         if self._traffic_light is None:
@@ -107,8 +107,5 @@ class VehicleTurnLeftAtJunction(BasicScenario):
 
         collison_criteria = CollisionTest(self.ego_vehicle)
         criteria.append(collison_criteria)
-
-        for vehicle in self.other_actors:
-            collison_criteria = CollisionTest(vehicle)
 
         return criteria
