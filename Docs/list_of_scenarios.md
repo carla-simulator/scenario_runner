@@ -60,7 +60,6 @@ vehicle traveling in the opposite direction.
 
 ### SignalizedJunctionRightTurn
 In this scenario right turn of hero actor without collision at signalized intersection
-is tested.
-Hero Vehicle is turning right in an urban area, at a signalized intersection and
+is tested. Hero Vehicle is turning right in an urban area, at a signalized intersection and
 turns into the same direction of another vehicle crossing straight initially from
 a lateral direction.

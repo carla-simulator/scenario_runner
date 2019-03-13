@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <scenarios>
     <scenario name="SignalizedJunctionRightTurn_1" type="SignalizedJunctionRightTurn" town="Town03">
-        <ego_vehicle x="80" y="127.4" z="1" yaw="-178" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="6" y="183.7" z="1" yaw="-90" model="vehicle.tesla.model3" />
+        <ego_vehicle x="67" y="127.4" z="1" yaw="-178" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="6" y="171.7" z="1" yaw="-90" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="SignalizedJunctionRightTurn_2" type="SignalizedJunctionRightTurn" town="Town04">
         <ego_vehicle x="244.7" y="-249.4" z="1" yaw="180" model="vehicle.lincoln.mkz2017" />
@@ -13,11 +13,11 @@
         <other_actor x="204.4" y="-290" z="0.1" yaw="-89" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="SignalizedJunctionRightTurn_4" type="SignalizedJunctionRightTurn" town="Town05">
-        <ego_vehicle x="-50.4" y="15.3" z="0.1" yaw="92" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-20" y="84.4" z="0.1" yaw="179" model="vehicle.tesla.model3" />
+        <ego_vehicle x="-50.4" y="25.3" z="0.1" yaw="92" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-10" y="84.4" z="0.1" yaw="179" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="SignalizedJunctionRightTurn_5" type="SignalizedJunctionRightTurn" town="Town05">
-        <ego_vehicle x="-34.7" y="95" z="0.0" yaw="1" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="-25.7" y="95" z="0.0" yaw="1" model="vehicle.lincoln.mkz2017" />
         <other_actor x="28" y="60" z="0.0" yaw="91" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="SignalizedJunctionRightTurn_6" type="SignalizedJunctionRightTurn" town="Town05">

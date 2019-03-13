@@ -32,6 +32,7 @@ from srunner.scenarios.control_loss import *
 from srunner.scenarios.maneuver_opposite_direction import *
 from srunner.scenarios.turning_right_at_signalized_junctions import *
 from srunner.scenarios.turning_right_signalized_junction import *
+from srunner.scenarios.signalized_junction_right_turn import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.carla_data_provider import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
@@ -52,8 +53,9 @@ SCENARIOS = {
     "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
     "ControlLoss": CONTROL_LOSS_SCENARIOS,
     "OppositeDirection": MANEUVER_OPPOSITE_DIRECTION,
-    "TurningRightSignalizedJunctions": TURNING_RIGHT_SIGNALIZED_JUNCTIONS_SCENARIOS
-    "TurningRightSignalizedJunction": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS
+    "TurningRightSignalizedJunctions": TURNING_RIGHT_SIGNALIZED_JUNCTIONS_SCENARIOS,
+    "TurningRightSignalizedJunction": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS,
+    "SignalizedJunctionRightTurn": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS
 }
 
 
