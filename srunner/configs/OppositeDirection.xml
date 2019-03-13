@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="ManeuverOppositeDirection" type="ManeuverOppositeDirection" town="Town04">
+        <ego_vehicle x="63.3" y="-190.3" z="2" yaw="270" model="vehicle.lincoln.mkz2017" />
+    </scenario>
+</scenarios>

@@ -7,8 +7,8 @@
 Vehicle Manuevering In Opposite Direction:
 
 Vehicle is passing another vehicle in a rural area, in daylight, under clear
-weather conditions, at a non-junction with a posted speed limit of 55 mph or more;
-and encroaches into another vehicle traveling in the opposite direcntotion.
+weather conditions, at a non-junction and encroaches into another
+vehicle traveling in the opposite direcntotion.
 """
 
 import random
@@ -19,6 +19,8 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
+from srunner.scenarios.scenario_helper import get_location_in_distance
+from srunner.scenarios.config_parser import ActorConfigurationData
 
 
 MANEUVER_OPPOSITE_DIRECTION = [
@@ -34,16 +36,27 @@ class ManeuverOppositeDirection(BasicScenario):
     """
 
     category = "ManeuverOppositeDirection"
-    timeout = 120            # Timeout of scenario in seconds
+    timeout = 120
 
     def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
         """
         Setup all relevant parameters and create scenario
         """
+
+        other_vehicle1_location, _ = get_location_in_distance(ego_vehicle, 100)
+        other_vehicle2_location, _ = get_location_in_distance(ego_vehicle, 200)
+        other_vehicle1_waypoint = world.get_map().get_waypoint(other_vehicle1_location)
+        other_vehicle2_waypoint = world.get_map().get_waypoint(other_vehicle2_location)
+        other_vehicle2_waypoint = other_vehicle2_waypoint.get_left_lane()
+
+        parameter_list = []
+        parameter_list.append(ActorConfigurationData('vehicle.tesla.model3', other_vehicle1_waypoint.transform))
+        parameter_list.append(ActorConfigurationData('vehicle.tesla.model3', other_vehicle2_waypoint.transform))
+
         super(ManeuverOppositeDirection, self).__init__(
             "FollowVehicle",
             ego_vehicle,
-            other_actors,
+            parameter_list,
             town,
             world,
             debug_mode)
@@ -56,10 +69,26 @@ class ManeuverOppositeDirection(BasicScenario):
         opposite direction in the oncoming lane.
         """
 
-        # Build behavior tree
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
+        # Leaf nodes
+        ego_drive_distance = DriveDistance(self.ego_vehicle, 300)
+        start_trigger = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 60)
+        waypoint_follower_1 = WaypointFollower(self.other_actors[0], 20)
+        waypoint_follower_2 = WaypointFollower(self.other_actors[1], 30)
 
-        return sequence
+        # Non-leaf nodes
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        sequence = py_trees.composites.Sequence()
+        waypoint_follow_node = py_trees.composites.Parallel()
+
+        # Building tree
+        root.add_child(ego_drive_distance)
+        root.add_child(sequence)
+        sequence.add_child(start_trigger)
+        sequence.add_child(waypoint_follow_node)
+        waypoint_follow_node.add_child(waypoint_follower_1)
+        waypoint_follow_node.add_child(waypoint_follower_2)
+
+        return root
 
     def _create_test_criteria(self):
         """

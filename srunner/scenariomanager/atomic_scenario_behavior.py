@@ -779,3 +779,52 @@ class Idle(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         return new_status
+
+class WaypointFollower(AtomicBehavior):
+    """
+    This is an atomic behaviour to follow waypoints indefinetly
+    while maintaining a given speed
+    """
+
+    def __init__(self, actor, target_speed, name="FollowWaypoints"):
+        """
+        Set up actor and local planner
+        """
+        super(WaypointFollower, self).__init__(name)
+        self._actor = actor
+        self._control = carla.VehicleControl()
+        self._target_speed = target_speed
+        self._local_planner = None
+
+    def initialise(self):
+        args_lateral_dict = {
+            'K_P': 0.8,
+            'K_D': 0.01,
+            'K_I': 0.0,
+            'dt': 0.1}
+        self._local_planner = LocalPlanner(
+            self._actor, opt_dict={
+                'target_speed': self._target_speed,
+                'lateral_control_dict': args_lateral_dict})
+
+    def update(self):
+        """
+        Run local planner, obtain and apply control to actor
+        """
+
+        new_status = py_trees.common.Status.RUNNING
+        control = self._local_planner.run_step()
+        self._actor.apply_control(control)
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior,
+        the throttle, brake and steer should be set back to 0.
+        """
+        self._control.throttle = 0.0
+        self._control.brake = 0.0
+        self._control.steer = 0.0
+        self._actor.apply_control(self._control)
+        super(WaypointFollower, self).terminate(new_status)
