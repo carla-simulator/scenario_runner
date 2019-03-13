@@ -57,3 +57,10 @@ and it checks whether the vehicle is regained its control and corrected its cour
 In this scenario vehicle is passing another vehicle in a rural area, in daylight, under clear
 weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
+
+### SignalizedJunctionRightTurn
+In this scenario right turn of hero actor without collision at signalized intersection
+is tested.
+Hero Vehicle is turning right in an urban area, at a signalized intersection and
+turns into the same direction of another vehicle crossing straight initially from
+a lateral direction.

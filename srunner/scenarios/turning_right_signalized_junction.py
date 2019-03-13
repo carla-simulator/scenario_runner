@@ -34,9 +34,9 @@ class SignalizedJunctionRightTurn(BasicScenario):
         """
         self.category = "SignalizedJunctionLeftTurn"
         self.timeout = 80  # Timeout of scenario in seconds
-        self._target_vel = 55
-        self._drive_distance = 60
-        self._trigger_dist_loc = 8
+        self._target_vel = 45
+        self._drive_distance = 50
+        self._trigger_dist_loc = 9
         self._brake_value = 0.5
         self._ego_distance = 10
         self._traffic_light = None
