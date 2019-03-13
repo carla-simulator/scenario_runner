@@ -100,7 +100,6 @@ class FollowLeadingVehicle(BasicScenario):
             # waypoint.transform.location.z += 39
             # self.other_actors[0].set_transform(waypoint.transform)
 
-
     def _create_behavior(self):
         """
         The scenario defined after is a "follow leading vehicle" scenario. After

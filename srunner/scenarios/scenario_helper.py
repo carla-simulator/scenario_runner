@@ -111,9 +111,9 @@ def generate_target_waypoint(waypoint, turn=0):
         current_transform = waypoint.transform
         current_location = current_transform.location
         projected_location = current_location + \
-        carla.Location(
-            x=math.cos(math.radians(current_transform.rotation.yaw)),
-            y=math.sin(math.radians(current_transform.rotation.yaw)))
+            carla.Location(
+                x=math.cos(math.radians(current_transform.rotation.yaw)),
+                y=math.sin(math.radians(current_transform.rotation.yaw)))
         wp_choice = waypoint.next(sampling_radius)
         #   Choose path at intersection
         if len(wp_choice) > 1:
@@ -137,6 +137,7 @@ def generate_target_waypoint(waypoint, turn=0):
         elif reached_junction and not wp_list[-1].is_intersection:
             break
     return wp_list[-1]
+
 
 def choose_at_junction(previous, current, next_choices, direction=0):
     """

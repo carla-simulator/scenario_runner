@@ -61,5 +61,3 @@
     - WaitForTrafficLightState: wait for the traffic light to have a given state
     - SyncArrival: sync the arrival of two vehicles to a given target
     - AddNoiseToVehicle: Add noise to steer as well as throttle of the vehicle
-    - WaypointFollower: follows the waypoints untill the given end condition
-    - HandBrakeVehicle: applies handbrake

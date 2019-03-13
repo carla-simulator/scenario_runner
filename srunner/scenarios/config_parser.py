@@ -56,6 +56,7 @@ class ActorConfigurationData(object):
     """
     This is a configuration base class to hold model and transform attributes
     """
+
     def __init__(self, model, transform, autopilot=False, random=False):
         self.model = model
         self.transform = transform

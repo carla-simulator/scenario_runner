@@ -45,7 +45,7 @@ class Scenario(object):
         self.timeout = timeout
 
         if not isinstance(self.test_criteria, py_trees.composites.Parallel):
-        # list of nodes
+            # list of nodes
             for criterion in self.test_criteria:
                 criterion.terminate_on_failure = terminate_on_failure
 
