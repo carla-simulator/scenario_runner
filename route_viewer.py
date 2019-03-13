@@ -8,16 +8,17 @@ import matplotlib.pyplot as plt
 import carla
 
 LIFETIME = 600
-LSIZE = 64
+LSIZE = 16
 
 class RouteViewer():
     def __init__(self, args):
         self.host = args.host
         self.port = args.port
+        self.debug = args.debug
         self.filename = args.route_file
         self.tree = ET.parse(self.filename)
 
-        self.cmap = 255.0 * plt.get_cmap('Pastel1', lut=LSIZE).colors
+        self.cmap = 255.0 * plt.get_cmap('Set1', lut=LSIZE).colors
         self.indexer = [x for x in range(LSIZE)]
 
         shuffle(self.indexer)
@@ -60,7 +61,7 @@ class RouteViewer():
 
             color = self.get_color(route_id)
 
-            loc = carla.Location(z=400)
+            loc = carla.Location(z=300)
             rot = carla.Rotation(pitch=-90)
             spectator.set_transform(carla.Transform(loc, rot))
 
@@ -71,19 +72,23 @@ class RouteViewer():
 
 
                 world.debug.draw_line(start.location, current.location,
-                                      thickness=0.8,
+                                      thickness=1.5,
                                       color=color,
                                       life_time=LIFETIME)
                 # update
                 start = current
 
-            world.debug.draw_point(start.location, size=0.1, color=carla.Color(0, 0, 255), life_time=LIFETIME)
+            world.debug.draw_point(trajectory[0].location, size=0.1, color=carla.Color(0, 0, 255), life_time=LIFETIME)
             world.debug.draw_point(current.location, size=0.1, color=carla.Color(255, 0, 0), life_time=LIFETIME)
-            world.debug.draw_string(start.location,
+            world.debug.draw_string(trajectory[0].location,
                                     "[R{}]".format(route_id),
                                     draw_shadow=False,
                                     color=color,
                                     life_time=LIFETIME)
+
+            if self.debug:
+                input("Press Enter to continue...")
+                world = None
 
     def get_color(self, idx):
         idx = idx % LSIZE
@@ -111,6 +116,11 @@ def main():
         type=str,
         default="routes.xml",
         help='Filename for the routes')
+    argparser.add_argument(
+        '--debug',
+        type=bool,
+        default=False,
+        help='Switch debug mode On/off')
 
     args = argparser.parse_args()
 
