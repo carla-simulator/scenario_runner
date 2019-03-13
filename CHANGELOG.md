@@ -45,9 +45,9 @@
     - FollowLeadingVehicleWithObstacle: hero vehicle must react to a leading vehicle due to an obstacle blocking the road
     - StationaryObjectCrossing: hero vehicle must react to a cyclist or pedestrian blocking the road
     - DynamicObjectCrossing: hero vehicle must react to a cyclist or pedestrian suddenly crossing in front of it
-    - OppositeVehicleRunningRedLight: hero vehicle must avoid a collision at an intersection regulated by traffic lights when the crossing traffic runs    a red light
+    - OppositeVehicleRunningRedLight: hero vehicle must avoid a collision at an intersection regulated by traffic lights when the crossing traffic runs a red light
     - NoSignalJunctionCrossing: hero vehicle must cross a non-signalized intersection
-    - SignalizedJunctionRightTurn: hero vehicle must react to a cyclist or pedestrian crossing ahead after a right turn
+    - VehicleTurningRight: hero vehicle must react to a cyclist or pedestrian crossing ahead after a right turn
     - VehicleTurningLeft: hero vehicle must react to a cyclist or pedestrian crossing ahead after a left turn
     - ControlLoss: Hero vehicle must react to a control loss and regain its control
 * Added atomic behaviors using py_trees behavior trees library
