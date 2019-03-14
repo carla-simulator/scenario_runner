@@ -56,7 +56,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     _traffic_light = None
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -64,8 +64,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
                                                              ego_vehicle,
-                                                             other_actors,
-                                                             town,
+                                                             config,
                                                              world,
                                                              debug_mode)
 

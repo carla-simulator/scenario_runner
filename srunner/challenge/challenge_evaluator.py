@@ -360,11 +360,9 @@ class ChallengeEvaluator(object):
 
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
-                                              config.other_actors,
-                                              config.town,
+                                              config,
                                               args.randomize,
-                                              args.debug,
-                                              config)
+                                              args.debug)
                 except Exception as exception:
                     print("The scenario cannot be loaded")
                     print(exception)

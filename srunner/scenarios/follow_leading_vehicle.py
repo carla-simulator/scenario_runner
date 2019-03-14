@@ -52,7 +52,7 @@ class FollowLeadingVehicle(BasicScenario):
     _other_actor_max_brake = 1.0                  # Maximum brake of other actor
     _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
 
@@ -60,8 +60,7 @@ class FollowLeadingVehicle(BasicScenario):
         """
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
                                                    ego_vehicle,
-                                                   other_actors,
-                                                   town,
+                                                   config,
                                                    world,
                                                    debug_mode)
 
@@ -184,15 +183,14 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     _other_actor_max_brake = 1.0                  # Maximum brake of other vehicle
     _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
 
         super(FollowLeadingVehicleWithObstacle, self).__init__("FollowLeadingVehicleWithObstacle",
                                                                ego_vehicle,
-                                                               other_actors,
-                                                               town,
+                                                               config,
                                                                world,
                                                                debug_mode)
 
