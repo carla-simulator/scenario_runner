@@ -15,7 +15,7 @@ class Track(Enum):
     SENSORS = 1
     NO_RENDERING = 2
 
-class ServerManager():
+class ServerManager(object):
     def __init__(self, opt_dict):
         log_level = logging.INFO
         logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
