@@ -31,7 +31,7 @@ class SceneLayoutReader(object):
         # The static scene dictionary of all the entire scene layout.
 
         self.static_scene_dict = scene_layout_parser.get_scene_layout(world, world.get_map())
-        print(" LOADEd CITY, number of waypoints :  ", len(self.static_scene_dict))
+        print("Map loaded. Number of waypoints:  ", len(self.static_scene_dict))
 
         # Callback attribute to set the function being used.
         self._callback = None
