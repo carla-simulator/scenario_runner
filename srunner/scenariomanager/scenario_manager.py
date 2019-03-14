@@ -168,7 +168,6 @@ class ScenarioManager(object):
         self._running = True
 
         while self._running:
-            print (" Running HeartBeat")
             time.sleep(0.5)
 
         self.end_system_time = time.time()
