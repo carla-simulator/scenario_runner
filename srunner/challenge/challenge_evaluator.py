@@ -208,6 +208,7 @@ class ChallengeEvaluator(object):
 
         # check that all sensors have initialized their data structure
         while not self.agent_instance.all_sensors_ready():
+            print (" waiting for one data reading from sensors...")
             time.sleep(0.1)
 
     def prepare_actors(self, config):

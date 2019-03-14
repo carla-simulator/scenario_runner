@@ -29,7 +29,9 @@ class SceneLayoutReader(object):
         """
 
         # The static scene dictionary of all the entire scene layout.
+
         self.static_scene_dict = scene_layout_parser.get_scene_layout(world, world.get_map())
+        print(" LOADEd CITY")
 
         # Callback attribute to set the function being used.
         self._callback = None
@@ -46,6 +48,8 @@ class SceneLayoutReader(object):
             if self._callback is not None:
                 self._callback(SceneLayoutMeasurement(self.__call__(), 0))
                 break
+            else:
+                time.sleep(0.01)
 
     def listen(self, callback):
         # Tell that this function receives what the producer does.
