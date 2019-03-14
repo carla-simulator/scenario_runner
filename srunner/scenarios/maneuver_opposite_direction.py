@@ -8,16 +8,13 @@ Vehicle Manuevering In Opposite Direction:
 
 Vehicle is passing another vehicle in a rural area, in daylight, under clear
 weather conditions, at a non-junction and encroaches into another
-vehicle traveling in the opposite direcntotion.
+vehicle traveling in the opposite direction.
 """
-
-import random
 
 import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import get_location_in_distance
 from srunner.scenarios.config_parser import ActorConfigurationData
@@ -43,15 +40,22 @@ class ManeuverOppositeDirection(BasicScenario):
         Setup all relevant parameters and create scenario
         """
 
-        other_vehicle1_location, _ = get_location_in_distance(ego_vehicle, 100)
-        other_vehicle2_location, _ = get_location_in_distance(ego_vehicle, 200)
-        other_vehicle1_waypoint = world.get_map().get_waypoint(other_vehicle1_location)
-        other_vehicle2_waypoint = world.get_map().get_waypoint(other_vehicle2_location)
-        other_vehicle2_waypoint = other_vehicle2_waypoint.get_left_lane()
+        self._first_vehicle_location = 50
+        self._second_vehicle_location = self._first_vehicle_location + 40
+        self._ego_vehicle_drive_distance = self._second_vehicle_location + 50
+        self._start_distance = self._first_vehicle_location * 0.8
+        self._first_vehicle_speed = 55
+        self._second_vehicle_speed = 60
+
+        first_vehicle_location, _ = get_location_in_distance(ego_vehicle, self._first_vehicle_location)
+        second_vehicle_location, _ = get_location_in_distance(ego_vehicle, self._second_vehicle_location)
+        first_vehicle_waypoint = world.get_map().get_waypoint(first_vehicle_location)
+        second_vehicle_waypoint = world.get_map().get_waypoint(second_vehicle_location)
+        second_vehicle_waypoint = second_vehicle_waypoint.get_left_lane()
 
         parameter_list = []
-        parameter_list.append(ActorConfigurationData('vehicle.tesla.model3', other_vehicle1_waypoint.transform))
-        parameter_list.append(ActorConfigurationData('vehicle.tesla.model3', other_vehicle2_waypoint.transform))
+        parameter_list.append(ActorConfigurationData('vehicle.audi.tt', first_vehicle_waypoint.transform))
+        parameter_list.append(ActorConfigurationData('vehicle.tesla.model3', second_vehicle_waypoint.transform))
 
         super(ManeuverOppositeDirection, self).__init__(
             "FollowVehicle",
@@ -70,10 +74,11 @@ class ManeuverOppositeDirection(BasicScenario):
         """
 
         # Leaf nodes
-        ego_drive_distance = DriveDistance(self.ego_vehicle, 300)
-        start_trigger = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 60)
-        waypoint_follower_1 = WaypointFollower(self.other_actors[0], 20)
-        waypoint_follower_2 = WaypointFollower(self.other_actors[1], 30)
+        ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
+        start_trigger_distance = InTriggerDistanceToVehicle(
+            self.other_actors[0], self.ego_vehicle, self._start_distance)
+        waypoint_follower_1 = WaypointFollower(self.other_actors[0], self._first_vehicle_speed)
+        waypoint_follower_2 = WaypointFollower(self.other_actors[1], self._second_vehicle_speed)
 
         # Non-leaf nodes
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -83,7 +88,7 @@ class ManeuverOppositeDirection(BasicScenario):
         # Building tree
         root.add_child(ego_drive_distance)
         root.add_child(sequence)
-        sequence.add_child(start_trigger)
+        sequence.add_child(start_trigger_distance)
         sequence.add_child(waypoint_follow_node)
         waypoint_follow_node.add_child(waypoint_follower_1)
         waypoint_follow_node.add_child(waypoint_follower_2)
