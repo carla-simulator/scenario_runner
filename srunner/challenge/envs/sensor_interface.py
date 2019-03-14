@@ -239,5 +239,5 @@ class SensorInterface(object):
     def get_data(self):
         data_dict = {}
         for key in self._sensors_objects.keys():
-            data_dict[key] = (self._timestamps[key], copy.deepcopy(self._data_buffers[key]))
+            data_dict[key] = (self._timestamps[key], self._data_buffers[key])
         return data_dict
