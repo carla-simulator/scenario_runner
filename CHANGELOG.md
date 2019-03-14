@@ -7,14 +7,14 @@
 * Added new traffic event logger
 * Added running red light test
 * Added various helper methods to allow generic scenario execution
-* Updated folder structure and naming convention in lowecase
+* Updated folder structure and naming convention in lowercase
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
       Currently there is one XML file for each scenario class
     - The scenario runner is now responsible for spawning/destroying the ego vehicle
     - Added a CarlaActorPool to share scenario-related actors between scenarios and the scenario_runner
     - Renamed vehicle -> actor
-    - If all scenarios in one coniguration file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
+    - If all scenarios in one configurations file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
     - Generalized ControlLoss and FollowLeadingVehicle scenarios
     - Added randomization option to scenario_runner and scenarios
     - The scenario behavior always starts with a wait behavior until the ego vehicle reached the scenario starting position
@@ -22,16 +22,20 @@
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
     - StandStill: check if a vehicle stands still
     - InTriggerDistanceToNextIntersection: check if a vehicle is within certain distance with respect to the next intersection
+    - WaypointFollower: follows the waypoints immediately in front of the vehicle.
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios
     - OppositeVehicleRunningRedLight: Updated to allow execution at different locations
+* Added NHTSA Traffic Scenarios
+    - ManeuverOppositeDirection: hero vehicle must maneuver in the opposite lane to pass a leading vehicle.
+* Created simple super class ActorConfigurationData for ActorConfiguration.
 
 ## CARLA Scenario_Runner 0.9.2
 
 * Added Traffic Scenarios engine to reproduce complex traffic situations for training and evaluating driving agents
 * Added NHTSA Traffic Scenarios
-    - FollowLeadingVehicle: hero vehicle must react to the deccelerations of a leading vehicle
+    - FollowLeadingVehicle: hero vehicle must react to the deceleration of a leading vehicle
     - FollowLeadingVehicleWithObstacle: hero vehicle must react to a leading vehicle due to an obstacle blocking the road
     - StationaryObjectCrossing: hero vehicle must react to a cyclist or pedestrian blocking the road
     - DynamicObjectCrossing: hero vehicle must react to a cyclist or pedestrian suddenly crossing in front of it
