@@ -71,6 +71,7 @@ class AutonomousAgent():
     def __call__(self):
         input_data = self.sensor_interface.get_data()
 
+
         control = self.run_step(input_data)
         control.manual_gear_shift = False
 

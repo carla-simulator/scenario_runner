@@ -1,4 +1,5 @@
 ## Latest changes
+* Added pseudo-sensors for SceneLayoutMeasurements and ObjectMeasurements for Track4 of the CARLA AD challenge
 * Extended CarlaDataProvider with method to get next relevant traffic light
 * Added track identification for autonomous_agent.py
 * Added HDMap pseudo-sensor

@@ -27,6 +27,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
+from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
@@ -127,7 +128,13 @@ class ChallengeEvaluator(object):
         bp_library = self.world.get_blueprint_library()
         for sensor_spec in sensors:
             # These are the pseudosensors (not spawned)
-            if sensor_spec['type'].startswith('sensor.can_bus'):
+            if sensor_spec['type'].startswith('sensor.scene_layout'):
+                # Static sensor that gives you the entire information from the world (Just runs once)
+                sensor = SceneLayoutReader(self.world)
+            elif sensor_spec['type'].startswith('sensor.object_finder'):
+                # This sensor returns the position of the dynamic objects in the scene.
+                sensor = ObjectFinder(self.world, sensor_spec['reading_frequency'])
+            elif sensor_spec['type'].startswith('sensor.can_bus'):
                 # The speedometer pseudo sensor is created directly here
                 sensor = CANBusSensor(vehicle, sensor_spec['reading_frequency'])
             elif sensor_spec['type'].startswith('sensor.hd_map'):
@@ -167,6 +174,7 @@ class ChallengeEvaluator(object):
 
         # check that all sensors have initialized their data structure
         while not self.agent_instance.all_sensors_ready():
+            print (" waiting for one data reading from sensors...")
             time.sleep(0.1)
 
     def prepare_actors(self, config):
