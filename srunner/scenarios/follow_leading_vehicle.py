@@ -221,11 +221,11 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         model = 'vehicle.tesla.model3'
         model_1 = 'vehicle.diamondback.century'
 
-        spawn_location, _ = get_location_in_distance(ego_vehicle, 30)
+        spawn_location, _ = get_location_in_distance(ego_vehicle, 20)
         spawn_waypoint = ego_vehicle.get_world().get_map().get_waypoint(spawn_location)
         spawn_transform = carla.Transform(spawn_location, spawn_waypoint.transform.rotation)
 
-        spawn_location_1, _ = get_location_in_distance(ego_vehicle, 100)
+        spawn_location_1, _ = get_location_in_distance(ego_vehicle, 70)
         spawn_waypoint_1 = ego_vehicle.get_world().get_map().get_waypoint(spawn_location_1)
         yaw_1 = spawn_waypoint_1.transform.rotation.yaw + 90
         spawn_transform_1 = carla.Transform(spawn_location_1, carla.Rotation(
@@ -278,7 +278,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             "Waiting for end position near Intersection",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         stop_near_intersection.add_child(WaypointFollower(self.other_actors[0], 35))
-        stop_near_intersection.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 35))
+        stop_near_intersection.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 25))
 
         driving_to_next_intersection.add_child(WaypointFollower(self.other_actors[0], 35))
         driving_to_next_intersection.add_child(InTriggerDistanceToVehicle(self.other_actors[1],
