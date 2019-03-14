@@ -7,15 +7,8 @@ from threading import Thread
 
 import carla
 
+from srunner.challenge.envs.scene_layout_sensors import SceneLayoutMeasurement, ObjectMeasurements, threaded
 
-def threaded(fn):
-    def wrapper(*args, **kwargs):
-        thread = Thread(target=fn, args=args, kwargs=kwargs)
-        thread.setDaemon(True)
-        thread.start()
-
-        return thread
-    return wrapper
 
 class HDMapMeasurement(object):
     def __init__(self, data, frame_number):
@@ -75,7 +68,7 @@ class CANBusMeasurement(object):
 
 class CANBusSensor(object):
     """
-    Speed pseudo sensor that gets to read all the vehicle proprieties including speed.
+    CAN BUS pseudo sensor that gets to read all the vehicle proprieties including speed.
     This sensor is not placed at the CARLA environment. It is
     only an asynchronous interface to the forward speed.
     """
@@ -150,9 +143,6 @@ class CANBusSensor(object):
             'wheels': wheels_list_dict
         }
 
-
-
-
     @threaded
     def read_CAN_Bus(self):
         latest_speed_read = time.time()
@@ -188,13 +178,13 @@ class CallBack(object):
             self._parse_lidar_cb(data, self._tag)
         elif isinstance(data, carla.GnssEvent):
             self._parse_gnss_cb(data, self._tag)
-        elif isinstance(data, CANBusMeasurement):
-            self._parse_speedometer(data, self._tag)
-        elif isinstance(data, HDMapMeasurement):
-            self._parse_hdmap(data, self._tag)
+        elif isinstance(data, CANBusMeasurement) or isinstance(data, HDMapMeasurement) \
+                or isinstance(data, SceneLayoutMeasurement) or isinstance(data, ObjectMeasurements):
+            self._parse_pseudosensor(data, self._tag)
         else:
             logging.error('No callback method for this sensor.')
 
+    # Parsing CARLA physical Sensors
     def _parse_image_cb(self, image, tag):
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = copy.deepcopy(array)
@@ -215,11 +205,9 @@ class CallBack(object):
                           gnss_data.altitude], dtype=np.float32)
         self._data_provider.update_sensor(tag, array, gnss_data.frame_number)
 
-    def _parse_speedometer(self, speed, tag):
-        self._data_provider.update_sensor(tag, speed.data, speed.frame_number)
-
-    def _parse_hdmap(self, hd_package, tag):
-        self._data_provider.update_sensor(tag, hd_package.data, hd_package.frame_number)
+    # The pseudo sensors already come properly parsed, so we can basically use a single function
+    def _parse_pseudosensor(self, package, tag):
+        self._data_provider.update_sensor(tag, package.data, package.frame_number)
 
 
 class SensorInterface(object):
@@ -229,7 +217,7 @@ class SensorInterface(object):
         self._timestamps = {}
 
     def register_sensor(self, tag, sensor):
-        if tag  in self._sensors_objects:
+        if tag in self._sensors_objects:
             raise ValueError("Duplicated sensor tag [{}]".format(tag))
 
         self._sensors_objects[tag] = sensor
@@ -237,7 +225,7 @@ class SensorInterface(object):
         self._timestamps[tag] = -1
 
     def update_sensor(self, tag, data, timestamp):
-        if tag  not in self._sensors_objects:
+        if tag not in self._sensors_objects:
             raise ValueError("The sensor with tag [{}] has not been created!".format(tag))
         self._data_buffers[tag] = data
         self._timestamps[tag] = timestamp
@@ -250,7 +238,6 @@ class SensorInterface(object):
 
     def get_data(self):
         data_dict = {}
-
         for key in self._sensors_objects.keys():
             data_dict[key] = (self._timestamps[key], copy.deepcopy(self._data_buffers[key]))
         return data_dict

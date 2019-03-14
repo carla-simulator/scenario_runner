@@ -161,6 +161,12 @@ class ChallengeEvaluator(object):
         bp_library = self.world.get_blueprint_library()
         for sensor_spec in sensors:
             # These are the pseudosensors (not spawned)
+            if sensor_spec['type'].startswith('sensor.scene_layout'):
+                # Static sensor that gives you the entire information from the world (Just runs once)
+                sensor = SceneLayout(self.world)
+            elif sensor_spec['type'].startswith('sensor.object_finder'):
+                # This sensor returns the position of the dynamic objects in the scene.
+                sensor = ObjectFinder(self.world, sensor_spec['reading_frequency'])
             if sensor_spec['type'].startswith('sensor.can_bus'):
                 # The speedometer pseudo sensor is created directly here
                 sensor = CANBusSensor(vehicle, sensor_spec['reading_frequency'])
