@@ -62,10 +62,10 @@
     </scenario>
 </scenarios>
     <scenario name="FollowLeadingVehicle_11" type="FollowLeadingVehicle" town="Town06">
-        <ego_vehicle x="6.5" y="-35.5" z="0" yaw="-91" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="6.5" y="-35" z="0" yaw="-91" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="FollowLeadingVehicleWithObstacle_11" type="FollowLeadingVehicleWithObstacle" town="Town06">
-        <ego_vehicle x="6.5" y="-35.5" z="0" yaw="-91" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="6.5" y="-35" z="0" yaw="-91" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="FollowLeadingVehicle_12" type="FollowLeadingVehicle" town="Town06">
         <ego_vehicle x="105.8" y="233.2" z="0" yaw="-22" model="vehicle.lincoln.mkz2017" />
