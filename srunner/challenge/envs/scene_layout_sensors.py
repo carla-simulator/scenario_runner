@@ -21,7 +21,7 @@ class SceneLayoutMeasurement(object):
         self.frame_number = frame_number
 
 
-class SceneLayout(object):
+class SceneLayoutReader(object):
     def __init__(self, world):
         """
             The scene layout just requires a reference to world where you will
