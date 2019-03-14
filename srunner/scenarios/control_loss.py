@@ -50,14 +50,13 @@ class ControlLoss(BasicScenario):
     _ego_vehicle_max_throttle = 1.0
     _ego_vehicle_target_velocity = 15
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
         super(ControlLoss, self).__init__("ControlLoss",
                                           ego_vehicle,
-                                          other_actors,
-                                          town,
+                                          config,
                                           world,
                                           debug_mode)
 

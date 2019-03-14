@@ -13,8 +13,9 @@ from __future__ import print_function
 
 import py_trees
 
-from srunner.scenariomanager.scenario_manager import Scenario
+from srunner.scenariomanager.atomic_scenario_behavior import InTimeToArrivalToLocation
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.scenario_manager import Scenario
 
 
 class BasicScenario(object):
@@ -23,7 +24,7 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
-    def __init__(self, name, ego_vehicle, other_actors, town, world, debug_mode=False, terminate_on_failure=False):
+    def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -36,14 +37,14 @@ class BasicScenario(object):
 
         self.other_actors = []
         # Check if the CARLA server uses the correct map
-        self._town = town
+        self._town = config.town
         self._check_town(world)
 
         self.ego_vehicle = ego_vehicle
         self.name = name
         self.terminate_on_failure = terminate_on_failure
 
-        for actor in other_actors:
+        for actor in config.other_actors:
             new_actor = CarlaActorPool.request_new_actor(actor.model,
                                                          actor.transform,
                                                          hero=False,
@@ -59,7 +60,15 @@ class BasicScenario(object):
 
         behavior = self._create_behavior()
         criteria = self._create_test_criteria()
-        self.scenario = Scenario(behavior, criteria, self.name, self.timeout, self.terminate_on_failure)
+
+        # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
+        start_location = config.ego_vehicle.transform.location     # start location of the scenario
+        time_to_start_location = 2.0                               # seconds
+        behavior_seq = py_trees.composites.Sequence()
+        behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle, time_to_start_location, start_location))
+        behavior_seq.add_child(behavior)
+
+        self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
 
     def _create_behavior(self):
         """

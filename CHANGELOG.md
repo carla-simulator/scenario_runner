@@ -16,6 +16,7 @@
     - If all scenarios in one coniguration file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
     - Generalized ControlLoss and FollowLeadingVehicle scenarios
     - Added randomization option to scenario_runner and scenarios
+    - The scenario behavior always starts with a wait behavior until the ego vehicle reached the scenario starting position
 * Added new atomic behaviors using py_trees behavior tree library
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
     - StandStill: check if a vehicle stands still

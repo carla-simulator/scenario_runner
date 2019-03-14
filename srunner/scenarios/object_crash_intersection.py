@@ -50,15 +50,14 @@ class VehicleTurningRight(BasicScenario):
 
     _location_of_collision = carla.Location(x=93.1, y=44.8, z=39)
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
-                                                  other_actors,
-                                                  town,
+                                                  config,
                                                   world,
                                                   debug_mode)
 
@@ -178,15 +177,14 @@ class VehicleTurningLeft(BasicScenario):
 
     _location_of_collision = carla.Location(x=88.6, y=75.8, z=38)
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
-                                                 other_actors,
-                                                 town,
+                                                 config,
                                                  world,
                                                  debug_mode)
 

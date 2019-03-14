@@ -28,7 +28,7 @@ class ChallengeBasic(BasicScenario):
     radius = 10.0           # meters
     timeout = 300           # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -41,7 +41,7 @@ class ChallengeBasic(BasicScenario):
         if hasattr(self.config, 'route'):
             self.route = self.config.route.data
 
-        super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, other_actors, town, world, debug_mode, True)
+        super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, config, world, debug_mode, True)
 
     def _create_behavior(self):
         """

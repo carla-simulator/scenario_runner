@@ -194,8 +194,7 @@ class ScenarioRunner(object):
                     self.prepare_ego_vehicle(config)
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
-                                              config.other_actors,
-                                              config.town,
+                                              config,
                                               args.randomize,
                                               args.debug)
                 except Exception as exception:
