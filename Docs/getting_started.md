@@ -31,6 +31,11 @@ In addition, you have to install Python networkx. You can install it via:
 sudo apt-get install python-networkx
 ```
 
+You have to install Python numpy. You can install it via:
+```
+sudo apt-get install python-numpy
+```
+
 Also psutil is needed for running the challenge evaluation.
     
     pip install psutil
