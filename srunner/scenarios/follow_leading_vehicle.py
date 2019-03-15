@@ -59,7 +59,7 @@ class FollowLeadingVehicle(BasicScenario):
 
         # other vehicle
         self._other_actor_max_brake = 1.0                  # Maximum brake of other actor
-        self._other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
+        self._other_actor_stop_in_front_intersection = 20  # Stop ~30m in front of intersection
 
         parameter_list = []
 
@@ -108,7 +108,7 @@ class FollowLeadingVehicle(BasicScenario):
             "DrivingTowardsIntersection",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        driving_to_next_intersection.add_child(WaypointFollower(self.other_actors[0], 55))
+        driving_to_next_intersection.add_child(WaypointFollower(self.other_actors[0], 50))
         driving_to_next_intersection.add_child(InTriggerDistanceToNextIntersection(
             self.other_actors[0], self._other_actor_stop_in_front_intersection))
 
@@ -235,7 +235,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             "Waiting for end position near Intersection",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         stop_near_intersection.add_child(WaypointFollower(self.other_actors[0], 35))
-        stop_near_intersection.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 25))
+        stop_near_intersection.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 20))
 
         driving_to_next_intersection.add_child(WaypointFollower(self.other_actors[0], 35))
         driving_to_next_intersection.add_child(InTriggerDistanceToVehicle(self.other_actors[1],
