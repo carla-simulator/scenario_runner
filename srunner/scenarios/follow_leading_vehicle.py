@@ -24,8 +24,7 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.scenario_helper import get_location_in_distance
-from srunner.scenarios.config_parser import ActorConfigurationData
+
 
 FOLLOW_LEADING_VEHICLE_SCENARIOS = [
     "FollowLeadingVehicle",
@@ -59,18 +58,6 @@ class FollowLeadingVehicle(BasicScenario):
 
         If randomize is True, the scenario parameters are randomized
         """
-
-        parameter_list = []
-
-        #   Other vehicle 1
-        model = 'vehicle.tesla.model3'
-        spawn_location, _ = get_location_in_distance(ego_vehicle, 50)
-        spawn_location.z = 40
-        spawn_transform = carla.Transform(
-            spawn_location,
-            ego_vehicle.get_transform().rotation)
-        parameter_list.append(ActorConfigurationData(model, spawn_transform))
-
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
                                                    ego_vehicle,
                                                    config,

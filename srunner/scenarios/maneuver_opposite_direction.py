@@ -16,8 +16,7 @@ import py_trees
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.scenario_helper import get_location_in_distance
-from srunner.scenarios.config_parser import ActorConfigurationData
+from srunner.scenarios.scenario_helper import get_waypoint_in_distance
 
 
 MANEUVER_OPPOSITE_DIRECTION = [
@@ -35,35 +34,40 @@ class ManeuverOppositeDirection(BasicScenario):
     category = "ManeuverOppositeDirection"
     timeout = 120
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria=True):
         """
         Setup all relevant parameters and create scenario
         """
 
+        self._map = world.get_map()
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location + 40
         self._ego_vehicle_drive_distance = self._second_vehicle_location + 50
         self._start_distance = self._first_vehicle_location * 0.8
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 60
-
-        first_vehicle_location, _ = get_location_in_distance(ego_vehicle, self._first_vehicle_location)
-        second_vehicle_location, _ = get_location_in_distance(ego_vehicle, self._second_vehicle_location)
-        first_vehicle_waypoint = world.get_map().get_waypoint(first_vehicle_location)
-        second_vehicle_waypoint = world.get_map().get_waypoint(second_vehicle_location)
-        second_vehicle_waypoint = second_vehicle_waypoint.get_left_lane()
-
-        parameter_list = []
-        parameter_list.append(ActorConfigurationData('vehicle.audi.tt', first_vehicle_waypoint.transform))
-        parameter_list.append(ActorConfigurationData('vehicle.tesla.model3', second_vehicle_waypoint.transform))
+        self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
 
         super(ManeuverOppositeDirection, self).__init__(
             "FollowVehicle",
             ego_vehicle,
-            parameter_list,
-            town,
+            config,
             world,
-            debug_mode)
+            debug_mode, criteria)
+
+    def initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+
+        first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
+        second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
+        second_vehicle_waypoint = second_vehicle_waypoint.get_left_lane()
+
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.tesla.model3', first_vehicle_waypoint.transform)
+        second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_waypoint.transform)
+
+        return [first_vehicle, second_vehicle]
 
     def _create_behavior(self):
         """
@@ -102,8 +106,9 @@ class ManeuverOppositeDirection(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
-        criteria.append(collision_criterion)
+        if self.criteria:
+            collision_criterion = CollisionTest(self.ego_vehicle)
+            criteria.append(collision_criterion)
 
         return criteria
 
