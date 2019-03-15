@@ -52,6 +52,7 @@ class FollowLeadingVehicle(BasicScenario):
 
         If randomize is True, the scenario parameters are randomized
         """
+<<<<<<< HEAD
 
         self._map = world.get_map()
         self._first_vehicle_location = 25
@@ -60,6 +61,8 @@ class FollowLeadingVehicle(BasicScenario):
         self._other_actor_max_brake = 1.0
         self._other_actor_stop_in_front_intersection = 20
 
+=======
+>>>>>>> *Updated SignalizedJunctionLeftTurn to match current development
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
                                                    ego_vehicle,
                                                    config,
@@ -77,6 +80,7 @@ class FollowLeadingVehicle(BasicScenario):
             # waypoint.transform.location.z += 39
             # self.other_actors[0].set_transform(waypoint.transform)
 
+<<<<<<< HEAD
     def _initialize_actors(self, config):
         """
         Custom initialization
@@ -87,6 +91,8 @@ class FollowLeadingVehicle(BasicScenario):
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
         self.other_actors.append(first_vehicle)
 
+=======
+>>>>>>> *Updated SignalizedJunctionLeftTurn to match current development
     def _create_behavior(self):
         """
         The scenario defined after is a "follow leading vehicle" scenario. After
