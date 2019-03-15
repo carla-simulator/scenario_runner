@@ -41,7 +41,7 @@ class LeadingVehicleDecelerate(BasicScenario):
     scenario involving a user controlled vehicle and two other actors.
     """
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -77,11 +77,11 @@ class LeadingVehicleDecelerate(BasicScenario):
             spawn_waypoint_2.transform.location, spawn_waypoint_2.transform.rotation)
         parameter_list.append(ActorConfigurationData(model_1, spawn_transform_1))
         parameter_list.append(ActorConfigurationData(model_2, spawn_transform_2))
+        config.other_actors = parameter_list
 
         super(LeadingVehicleDecelerate, self).__init__("LeadingVehicleDeceleratingInMultiLaneSetUp",
                                                        ego_vehicle,
-                                                       parameter_list,
-                                                       town,
+                                                       config,
                                                        world,
                                                        debug_mode)
 
@@ -120,10 +120,6 @@ class LeadingVehicleDecelerate(BasicScenario):
         brake.add_child(brake_1)
         brake.add_child(brake_2)
 
-        # start condition
-        location, _ = get_location_in_distance(self.ego_vehicle, 50)
-        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 40)
-
         # both actors moving in same direction
         driving_in_same_direction = py_trees.composites.Parallel(
             "Both actors driving in same direction",
@@ -154,7 +150,6 @@ class LeadingVehicleDecelerate(BasicScenario):
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence behavior")
         sequence.add_child(brake)
-        sequence.add_child(start_condition)
         sequence.add_child(driving_in_same_direction)
         driving_in_same_direction.add_child(leading_actor_sequence_behavior)
         driving_in_same_direction.add_child(WaypointFollower(self.other_actors[1], self._other_target_vel))
