@@ -43,19 +43,6 @@ class FollowLeadingVehicle(BasicScenario):
     scenario involving two vehicles.
     """
 
-    category = "FollowLeadingVehicle"
-
-    timeout = 120            # Timeout of scenario in seconds
-
-    # ego vehicle parameters
-    _ego_max_velocity_allowed = 20        # Maximum allowed velocity [m/s]
-    _ego_avg_velocity_expected = 4        # Average expected velocity [m/s]
-    _ego_other_distance_start = 4         # time to arrival that triggers scenario starts
-
-    # other vehicle
-    _other_actor_max_brake = 1.0                  # Maximum brake of other actor
-    _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
-
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
@@ -83,6 +70,7 @@ class FollowLeadingVehicle(BasicScenario):
         spawn_waypoint = ego_vehicle.get_world().get_map().get_waypoint(spawn_location)
         spawn_transform = carla.Transform(spawn_location, spawn_waypoint.transform.rotation)
         parameter_list.append(ActorConfigurationData(model, spawn_transform))
+        config.other_actors = parameter_list
 
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
                                                    ego_vehicle,
@@ -111,18 +99,6 @@ class FollowLeadingVehicle(BasicScenario):
         """
 
         hand_brake_apply = HandBrakeVehicle(self.other_actors[0], True, name="HandBraking")
-
-        # start condition
-        startcondition = py_trees.composites.Parallel(
-            "Waiting for start position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        startcondition.add_child(InTimeToArrivalToLocation(self.ego_vehicle,
-                                                           self._ego_other_distance_start,
-                                                           self.other_actors[0].get_location()))
-        startcondition.add_child(InTriggerDistanceToVehicle(self.ego_vehicle,
-                                                            self.other_actors[0],
-                                                            15))
 
         hand_brake_release = HandBrakeVehicle(self.other_actors[0], False, name="ReleasingHandBrake")
 
@@ -153,7 +129,6 @@ class FollowLeadingVehicle(BasicScenario):
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(hand_brake_apply)
-        sequence.add_child(startcondition)
         sequence.add_child(hand_brake_release)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(stop)
@@ -188,19 +163,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     but there is an obstacle in front of the leading vehicle
     """
 
-    category = "FollowLeadingVehicle"
-
-    timeout = 120            # Timeout of scenario in seconds
-
-    # ego vehicle parameters
-    _ego_max_velocity_allowed = 20   # Maximum allowed velocity [m/s]
-    _ego_avg_velocity_expected = 4   # Average expected velocity [m/s]
-    _ego_other_distance_start = 4    # time to arrival that triggers scenario starts
-
-    # other vehicle
-    _other_actor_max_brake = 1.0                  # Maximum brake of other vehicle
-    _other_actor_stop_in_front_intersection = 30  # Stop ~30m in front of intersection
-
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
@@ -222,6 +184,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         model_1 = 'vehicle.diamondback.century'
 
         spawn_location, _ = get_location_in_distance(ego_vehicle, 20)
+        spawn_location.z += 1
         spawn_waypoint = ego_vehicle.get_world().get_map().get_waypoint(spawn_location)
         spawn_transform = carla.Transform(spawn_location, spawn_waypoint.transform.rotation)
 
@@ -234,6 +197,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         parameter_list.append(ActorConfigurationData(model, spawn_transform))
         parameter_list.append(ActorConfigurationData(model_1, spawn_transform_1))
+        config.other_actors = parameter_list
 
         super(FollowLeadingVehicleWithObstacle, self).__init__("FollowLeadingVehicleWithObstacle",
                                                                ego_vehicle,
@@ -255,13 +219,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         """
 
         hand_brake_apply = HandBrakeVehicle(self.other_actors[0], True, name="HandBraking")
-
-        # start condition
-        startcondition = InTimeToArrivalToLocation(self.ego_vehicle,
-                                                   self._ego_other_distance_start,
-                                                   self.other_actors[0].get_location(),
-                                                   name="Waiting for start position")
-
         hand_brake_release = HandBrakeVehicle(self.other_actors[0], False, name="ReleasingHandBrake")
 
         # let the other actor drive until next intersection
@@ -298,7 +255,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(hand_brake_apply)
-        sequence.add_child(startcondition)
         sequence.add_child(hand_brake_release)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(StopVehicle(self.other_actors[0], self._other_actor_max_brake))
