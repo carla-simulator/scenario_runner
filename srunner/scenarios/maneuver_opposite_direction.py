@@ -34,7 +34,7 @@ class ManeuverOppositeDirection(BasicScenario):
     category = "ManeuverOppositeDirection"
     timeout = 120
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -53,7 +53,7 @@ class ManeuverOppositeDirection(BasicScenario):
             ego_vehicle,
             config,
             world,
-            debug_mode, criteria)
+            debug_mode)
 
     def initialize_actors(self, config):
         """
@@ -106,9 +106,8 @@ class ManeuverOppositeDirection(BasicScenario):
         """
         criteria = []
 
-        if self.criteria:
-            collision_criterion = CollisionTest(self.ego_vehicle)
-            criteria.append(collision_criterion)
+        collision_criterion = CollisionTest(self.ego_vehicle)
+        criteria.append(collision_criterion)
 
         return criteria
 

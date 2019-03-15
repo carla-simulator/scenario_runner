@@ -24,7 +24,7 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
-    def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False, criteria=True):
+    def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -34,7 +34,6 @@ class BasicScenario(object):
         self.criteria_list = []  # List of evaluation criteria
         self.timeout = 60  # Timeout of scenario in seconds
         self.scenario = None
-        self.criteria = criteria
         self.other_actors = self.initialize_actors(config)
         # Check if the CARLA server uses the correct map
         self._town = config.town

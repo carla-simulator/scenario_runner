@@ -616,10 +616,10 @@ class SyncArrival(AtomicBehavior):
     """
     This class contains an atomic behavior to
     set velocity of actor so that it reaches location at the same time as
-    actor_reference. The behaviour assumes that the two actors are moving
+    actor_reference. The behavior assumes that the two actors are moving
     towards location in a straight line.
     Note: In parallel to this behavior a termination behavior has to be used
-          to keep continue scynhronisation for a certain duration, or for a
+          to keep continue synchronization for a certain duration, or for a
           certain distance, etc.
     """
 
@@ -627,7 +627,7 @@ class SyncArrival(AtomicBehavior):
         """
         actor : actor to be controlled
         actor_ reference : reference actor with which arrival has to be
-                             synchronised
+                             synchronized
         gain : coefficient for actor's throttle and break
                controls
         """
@@ -782,11 +782,12 @@ class Idle(AtomicBehavior):
 
 class WaypointFollower(AtomicBehavior):
     """
-    This is an atomic behaviour to follow waypoints indefinetly
-    while maintaining a given speed
+    This is an atomic behavior to follow waypoints indefinitely
+    while maintaining a given speed or if given a waypoint plan,
+    follows the given plan
     """
 
-    def __init__(self, actor, target_speed, name="FollowWaypoints"):
+    def __init__(self, actor, target_speed, plan=None, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
@@ -795,17 +796,20 @@ class WaypointFollower(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._target_speed = target_speed
         self._local_planner = None
+        self._plan = plan
 
     def initialise(self):
         args_lateral_dict = {
-            'K_P': 0.8,
+            'K_P': 1.0,
             'K_D': 0.01,
             'K_I': 0.0,
-            'dt': 0.1}
+            'dt': 1.0/20.0}
         self._local_planner = LocalPlanner(
             self._actor, opt_dict={
-                'target_speed': self._target_speed,
+                'target_speed' : self._target_speed,
                 'lateral_control_dict': args_lateral_dict})
+        if self._plan is not None:
+            self._local_planner.set_global_plan(self._plan)
 
     def update(self):
         """
@@ -813,7 +817,7 @@ class WaypointFollower(AtomicBehavior):
         """
 
         new_status = py_trees.common.Status.RUNNING
-        control = self._local_planner.run_step()
+        control = self._local_planner.run_step(debug=False)
         self._actor.apply_control(control)
 
         return new_status
