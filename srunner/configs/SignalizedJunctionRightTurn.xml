@@ -28,12 +28,12 @@
         <ego_vehicle x="-175.3" y="94.9" z="0.0" yaw="0" model="vehicle.lincoln.mkz2017" />
         <other_actor x="-131.6" y="70" z="0.0" yaw="90" model="vehicle.tesla.model3" />
     </scenario>
-    <scenario name="SignalizedJunctionRightTurn_8" type="SignalizedJunctionRightTurn" town="Town06">
+    <!-- <scenario name="SignalizedJunctionRightTurn_8" type="SignalizedJunctionRightTurn" town="Town06">
         <ego_vehicle x="-82.2" y="52.4" z="0.0" yaw="2" model="vehicle.lincoln.mkz2017" />
         <other_actor x="-9.1" y="0.6" z="0.0" yaw="90" model="vehicle.tesla.model3" />
     </scenario>
     <scenario name="SignalizedJunctionRightTurn_9" type="SignalizedJunctionRightTurn" town="Town06">
         <ego_vehicle x="-49.3" y="246.6" z="1" yaw="1" model="vehicle.lincoln.mkz2017" />
         <other_actor x="-7" y="207.2" z="1" yaw="90" model="vehicle.tesla.model3" />
-    </scenario>
+    </scenario> -->
 </scenarios>

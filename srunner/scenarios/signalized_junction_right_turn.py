@@ -28,7 +28,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
     Traffic Scenario 09.
     """
 
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -43,8 +43,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
         super(SignalizedJunctionRightTurn, self).__init__("HeroActorTurningRightAtSignalizedJunction",
                                                           ego_vehicle,
-                                                          other_actors,
-                                                          town,
+                                                          config,
                                                           world,
                                                           debug_mode)
 
