@@ -34,7 +34,7 @@ class BasicScenario(object):
         self.criteria_list = []  # List of evaluation criteria
         self.timeout = 60  # Timeout of scenario in seconds
         self.scenario = None
-        self.other_actors = self.initialize_actors(config)
+        self.other_actors = self._initialize_actors(config)
         # Check if the CARLA server uses the correct map
         self._town = config.town
         self._check_town(world)
@@ -59,7 +59,7 @@ class BasicScenario(object):
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
 
-    def initialize_actors(self, config):
+    def _initialize_actors(self, config):
         """
         Default initialization of other actors.
         Override this method in chid class to provide custom initialization.

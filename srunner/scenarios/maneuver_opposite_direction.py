@@ -42,8 +42,8 @@ class ManeuverOppositeDirection(BasicScenario):
         self._map = world.get_map()
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location + 40
-        self._ego_vehicle_drive_distance = self._second_vehicle_location + 50
-        self._start_distance = self._first_vehicle_location * 0.8
+        self._ego_vehicle_drive_distance = self._second_vehicle_location * 2
+        self._start_distance = self._first_vehicle_location * 0.5
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 60
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
@@ -55,7 +55,7 @@ class ManeuverOppositeDirection(BasicScenario):
             world,
             debug_mode)
 
-    def initialize_actors(self, config):
+    def _initialize_actors(self, config):
         """
         Custom initialization
         """
@@ -64,7 +64,7 @@ class ManeuverOppositeDirection(BasicScenario):
         second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
         second_vehicle_waypoint = second_vehicle_waypoint.get_left_lane()
 
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.tesla.model3', first_vehicle_waypoint.transform)
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
         second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_waypoint.transform)
 
         return [first_vehicle, second_vehicle]
