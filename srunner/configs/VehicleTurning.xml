@@ -43,15 +43,9 @@
         <ego_vehicle x="-74.32" y="-50" z="0.5" yaw="270" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="VehicleTurningRight_8" type="VehicleTurningRight" town="Town04">
-        <ego_vehicle x="199.9" y="-236.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
-    </scenario>
-    <scenario name="VehicleTurningLeft_8" type="VehicleTurningLeft" town="Town04">
-        <ego_vehicle x="199.9" y="-236.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
-    </scenario>
-    <scenario name="VehicleTurningRight_9" type="VehicleTurningRight" town="Town04">
         <ego_vehicle x="255.2" y="-300.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
     </scenario>
-    <scenario name="VehicleTurningLeft_9" type="VehicleTurningLeft" town="Town04">
+    <scenario name="VehicleTurningLeft_8" type="VehicleTurningLeft" town="Town04">
         <ego_vehicle x="255.2" y="-300.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
     </scenario>
 </scenarios>
