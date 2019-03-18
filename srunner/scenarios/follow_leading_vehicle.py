@@ -27,7 +27,7 @@ from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
-from srunner.scenarios.config_parser import ActorConfigurationData
+from srunner.scenarios.config_parser import *
 
 
 FOLLOW_LEADING_VEHICLE_SCENARIOS = [
