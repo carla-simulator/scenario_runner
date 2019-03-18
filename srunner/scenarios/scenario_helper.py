@@ -103,7 +103,7 @@ def get_waypoint_in_distance(waypoint, distance):
 def generate_target_waypoint(waypoint, turn=0):
     """
     This method follow waypoints to a junction and choose path based on turn input.
-    Turn input: LEFT -> 1, RIGHT -> -1, STRAIGHT -> 0
+    Turn input: LEFT -> -1, RIGHT -> 1, STRAIGHT -> 0
     @returns a waypoint list according to turn input
     """
     sampling_radius = 1
