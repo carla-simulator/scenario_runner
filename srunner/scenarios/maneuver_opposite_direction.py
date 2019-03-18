@@ -48,7 +48,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
 
         super(ManeuverOppositeDirection, self).__init__(
-            "FollowVehicle",
+            "ManeuverOppositeDirection",
             ego_vehicle,
             config,
             world,
