@@ -31,10 +31,10 @@
         <ego_vehicle x="-337  " y="435.8" z="5.5" yaw="0" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="FollowLeadingVehicle_6" type="FollowLeadingVehicle" town="Town04">
-        <ego_vehicle x="44.8" y="-98.3" z="0" yaw="-18" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="44.8" y="-98.3" z="1" yaw="-18" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="FollowLeadingVehicleWithObstacle_6" type="FollowLeadingVehicleWithObstacle" town="Town04">
-        <ego_vehicle x="44.8" y="-98.3" z="0" yaw="-18" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="44.8" y="-98.3" z="1" yaw="-18" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="FollowLeadingVehicle_7" type="FollowLeadingVehicle" town="Town04">
         <ego_vehicle x="178" y="-395.8" z="0" yaw="180" model="vehicle.lincoln.mkz2017" />
