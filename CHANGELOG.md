@@ -18,6 +18,7 @@
     - Generalized ControlLoss and FollowLeadingVehicle scenarios
     - Added randomization option to scenario_runner and scenarios
     - The scenario behavior always starts with a wait behavior until the ego vehicle reached the scenario starting position
+    - Created method _initialize_actors in basic scenario that can be overridden for scenario specific actor initialization
 * Added new atomic behaviors using py_trees behavior tree library
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
     - StandStill: check if a vehicle stands still
@@ -26,7 +27,6 @@
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios
     - OppositeVehicleRunningRedLight: Updated to allow execution at different locations
-* Created method _initialize_actors in basic scenario that can be overridden for scenario specific actor initialization
 
 ## CARLA Scenario_Runner 0.9.2
 
