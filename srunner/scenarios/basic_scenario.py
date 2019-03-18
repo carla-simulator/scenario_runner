@@ -24,6 +24,8 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
+    other_actors = []
+
     def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False):
         """
         Setup all relevant parameters and create scenario

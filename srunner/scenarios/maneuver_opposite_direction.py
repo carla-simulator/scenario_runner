@@ -58,7 +58,6 @@ class ManeuverOppositeDirection(BasicScenario):
         """
         Custom initialization
         """
-
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
         second_vehicle_waypoint = second_vehicle_waypoint.get_left_lane()
@@ -66,7 +65,8 @@ class ManeuverOppositeDirection(BasicScenario):
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
         second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_waypoint.transform)
 
-        return [first_vehicle, second_vehicle]
+        self.other_actors.append(first_vehicle)
+        self.other_actors.append(second_vehicle)
 
     def _create_behavior(self):
         """
