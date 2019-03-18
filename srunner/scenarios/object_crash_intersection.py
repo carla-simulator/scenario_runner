@@ -39,7 +39,7 @@ class VehicleTurningRight(BasicScenario):
         # other vehicle parameters
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
-        self.timeout = 20
+        self.timeout = 60
 
         self._wmap = world.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
@@ -147,7 +147,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
-        self.timeout = 20
+        self.timeout = 60
 
         self._wmap = world.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
