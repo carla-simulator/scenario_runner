@@ -30,6 +30,7 @@ from srunner.scenarios.no_signal_junction_crossing import *
 from srunner.scenarios.object_crash_intersection import *
 from srunner.scenarios.control_loss import *
 from srunner.scenarios.maneuver_opposite_direction import *
+from srunner.scenarios.other_leading_vehicle import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.carla_data_provider import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
@@ -50,6 +51,7 @@ SCENARIOS = {
     "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
     "ControlLoss": CONTROL_LOSS_SCENARIOS,
     "OppositeDirection": MANEUVER_OPPOSITE_DIRECTION
+    "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS
 }
 
 
