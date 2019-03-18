@@ -21,7 +21,7 @@ accordingly. After some time, the cyclist clears the road, such that ego vehicle
 can continue driving.
 
 ### VehicleTurningLeft
-This scenario is similar to 'VehicleTurningRight'. The differnce is that the ego
+This scenario is similar to 'VehicleTurningRight'. The difference is that the ego
 vehicle takes a left turn from an intersection.
 
 ### OppositeVehicleRunningRedLight
@@ -47,9 +47,13 @@ This scenario tests negotiation between two vehicles crossing cross each other
 through a junction without signal.
 The ego vehicle is passing through a junction without traffic lights
 And encounters another vehicle passing across the junction. The ego vehicle has
-to avoid collision and navigate accross the junction to succeed.
+to avoid collision and navigate across the junction to succeed.
 
 ### ControlLoss
 In this scenario control loss of a vehicle is tested due to bad road conditions, etc
 and it checks whether the vehicle is regained its control and corrected its course.
 
+### ManeuverOppositeDirection
+In this scenario vehicle is passing another vehicle in a rural area, in daylight, under clear
+weather conditions, at a non-junction and encroaches into another
+vehicle traveling in the opposite direction.

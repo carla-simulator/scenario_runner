@@ -24,6 +24,8 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
+    other_actors = []
+
     def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False):
         """
         Setup all relevant parameters and create scenario
@@ -34,7 +36,6 @@ class BasicScenario(object):
         self.criteria_list = []  # List of evaluation criteria
         self.timeout = 60  # Timeout of scenario in seconds
         self.scenario = None
-        self.other_actors = []
         # Check if the CARLA server uses the correct map
         self._town = config.town
         self._check_town(world)
@@ -67,7 +68,6 @@ class BasicScenario(object):
         Default initialization of other actors.
         Override this method in child class to provide custom initialization.
         """
-
         for actor in config.other_actors:
             new_actor = CarlaActorPool.request_new_actor(actor.model,
                                                          actor.transform,
@@ -76,6 +76,7 @@ class BasicScenario(object):
                                                          random_location=actor.random_location)
             if new_actor is None:
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
+
             self.other_actors.append(new_actor)
 
     def _create_behavior(self):

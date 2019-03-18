@@ -15,7 +15,7 @@
     - The scenario runner is now responsible for spawning/destroying the ego vehicle
     - Added a CarlaActorPool to share scenario-related actors between scenarios and the scenario_runner
     - Renamed vehicle -> actor
-    - If all scenarios in one configuration file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
+    - If all scenarios in one configurations file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
     - Generalized ControlLoss and FollowLeadingVehicle scenarios
     - Added randomization option to scenario_runner and scenarios
     - The scenario behavior always starts with a wait behavior until the ego vehicle reached the scenario starting position
@@ -30,6 +30,8 @@
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios
     - OppositeVehicleRunningRedLight: Updated to allow execution at different locations
+* Added NHTSA Traffic Scenarios
+    - ManeuverOppositeDirection: hero vehicle must maneuver in the opposite lane to pass a leading vehicle.
 
 ## CARLA Scenario_Runner 0.9.2
 

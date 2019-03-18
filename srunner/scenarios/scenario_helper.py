@@ -13,10 +13,8 @@ from __future__ import print_function
 import math
 
 import numpy as np
-
 import carla
 from agents.tools.misc import vector
-
 
 def get_crossing_point(actor):
     """

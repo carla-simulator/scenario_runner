@@ -616,10 +616,10 @@ class SyncArrival(AtomicBehavior):
     """
     This class contains an atomic behavior to
     set velocity of actor so that it reaches location at the same time as
-    actor_reference. The behaviour assumes that the two actors are moving
+    actor_reference. The behavior assumes that the two actors are moving
     towards location in a straight line.
     Note: In parallel to this behavior a termination behavior has to be used
-          to keep continue scynhronisation for a certain duration, or for a
+          to keep continue synchronization for a certain duration, or for a
           certain distance, etc.
     """
 
@@ -627,7 +627,7 @@ class SyncArrival(AtomicBehavior):
         """
         actor : actor to be controlled
         actor_ reference : reference actor with which arrival has to be
-                             synchronised
+                             synchronized
         gain : coefficient for actor's throttle and break
                controls
         """
