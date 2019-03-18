@@ -9,7 +9,7 @@
 Welcome to CARLA scenario_runner
 
 This is the main script to be executed when running a scenario.
-It loeads the scenario coniguration, loads the scenario and manager,
+It loads the scenario configuration, loads the scenario and manager,
 and finally triggers the scenario execution.
 """
 

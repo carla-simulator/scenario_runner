@@ -34,8 +34,7 @@ class BasicScenario(object):
         self.criteria_list = []  # List of evaluation criteria
         self.timeout = 60  # Timeout of scenario in seconds
         self.scenario = None
-
-        self.other_actors = []
+        self.other_actors = self._initialize_actors(config)
         # Check if the CARLA server uses the correct map
         self._town = config.town
         self._check_town(world)
@@ -43,16 +42,6 @@ class BasicScenario(object):
         self.ego_vehicle = ego_vehicle
         self.name = name
         self.terminate_on_failure = terminate_on_failure
-
-        for actor in config.other_actors:
-            new_actor = CarlaActorPool.request_new_actor(actor.model,
-                                                         actor.transform,
-                                                         hero=False,
-                                                         autopilot=actor.autopilot,
-                                                         random_location=actor.random_location)
-            if new_actor is None:
-                raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
-            self.other_actors.append(new_actor)
 
         # Setup scenario
         if debug_mode:
@@ -69,6 +58,24 @@ class BasicScenario(object):
         behavior_seq.add_child(behavior)
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
+
+    def _initialize_actors(self, config):
+        """
+        Default initialization of other actors.
+        Override this method in child class to provide custom initialization.
+        """
+        actor_list = []
+        for actor in config.other_actors:
+            new_actor = CarlaActorPool.request_new_actor(actor.model,
+                                                         actor.transform,
+                                                         hero=False,
+                                                         autopilot=actor.autopilot,
+                                                         random_location=actor.random_location)
+            if new_actor is None:
+                raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
+            actor_list.append(new_actor)
+
+        return actor_list
 
     def _create_behavior(self):
         """
