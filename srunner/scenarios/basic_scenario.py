@@ -25,6 +25,7 @@ class BasicScenario(object):
     """
 
     other_actors = []
+    timeout = 60        # Timeout of scenario in seconds
 
     def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False):
         """
@@ -32,9 +33,8 @@ class BasicScenario(object):
         and instantiate scenario manager
         """
 
-        self.category = None  # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
+        self.category = None     # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
         self.criteria_list = []  # List of evaluation criteria
-        self.timeout = 60  # Timeout of scenario in seconds
         self.scenario = None
         # Check if the CARLA server uses the correct map
         self._town = config.town
