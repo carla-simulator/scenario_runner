@@ -84,8 +84,7 @@ class FollowLeadingVehicle(BasicScenario):
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         first_vehicle_waypoint.transform.location.z += 1
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
-
-        return [first_vehicle]
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -201,7 +200,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         second_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                           second_vehicle_transform)
 
-        return [first_vehicle, second_vehicle]
+        self.other_actors.append(first_vehicle)
+        self.other_actors.append(second_vehicle)
 
     def _create_behavior(self):
         """
