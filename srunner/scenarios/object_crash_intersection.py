@@ -16,6 +16,7 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
+from srunner.scenarios.scenario_helper import *
 
 VEHICLE_TURNING_SCENARIOS = [
     "VehicleTurningRight",
@@ -30,16 +31,18 @@ class VehicleTurningRight(BasicScenario):
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a right turn.
     """
-    category = "VehicleTurning"
-    timeout = 90
-
-    # other vehicle parameters
-    _other_actor_target_velocity = 10
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
+        # other vehicle parameters
+        self._other_actor_target_velocity = 10
+        self.category = "VehicleTurning"
+        self.timeout = 20
+
+        self._wmap = world.get_map()
+        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -47,17 +50,12 @@ class VehicleTurningRight(BasicScenario):
                                                   world,
                                                   debug_mode)
 
-    @staticmethod
-    def initialize_actors(ego_vehicle):
+    def _initialize_actors(self, config):
         """
-        This method returns the list of participant actors and their initial positions for the scenario
+        Custom initialization
         """
-        actor_parameters = []
-        world = ego_vehicle.get_world()
-        wmap = world.get_map()
-        waypoint = wmap.get_waypoint(ego_vehicle.get_location())
-        _wp = generate_target_waypoint(waypoint, -1)
-        model = 'vehicle.diamondback.century'
+        waypoint = self._wmap.get_waypoint(self.ego_vehicle.get_location())
+        _wp = generate_target_waypoint(waypoint, 1)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.7}
         _wp = _wp.next(10)[-1]
         lane_width = _wp.lane_width
@@ -70,9 +68,8 @@ class VehicleTurningRight(BasicScenario):
         location += offset_location
         location.z += offset["z"]
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        actor_parameters.append((model, transform))
-
-        return actor_parameters
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -148,19 +145,16 @@ class VehicleTurningLeft(BasicScenario):
     a cyclist after taking a left turn.
     """
 
-    category = "VehicleTurning"
-
-    timeout = 90
-
-    # other vehicle parameters
-    _other_actor_target_velocity = 10
-
-    _location_of_collision = carla.Location(x=88.6, y=75.8, z=38)
-
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
+        self._other_actor_target_velocity = 10
+        self.category = "VehicleTurning"
+        self.timeout = 20
+
+        self._wmap = world.get_map()
+        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
@@ -168,18 +162,13 @@ class VehicleTurningLeft(BasicScenario):
                                                  world,
                                                  debug_mode)
 
-    @staticmethod
-    def initialize_actors(ego_vehicle):
+    def _initialize_actors(self, config):
         """
-        This method returns the list of participant actors and their initial positions for the scenario
+        Custom initialization
         """
-        actor_parameters = []
-        wmap = ego_vehicle.get_world().get_map()
-        lane_width = wmap.get_waypoint(ego_vehicle.get_location()).lane_width
-        waypoint = wmap.get_waypoint(ego_vehicle.get_location())
-        _wp = generate_target_waypoint(waypoint, turn=1)
-        model = 'vehicle.diamondback.century'
-        offset = {"orientation": 270, "position": 80, "z": 0.2, "k": 0.7}
+        waypoint = self._wmap.get_waypoint(self.ego_vehicle.get_location())
+        _wp = generate_target_waypoint(waypoint, -1)
+        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.7}
         _wp = _wp.next(10)[-1]
         lane_width = _wp.lane_width
         location = _wp.transform.location
@@ -191,9 +180,8 @@ class VehicleTurningLeft(BasicScenario):
         location += offset_location
         location.z += offset["z"]
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        actor_parameters.append((model, transform))
-
-        return actor_parameters
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -206,6 +194,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
         lane_width = lane_width+(1.10*lane_width)
+
         trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30*lane_width)
