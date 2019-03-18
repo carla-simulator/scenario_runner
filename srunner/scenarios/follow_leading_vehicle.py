@@ -15,11 +15,12 @@ finally stop. The ego vehicle has to react accordingly to avoid
 a collision. The scenario ends either via a timeout, or if the ego
 vehicle stopped close enough to the leading vehicle
 """
-import carla
 
 import random
 
 import py_trees
+
+import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
