@@ -86,7 +86,6 @@ class VehicleTurningRight(BasicScenario):
         trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30*lane_width)
-        actor_brakes = StopVehicle(self.other_actors[0], 1)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70*lane_width)
         end_condition = TimeOut(5)
@@ -106,7 +105,6 @@ class VehicleTurningRight(BasicScenario):
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(trigger_distance)
         scenario_sequence.add_child(actor_ego_sync)
-        scenario_sequence.add_child(actor_brakes)
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
 
