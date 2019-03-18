@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-#
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
@@ -16,7 +14,8 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
-
+from srunner.scenarios.config_parser import ActorConfigurationData
+from srunner.scenarios.scenario_helper import get_location_in_distance
 
 OBJECT_CROSSING_SCENARIOS = [
     "StationaryObjectCrossing",
@@ -45,13 +44,38 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-
         super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
                                                        ego_vehicle,
                                                        config,
                                                        world,
                                                        debug_mode,
                                                        criteria_enable=criteria_enable)
+
+
+        _start_distance = 40
+        actor_parameters = []
+        world_map = ego_vehicle.get_world().get_map()
+        lane_width = world_map.get_waypoint(ego_vehicle.get_location()).lane_width
+        location, _ = get_location_in_distance(ego_vehicle, _start_distance)
+        waypoint = world_map.get_waypoint(location)
+        model = 'vehicle.diamondback.century'
+        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.2}
+        position_yaw = waypoint.transform.rotation.yaw + offset['position']
+        orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
+        offset_location = carla.Location(
+            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
+            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+        location += offset_location
+        location.z += offset['z']
+        transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+        actor_parameters.append(ActorConfigurationData(model, transform))
+
+        super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
+                                                       ego_vehicle,
+                                                       actor_parameters,
+                                                       town,
+                                                       world,
+                                                       debug_mode)
 
     def _create_behavior(self):
         """
@@ -62,25 +86,13 @@ class StationaryObjectCrossing(BasicScenario):
 
     def _create_test_criteria(self):
         """
-        A list of all test criteria will be created
-        that is later used in parallel behavior tree.
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed,
-            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
-        keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
-            self._ego_vehicle_distance_to_other)
-
-        criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
-        criteria.append(keep_lane_criterion)
-        criteria.append(driven_distance_criterion)
 
         return criteria
 
@@ -90,7 +102,6 @@ class StationaryObjectCrossing(BasicScenario):
         """
         self.remove_all_actors()
 
-
 class DynamicObjectCrossing(BasicScenario):
 
     """
@@ -99,6 +110,7 @@ class DynamicObjectCrossing(BasicScenario):
     The ego vehicle is passing through a road,
     And encounters a cyclist crossing the road.
     """
+
 
     category = "ObjectCrossing"
 
@@ -110,14 +122,15 @@ class DynamicObjectCrossing(BasicScenario):
 
     # other vehicle parameters
     _other_actor_target_velocity = 10
-    _trigger_distance_from_ego = 35
-    _other_actor_max_throttle = 1.0
     _other_actor_max_brake = 1.0
+    _time_to_reach = 12
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
+        category = "ObjectCrossing"
+        timeout = 60
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
@@ -126,63 +139,81 @@ class DynamicObjectCrossing(BasicScenario):
                                                     debug_mode,
                                                     criteria_enable=criteria_enable)
 
+        # other vehicle parameters
+        _other_actor_target_velocity = 10
+        _other_actor_max_brake = 1.0
+        _time_to_reach = 12
+
+        # spawning other actors
+        _start_distance = 40
+        actor_parameters = []
+        world_map = ego_vehicle.get_world().get_map()
+        lane_width = world_map.get_waypoint(ego_vehicle.get_location()).lane_width
+        location, _ = get_location_in_distance(ego_vehicle, _start_distance)
+        waypoint = world_map.get_waypoint(location)
+        model = 'vehicle.diamondback.century'
+        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 1.1}
+        position_yaw = waypoint.transform.rotation.yaw + offset['position']
+        orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
+        offset_location = carla.Location(
+            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
+            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+        location += offset_location
+        location.z += offset['z']
+        transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+        actor_parameters.append(ActorConfigurationData(model, transform))
+
+        super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
+                                                    ego_vehicle,
+                                                    actor_parameters,
+                                                    town,
+                                                    world,
+                                                    debug_mode)
+
     def _create_behavior(self):
         """
         After invoking this scenario, cyclist will wait for the user
-        controlled vehicle to enter the in the trigger distance region,
+        controlled vehicle to enter trigger distance region,
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
         """
+
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = lane_width+(1.25*lane_width)
+
         # leaf nodes
-        trigger_dist = InTriggerDistanceToVehicle(
-            self.other_actors[0],
-            self.ego_vehicle,
-            self._trigger_distance_from_ego)
-        start_other_actor = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other = InTriggerRegion(
-            self.other_actors[0],
-            46, 50,
-            128, 129.5)
-        stop_other_actor = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
-        timeout_other = TimeOut(10)
-        start_vehicle = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        trigger_other_actor = InTriggerRegion(
-            self.other_actors[0],
-            46, 50,
-            137, 139)
-        stop_vehicle = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(3)
+        start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
+        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
+        actor_drive = DriveDistance(self.other_actors[0], 0.3*lane_width)
+        actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
+                                                      self._other_actor_target_velocity)
+        actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
+        actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
+        timeout_other_actor = TimeOut(5)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
-        keep_velocity_other_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity_other = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        keep_velocity = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building tree
         root.add_child(scenario_sequence)
-        scenario_sequence.add_child(trigger_dist)
-        scenario_sequence.add_child(keep_velocity_other_parallel)
-        scenario_sequence.add_child(stop_other_actor)
-        scenario_sequence.add_child(timeout_other)
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
+        scenario_sequence.add_child(start_condition)
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
+        scenario_sequence.add_child(keep_velocity)
         scenario_sequence.add_child(keep_velocity_other)
-        scenario_sequence.add_child(stop_vehicle)
+        scenario_sequence.add_child(actor_stop_crossed_lane)
         scenario_sequence.add_child(timeout_other_actor)
-        keep_velocity_other_parallel.add_child(start_other_actor)
-        keep_velocity_other_parallel.add_child(trigger_other)
-        keep_velocity_other.add_child(start_vehicle)
-        keep_velocity_other.add_child(trigger_other_actor)
+
+        keep_velocity.add_child(actor_velocity)
+        keep_velocity.add_child(actor_drive)
+        keep_velocity_other.add_child(actor_start_cross_lane)
+        keep_velocity_other.add_child(actor_cross_lane)
 
         return root
 
@@ -193,19 +224,8 @@ class DynamicObjectCrossing(BasicScenario):
         """
         criteria = []
 
-        max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
-            self._ego_vehicle_velocity_allowed,
-            optional=True)
         collision_criterion = CollisionTest(self.ego_vehicle)
-        keep_lane_criterion = KeepLaneTest(self.ego_vehicle, optional=True)
-        driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle, self._ego_vehicle_distance_driven)
-
-        criteria.append(max_velocity_criterion)
         criteria.append(collision_criterion)
-        criteria.append(keep_lane_criterion)
-        criteria.append(driven_distance_criterion)
 
         return criteria
 
