@@ -34,7 +34,7 @@ class BasicScenario(object):
         self.criteria_list = []  # List of evaluation criteria
         self.timeout = 60  # Timeout of scenario in seconds
         self.scenario = None
-        self.other_actors = self._initialize_actors(config)
+        self.other_actors = []
         # Check if the CARLA server uses the correct map
         self._town = config.town
         self._check_town(world)
@@ -42,6 +42,9 @@ class BasicScenario(object):
         self.ego_vehicle = ego_vehicle
         self.name = name
         self.terminate_on_failure = terminate_on_failure
+
+        # Initializing adversarial actors
+        self._initialize_actors(config)
 
         # Setup scenario
         if debug_mode:
@@ -64,7 +67,7 @@ class BasicScenario(object):
         Default initialization of other actors.
         Override this method in child class to provide custom initialization.
         """
-        actor_list = []
+
         for actor in config.other_actors:
             new_actor = CarlaActorPool.request_new_actor(actor.model,
                                                          actor.transform,
@@ -73,9 +76,7 @@ class BasicScenario(object):
                                                          random_location=actor.random_location)
             if new_actor is None:
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
-            actor_list.append(new_actor)
-
-        return actor_list
+            self.other_actors.append(new_actor)
 
     def _create_behavior(self):
         """
