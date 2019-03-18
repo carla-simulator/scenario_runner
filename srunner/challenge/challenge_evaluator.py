@@ -62,7 +62,7 @@ class ChallengeEvaluator(object):
 
         # first we instantiate the Agent
         module_name = os.path.basename(args.agent).split('.')[0]
-        sys.path.insert(0,os.path.dirname(args.agent))
+        sys.path.insert(0, os.path.dirname(args.agent))
         self.module_agent = importlib.import_module(module_name)
 
         self._sensors_list = []

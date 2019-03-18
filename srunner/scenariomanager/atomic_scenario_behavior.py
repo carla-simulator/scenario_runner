@@ -807,7 +807,7 @@ class WaypointFollower(AtomicBehavior):
             'dt':  0.05}
         self._local_planner = LocalPlanner(
             self._actor, opt_dict={
-                'target_speed' : self._target_speed,
+                'target_speed': self._target_speed,
                 'lateral_control_dict': args_lateral_dict})
         if self._plan is not None:
             self._local_planner.set_global_plan(self._plan)

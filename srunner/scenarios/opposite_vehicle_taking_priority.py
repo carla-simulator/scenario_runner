@@ -87,8 +87,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         traffic_light_other.set_state(carla.TrafficLightState.Red)
         traffic_light_other.set_red_time(self.timeout)
 
-
-
     def _create_behavior(self):
         """
         Scenario behavior:
@@ -108,7 +106,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             crossing_point_dynamic,
             self._ego_distance_to_traffic_light,
             name="Waiting for start position")
-
 
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
