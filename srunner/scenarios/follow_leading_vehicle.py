@@ -83,7 +83,7 @@ class FollowLeadingVehicle(BasicScenario):
 
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         first_vehicle_waypoint.transform.location.z += 1
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.*', first_vehicle_waypoint.transform)
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
 
         return [first_vehicle]
 
