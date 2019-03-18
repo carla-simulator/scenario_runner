@@ -14,8 +14,7 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.config_parser import ActorConfigurationData
-from srunner.scenarios.scenario_helper import get_location_in_distance
+from srunner.scenarios.scenario_helper import *
 
 OBJECT_CROSSING_SCENARIOS = [
     "StationaryObjectCrossing",
@@ -44,6 +43,9 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
+        self._wmap = world.get_map()
+        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
+
         super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
                                                        ego_vehicle,
                                                        config,
@@ -51,14 +53,14 @@ class StationaryObjectCrossing(BasicScenario):
                                                        debug_mode,
                                                        criteria_enable=criteria_enable)
 
-
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
         _start_distance = 40
-        actor_parameters = []
-        world_map = ego_vehicle.get_world().get_map()
-        lane_width = world_map.get_waypoint(ego_vehicle.get_location()).lane_width
-        location, _ = get_location_in_distance(ego_vehicle, _start_distance)
-        waypoint = world_map.get_waypoint(location)
-        model = 'vehicle.diamondback.century'
+        lane_width = self._reference_waypoint.lane_width
+        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
+        waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.2}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
@@ -68,14 +70,8 @@ class StationaryObjectCrossing(BasicScenario):
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        actor_parameters.append(ActorConfigurationData(model, transform))
-
-        super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
-                                                       ego_vehicle,
-                                                       actor_parameters,
-                                                       town,
-                                                       world,
-                                                       debug_mode)
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -102,8 +98,8 @@ class StationaryObjectCrossing(BasicScenario):
         """
         self.remove_all_actors()
 
-class DynamicObjectCrossing(BasicScenario):
 
+class DynamicObjectCrossing(BasicScenario):
     """
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist,
@@ -129,8 +125,15 @@ class DynamicObjectCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        category = "ObjectCrossing"
-        timeout = 60
+        self._wmap = world.get_map()
+        self.category = "ObjectCrossing"
+        self.timeout = 30
+        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
+
+        # other vehicle parameters
+        self._other_actor_target_velocity = 10
+        self._other_actor_max_brake = 1.0
+        self._time_to_reach = 12
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
@@ -139,19 +142,14 @@ class DynamicObjectCrossing(BasicScenario):
                                                     debug_mode,
                                                     criteria_enable=criteria_enable)
 
-        # other vehicle parameters
-        _other_actor_target_velocity = 10
-        _other_actor_max_brake = 1.0
-        _time_to_reach = 12
-
-        # spawning other actors
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
         _start_distance = 40
-        actor_parameters = []
-        world_map = ego_vehicle.get_world().get_map()
-        lane_width = world_map.get_waypoint(ego_vehicle.get_location()).lane_width
-        location, _ = get_location_in_distance(ego_vehicle, _start_distance)
-        waypoint = world_map.get_waypoint(location)
-        model = 'vehicle.diamondback.century'
+        lane_width = self._reference_waypoint.lane_width
+        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
+        waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
@@ -161,14 +159,8 @@ class DynamicObjectCrossing(BasicScenario):
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        actor_parameters.append(ActorConfigurationData(model, transform))
-
-        super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
-                                                    ego_vehicle,
-                                                    actor_parameters,
-                                                    town,
-                                                    world,
-                                                    debug_mode)
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
