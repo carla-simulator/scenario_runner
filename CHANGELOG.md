@@ -1,4 +1,5 @@
 ## Latest changes
+* Added multiple helper methods for generic scenario execution.
 * Added pseudo-sensors for SceneLayoutMeasurements and ObjectMeasurements for Track4 of the CARLA AD challenge
 * Extended CarlaDataProvider with method to get next relevant traffic light
 * Added track identification for autonomous_agent.py
@@ -18,11 +19,13 @@
     - Generalized ControlLoss and FollowLeadingVehicle scenarios
     - Added randomization option to scenario_runner and scenarios
     - The scenario behavior always starts with a wait behavior until the ego vehicle reached the scenario starting position
+    - Created method _initialize_actors in basic scenario that can be overridden for scenario specific actor initialization
 * Added new atomic behaviors using py_trees behavior tree library
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
     - StandStill: check if a vehicle stands still
     - InTriggerDistanceToNextIntersection: check if a vehicle is within certain distance with respect to the next intersection
-    - WaypointFollower: follows the waypoints immediately in front of the vehicle.
+    - WaypointFollower: follows auto-generated waypoints indefinitely or follows a given waypoint list
+    - HandBrakeVehicle: sets the handbrake value for a given actor
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios

@@ -84,10 +84,9 @@ def get_location_in_distance(actor, distance):
 
 def get_waypoint_in_distance(waypoint, distance):
     """
-    Obtain a location in a given distance from the current actor's location.
+    Obtain a waypoint in a given distance from the current actor's location.
     Note: Search is stopped on first intersection.
-
-    @return obtained location and the traveled distance
+    @return obtained waypoint and the traveled distance
     """
     traveled_distance = 0
     while not waypoint.is_intersection and traveled_distance < distance:
@@ -96,3 +95,99 @@ def get_waypoint_in_distance(waypoint, distance):
         waypoint = waypoint_new
 
     return waypoint, traveled_distance
+
+def generate_target_waypoint(waypoint, turn=0):
+    """
+    This method follow waypoints to a junction and choose path based on turn input.
+    Turn input: LEFT -> 1, RIGHT -> -1, STRAIGHT -> 0
+    @returns a waypoint list according to turn input
+    """
+    sampling_radius = 1
+    reached_junction = False
+    wp_list = []
+    threshold = math.radians(0.1)
+    while True:
+        current_transform = waypoint.transform
+        current_location = current_transform.location
+        projected_location = current_location + \
+        carla.Location(
+            x=math.cos(math.radians(current_transform.rotation.yaw)),
+            y=math.sin(math.radians(current_transform.rotation.yaw)))
+        wp_choice = waypoint.next(sampling_radius)
+        #   Choose path at intersection
+        if len(wp_choice) > 1:
+            reached_junction = True
+            waypoint = choose_at_junction(current_location, projected_location, wp_choice, turn)
+        else:
+            waypoint = wp_choice[0]
+        wp_list.append(waypoint)
+        #   End condition for the behaviour
+        if turn != 0 and reached_junction and len(wp_list) >= 3:
+            v_1 = vector(
+                wp_list[-2].transform.location,
+                wp_list[-1].transform.location)
+            v_2 = vector(
+                wp_list[-3].transform.location,
+                wp_list[-2].transform.location)
+            angle_wp = math.acos(
+                np.dot(v_1, v_2)/abs((np.linalg.norm(v_1)*np.linalg.norm(v_2))))
+            if angle_wp < threshold:
+                break
+        elif reached_junction and not wp_list[-1].is_intersection:
+            break
+    return wp_list[-1]
+
+def choose_at_junction(previous, current, next_choices, direction=0):
+    """
+    This function chooses the appropriate waypoint from next_choices based on direction
+    """
+    current_vector = vector(previous, current)
+    cross_list = []
+    cross_to_waypoint = dict()
+    for waypoint in next_choices:
+        waypoint = waypoint.next(10)[0]
+        select_vector = vector(current, waypoint.transform.location)
+        cross = np.cross(current_vector, select_vector)[2]
+        cross_list.append(cross)
+        cross_to_waypoint[cross] = waypoint
+    select_cross = None
+    if direction > 0:
+        select_cross = max(cross_list)
+    elif direction < 0:
+        select_cross = min(cross_list)
+    else:
+        select_cross = min(cross_list, key=abs)
+
+    return cross_to_waypoint[select_cross]
+
+def get_intersection(ego_actor, other_actor):
+    """
+    Obtain a intersection point between two actor's location
+    @return the intersection location
+    """
+    waypoint = ego_actor.get_world().get_map().get_waypoint(ego_actor.get_location())
+    waypoint_other = other_actor.get_world().get_map().get_waypoint(other_actor.get_location())
+    max_dist = float("inf")
+    distance = float("inf")
+    while distance <= max_dist:
+        max_dist = distance
+        current_location = waypoint.transform.location
+        waypoint_choice = waypoint.next(1)
+        #   Select the straighter path at intersection
+        if len(waypoint_choice) > 1:
+            max_dot = -1*float('inf')
+            loc_projection = current_location + carla.Location(
+                x=math.cos(math.radians(waypoint.transform.rotation.yaw)),
+                y=math.sin(math.radians(waypoint.transform.rotation.yaw)))
+            v_current = vector(current_location, loc_projection)
+            for wp_select in waypoint_choice:
+                v_select = vector(current_location, wp_select.transform.location)
+                dot_select = np.dot(v_current, v_select)
+                if dot_select > max_dot:
+                    max_dot = dot_select
+                    waypoint = wp_select
+        else:
+            waypoint = waypoint_choice[0]
+        distance = current_location.distance(waypoint_other.transform.location)
+
+    return current_location

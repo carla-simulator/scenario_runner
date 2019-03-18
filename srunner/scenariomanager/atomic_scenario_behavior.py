@@ -836,3 +836,34 @@ class WaypointFollower(AtomicBehavior):
             self._local_planner.reset_vehicle()
             self._local_planner = None
         super(WaypointFollower, self).terminate(new_status)
+
+
+class HandBrakeVehicle(AtomicBehavior):
+
+    """
+    This class contains an atomic hand brake behavior.
+    To set the hand brake value of the vehicle.
+    """
+
+    def __init__(self, vehicle, hand_brake_value, name="Braking"):
+        """
+        Setup vehicle control and brake value
+        """
+        super(HandBrakeVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._hand_brake_value = hand_brake_value
+
+    def update(self):
+        """
+        Set handbrake
+        """
+        self._control.hand_brake = self._hand_brake_value
+        new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        self._vehicle.apply_control(self._control)
+
+        return new_status
