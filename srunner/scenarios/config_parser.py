@@ -52,19 +52,7 @@ class TargetConfiguration(object):
         self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z))
 
 
-class ActorConfigurationData(object):
-    """
-    This is a configuration base class to hold model and transform attributes
-    """
-
-    def __init__(self, model, transform, autopilot=False, random=False):
-        self.model = model
-        self.transform = transform
-        self.autopilot = autopilot
-        self.random_location = random
-
-
-class ActorConfiguration(ActorConfigurationData):
+class ActorConfiguration(object):
 
     """
     This class provides the basic actor configuration for a
@@ -73,25 +61,25 @@ class ActorConfiguration(ActorConfigurationData):
     - Model (e.g. Lincoln MKZ2017)
     """
 
-    def __init__(self, node):
+    transform = None
+    model = None
+    autopilot = False
+    random_location = False
 
+    def __init__(self, node):
         pos_x = float(set_attrib(node, 'x', 0))
         pos_y = float(set_attrib(node, 'y', 0))
         pos_z = float(set_attrib(node, 'z', 0))
         yaw = float(set_attrib(node, 'yaw', 0))
 
-        random_location = False
         if 'random_location' in node.keys():
-            random_location = True
+            self.random_location = True
 
-        autopilot = False
         if 'autopilot' in node.keys():
-            autopilot = True
+            self.autopilot = True
 
-        super(ActorConfiguration, self).__init__(
-            set_attrib(node, 'model', 'vehicle.*'),
-            carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw)),
-            autopilot, random_location)
+        self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw))
+        self.model = set_attrib(node, 'model', 'vehicle.*')
 
 
 class ScenarioConfiguration(object):
