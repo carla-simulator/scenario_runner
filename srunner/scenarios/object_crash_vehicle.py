@@ -127,7 +127,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         self._wmap = world.get_map()
         self.category = "ObjectCrossing"
-        self.timeout = 30
+        self.timeout = 60
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
         # other vehicle parameters
