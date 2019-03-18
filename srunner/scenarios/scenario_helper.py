@@ -16,6 +16,7 @@ import numpy as np
 import carla
 from agents.tools.misc import vector
 
+
 def get_crossing_point(actor):
     """
     Get the next crossing point location in front of the ego vehicle
@@ -83,6 +84,7 @@ def get_location_in_distance(actor, distance):
 
     return waypoint.transform.location, traveled_distance
 
+
 def get_waypoint_in_distance(waypoint, distance):
     """
     Obtain a waypoint in a given distance from the current actor's location.
@@ -96,6 +98,7 @@ def get_waypoint_in_distance(waypoint, distance):
         waypoint = waypoint_new
 
     return waypoint, traveled_distance
+
 
 def generate_target_waypoint(waypoint, turn=0):
     """
@@ -161,6 +164,7 @@ def choose_at_junction(previous, current, next_choices, direction=0):
         select_cross = min(cross_list, key=abs)
 
     return cross_to_waypoint[select_cross]
+
 
 def get_intersection(ego_actor, other_actor):
     """
