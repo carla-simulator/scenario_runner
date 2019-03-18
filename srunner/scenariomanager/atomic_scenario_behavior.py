@@ -779,3 +779,91 @@ class Idle(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         return new_status
+
+
+class WaypointFollower(AtomicBehavior):
+    """
+    This is an atomic behavior to follow waypoints indefinitely
+    while maintaining a given speed or if given a waypoint plan,
+    follows the given plan
+    """
+
+    def __init__(self, actor, target_speed, plan=None, name="FollowWaypoints"):
+        """
+        Set up actor and local planner
+        """
+        super(WaypointFollower, self).__init__(name)
+        self._actor = actor
+        self._control = carla.VehicleControl()
+        self._target_speed = target_speed
+        self._local_planner = None
+        self._plan = plan
+
+    def initialise(self):
+        args_lateral_dict = {
+            'K_P': 1.0,
+            'K_D': 0.01,
+            'K_I': 0.0,
+            'dt':  0.05}
+        self._local_planner = LocalPlanner(
+            self._actor, opt_dict={
+                'target_speed' : self._target_speed,
+                'lateral_control_dict': args_lateral_dict})
+        if self._plan is not None:
+            self._local_planner.set_global_plan(self._plan)
+
+    def update(self):
+        """
+        Run local planner, obtain and apply control to actor
+        """
+
+        new_status = py_trees.common.Status.RUNNING
+        control = self._local_planner.run_step(debug=False)
+        self._actor.apply_control(control)
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior,
+        the throttle, brake and steer should be set back to 0.
+        """
+        self._control.throttle = 0.0
+        self._control.brake = 0.0
+        self._control.steer = 0.0
+        self._actor.apply_control(self._control)
+        if self._local_planner:
+            self._local_planner.reset_vehicle()
+            self._local_planner = None
+        super(WaypointFollower, self).terminate(new_status)
+
+
+class HandBrakeVehicle(AtomicBehavior):
+
+    """
+    This class contains an atomic hand brake behavior.
+    To set the hand brake value of the vehicle.
+    """
+
+    def __init__(self, vehicle, hand_brake_value, name="Braking"):
+        """
+        Setup vehicle control and brake value
+        """
+        super(HandBrakeVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control = carla.VehicleControl()
+        self._vehicle = vehicle
+        self._hand_brake_value = hand_brake_value
+
+    def update(self):
+        """
+        Set handbrake
+        """
+        self._control.hand_brake = self._hand_brake_value
+        new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" %
+                          (self.__class__.__name__, self.status, new_status))
+        self._vehicle.apply_control(self._control)
+
+        return new_status
