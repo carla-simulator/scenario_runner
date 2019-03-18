@@ -780,6 +780,7 @@ class Idle(AtomicBehavior):
 
         return new_status
 
+
 class WaypointFollower(AtomicBehavior):
     """
     This is an atomic behavior to follow waypoints indefinitely
@@ -803,7 +804,7 @@ class WaypointFollower(AtomicBehavior):
             'K_P': 1.0,
             'K_D': 0.01,
             'K_I': 0.0,
-            'dt': 1.0/20.0}
+            'dt':  0.05}
         self._local_planner = LocalPlanner(
             self._actor, opt_dict={
                 'target_speed' : self._target_speed,
@@ -831,4 +832,7 @@ class WaypointFollower(AtomicBehavior):
         self._control.brake = 0.0
         self._control.steer = 0.0
         self._actor.apply_control(self._control)
+        if self._local_planner:
+            self._local_planner.reset_vehicle()
+            self._local_planner = None
         super(WaypointFollower, self).terminate(new_status)

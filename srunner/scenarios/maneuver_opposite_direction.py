@@ -44,8 +44,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._second_vehicle_location = self._first_vehicle_location + 40
         self._ego_vehicle_drive_distance = self._second_vehicle_location * 2
         self._start_distance = self._first_vehicle_location * 0.5
-        self._first_vehicle_speed = 55
-        self._second_vehicle_speed = 60
+        self._opposite_speed = 30 # km/h
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
 
         super(ManeuverOppositeDirection, self).__init__(
@@ -79,23 +78,16 @@ class ManeuverOppositeDirection(BasicScenario):
 
         # Leaf nodes
         ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
-        start_trigger_distance = InTriggerDistanceToVehicle(
-            self.other_actors[0], self.ego_vehicle, self._start_distance)
-        waypoint_follower_1 = WaypointFollower(self.other_actors[0], self._first_vehicle_speed)
-        waypoint_follower_2 = WaypointFollower(self.other_actors[1], self._second_vehicle_speed)
+        waypoint_follower = WaypointFollower(self.other_actors[1], self._opposite_speed)
 
         # Non-leaf nodes
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         sequence = py_trees.composites.Sequence()
-        waypoint_follow_node = py_trees.composites.Parallel()
 
         # Building tree
         root.add_child(ego_drive_distance)
         root.add_child(sequence)
-        sequence.add_child(start_trigger_distance)
-        sequence.add_child(waypoint_follow_node)
-        waypoint_follow_node.add_child(waypoint_follower_1)
-        waypoint_follow_node.add_child(waypoint_follower_2)
+        sequence.add_child(waypoint_follower)
 
         return root
 
