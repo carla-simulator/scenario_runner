@@ -5,7 +5,7 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-Leading vehicle decelerate scenario:
+Other Leading Vehicle scenario:
 
 The scenario realizes a common driving behavior, in which the
 user-controlled ego vehicle follows a leading car driving down
@@ -25,7 +25,7 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenarios.config_parser import ActorConfigurationData
+from srunner.scenarios.config_parser import *
 from srunner.scenarios.scenario_helper import get_waypoint_in_distance
 
 
@@ -37,10 +37,10 @@ OTHER_LEADING_VEHICLE_SCENARIOS = [
 class OtherLeadingVehicle(BasicScenario):
 
     """
-    This class holds everything required for a simple "Leading vehicle decelerate"
+    This class holds everything required for a simple "Other Leading Vehicle"
     scenario involving a user controlled vehicle and two other actors.
     """
-    category = "LeadingVehicleDecelerate"
+    category = "OtherLeadingVehicle"
 
     timeout = 90        # Timeout of scenario in seconds
 
@@ -54,8 +54,6 @@ class OtherLeadingVehicle(BasicScenario):
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 55
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
-
-        # ego vehicle parameters
         self._ego_max_vel = 100        # Maximum allowed velocity [m/s]
 
         self._traffic_light = None
@@ -85,7 +83,7 @@ class OtherLeadingVehicle(BasicScenario):
 
     def _create_behavior(self):
         """
-        The scenario defined after is a "leading vehicle decelerate" scenario. After
+        The scenario defined after is a "other leading vehicle" scenario. After
         invoking this scenario, the user controlled vehicle has to drive towards the
         moving other actors, then make the leading actor to decelerate when user controlled
         vehicle is at some close distance. Finally, the user-controlled vehicle has to change

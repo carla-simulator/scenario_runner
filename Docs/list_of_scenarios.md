@@ -57,3 +57,11 @@ and it checks whether the vehicle is regained its control and corrected its cour
 In this scenario vehicle is passing another vehicle in a rural area, in daylight, under clear
 weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
+
+### OtherLeadingVehicle
+The scenario realizes a common driving behavior, in which the user-controlled ego
+vehicle follows a leading car driving down a given road.
+At some point the leading car has to decelerate. The ego vehicle has to react
+accordingly by changing lane to avoid a collision and follow the leading car in
+other lane. The scenario ends via timeout, or if the ego vehicle drives certain
+distance.
