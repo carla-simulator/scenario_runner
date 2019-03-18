@@ -33,8 +33,8 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self.category = "SignalizedJunctionLeftTurn"
         self.timeout = 80     #Timeout of scenario in seconds
         self._target_vel = 35
+        self._time_to_reach = 18
         self._drive_distance = 50
-        self._trigger_dist_loc = 8
         self._brake_value = 0.02
         self._ego_distance = 20
         self._traffic_light = None
@@ -66,8 +66,8 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         coming straight crossing from an opposite direction,
         After 80 seconds, a timeout stops the scenario.
         """
-        start_trigger_loc, _ = get_location_in_distance(self.ego_vehicle, 10)
-        start_other_trigger = InTriggerDistanceToLocation(self.ego_vehicle, start_trigger_loc, self._trigger_dist_loc)
+        _location = get_crossing_point(self.ego_vehicle)
+        start_other_trigger = InTriggerDistanceToLocation(self.ego_vehicle, _location, self._time_to_reach)
         # Selecting straight path at intersection
         target_waypoint = generate_target_waypoint(
             self.other_actors[0].get_world().get_map().get_waypoint(
