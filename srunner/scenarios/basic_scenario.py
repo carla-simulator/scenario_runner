@@ -77,14 +77,13 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
-    other_actors = []
-    timeout = 60        # Timeout of scenario in seconds
-
     def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
+        self.other_actors = []
+        self.timeout = 60  # Timeout of scenario in seconds
 
         self.category = None     # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
         self.criteria_list = []  # List of evaluation criteria
