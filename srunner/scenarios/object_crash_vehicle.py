@@ -46,6 +46,9 @@ class StationaryObjectCrossing(BasicScenario):
         self._wmap = world.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
+        # other vehicle parameters
+        self._other_actor_target_velocity = 10
+
         super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
                                                        ego_vehicle,
                                                        config,
@@ -77,8 +80,34 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Only behavior here is to wait
         """
-        redundant = TimeOut(self.timeout - 5)
-        return redundant
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = lane_width+(1.25*lane_width)
+
+        # leaf nodes
+        start_condition = InTriggerDistanceToVehicle(self.other_actors[0],self.ego_vehicle, 10)
+        actor_stand = TimeOut(3)
+        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
+        actor_drive = DriveDistance(self.other_actors[0], 0.8*lane_width)
+        actor_removed = ActorDestroy(self.other_actors[0])
+
+        # non leaf nodes
+        root = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        scenario_sequence = py_trees.composites.Sequence()
+        keep_velocity = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
+        # building tree
+        root.add_child(scenario_sequence)
+        scenario_sequence.add_child(start_condition)
+        scenario_sequence.add_child(actor_stand)
+        scenario_sequence.add_child(keep_velocity)
+        scenario_sequence.add_child(actor_removed)
+
+        keep_velocity.add_child(actor_velocity)
+        keep_velocity.add_child(actor_drive)
+
+        return root
 
     def _create_test_criteria(self):
         """
@@ -181,7 +210,8 @@ class DynamicObjectCrossing(BasicScenario):
                                                       self._other_actor_target_velocity)
         actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
         actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(5)
+        timeout_other_actor = TimeOut(3)
+        actor_removed = ActorDestroy(self.other_actors[0])
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -201,6 +231,7 @@ class DynamicObjectCrossing(BasicScenario):
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(actor_stop_crossed_lane)
         scenario_sequence.add_child(timeout_other_actor)
+        scenario_sequence.add_child(actor_removed)
 
         keep_velocity.add_child(actor_velocity)
         keep_velocity.add_child(actor_drive)
