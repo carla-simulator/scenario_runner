@@ -105,15 +105,15 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    scenario = None
-    scenario_tree = None
-    ego_vehicle = None
-    other_actors = None
-
     def __init__(self, world, debug_mode=False):
         """
         Init requires scenario as input
         """
+        self.scenario = None
+        self.scenario_tree = None
+        self.ego_vehicle = None
+        self.other_actors = None
+
         self._debug_mode = debug_mode
         self.agent = None
         self._autonomous_agent_plugged = False
@@ -140,7 +140,6 @@ class ScenarioManager(object):
 
         CarlaDataProvider.register_actor(self.ego_vehicle)
         CarlaDataProvider.register_actors(self.other_actors)
-
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
 
