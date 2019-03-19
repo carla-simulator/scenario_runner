@@ -888,30 +888,6 @@ class ActorDestroy(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         if self._actor:
-            self._actor.destroy()
-            new_status = py_trees.common.Status.SUCCESS
-
-        return new_status
-
-
-class ActorDestroy(AtomicBehavior):
-
-    """
-    This class contains an actor destroy behavior.
-    Given a actor this behavior will delete it.
-    """
-
-    def __init__(self, actor, name="ActorDestroy"):
-        """
-        Setup actor
-        """
-        super(ActorDestroy, self).__init__(name)
-        self._actor = actor
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-
-    def update(self):
-        new_status = py_trees.common.Status.RUNNING
-        if self._actor:
             CarlaActorPool.remove_actor_by_id(self._actor.id)
             self._actor = None
             new_status = py_trees.common.Status.SUCCESS
