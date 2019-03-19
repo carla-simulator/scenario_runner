@@ -50,7 +50,7 @@ SCENARIOS = {
     "NoSignalJunction": NO_SIGNAL_JUNCTION_SCENARIOS,
     "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
     "ControlLoss": CONTROL_LOSS_SCENARIOS,
-    "OppositeDirection": MANEUVER_OPPOSITE_DIRECTION
+    "OppositeDirection": MANEUVER_OPPOSITE_DIRECTION,
     "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS
 }
 

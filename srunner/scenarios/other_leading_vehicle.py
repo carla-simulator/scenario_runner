@@ -58,7 +58,7 @@ class OtherLeadingVehicle(BasicScenario):
 
         self._traffic_light = None
 
-        super(OtherLeadingVehicle, self).__init__("LeadingVehicleDeceleratingInMultiLaneSetUp",
+        super(OtherLeadingVehicle, self).__init__("VehicleDeceleratingInMultiLaneSetUp",
                                                   ego_vehicle,
                                                   config,
                                                   world,
@@ -79,7 +79,8 @@ class OtherLeadingVehicle(BasicScenario):
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
         second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_waypoint.transform)
 
-        return [first_vehicle, second_vehicle]
+        self.other_actors.append(first_vehicle)
+        self.other_actors.append(second_vehicle)
 
     def _create_behavior(self):
         """
