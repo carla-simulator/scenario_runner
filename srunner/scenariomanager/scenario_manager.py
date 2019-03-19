@@ -239,24 +239,26 @@ class ScenarioManager(object):
         timeout = False
         result = "SUCCESS"
 
-        if self.scenario.test_criteria is not None:
-            if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
-                if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
+        if self.scenario.test_criteria is None:
+            return
+
+        if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
+            if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
+                failure = True
+                result = "FAILURE"
+        else:
+            for criterion in self.scenario.test_criteria:
+                if (not criterion.optional and
+                        criterion.test_status != "SUCCESS" and
+                        criterion.test_status != "ACCEPTABLE"):
                     failure = True
                     result = "FAILURE"
-            else:
-                for criterion in self.scenario.test_criteria:
-                    if (not criterion.optional and
-                            criterion.test_status != "SUCCESS" and
-                            criterion.test_status != "ACCEPTABLE"):
-                        failure = True
-                        result = "FAILURE"
-                    elif criterion.test_status == "ACCEPTABLE":
-                        result = "ACCEPTABLE"
+                elif criterion.test_status == "ACCEPTABLE":
+                    result = "ACCEPTABLE"
 
-            if self.scenario.timeout_node.timeout and not failure:
-                timeout = True
-                result = "TIMEOUT"
+        if self.scenario.timeout_node.timeout and not failure:
+            timeout = True
+            result = "TIMEOUT"
 
         output = ResultOutputProvider(self, result, stdout, filename, junit)
         output.write()

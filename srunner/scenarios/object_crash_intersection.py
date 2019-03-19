@@ -142,7 +142,7 @@ class VehicleTurningLeft(BasicScenario):
     a cyclist after taking a left turn.
     """
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
@@ -157,7 +157,8 @@ class VehicleTurningLeft(BasicScenario):
                                                  ego_vehicle,
                                                  config,
                                                  world,
-                                                 debug_mode)
+                                                 debug_mode,
+                                                 criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
