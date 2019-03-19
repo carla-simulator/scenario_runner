@@ -88,7 +88,9 @@ class StationaryObjectCrossing(BasicScenario):
         actor_stand = TimeOut(3)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_drive = DriveDistance(self.other_actors[0], 0.8*lane_width)
+        actor_pre_del = TimeOut(10)
         actor_removed = ActorDestroy(self.other_actors[0])
+        end_condition = DriveDistance(self.ego_vehicle, 50)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -102,7 +104,9 @@ class StationaryObjectCrossing(BasicScenario):
         scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(actor_stand)
         scenario_sequence.add_child(keep_velocity)
+        scenario_sequence.add_child(actor_pre_del)
         scenario_sequence.add_child(actor_removed)
+        scenario_sequence.add_child(end_condition)
 
         keep_velocity.add_child(actor_velocity)
         keep_velocity.add_child(actor_drive)
@@ -210,8 +214,9 @@ class DynamicObjectCrossing(BasicScenario):
                                                       self._other_actor_target_velocity)
         actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
         actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(3)
+        timeout_other_actor = TimeOut(10)
         actor_removed = ActorDestroy(self.other_actors[0])
+        end_condition = DriveDistance(self.ego_vehicle, 50)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -232,6 +237,7 @@ class DynamicObjectCrossing(BasicScenario):
         scenario_sequence.add_child(actor_stop_crossed_lane)
         scenario_sequence.add_child(timeout_other_actor)
         scenario_sequence.add_child(actor_removed)
+        scenario_sequence.add_child(end_condition)
 
         keep_velocity.add_child(actor_velocity)
         keep_velocity.add_child(actor_drive)
