@@ -27,6 +27,7 @@
     - InTriggerDistanceToNextIntersection: check if a vehicle is within certain distance with respect to the next intersection
     - WaypointFollower: follows auto-generated waypoints indefinitely or follows a given waypoint list
     - HandBrakeVehicle: sets the handbrake value for a given actor
+    - ActorDestroy: destroys a given actor
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios

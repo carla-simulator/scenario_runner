@@ -20,6 +20,7 @@ from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 
 EPSILON = 0.001
 
@@ -887,7 +888,8 @@ class ActorDestroy(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         if self._actor:
-            self._actor.destroy()
+            CarlaActorPool.remove_actor_by_id(self._actor.id)
+            self._actor = None
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
