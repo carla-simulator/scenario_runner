@@ -41,7 +41,7 @@ class StationaryObjectCrossing(BasicScenario):
     _ego_vehicle_velocity_allowed = 20
     _ego_vehicle_distance_to_other = 35
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
@@ -50,7 +50,8 @@ class StationaryObjectCrossing(BasicScenario):
                                                        ego_vehicle,
                                                        config,
                                                        world,
-                                                       debug_mode)
+                                                       debug_mode,
+                                                       criteria_enable=criteria_enable)
 
     def _create_behavior(self):
         """

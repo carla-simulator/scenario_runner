@@ -42,7 +42,7 @@ class NoSignalJunctionCrossing(BasicScenario):
     _other_actor_max_brake = 1.0
     _other_actor_target_velocity = 15
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
@@ -50,7 +50,8 @@ class NoSignalJunctionCrossing(BasicScenario):
                                                        ego_vehicle,
                                                        config,
                                                        world,
-                                                       debug_mode)
+                                                       debug_mode,
+                                                       criteria_enable=False)
 
     def _create_behavior(self):
         """
