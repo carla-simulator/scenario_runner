@@ -110,6 +110,7 @@ class StationaryObjectCrossing(BasicScenario):
 
         keep_velocity.add_child(actor_velocity)
         keep_velocity.add_child(actor_drive)
+        keep_velocity.add_child(TimeOut(5))
 
         return root
 
@@ -243,6 +244,7 @@ class DynamicObjectCrossing(BasicScenario):
         keep_velocity.add_child(actor_drive)
         keep_velocity_other.add_child(actor_start_cross_lane)
         keep_velocity_other.add_child(actor_cross_lane)
+        keep_velocity_other.add_child(TimeOut(5))
 
         return root
 
