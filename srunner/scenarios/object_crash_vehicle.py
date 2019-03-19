@@ -84,7 +84,7 @@ class StationaryObjectCrossing(BasicScenario):
         lane_width = lane_width+(1.25*lane_width)
 
         # leaf nodes
-        start_condition = InTriggerDistanceToVehicle(self.other_actors[0],self.ego_vehicle, 10)
+        start_condition = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 10)
         actor_stand = TimeOut(3)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_drive = DriveDistance(self.other_actors[0], 0.8*lane_width)

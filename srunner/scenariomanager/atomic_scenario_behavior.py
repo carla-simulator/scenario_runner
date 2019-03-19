@@ -869,6 +869,7 @@ class HandBrakeVehicle(AtomicBehavior):
 
         return new_status
 
+
 class ActorDestroy(AtomicBehavior):
 
     """
@@ -889,7 +890,6 @@ class ActorDestroy(AtomicBehavior):
         if self._actor:
             self._actor.destroy()
             new_status = py_trees.common.Status.SUCCESS
-
 
         return new_status
 
