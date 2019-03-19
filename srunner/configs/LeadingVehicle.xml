@@ -10,7 +10,7 @@
         <ego_vehicle x="82" y="249.1" z="0" yaw="-33" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="OtherLeadingVehicle_4" type="OtherLeadingVehicle" town="Town04">
-        <ego_vehicle x="185" y="36.1" z="8" yaw="1" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="138.9" y="34.9" z="10" yaw="1" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="OtherLeadingVehicle_5" type="OtherLeadingVehicle" town="Town04">
         <ego_vehicle x="-110" y="9.1" z="9.5" yaw="180" model="vehicle.lincoln.mkz2017" />

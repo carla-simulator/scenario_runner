@@ -51,9 +51,10 @@ class OtherLeadingVehicle(BasicScenario):
         self._map = world.get_map()
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location
-        self._ego_vehicle_drive_distance = self._second_vehicle_location * 3
+        self._ego_vehicle_drive_distance = self._first_vehicle_location * 4
+        self.drive_distance_after_decelerate = 55
         self._first_vehicle_speed = 55
-        self._second_vehicle_speed = 55
+        self._second_vehicle_speed = 45
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
         self._other_actor_max_brake = 1.0
 
@@ -90,7 +91,7 @@ class OtherLeadingVehicle(BasicScenario):
         moving other actors, then make the leading actor to decelerate when user controlled
         vehicle is at some close distance. Finally, the user-controlled vehicle has to change
         lane to avoid collision and follow other leading actor in other lane to end the scenario.
-        If this does not happen within 60 seconds, a timeout stops the scenario or the ego vehicle
+        If this does not happen within 90 seconds, a timeout stops the scenario or the ego vehicle
         drives certain distance and stops the scenario.
         """
         # traffic light
@@ -118,7 +119,7 @@ class OtherLeadingVehicle(BasicScenario):
                                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         decelerate = self._first_vehicle_speed / 3.2
         deceleration.add_child(WaypointFollower(self.other_actors[0], decelerate))
-        deceleration.add_child(DriveDistance(self.other_actors[0], 60))
+        deceleration.add_child(DriveDistance(self.other_actors[0], self.drive_distance_after_decelerate))
 
         # Decelerating actor sequence behavior
         leading_actor_sequence_behavior.add_child(keep_velocity)
