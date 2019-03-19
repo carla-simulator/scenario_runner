@@ -114,7 +114,7 @@ class DynamicObjectCrossing(BasicScenario):
     _other_actor_max_throttle = 1.0
     _other_actor_max_brake = 1.0
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
@@ -123,7 +123,8 @@ class DynamicObjectCrossing(BasicScenario):
                                                     ego_vehicle,
                                                     config,
                                                     world,
-                                                    debug_mode)
+                                                    debug_mode,
+                                                    criteria_enable=criteria_enable)
 
     def _create_behavior(self):
         """
