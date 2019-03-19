@@ -27,18 +27,17 @@ class SignalizedJunctionRightTurn(BasicScenario):
     Vehicle turning right at signalized junction scenario,
     Traffic Scenario 09.
     """
+    category = "SignalizedJunctionLeftTurn"
+
+    timeout = 80  # Timeout of scenario in seconds
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
         Setup all relevant parameters and create scenario
         """
-        self.category = "SignalizedJunctionLeftTurn"
-        self.timeout = 80  # Timeout of scenario in seconds
-        self._target_vel = 45
-        self._drive_distance = 50
-        self._trigger_dist_loc = 9
+        self._target_vel = 25
         self._brake_value = 0.5
-        self._ego_distance = 10
+        self._ego_distance = 40
         self._traffic_light = None
 
         super(SignalizedJunctionRightTurn, self).__init__("HeroActorTurningRightAtSignalizedJunction",
@@ -69,36 +68,50 @@ class SignalizedJunctionRightTurn(BasicScenario):
         passes intersection or later, without any collision.
         After 80 seconds, a timeout stops the scenario.
         """
-        start_trigger_loc, _ = get_location_in_distance(self.ego_vehicle, 10)
-        start_other_trigger = InTriggerDistanceToLocation(self.ego_vehicle, start_trigger_loc, self._trigger_dist_loc)
+
+        crossing_point_dynamic = get_crossing_point(self.other_actors[0])
+
+        sync_arrival_parallel = py_trees.composites.Parallel(
+            "Synchronize arrival times",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
+        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
+
+        sync_arrival = SyncArrival(
+            self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
+        sync_arrival_stop = InTriggerDistanceToLocation(self.other_actors[0], crossing_point_dynamic, 5)
+        sync_arrival_parallel.add_child(sync_arrival)
+        sync_arrival_parallel.add_child(sync_arrival_stop)
+
         # Selecting straight path at intersection
         target_waypoint = generate_target_waypoint(
             self.other_actors[0].get_world().get_map().get_waypoint(
                 self.other_actors[0].get_location()), 0)
         # Generating waypoint list till next intersection
         plan = []
-        wp_choice = target_waypoint.next(5.0)
-        while len(wp_choice) == 1:
+        wp_choice = target_waypoint.next(1.0)
+        while not wp_choice[0].is_intersection:
             target_waypoint = wp_choice[0]
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
-            wp_choice = target_waypoint.next(5.0)
+            wp_choice = target_waypoint.next(1.0)
 
         move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
-        drive_actor = DriveDistance(self.other_actors[0], self._drive_distance)
+        waypoint_follower_end = InTriggerDistanceToLocation(
+            self.other_actors[0], plan[-1][0].transform.location, 10)
         move_actor_parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         move_actor_parallel.add_child(move_actor)
-        move_actor_parallel.add_child(drive_actor)
+        move_actor_parallel.add_child(waypoint_follower_end)
         # stop other actor
-        stop_other = StopVehicle(self.other_actors[0], self._brake_value)
+        stop = StopVehicle(self.other_actors[0], self._brake_value)
         # end condition
         end_condition = DriveDistance(self.ego_vehicle, self._ego_distance)
 
         # Behavior tree
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(start_other_trigger)
+        sequence.add_child(sync_arrival_parallel)
         sequence.add_child(move_actor_parallel)
-        sequence.add_child(stop_other)
+        sequence.add_child(stop)
         sequence.add_child(end_condition)
 
         return sequence
