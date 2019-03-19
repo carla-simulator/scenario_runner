@@ -56,7 +56,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     _traffic_light = None
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -66,7 +66,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                                                              ego_vehicle,
                                                              config,
                                                              world,
-                                                             debug_mode)
+                                                             debug_mode,
+                                                             criteria_enable=criteria_enable)
 
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
 

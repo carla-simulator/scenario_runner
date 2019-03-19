@@ -46,7 +46,7 @@ class FollowLeadingVehicle(BasicScenario):
 
     timeout = 120            # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
 
@@ -64,7 +64,8 @@ class FollowLeadingVehicle(BasicScenario):
                                                    ego_vehicle,
                                                    config,
                                                    world,
-                                                   debug_mode)
+                                                   debug_mode,
+                                                   criteria_enable=criteria_enable)
 
         if randomize:
             self._ego_other_distance_start = random.randint(4, 8)

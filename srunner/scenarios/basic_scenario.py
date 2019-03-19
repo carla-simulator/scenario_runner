@@ -21,63 +21,13 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 from srunner.scenariomanager.scenario_manager import Scenario
 
 
-def generate_target_waypoint(waypoint, turn=-1):
-    """
-    This method follow waypoints to a junction and choose path based on turn input.
-    Turn input: LEFT -> 1, RIGHT -> -1
-    @returns a waypoint according to turn input
-    """
-    sampling_radius = 1
-    reached_junction = False
-    wp_list = []
-    threshold = math.radians(0.1)
-    while True:
-        current_transform = waypoint.transform
-        current_location = current_transform.location
-        projected_location = current_location + \
-            carla.Location(
-                x=math.cos(math.radians(current_transform.rotation.yaw)),
-                y=math.sin(math.radians(current_transform.rotation.yaw)))
-        v_actual = vector(current_location, projected_location)
-        wp_choice = waypoint.next(sampling_radius)
-        #   Choose path at intersection
-        if len(wp_choice) > 1:
-            reached_junction = True
-            select_criteria = float('inf')
-            for wp_select in wp_choice:
-                wp_select = wp_select.next(5)[0]
-                v_select = vector(
-                    current_location, wp_select.transform.location)
-                cross = turn*np.cross(v_actual, v_select)[-1]
-                if cross < select_criteria:
-                    select_criteria = cross
-                    waypoint = wp_select
-        else:
-            waypoint = wp_choice[0]
-        wp_list.append(waypoint)
-        #   End condition for the behaviour
-        if reached_junction and len(wp_list) >= 3:
-            v_1 = vector(
-                wp_list[-2].transform.location,
-                wp_list[-1].transform.location)
-            v_2 = vector(
-                wp_list[-3].transform.location,
-                wp_list[-2].transform.location)
-            angle_wp = math.acos(
-                np.dot(v_1, v_2)/abs((np.linalg.norm(v_1)*np.linalg.norm(v_2))))
-            if angle_wp < threshold:
-                break
-
-    return wp_list[-1]
-
-
 class BasicScenario(object):
 
     """
     Base class for user-defined scenario
     """
 
-    def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False):
+    def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False, criteria_enable=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -104,7 +54,10 @@ class BasicScenario(object):
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
         behavior = self._create_behavior()
-        criteria = self._create_test_criteria()
+
+        criteria = None
+        if criteria_enable:
+            criteria = self._create_test_criteria()
 
         # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
         start_location = config.ego_vehicle.transform.location     # start location of the scenario
