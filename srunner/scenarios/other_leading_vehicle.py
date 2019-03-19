@@ -51,10 +51,11 @@ class OtherLeadingVehicle(BasicScenario):
         self._map = world.get_map()
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location
+        self._ego_vehicle_drive_distance = self._second_vehicle_location * 3
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 55
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
-        self._ego_max_vel = 100        # Maximum allowed velocity [m/s]
+        self._other_actor_max_brake = 1.0
 
         self._traffic_light = None
 
@@ -100,59 +101,40 @@ class OtherLeadingVehicle(BasicScenario):
         self._traffic_light.set_state(carla.TrafficLightState.Green)
         self._traffic_light.set_green_time(self.timeout)
 
-        # hand brakes
-        brake = py_trees.composites.Parallel(
-            "Apply and release hand brakes",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        brake_1 = py_trees.composites.Parallel(
-            "Hand brake for other actor",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        brake_2 = py_trees.composites.Parallel(
-            "Hand brake for leading actor",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        brake_1.add_child(HandBrakeVehicle(self.other_actors[1], True))
-        brake_1.add_child(HandBrakeVehicle(self.other_actors[1], False))
-        brake_2.add_child(HandBrakeVehicle(self.other_actors[0], True))
-        brake_2.add_child(HandBrakeVehicle(self.other_actors[0], False))
-        brake.add_child(brake_1)
-        brake.add_child(brake_2)
+        # start condition
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        driving_in_same_direction = py_trees.composites.Parallel("Both actors driving in same direction",
+                                                                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        leading_actor_sequence_behavior = py_trees.composites.Sequence("Decelerating actor sequence behavior")
 
         # both actors moving in same direction
-        driving_in_same_direction = py_trees.composites.Parallel(
-            "Both actors driving in same direction",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        keep_velocity = py_trees.composites.Parallel(
-            "Trigger condition for deceleration",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        keep_velocity = py_trees.composites.Parallel("Trigger condition for deceleration",
+                                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity.add_child(WaypointFollower(self.other_actors[0], self._first_vehicle_speed))
-        keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 30))
+        keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 35))
 
-        # deceleration of leading actor
-        deceleration = py_trees.composites.Parallel(
-            "Deceleration of leading actor",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        # deceleration
+        deceleration = py_trees.composites.Parallel("Deceleration of leading actor",
+                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         decelerate = self._first_vehicle_speed / 3.2
         deceleration.add_child(WaypointFollower(self.other_actors[0], decelerate))
-        deceleration.add_child(DriveDistance(self.other_actors[0], 70))
+        deceleration.add_child(DriveDistance(self.other_actors[0], 60))
 
-        leading_actor_sequence_behavior = py_trees.composites.Sequence("Decelerating actor sequence behavior")
+        # Decelerating actor sequence behavior
         leading_actor_sequence_behavior.add_child(keep_velocity)
         leading_actor_sequence_behavior.add_child(deceleration)
-        leading_actor_sequence_behavior.add_child(WaypointFollower(self.other_actors[0], self._first_vehicle_speed))
+        leading_actor_sequence_behavior.add_child(StopVehicle(self.other_actors[0], self._other_actor_max_brake))
 
         # end condition
-        endcondition = DriveDistance(self.ego_vehicle, 350)
+        ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
 
         # Build behavior tree
-        sequence = py_trees.composites.Sequence("Sequence behavior")
-        sequence.add_child(brake)
-        sequence.add_child(driving_in_same_direction)
+        root.add_child(ego_drive_distance)
+        root.add_child(driving_in_same_direction)
         driving_in_same_direction.add_child(leading_actor_sequence_behavior)
         driving_in_same_direction.add_child(WaypointFollower(self.other_actors[1], self._second_vehicle_speed))
-        driving_in_same_direction.add_child(endcondition)
 
-        return sequence
+        return root
 
     def _create_test_criteria(self):
         """
