@@ -31,7 +31,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
     timeout = 80  # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
@@ -44,7 +44,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
                                                           ego_vehicle,
                                                           config,
                                                           world,
-                                                          debug_mode)
+                                                          debug_mode,
+                                                          criteria_enable=criteria_enable)
 
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
         if self._traffic_light is None:
