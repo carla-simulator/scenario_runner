@@ -69,17 +69,15 @@ class SignalizedJunctionRightTurn(BasicScenario):
         After 80 seconds, a timeout stops the scenario.
         """
 
+        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
         crossing_point_dynamic = get_crossing_point(self.other_actors[0])
+        sync_arrival = SyncArrival(
+            self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
+        sync_arrival_stop = InTriggerDistanceToLocation(self.other_actors[0], crossing_point_dynamic, 5)
 
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
-
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
-        sync_arrival_stop = InTriggerDistanceToLocation(self.other_actors[0], crossing_point_dynamic, 5)
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(sync_arrival_stop)
 
@@ -98,6 +96,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
         waypoint_follower_end = InTriggerDistanceToLocation(
             self.other_actors[0], plan[-1][0].transform.location, 10)
+
         move_actor_parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         move_actor_parallel.add_child(move_actor)
