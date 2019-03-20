@@ -58,6 +58,12 @@ In this scenario vehicle is passing another vehicle in a rural area, in daylight
 weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 
+### SignalizedJunctionRightTurn
+In this scenario right turn of hero actor without collision at signalized intersection
+is tested. Hero Vehicle is turning right in an urban area, at a signalized intersection and
+turns into the same direction of another vehicle crossing straight initially from
+a lateral direction.
+
 ### SignalizedJunctionLeftTurn
 In this scenario hero vehicle is turning left in an urban area,
 at a signalized intersection and cuts across the path of another vehicle
