@@ -141,7 +141,6 @@ class DynamicObjectCrossing(BasicScenario):
     And encounters a cyclist crossing the road.
     """
 
-
     category = "ObjectCrossing"
 
     timeout = 60
