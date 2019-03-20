@@ -125,7 +125,7 @@ def generate_target_waypoint(waypoint, turn=0):
         else:
             waypoint = wp_choice[0]
         wp_list.append(waypoint)
-        #   End condition for the behaviour
+        #   End condition for the behavior
         if turn != 0 and reached_junction and len(wp_list) >= 3:
             v_1 = vector(
                 wp_list[-2].transform.location,
