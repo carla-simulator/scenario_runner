@@ -65,3 +65,14 @@ At some point the leading car has to decelerate. The ego vehicle has to react
 accordingly by changing lane to avoid a collision and follow the leading car in
 other lane. The scenario ends via timeout, or if the ego vehicle drives certain
 distance.
+
+### SignalizedJunctionRightTurn
+In this scenario right turn of hero actor without collision at signalized intersection
+is tested. Hero Vehicle is turning right in an urban area, at a signalized intersection and
+turns into the same direction of another vehicle crossing straight initially from
+a lateral direction.
+
+### SignalizedJunctionLeftTurn
+In this scenario hero vehicle is turning left in an urban area,
+at a signalized intersection and cuts across the path of another vehicle
+coming straight crossing from an opposite direction.
