@@ -34,6 +34,8 @@
     - OppositeVehicleRunningRedLight: Updated to allow execution at different locations
 * Added NHTSA Traffic Scenarios
     - ManeuverOppositeDirection: hero vehicle must maneuver in the opposite lane to pass a leading vehicle.
+    - OtherLeadingVehicle: hero vehicle must react to the deceleration of leading vehicle and change lane to avoid collision and follow
+                           the vehicle in changed lane
     - SignalizedJunctionRightTurn: hero vehicle must turn right into the same direction of another vehicle crossing
                                    straight initially from a lateral direction and avoid collision at a signalized intersection.
     - SignalizedJunctionLeftTurn : hero vehicle is turning left at signalized intersection, cuts across the path of another vehicle
