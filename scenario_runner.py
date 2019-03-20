@@ -90,18 +90,13 @@ class ScenarioRunner(object):
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
         # requests in the localhost at port 2000.
-        client = carla.Client(args.host, int(args.port))
-        client.set_timeout(self.client_timeout)
+        self.client = carla.Client(args.host, int(args.port))
+        self.client.set_timeout(self.client_timeout)
 
         # Once we have a client we can retrieve the world that is currently
         # running.
-        self.world = client.get_world()
+        self.world = self.client.get_world()
 
-        # Wait for the world to be ready
-        self.world.wait_for_tick(self.wait_for_world)
-
-        # Create scenario manager
-        self.manager = ScenarioManager(self.world, args.debug)
 
     def __del__(self):
         """
@@ -193,6 +188,12 @@ class ScenarioRunner(object):
 
             # Execute each configuration
             for config in scenario_configurations:
+                self.world = self.client.load_world(config.town)
+                # Wait for the world to be ready
+                self.world.wait_for_tick(self.wait_for_world)
+
+                # Create scenario manager
+                self.manager = ScenarioManager(self.world, args.debug)
 
                 # Prepare scenario
                 print("Preparing scenario: " + config.name)
