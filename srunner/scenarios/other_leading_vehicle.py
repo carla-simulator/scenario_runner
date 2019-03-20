@@ -44,7 +44,7 @@ class OtherLeadingVehicle(BasicScenario):
 
     timeout = 90        # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
@@ -64,7 +64,17 @@ class OtherLeadingVehicle(BasicScenario):
                                                   ego_vehicle,
                                                   config,
                                                   world,
-                                                  debug_mode)
+                                                  debug_mode,
+                                                  criteria_enable=criteria_enable)
+        # traffic light
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
+
+        if self._traffic_light is None:
+            print("No traffic light for the given location found")
+            sys.exit(-1)
+
+        self._traffic_light.set_state(carla.TrafficLightState.Green)
+        self._traffic_light.set_green_time(self.timeout)
 
     def _initialize_actors(self, config):
         """
@@ -94,17 +104,9 @@ class OtherLeadingVehicle(BasicScenario):
         If this does not happen within 90 seconds, a timeout stops the scenario or the ego vehicle
         drives certain distance and stops the scenario.
         """
-        # traffic light
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
-        if self._traffic_light is None:
-            print("No traffic light for the given location found")
-            sys.exit(-1)
-        self._traffic_light.set_state(carla.TrafficLightState.Green)
-        self._traffic_light.set_green_time(self.timeout)
-
         # start condition
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        driving_in_same_direction = py_trees.composites.Parallel("Both actors driving in same direction",
+        driving_in_same_direction = py_trees.composites.Parallel("All actors driving in same direction",
                                                                  policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         leading_actor_sequence_behavior = py_trees.composites.Sequence("Decelerating actor sequence behavior")
 
