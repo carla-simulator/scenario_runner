@@ -57,6 +57,7 @@ and it checks whether the vehicle is regained its control and corrected its cour
 In this scenario vehicle is passing another vehicle in a rural area, in daylight, under clear
 weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
+
 ### SignalizedJunctionLeftTurn
 In this scenario hero vehicle is turning left in an urban area,
 at a signalized intersection and cuts across the path of another vehicle
