@@ -1,4 +1,5 @@
 ## Latest changes
+* Added universal access to the map without re-calling get_map()
 * Added criteria_enable flag to enable/disable criteria tree
 * Added multiple helper methods for generic scenario execution.
 * Added pseudo-sensors for SceneLayoutMeasurements and ObjectMeasurements for Track4 of the CARLA AD challenge
