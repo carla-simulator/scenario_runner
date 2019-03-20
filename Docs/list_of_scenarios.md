@@ -63,3 +63,8 @@ In this scenario right turn of hero actor without collision at signalized inters
 is tested. Hero Vehicle is turning right in an urban area, at a signalized intersection and
 turns into the same direction of another vehicle crossing straight initially from
 a lateral direction.
+
+### SignalizedJunctionLeftTurn
+In this scenario hero vehicle is turning left in an urban area,
+at a signalized intersection and cuts across the path of another vehicle
+coming straight crossing from an opposite direction.
