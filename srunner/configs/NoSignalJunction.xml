@@ -1,7 +1,27 @@
 <?xml version="1.0"?>
 <scenarios>
-    <scenario name="NoSignalJunctionCrossing" type="NoSignalJunctionCrossing" town="Town03">
-        <ego_vehicle x="-74.32" y="-50" z="0.5" yaw="270" model="vehicle.lincoln.mkz2017" />
-        <other_actor x="-105" y="-136" z="0.5" yaw="0" model="vehicle.tesla.model3" />
+    <scenario name="NoSignalJunctionCrossing_1" type="NoSignalJunctionCrossing" town="Town03">
+        <ego_vehicle x="-77.8" y="-12.9" z="2" yaw="270" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-13.6" y="-138.6" z="2" yaw="180" model="vehicle.audi.tt" />
+        <other_actor x="-70.1" y="-199.9" z="2" yaw="150" model="vehicle.nissan.micra" />
+        <other_actor x="-130.4" y="-125.4" z="2" yaw="-45" model="vehicle.tesla.model3" />
+    </scenario>
+    <scenario name="NoSignalJunctionCrossing_2" type="NoSignalJunctionCrossing" town="Town04">
+        <ego_vehicle x="199.9" y="-236.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="151.9" y="-169.8" z="0.5" yaw="0" model="vehicle.audi.tt" />
+        <other_actor x="216.8" y="-128.4" z="0.5" yaw="-135" model="vehicle.nissan.micra" />
+        <other_actor x="222.3" y="-173.0" z="0.5" yaw="180" model="vehicle.tesla.model3" />
+    </scenario>
+    <scenario name="NoSignalJunctionCrossing_3" type="NoSignalJunctionCrossing" town="Town04">
+        <ego_vehicle x="255.2" y="-300.4" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="232" y="-246.2" z="0.5" yaw="0" model="vehicle.audi.tt" />
+        <other_actor x="258" y="-200.4" z="0.5" yaw="-89" model="vehicle.nissan.micra" />
+        <other_actor x="292" y="-250.2" z="0.5" yaw="180" model="vehicle.tesla.model3" />
+    </scenario>
+    <scenario name="NoSignalJunctionCrossing_4" type="NoSignalJunctionCrossing" town="Town05">
+        <ego_vehicle x="-188.1" y="-22.6" z="0.5" yaw="270" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-150" y="-91.7" z="0.5" yaw="180" model="vehicle.audi.tt" />
+        <other_actor x="-153.5" y="-142.7" z="0.5" yaw="181" model="vehicle.nissan.micra" />
+        <other_actor x="-264.8" y="-53.2" z="0.5" yaw="-88" model="vehicle.tesla.model3" />
     </scenario>
 </scenarios>

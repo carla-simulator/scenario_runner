@@ -16,6 +16,8 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
+from srunner.scenarios.scenario_helper import *
+from srunner.scenariomanager.timer import TimeOut
 
 
 NO_SIGNAL_JUNCTION_SCENARIOS = [
@@ -32,22 +34,17 @@ class NoSignalJunctionCrossing(BasicScenario):
     """
 
     category = "NoSignalJunction"
-
     timeout = 120
-
-    # ego vehicle parameters
-    _ego_vehicle_driven_distance = 105
-
-    # other vehicle
-    _other_actor_max_brake = 1.0
-    _other_actor_target_velocity = 45
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
 
-        self._other_actor_transform = None
+        self._ego_vehicle_driven_distance = 100
+        self._other_actor_max_brake = 1.0
+        self._other_actor_target_velocity = 50
+        self._wmap = world.get_map()
 
         super(NoSignalJunctionCrossing, self).__init__("NoSignalJunctionCrossing",
                                                        ego_vehicle,
@@ -81,62 +78,53 @@ class NoSignalJunctionCrossing(BasicScenario):
         After 60 seconds, a timeout stops the scenario.
         """
 
-        # Creating leaf nodes
-        location, _ = get_location_in_distance(self.ego_vehicle, 10)
-        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 5.0)
-
-        target_location = get_intersection(self.ego_vehicle, self.other_actors[0])
-
-        sync_arrival = SyncArrival(self.other_actors[0], self.ego_vehicle, target_location)
-        sync_arrival_stop = InTriggerDistanceToNextIntersection(self.ego_vehicle, 10)
-
-        # Selecting straight path at intersection
-        target_waypoint = generate_target_waypoint(
-            self.other_actors[0].get_world().get_map().get_waypoint(
-                self.other_actors[0].get_location()), 0)
-
-        # Generating waypoint list till next intersection
-        plan = []
-        wp_choice = target_waypoint.next(1.0)
-        while len(wp_choice) == 1:
-            target_waypoint = wp_choice[0]
-            plan.append((target_waypoint, RoadOption.LANEFOLLOW))
-            wp_choice = target_waypoint.next(5.0)
-
-        keep_velocity_other = WaypointFollower(self.other_actors[0], self._other_actor_target_velocity, plan=plan)
-        stop_other_trigger = DriveDistance(self.other_actors[0], 40)
-
-        stop_other = StopVehicle(
-            self.other_actors[0],
-            self._other_actor_max_brake)
-
-        end_condition = DriveDistance(self.ego_vehicle, 20)
-
-        # Creating non-leaf nodes
         root = py_trees.composites.Sequence()
-        scenario_sequence = py_trees.composites.Sequence()
-        sync_arrival_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity_other_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        # Building tree
-        root.add_child(scenario_sequence)
-        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-        scenario_sequence.add_child(start_other_trigger)
-        scenario_sequence.add_child(start_condition)
-        scenario_sequence.add_child(sync_arrival_parallel)
-        scenario_sequence.add_child(keep_velocity_other_parallel)
-        scenario_sequence.add_child(stop_other)
-        scenario_sequence.add_child(end_condition)
-        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+        move_all_to_intersection = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+        pass_through_all = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
-        sync_arrival_parallel.add_child(sync_arrival)
-        sync_arrival_parallel.add_child(sync_arrival_stop)
-        keep_velocity_other_parallel.add_child(keep_velocity_other)
-        keep_velocity_other_parallel.add_child(stop_other_trigger)
+        for i, adversary in enumerate(self.other_actors):
+            move_vehicle_to_intersection = py_trees.composites.Sequence()
+            waypoint_follow_reach = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        return scenario_sequence
+            current_waypoint = self._wmap.get_waypoint(adversary.get_location())
+            plan = self._make_plan(current_waypoint)
+
+            waypoint_follow_reach.add_child(WaypointFollower(adversary, 30, plan))
+            waypoint_follow_reach.add_child(InTriggerDistanceToNextIntersection(adversary, 10))
+            move_vehicle_to_intersection.add_child(waypoint_follow_reach)
+            move_vehicle_to_intersection.add_child(StopVehicle(adversary, 1.0))
+            move_all_to_intersection.add_child(move_vehicle_to_intersection)
+
+            waypoint_beyond = generate_target_waypoint(current_waypoint, 0)
+            plan_beyond = self._make_plan(waypoint_beyond)
+            wait_and_move = py_trees.composites.Sequence()
+            wait_and_move.add_child(TimeOut(5*i))
+            waypoint_follow_through = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            waypoint_follow_through.add_child(WaypointFollower(adversary, 30, plan=plan_beyond))
+            waypoint_follow_through.add_child(
+                InTriggerDistanceToLocation(adversary, plan_beyond[-1][0].transform.location, 10))
+            wait_and_move.add_child(waypoint_follow_through)
+            pass_through_all.add_child(wait_and_move)
+
+        root.add_child(move_all_to_intersection)
+        root.add_child(InTriggerDistanceToNextIntersection(self.ego_vehicle, 15))
+        root.add_child(pass_through_all)
+
+        return root
+
+    def _make_plan(self, current_waypoint):
+        """
+        Creates a waypoint plan till the next intersection
+        """
+        plan = []
+        wp_choice = current_waypoint.next(1.0)
+        while not wp_choice[0].is_intersection:
+            current_waypoint = wp_choice[0]
+            plan.append((current_waypoint, RoadOption.LANEFOLLOW))
+            wp_choice = current_waypoint.next(1.0)
+
+        return plan
 
     def _create_test_criteria(self):
         """
