@@ -412,6 +412,7 @@ class OnSidewalkTest(Criterion):
     """
     This class contains an atomic test to detect sidewalk invasions.
     """
+    MAX_INVASION_ALLOWED = 4.0 # meters
 
     def __init__(self, actor, optional=False, name="WrongLaneTest"):
         """
@@ -420,16 +421,9 @@ class OnSidewalkTest(Criterion):
         super(OnSidewalkTest, self).__init__(name, actor, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-        self._world = self.actor.get_world()
         self._actor = actor
-        self._map = self._world.get_map()
-        self._infractions = 0
-        self._last_lane_id = None
-        self._last_road_id = None
-
-        blueprint = self._world.get_blueprint_library().find('sensor.other.lane_detector')
-        self._lane_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._lane_sensor.listen(lambda event: self._lane_change(weakref.ref(self), event))
+        self._map = CarlaDataProvider.get_map()
+        self._onsidewalk_active = False
 
     def update(self):
         """
@@ -439,6 +433,37 @@ class OnSidewalkTest(Criterion):
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
+
+        current_location = self._actor.get_location()
+        closet_waypoint = self._map.get_waypoint(current_location)
+        waypoint_adj_right = closet_waypoint.get_right_lane()
+        waypoint_adj_left =  closet_waypoint.get_left_lane()
+
+        # skipping shoulders
+        if waypoint_adj_right.lane_type == 'shoulder':
+            waypoint_adj_right = waypoint_adj_right.get_right_lane()
+        if waypoint_adj_left.lane_type == 'shoulder':
+            waypoint_adj_left = waypoint_adj_left.get_left_lane()
+
+        distance = float('inf')
+        if waypoint_adj_right.lane_type == 'sidewalk':
+            distance = current_location.distance(waypoint_adj_right.transform.location)
+        elif waypoint_adj_left.lane_type == 'sidewalk':
+            distance = current_location.distance(waypoint_adj_left.transform.location)
+
+
+        if distance >= self.MAX_INVASION_ALLOWED:
+            # we are not on a sidewalk
+            self._onsidewalk_active = False
+        else:
+            if not self._onsidewalk_active:
+                onsidewalk_event = TrafficEvent(type=TrafficEventType.ON_SIDEWALK_INFRACTION)
+                onsidewalk_event.set_message('Agent invaded the sidewalk')
+                onsidewalk_event.set_dict({'x': current_location.x, 'y': current_location.y})
+                self.list_traffic_events.append(onsidewalk_event)
+
+                self.test_status = "FAILURE"
+                self._onsidewalk_active = True
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 

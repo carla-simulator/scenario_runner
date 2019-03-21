@@ -41,7 +41,13 @@ class ChallengeBasic(BasicScenario):
         if hasattr(self.config, 'route'):
             self.route = self.config.route.data
 
-        super(ChallengeBasic, self).__init__("ChallengeBasic", ego_vehicle, config, world, debug_mode, True)
+        super(ChallengeBasic, self).__init__("ChallengeBasic",
+                                             ego_vehicle,
+                                             config,
+                                             world,
+                                             debug_mode,
+                                             terminate_on_failure=True,
+                                             criteria_enable=True)
 
     def _create_behavior(self):
         """
@@ -77,6 +83,8 @@ class ChallengeBasic(BasicScenario):
 
         wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
 
+        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicle)
+
         red_light_criterion = RunningRedLightTest(self.ego_vehicle)
 
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
@@ -87,6 +95,7 @@ class ChallengeBasic(BasicScenario):
         parallel_criteria.add_child(target_criterion)
         parallel_criteria.add_child(route_criterion)
         parallel_criteria.add_child(wrong_way_criterion)
+        parallel_criteria.add_child(onsidewalk_criterion)
         parallel_criteria.add_child(red_light_criterion)
 
         return parallel_criteria
