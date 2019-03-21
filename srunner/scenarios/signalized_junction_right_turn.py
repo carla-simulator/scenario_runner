@@ -60,8 +60,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
             sys.exit(-1)
-        self._traffic_light.set_state(carla.TrafficLightState.Red)
-        self._traffic_light.set_red_time(self.timeout)
+        self._traffic_light.set_state(carla.TrafficLightState.Green)
+        self._traffic_light.set_green_time(self.timeout)
         # other vehicle's traffic light
         traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
         if traffic_light_other is None:
