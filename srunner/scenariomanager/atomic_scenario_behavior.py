@@ -21,6 +21,7 @@ from agents.navigation.basic_agent import *
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenarios.scenario_helper import detect_lane_obstacle
 
 EPSILON = 0.001
 
@@ -818,7 +819,7 @@ class WaypointFollower(AtomicBehavior):
     follows the given plan
     """
 
-    def __init__(self, actor, target_speed, plan=None, name="FollowWaypoints"):
+    def __init__(self, actor, target_speed, other_actors=None, plan=None, avoid_collision=False, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
@@ -828,13 +829,11 @@ class WaypointFollower(AtomicBehavior):
         self._target_speed = target_speed
         self._local_planner = None
         self._plan = plan
+        self._other_actor = None
+        self._avoid_collision = None
 
     def initialise(self):
-        args_lateral_dict = {
-            'K_P': 1.0,
-            'K_D': 0.01,
-            'K_I': 0.0,
-            'dt':  0.05}
+        args_lateral_dict = {'K_P': 1.0, 'K_D': 0.01, 'K_I': 0.0, 'dt':  0.05}
         self._local_planner = LocalPlanner(
             self._actor, opt_dict={
                 'target_speed': self._target_speed,
@@ -846,9 +845,11 @@ class WaypointFollower(AtomicBehavior):
         """
         Run local planner, obtain and apply control to actor
         """
-
         new_status = py_trees.common.Status.RUNNING
         control = self._local_planner.run_step(debug=False)
+        if detect_lane_obstacle(self._actor, self._other_actor):
+            control.brake = 1.0
+            control.throttle = 0.0
         self._actor.apply_control(control)
 
         return new_status
