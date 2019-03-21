@@ -79,20 +79,24 @@ class ControlLoss(BasicScenario):
         jitter_timeout = TimeOut(timeout=0.2, name="Timeout for next jitter")
 
         for i in range(self._no_of_jitter_actions):
-            noise = random.gauss(self._noise_mean, self._noise_std)
-            noise = abs(noise)
-            self._ego_vehicle_max_steer = min(0, -(noise - self._dynamic_mean_for_steer))
-            self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
+            if (i+1)%5 != 0:
+                noise = random.gauss(self._noise_mean, self._noise_std)
+                noise = abs(noise)
+                self._ego_vehicle_max_steer = min(0, -(noise - self._dynamic_mean_for_steer))
+                self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
 
-            # turn vehicle
-            turn = AddNoiseToVehicle(
-                self.ego_vehicle, self._ego_vehicle_max_steer, self._ego_vehicle_max_throttle, name='Jittering ' + str(i))
+                # turn vehicle
+                turn = AddNoiseToVehicle(
+                    self.ego_vehicle, self._ego_vehicle_max_steer,
+                    self._ego_vehicle_max_throttle, name='Jittering ' + str(i))
 
-            jitter_action = py_trees.composites.Parallel("Jitter Actions with Timeouts",
-                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-            jitter_action.add_child(turn)
-            jitter_action.add_child(jitter_timeout)
-            jitter_sequence.add_child(jitter_action)
+                jitter_action = py_trees.composites.Parallel("Jitter Actions with Timeouts",
+                                                             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                jitter_action.add_child(turn)
+                jitter_action.add_child(jitter_timeout)
+                jitter_sequence.add_child(jitter_action)
+            else:
+                jitter_sequence.add_child(TimeOut(2))
 
         # Abort jitter_sequence, if the vehicle is approaching an intersection
         jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
