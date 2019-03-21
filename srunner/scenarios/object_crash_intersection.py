@@ -14,6 +14,7 @@ import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
@@ -41,7 +42,7 @@ class VehicleTurningRight(BasicScenario):
         self.category = "VehicleTurning"
         self.timeout = 60
 
-        self._wmap = world.get_map()
+        self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
@@ -81,7 +82,7 @@ class VehicleTurningRight(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
-        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
         lane_width = lane_width+(1.10*lane_width)
 
         trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
@@ -150,7 +151,7 @@ class VehicleTurningLeft(BasicScenario):
         self.category = "VehicleTurning"
         self.timeout = 60
 
-        self._wmap = world.get_map()
+        self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
@@ -190,7 +191,7 @@ class VehicleTurningLeft(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
-        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
         lane_width = lane_width+(1.10*lane_width)
 
         trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)

@@ -2,6 +2,7 @@
 import time
 
 from threading import Thread
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 import util.scene_layout as scene_layout_parser  # This should come from CARLA path
 
 
@@ -30,7 +31,7 @@ class SceneLayoutReader(object):
 
         # The static scene dictionary of all the entire scene layout.
 
-        self.static_scene_dict = scene_layout_parser.get_scene_layout(world, world.get_map())
+        self.static_scene_dict = scene_layout_parser.get_scene_layout(world, CarlaDataProvider.get_map())
         print("Map loaded. Number of waypoints:  ", len(self.static_scene_dict))
 
         # Callback attribute to set the function being used.
@@ -80,7 +81,7 @@ class ObjectFinder(object):
         # The vehicle where the class reads the speed
         self._world = world
         # Map used by the object finder
-        self._map = world.get_map()
+        self._map = CarlaDataProvider.get_map()
         # How often do you look at your speedometer in hz
         self._reading_frequency = reading_frequency
         self._callback = None

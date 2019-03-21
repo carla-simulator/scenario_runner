@@ -96,6 +96,7 @@ class ScenarioRunner(object):
         # Once we have a client we can retrieve the world that is currently
         # running.
         self.world = self.client.get_world()
+        CarlaDataProvider.set_world(self.world)
 
     def __del__(self):
         """
@@ -188,6 +189,8 @@ class ScenarioRunner(object):
             # Execute each configuration
             for config in scenario_configurations:
                 self.world = self.client.load_world(config.town)
+                CarlaDataProvider.set_world(self.world)
+
                 # Wait for the world to be ready
                 self.world.wait_for_tick(self.wait_for_world)
 

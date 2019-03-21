@@ -15,6 +15,7 @@ import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import get_waypoint_in_distance
 
@@ -39,7 +40,7 @@ class ManeuverOppositeDirection(BasicScenario):
         Setup all relevant parameters and create scenario
         """
 
-        self._map = world.get_map()
+        self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location + 40
         self._ego_vehicle_drive_distance = self._second_vehicle_location * 2

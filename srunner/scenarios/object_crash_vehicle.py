@@ -12,6 +12,7 @@ import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
@@ -43,7 +44,7 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        self._wmap = world.get_map()
+        self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
         # other vehicle parameters
@@ -80,7 +81,7 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Only behavior here is to wait
         """
-        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
         lane_width = lane_width+(1.25*lane_width)
 
         # leaf nodes
@@ -158,7 +159,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        self._wmap = world.get_map()
+        self._wmap = CarlaDataProvider.get_map()
         self.category = "ObjectCrossing"
         self.timeout = 60
         self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
@@ -203,7 +204,7 @@ class DynamicObjectCrossing(BasicScenario):
         then after 60 seconds, a timeout stops the scenario
         """
 
-        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
         lane_width = lane_width+(1.25*lane_width)
 
         # leaf nodes
