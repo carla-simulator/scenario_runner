@@ -149,6 +149,9 @@ class ScenarioRunner(object):
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
+        # sync state
+        CarlaDataProvider.get_world().wait_for_tick()
+
     def analyze_scenario(self, args, config):
         """
         Provide feedback about success/failure of a scenario

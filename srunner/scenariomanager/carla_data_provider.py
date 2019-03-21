@@ -128,6 +128,9 @@ class CarlaDataProvider(object):
             else:
                 raise KeyError(
                     "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
+    @staticmethod
+    def get_world():
+        return CarlaDataProvider._world
 
     @staticmethod
     def set_world(world):
