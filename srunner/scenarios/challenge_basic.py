@@ -87,16 +87,20 @@ class ChallengeBasic(BasicScenario):
 
         red_light_criterion = RunningRedLightTest(self.ego_vehicle)
 
+        stop_criterion = RunningStopTest(self.ego_vehicle)
+
+
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         parallel_criteria.add_child(completion_criterion)
         parallel_criteria.add_child(collision_criterion)
         parallel_criteria.add_child(target_criterion)
-        parallel_criteria.add_child(route_criterion)
+        #parallel_criteria.add_child(route_criterion)
         parallel_criteria.add_child(wrong_way_criterion)
         parallel_criteria.add_child(onsidewalk_criterion)
         parallel_criteria.add_child(red_light_criterion)
+        parallel_criteria.add_child(stop_criterion)
 
         return parallel_criteria
 

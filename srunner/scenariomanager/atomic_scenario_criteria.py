@@ -810,3 +810,65 @@ class RunningRedLightTest(Criterion):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+class RunningStopTest(Criterion):
+
+    """
+    Check if an actor is running a stop sign
+    """
+    PROXIMITY_THRESHOLD = 30.0 # meters
+
+    def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
+        """
+        """
+        super(RunningStopTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._world = CarlaDataProvider.get_world()
+        self._map = CarlaDataProvider.get_map()
+        self._list_stop_signs = []
+        self._target_stop_sign = None
+
+        all_actors = self._world.get_actors()
+        for actor in all_actors:
+            if 'traffic.stop' in actor.type_id:
+                self._list_stop_signs.append(actor)
+
+    @staticmethod
+    def length(v):
+        return math.sqrt(v.x**2 + v.y**2 + v.z**2)
+
+    def update(self):
+        """
+        Check if the actor is running a red light
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = self._actor.get_location()
+        if location is None:
+            return new_status
+
+        # scan for red traffic lights
+        for stop_sign in self._list_stop_signs:
+            stop_location = stop_sign.get_transform().location
+            if stop_location.distance(location) > self.PROXIMITY_THRESHOLD:
+                continue
+
+            if hasattr(stop_sign, 'trigger_volume'):
+                stop_t = stop_sign.get_transform()
+                transformed_tv = stop_t.transform(stop_sign.trigger_volume.location)
+                distance = carla.Location(transformed_tv).distance(location)
+                s = self.length(stop_sign.trigger_volume.extent) + self.length(self._actor.bounding_box.extent)
+                if distance <= s:
+                    # this stop sign is affecting the vehicle
+                    print('>>>>>> AFFECTED BY A STOP SIGN!!!')
+
+
+
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
