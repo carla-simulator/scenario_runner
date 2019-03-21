@@ -33,7 +33,8 @@ class BasicScenario(object):
         and instantiate scenario manager
         """
         self.other_actors = []
-        self.timeout = 60  # Timeout of scenario in seconds
+        if not self.timeout:
+            self.timeout = 60    # If no timeout was provided, set it to 60 seconds
 
         self.category = None     # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
         self.criteria_list = []  # List of evaluation criteria
