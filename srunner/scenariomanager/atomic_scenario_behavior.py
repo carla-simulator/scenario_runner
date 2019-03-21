@@ -819,7 +819,8 @@ class WaypointFollower(AtomicBehavior):
     follows the given plan
     """
 
-    def __init__(self, actor, target_speed, other_actors=None, plan=None, avoid_collision=False, name="FollowWaypoints"):
+    def __init__(self, actor, target_speed, other_actors=None,
+                 plan=None, avoid_collision=False, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
@@ -829,7 +830,7 @@ class WaypointFollower(AtomicBehavior):
         self._target_speed = target_speed
         self._local_planner = None
         self._plan = plan
-        self._other_actor = None
+        self._other_actor = other_actors
         self._avoid_collision = None
 
     def initialise(self):
