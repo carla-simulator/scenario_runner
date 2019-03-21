@@ -16,6 +16,8 @@ import numpy as np
 import carla
 from agents.tools.misc import vector
 
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+
 
 def get_crossing_point(actor):
     """
@@ -23,7 +25,7 @@ def get_crossing_point(actor):
 
     @return point of crossing
     """
-    wp_cross = actor.get_world().get_map().get_waypoint(actor.get_location())
+    wp_cross = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
 
     while(not wp_cross.is_intersection):
         wp_cross = wp_cross.next(2)[0]
@@ -41,14 +43,14 @@ def get_geometric_linear_intersection(ego_actor, other_actor):
     @return point of intersection of the two vehicles
     """
 
-    wp_ego_1 = ego_actor.get_world().get_map().get_waypoint(ego_actor.get_location())
+    wp_ego_1 = CarlaDataProvider.get_map().get_waypoint(ego_actor.get_location())
     wp_ego_2 = wp_ego_1.next(1)[0]
     x_ego_1 = wp_ego_1.transform.location.x
     y_ego_1 = wp_ego_1.transform.location.y
     x_ego_2 = wp_ego_2.transform.location.x
     y_ego_2 = wp_ego_2.transform.location.y
 
-    wp_other_1 = other_actor.get_world().get_map().get_waypoint(other_actor.get_location())
+    wp_other_1 = CarlaDataProvider.get_world().get_map().get_waypoint(other_actor.get_location())
     wp_other_2 = wp_other_1.next(1)[0]
     x_other_1 = wp_other_1.transform.location.x
     y_other_1 = wp_other_1.transform.location.y
@@ -75,7 +77,7 @@ def get_location_in_distance(actor, distance):
 
     @return obtained location and the traveled distance
     """
-    waypoint = actor.get_world().get_map().get_waypoint(actor.get_location())
+    waypoint = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
     traveled_distance = 0
     while not waypoint.is_intersection and traveled_distance < distance:
         waypoint_new = waypoint.next(1.0)[-1]
@@ -171,8 +173,8 @@ def get_intersection(ego_actor, other_actor):
     Obtain a intersection point between two actor's location
     @return the intersection location
     """
-    waypoint = ego_actor.get_world().get_map().get_waypoint(ego_actor.get_location())
-    waypoint_other = other_actor.get_world().get_map().get_waypoint(other_actor.get_location())
+    waypoint = CarlaDataProvider.get_map().get_waypoint(ego_actor.get_location())
+    waypoint_other = CarlaDataProvider.get_map().get_waypoint(other_actor.get_location())
     max_dist = float("inf")
     distance = float("inf")
     while distance <= max_dist:

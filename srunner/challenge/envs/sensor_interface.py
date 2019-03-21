@@ -7,6 +7,7 @@ from threading import Thread
 
 import carla
 
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutMeasurement, ObjectMeasurements, threaded
 
 
@@ -27,7 +28,7 @@ class HDMapReader(object):
         self.run()
 
     def __call__(self):
-        map_name = os.path.basename(self._vehicle.get_world().get_map().name)
+        map_name = os.path.basename(CarlaDataProvider.get_map().name)
         transform = self._vehicle.get_transform()
 
         return {'map_file': "{}/HDMaps/{}.ply".format(self._CARLA_ROOT, map_name),

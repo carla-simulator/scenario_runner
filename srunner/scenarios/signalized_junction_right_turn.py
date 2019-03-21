@@ -12,6 +12,7 @@ import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
 
@@ -84,8 +85,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
         # Selecting straight path at intersection
         target_waypoint = generate_target_waypoint(
-            self.other_actors[0].get_world().get_map().get_waypoint(
-                self.other_actors[0].get_location()), 0)
+            CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), 0)
         # Generating waypoint list till next intersection
         plan = []
         wp_choice = target_waypoint.next(1.0)

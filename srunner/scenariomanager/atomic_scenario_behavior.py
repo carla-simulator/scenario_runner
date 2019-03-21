@@ -221,7 +221,7 @@ class InTriggerDistanceToNextIntersection(AtomicBehavior):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._distance = distance
-        self._map = self._actor.get_world().get_map()
+        self._map = CarlaDataProvider.get_map()
 
         waypoint = self._map.get_waypoint(self._actor.get_location())
         while not waypoint.is_intersection:

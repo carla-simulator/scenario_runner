@@ -24,6 +24,7 @@ import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
@@ -53,7 +54,7 @@ class FollowLeadingVehicle(BasicScenario):
         If randomize is True, the scenario parameters are randomized
         """
 
-        self._map = world.get_map()
+        self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 25
         self._first_vehicle_speed = 40
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
@@ -73,7 +74,7 @@ class FollowLeadingVehicle(BasicScenario):
             # Example code how to randomize start location
             # distance = random.randint(20, 80)
             # new_location, _ = get_location_in_distance(self.ego_vehicle, distance)
-            # waypoint = world.get_map().get_waypoint(new_location)
+            # waypoint = CarlaDataProvider.get_map().get_waypoint(new_location)
             # waypoint.transform.location.z += 39
             # self.other_actors[0].set_transform(waypoint.transform)
 
@@ -167,7 +168,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        self._map = world.get_map()
+        self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 25
         self._second_vehicle_location = self._first_vehicle_location + 40
         self._first_vehicle_speed = 40

@@ -17,7 +17,7 @@ import carla
 import numpy as np
 
 from srunner.scenariomanager.atomic_scenario_behavior import InTimeToArrivalToLocation
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import Scenario
 
 
@@ -103,7 +103,7 @@ class BasicScenario(object):
             "If this error becomes visible the class hierarchy is somehow broken")
 
     def _check_town(self, world):
-        if world.get_map().name != self._town:
+        if CarlaDataProvider.get_map().name != self._town:
             print("The CARLA server uses the wrong map!")
             print("This scenario requires to use map {}".format(self._town))
             raise Exception("The CARLA server uses the wrong map!")

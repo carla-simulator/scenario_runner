@@ -424,7 +424,7 @@ class WrongLaneTest(Criterion):
 
         self._world = self.actor.get_world()
         self._actor = actor
-        self._map = self._world.get_map()
+        self._map = CarlaDataProvider.get_map()
         self._infractions = 0
         self._last_lane_id = None
         self._last_road_id = None

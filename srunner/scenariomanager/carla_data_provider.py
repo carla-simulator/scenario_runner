@@ -46,6 +46,7 @@ class CarlaDataProvider(object):
     _actor_location_map = dict()
     _traffic_light_map = dict()
     _map = None
+    _world = None
 
     @staticmethod
     def register_actor(actor):
@@ -130,12 +131,24 @@ class CarlaDataProvider(object):
                         "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
 
     @staticmethod
-    def get_map(world):
+    def set_world(world):
+        CarlaDataProvider._world = world
+        CarlaDataProvider._map = CarlaDataProvider._world.get_map()
+
+
+    @staticmethod
+    def get_map(world=None):
         """
         Get the current map
         """
         if CarlaDataProvider._map is None:
-            CarlaDataProvider._map = world.get_map()
+            if world is None:
+                if CarlaDataProvider._world is None:
+                    raise ValueError("class member \'world'\' not initialized yet")
+                else:
+                    CarlaDataProvider._map = CarlaDataProvider._world.get_map()
+            else:
+                CarlaDataProvider._map = world.get_map()
 
         return CarlaDataProvider._map
 
