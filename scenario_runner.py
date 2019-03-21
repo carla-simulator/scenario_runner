@@ -97,7 +97,6 @@ class ScenarioRunner(object):
         # running.
         self.world = self.client.get_world()
 
-
     def __del__(self):
         """
         Cleanup and delete actors, ScenarioManager and CARLA world

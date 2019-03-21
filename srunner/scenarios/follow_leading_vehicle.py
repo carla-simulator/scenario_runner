@@ -83,8 +83,10 @@ class FollowLeadingVehicle(BasicScenario):
         """
 
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
-        first_vehicle_waypoint.transform.location.z += 1
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
+        first_vehicle_transform = carla.Transform(
+            carla.Location(first_vehicle_waypoint.transform.location.x, first_vehicle_waypoint.transform.location.y,
+                           first_vehicle_waypoint.transform.location.z+1), first_vehicle_waypoint.transform.rotation)
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -96,10 +98,6 @@ class FollowLeadingVehicle(BasicScenario):
         enough to the other actor to end the scenario.
         If this does not happen within 60 seconds, a timeout stops the scenario
         """
-
-        hand_brake_apply = HandBrakeVehicle(self.other_actors[0], True, name="HandBraking")
-
-        hand_brake_release = HandBrakeVehicle(self.other_actors[0], False, name="ReleasingHandBrake")
 
         # let the other actor drive until next intersection
         # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
@@ -127,8 +125,6 @@ class FollowLeadingVehicle(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        sequence.add_child(hand_brake_apply)
-        sequence.add_child(hand_brake_release)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(stop)
         sequence.add_child(endcondition)
@@ -171,7 +167,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         """
         self._map = world.get_map()
         self._first_vehicle_location = 25
-        self._second_vehicle_location = self._first_vehicle_location + 35
+        self._second_vehicle_location = self._first_vehicle_location + 40
         self._first_vehicle_speed = 40
         self._second_vehicle_speed = 5
         self._reference_waypoint = self._map.get_waypoint(config.ego_vehicle.transform.location)
@@ -193,12 +189,17 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
+        first_vehicle_transform = carla.Transform(
+            carla.Location(first_vehicle_waypoint.transform.location.x, first_vehicle_waypoint.transform.location.y,
+                           first_vehicle_waypoint.transform.location.z+1), first_vehicle_waypoint.transform.rotation)
         yaw_1 = second_vehicle_waypoint.transform.rotation.yaw + 90
-        second_vehicle_transform = carla.Transform(second_vehicle_waypoint.transform.location,
-                                                   carla.Rotation(
-                                                       pitch=second_vehicle_waypoint.transform.rotation.pitch,
-                                                       yaw=yaw_1, roll=second_vehicle_waypoint.transform.rotation.roll))
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
+        second_vehicle_transform = carla.Transform(
+            carla.Location(second_vehicle_waypoint.transform.location.x, second_vehicle_waypoint.transform.location.y,
+                           second_vehicle_waypoint.transform.location.z+1),
+            carla.Rotation(second_vehicle_waypoint.transform.rotation.pitch, yaw_1,
+                           second_vehicle_waypoint.transform.rotation.roll))
+
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         second_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                           second_vehicle_transform)
 
@@ -215,9 +216,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         enough to the other actor to end the scenario.
         If this does not happen within 60 seconds, a timeout stops the scenario
         """
-
-        hand_brake_apply = HandBrakeVehicle(self.other_actors[0], True, name="HandBraking")
-        hand_brake_release = HandBrakeVehicle(self.other_actors[0], False, name="ReleasingHandBrake")
 
         # let the other actor drive until next intersection
         driving_to_next_intersection = py_trees.composites.Parallel(
@@ -252,8 +250,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        sequence.add_child(hand_brake_apply)
-        sequence.add_child(hand_brake_release)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(StopVehicle(self.other_actors[0], self._other_actor_max_brake))
         sequence.add_child(TimeOut(3))
