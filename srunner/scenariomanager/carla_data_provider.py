@@ -112,23 +112,22 @@ class CarlaDataProvider(object):
             return CarlaDataProvider._actor_location_map[actor]
 
     @staticmethod
-    def prepare_map(actor):
+    def prepare_map():
         """
         This function set the current map and loads all traffic lights for this map to
         _traffic_light_map
         """
-
         if CarlaDataProvider._map is None:
-            CarlaDataProvider._map = actor.get_world().get_map()
+            CarlaDataProvider._map = CarlaDataProvider._world.get_map()
 
-            # Parse all traffic lights
-            CarlaDataProvider._traffic_light_map.clear()
-            for traffic_light in actor.get_world().get_actors().filter('*traffic_light*'):
-                if traffic_light not in CarlaDataProvider._traffic_light_map.keys():
-                    CarlaDataProvider._traffic_light_map[traffic_light] = traffic_light.get_transform()
-                else:
-                    raise KeyError(
-                        "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
+        # Parse all traffic lights
+        CarlaDataProvider._traffic_light_map.clear()
+        for traffic_light in CarlaDataProvider._world.get_actors().filter('*traffic_light*'):
+            if traffic_light not in CarlaDataProvider._traffic_light_map.keys():
+                CarlaDataProvider._traffic_light_map[traffic_light] = traffic_light.get_transform()
+            else:
+                raise KeyError(
+                    "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
 
     @staticmethod
     def set_world(world):
@@ -157,7 +156,8 @@ class CarlaDataProvider(object):
         """
         returns the next relevant traffic light for the provided actor
         """
-        CarlaDataProvider.prepare_map(actor)
+
+        CarlaDataProvider.prepare_map()
         location = CarlaDataProvider.get_location(actor)
         if not use_cached_location:
             location = actor.get_transform().location

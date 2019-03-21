@@ -193,6 +193,8 @@ class DynamicObjectCrossing(BasicScenario):
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+
+        import pdb; pdb.set_trace()
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
         self.other_actors.append(first_vehicle)
 
