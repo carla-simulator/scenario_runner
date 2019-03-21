@@ -84,8 +84,10 @@ class FollowLeadingVehicle(BasicScenario):
 
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         first_vehicle_transform = carla.Transform(
-            carla.Location(first_vehicle_waypoint.transform.location.x, first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z+1), first_vehicle_waypoint.transform.rotation)
+            carla.Location(first_vehicle_waypoint.transform.location.x,
+                           first_vehicle_waypoint.transform.location.y,
+                           first_vehicle_waypoint.transform.location.z+1),
+            first_vehicle_waypoint.transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         self.other_actors.append(first_vehicle)
 
@@ -190,11 +192,14 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
         first_vehicle_transform = carla.Transform(
-            carla.Location(first_vehicle_waypoint.transform.location.x, first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z+1), first_vehicle_waypoint.transform.rotation)
+            carla.Location(first_vehicle_waypoint.transform.location.x,
+                           first_vehicle_waypoint.transform.location.y,
+                           first_vehicle_waypoint.transform.location.z+1),
+            first_vehicle_waypoint.transform.rotation)
         yaw_1 = second_vehicle_waypoint.transform.rotation.yaw + 90
         second_vehicle_transform = carla.Transform(
-            carla.Location(second_vehicle_waypoint.transform.location.x, second_vehicle_waypoint.transform.location.y,
+            carla.Location(second_vehicle_waypoint.transform.location.x,
+                           second_vehicle_waypoint.transform.location.y,
                            second_vehicle_waypoint.transform.location.z+1),
             carla.Rotation(second_vehicle_waypoint.transform.rotation.pitch, yaw_1,
                            second_vehicle_waypoint.transform.rotation.roll))
