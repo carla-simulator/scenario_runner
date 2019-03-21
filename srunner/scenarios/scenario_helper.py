@@ -14,7 +14,7 @@ import math
 
 import numpy as np
 import carla
-from agents.tools.misc import vector
+from agents.tools.misc import vector, is_within_distance_ahead
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
@@ -200,3 +200,27 @@ def get_intersection(ego_actor, other_actor):
         distance = current_location.distance(waypoint_other.transform.location)
 
     return current_location
+
+
+def detect_lane_obstacle(actor, other_actors):
+    """
+    This function identifies if an obstacle is present in front of the reference actor
+    """
+    wmap = actor.get_world().get_map()
+    ego_vehicle_location = actor.get_location()
+    ego_vehicle_waypoint = wmap.get_waypoint(ego_vehicle_location)
+    max_distance = 20
+    is_hazard = False
+    for target_vehicle in other_actors:
+        # if the object is not in our lane it's not an obstacle
+        waypoint = wmap.get_waypoint(target_vehicle.get_location())
+        if (waypoint.road_id == ego_vehicle_waypoint.road_id or \
+                waypoint.lane_id == ego_vehicle_waypoint.lane_id) and\
+                    is_within_distance_ahead(
+                            waypoint.transform.location,
+                            ego_vehicle_waypoint.transform.location,
+                            ego_vehicle_waypoint.transform.rotation.yaw,
+                            max_distance):
+            is_hazard = True
+
+    return is_hazard
