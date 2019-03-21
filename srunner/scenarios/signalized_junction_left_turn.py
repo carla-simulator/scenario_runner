@@ -27,18 +27,17 @@ class SignalizedJunctionLeftTurn(BasicScenario):
     Vehicle turning left at signalized junction scenario,
     Traffic Scenario 08.
     """
-
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
         self.category = "SignalizedJunctionLeftTurn"
-        self.timeout = 80  # Timeout of scenario in seconds
-        self._target_vel = 35
+        self.timeout = 80     #Timeout of scenario in seconds
+        self._target_vel = 25
         self._brake_value = 0.02
-        self._dist_to_intersection = 4
         self._drive_distance = 50
         self._ego_distance = 20
+        self._dist_to_intersection = 9
         self._traffic_light = None
 
         super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
@@ -69,8 +68,15 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         coming straight crossing from an opposite direction,
         After 80 seconds, a timeout stops the scenario.
         """
-        _location = get_crossing_point(self.ego_vehicle)
-        start_other_trigger = InTriggerDistanceToLocation(self.ego_vehicle, _location, self._dist_to_intersection)
+        waypoint = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location())
+        wp_choice = waypoint.next(3)
+        while not wp_choice[0].is_intersection:
+            waypoint = wp_choice[0]
+            wp_choice = waypoint.next(3)
+        target_wp = choose_at_junction(waypoint, waypoint.next(3), direction=-1)
+        start_other_trigger = InTriggerDistanceToLocation(
+            self.ego_vehicle,
+            target_wp.transform.location, self._dist_to_intersection)
         # Selecting straight path at intersection
         target_waypoint = generate_target_waypoint(
             self.other_actors[0].get_world().get_map().get_waypoint(
