@@ -239,8 +239,11 @@ class CarlaActorPool(object):
             raise Exception(
                 "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
         else:
-            # Let's deactivate the autopilot of the actor
-            actor.set_autopilot(autopilot)
+            # Let's deactivate the autopilot of the actor if it belongs to vehicle
+            if actor in blueprint_library.filter('vehicle.*'):
+                actor.set_autopilot(autopilot)
+            else:
+                pass
 
         return actor
 
