@@ -440,15 +440,15 @@ class OnSidewalkTest(Criterion):
         waypoint_adj_left =  closet_waypoint.get_left_lane()
 
         # skipping shoulders
-        if waypoint_adj_right.lane_type == 'shoulder':
+        if waypoint_adj_right and waypoint_adj_right.lane_type == 'shoulder':
             waypoint_adj_right = waypoint_adj_right.get_right_lane()
-        if waypoint_adj_left.lane_type == 'shoulder':
+        if waypoint_adj_left and waypoint_adj_left.lane_type == 'shoulder':
             waypoint_adj_left = waypoint_adj_left.get_left_lane()
 
         distance = float('inf')
-        if waypoint_adj_right.lane_type == 'sidewalk':
+        if waypoint_adj_right and waypoint_adj_right.lane_type == 'sidewalk':
             distance = current_location.distance(waypoint_adj_right.transform.location)
-        elif waypoint_adj_left.lane_type == 'sidewalk':
+        elif waypoint_adj_left and waypoint_adj_left.lane_type == 'sidewalk':
             distance = current_location.distance(waypoint_adj_left.transform.location)
 
 
@@ -473,10 +473,7 @@ class OnSidewalkTest(Criterion):
         """
         Cleanup sensor
         """
-        if self._lane_sensor is not None:
-            self._lane_sensor.destroy()
-        self._lane_sensor = None
-        super(WrongLaneTest, self).terminate(new_status)
+        super(OnSidewalkTest, self).terminate(new_status)
 
 class WrongLaneTest(Criterion):
 
