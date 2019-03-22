@@ -800,7 +800,10 @@ class WaypointFollower(AtomicBehavior):
         self._local_planner = None
         self._plan = plan
 
-    def initialise(self):
+    def setup(self, timeout=5):
+        """
+        Delayed one-time initialization
+        """
         args_lateral_dict = {
             'K_P': 1.0,
             'K_D': 0.01,
@@ -813,14 +816,16 @@ class WaypointFollower(AtomicBehavior):
         if self._plan is not None:
             self._local_planner.set_global_plan(self._plan)
 
+        return True
+
     def update(self):
         """
         Run local planner, obtain and apply control to actor
         """
-
         new_status = py_trees.common.Status.RUNNING
-        control = self._local_planner.run_step(debug=False)
-        self._actor.apply_control(control)
+        if self._local_planner is not None:
+            control = self._local_planner.run_step(debug=False)
+            self._actor.apply_control(control)
 
         return new_status
 
