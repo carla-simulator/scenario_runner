@@ -43,7 +43,7 @@ class VehicleTurningRight(BasicScenario):
         self.timeout = 60
 
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -152,7 +152,7 @@ class VehicleTurningLeft(BasicScenario):
         self.timeout = 60
 
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,

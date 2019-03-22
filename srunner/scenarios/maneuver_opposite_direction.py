@@ -46,7 +46,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._ego_vehicle_drive_distance = self._second_vehicle_location * 2
         self._start_distance = self._first_vehicle_location * 0.9
         self._opposite_speed = 30  # km/h
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.transform.location)
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
 
         super(ManeuverOppositeDirection, self).__init__(
             "ManeuverOppositeDirection",
