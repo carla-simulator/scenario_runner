@@ -31,6 +31,7 @@ from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, Objec
 from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
+import traceback
 
 # Dictionary of supported scenarios.
 # key = Name of config file in configs/
@@ -59,7 +60,6 @@ class ChallengeEvaluator(object):
 
     def __init__(self, args):
         self.output_scenario = []
-
         # first we instantiate the Agent
         module_name = os.path.basename(args.agent).split('.')[0]
         sys.path.insert(0, os.path.dirname(args.agent))
@@ -349,6 +349,8 @@ class ChallengeEvaluator(object):
                 # running.
                 self.world = client.load_world(config.town)
                 CarlaActorPool.set_world(self.world)
+                # Setting the world to the data provider.
+                CarlaDataProvider.set_world(self.world)
 
                 # Wait for the world to be ready
                 self.world.wait_for_tick(self.wait_for_world)
@@ -374,6 +376,7 @@ class ChallengeEvaluator(object):
                 except Exception as exception:
                     print("The scenario cannot be loaded")
                     print(exception)
+
                     self.cleanup(ego=True)
                     continue
 
