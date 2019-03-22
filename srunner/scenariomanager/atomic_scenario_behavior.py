@@ -855,11 +855,13 @@ class WaypointFollower(AtomicBehavior):
             local_planner.set_global_plan(self._plan)
         self._local_planner_list.append(local_planner)
 
+        return True
+
     def update(self):
         """
         Run local planner, obtain and apply control to actor
         """
-
+        
         new_status = py_trees.common.Status.RUNNING
 
         if self._blackboard_queue_name is not None:

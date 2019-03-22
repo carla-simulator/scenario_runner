@@ -15,6 +15,7 @@ from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
 from srunner.scenariomanager.timer import TimeOut
@@ -41,10 +42,16 @@ class NoSignalJunctionCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
 
+        self._wmap = CarlaDataProvider.get_map()
         self._ego_vehicle_driven_distance = 100
-        self._other_actor_max_brake = 1.0
+        self._ego_vehicle_end_distance = 200
         self._other_actor_target_velocity = 50
-        self._wmap = world.get_map()
+        self._max_brake = 1.0
+        self._arrival_threshold = 10
+        self._ego_arrival_trigger = 15
+        self._other_actor_wait_time = 10
+        self._adversary_speed = 30
+        self._end_threshold = 20
 
         super(NoSignalJunctionCrossing, self).__init__("NoSignalJunctionCrossing",
                                                        ego_vehicle,
@@ -78,7 +85,8 @@ class NoSignalJunctionCrossing(BasicScenario):
         After 60 seconds, a timeout stops the scenario.
         """
 
-        root = py_trees.composites.Sequence()
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        scenario_sequence = py_trees.composites.Sequence()
 
         move_all_to_intersection = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
         pass_through_all = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
@@ -90,26 +98,29 @@ class NoSignalJunctionCrossing(BasicScenario):
             current_waypoint = self._wmap.get_waypoint(adversary.get_location())
             plan = self._make_plan(current_waypoint)
 
-            waypoint_follow_reach.add_child(WaypointFollower(adversary, 30, plan))
-            waypoint_follow_reach.add_child(InTriggerDistanceToNextIntersection(adversary, 10))
+            waypoint_follow_reach.add_child(WaypointFollower(adversary, self._adversary_speed, plan))
+            waypoint_follow_reach.add_child(InTriggerDistanceToNextIntersection(adversary, self._arrival_threshold))
             move_vehicle_to_intersection.add_child(waypoint_follow_reach)
-            move_vehicle_to_intersection.add_child(StopVehicle(adversary, 1.0))
+            move_vehicle_to_intersection.add_child(StopVehicle(adversary, self._max_brake))
             move_all_to_intersection.add_child(move_vehicle_to_intersection)
 
-            waypoint_beyond = generate_target_waypoint(current_waypoint, 0)
+            waypoint_beyond = generate_target_waypoint(current_waypoint, 0) # Straight across the intersection
             plan_beyond = self._make_plan(waypoint_beyond)
             wait_and_move = py_trees.composites.Sequence()
-            wait_and_move.add_child(TimeOut(5*i))
+            wait_and_move.add_child(TimeOut(self._other_actor_wait_time*i))
             waypoint_follow_through = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-            waypoint_follow_through.add_child(WaypointFollower(adversary, 30, plan=plan_beyond))
+            waypoint_follow_through.add_child(WaypointFollower(adversary, self._adversary_speed, plan=plan_beyond))
             waypoint_follow_through.add_child(
-                InTriggerDistanceToLocation(adversary, plan_beyond[-1][0].transform.location, 10))
+                InTriggerDistanceToLocation(adversary, plan_beyond[-1][0].transform.location, self._end_threshold))
             wait_and_move.add_child(waypoint_follow_through)
             pass_through_all.add_child(wait_and_move)
 
-        root.add_child(move_all_to_intersection)
-        root.add_child(InTriggerDistanceToNextIntersection(self.ego_vehicle, 15))
-        root.add_child(pass_through_all)
+        scenario_sequence.add_child(move_all_to_intersection)
+        scenario_sequence.add_child(InTriggerDistanceToNextIntersection(self.ego_vehicle, self._ego_arrival_trigger))
+        scenario_sequence.add_child(pass_through_all)
+
+        root.add_child(scenario_sequence)
+        root.add_child(DriveDistance(self.ego_vehicle, self._ego_vehicle_end_distance))
 
         return root
 
