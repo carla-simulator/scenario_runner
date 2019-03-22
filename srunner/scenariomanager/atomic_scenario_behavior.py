@@ -861,7 +861,7 @@ class WaypointFollower(AtomicBehavior):
         """
         Run local planner, obtain and apply control to actor
         """
-        
+
         new_status = py_trees.common.Status.RUNNING
 
         if self._blackboard_queue_name is not None:

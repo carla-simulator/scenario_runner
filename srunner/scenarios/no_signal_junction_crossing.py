@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+#
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
@@ -104,7 +105,7 @@ class NoSignalJunctionCrossing(BasicScenario):
             move_vehicle_to_intersection.add_child(StopVehicle(adversary, self._max_brake))
             move_all_to_intersection.add_child(move_vehicle_to_intersection)
 
-            waypoint_beyond = generate_target_waypoint(current_waypoint, 0) # Straight across the intersection
+            waypoint_beyond = generate_target_waypoint(current_waypoint, 0)  # Straight across the intersection
             plan_beyond = self._make_plan(waypoint_beyond)
             wait_and_move = py_trees.composites.Sequence()
             wait_and_move.add_child(TimeOut(self._other_actor_wait_time*i))
