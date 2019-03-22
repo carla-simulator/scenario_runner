@@ -74,8 +74,9 @@ class StationaryObjectCrossing(BasicScenario):
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
-        self.other_actors.append(first_vehicle)
+        static = CarlaActorPool.request_new_actor('static.prop.container', transform)
+        static.set_simulate_physics(True)
+        self.other_actors.append(static)
 
     def _create_behavior(self):
         """
@@ -86,10 +87,7 @@ class StationaryObjectCrossing(BasicScenario):
 
         # leaf nodes
         start_condition = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 10)
-        actor_stand = TimeOut(3)
-        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_drive = DriveDistance(self.other_actors[0], 0.8*lane_width)
-        actor_pre_del = TimeOut(10)
+        actor_stand = TimeOut(30)
         actor_removed = ActorDestroy(self.other_actors[0])
         end_condition = DriveDistance(self.ego_vehicle, 50)
 
@@ -97,21 +95,13 @@ class StationaryObjectCrossing(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
-        keep_velocity = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(actor_stand)
-        scenario_sequence.add_child(keep_velocity)
-        scenario_sequence.add_child(actor_pre_del)
         scenario_sequence.add_child(actor_removed)
         scenario_sequence.add_child(end_condition)
-
-        keep_velocity.add_child(actor_velocity)
-        keep_velocity.add_child(actor_drive)
-        keep_velocity.add_child(TimeOut(5))
 
         return root
 
@@ -180,6 +170,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         Custom initialization
         """
+        # cyclist transform
         _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
         location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
@@ -196,6 +187,20 @@ class DynamicObjectCrossing(BasicScenario):
 
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
         self.other_actors.append(first_vehicle)
+
+        # static object transform
+        shift = 0.8
+        x_ego = self.ego_vehicle.get_location().x
+        y_ego = self.ego_vehicle.get_location().y
+        x_cycle = transform.location.x
+        y_cycle = transform.location.y
+        x_static = x_ego + shift * (x_cycle - x_ego)
+        y_static = y_ego + shift * (y_cycle - y_ego)
+
+        transform2 = carla.Transform(carla.Location(x_static, y_static, transform.location.z+0.01))
+        static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', transform2)
+        static.set_simulate_physics(True)
+        self.other_actors.append(static)
 
     def _create_behavior(self):
         """
@@ -217,7 +222,8 @@ class DynamicObjectCrossing(BasicScenario):
         actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
         actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
         timeout_other_actor = TimeOut(10)
-        actor_removed = ActorDestroy(self.other_actors[0])
+        actor_remove = ActorDestroy(self.other_actors[0])
+        static_remove = ActorDestroy(self.other_actors[1])
         end_condition = DriveDistance(self.ego_vehicle, 50)
 
         # non leaf nodes
@@ -238,7 +244,8 @@ class DynamicObjectCrossing(BasicScenario):
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(actor_stop_crossed_lane)
         scenario_sequence.add_child(timeout_other_actor)
-        scenario_sequence.add_child(actor_removed)
+        scenario_sequence.add_child(actor_remove)
+        scenario_sequence.add_child(static_remove)
         scenario_sequence.add_child(end_condition)
 
         keep_velocity.add_child(actor_velocity)
