@@ -45,7 +45,7 @@ class StationaryObjectCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
@@ -153,7 +153,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._wmap = CarlaDataProvider.get_map()
         self.category = "ObjectCrossing"
         self.timeout = 60
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10

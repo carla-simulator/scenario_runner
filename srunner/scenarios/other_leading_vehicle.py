@@ -56,7 +56,7 @@ class OtherLeadingVehicle(BasicScenario):
         self.drive_distance_after_decelerate = 55
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 45
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.transform.location)
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self._other_actor_max_brake = 1.0
 
         self._traffic_light = None

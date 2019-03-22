@@ -186,11 +186,11 @@ class ChallengeEvaluator(object):
         # If ego_vehicle already exists, just update location
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
-            self.ego_vehicle = CarlaActorPool.setup_actor(config.trigger_point.model,
-                                                          config.trigger_point.transform,
+            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model,
+                                                          config.ego_vehicle.transform,
                                                           True)
         else:
-            self.ego_vehicle.set_transform(config.trigger_point.transform)
+            self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
         # setup sensors
         self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
@@ -362,7 +362,7 @@ class ChallengeEvaluator(object):
                     self.prepare_actors(config)
                     lat_ref, lon_ref = self._get_latlon_ref()
                     compact_route = self.compress_route(config.route.data,
-                                                        config.trigger_point.transform.location,
+                                                        config.trigger_point.location,
                                                         config.target.transform.location)
                     gps_route = self.location_route_to_gps(compact_route, lat_ref, lon_ref)
 

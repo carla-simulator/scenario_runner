@@ -93,6 +93,7 @@ class ScenarioConfiguration(object):
     """
 
     trigger_point = None
+    ego_vehicle = None
     other_actors = []
     town = None
     name = None
@@ -139,7 +140,9 @@ def parse_scenario_configuration(file_name, scenario_name):
         new_config.other_actors = []
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
-            new_config.trigger_point = ActorConfiguration(ego_vehicle)
+            ego_vehicle = ActorConfiguration(ego_vehicle)
+            new_config.ego_vehicle = ego_vehicle
+            new_config.trigger_point = ego_vehicle.transform
 
         for target in scenario.iter("target"):
             new_config.target = TargetConfiguration(target)
