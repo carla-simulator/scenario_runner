@@ -43,7 +43,7 @@ class VehicleTurningRight(BasicScenario):
         self.timeout = 60
 
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -56,7 +56,7 @@ class VehicleTurningRight(BasicScenario):
         """
         Custom initialization
         """
-        waypoint = self._wmap.get_waypoint(self.ego_vehicle.get_location())
+        waypoint = self._reference_waypoint
         _wp = generate_target_waypoint(waypoint, 1)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.7}
         _wp = _wp.next(10)[-1]
@@ -152,7 +152,7 @@ class VehicleTurningLeft(BasicScenario):
         self.timeout = 60
 
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
@@ -165,7 +165,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         Custom initialization
         """
-        waypoint = self._wmap.get_waypoint(self.ego_vehicle.get_location())
+        waypoint = self._reference_waypoint
         _wp = generate_target_waypoint(waypoint, -1)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.7}
         _wp = _wp.next(10)[-1]

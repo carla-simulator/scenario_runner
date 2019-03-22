@@ -45,7 +45,7 @@ class StationaryObjectCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
@@ -63,7 +63,7 @@ class StationaryObjectCrossing(BasicScenario):
         """
         _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
+        location, _ = get_location_in_distance(self._reference_waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.2}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
@@ -152,7 +152,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._wmap = CarlaDataProvider.get_map()
         self.category = "ObjectCrossing"
         self.timeout = 60
-        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.transform.location)
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
@@ -173,7 +173,7 @@ class DynamicObjectCrossing(BasicScenario):
         # cyclist transform
         _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
+        location, _ = get_location_in_distance(self._reference_waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
