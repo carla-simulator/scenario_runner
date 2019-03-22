@@ -145,9 +145,11 @@ class ScenarioRunner(object):
         # If ego_vehicle already exists, just update location
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
-            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model, config.ego_vehicle.transform, True)
+            self.ego_vehicle = CarlaActorPool.setup_actor(config.trigger_point.model,
+                                                          config.trigger_model.transform,
+                                                          True)
         else:
-            self.ego_vehicle.set_transform(config.ego_vehicle.transform)
+            self.ego_vehicle.set_transform(config.trigger_point.transform)
 
         # sync state
         CarlaDataProvider.get_world().wait_for_tick()
