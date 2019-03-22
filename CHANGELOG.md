@@ -1,4 +1,5 @@
 ## Latest changes
+* Updated the reference position for a scenario is now called trigger_point
 * Added universal access to the map without re-calling get_map()
 * Added criteria_enable flag to enable/disable criteria tree
 * Added multiple helper methods for generic scenario execution.
