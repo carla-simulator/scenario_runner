@@ -33,11 +33,12 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         """
         self.category = "SignalizedJunctionLeftTurn"
         self.timeout = 80     #Timeout of scenario in seconds
-        self._target_vel = 25
-        self._brake_value = 0.02
+        self._target_vel = 35
+        self._brake_value = 0.5
         self._drive_distance = 50
         self._ego_distance = 20
-        self._dist_to_intersection = 9
+        self._dist_to_intersection = 12
+        self._start_distance = 3
         self._traffic_light = None
 
         super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
@@ -69,11 +70,11 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         After 80 seconds, a timeout stops the scenario.
         """
         waypoint = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location())
-        wp_choice = waypoint.next(3)
+        wp_choice = waypoint.next(2)
         while not wp_choice[0].is_intersection:
             waypoint = wp_choice[0]
-            wp_choice = waypoint.next(3)
-        target_wp = choose_at_junction(waypoint, waypoint.next(3), direction=-1)
+            wp_choice = waypoint.next(2)
+        target_wp = choose_at_junction(waypoint, waypoint.next(2), direction=-1)
         start_other_trigger = InTriggerDistanceToLocation(
             self.ego_vehicle,
             target_wp.transform.location, self._dist_to_intersection)
@@ -88,7 +89,9 @@ class SignalizedJunctionLeftTurn(BasicScenario):
             target_waypoint = wp_choice[0]
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(5.0)
-
+        location, _ = get_location_in_distance(self.ego_vehicle, self._start_distance)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2)
+        move_other_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
         move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
         drive_actor = DriveDistance(self.other_actors[0], self._drive_distance)
         stop_other = StopVehicle(self.other_actors[0], self._brake_value)
@@ -97,8 +100,14 @@ class SignalizedJunctionLeftTurn(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         move_actor_parallel.add_child(move_actor)
         move_actor_parallel.add_child(drive_actor)
-
+        move_other_actor_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        move_other_actor_parallel.add_child(move_other_actor)
+        move_other_actor_parallel.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 10))
         sequence = py_trees.composites.Sequence()
+        sequence.add_child(start_condition)
+        sequence.add_child(move_other_actor_parallel)
+        sequence.add_child(stop_other)
         sequence.add_child(start_other_trigger)
         sequence.add_child(move_actor_parallel)
         sequence.add_child(stop_other)
