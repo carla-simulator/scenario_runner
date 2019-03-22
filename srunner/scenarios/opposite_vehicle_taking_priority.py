@@ -46,13 +46,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _ego_max_velocity_allowed = 20       # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4       # Average expected velocity [m/s]
     _ego_expected_driven_distance = 88   # Expected driven distance [m]
-    _ego_distance_to_traffic_light = 53  # Trigger distance to traffic light [m]
-    _ego_distance_to_drive = 35          # Allowed distance to drive
+    _ego_distance_to_traffic_light = 32  # Trigger distance to traffic light [m]
+    _ego_distance_to_drive = 40          # Allowed distance to drive
 
     # other vehicle
-    _other_actor_target_velocity = 15      # Target velocity of other vehicle
+    _other_actor_target_velocity = 30      # Target velocity of other vehicle
     _other_actor_max_brake = 1.0           # Maximum brake of other vehicle
-    _other_actor_distance = 30             # Distance the other vehicle should drive
+    _other_actor_distance = 50             # Distance the other vehicle should drive
 
     _traffic_light = None
 
@@ -118,10 +118,26 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
         sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
-                                                       15)
+                                                       40)
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(sync_arrival_stop)
 
+        
+        continue_driving = py_trees.composites.Parallel(
+            "ContinueDriving",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        
+        continue_driving_distance = DriveDistance(
+            self.other_actors[0],
+            self._other_actor_distance,
+            name="Distance")
+
+        continue_driving_timeout = TimeOut(5)
+        continue_driving.add_child(WaypointFollower(self.other_actors[0], self._other_actor_target_velocity))
+        continue_driving.add_child(continue_driving_distance)
+        continue_driving.add_child(continue_driving_timeout)
+        
+        
         keep_velocity_for_distance = py_trees.composites.Parallel(
             "Keep velocity for distance",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -147,7 +163,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(startcondition)
         sequence.add_child(sync_arrival_parallel)
-        sequence.add_child(keep_velocity_for_distance)
+        sequence.add_child(continue_driving)
+        #sequence.add_child(keep_velocity_for_distance)
         sequence.add_child(wait)
 
         return sequence
