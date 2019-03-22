@@ -146,7 +146,7 @@ class ScenarioRunner(object):
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
             self.ego_vehicle = CarlaActorPool.setup_actor(config.trigger_point.model,
-                                                          config.trigger_model.transform,
+                                                          config.trigger_point.transform,
                                                           True)
         else:
             self.ego_vehicle.set_transform(config.trigger_point.transform)
