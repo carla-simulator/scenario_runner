@@ -113,17 +113,12 @@ def generate_target_waypoint(waypoint, turn=0):
     wp_list = []
     threshold = math.radians(0.1)
     while True:
-        current_transform = waypoint.transform
-        current_location = current_transform.location
-        projected_location = current_location + \
-            carla.Location(
-                x=math.cos(math.radians(current_transform.rotation.yaw)),
-                y=math.sin(math.radians(current_transform.rotation.yaw)))
+
         wp_choice = waypoint.next(sampling_radius)
         #   Choose path at intersection
         if len(wp_choice) > 1:
             reached_junction = True
-            waypoint = choose_at_junction(current_location, projected_location, wp_choice, turn)
+            waypoint = choose_at_junction(waypoint, wp_choice, turn)
         else:
             waypoint = wp_choice[0]
         wp_list.append(waypoint)
@@ -144,16 +139,22 @@ def generate_target_waypoint(waypoint, turn=0):
     return wp_list[-1]
 
 
-def choose_at_junction(previous, current, next_choices, direction=0):
+def choose_at_junction(current_waypoint, next_choices, direction=0):
     """
     This function chooses the appropriate waypoint from next_choices based on direction
     """
-    current_vector = vector(previous, current)
+    current_transform = current_waypoint.transform
+    current_location = current_transform.location
+    projected_location = current_location + \
+        carla.Location(
+            x=math.cos(math.radians(current_transform.rotation.yaw)),
+            y=math.sin(math.radians(current_transform.rotation.yaw)))
+    current_vector = vector(current_location, projected_location)
     cross_list = []
     cross_to_waypoint = dict()
     for waypoint in next_choices:
         waypoint = waypoint.next(10)[0]
-        select_vector = vector(current, waypoint.transform.location)
+        select_vector = vector(current_location, waypoint.transform.location)
         cross = np.cross(current_vector, select_vector)[2]
         cross_list.append(cross)
         cross_to_waypoint[cross] = waypoint
