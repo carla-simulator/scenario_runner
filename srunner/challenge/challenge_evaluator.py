@@ -32,7 +32,6 @@ from srunner.scenarios.challenge_basic import *
 from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 
-
 # Dictionary of supported scenarios.
 # key = Name of config file in configs/
 # value = List as defined in the scenario module
