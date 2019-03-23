@@ -81,15 +81,16 @@ class BasicScenario(object):
         Override this method in child class to provide custom initialization.
         """
         for actor in config.other_actors:
-            new_actor = CarlaActorPool.request_new_actor(actor.model,
-                                                         actor.transform,
-                                                         hero=False,
-                                                         autopilot=actor.autopilot,
-                                                         random_location=actor.random_location)
-            if new_actor is None:
-                raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
+            for i in range(actor.amount):
+                new_actor = CarlaActorPool.request_new_actor(actor.model,
+                                                             actor.transform,
+                                                             hero=False,
+                                                             autopilot=actor.autopilot,
+                                                             random_location=actor.random_location)
+                if new_actor is None:
+                    raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
-            self.other_actors.append(new_actor)
+                self.other_actors.append(new_actor)
 
     def _create_behavior(self):
         """

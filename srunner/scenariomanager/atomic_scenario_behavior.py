@@ -793,6 +793,26 @@ class BasicAgentBehavior(AtomicBehavior):
         super(BasicAgentBehavior, self).terminate(new_status)
 
 
+class CheckCollisions(AtomicBehavior):
+    """
+
+    """
+    def __init__(self, name="CheckCollisions"):
+        super(CheckCollisions, self).__init__(name)
+
+        #shash = SpatialHash(50, 50)
+
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        for id, actor in CarlaActorPool. _carla_actor_pool.items():
+            if actor.autopilot:
+                pass
+
+        return new_status
+
 class Idle(AtomicBehavior):
 
     """
