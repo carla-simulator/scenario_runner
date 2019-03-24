@@ -893,3 +893,31 @@ class ActorDestroy(AtomicBehavior):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+
+class SetActorTransform(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to set the transform
+    of an actor.
+    """
+
+    def __init__(self, actor, transform, name="SetActorTransform"):
+        """
+        Init
+        """
+        super(SetActorTransform, self).__init__(name)
+        self._actor = actor
+        self._transform = transform
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Transform actor
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        self._actor.set_transform(self._transform)
+        new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
