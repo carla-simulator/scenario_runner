@@ -58,6 +58,8 @@ class OtherLeadingVehicle(BasicScenario):
         self._second_vehicle_speed = 45
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self._other_actor_max_brake = 1.0
+        self._first_actor_transform = None
+        self._second_actor_transform = None
 
         self._traffic_light = None
 
@@ -89,8 +91,23 @@ class OtherLeadingVehicle(BasicScenario):
         elif second_vehicle_waypoint.lane_change & carla.LaneChange.Right:
             second_vehicle_waypoint = first_vehicle_waypoint.get_right_lane()
 
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
-        second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_waypoint.transform)
+        self._first_actor_transform = first_vehicle_waypoint.transform
+        self._second_actor_transform = second_vehicle_waypoint.transform
+
+        first_vehicle_transform = carla.Transform(
+            carla.Location(first_vehicle_waypoint.transform.location.x,
+                           first_vehicle_waypoint.transform.location.y,
+                           first_vehicle_waypoint.transform.location.z - 5),
+            first_vehicle_waypoint.transform.rotation)
+
+        second_vehicle_transform = carla.Transform(
+            carla.Location(second_vehicle_waypoint.transform.location.x,
+                           second_vehicle_waypoint.transform.location.y,
+                           second_vehicle_waypoint.transform.location.z - 5),
+            second_vehicle_waypoint.transform.rotation)
+
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
+        second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_transform)
 
         self.other_actors.append(first_vehicle)
         self.other_actors.append(second_vehicle)
@@ -105,8 +122,11 @@ class OtherLeadingVehicle(BasicScenario):
         If this does not happen within 90 seconds, a timeout stops the scenario or the ego vehicle
         drives certain distance and stops the scenario.
         """
+
+        sequence = py_trees.composites.Sequence("Scenario behavior")
+
         # start condition
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         driving_in_same_direction = py_trees.composites.Parallel("All actors driving in same direction",
                                                                  policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         leading_actor_sequence_behavior = py_trees.composites.Sequence("Decelerating actor sequence behavior")
@@ -133,12 +153,18 @@ class OtherLeadingVehicle(BasicScenario):
         ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
 
         # Build behavior tree
-        root.add_child(ego_drive_distance)
-        root.add_child(driving_in_same_direction)
+        parallel_root.add_child(ego_drive_distance)
+        parallel_root.add_child(driving_in_same_direction)
         driving_in_same_direction.add_child(leading_actor_sequence_behavior)
         driving_in_same_direction.add_child(WaypointFollower(self.other_actors[1], self._second_vehicle_speed))
 
-        return root
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._first_actor_transform))
+        sequence.add_child(ActorTransformSetter(self.other_actors[1], self._second_actor_transform))
+        sequence.add_child(parallel_root)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
+        sequence.add_child(ActorDestroy(self.other_actors[1]))
+
+        return sequence
 
     def _create_test_criteria(self):
         """

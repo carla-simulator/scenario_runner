@@ -26,6 +26,7 @@ VEHICLE_TURNING_SCENARIOS = [
 
 
 class VehicleTurningRight(BasicScenario):
+
     """
     This class holds everything required for a simple object crash
     with prior vehicle action involving a vehicle and a cyclist.
@@ -44,6 +45,7 @@ class VehicleTurningRight(BasicScenario):
 
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._other_actor_transform = None
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -62,15 +64,24 @@ class VehicleTurningRight(BasicScenario):
         _wp = _wp.next(10)[-1]
         lane_width = _wp.lane_width
         location = _wp.transform.location
-        orientation_yaw = _wp.transform.rotation.yaw+offset["orientation"]
-        position_yaw = _wp.transform.rotation.yaw+offset["position"]
+        orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
+        position_yaw = _wp.transform.rotation.yaw + offset["position"]
         offset_location = carla.Location(
-            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
-            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset["z"]
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+
+        self._other_actor_transform = transform
+
+        actor_transform = carla.Transform(
+            carla.Location(self._other_actor_transform.location.x,
+                           self._other_actor_transform.location.y,
+                           self._other_actor_transform.location.z - 5),
+            self._other_actor_transform.rotation)
+
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -83,13 +94,13 @@ class VehicleTurningRight(BasicScenario):
         within 90 seconds, a timeout stops the scenario.
         """
         lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width+(1.10*lane_width)
+        lane_width = lane_width + (1.10 * lane_width)
 
         trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_traverse = DriveDistance(self.other_actors[0], 0.30*lane_width)
+        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70*lane_width)
+        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
         end_condition = TimeOut(5)
 
         # non leaf nodes
@@ -105,10 +116,12 @@ class VehicleTurningRight(BasicScenario):
 
         # building the tree
         root.add_child(scenario_sequence)
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
         scenario_sequence.add_child(trigger_distance)
         scenario_sequence.add_child(actor_ego_sync)
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
+        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         actor_ego_sync.add_child(actor_velocity)
         actor_ego_sync.add_child(actor_traverse)
@@ -153,6 +166,7 @@ class VehicleTurningLeft(BasicScenario):
 
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._other_actor_transform = None
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
@@ -171,15 +185,24 @@ class VehicleTurningLeft(BasicScenario):
         _wp = _wp.next(10)[-1]
         lane_width = _wp.lane_width
         location = _wp.transform.location
-        orientation_yaw = _wp.transform.rotation.yaw+offset["orientation"]
-        position_yaw = _wp.transform.rotation.yaw+offset["position"]
+        orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
+        position_yaw = _wp.transform.rotation.yaw + offset["position"]
         offset_location = carla.Location(
-            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
-            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset["z"]
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+
+        self._other_actor_transform = transform
+
+        actor_transform = carla.Transform(
+            carla.Location(self._other_actor_transform.location.x,
+                           self._other_actor_transform.location.y,
+                           self._other_actor_transform.location.z - 5),
+            self._other_actor_transform.rotation)
+
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -192,13 +215,13 @@ class VehicleTurningLeft(BasicScenario):
         within 90 seconds, a timeout stops the scenario.
         """
         lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width+(1.10*lane_width)
+        lane_width = lane_width + (1.10 * lane_width)
 
         trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_traverse = DriveDistance(self.other_actors[0], 0.30*lane_width)
+        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70*lane_width)
+        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
         end_condition = TimeOut(5)
 
         # non leaf nodes
@@ -216,10 +239,12 @@ class VehicleTurningLeft(BasicScenario):
 
         # building the tree
         root.add_child(scenario_sequence)
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
         scenario_sequence.add_child(trigger_distance)
         scenario_sequence.add_child(actor_ego_sync)
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
+        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         actor_ego_sync.add_child(actor_velocity)
         actor_ego_sync.add_child(actor_traverse)

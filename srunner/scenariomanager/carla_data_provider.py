@@ -128,6 +128,7 @@ class CarlaDataProvider(object):
             else:
                 raise KeyError(
                     "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
+
     @staticmethod
     def get_world():
         return CarlaDataProvider._world
@@ -136,7 +137,6 @@ class CarlaDataProvider(object):
     def set_world(world):
         CarlaDataProvider._world = world
         CarlaDataProvider._map = CarlaDataProvider._world.get_map()
-
 
     @staticmethod
     def get_map(world=None):

@@ -47,6 +47,8 @@ class ManeuverOppositeDirection(BasicScenario):
         self._start_distance = self._first_vehicle_location * 0.9
         self._opposite_speed = 30  # km/h
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
+        self._first_actor_transform = None
+        self._second_actor_transform = None
 
         super(ManeuverOppositeDirection, self).__init__(
             "ManeuverOppositeDirection",
@@ -64,8 +66,24 @@ class ManeuverOppositeDirection(BasicScenario):
         second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
         second_vehicle_waypoint = second_vehicle_waypoint.get_left_lane()
 
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_waypoint.transform)
-        second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_waypoint.transform)
+        self._first_actor_transform = first_vehicle_waypoint.transform
+
+        first_actor_transform = carla.Transform(
+            carla.Location(self._first_actor_transform.location.x,
+                           self._first_actor_transform.location.y,
+                           self._first_actor_transform.location.z - 5),
+            self._first_actor_transform.rotation)
+
+        self._second_actor_transform = second_vehicle_waypoint.transform
+
+        second_actor_transform = carla.Transform(
+            carla.Location(self._second_actor_transform.location.x,
+                           self._second_actor_transform.location.y,
+                           self._second_actor_transform.location.z - 5),
+            self._second_actor_transform.rotation)
+
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_actor_transform)
+        second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_actor_transform)
 
         self.other_actors.append(first_vehicle)
         self.other_actors.append(second_vehicle)
@@ -85,16 +103,23 @@ class ManeuverOppositeDirection(BasicScenario):
             self.other_actors[0], self.ego_vehicle, self._start_distance)
 
         # Non-leaf nodes
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         sequence = py_trees.composites.Sequence()
 
         # Building tree
-        root.add_child(ego_drive_distance)
-        root.add_child(sequence)
+        parallel_root.add_child(ego_drive_distance)
+        parallel_root.add_child(sequence)
         sequence.add_child(opposite_start_trigger)
         sequence.add_child(waypoint_follower)
 
-        return root
+        scenario_sequence = py_trees.composites.Sequence()
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._first_actor_transform))
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self._second_actor_transform))
+        scenario_sequence.add_child(parallel_root)
+        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+        scenario_sequence.add_child(ActorDestroy(self.other_actors[1]))
+
+        return scenario_sequence
 
     def _create_test_criteria(self):
         """

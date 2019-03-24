@@ -46,6 +46,7 @@ class StationaryObjectCrossing(BasicScenario):
         """
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._other_actor_transform = None
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
@@ -70,12 +71,21 @@ class StationaryObjectCrossing(BasicScenario):
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
-            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
-            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        static = CarlaActorPool.request_new_actor('static.prop.container', transform)
+
+        self._other_actor_transform = transform
+
+        actor_transform = carla.Transform(
+            carla.Location(self._other_actor_transform.location.x,
+                           self._other_actor_transform.location.y,
+                           self._other_actor_transform.location.z - 5),
+            self._other_actor_transform.rotation)
+
+        static = CarlaActorPool.request_new_actor('static.prop.container', actor_transform)
         static.set_simulate_physics(True)
         self.other_actors.append(static)
 
@@ -84,7 +94,7 @@ class StationaryObjectCrossing(BasicScenario):
         Only behavior here is to wait
         """
         lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width+(1.25*lane_width)
+        lane_width = lane_width + (1.25 * lane_width)
 
         # leaf nodes
         start_condition = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 10)
@@ -99,10 +109,12 @@ class StationaryObjectCrossing(BasicScenario):
 
         # building tree
         root.add_child(scenario_sequence)
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
         scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(actor_stand)
         scenario_sequence.add_child(actor_removed)
         scenario_sequence.add_child(end_condition)
+        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return root
 
@@ -126,6 +138,7 @@ class StationaryObjectCrossing(BasicScenario):
 
 
 class DynamicObjectCrossing(BasicScenario):
+
     """
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist,
@@ -154,6 +167,7 @@ class DynamicObjectCrossing(BasicScenario):
         self.category = "ObjectCrossing"
         self.timeout = 60
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._other_actor_transform = None
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
@@ -181,13 +195,21 @@ class DynamicObjectCrossing(BasicScenario):
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
-            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
-            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
 
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+        self._other_actor_transform = transform
+
+        actor_transform = carla.Transform(
+            carla.Location(self._other_actor_transform.location.x,
+                           self._other_actor_transform.location.y,
+                           self._other_actor_transform.location.z - 5),
+            self._other_actor_transform.rotation)
+
+        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
         self.other_actors.append(first_vehicle)
 
         # static object transform
@@ -199,7 +221,7 @@ class DynamicObjectCrossing(BasicScenario):
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
-        transform2 = carla.Transform(carla.Location(x_static, y_static, transform.location.z+0.01))
+        transform2 = carla.Transform(carla.Location(x_static, y_static, transform.location.z + 0.01))
         static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', transform2)
         static.set_simulate_physics(True)
         self.other_actors.append(static)
@@ -213,12 +235,12 @@ class DynamicObjectCrossing(BasicScenario):
         """
 
         lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width+(1.25*lane_width)
+        lane_width = lane_width + (1.25 * lane_width)
 
         # leaf nodes
         start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_drive = DriveDistance(self.other_actors[0], 0.3*lane_width)
+        actor_drive = DriveDistance(self.other_actors[0], 0.3 * lane_width)
         actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
                                                       self._other_actor_target_velocity)
         actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
@@ -239,6 +261,7 @@ class DynamicObjectCrossing(BasicScenario):
 
         # building tree
         root.add_child(scenario_sequence)
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
         scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
         scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
@@ -249,6 +272,7 @@ class DynamicObjectCrossing(BasicScenario):
         scenario_sequence.add_child(actor_remove)
         scenario_sequence.add_child(static_remove)
         scenario_sequence.add_child(end_condition)
+        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         keep_velocity.add_child(actor_velocity)
         keep_velocity.add_child(actor_drive)

@@ -131,7 +131,7 @@ def generate_target_waypoint(waypoint, turn=0):
                 wp_list[-3].transform.location,
                 wp_list[-2].transform.location)
             angle_wp = math.acos(
-                np.dot(v_1, v_2)/abs((np.linalg.norm(v_1)*np.linalg.norm(v_2))))
+                np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2))))
             if angle_wp < threshold:
                 break
         elif reached_junction and not wp_list[-1].is_intersection:
@@ -184,7 +184,7 @@ def get_intersection(ego_actor, other_actor):
         waypoint_choice = waypoint.next(1)
         #   Select the straighter path at intersection
         if len(waypoint_choice) > 1:
-            max_dot = -1*float('inf')
+            max_dot = -1 * float('inf')
             loc_projection = current_location + carla.Location(
                 x=math.cos(math.radians(waypoint.transform.rotation.yaw)),
                 y=math.sin(math.radians(waypoint.transform.rotation.yaw)))

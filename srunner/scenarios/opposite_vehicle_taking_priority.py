@@ -62,6 +62,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         and instantiate scenario manager
         """
 
+        self._other_actor_transform = None
+
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
                                                              ego_vehicle,
                                                              config,
@@ -87,6 +89,19 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         traffic_light_other.set_state(carla.TrafficLightState.Red)
         traffic_light_other.set_red_time(self.timeout)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        self._other_actor_transform = config.other_actors[0].transform
+        first_vehicle_transform = carla.Transform(
+            carla.Location(config.other_actors[0].transform.location.x,
+                           config.other_actors[0].transform.location.y,
+                           config.other_actors[0].transform.location.z - 5),
+            config.other_actors[0].transform.rotation)
+        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -145,10 +160,12 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
         sequence.add_child(startcondition)
         sequence.add_child(sync_arrival_parallel)
         sequence.add_child(keep_velocity_for_distance)
         sequence.add_child(wait)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
 

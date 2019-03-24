@@ -783,6 +783,7 @@ class Idle(AtomicBehavior):
 
 
 class WaypointFollower(AtomicBehavior):
+
     """
     This is an atomic behavior to follow waypoints indefinitely
     while maintaining a given speed or if given a waypoint plan,
@@ -895,18 +896,18 @@ class ActorDestroy(AtomicBehavior):
         return new_status
 
 
-class SetActorTransform(AtomicBehavior):
+class ActorTransformSetter(AtomicBehavior):
 
     """
     This class contains an atomic behavior to set the transform
     of an actor.
     """
 
-    def __init__(self, actor, transform, name="SetActorTransform"):
+    def __init__(self, actor, transform, name="ActorTransformSetter"):
         """
         Init
         """
-        super(SetActorTransform, self).__init__(name)
+        super(ActorTransformSetter, self).__init__(name)
         self._actor = actor
         self._transform = transform
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
