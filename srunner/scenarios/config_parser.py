@@ -141,7 +141,7 @@ def parse_scenario_configuration(file_name, scenario_name):
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
             new_config.ego_vehicle = ActorConfiguration(ego_vehicle)
-            new_config.trigger_point = ego_vehicle.transform
+            new_config.trigger_point = new_config.ego_vehicle.transform
 
         for target in scenario.iter("target"):
             new_config.target = TargetConfiguration(target)
