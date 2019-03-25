@@ -818,6 +818,7 @@ class RunningStopTest(Criterion):
     """
     PROXIMITY_THRESHOLD = 50.0 # meters
     SPEED_THRESHOLD = 0.1
+    WAYPOINT_STEP = 5.0 # meters
 
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
         """
@@ -876,7 +877,7 @@ class RunningStopTest(Criterion):
         list_locations = [current_location]
         waypoint = self._map.get_waypoint(current_location)
         for i in range(multi_step):
-            waypoint =  waypoint.next(5.0)[0]
+            waypoint =  waypoint.next(self.WAYPOINT_STEP)[0]
             list_locations.append(waypoint.transform.location)
 
         for actor_location in list_locations:
