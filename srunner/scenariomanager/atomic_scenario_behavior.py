@@ -411,8 +411,6 @@ class AccelerateToVelocity(AtomicBehavior):
         self._throttle_value = throttle_value
         self._target_velocity = target_velocity
 
-        # self._control.steering = 0
-
     def update(self):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
@@ -425,10 +423,9 @@ class AccelerateToVelocity(AtomicBehavior):
             else:
                 new_status = py_trees.common.Status.SUCCESS
                 self._control.throttle = 0
-            self._actor.apply_control(self._control)
-        else:
-            self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-            self._actor.apply_control(self._control)
+
+        self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -474,10 +471,9 @@ class KeepVelocity(AtomicBehavior):
                 self._control.throttle = 1.0
             else:
                 self._control.throttle = 0.0
-            self._actor.apply_control(self._control)
-        else:
-            self._actor.apply_control(self._control)
-            self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(self._control)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -487,7 +483,8 @@ class KeepVelocity(AtomicBehavior):
         to avoid further acceleration.
         """
         self._control.throttle = 0.0
-        self._actor.apply_control(self._control)
+        if self._actor is not None and self._actor.is_alive:
+            self._actor.apply_control(self._control)
         super(KeepVelocity, self).terminate(new_status)
 
 
@@ -585,8 +582,6 @@ class StopVehicle(AtomicBehavior):
         self._actor = actor
         self._brake_value = brake_value
 
-        # self._control.steering = 0
-
     def update(self):
         """
         Set brake to brake_value until reaching full stop
@@ -601,8 +596,10 @@ class StopVehicle(AtomicBehavior):
                 self._control.brake = 0
             self._actor.apply_control(self._control)
         else:
-            self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+            new_status = py_trees.common.Status.SUCCESS
             self._actor.apply_control(self._control)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 

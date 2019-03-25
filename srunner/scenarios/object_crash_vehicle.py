@@ -35,10 +35,6 @@ class StationaryObjectCrossing(BasicScenario):
 
     timeout = 60
 
-    # ego vehicle parameters
-    _ego_vehicle_velocity_allowed = 20
-    _ego_vehicle_distance_to_other = 35
-
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
@@ -46,6 +42,9 @@ class StationaryObjectCrossing(BasicScenario):
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
+
+        # ego vehicle parameters
+        self._ego_vehicle_distance_driven = 40
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
@@ -95,10 +94,9 @@ class StationaryObjectCrossing(BasicScenario):
         lane_width = lane_width+(1.25*lane_width)
 
         # leaf nodes
-        start_condition = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 15)
-        actor_stand = TimeOut(1)
+        actor_stand = TimeOut(15)
         actor_removed = ActorDestroy(self.other_actors[0])
-        end_condition = DriveDistance(self.ego_vehicle, 30)
+        end_condition = DriveDistance(self.ego_vehicle, self._ego_vehicle_distance_driven)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -107,8 +105,6 @@ class StationaryObjectCrossing(BasicScenario):
 
         # building tree
         root.add_child(scenario_sequence)
-        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-        scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(actor_stand)
         scenario_sequence.add_child(actor_removed)
         scenario_sequence.add_child(end_condition)
@@ -139,39 +135,29 @@ class DynamicObjectCrossing(BasicScenario):
 
     """
     This class holds everything required for a simple object crash
-    without prior vehicle action involving a vehicle and a cyclist,
+    without prior vehicle action involving a vehicle and a cyclist/pedestrian,
     The ego vehicle is passing through a road,
-    And encounters a cyclist crossing the road. Scenario 3.
+    And encounters a cyclist/pedestrian crossing the road.
     """
 
     category = "ObjectCrossing"
 
     timeout = 60
 
-    # ego vehicle parameters
-    _ego_vehicle_velocity_allowed = 10
-    _ego_vehicle_distance_driven = 50
-
-    # other vehicle parameters
-    _other_actor_target_velocity = 10
-    _other_actor_max_brake = 1.0
-    _time_to_reach = 12
-
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True, adversary_type=True):
         """
         Setup all relevant parameters and create scenario
         """
-        self._wmap = world.get_map()
-        self.category = "ObjectCrossing"
-        self.timeout = 60
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
-        self._other_actor_transform = None
+        self._wmap = CarlaDataProvider.get_map()
+        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
+        # ego vehicle parameters
+        self._ego_vehicle_distance_driven = 40
         # other vehicle parameters
         self._other_actor_target_velocity = 5
         self._other_actor_max_brake = 1.0
         self._time_to_reach = 12
-        self._object_flag = True
+        self._adversary_type = adversary_type  # flag to select either pedestrian (true) or cyclist (false)
         self._walker_yaw = 0
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
@@ -200,9 +186,10 @@ class DynamicObjectCrossing(BasicScenario):
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
 
-        if self._object_flag is True:
+        if self._adversary_type is True:
             walker = CarlaActorPool.request_new_actor('walker.*', transform)
             self._walker_yaw = orientation_yaw
+            self._other_actor_target_velocity = 2
             self.other_actors.append(walker)
         else:
             first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
@@ -235,15 +222,15 @@ class DynamicObjectCrossing(BasicScenario):
         # leaf nodes
         start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity, self._walker_yaw)
-        actor_drive = DriveDistance(self.other_actors[0], 0.3*lane_width)
+        actor_drive = DriveDistance(self.other_actors[0], 0.4*lane_width)
         actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
                                                       self._other_actor_target_velocity, self._walker_yaw)
         actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
         actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(1)
+        timeout_other_actor = TimeOut(15)
         actor_remove = ActorDestroy(self.other_actors[0])
         static_remove = ActorDestroy(self.other_actors[1])
-        end_condition = DriveDistance(self.ego_vehicle, 50)
+        end_condition = DriveDistance(self.ego_vehicle, self._ego_vehicle_distance_driven)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
