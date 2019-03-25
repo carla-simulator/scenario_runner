@@ -12,7 +12,6 @@ import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
@@ -64,8 +63,7 @@ class StationaryObjectCrossing(BasicScenario):
         """
         _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
-        wp_dist, _ = get_waypoint_in_distance(self._reference_waypoint, _start_distance)
-        location = wp_dist.transform.location
+        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.2}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
@@ -93,14 +91,14 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Only behavior here is to wait
         """
-        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width + (1.25 * lane_width)
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = lane_width+(1.25*lane_width)
 
         # leaf nodes
-        start_condition = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 10)
-        actor_stand = TimeOut(30)
+        start_condition = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 15)
+        actor_stand = TimeOut(1)
         actor_removed = ActorDestroy(self.other_actors[0])
-        end_condition = DriveDistance(self.ego_vehicle, 50)
+        end_condition = DriveDistance(self.ego_vehicle, 30)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -163,16 +161,18 @@ class DynamicObjectCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        self._wmap = CarlaDataProvider.get_map()
+        self._wmap = world.get_map()
         self.category = "ObjectCrossing"
         self.timeout = 60
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
 
         # other vehicle parameters
-        self._other_actor_target_velocity = 10
+        self._other_actor_target_velocity = 5
         self._other_actor_max_brake = 1.0
         self._time_to_reach = 12
+        self._object_flag = True
+        self._walker_yaw = 0
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
@@ -188,8 +188,7 @@ class DynamicObjectCrossing(BasicScenario):
         # cyclist transform
         _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
-        wp_dist, _ = get_waypoint_in_distance(self._reference_waypoint, _start_distance)
-        location = wp_dist.transform.location
+        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
@@ -201,19 +200,15 @@ class DynamicObjectCrossing(BasicScenario):
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
 
-        self._other_actor_transform = transform
-
-        actor_transform = carla.Transform(
-            carla.Location(self._other_actor_transform.location.x,
-                           self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z - 5),
-            self._other_actor_transform.rotation)
-
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
-        self.other_actors.append(first_vehicle)
-
+        if self._object_flag is True:
+            walker = CarlaActorPool.request_new_actor('walker.*', transform)
+            self._walker_yaw = orientation_yaw
+            self.other_actors.append(walker)
+        else:
+            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+            self.other_actors.append(first_vehicle)
         # static object transform
-        shift = 0.8
+        shift = 0.9
         x_ego = self.ego_vehicle.get_location().x
         y_ego = self.ego_vehicle.get_location().y
         x_cycle = transform.location.x
@@ -234,18 +229,18 @@ class DynamicObjectCrossing(BasicScenario):
         then after 60 seconds, a timeout stops the scenario
         """
 
-        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width + (1.25 * lane_width)
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = lane_width+(1.25*lane_width)
 
         # leaf nodes
         start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
-        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_drive = DriveDistance(self.other_actors[0], 0.3 * lane_width)
+        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity, self._walker_yaw)
+        actor_drive = DriveDistance(self.other_actors[0], 0.3*lane_width)
         actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
-                                                      self._other_actor_target_velocity)
+                                                      self._other_actor_target_velocity, self._walker_yaw)
         actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
         actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(10)
+        timeout_other_actor = TimeOut(1)
         actor_remove = ActorDestroy(self.other_actors[0])
         static_remove = ActorDestroy(self.other_actors[1])
         end_condition = DriveDistance(self.ego_vehicle, 50)
