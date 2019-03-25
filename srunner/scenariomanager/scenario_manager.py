@@ -275,6 +275,8 @@ class ScenarioManager(object):
         PENALTY_COLLISION_PEDESTRIAN = 30
         PENALTY_TRAFFIC_LIGHT = 10
         PENALTY_WRONG_WAY = 5
+        PENALTY_SIDEWALK_INVASION = 5
+        PENALTY_STOP = 7
 
         target_reached = False
         failure = False
@@ -300,6 +302,8 @@ class ScenarioManager(object):
             list_red_lights = []
             list_wrong_way = []
             list_route_dev = []
+            list_sidewalk_inv = []
+            list_stop_inf = []
             # analyze all traffic events
             for event in list_traffic_events:
                 if event.get_type() == TrafficEventType.COLLISION_STATIC:
@@ -337,6 +341,18 @@ class ScenarioManager(object):
                     if msg:
                         list_route_dev.append(event.get_message())
 
+                elif event.get_type() == TrafficEventType.ON_SIDEWALK_INFRACTION:
+                    score_penalty += PENALTY_SIDEWALK_INVASION
+                    msg = event.get_message()
+                    if msg:
+                        list_sidewalk_inv.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.STOP_INFRACTION:
+                    score_penalty += PENALTY_STOP
+                    msg = event.get_message()
+                    if msg:
+                        list_stop_inf.append(event.get_message())
+
                 elif event.get_type() == TrafficEventType.ROUTE_COMPLETED:
                     score_route = 100.0
                     target_reached = True
@@ -361,9 +377,19 @@ class ScenarioManager(object):
                 for item in list_red_lights:
                     return_message += "\n========== {}".format(item)
 
+            if list_stop_inf:
+                return_message += "\n===== STOP infractions:"
+                for item in list_stop_inf:
+                    return_message += "\n========== {}".format(item)
+
             if list_wrong_way:
                 return_message += "\n===== Wrong way:"
                 for item in list_wrong_way:
+                    return_message += "\n========== {}".format(item)
+
+            if list_sidewalk_inv:
+                return_message += "\n===== Sidewalk invasions:"
+                for item in list_sidewalk_inv:
                     return_message += "\n========== {}".format(item)
 
             if list_route_dev:

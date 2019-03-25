@@ -412,7 +412,7 @@ class OnSidewalkTest(Criterion):
     """
     This class contains an atomic test to detect sidewalk invasions.
     """
-    MAX_INVASION_ALLOWED = 4.0 # meters
+    MAX_INVASION_ALLOWED = 2.0 # meters
 
     def __init__(self, actor, optional=False, name="WrongLaneTest"):
         """
@@ -803,6 +803,138 @@ class RunningRedLightTest(Criterion):
                         self._target_traffic_light = traffic_light
                         self._in_red_light = True
                         break
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+class RunningStopTest(Criterion):
+
+    """
+    Check if an actor is running a stop sign
+    """
+    PROXIMITY_THRESHOLD = 50.0 # meters
+    SPEED_THRESHOLD = 0.1
+    WAYPOINT_STEP = 5.0 # meters
+
+    def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
+        """
+        """
+        super(RunningStopTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._world = CarlaDataProvider.get_world()
+        self._map = CarlaDataProvider.get_map()
+        self._list_stop_signs = []
+        self._target_stop_sign = None
+        self._stop_completed = False
+
+        all_actors = self._world.get_actors()
+        for actor in all_actors:
+            if 'traffic.stop' in actor.type_id:
+                self._list_stop_signs.append(actor)
+
+    @staticmethod
+    def point_inside_boundingbox(p, bb_center, bb_extent):
+        """
+        X
+        :param p:
+        :param bb_center:
+        :param bb_extent:
+        :return:
+        """
+
+        A = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y - bb_extent.y)
+        B = carla.Vector2D(bb_center.x + bb_extent.x, bb_center.y - bb_extent.y)
+        D = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y + bb_extent.y)
+        M = carla.Vector2D(p.x, p.y)
+
+        AB = B - A
+        AD = D - A
+        AM = M - A
+        am_ab = AM.x * AB.x + AM.y * AB.y
+        ab_ab = AB.x * AB.x + AB.y * AB.y
+        am_ad = AM.x * AD.x + AM.y * AD.y
+        ad_ad = AD.x * AD.x + AD.y * AD.y
+
+        return am_ab > 0 and am_ab < ab_ab and am_ad > 0 and am_ad < ad_ad
+
+
+    def is_actor_affected_by_stop(self, actor, stop, multi_step=2):
+        # first we run a fast coarse test
+        current_location = actor.get_location()
+        stop_location = stop.get_transform().location
+        if stop_location.distance(current_location) > self.PROXIMITY_THRESHOLD:
+            return False
+
+        stop_t = stop.get_transform()
+        transformed_tv = stop_t.transform(stop.trigger_volume.location)
+
+        # slower and accurate test based on waypoint's horizon and geometric test
+        list_locations = [current_location]
+        waypoint = self._map.get_waypoint(current_location)
+        for i in range(multi_step):
+            waypoint =  waypoint.next(self.WAYPOINT_STEP)[0]
+            list_locations.append(waypoint.transform.location)
+
+        for actor_location in list_locations:
+            if self.point_inside_boundingbox(actor_location, transformed_tv, stop.trigger_volume.extent):
+                return True
+
+        return False
+
+    def update(self):
+        """
+        Check if the actor is running a red light
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = self._actor.get_location()
+        if location is None:
+            return new_status
+
+        if not self._target_stop_sign:
+            # scan for stop signs
+            for stop_sign in self._list_stop_signs:
+                if self.is_actor_affected_by_stop(self._actor, stop_sign):
+                    # this stop sign is affecting the vehicle
+                    self._target_stop_sign = stop_sign
+                else:
+                    self._target_stop_sign = None
+                    self._stop_completed = False
+        else:
+            # if there is a stop sign affecting the vehicle
+            # we check for low speeds as a proxy of a stop
+            current_speed = CarlaDataProvider.get_velocity(self._actor)
+            if current_speed < self.SPEED_THRESHOLD:
+                self._stop_completed = True
+
+            # stop sign already identified
+            # is the vehicle still affected?
+            if not self.is_actor_affected_by_stop(self._actor, self._target_stop_sign):
+                if not self._stop_completed:
+                    self.test_status == "FAILURE"
+                    stop_location = self._target_stop_sign.get_transform().location
+                    running_stop_event = TrafficEvent(type=TrafficEventType.STOP_INFRACTION)
+                    running_stop_event.set_message("Agent ran a stop {} at (x={}, y={}, x={})".format(
+                        self._target_stop_sign.id,
+                        stop_location.x,
+                        stop_location.y,
+                        stop_location.z))
+                    running_stop_event.set_dict({'id': self._target_stop_sign.id,
+                                                 'x': stop_location.x,
+                                                 'y': stop_location.y,
+                                                 'z': stop_location.z})
+
+                    self.list_traffic_events.append(running_stop_event)
+
+                # reset state
+                self._target_stop_sign = None
+                self._stop_completed = False
+
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE

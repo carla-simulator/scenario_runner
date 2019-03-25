@@ -16,6 +16,7 @@ class TrafficEventType(Enum):
     TRAFFIC_LIGHT_INFRACTION = 7
     WRONG_WAY_INFRACTION = 8
     ON_SIDEWALK_INFRACTION = 9
+    STOP_INFRACTION = 10
 
 
 class TrafficEvent(object):
