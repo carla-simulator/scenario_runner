@@ -42,15 +42,15 @@ class ControlLoss(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         # ego vehicle parameters
-        self._no_of_jitter_actions = 20
+        self._no_of_jitter = 10
         self._noise_mean = 0      # Mean value of steering noise
-        self._noise_std = 0.05   # Std. deviation of steering noise
+        self._noise_std = 0.06   # Std. deviation of steering noise
         self._dynamic_mean_for_steer = 0.01
         self._dynamic_mean_for_throttle = 0.75
         self._abort_distance_to_intersection = 10
         self._start_distance = 20
         self._trigger_dist = 2
-        self._end_distance = 80
+        self._end_distance = 100
         self._ego_vehicle_max_steer = 0.0
         self._ego_vehicle_max_throttle = 1.0
         self._ego_vehicle_target_velocity = 15
@@ -104,12 +104,16 @@ class ControlLoss(BasicScenario):
         # start condition
         location, _ = get_location_in_distance(self.ego_vehicle, self._start_distance)
         start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 10.0)
-        noise = random.gauss(self._noise_mean, self._noise_std)
-        noise = abs(noise)
-        self._ego_vehicle_max_steer = min(0, -(noise - self._dynamic_mean_for_steer))
-        self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
-        # turn vehicle
-        turn = AddNoiseToVehicle(self.ego_vehicle, self._ego_vehicle_max_steer, self._ego_vehicle_max_throttle)
+        for i in range(self._no_of_jitter):
+            noise = random.gauss(self._noise_mean, self._noise_std)
+            noise = abs(noise)
+            self._ego_vehicle_max_steer = min(0, -(noise - self._dynamic_mean_for_steer))
+            self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
+            # turn vehicle
+            turn = AddNoiseToVehicle(self.ego_vehicle, self._ego_vehicle_max_steer,
+                                     self._ego_vehicle_max_throttle, name="jittering"+str(i))
+        jitter_action = py_trees.composites.Parallel("Jitter",
+                                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         # Abort jitter_sequence, if the vehicle is approaching an intersection
         jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
@@ -123,9 +127,10 @@ class ControlLoss(BasicScenario):
         jitter.add_child(turn)
         jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.loc_list[2], self._trigger_dist))
         jitter.add_child(turn)
-        jitter.add_child(jitter_abort)
+        jitter_action.add_child(jitter)
+        jitter_action.add_child(jitter_abort)
         sequence.add_child(start_condition)
-        sequence.add_child(jitter)
+        sequence.add_child(jitter_action)
         sequence.add_child(end_condition)
         return sequence
 
