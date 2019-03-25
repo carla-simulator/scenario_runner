@@ -49,6 +49,7 @@ class BasicScenario(object):
 
         # Initializing adversarial actors
         self._initialize_actors(config)
+        world.wait_for_tick()
 
         # Setup scenario
         if debug_mode:
