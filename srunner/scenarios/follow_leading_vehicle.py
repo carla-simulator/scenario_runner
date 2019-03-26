@@ -60,6 +60,7 @@ class FollowLeadingVehicle(BasicScenario):
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self._other_actor_max_brake = 1.0
         self._other_actor_stop_in_front_intersection = 20
+        self._other_actor_transform = None
 
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
                                                    ego_vehicle,
@@ -84,11 +85,16 @@ class FollowLeadingVehicle(BasicScenario):
         """
 
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
-        first_vehicle_transform = carla.Transform(
+        self._other_actor_transform = carla.Transform(
             carla.Location(first_vehicle_waypoint.transform.location.x,
                            first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z+1),
+                           first_vehicle_waypoint.transform.location.z + 1),
             first_vehicle_waypoint.transform.rotation)
+        first_vehicle_transform = carla.Transform(
+            carla.Location(self._other_actor_transform.location.x,
+                           self._other_actor_transform.location.y,
+                           self._other_actor_transform.location.z - 5),
+            self._other_actor_transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         self.other_actors.append(first_vehicle)
 
@@ -101,6 +107,10 @@ class FollowLeadingVehicle(BasicScenario):
         enough to the other actor to end the scenario.
         If this does not happen within 60 seconds, a timeout stops the scenario
         """
+
+        # to avoid the other actor blocking traffic, it was spawed elsewhere
+        # reset its pose to the required one
+        start_transform = ActorTransformSetter(self.other_actors[0], self._other_actor_transform)
 
         # let the other actor drive until next intersection
         # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
@@ -128,9 +138,11 @@ class FollowLeadingVehicle(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence.add_child(start_transform)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(stop)
         sequence.add_child(endcondition)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
 
@@ -169,12 +181,14 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._map = CarlaDataProvider.get_map()
-        self._first_vehicle_location = 25
-        self._second_vehicle_location = self._first_vehicle_location + 40
-        self._first_vehicle_speed = 40
-        self._second_vehicle_speed = 5
+        self._first_actor_location = 25
+        self._second_actor_location = self._first_actor_location + 41
+        self._first_actor_speed = 40
+        self._second_actor_speed = 5
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self._other_actor_max_brake = 1.0
+        self._first_actor_transform = None
+        self._second_actor_transform = None
 
         super(FollowLeadingVehicleWithObstacle, self).__init__("FollowLeadingVehicleWithObstacle",
                                                                ego_vehicle,
@@ -190,27 +204,38 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         Custom initialization
         """
 
-        first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
-        second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
-        first_vehicle_transform = carla.Transform(
-            carla.Location(first_vehicle_waypoint.transform.location.x,
-                           first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z+1),
-            first_vehicle_waypoint.transform.rotation)
-        yaw_1 = second_vehicle_waypoint.transform.rotation.yaw + 90
-        second_vehicle_transform = carla.Transform(
-            carla.Location(second_vehicle_waypoint.transform.location.x,
-                           second_vehicle_waypoint.transform.location.y,
-                           second_vehicle_waypoint.transform.location.z+1),
-            carla.Rotation(second_vehicle_waypoint.transform.rotation.pitch, yaw_1,
-                           second_vehicle_waypoint.transform.rotation.roll))
+        first_actor_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_actor_location)
+        second_actor_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_actor_location)
+        first_actor_transform = carla.Transform(
+            carla.Location(first_actor_waypoint.transform.location.x,
+                           first_actor_waypoint.transform.location.y,
+                           first_actor_waypoint.transform.location.z - 5),
+            first_actor_waypoint.transform.rotation)
+        self._first_actor_transform = carla.Transform(
+            carla.Location(first_actor_waypoint.transform.location.x,
+                           first_actor_waypoint.transform.location.y,
+                           first_actor_waypoint.transform.location.z + 1),
+            first_actor_waypoint.transform.rotation)
+        yaw_1 = second_actor_waypoint.transform.rotation.yaw + 90
+        second_actor_transform = carla.Transform(
+            carla.Location(second_actor_waypoint.transform.location.x,
+                           second_actor_waypoint.transform.location.y,
+                           second_actor_waypoint.transform.location.z - 5),
+            carla.Rotation(second_actor_waypoint.transform.rotation.pitch, yaw_1,
+                           second_actor_waypoint.transform.rotation.roll))
+        self._second_actor_transform = carla.Transform(
+            carla.Location(second_actor_waypoint.transform.location.x,
+                           second_actor_waypoint.transform.location.y,
+                           second_actor_waypoint.transform.location.z + 1),
+            carla.Rotation(second_actor_waypoint.transform.rotation.pitch, yaw_1,
+                           second_actor_waypoint.transform.rotation.roll))
 
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
-        second_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
-                                                          second_vehicle_transform)
+        first_actor = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_actor_transform)
+        second_actor = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                                                        second_actor_transform)
 
-        self.other_actors.append(first_vehicle)
-        self.other_actors.append(second_vehicle)
+        self.other_actors.append(first_actor)
+        self.other_actors.append(second_actor)
 
     def _create_behavior(self):
         """
@@ -231,7 +256,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         obstacle_clear_road = py_trees.composites.Parallel("Obstalce clearing road",
                                                            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         obstacle_clear_road.add_child(DriveDistance(self.other_actors[1], 4))
-        obstacle_clear_road.add_child(KeepVelocity(self.other_actors[1], self._second_vehicle_speed))
+        obstacle_clear_road.add_child(KeepVelocity(self.other_actors[1], self._second_actor_speed))
 
         stop_near_intersection = py_trees.composites.Parallel(
             "Waiting for end position near Intersection",
@@ -239,7 +264,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         stop_near_intersection.add_child(WaypointFollower(self.other_actors[0], 35))
         stop_near_intersection.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 20))
 
-        driving_to_next_intersection.add_child(WaypointFollower(self.other_actors[0], self._first_vehicle_speed))
+        driving_to_next_intersection.add_child(WaypointFollower(self.other_actors[0], self._first_actor_speed))
         driving_to_next_intersection.add_child(InTriggerDistanceToVehicle(self.other_actors[1],
                                                                           self.other_actors[0], 15))
 
@@ -256,6 +281,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._first_actor_transform))
+        sequence.add_child(ActorTransformSetter(self.other_actors[1], self._second_actor_transform))
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(StopVehicle(self.other_actors[0], self._other_actor_max_brake))
         sequence.add_child(TimeOut(3))
@@ -263,6 +290,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         sequence.add_child(stop_near_intersection)
         sequence.add_child(StopVehicle(self.other_actors[0], self._other_actor_max_brake))
         sequence.add_child(endcondition)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
+        sequence.add_child(ActorDestroy(self.other_actors[1]))
 
         return sequence
 

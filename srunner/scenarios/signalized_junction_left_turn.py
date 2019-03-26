@@ -28,12 +28,13 @@ class SignalizedJunctionLeftTurn(BasicScenario):
     Vehicle turning left at signalized junction scenario,
     Traffic Scenario 08.
     """
+
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
         self.category = "SignalizedJunctionLeftTurn"
-        self.timeout = 80     #Timeout of scenario in seconds
+        self.timeout = 80  # Timeout of scenario in seconds
         self._target_vel = 35
         self._brake_value = 0.5
         self._drive_distance = 50
@@ -41,6 +42,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._dist_to_intersection = 12
         self._start_distance = 3
         self._traffic_light = None
+        self._other_actor_transform = None
 
         super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
                                                          ego_vehicle,
@@ -62,6 +64,19 @@ class SignalizedJunctionLeftTurn(BasicScenario):
             sys.exit(-1)
         traffic_light_other.set_state(carla.TrafficLightState.Green)
         traffic_light_other.set_green_time(self.timeout)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        self._other_actor_transform = config.other_actors[0].transform
+        first_vehicle_transform = carla.Transform(
+            carla.Location(config.other_actors[0].transform.location.x,
+                           config.other_actors[0].transform.location.y,
+                           config.other_actors[0].transform.location.z - 5),
+            config.other_actors[0].transform.rotation)
+        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -104,7 +119,9 @@ class SignalizedJunctionLeftTurn(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         move_other_actor_parallel.add_child(move_other_actor)
         move_other_actor_parallel.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 10))
+
         sequence = py_trees.composites.Sequence()
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
         sequence.add_child(start_condition)
         sequence.add_child(move_other_actor_parallel)
         sequence.add_child(stop_other)
@@ -112,6 +129,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         sequence.add_child(move_actor_parallel)
         sequence.add_child(stop_other)
         sequence.add_child(end_condition)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
 

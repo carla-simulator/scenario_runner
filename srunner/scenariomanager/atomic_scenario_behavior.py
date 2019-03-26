@@ -783,6 +783,7 @@ class Idle(AtomicBehavior):
 
 
 class WaypointFollower(AtomicBehavior):
+
     """
     This is an atomic behavior to follow waypoints indefinitely
     while maintaining a given speed or if given a waypoint plan,
@@ -891,5 +892,33 @@ class ActorDestroy(AtomicBehavior):
             CarlaActorPool.remove_actor_by_id(self._actor.id)
             self._actor = None
             new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
+class ActorTransformSetter(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to set the transform
+    of an actor.
+    """
+
+    def __init__(self, actor, transform, name="ActorTransformSetter"):
+        """
+        Init
+        """
+        super(ActorTransformSetter, self).__init__(name)
+        self._actor = actor
+        self._transform = transform
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Transform actor
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        self._actor.set_transform(self._transform)
+        new_status = py_trees.common.Status.SUCCESS
 
         return new_status

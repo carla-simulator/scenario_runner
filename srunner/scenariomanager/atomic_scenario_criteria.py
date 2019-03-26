@@ -407,6 +407,7 @@ class ReachedRegionTest(Criterion):
 
         return new_status
 
+
 class OnSidewalkTest(Criterion):
 
     """
@@ -437,7 +438,7 @@ class OnSidewalkTest(Criterion):
         current_location = self._actor.get_location()
         closet_waypoint = self._map.get_waypoint(current_location)
         waypoint_adj_right = closet_waypoint.get_right_lane()
-        waypoint_adj_left =  closet_waypoint.get_left_lane()
+        waypoint_adj_left = closet_waypoint.get_left_lane()
 
         # skipping shoulders
         if waypoint_adj_right and waypoint_adj_right.lane_type == 'shoulder':
@@ -450,7 +451,6 @@ class OnSidewalkTest(Criterion):
             distance = current_location.distance(waypoint_adj_right.transform.location)
         elif waypoint_adj_left and waypoint_adj_left.lane_type == 'sidewalk':
             distance = current_location.distance(waypoint_adj_left.transform.location)
-
 
         if distance >= self.MAX_INVASION_ALLOWED:
             # we are not on a sidewalk
@@ -474,6 +474,7 @@ class OnSidewalkTest(Criterion):
         Cleanup sensor
         """
         super(OnSidewalkTest, self).terminate(new_status)
+
 
 class WrongLaneTest(Criterion):
 

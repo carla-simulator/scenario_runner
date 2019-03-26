@@ -46,12 +46,28 @@ class NoSignalJunctionCrossing(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
+
+        self._other_actor_transform = None
+
         super(NoSignalJunctionCrossing, self).__init__("NoSignalJunctionCrossing",
                                                        ego_vehicle,
                                                        config,
                                                        world,
                                                        debug_mode,
                                                        criteria_enable=False)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        self._other_actor_transform = config.other_actors[0].transform
+        first_vehicle_transform = carla.Transform(
+            carla.Location(config.other_actors[0].transform.location.x,
+                           config.other_actors[0].transform.location.y,
+                           config.other_actors[0].transform.location.z - 5),
+            config.other_actors[0].transform.rotation)
+        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -100,8 +116,7 @@ class NoSignalJunctionCrossing(BasicScenario):
         )
 
         # Creating non-leaf nodes
-        root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        root = py_trees.composites.Sequence()
         scenario_sequence = py_trees.composites.Sequence()
         sync_arrival_parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -110,11 +125,14 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         # Building tree
         root.add_child(scenario_sequence)
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
         scenario_sequence.add_child(start_other_trigger)
         scenario_sequence.add_child(sync_arrival_parallel)
         scenario_sequence.add_child(keep_velocity_other_parallel)
         scenario_sequence.add_child(stop_other)
         scenario_sequence.add_child(end_condition)
+        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(pass_through_trigger)
         keep_velocity_other_parallel.add_child(keep_velocity_other)

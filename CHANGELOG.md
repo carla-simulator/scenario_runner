@@ -11,6 +11,7 @@
 * Added wrong way test
 * Added new traffic event logger
 * Added running red light test
+* Added running stop test
 * Added various helper methods to allow generic scenario execution
 * Updated folder structure and naming convention in lowercase
 * Reworked scenario execution
@@ -31,11 +32,13 @@
     - WaypointFollower: follows auto-generated waypoints indefinitely or follows a given waypoint list
     - HandBrakeVehicle: sets the handbrake value for a given actor
     - ActorDestroy: destroys a given actor
+    - ActorTransformSetter: sets transform of given actor
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios
     - OppositeVehicleRunningRedLight: Updated to allow execution at different locations
 * Added NHTSA Traffic Scenarios
+    - Updated all traffic scenarios to let the other actors appear upon scenario triggering and removal on scenario end
     - ManeuverOppositeDirection: hero vehicle must maneuver in the opposite lane to pass a leading vehicle.
     - OtherLeadingVehicle: hero vehicle must react to the deceleration of leading vehicle and change lane to avoid collision and follow
                            the vehicle in changed lane
