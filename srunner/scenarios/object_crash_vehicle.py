@@ -29,7 +29,7 @@ class StationaryObjectCrossing(BasicScenario):
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
-    a stationary cyclist.
+    a stationary cyclist. (Traffic Scenario 3)
     """
 
     category = "ObjectCrossing"
@@ -143,7 +143,7 @@ class DynamicObjectCrossing(BasicScenario):
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist,
     The ego vehicle is passing through a road,
-    And encounters a cyclist crossing the road.
+    And encounters a cyclist crossing the road. Scenario 3.
     """
 
     category = "ObjectCrossing"

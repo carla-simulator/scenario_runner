@@ -29,7 +29,7 @@ class NoSignalJunctionCrossing(BasicScenario):
     """
     Implementation class for
     'Non-signalized junctions: crossing negotiation' scenario,
-    Traffic Scenario 10.
+    (Traffic Scenario 10).
     """
 
     category = "NoSignalJunction"

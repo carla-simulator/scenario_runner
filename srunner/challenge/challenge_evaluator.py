@@ -338,14 +338,12 @@ class ChallengeEvaluator(object):
             for config in scenario_configurations:
                 # create agent instance
                 self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
-
                 # Prepare scenario
                 print("Preparing scenario: " + config.name)
                 scenario_class = ChallengeEvaluator.get_scenario_class_or_fail(config.type)
 
                 client = carla.Client(args.host, int(args.port))
                 client.set_timeout(self.client_timeout)
-
                 # Once we have a client we can retrieve the world that is currently
                 # running.
                 self.world = client.load_world(config.town)
@@ -385,7 +383,7 @@ class ChallengeEvaluator(object):
                 # debug
                 if args.route_visible:
                     locations_route, _ = zip(*config.route.data)
-                    self.draw_waypoints(locations_route, vertical_shift=1.0, persistency=scenario.timeout)
+                    self.draw_waypoints(locations_route, vertical_shift=1.0, persistency=10)
 
                 self.manager.run_scenario(self.agent_instance)
 

@@ -41,7 +41,7 @@ class FollowLeadingVehicle(BasicScenario):
 
     """
     This class holds everything required for a simple "Follow a leading vehicle"
-    scenario involving two vehicles.
+    scenario involving two vehicles.  (Traffic Scenario 2)
     """
     category = "FollowLeadingVehicle"
 

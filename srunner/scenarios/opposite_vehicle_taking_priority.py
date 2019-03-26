@@ -35,7 +35,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     This class holds everything required for a scenario,
     in which an other vehicle takes priority from the ego
     vehicle, by running a red traffic light (while the ego
-    vehicle has green)
+    vehicle has green) (Traffic Scenario 7)
     """
 
     category = "RunningRedLight"

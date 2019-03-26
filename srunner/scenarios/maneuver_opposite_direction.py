@@ -28,8 +28,7 @@ MANEUVER_OPPOSITE_DIRECTION = [
 class ManeuverOppositeDirection(BasicScenario):
 
     """
-    Implementation class for Traffic Scenario 06,
-    "Vehicle Manuevering In Opposite Direction".
+    "Vehicle Maneuvering In Opposite Direction" (Traffic Scenario 06)
     """
 
     category = "ManeuverOppositeDirection"
