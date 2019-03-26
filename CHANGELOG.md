@@ -50,6 +50,8 @@
                                    straight initially from a lateral direction and avoid collision at a signalized intersection.
     - SignalizedJunctionLeftTurn : hero vehicle is turning left at signalized intersection, cuts across the path of another vehicle
                                    coming straight crossing from an opposite direction.
+* Traffic flow scenario rework
+    - Traffic scenario 06 modified to simulate a flow of vehicles
 
 ## CARLA Scenario_Runner 0.9.2
 
