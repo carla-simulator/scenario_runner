@@ -1,5 +1,7 @@
 ## Latest changes
-* Added test to detect vehicles running a stop 
+* Updated WaypointFollower behavior
+* Added detect_lane_obstacle() helper function which identifies if an obstacle is present in front of the reference actor
+* Added test to detect vehicles running a stop
 * Updated the reference position for a scenario is now called trigger_point
 * Added universal access to the map without re-calling get_map()
 * Added criteria_enable flag to enable/disable criteria tree
@@ -33,6 +35,8 @@
     - HandBrakeVehicle: sets the handbrake value for a given actor
     - ActorDestroy: destroys a given actor
     - ActorTransformSetter: sets transform of given actor
+    - ActorSource: creates actors indefinitely around a location if no other vehicles are present within a threshold
+    - ActorSink: indefinitely destroys vehicles that wander close to a location within a threshold
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios
