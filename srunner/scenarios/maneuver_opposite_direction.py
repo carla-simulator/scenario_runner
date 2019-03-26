@@ -36,9 +36,10 @@ class ManeuverOppositeDirection(BasicScenario):
     category = "ManeuverOppositeDirection"
     timeout = 120
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True, obstacle_type='barrier'):
         """
         Setup all relevant parameters and create scenario
+        obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
         """
 
         self._world = world
@@ -53,6 +54,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._sink_location = None
         self._blackboard_queue_name = 'ManeuverOppositeDirection/actor_flow_queue'
         self._queue = Blackboard().set(self._blackboard_queue_name, Queue())
+        self._obstacle_type = obstacle_type
 
         super(ManeuverOppositeDirection, self).__init__(
             "ManeuverOppositeDirection",
@@ -73,8 +75,12 @@ class ManeuverOppositeDirection(BasicScenario):
         first_actor_transform = carla.Transform(
             first_actor_waypoint.transform.location,
             first_actor_waypoint.transform.rotation)
-        first_actor_transform.rotation.yaw += 90
-        first_actor = CarlaActorPool.request_new_actor('static.prop.streetbarrier', first_actor_transform)
+        if self._obstacle_type == 'vehicle':
+            first_actor_model = 'vehicle.nissan.micra'
+        else:
+            first_actor_transform.rotation.yaw += 90
+            first_actor_model = 'static.prop.streetbarrier'
+        first_actor = CarlaActorPool.request_new_actor(first_actor_model, first_actor_transform)
         first_actor.set_simulate_physics(True)
         second_actor = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
 
