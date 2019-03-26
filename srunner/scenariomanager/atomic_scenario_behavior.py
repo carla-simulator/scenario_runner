@@ -15,6 +15,7 @@ The atomic behaviors are implemented with py_trees.
 
 import carla
 import py_trees
+from py_trees.blackboard import Blackboard
 
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
@@ -819,50 +820,61 @@ class WaypointFollower(AtomicBehavior):
     follows the given plan
     """
 
-    def __init__(self, actor, target_speed, plan=None, other_actors=None, avoid_collision=False, name="FollowWaypoints"):
+    def __init__(self, actor, target_speed, plan=None, blackboard_queue_name=None,
+                 avoid_collision=False, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
         super(WaypointFollower, self).__init__(name)
-        self._actor = actor
-        self._control = carla.VehicleControl()
+        self._actor_list = []
+        self._actor_list.append(actor)
         self._target_speed = target_speed
-        self._local_planner = None
+        self._local_planner_list = []
         self._plan = plan
-        self._other_actors = other_actors
+        self._blackboard_queue_name = blackboard_queue_name
+        if blackboard_queue_name is not None:
+            self._queue = Blackboard().get(blackboard_queue_name)
+        self._args_lateral_dict = {'K_P': 1.0, 'K_D': 0.01, 'K_I': 0.0, 'dt': 0.05}
         self._avoid_collision = avoid_collision
 
     def setup(self, timeout=5):
         """
         Delayed one-time initialization
         """
-        args_lateral_dict = {
-            'K_P': 1.0,
-            'K_D': 0.01,
-            'K_I': 0.0,
-            'dt':  0.05}
-        self._local_planner = LocalPlanner(
-            self._actor, opt_dict={
-                'target_speed': self._target_speed,
-                'lateral_control_dict': args_lateral_dict})
-        if self._plan is not None:
-            self._local_planner.set_global_plan(self._plan)
+        for actor in self._actor_list:
+            self._apply_local_planner(actor)
 
         return True
+
+    def _apply_local_planner(self, actor):
+        local_planner = LocalPlanner(
+            actor, opt_dict={
+                'target_speed': self._target_speed,
+                'lateral_control_dict': self._args_lateral_dict})
+        if self._plan is not None:
+            local_planner.set_global_plan(self._plan)
+        self._local_planner_list.append(local_planner)
 
     def update(self):
         """
         Run local planner, obtain and apply control to actor
         """
+
         new_status = py_trees.common.Status.RUNNING
-        if self._local_planner is not None:
-            control = self._local_planner.run_step(debug=False)
-        if self._other_actors is not None and \
-            detect_lane_obstacle(self._actor, self._other_actors) and \
-            self._avoid_collision:
-            control.throttle = 0.0
-            control.brake = 1.0
-        self._actor.apply_control(control)
+
+        if self._blackboard_queue_name is not None:
+            while not self._queue.empty():
+                actor = self._queue.get()
+                self._actor_list.append(actor)
+                self._apply_local_planner(actor)
+
+        for actor, local_planner in zip(self._actor_list, self._local_planner_list):
+            if actor is not None and actor.is_alive and local_planner is not None:
+                control = local_planner.run_step(debug=False)
+                if self._avoid_collision and detect_lane_obstacle(actor):
+                    control.throttle = 0.0
+                    control.brake = 1.0
+                actor.apply_control(control)
 
         return new_status
 
@@ -871,13 +883,16 @@ class WaypointFollower(AtomicBehavior):
         On termination of this behavior,
         the throttle, brake and steer should be set back to 0.
         """
-        self._control.throttle = 0.0
-        self._control.brake = 0.0
-        self._control.steer = 0.0
-        self._actor.apply_control(self._control)
-        if self._local_planner:
-            self._local_planner.reset_vehicle()
-            self._local_planner = None
+        control = carla.VehicleControl()
+        control.throttle = 0.0
+        control.brake = 0.0
+        control.steer = 0.0
+        for actor, local_planner in zip(self._actor_list, self._local_planner_list):
+            if actor is not None and actor.is_alive:
+                actor.apply_control(control)
+            if local_planner is not None:
+                local_planner.reset_vehicle()
+                local_planner = None
         super(WaypointFollower, self).terminate(new_status)
 
 
@@ -965,4 +980,54 @@ class ActorTransformSetter(AtomicBehavior):
         self._actor.set_transform(self._transform)
         new_status = py_trees.common.Status.SUCCESS
 
+class ActorSource(AtomicBehavior):
+    """
+    Implementation for a behavior that will indefinitely create actors
+    at a given transform if no other actor exists in a given radius
+    from the transform.
+    """
+
+    def __init__(self, world, actor_type_list, transform, threshold, blackboard_queue_name, name="ActorSource"):
+        """
+        Setup class members
+        """
+        super(ActorSource, self).__init__(name)
+        self._world = world
+        self._actor_types = actor_type_list
+        self._spawn_point = transform
+        self._threshold = threshold
+        self._queue = Blackboard().get(blackboard_queue_name)
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+        world_actors = self._world.get_actors().filter('vehicle.*')
+        spawn_point_blocked = False
+        for actor in world_actors:
+            if self._spawn_point.location.distance(actor.get_location()) < self._threshold:
+                spawn_point_blocked = True
+                break
+        if not spawn_point_blocked:
+            new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
+            self._queue.put(new_actor)
+        return new_status
+
+
+class ActorSink(AtomicBehavior):
+    """
+    Implementation for a behavior that will indefinitely destroy actors
+    that wander near a given location within a specified threshold.
+    """
+
+    def __init__(self, world, sink_location, threshold, name="ActorSink"):
+        """
+        Setup class members
+        """
+        super(ActorSink, self).__init__(name)
+        self._world = world
+        self._sink_location = sink_location
+        self._threshold = threshold
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+        CarlaActorPool.remove_all_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status

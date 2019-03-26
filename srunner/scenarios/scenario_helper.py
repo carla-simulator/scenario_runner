@@ -202,18 +202,20 @@ def get_intersection(ego_actor, other_actor):
     return current_location
 
 
-def detect_lane_obstacle(actor, other_actors):
+def detect_lane_obstacle(actor):
     """
     This function identifies if an obstacle is present in front of the reference actor
     """
+    world = CarlaDataProvider.get_world()
     wmap = CarlaDataProvider.get_map()
+    world_actors = world.get_actors()
     reference_vehicle_location = actor.get_location()
     reference_vehicle_waypoint = wmap.get_waypoint(reference_vehicle_location)
-    max_distance = 20
+    max_distance = 10
     is_hazard = False
-    for actor in other_actors:
+    for adversary in world_actors:
         # if the object is not in our lane it's not an obstacle
-        waypoint = wmap.get_waypoint(actor.get_location())
+        waypoint = wmap.get_waypoint(adversary.get_location())
         if waypoint.road_id == reference_vehicle_waypoint.road_id and \
                 waypoint.lane_id == reference_vehicle_waypoint.lane_id and\
                     is_within_distance_ahead(
@@ -222,5 +224,6 @@ def detect_lane_obstacle(actor, other_actors):
                             reference_vehicle_waypoint.transform.rotation.yaw,
                             max_distance):
             is_hazard = True
+            break
 
     return is_hazard
