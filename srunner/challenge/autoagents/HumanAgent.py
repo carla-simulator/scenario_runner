@@ -96,7 +96,6 @@ class HumanAgent(AutonomousAgent):
         self.current_control.throttle = 1.0
         self.current_control.brake = 0.0
         self.current_control.hand_brake = False
-
         self._hic = HumanInterface(self)
         self._thread = Thread(target=self._hic.run)
         self._thread.start()
@@ -128,8 +127,8 @@ class HumanAgent(AutonomousAgent):
                    {'type': 'sensor.camera.rgb', 'x':0.7, 'y':-0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
                     'yaw': -45.0, 'width': 300, 'height': 200, 'fov': 100, 'id': 'Left'},
 
-                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0,
-                    'width':300, 'height':200, 'fov':100, 'id': 'Right'},
+                   {'type': 'sensor.camera.rgb', 'x': 0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0,
+                    'width':300, 'height':200, 'fov': 100, 'id': 'Right'},
 
                    {'type': 'sensor.camera.rgb', 'x': -1.8, 'y': 0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
                     'yaw': 180.0, 'width': 300, 'height': 200, 'fov': 130, 'id': 'Rear'},
@@ -141,7 +140,6 @@ class HumanAgent(AutonomousAgent):
 
     def run_step(self, input_data):
         self.agent_engaged = True
-
         return self.current_control
 
     def destroy(self):

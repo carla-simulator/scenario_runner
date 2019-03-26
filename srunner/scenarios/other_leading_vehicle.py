@@ -25,7 +25,6 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenarios.config_parser import *
 from srunner.scenarios.scenario_helper import get_waypoint_in_distance
 
 

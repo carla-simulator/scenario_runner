@@ -14,7 +14,6 @@ from __future__ import print_function
 import sys
 import time
 import threading
-
 import py_trees
 
 import srunner

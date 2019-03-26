@@ -452,6 +452,7 @@ class OnSidewalkTest(Criterion):
         elif waypoint_adj_left and waypoint_adj_left.lane_type == 'sidewalk':
             distance = current_location.distance(waypoint_adj_left.transform.location)
 
+
         if distance >= self.MAX_INVASION_ALLOWED:
             # we are not on a sidewalk
             self._onsidewalk_active = False
@@ -474,7 +475,6 @@ class OnSidewalkTest(Criterion):
         Cleanup sensor
         """
         super(OnSidewalkTest, self).terminate(new_status)
-
 
 class WrongLaneTest(Criterion):
 

@@ -23,7 +23,13 @@ class RouteConfiguration(object):
     This class provides the basic  configuration for a route
     """
 
-    def __init__(self, node):
+    def __init__(self, route=None):
+        if route is not None:
+            self.data = route
+        else:
+            self.data = None
+
+    def parse_xml(self, node):
         self.data = []
 
         for waypoint in node.iter("waypoint"):
@@ -52,7 +58,19 @@ class TargetConfiguration(object):
         self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z))
 
 
-class ActorConfiguration(object):
+class ActorConfigurationData(object):
+    """
+    This is a configuration base class to hold model and transform attributes
+    """
+
+    def __init__(self, model, transform, autopilot=False, random=False):
+        self.model = model
+        self.transform = transform
+        self.autopilot = autopilot
+        self.random_location = random
+
+
+class ActorConfiguration(ActorConfigurationData):
 
     """
     This class provides the basic actor configuration for a
@@ -61,25 +79,25 @@ class ActorConfiguration(object):
     - Model (e.g. Lincoln MKZ2017)
     """
 
-    transform = None
-    model = None
-    autopilot = False
-    random_location = False
-
     def __init__(self, node):
+
         pos_x = float(set_attrib(node, 'x', 0))
         pos_y = float(set_attrib(node, 'y', 0))
         pos_z = float(set_attrib(node, 'z', 0))
         yaw = float(set_attrib(node, 'yaw', 0))
 
+        random_location = False
         if 'random_location' in node.keys():
-            self.random_location = True
+            random_location = True
 
+        autopilot = False
         if 'autopilot' in node.keys():
-            self.autopilot = True
+            autopilot = True
 
-        self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw))
-        self.model = set_attrib(node, 'model', 'vehicle.*')
+        super(ActorConfiguration, self).__init__(
+            set_attrib(node, 'model', 'vehicle.*'),
+            carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw)),
+            autopilot, random_location)
 
 
 class ScenarioConfiguration(object):
@@ -147,7 +165,8 @@ def parse_scenario_configuration(file_name, scenario_name):
             new_config.target = TargetConfiguration(target)
 
         for route in scenario.iter("route"):
-            new_config.route = RouteConfiguration(route)
+            route_conf = RouteConfiguration()
+            new_config.route = route_conf.parse_xml(route)
 
         for other_actor in scenario.iter("other_actor"):
             new_config.other_actors.append(ActorConfiguration(other_actor))
