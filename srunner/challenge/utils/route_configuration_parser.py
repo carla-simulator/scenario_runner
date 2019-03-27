@@ -21,7 +21,7 @@ def parse_annotations_file(annotation_filename):
     with open(annotation_filename, 'r') as f:
         annotation_dict = json.loads(f.read())
 
-    return annotation_dict['available_scenarios'][0]  # the file has a current maps name that is an one element vec
+    return annotation_dict['available_scenarios']  # the file has a current maps name that is an one element vec
 
 
 def parse_routes_file(route_filename):
