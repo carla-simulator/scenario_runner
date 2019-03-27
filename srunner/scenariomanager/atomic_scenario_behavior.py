@@ -821,7 +821,7 @@ class WaypointFollower(AtomicBehavior):
     """
 
     def __init__(self, actor, target_speed, plan=None, blackboard_queue_name=None,
-                 avoid_collision=False, name="FollowWaypoints"):
+                 avoid_collision=True, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
@@ -980,6 +980,8 @@ class ActorTransformSetter(AtomicBehavior):
         self._actor.set_transform(self._transform)
         new_status = py_trees.common.Status.SUCCESS
 
+        return new_status
+
 class ActorSource(AtomicBehavior):
     """
     Implementation for a behavior that will indefinitely create actors
@@ -1030,4 +1032,5 @@ class ActorSink(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         CarlaActorPool.remove_all_actors_in_surrounding(self._sink_location, self._threshold)
+        new_status = py_trees.common.Status.SUCCESS
         return new_status

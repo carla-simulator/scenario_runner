@@ -202,7 +202,7 @@ def get_intersection(ego_actor, other_actor):
     return current_location
 
 
-def detect_lane_obstacle(actor):
+def detect_lane_obstacle(actor, max_distance=10):
     """
     This function identifies if an obstacle is present in front of the reference actor
     """
@@ -211,7 +211,6 @@ def detect_lane_obstacle(actor):
     world_actors = world.get_actors()
     reference_vehicle_location = actor.get_location()
     reference_vehicle_waypoint = wmap.get_waypoint(reference_vehicle_location)
-    max_distance = 10
     is_hazard = False
     for adversary in world_actors:
         # if the object is not in our lane it's not an obstacle
