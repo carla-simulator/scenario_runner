@@ -40,17 +40,13 @@ class SignalizedJunctionRightTurn(BasicScenario):
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=80):
         """
         Setup all relevant parameters and create scenario
-        obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
         """
-
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
         self._target_vel = 25
         self._brake_value = 0.5
         self._ego_distance = 40
         self._traffic_light = None
-<<<<<<< HEAD
         self._other_actor_transform = None
+<<<<<<< HEAD
 <<<<<<< HEAD
         # Timeout of scenario in seconds
         self.timeout = timeout
@@ -64,6 +60,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._source_transform = self._map.get_waypoint(config.other_point.location)
         print(self._source_transform)
 >>>>>>> WIP:Flow of vehicles.
+=======
+>>>>>>> Rebased
 
 >>>>>>> WIP:Flow of vehicles.
         super(SignalizedJunctionRightTurn, self).__init__("HeroActorTurningRightAtSignalizedJunction",
@@ -77,8 +75,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
             sys.exit(-1)
-        self._traffic_light.set_state(carla.TrafficLightState.Green)
-        self._traffic_light.set_green_time(self.timeout)
+        self._traffic_light.set_state(carla.TrafficLightState.Red)
+        self._traffic_light.set_red_time(self.timeout)
         # other vehicle's traffic light
         traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
         if traffic_light_other is None:
@@ -99,10 +97,6 @@ class SignalizedJunctionRightTurn(BasicScenario):
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
         self.other_actors.append(first_vehicle)
-        sink_waypoint = self._source_transform.next(1)[0]
-        while not sink_waypoint.is_intersection:
-            sink_waypoint = sink_waypoint.next(1)[0]
-        self._sink_location = sink_waypoint.transform.location
 
     def _create_behavior(self):
         """
@@ -112,11 +106,6 @@ class SignalizedJunctionRightTurn(BasicScenario):
         passes intersection or later, without any collision.
         After 80 seconds, a timeout stops the scenario.
         """
-
-        actor_source = ActorSource(
-            self._world, ['vehicle.audi.tt', 'vehicle.tesla.model3', 'vehicle.nissan.micra'],
-            self._source_transform, 20, self._blackboard_queue_name)
-        actor_sink = ActorSink(self._world, self._sink_location, 10)
 
         location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
         crossing_point_dynamic = get_crossing_point(self.other_actors[0])
@@ -141,7 +130,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(1.0)
 
-        move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan, blackboard_queue_name=self._blackboard_queue_name)
+        move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
         waypoint_follower_end = InTriggerDistanceToLocation(
             self.other_actors[0], plan[-1][0].transform.location, 10)
 
@@ -156,12 +145,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
         # Behavior tree
         sequence = py_trees.composites.Sequence()
-<<<<<<< HEAD
         sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-=======
-        sequence.add_child(actor_source)
-        sequence.add_child(actor_sink)
->>>>>>> WIP:Flow of vehicles.
         sequence.add_child(sync_arrival_parallel)
         sequence.add_child(move_actor_parallel)
         sequence.add_child(stop)
