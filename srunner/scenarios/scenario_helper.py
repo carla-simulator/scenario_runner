@@ -17,7 +17,7 @@ import carla
 from agents.tools.misc import vector, is_within_distance_ahead
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-
+from srunner.scenariomanager.atomic_scenario_behavior import *
 
 def get_crossing_point(actor):
     """
@@ -116,6 +116,43 @@ def get_waypoint_in_distance(waypoint, distance):
         waypoint = waypoint_new
 
     return waypoint, traveled_distance
+
+
+def generate_target_waypoint_list(waypoint, turn=0):
+    """
+    This method follow waypoints to a junction and choose path based on turn input.
+    Turn input: LEFT -> -1, RIGHT -> 1, STRAIGHT -> 0
+    @returns a waypoint list from the starting point to the end point according to turn input
+    """
+    sampling_radius = 1
+    reached_junction = False
+    wp_list = []
+    threshold = math.radians(0.1)
+    plan = []
+    while True:
+	wp_choice = waypoint.next(2)
+	if len(wp_choice) > 1:
+	    reached_junction = True
+	    waypoint = choose_at_junction(waypoint, wp_choice, turn)
+	else:
+	    waypoint = wp_choice[0]
+	plan.append((waypoint, RoadOption.LANEFOLLOW))
+	#   End condition for the behavior
+	if turn != 0 and reached_junction and len(plan) >= 3:
+	    v_1 = vector(
+	        plan[-2][0].transform.location,
+	        plan[-1][0].transform.location)
+	    v_2 = vector(
+	        plan[-3][0].transform.location,
+	        plan[-2][0].transform.location)
+	    angle_wp = math.acos(
+	        np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2))))
+	    if angle_wp < threshold:
+	        break
+	elif reached_junction and not plan[-1][0].is_intersection:
+	    break
+
+    return plan, plan[-1][0]
 
 
 def generate_target_waypoint(waypoint, turn=0):
