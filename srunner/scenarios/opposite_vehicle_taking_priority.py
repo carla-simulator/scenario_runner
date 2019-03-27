@@ -136,50 +136,42 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                                                        41)
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(sync_arrival_stop)
-        
-        # ---------------- Generate plan for WaypointFollower ----------------
-        waypoint = self.other_actors[0].get_world().get_map().get_waypoint(self.other_actors[0].get_location())       
-        
-        turn = 0 # drive straight ahead
+
+        # Generate plan for WaypointFollower
+        waypoint = self.other_actors[0].get_world().get_map().get_waypoint(self.other_actors[0].get_location())
+
+        turn = 0  # drive straight ahead
         plan = []
-        
-        #reached_junction = False
-        #threshold = math.radians(0.1)
-        
-        # Selecting straight path at intersection
-        
-        #target_waypoint = generate_target_waypoint(
-        #    CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), turn)
-        
+
+        # generating waypoints until intersection (target_waypoint)
         plan, target_waypoint = generate_target_waypoint_list(
             CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), turn)
-        
-        
+
         # Generating waypoint list till next intersection
         wp_choice = target_waypoint.next(5.0)
         while len(wp_choice) == 1:
-            target_waypoint = wp_choice[0]            
+            target_waypoint = wp_choice[0]
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(5.0)
 
         continue_driving = py_trees.composites.Parallel(
             "ContinueDriving",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        
+
         continue_driving_waypoints = WaypointFollower(
             self.other_actors[0], self._other_actor_target_velocity, plan=plan)
-        
+
         continue_driving_distance = DriveDistance(
             self.other_actors[0],
             self._other_actor_distance,
             name="Distance")
-        
+
         continue_driving_timeout = TimeOut(10)
-        
+
         continue_driving.add_child(continue_driving_waypoints)
         continue_driving.add_child(continue_driving_distance)
         continue_driving.add_child(continue_driving_timeout)
-        
+
         # finally wait that ego vehicle drove a specific distance
         wait = DriveDistance(
             self.ego_vehicle,
