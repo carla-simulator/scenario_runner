@@ -89,7 +89,6 @@ class ChallengeBasic(BasicScenario):
 
         stop_criterion = RunningStopTest(self.ego_vehicle)
 
-
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 

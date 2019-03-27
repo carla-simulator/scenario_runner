@@ -37,6 +37,21 @@ def calculate_distance(location, other_location):
     return location.distance(other_location)
 
 
+def get_actor_control(actor):
+    """
+    Method to return the type of control to the actor.
+    """
+    control = None
+    actor_type = actor.type_id.split('.')[0]
+    if actor.type_id.split('.')[0] == 'vehicle':
+        control = carla.VehicleControl()
+        control.steering = 0
+    elif actor.type_id.split('.')[0] == 'walker':
+        control = carla.WalkerControl()
+
+    return control, actor_type
+
+
 class AtomicBehavior(py_trees.behaviour.Behaviour):
 
     """
@@ -381,19 +396,20 @@ class AccelerateToVelocity(AtomicBehavior):
     a given _target_velocity_
     """
 
-    def __init__(self, actor, throttle_value, target_velocity, name="Acceleration"):
+    def __init__(self, actor, throttle_value, target_velocity, walker_direction=0, name="Acceleration"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
         """
         super(AccelerateToVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._control = carla.VehicleControl()
+        self._control, self._type = get_actor_control(actor)
+        if self._type == 'walker':
+            self._control.speed = target_velocity
+            self._control.direction = carla.Rotation(0, walker_direction, 0).get_forward_vector()
         self._actor = actor
         self._throttle_value = throttle_value
         self._target_velocity = target_velocity
-
-        self._control.steering = 0
 
     def update(self):
         """
@@ -401,14 +417,15 @@ class AccelerateToVelocity(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(self._actor) < self._target_velocity:
-            self._control.throttle = self._throttle_value
-        else:
-            new_status = py_trees.common.Status.SUCCESS
-            self._control.throttle = 0
+        if self._type == 'vehicle':
+            if CarlaDataProvider.get_velocity(self._actor) < self._target_velocity:
+                self._control.throttle = self._throttle_value
+            else:
+                new_status = py_trees.common.Status.SUCCESS
+                self._control.throttle = 0
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -426,18 +443,22 @@ class KeepVelocity(AtomicBehavior):
           distance, etc.
     """
 
-    def __init__(self, actor, target_velocity, name="KeepVelocity"):
+    def __init__(self, actor, target_velocity, walker_direction=0, name="KeepVelocity"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
         """
         super(KeepVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._control = carla.VehicleControl()
         self._actor = actor
         self._target_velocity = target_velocity
 
-        self._control.steering = 0
+        self._control, self._type = get_actor_control(actor)
+        self._map = self._actor.get_world().get_map()
+        self._waypoint = self._map.get_waypoint(self._actor.get_location())
+        if self._type == 'walker':
+            self._control.speed = target_velocity
+            self._control.direction = carla.Rotation(0, walker_direction, 0).get_forward_vector()
 
     def update(self):
         """
@@ -445,13 +466,15 @@ class KeepVelocity(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(self._actor) < self._target_velocity:
-            self._control.throttle = 1.0
-        else:
-            self._control.throttle = 0.0
-
+        if self._type == 'vehicle':
+            if CarlaDataProvider.get_velocity(self._actor) < self._target_velocity:
+                self._control.throttle = 1.0
+            else:
+                self._control.throttle = 0.0
         self._actor.apply_control(self._control)
+
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
         return new_status
 
     def terminate(self, new_status):
@@ -460,7 +483,8 @@ class KeepVelocity(AtomicBehavior):
         to avoid further acceleration.
         """
         self._control.throttle = 0.0
-        self._actor.apply_control(self._control)
+        if self._actor is not None and self._actor.is_alive:
+            self._actor.apply_control(self._control)
         super(KeepVelocity, self).terminate(new_status)
 
 
@@ -552,11 +576,11 @@ class StopVehicle(AtomicBehavior):
         """
         super(StopVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._control = carla.VehicleControl()
+        self._control, self._type = get_actor_control(actor)
+        if self._type == 'walker':
+            self._control.speed = 0
         self._actor = actor
         self._brake_value = brake_value
-
-        self._control.steering = 0
 
     def update(self):
         """
@@ -564,14 +588,18 @@ class StopVehicle(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if CarlaDataProvider.get_velocity(self._actor) > EPSILON:
-            self._control.brake = self._brake_value
+        if self._type == 'vehicle':
+            if CarlaDataProvider.get_velocity(self._actor) > EPSILON:
+                self._control.brake = self._brake_value
+            else:
+                new_status = py_trees.common.Status.SUCCESS
+                self._control.brake = 0
+            self._actor.apply_control(self._control)
         else:
             new_status = py_trees.common.Status.SUCCESS
-            self._control.brake = 0
+            self._actor.apply_control(self._control)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-        self._actor.apply_control(self._control)
 
         return new_status
 
@@ -853,20 +881,23 @@ class HandBrakeVehicle(AtomicBehavior):
         """
         super(HandBrakeVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._control = carla.VehicleControl()
         self._vehicle = vehicle
+        self._control, self._type = get_actor_control(vehicle)
         self._hand_brake_value = hand_brake_value
 
     def update(self):
         """
         Set handbrake
         """
-        self._control.hand_brake = self._hand_brake_value
         new_status = py_trees.common.Status.SUCCESS
-
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
-        self._vehicle.apply_control(self._control)
+        if self._type == 'vehicle':
+            self._control.hand_brake = self._hand_brake_value
+            self._vehicle.apply_control(self._control)
+        else:
+            self._hand_brake_value = None
+            self.logger.debug("%s.update()[%s->%s]" %
+                              (self.__class__.__name__, self.status, new_status))
+            self._vehicle.apply_control(self._control)
 
         return new_status
 
