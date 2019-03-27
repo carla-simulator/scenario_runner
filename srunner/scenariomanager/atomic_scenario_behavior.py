@@ -989,58 +989,6 @@ class ActorSource(AtomicBehavior):
     from the transform.
     """
 
-    def __init__(self, world, actor_type_list, transform, threshold, blackboard_queue_name, name="ActorSource"):
-        """
-        Setup class members
-        """
-        super(ActorSource, self).__init__(name)
-        self._world = world
-        self._actor_types = actor_type_list
-        self._spawn_point = transform
-        self._threshold = threshold
-        self._queue = Blackboard().get(blackboard_queue_name)
-
-    def update(self):
-        new_status = py_trees.common.Status.RUNNING
-        world_actors = self._world.get_actors().filter('vehicle.*')
-        spawn_point_blocked = False
-        for actor in world_actors:
-            if self._spawn_point.location.distance(actor.get_location()) < self._threshold:
-                spawn_point_blocked = True
-                break
-        if not spawn_point_blocked:
-            new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
-            self._queue.put(new_actor)
-        return new_status
-
-
-class ActorSink(AtomicBehavior):
-    """
-    Implementation for a behavior that will indefinitely destroy actors
-    that wander near a given location within a specified threshold.
-    """
-
-    def __init__(self, world, sink_location, threshold, name="ActorSink"):
-        """
-        Setup class members
-        """
-        super(ActorSink, self).__init__(name)
-        self._world = world
-        self._sink_location = sink_location
-        self._threshold = threshold
-
-    def update(self):
-        new_status = py_trees.common.Status.RUNNING
-        CarlaActorPool.remove_all_actors_in_surrounding(self._sink_location, self._threshold)
-        return new_status
-
-class ActorSource(AtomicBehavior):
-    """
-    Implementation for a behavior that will indefinitely create actors
-    at a given transform if no other actor exists in a given radius
-    from the transform.
-    """
-
     def __init__(self, world, actor_type_list, transform, threshold, blackboard_queue_name, actor_limit=30, name="ActorSource"):
         """
         Setup class members
@@ -1064,8 +1012,8 @@ class ActorSource(AtomicBehavior):
                     break
             if not spawn_point_blocked:
                 new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
+                self._actor_limit -= 1
                 self._queue.put(new_actor)
-            self._actor_limit -= 1
         return new_status
 
 
@@ -1087,5 +1035,4 @@ class ActorSink(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         CarlaActorPool.remove_all_actors_in_surrounding(self._sink_location, self._threshold)
-        new_status = py_trees.common.Status.SUCCESS
         return new_status
