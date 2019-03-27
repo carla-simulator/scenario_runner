@@ -137,23 +137,15 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(sync_arrival_stop)
         
-        # ---------------- Generate plan for WaypointFollower ----------------
+        # Generate plan for WaypointFollower
         waypoint = self.other_actors[0].get_world().get_map().get_waypoint(self.other_actors[0].get_location())       
         
         turn = 0 # drive straight ahead
         plan = []
         
-        #reached_junction = False
-        #threshold = math.radians(0.1)
-        
-        # Selecting straight path at intersection
-        
-        #target_waypoint = generate_target_waypoint(
-        #    CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), turn)
-        
+        # generating waypoints until intersection (target_waypoint)
         plan, target_waypoint = generate_target_waypoint_list(
             CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), turn)
-        
         
         # Generating waypoint list till next intersection
         wp_choice = target_waypoint.next(5.0)
@@ -161,6 +153,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             target_waypoint = wp_choice[0]            
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(5.0)
+
 
         continue_driving = py_trees.composites.Parallel(
             "ContinueDriving",
