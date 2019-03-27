@@ -74,7 +74,6 @@ class ManeuverOppositeDirection(BasicScenario):
         first_actor_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         second_actor_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
         second_actor_waypoint = second_actor_waypoint.get_left_lane()
-        self._second_actor_transform = second_actor_waypoint.transform
 
         first_actor_transform = carla.Transform(
             first_actor_waypoint.transform.location,
@@ -83,7 +82,6 @@ class ManeuverOppositeDirection(BasicScenario):
             first_actor_model = 'vehicle.nissan.micra'
         else:
             first_actor_transform.rotation.yaw += 90
-            self._first_actor_transform = first_actor_transform
             first_actor_model = 'static.prop.streetbarrier'
             second_prop_waypoint = first_actor_waypoint.next(2.0)[0]
             position_yaw = second_prop_waypoint.transform.rotation.yaw + 90
@@ -92,7 +90,6 @@ class ManeuverOppositeDirection(BasicScenario):
                 0.50*second_prop_waypoint.lane_width*math.sin(math.radians(position_yaw)))
             second_prop_transform = carla.Transform(
                 second_prop_waypoint.transform.location+offset_location, first_actor_transform.rotation)
-            self._third_actor_transform = second_prop_transform
             second_prop_actor = CarlaActorPool.request_new_actor(first_actor_model, second_prop_transform)
             second_prop_actor.set_simulate_physics(True)
         first_actor = CarlaActorPool.request_new_actor(first_actor_model, first_actor_transform)
@@ -109,6 +106,10 @@ class ManeuverOppositeDirection(BasicScenario):
         while not sink_waypoint.is_intersection:
             sink_waypoint = sink_waypoint.next(1)[0]
         self._sink_location = sink_waypoint.transform.location
+
+        self._first_actor_transform = first_actor_transform
+        self._second_actor_transform = second_actor_waypoint.transform
+        self._third_actor_transform = second_prop_transform
 
     def _create_behavior(self):
         """
@@ -129,7 +130,6 @@ class ManeuverOppositeDirection(BasicScenario):
 
         # Non-leaf nodes
         parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sequence = py_trees.composites.Sequence()
 
         # Building tree
         parallel_root.add_child(ego_drive_distance)
