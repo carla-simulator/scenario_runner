@@ -11,7 +11,7 @@ weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 """
 
-from Queue import Queue
+from queue import Queue
 
 import py_trees
 
@@ -80,12 +80,22 @@ class ManeuverOppositeDirection(BasicScenario):
         else:
             first_actor_transform.rotation.yaw += 90
             first_actor_model = 'static.prop.streetbarrier'
+            second_prop_waypoint = first_actor_waypoint.next(2.0)[0]
+            position_yaw = second_prop_waypoint.transform.rotation.yaw + 90
+            offset_location = carla.Location(
+                0.50*second_prop_waypoint.lane_width*math.cos(math.radians(position_yaw)),
+                0.50*second_prop_waypoint.lane_width*math.sin(math.radians(position_yaw)))
+            second_prop_transform = carla.Transform(
+                second_prop_waypoint.transform.location+offset_location, first_actor_transform.rotation)
+            second_prop_actor = CarlaActorPool.request_new_actor(first_actor_model, second_prop_transform)
+            second_prop_actor.set_simulate_physics(True)
         first_actor = CarlaActorPool.request_new_actor(first_actor_model, first_actor_transform)
         first_actor.set_simulate_physics(True)
         second_actor = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
 
         self.other_actors.append(first_actor)
         self.other_actors.append(second_actor)
+        self.other_actors.append(second_prop_actor)
 
         self._source_transform = second_actor_waypoint.transform
         sink_waypoint = second_actor_waypoint.next(1)[0]
