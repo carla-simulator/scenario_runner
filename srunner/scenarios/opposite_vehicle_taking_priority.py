@@ -45,12 +45,12 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     # ego vehicle parameters
     _ego_max_velocity_allowed = 20       # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4       # Average expected velocity [m/s]
-    _ego_expected_driven_distance = 88   # Expected driven distance [m]
+    _ego_expected_driven_distance = 70   # Expected driven distance [m]
     _ego_distance_to_traffic_light = 32  # Trigger distance to traffic light [m]
     _ego_distance_to_drive = 40          # Allowed distance to drive
 
     # other vehicle
-    _other_actor_target_velocity = 30      # Target velocity of other vehicle
+    _other_actor_target_velocity = 35      # Target velocity of other vehicle
     _other_actor_max_brake = 1.0           # Maximum brake of other vehicle
     _other_actor_distance = 50             # Distance the other vehicle should drive
 
@@ -98,7 +98,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(config.other_actors[0].transform.location.x,
                            config.other_actors[0].transform.location.y,
-                           config.other_actors[0].transform.location.z - 5),
+                           config.other_actors[0].transform.location.z),
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
         self.other_actors.append(first_vehicle)
@@ -133,41 +133,53 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
         sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
                                                        self.ego_vehicle,
-                                                       40)
+                                                       41)
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(sync_arrival_stop)
-
         
+        # ---------------- Generate plan for WaypointFollower ----------------
+        waypoint = self.other_actors[0].get_world().get_map().get_waypoint(self.other_actors[0].get_location())       
+        
+        turn = 0 # drive straight ahead
+        plan = []
+        
+        #reached_junction = False
+        #threshold = math.radians(0.1)
+        
+        # Selecting straight path at intersection
+        
+        #target_waypoint = generate_target_waypoint(
+        #    CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), turn)
+        
+        plan, target_waypoint = generate_target_waypoint_list(
+            CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), turn)
+        
+        
+        # Generating waypoint list till next intersection
+        wp_choice = target_waypoint.next(5.0)
+        while len(wp_choice) == 1:
+            target_waypoint = wp_choice[0]            
+            plan.append((target_waypoint, RoadOption.LANEFOLLOW))
+            wp_choice = target_waypoint.next(5.0)
+
         continue_driving = py_trees.composites.Parallel(
             "ContinueDriving",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        
+        continue_driving_waypoints = WaypointFollower(
+            self.other_actors[0], self._other_actor_target_velocity, plan=plan)
         
         continue_driving_distance = DriveDistance(
             self.other_actors[0],
             self._other_actor_distance,
             name="Distance")
-
-        continue_driving_timeout = TimeOut(5)
-        continue_driving.add_child(WaypointFollower(self.other_actors[0], self._other_actor_target_velocity))
+        
+        continue_driving_timeout = TimeOut(10)
+        
+        continue_driving.add_child(continue_driving_waypoints)
         continue_driving.add_child(continue_driving_distance)
         continue_driving.add_child(continue_driving_timeout)
         
-        
-        keep_velocity_for_distance = py_trees.composites.Parallel(
-            "Keep velocity for distance",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity = KeepVelocity(
-            self.other_actors[0],
-            self._other_actor_target_velocity)
-        keep_velocity_distance = DriveDistance(
-            self.other_actors[0],
-            self._other_actor_distance,
-            name="Distance")
-        keep_velocity_timeout = TimeOut(5)
-        keep_velocity_for_distance.add_child(keep_velocity)
-        keep_velocity_for_distance.add_child(keep_velocity_distance)
-        keep_velocity_for_distance.add_child(keep_velocity_timeout)
-
         # finally wait that ego vehicle drove a specific distance
         wait = DriveDistance(
             self.ego_vehicle,
@@ -180,7 +192,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sequence.add_child(startcondition)
         sequence.add_child(sync_arrival_parallel)
         sequence.add_child(continue_driving)
-        #sequence.add_child(keep_velocity_for_distance)
         sequence.add_child(wait)
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 
