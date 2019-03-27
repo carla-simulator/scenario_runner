@@ -130,8 +130,8 @@ def generate_target_waypoint(waypoint, turn=0):
             v_2 = vector(
                 wp_list[-3].transform.location,
                 wp_list[-2].transform.location)
-            angle_wp = math.acos(
-                np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2))))
+            angle_wp = math.acos(min(1.0,
+                                     np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2)))))
             if angle_wp < threshold:
                 break
         elif reached_junction and not wp_list[-1].is_intersection:
