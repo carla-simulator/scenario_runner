@@ -47,6 +47,7 @@ class CarlaDataProvider(object):
     _traffic_light_map = dict()
     _map = None
     _world = None
+    _sync_flag = False
 
     @staticmethod
     def register_actor(actor):
@@ -134,8 +135,14 @@ class CarlaDataProvider(object):
         return CarlaDataProvider._world
 
     @staticmethod
+    def is_sync_mode():
+        return CarlaDataProvider._sync_flag
+
+    @staticmethod
     def set_world(world):
         CarlaDataProvider._world = world
+        settings = world.get_settings()
+        CarlaDataProvider._sync_flag = settings.synchronous_mode
         CarlaDataProvider._map = CarlaDataProvider._world.get_map()
 
     @staticmethod

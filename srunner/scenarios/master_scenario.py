@@ -15,7 +15,7 @@ from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
 
 
-CHALLENGE_BASIC_SCENARIOS = ["ChallengeBasic"]
+CHALLENGE_BASIC_SCENARIOS = ["MasterScenario"]
 
 
 class MasterScenario(BasicScenario):
@@ -45,7 +45,7 @@ class MasterScenario(BasicScenario):
         else:
             raise ValueError("Master scenario must have a route")
 
-        super(MasterScenario, self).__init__("ChallengeBasic", ego_vehicle=ego_vehicle, config=config,
+        super(MasterScenario, self).__init__("MasterScenario", ego_vehicle=ego_vehicle, config=config,
                                              world=world, debug_mode=debug_mode,
                                              terminate_on_failure=True, criteria_enable=criteria_enable)
 
@@ -83,7 +83,11 @@ class MasterScenario(BasicScenario):
 
         wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
 
+        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicle)
+
         red_light_criterion = RunningRedLightTest(self.ego_vehicle)
+
+        stop_criterion = RunningStopTest(self.ego_vehicle)
 
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -93,7 +97,9 @@ class MasterScenario(BasicScenario):
         parallel_criteria.add_child(target_criterion)
         parallel_criteria.add_child(route_criterion)
         parallel_criteria.add_child(wrong_way_criterion)
+        parallel_criteria.add_child(onsidewalk_criterion)
         parallel_criteria.add_child(red_light_criterion)
+        parallel_criteria.add_child(stop_criterion)
 
         return parallel_criteria
 
