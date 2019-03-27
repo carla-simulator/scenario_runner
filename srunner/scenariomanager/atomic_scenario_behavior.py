@@ -979,8 +979,8 @@ class ActorTransformSetter(AtomicBehavior):
 
         self._actor.set_transform(self._transform)
         new_status = py_trees.common.Status.SUCCESS
-
         return new_status
+
 
 class ActorSource(AtomicBehavior):
     """
@@ -1012,8 +1012,8 @@ class ActorSource(AtomicBehavior):
                     break
             if not spawn_point_blocked:
                 new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
+                self._actor_limit -= 1
                 self._queue.put(new_actor)
-            self._actor_limit -= 1
         return new_status
 
 
@@ -1035,5 +1035,4 @@ class ActorSink(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         CarlaActorPool.remove_all_actors_in_surrounding(self._sink_location, self._threshold)
-        new_status = py_trees.common.Status.SUCCESS
         return new_status
