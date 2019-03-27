@@ -413,7 +413,7 @@ class OnSidewalkTest(Criterion):
     """
     This class contains an atomic test to detect sidewalk invasions.
     """
-    MAX_INVASION_ALLOWED = 2.0 # meters
+    MAX_INVASION_ALLOWED = 2.0  # meters
 
     def __init__(self, actor, optional=False, name="WrongLaneTest"):
         """
@@ -812,14 +812,15 @@ class RunningRedLightTest(Criterion):
 
         return new_status
 
+
 class RunningStopTest(Criterion):
 
     """
     Check if an actor is running a stop sign
     """
-    PROXIMITY_THRESHOLD = 50.0 # meters
+    PROXIMITY_THRESHOLD = 50.0  # meters
     SPEED_THRESHOLD = 0.1
-    WAYPOINT_STEP = 5.0 # meters
+    WAYPOINT_STEP = 5.0  # meters
 
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
         """
@@ -863,7 +864,6 @@ class RunningStopTest(Criterion):
 
         return am_ab > 0 and am_ab < ab_ab and am_ad > 0 and am_ad < ad_ad
 
-
     def is_actor_affected_by_stop(self, actor, stop, multi_step=2):
         # first we run a fast coarse test
         current_location = actor.get_location()
@@ -878,7 +878,7 @@ class RunningStopTest(Criterion):
         list_locations = [current_location]
         waypoint = self._map.get_waypoint(current_location)
         for i in range(multi_step):
-            waypoint =  waypoint.next(self.WAYPOINT_STEP)[0]
+            waypoint = waypoint.next(self.WAYPOINT_STEP)[0]
             list_locations.append(waypoint.transform.location)
 
         for actor_location in list_locations:
@@ -935,7 +935,6 @@ class RunningStopTest(Criterion):
                 # reset state
                 self._target_stop_sign = None
                 self._stop_completed = False
-
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
