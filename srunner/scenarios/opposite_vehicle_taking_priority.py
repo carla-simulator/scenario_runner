@@ -192,6 +192,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sequence.add_child(startcondition)
         sequence.add_child(sync_arrival_parallel)
         sequence.add_child(continue_driving)
+
         sequence.add_child(wait)
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 
