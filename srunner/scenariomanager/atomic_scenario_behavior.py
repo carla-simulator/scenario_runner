@@ -821,7 +821,7 @@ class WaypointFollower(AtomicBehavior):
     """
 
     def __init__(self, actor, target_speed, plan=None, blackboard_queue_name=None,
-                 avoid_collision=True, name="FollowWaypoints"):
+                 avoid_collision=False, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
