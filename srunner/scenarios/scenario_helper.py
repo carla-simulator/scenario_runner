@@ -218,11 +218,11 @@ def detect_lane_obstacle(actor, max_distance=10):
         waypoint = wmap.get_waypoint(adversary.get_location())
         if waypoint.road_id == reference_vehicle_waypoint.road_id and \
                 waypoint.lane_id == reference_vehicle_waypoint.lane_id and\
-                    is_within_distance_ahead(
-                            waypoint.transform.location,
-                            reference_vehicle_waypoint.transform.location,
-                            reference_vehicle_waypoint.transform.rotation.yaw,
-                            max_distance):
+        is_within_distance_ahead(
+                waypoint.transform.location,
+                reference_vehicle_waypoint.transform.location,
+                reference_vehicle_waypoint.transform.rotation.yaw,
+                max_distance):
             is_hazard = True
             break
 
