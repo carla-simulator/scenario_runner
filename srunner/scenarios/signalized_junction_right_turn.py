@@ -93,6 +93,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
                            config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+
         self.other_actors.append(first_vehicle)
         sink_waypoint = self._source_transform.next(1)[0]
         while not sink_waypoint.is_intersection:
@@ -137,7 +138,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
             wp_choice = target_waypoint.next(1.0)
         # adding flow of actors
         actor_source = ActorSource(
-            self._world, ['vehicle.audi.tt', 'vehicle.tesla.model3', 'vehicle.nissan.micra'],
+            self._world, ['vehicle.*', 'vehicle.tesla.model3', 'vehicle.nissan.micra'],
             self._other_actor_transform, 20, self._blackboard_queue_name)
         # destroying flow of actors
         actor_sink = ActorSink(self._world, plan[-1][0].transform.location, 10)
@@ -150,12 +151,17 @@ class SignalizedJunctionRightTurn(BasicScenario):
         # Behavior tree
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        sequence = py_trees.composites.Sequence()
         root.add_child(wait)
         root.add_child(actor_source)
         root.add_child(actor_sink)
         root.add_child(move_actor)
 
-        return sequence
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+        sequence.add_child(root)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
+
+        return root
 
     def _create_test_criteria(self):
         """
