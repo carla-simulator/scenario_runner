@@ -1178,7 +1178,6 @@ class ActorTransformSetter(AtomicBehavior):
         return new_status
 
 
-
 class ActorSource(AtomicBehavior):
 
     """
