@@ -93,7 +93,6 @@ class SignalizedJunctionRightTurn(BasicScenario):
                            config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
-
         self.other_actors.append(first_vehicle)
         sink_waypoint = self._source_transform.next(1)[0]
         while not sink_waypoint.is_intersection:
@@ -151,7 +150,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         # Behavior tree
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence("Sequence behavior")
         root.add_child(wait)
         root.add_child(actor_source)
         root.add_child(actor_sink)
