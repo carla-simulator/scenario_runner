@@ -120,7 +120,6 @@ class ScenarioConfiguration(object):
     """
 
     trigger_point = None
-    other_point = None
     ego_vehicle = None
     other_actors = []
     town = None
@@ -181,7 +180,6 @@ def parse_scenario_configuration(file_name, scenario_name):
 
         for other_actor in scenario.iter("other_actor"):
             new_config.other_actors.append(ActorConfiguration(other_actor))
-            new_config.other_point = new_config.other_actors[0].transform
 
         if single_scenario_only:
             if new_config.name == scenario_name:
