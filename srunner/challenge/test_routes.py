@@ -108,6 +108,7 @@ class ChallengeEvaluator(object):
         # CARLA world and scenario handlers
         self.world = None
         self.agent_instance = None
+        self.timestamp = None
 
         self.output_scenario = []
         self.master_scenario = None
@@ -556,7 +557,7 @@ class ChallengeEvaluator(object):
             settings.synchronous_mode = False
             self.world.apply_settings(settings)
         self.world = client.load_world(town_name)
-        self.world.wait_for_tick()
+        self.timestamp = self.world.wait_for_tick()
         settings = self.world.get_settings()
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
@@ -649,6 +650,7 @@ class ChallengeEvaluator(object):
             # Also se the Data provider pool.
             CarlaDataProvider.set_world(self.world)
             # tick world so we can start.
+
             self.world.tick()
 
             # create agent
@@ -679,9 +681,8 @@ class ChallengeEvaluator(object):
                 scenario.scenario.scenario_tree.tick_once()
 
             while self.route_is_running():
-                timestamp = self.world.wait_for_tick()
                 # update all scenarios
-                GameTime.on_carla_tick(timestamp)
+                GameTime.on_carla_tick(self.timestamp)
                 CarlaDataProvider.on_carla_tick()
                 # update all scenarios
                 for scenario in list_scenarios:
@@ -696,6 +697,7 @@ class ChallengeEvaluator(object):
 
                 # time continues
                 self.world.tick()
+                self.timestamp = self.world.wait_for_tick()
 
             # statistics recording
             self.record_route_statistics(route_description['id'])
