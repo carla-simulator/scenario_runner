@@ -14,6 +14,7 @@ from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
 import importlib
+import math
 import sys
 import os
 import json
@@ -35,6 +36,7 @@ from srunner.scenarios.control_loss import ControlLoss
 from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
 from srunner.scenarios.object_crash_vehicle import DynamicObjectCrossing
 from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
+from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
 from srunner.scenarios.opposite_vehicle_taking_priority import OppositeVehicleRunningRedLight
 from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLeftTurn
 from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
@@ -57,7 +59,7 @@ number_class_translation = {
     "Scenario2": [FollowLeadingVehicle],   # TODO there is more than one class depending on the scenario configuration
     "Scenario3": [DynamicObjectCrossing],
     "Scenario4": [VehicleTurningRight, VehicleTurningLeft],
-    "Scenario5": [],
+    "Scenario5": [OtherLeadingVehicle],
     "Scenario6": [ManeuverOppositeDirection],
     "Scenario7": [OppositeVehicleRunningRedLight],
     "Scenario8": [SignalizedJunctionLeftTurn],
@@ -90,6 +92,7 @@ class ChallengeEvaluator(object):
     """
     Provisional code to evaluate AutonomousAgent performance
     """
+    MAX_ALLOWED_RADIUS_SENSOR = 5.0
 
     def __init__(self, args):
         phase_codename = args.split
@@ -583,6 +586,10 @@ class ChallengeEvaluator(object):
                         'sensor.object_finder') or sensor['type'].startswith(
                         'sensor.other.gnss')):
                     return False, "Illegal sensor used for Track [{}]!".format(agent.track)
+
+            # let's check the extrinsics of the sensor
+            if math.sqrt(sensor['x']**2 + sensor['y']**2 + sensor['z']**2) > self.MAX_ALLOWED_RADIUS_SENSOR:
+                return False, "Illegal sensor extrinsics used for Track [{}]!".format(agent.track)
 
         return True, ""
 
