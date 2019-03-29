@@ -15,6 +15,7 @@ import sys
 
 import py_trees
 import carla
+from agents.navigation.local_planner import RoadOption
 
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
@@ -131,9 +132,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         sync_arrival = SyncArrival(
             self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
-        sync_arrival_stop = InTriggerDistanceToVehicle(self.other_actors[0],
-                                                       self.ego_vehicle,
-                                                       41)
+        sync_arrival_stop = InTriggerDistanceToNextIntersection(self.other_actors[0],
+                                                                5)
         sync_arrival_parallel.add_child(sync_arrival)
         sync_arrival_parallel.add_child(sync_arrival_stop)
 
@@ -159,7 +159,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         continue_driving_waypoints = WaypointFollower(
-            self.other_actors[0], self._other_actor_target_velocity, plan=plan)
+            self.other_actors[0], self._other_actor_target_velocity, plan=plan, avoid_collision=False)
 
         continue_driving_distance = DriveDistance(
             self.other_actors[0],

@@ -15,9 +15,11 @@ import math
 import numpy as np
 import carla
 from agents.tools.misc import vector, is_within_distance_ahead
+from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.atomic_scenario_behavior import *
+
 
 def get_crossing_point(actor):
     """
@@ -130,27 +132,27 @@ def generate_target_waypoint_list(waypoint, turn=0):
     threshold = math.radians(0.1)
     plan = []
     while True:
-	wp_choice = waypoint.next(2)
-	if len(wp_choice) > 1:
-	    reached_junction = True
-	    waypoint = choose_at_junction(waypoint, wp_choice, turn)
-	else:
-	    waypoint = wp_choice[0]
-	plan.append((waypoint, RoadOption.LANEFOLLOW))
-	#   End condition for the behavior
-	if turn != 0 and reached_junction and len(plan) >= 3:
-	    v_1 = vector(
-	        plan[-2][0].transform.location,
-	        plan[-1][0].transform.location)
-	    v_2 = vector(
-	        plan[-3][0].transform.location,
-	        plan[-2][0].transform.location)
-	    angle_wp = math.acos(
-	        np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2))))
-	    if angle_wp < threshold:
-	        break
-	elif reached_junction and not plan[-1][0].is_intersection:
-	    break
+        wp_choice = waypoint.next(2)
+        if len(wp_choice) > 1:
+            reached_junction = True
+            waypoint = choose_at_junction(waypoint, wp_choice, turn)
+        else:
+            waypoint = wp_choice[0]
+        plan.append((waypoint, RoadOption.LANEFOLLOW))
+        #   End condition for the behavior
+        if turn != 0 and reached_junction and len(plan) >= 3:
+            v_1 = vector(
+                plan[-2][0].transform.location,
+                plan[-1][0].transform.location)
+            v_2 = vector(
+                plan[-3][0].transform.location,
+                plan[-2][0].transform.location)
+            angle_wp = math.acos(
+                np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2))))
+            if angle_wp < threshold:
+                break
+        elif reached_junction and not plan[-1][0].is_intersection:
+            break
 
     return plan, plan[-1][0]
 
@@ -184,7 +186,7 @@ def generate_target_waypoint(waypoint, turn=0):
                 wp_list[-3].transform.location,
                 wp_list[-2].transform.location)
             vec_dots = np.dot(v_1, v_2)
-            cos_wp = vec_dots/abs((np.linalg.norm(v_1)*np.linalg.norm(v_2)))
+            cos_wp = vec_dots / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2)))
             angle_wp = math.acos(min(1.0, cos_wp))  # COS can't be larger than 1, it can happen due to float imprecision
             if angle_wp < threshold:
                 break
@@ -272,8 +274,8 @@ def detect_lane_obstacle(actor, max_distance=10):
             waypoint = wmap.get_waypoint(adversary.get_location())
             if waypoint.road_id == reference_vehicle_waypoint.road_id and \
                     waypoint.lane_id == reference_vehicle_waypoint.lane_id and\
-                        is_within_distance_ahead(
-                                waypoint.transform.location,
+                is_within_distance_ahead(
+                    waypoint.transform.location,
                                 reference_vehicle_waypoint.transform.location,
                                 reference_vehicle_waypoint.transform.rotation.yaw,
                                 max_distance):
