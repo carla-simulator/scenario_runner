@@ -49,7 +49,7 @@ class ControlLoss(BasicScenario):
         self._abort_distance_to_intersection = 10
         self._start_distance = 20
         self._trigger_dist = 2
-        self._end_distance = 100
+        self._end_distance = 150
         self._ego_vehicle_max_steer = 0.0
         self._ego_vehicle_max_throttle = 1.0
         self._ego_vehicle_target_velocity = 15
@@ -67,33 +67,47 @@ class ControlLoss(BasicScenario):
         """
         Custom initialization
         """
-        _distance = random.sample(range(10, 90), 3)
-        _distance = sorted(_distance)
-        first_loc, _ = get_location_in_distance(self.ego_vehicle, _distance[0])
-        second_loc, _ = get_location_in_distance(self.ego_vehicle, _distance[1])
-        third_loc, _ = get_location_in_distance(self.ego_vehicle, _distance[2])
+        self._distance = random.sample(range(10, 80), 3)
+        self._distance = sorted(self._distance)
+        first_loc, _ = get_location_in_distance(self.ego_vehicle, self._distance[0])
+        second_loc, _ = get_location_in_distance(self.ego_vehicle, self._distance[1])
+        third_loc, _ = get_location_in_distance(self.ego_vehicle, self._distance[2])
+
         self.loc_list.extend([first_loc, second_loc, third_loc])
-        self._dist_prop = [x+2 for x in _distance]
+        self._dist_prop = [x-2 for x in self._distance]
 
         self.first_loc_prev, _ = get_location_in_distance(self.ego_vehicle, self._dist_prop[0])
-        self.second_loc_prev, _ = get_location_in_distance(self.ego_vehicle, self._dist_prop[1])
+        self.sec_loc_prev, _ = get_location_in_distance(self.ego_vehicle, self._dist_prop[1])
         self.third_loc_prev, _ = get_location_in_distance(self.ego_vehicle, self._dist_prop[2])
 
         self.first_transform = carla.Transform(self.first_loc_prev)
-        self.second_transform = carla.Transform(self.second_loc_prev)
+        self.sec_transform = carla.Transform(self.sec_loc_prev)
         self.third_transform = carla.Transform(self.third_loc_prev)
+        self.first_transform = carla.Transform(carla.Location(self.first_loc_prev.x,
+                                                              self.first_loc_prev.y,
+                                                              self.first_loc_prev.z))
+        self.sec_transform = carla.Transform(carla.Location(self.sec_loc_prev.x,
+                                                               self.sec_loc_prev.y,
+                                                               self.sec_loc_prev.z))
+        self.third_transform = carla.Transform(carla.Location(self.third_loc_prev.x,
+                                                              self.third_loc_prev.y,
+                                                              self.third_loc_prev.z))
+        if self._map.name == 'Town02':
+            self.first_transform.location.z += 0.2
+            self.sec_transform.location.z += 0.2
+            self.third_transform.location.z += 0.2
 
-        first_prop = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.first_transform)
-        second_prop = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.second_transform)
-        third_prop = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.third_transform)
+        first_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.first_transform)
+        second_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.sec_transform)
+        third_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.third_transform)
 
-        self.obj.extend([first_prop, second_prop, third_prop])
-        for prop in self.obj:
-            prop.set_simulate_physics(False)
+        self.obj.extend([first_debris, second_debris, third_debris])
+        for debris in self.obj:
+            debris.set_simulate_physics(False)
 
-        self.other_actors.append(first_prop)
-        self.other_actors.append(second_prop)
-        self.other_actors.append(third_prop)
+        self.other_actors.append(first_debris)
+        self.other_actors.append(second_debris)
+        self.other_actors.append(third_debris)
 
     def _create_behavior(self):
         """
@@ -105,6 +119,8 @@ class ControlLoss(BasicScenario):
         """
 
         # start condition
+        start_end_parallel = py_trees.composites.Parallel("Jitter",
+                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
         for i in range(self._no_of_jitter):
             noise = random.gauss(self._noise_mean, self._noise_std)
@@ -120,21 +136,23 @@ class ControlLoss(BasicScenario):
         jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
         end_condition = DriveDistance(self.ego_vehicle, self._end_distance)
+        start_end_parallel.add_child(start_condition)
+        start_end_parallel.add_child(end_condition)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self.first_transform))
+        sequence.add_child(ActorTransformSetter(self.other_actors[1], self.sec_transform))
+        sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform))
         jitter = py_trees.composites.Sequence("Jitter Behavior")
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.loc_list[1], self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.sec_loc_prev, self._trigger_dist))
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.loc_list[2], self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.third_loc_prev, self._trigger_dist))
         jitter.add_child(turn)
         jitter_action.add_child(jitter)
         jitter_action.add_child(jitter_abort)
-        sequence.add_child(ActorTransformSetter(self.other_actors[0], self.first_transform))
-        sequence.add_child(ActorTransformSetter(self.other_actors[1], self.second_transform))
-        sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform))
-        sequence.add_child(start_condition)
+        sequence.add_child(start_end_parallel)
         sequence.add_child(jitter_action)
         sequence.add_child(end_condition)
         return sequence
