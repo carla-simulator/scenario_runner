@@ -554,7 +554,7 @@ class ChallengeEvaluator(object):
         json_data = {
             'submission_status': 'FAILED',
             'stderr': error_message,
-            'results': [
+            'result': [
                 {
                     'split': split_name,
                     'show_to_participant': show_to_participant,
