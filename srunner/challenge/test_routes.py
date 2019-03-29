@@ -30,6 +30,7 @@ from srunner.challenge.autoagents.autonomous_agent import Track
 
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
+from srunner.scenariomanager.timer import GameTime, TimeOut
 
 from srunner.scenarios.control_loss import ControlLoss
 from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
@@ -678,6 +679,10 @@ class ChallengeEvaluator(object):
                 scenario.scenario.scenario_tree.tick_once()
 
             while self.route_is_running():
+                timestamp = self.world.wait_for_tick()
+                # update all scenarios
+                GameTime.on_carla_tick(timestamp)
+                CarlaDataProvider.on_carla_tick()
                 # update all scenarios
                 for scenario in list_scenarios:
                     scenario.scenario.scenario_tree.tick_once()

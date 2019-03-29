@@ -140,6 +140,7 @@ class HumanAgent(AutonomousAgent):
 
     def run_step(self, input_data):
         self.agent_engaged = True
+        time.sleep(0.1)
         return self.current_control
 
     def destroy(self):
