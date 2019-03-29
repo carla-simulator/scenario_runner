@@ -71,6 +71,11 @@ class ControlLoss(BasicScenario):
         first_loc, _ = get_location_in_distance(self.ego_vehicle, 18)
         second_loc, _ = get_location_in_distance(self.ego_vehicle, 47)
         third_loc, _ = get_location_in_distance(self.ego_vehicle, 81)
+
+        first_loc_prev, _ = get_location_in_distance(self.ego_vehicle, 16)
+        second_loc_prev, _ = get_location_in_distance(self.ego_vehicle, 45)
+        third_loc_prev, _ = get_location_in_distance(self.ego_vehicle, 79)
+
         self.loc_list.extend([first_loc, second_loc, third_loc])
         for loc in self.loc_list:
             if self._map.name == 'Town02':
@@ -80,9 +85,9 @@ class ControlLoss(BasicScenario):
         sec_transform = carla.Transform(self.loc_list[1])
         third_transform = carla.Transform(self.loc_list[2])
 
-        first_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', first_transform)
-        second_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', sec_transform)
-        third_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', third_transform)
+        first_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', carla.Transform(first_loc_prev))
+        second_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01',  carla.Transform(second_loc_prev))
+        third_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01',  carla.Transform(third_loc_prev))
 
         self.obj.extend([first_debris, second_debris, third_debris])
         for debris in self.obj:
