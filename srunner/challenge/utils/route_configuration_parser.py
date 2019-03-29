@@ -21,7 +21,12 @@ def parse_annotations_file(annotation_filename):
     with open(annotation_filename, 'r') as f:
         annotation_dict = json.loads(f.read())
 
-    return annotation_dict['available_scenarios']  # the file has a current maps name that is an one element vec
+    final_dict = {}
+
+    for town_dict in annotation_dict['available_scenarios']:
+        final_dict.update(town_dict)
+
+    return final_dict  # the file has a current maps name that is an one element vec
 
 
 def parse_routes_file(route_filename):
@@ -74,7 +79,6 @@ def convert_waypoint_float(waypoint):
     waypoint['y'] = float(waypoint['y'])
     waypoint['z'] = float(waypoint['z'])
     waypoint['yaw'] = float(waypoint['yaw'])
-
 
 
 def scan_route_for_scenarios(route_description, world_annotations):

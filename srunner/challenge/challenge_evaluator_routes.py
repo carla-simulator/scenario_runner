@@ -29,6 +29,7 @@ from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, Objec
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.challenge.autoagents.autonomous_agent import Track
 
+from srunner.scenariomanager.timer import GameTime, TimeOut
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 
@@ -120,6 +121,10 @@ class ChallengeEvaluator(object):
             self.module_agent = importlib.import_module(module_name)
         self._sensors_list = []
         self._hop_resolution = 2.0
+        self.timestamp = None
+
+        # debugging parameters
+        self.route_visible = args.route_visible
 
     def cleanup(self, ego=False):
         """
@@ -315,11 +320,11 @@ class ChallengeEvaluator(object):
         scenario_instance_vec = []
 
         for definition in scenario_definition_vec:
-
             # Get the class possibilities for this scenario number
             possibility_vec = number_class_translation[definition['name']]
             #  TODO for now I dont know how to disambiguate this part.
             ScenarioClass = possibility_vec[0]
+
             # Create the other actors that are going to appear
             if definition['other_actors'] is not None:
                 list_of_actor_conf_instances = self.get_actors_instances(definition['other_actors'])
@@ -328,7 +333,6 @@ class ChallengeEvaluator(object):
             # Create an actor configuration for the ego-vehicle trigger position
 
             egoactor_trigger_position = convert_json_to_transform(definition['trigger_position'])
-
             scenario_configuration = ScenarioConfiguration()
             scenario_configuration.other_actors = list_of_actor_conf_instances
             scenario_configuration.town = town_name
@@ -337,6 +341,10 @@ class ChallengeEvaluator(object):
                                                                         self.ego_vehicle.get_transform())
 
             scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration)
+            # registering the used actors on the data provider so they can be updated.
+            CarlaDataProvider.register_actor(self.ego_vehicle)
+            CarlaDataProvider.register_actors(scenario_instance.other_actors)
+
             scenario_instance_vec.append(scenario_instance)
 
         return scenario_instance_vec
@@ -349,6 +357,31 @@ class ChallengeEvaluator(object):
             raise ValueError('You should not run a route without a master scenario')
 
         return self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING
+
+    def run_route(self, list_scenarios, trajectory, no_master=False):
+
+        while no_master or self.route_is_running():
+            # update all scenarios
+            GameTime.on_carla_tick(self.timestamp)
+            CarlaDataProvider.on_carla_tick()
+            # update all scenarios
+            for scenario in list_scenarios:
+                scenario.scenario.scenario_tree.tick_once()
+                # print("\n")
+                # py_trees.display.print_ascii_tree(
+                #    scenario.scenario.scenario_tree, show_status=True)
+                # sys.stdout.flush()
+
+            # ego vehicle acts
+            ego_action = self.agent_instance()
+            self.ego_vehicle.apply_control(ego_action)
+
+            if self.route_visible:
+                self.draw_waypoints(trajectory,
+                                    vertical_shift=1.0, persistency=scenario.timeout)
+            # time continues
+            self.world.tick()
+            self.timestamp = self.world.wait_for_tick()
 
     def record_route_statistics(self, route_id):
         """
@@ -555,7 +588,7 @@ class ChallengeEvaluator(object):
             settings.synchronous_mode = False
             self.world.apply_settings(settings)
         self.world = client.load_world(town_name)
-        self.world.wait_for_tick()
+        self.timestamp = self.world.wait_for_tick()
         settings = self.world.get_settings()
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
@@ -652,20 +685,7 @@ class ChallengeEvaluator(object):
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
 
-            while self.route_is_running():
-                # update all scenarios
-                for scenario in list_scenarios:
-                    scenario.scenario.scenario_tree.tick_once()
-                # ego vehicle acts
-                ego_action = self.agent_instance()
-                self.ego_vehicle.apply_control(ego_action)
-
-                if args.route_visible:
-                    self.draw_waypoints(route_description['trajectory'],
-                                        vertical_shift=1.0, persistency=scenario.timeout)
-
-                # time continues
-                self.world.tick()
+            self.run_route(list_scenarios, None)
 
             # statistics recording
             self.record_route_statistics(route_description['id'])

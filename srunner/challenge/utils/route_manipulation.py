@@ -19,6 +19,9 @@ from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 import xml.etree.ElementTree as ET
 
 
+Z_ADDITION_AVOID_COLLISION_GROUND = 0.5  # constant to add to the z location in order to no colide with the ground.
+
+
 def _location_to_gps(lat_ref, lon_ref, location):
     """
     Convert from world coordinates to GPS coordinates
@@ -112,6 +115,8 @@ def interpolate_trajectory(world, waypoints_trajectory, hop_resolution = 2.0):
 
         route += interpolated_trace
 
+    # Increase the route position to avoid fails
+    route[0][0].transform.location.z += Z_ADDITION_AVOID_COLLISION_GROUND
     lat_ref, lon_ref = _get_latlon_ref(world)
 
     return location_route_to_gps(route, lat_ref, lon_ref), route
