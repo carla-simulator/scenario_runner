@@ -224,6 +224,7 @@ class CarlaActorPool(object):
 
     _world = None
     _carla_actor_pool = dict()
+    _spawn_points = None
 
     @staticmethod
     def set_world(world):
@@ -231,6 +232,13 @@ class CarlaActorPool(object):
         Set the CARLA world
         """
         CarlaActorPool._world = world
+        CarlaActorPool.generate_spawn_points()
+
+    @staticmethod
+    def generate_spawn_points():
+        spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
+        random.shuffle(spawn_points)
+        CarlaActorPool._spawn_points = spawn_points
 
     @staticmethod
     def setup_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
@@ -249,12 +257,11 @@ class CarlaActorPool(object):
             blueprint.set_attribute('role_name', 'scenario')
 
         if random_location:
-            spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
-            random.shuffle(spawn_points)
-            for spawn_point in spawn_points:
+            actor = None
+            while not actor:
+                spawn_point = random.choice(CarlaActorPool._spawn_points)
                 actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
-                if actor:
-                    break
+
         else:
             actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
 

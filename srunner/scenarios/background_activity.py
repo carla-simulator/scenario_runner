@@ -56,7 +56,7 @@ class BackgroundActivity(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        check_collisions = CheckCollisions()
+        check_collisions = CheckCollisions(self.ego_vehicle)
         sequence.add_child(check_collisions)
 
         return sequence

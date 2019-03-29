@@ -178,6 +178,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
 
         if ego_location is None or other_location is None:
             return new_status
+
         if calculate_distance(ego_location, other_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 
@@ -584,6 +585,7 @@ class StopVehicle(AtomicBehavior):
         self._actor = actor
         self._brake_value = brake_value
 
+
     def update(self):
         """
         Set brake to brake_value until reaching full stop
@@ -797,19 +799,82 @@ class CheckCollisions(AtomicBehavior):
     """
 
     """
-    def __init__(self, name="CheckCollisions"):
-        super(CheckCollisions, self).__init__(name)
+    SOFT_NUMBER_BLOCKS = 10 # 10 seconds
+    HARD_NUMBER_BLOCKS = 10 # 30 seconds
 
-        #shash = SpatialHash(50, 50)
+    MINIMUM_DISTANCE = 5.0 # meters
+
+    def __init__(self, ego_vehicle, name="CheckCollisions"):
+        super(CheckCollisions, self).__init__(name)
+        self.ego_vehicle = ego_vehicle
+        self.world = CarlaDataProvider.get_world()
+        self.map = CarlaDataProvider.get_map()
+        self.list_intersection_waypoints = []
+
+        self.collision_manager = CollisionManager()
+        for id, actor in CarlaActorPool._carla_actor_pool.items():
+                self.collision_manager.add(actor)
+
+        self.collision_manager.add(self.ego_vehicle)
+        list_collisions = self.collision_manager.detect_collisions()
+        print(">>>>> LIST_COLLISIONS = {}".format(len(list_collisions)))
+
+        for collisions in list_collisions:
+            anchor, other = collisions
+            if anchor.attributes['role_name'] == 'autopilot':
+                CarlaActorPool.remove_actor_by_id(anchor.id)
+            if other.attributes['role_name'] == 'autopilot':
+                CarlaActorPool.remove_actor_by_id(other.id)
+
+
+        self.table_blocked_actors = {}
+        current_game_time = GameTime.get_time()
+        for id, actor in CarlaActorPool._carla_actor_pool.items():
+            if actor.attributes['role_name'] == 'autopilot':
+                actor.set_autopilot(True)
+                self.table_blocked_actors[id] = {'location': actor.get_location(),
+                                                 'time': current_game_time
+                                                 }
 
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
+        current_game_time = GameTime.get_time()
 
-        for id, actor in CarlaActorPool. _carla_actor_pool.items():
-            if actor.autopilot:
-                pass
+        items = list(CarlaActorPool._carla_actor_pool.items())
+        print("--- Number of vehicles = {}".format(len(items)))
+        list_actors_to_destroy = []
+        for id, actor in CarlaActorPool._carla_actor_pool.items():
+            if actor.attributes['role_name'] == 'autopilot':
+                block_info = self.table_blocked_actors[id]
+                current_location = actor.get_location()
+
+                distance = current_location.distance(block_info['location'])
+                if distance >= self.MINIMUM_DISTANCE:
+                    self.table_blocked_actors[id]['location'] = current_location
+                    self.table_blocked_actors[id]['time'] = current_game_time
+
+                if (current_game_time - self.table_blocked_actors[id]['time']) > self.HARD_NUMBER_BLOCKS:
+                        list_actors_to_destroy.append(id)
+                        self.world.debug.draw_point(current_location ,
+                                                    size=1.3,
+                                                    color=carla.Color(255, 0, 0),
+                                                    life_time=5)
+
+                elif (current_game_time - self.table_blocked_actors[id]['time'])  > self.SOFT_NUMBER_BLOCKS:
+                        # check if this vehicle is at an intersection
+                        current_waypoint = self.map.get_waypoint(current_location)
+                        if current_waypoint.is_intersection:
+                            self.world.debug.draw_point(current_location,
+                                                        size=1.3,
+                                                        color=carla.Color(0, 0, 255),
+                                                        life_time=5)
+                            list_actors_to_destroy.append(id)
+
+        for id in list_actors_to_destroy:
+            CarlaActorPool.remove_actor_by_id(id)
+            self.table_blocked_actors[id] = None
 
         return new_status
 
