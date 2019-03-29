@@ -138,7 +138,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sync_arrival_parallel.add_child(sync_arrival_stop)
 
         # Generate plan for WaypointFollower
-        waypoint = self.other_actors[0].get_world().get_map().get_waypoint(self.other_actors[0].get_location())
+        waypoint = CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location())
 
         turn = 0  # drive straight ahead
         plan = []
