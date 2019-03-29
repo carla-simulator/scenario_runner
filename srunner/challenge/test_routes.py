@@ -329,20 +329,19 @@ class ChallengeEvaluator(object):
             # Create an actor configuration for the ego-vehicle trigger position
 
             egoactor_trigger_position = convert_json_to_transform(definition['trigger_position'])
-
             scenario_configuration = ScenarioConfiguration()
-
             scenario_configuration.other_actors = list_of_actor_conf_instances
             scenario_configuration.town = town_name
             scenario_configuration.trigger_point = egoactor_trigger_position
-
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
 
             scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration)
+            # registering the used actors on the data provider so they can be updated.
+            CarlaDataProvider.register_actor(self.ego_vehicle)
+            CarlaDataProvider.register_actors(scenario_instance.other_actors)
 
             scenario_instance_vec.append(scenario_instance)
-
 
         return scenario_instance_vec
 
