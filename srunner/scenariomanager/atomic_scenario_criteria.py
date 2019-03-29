@@ -540,6 +540,9 @@ class WrongLaneTest(Criterion):
         if not (self._last_road_id == current_road_id and self._last_lane_id == current_lane_id):
             next_waypoint = lane_waypoint.next(2.0)[0]
 
+            if not next_waypoint:
+                return
+
             vector_wp = np.array([next_waypoint.transform.location.x - lane_waypoint.transform.location.x,
                                   next_waypoint.transform.location.y - lane_waypoint.transform.location.y])
 
@@ -879,6 +882,8 @@ class RunningStopTest(Criterion):
         waypoint = self._map.get_waypoint(current_location)
         for i in range(multi_step):
             waypoint = waypoint.next(self.WAYPOINT_STEP)[0]
+            if not waypoint:
+                break
             list_locations.append(waypoint.transform.location)
 
         for actor_location in list_locations:
