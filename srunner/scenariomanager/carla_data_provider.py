@@ -176,7 +176,7 @@ class CarlaDataProvider(object):
 
         # Create list of all waypoints until next intersection
         list_of_waypoints = []
-        while not waypoint.is_intersection:
+        while waypoint and not waypoint.is_intersection:
             list_of_waypoints.append(waypoint)
             waypoint = waypoint.next(2.0)[0]
 
