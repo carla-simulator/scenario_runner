@@ -16,7 +16,7 @@
         <ego_vehicle x="54.8" y="307.2" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="ControlLoss_6" type="ControlLoss" town="Town02">
-        <ego_vehicle x="56.1" y="191.7" z="0.22" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="57.4" y="191.7" z="0.5" yaw="0" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="ControlLoss_7" type="ControlLoss" town="Town03">
         <ego_vehicle x="15" y="207.5" z="2" yaw="0" model="vehicle.lincoln.mkz2017" />
@@ -43,6 +43,6 @@
         <ego_vehicle x="-54.7" y="110.9" z="0.1" yaw="90" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="ControlLoss_15" type="ControlLoss" town="Town05">
-        <ego_vehicle x="119.1" y="-140.8" z="0.1" yaw="-170" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="119.1" y="-142.7" z="0.1" yaw="-170" model="vehicle.lincoln.mkz2017" />
     </scenario>
 </scenarios>
