@@ -24,6 +24,7 @@ def convert_waypoint_float(waypoint):
     waypoint['z'] = float(waypoint['z'])
     waypoint['yaw'] = float(waypoint['yaw'])
 
+
 class Arguments():
 
     def __init__(self):
@@ -33,6 +34,7 @@ class Arguments():
         self.port = 2000
         self.split = 'dev_track_1'
         self.route_visible = False
+
 
 class TestRouteSpawn(unittest.TestCase):
 
@@ -54,8 +56,6 @@ class TestRouteSpawn(unittest.TestCase):
         # Which type of file is expected ????
 
         # For each of the routes to be evaluated.
-
-
         for route_description in list_route_descriptions:
             challenge.world = client.load_world(route_description['town_name'])
 
@@ -67,16 +67,15 @@ class TestRouteSpawn(unittest.TestCase):
             # Returns the iterpolation in a different format
 
             challenge.world.wait_for_tick()
-
-
             gps_route, route_description['trajectory'] = interpolate_trajectory(challenge.world,
                                                                                 route_description['trajectory'])
 
+            #print (gps_route)
+            #print (route_description['trajectory'])
 
             elevate_transform = route_description['trajectory'][0][0].transform
             elevate_transform.location.z += 0.5
-
-            print (elevate_transform)
+            #print (elevate_transform)
             challenge.prepare_ego_car(elevate_transform)
 
 

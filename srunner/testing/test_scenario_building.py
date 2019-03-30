@@ -21,6 +21,7 @@ class Arguments():
         self.host = '127.0.0.1'
         self.port = 2000
         self.split = 'dev_track_1'
+        self.route_visible = False
 
 class TestScenarioBuilder(unittest.TestCase):
 
@@ -67,7 +68,9 @@ class TestScenarioBuilder(unittest.TestCase):
             sampled_scenarios = challenge.scenario_sampling(potential_scenarios_definitions)
 
             # prepare route's trajectory
-            challenge.prepare_ego_car(route_description['trajectory'][0][0].transform)
+            elevate_transform = route_description['trajectory'][0][0].transform
+            elevate_transform.location.z += 0.5
+            challenge.prepare_ego_car(elevate_transform)
 
             # build the master scenario based on the route and the target.
             master_scenario = challenge.build_master_scenario(route_description['trajectory'], route_description['town_name'])

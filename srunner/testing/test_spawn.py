@@ -106,7 +106,6 @@ class TestSpawn(unittest.TestCase):
                                 print ("Spawn front", other_waypoint)
 
 
-
                     challenge.cleanup(ego=True)
 
         print ("Failed Scenarios ", list_failed)
