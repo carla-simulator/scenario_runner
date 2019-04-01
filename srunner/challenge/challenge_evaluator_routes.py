@@ -680,7 +680,6 @@ class ChallengeEvaluator(object):
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
 
-
     def valid_sensors_configuration(self, agent, track):
         if Track(track) != agent.track:
             return False, "You are submitting to the wrong track [{}]!".format(Track(track))

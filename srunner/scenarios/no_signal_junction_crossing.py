@@ -11,6 +11,8 @@ The hero vehicle is passing through a junction without traffic lights
 and encounters another vehicle passing across the junction.
 """
 
+from queue import Queue
+
 import py_trees
 from agents.navigation.local_planner import RoadOption
 
@@ -43,6 +45,7 @@ class NoSignalJunctionCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
 
+        self._world = world
         self._wmap = CarlaDataProvider.get_map()
         self._ego_vehicle_driven_distance = 100
         self._ego_vehicle_end_distance = 200
@@ -53,6 +56,7 @@ class NoSignalJunctionCrossing(BasicScenario):
         self._other_actor_wait_time = 10
         self._adversary_speed = 30
         self._end_threshold = 20
+        self._reference_waypoint = self._wmap.get_waypoint(config.ego_vehicle.transform.location)
 
         super(NoSignalJunctionCrossing, self).__init__("NoSignalJunctionCrossing",
                                                        ego_vehicle,
@@ -61,18 +65,18 @@ class NoSignalJunctionCrossing(BasicScenario):
                                                        debug_mode,
                                                        criteria_enable=False)
 
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-        self._other_actor_transform = config.other_actors[0].transform
-        first_vehicle_transform = carla.Transform(
-            carla.Location(config.other_actors[0].transform.location.x,
-                           config.other_actors[0].transform.location.y,
-                           config.other_actors[0].transform.location.z - 5),
-            config.other_actors[0].transform.rotation)
-        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
-        self.other_actors.append(first_vehicle)
+    # def _initialize_actors(self, config):
+    #     """
+    #     Custom initialization
+    #     """
+    #     self._other_actor_transform = config.other_actors[0].transform
+    #     first_vehicle_transform = carla.Transform(
+    #         carla.Location(config.other_actors[0].transform.location.x,
+    #                        config.other_actors[0].transform.location.y,
+    #                        config.other_actors[0].transform.location.z - 5),
+    #         config.other_actors[0].transform.rotation)
+    #     first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+    #     self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -86,41 +90,42 @@ class NoSignalJunctionCrossing(BasicScenario):
         After 60 seconds, a timeout stops the scenario.
         """
 
+        left_boundary = generate_target_waypoint(self._reference_waypoint, turn=-1).transform.location
+        right_boundary = generate_target_waypoint(self._reference_waypoint, turn=1).transform.location
+        intersection_center = (left_boundary+right_boundary)/2
+        intersection_width = left_boundary.distance(right_boundary)
+
+        stop_queue_name = "ts10/detect_for_stopping"
+        negotiation_queue_name = "ts10/detect_for_negotiation"
+        passthrough_queue_name = "ts10/passthrough_queue"
+
+        for queue_name in [stop_queue_name, negotiation_queue_name, passthrough_queue_name]:
+            Blackboard().set(queue_name, Queue())
+
+        # leaves
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        scenario_sequence = py_trees.composites.Sequence()
 
-        move_all_to_intersection = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        pass_through_all = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+        for actor in self.other_actors:
+            current_waypoint = self._wmap.get_waypoint(actor.get_location())
+            waypoint = generate_target_waypoint(current_waypoint, 0)  # Straight across the intersection
+            plan = self._make_plan(waypoint)
 
-        for i, adversary in enumerate(self.other_actors):
-            move_vehicle_to_intersection = py_trees.composites.Sequence()
-            waypoint_follow_reach = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            root.add_child(WaypointFollower(actor, 30, plan=plan))
 
-            current_waypoint = self._wmap.get_waypoint(adversary.get_location())
-            plan = self._make_plan(current_waypoint)
+        detect_to_stop = DetectActorArrival(self._world, intersection_center, intersection_width, stop_queue_name)
+        detect_to_passthrough = DetectActorArrival(
+            self._world, intersection_center, intersection_width, negotiation_queue_name)
+        stop_actors = StopMultiActor(stop_queue_name)
+        negotiate = PriorityNegotiator(negotiation_queue_name, passthrough_queue_name, interval=5)
+        reset_actor_control = ResetActorControl(negotiation_queue_name)
+        passthrough_follower = WaypointFollower(None, 30, blackboard_queue_name=passthrough_queue_name)
 
-            waypoint_follow_reach.add_child(WaypointFollower(adversary, self._adversary_speed, plan))
-            waypoint_follow_reach.add_child(InTriggerDistanceToNextIntersection(adversary, self._arrival_threshold))
-            move_vehicle_to_intersection.add_child(waypoint_follow_reach)
-            move_vehicle_to_intersection.add_child(StopVehicle(adversary, self._max_brake))
-            move_all_to_intersection.add_child(move_vehicle_to_intersection)
-
-            waypoint_beyond = generate_target_waypoint(current_waypoint, 0)  # Straight across the intersection
-            plan_beyond = self._make_plan(waypoint_beyond)
-            wait_and_move = py_trees.composites.Sequence()
-            wait_and_move.add_child(TimeOut(self._other_actor_wait_time*i))
-            waypoint_follow_through = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-            waypoint_follow_through.add_child(WaypointFollower(adversary, self._adversary_speed, plan=plan_beyond))
-            waypoint_follow_through.add_child(
-                InTriggerDistanceToLocation(adversary, plan_beyond[-1][0].transform.location, self._end_threshold))
-            wait_and_move.add_child(waypoint_follow_through)
-            pass_through_all.add_child(wait_and_move)
-
-        scenario_sequence.add_child(move_all_to_intersection)
-        scenario_sequence.add_child(InTriggerDistanceToNextIntersection(self.ego_vehicle, self._ego_arrival_trigger))
-        scenario_sequence.add_child(pass_through_all)
-
-        root.add_child(scenario_sequence)
+        root.add_child(detect_to_stop)
+        root.add_child(detect_to_passthrough)
+        root.add_child(stop_actors)
+        root.add_child(negotiate)
+        root.add_child(reset_actor_control)
+        root.add_child(passthrough_follower)
         root.add_child(DriveDistance(self.ego_vehicle, self._ego_vehicle_end_distance))
 
         return root

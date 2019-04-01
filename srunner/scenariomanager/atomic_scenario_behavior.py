@@ -13,6 +13,8 @@ etc.
 The atomic behaviors are implemented with py_trees.
 """
 
+import time
+
 import carla
 import py_trees
 from py_trees.blackboard import Blackboard
@@ -827,7 +829,8 @@ class WaypointFollower(AtomicBehavior):
         """
         super(WaypointFollower, self).__init__(name)
         self._actor_list = []
-        self._actor_list.append(actor)
+        if actor is not None:
+            self._actor_list.append(actor)
         self._target_speed = target_speed
         self._local_planner_list = []
         self._plan = plan
@@ -1037,4 +1040,110 @@ class ActorSink(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         CarlaActorPool.remove_all_actors_in_surrounding(self._sink_location, self._threshold)
+        return new_status
+
+
+class DetectActorArrival(AtomicBehavior):
+    """
+    Detects arrival vehicles near a location
+    """
+
+    def __init__(self, world, location, threshold, blackboard_queue_name, name="DetectActorArrival"):
+        """
+        Setup class members
+        """
+        super(DetectActorArrival, self).__init__(name)
+        self._world = world
+        self._location = location
+        self._threshold = threshold
+        self._blackboard_queue_name = blackboard_queue_name
+        self._queue = Blackboard().get(blackboard_queue_name)
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+        world_actors = self._world.get_actors().filter('vehicle.*')
+
+        for actor in world_actors:
+            if calculate_distance(actor.get_location(), self._location) < self._threshold:
+                self._queue.put(actor)
+
+        return new_status
+
+
+class StopMultiActor(AtomicBehavior):
+    """
+    Stops actors put into a specified blackboard queue
+    """
+
+    def __init__(self, blackboard_queue_name, name="StopMultiActor"):
+        """
+        Setup class members
+        """
+        super(StopMultiActor, self).__init__(name)
+        self._blackboard_queue_name = blackboard_queue_name
+        self._queue = Blackboard().get(blackboard_queue_name)
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        while not self._queue.empty():
+            actor = self._queue.get()
+            control, _ = get_actor_control(actor)
+            control.brake = 1.0
+            actor.apply_control(control)
+
+        return new_status
+
+
+class PriorityNegotiator(AtomicBehavior):
+    """
+    This behaviour allows each actor in a queue
+    to be passed to a different behaviour in order via a blackboard queue
+    """
+
+    def __init__(self, in_queue_name, out_queue_name, interval=5, name="PriorityNegotiator"):
+        """ Constructor """
+        super(PriorityNegotiator, self).__init__(name)
+        self._in_queue_name = in_queue_name
+        self._out_queue_name = out_queue_name
+        self._in_queue = Blackboard().get(in_queue_name)
+        self._out_queue = Blackboard().get(out_queue_name)
+        self._last_pass = time.time()
+        self._interval = interval
+
+    def update(self):
+        """ pass actors in order """
+        if (time.time() - self._last_pass) > self._interval and not self._in_queue.empty():
+            self._last_pass = time.time()
+            actor = self._in_queue.get()
+            if actor.attributes['role_name'] == "hero":
+                self._out_queue.put(actor)
+
+        return py_trees.common.Status.RUNNING
+
+
+class ResetActorControl(AtomicBehavior):
+    """
+    Resets the actors control in a specified blackboard queue
+    """
+
+    def __init__(self, blackboard_queue_name, name="ResetActorControl"):
+        """
+        Setup class members
+        """
+        super(ResetActorControl, self).__init__(name)
+        self._blackboard_queue_name = blackboard_queue_name
+        self._queue = Blackboard().get(blackboard_queue_name)
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        while not self._queue.empty():
+            actor = self._queue.get()
+            control, _ = get_actor_control(actor)
+            control.brake = 0.0
+            control.throttle = 1.0
+
+            actor.apply_control(control)
+
         return new_status
