@@ -105,23 +105,6 @@ class SignalizedJunctionRightTurn(BasicScenario):
         After 80 seconds, a timeout stops the scenario.
         """
 
-        actor_source = ActorSource(
-            self._world, ['vehicle.audi.tt', 'vehicle.tesla.model3', 'vehicle.nissan.micra'],
-            self._source_transform, 20, self._blackboard_queue_name)
-        actor_sink = ActorSink(self._world, self._sink_location, 10)
-
-        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
-        crossing_point_dynamic = get_crossing_point(self.other_actors[0])
-        sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
-        sync_arrival_stop = InTriggerDistanceToLocation(self.other_actors[0], crossing_point_dynamic, 5)
-
-        sync_arrival_parallel = py_trees.composites.Parallel(
-            "Synchronize arrival times",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sync_arrival_parallel.add_child(sync_arrival)
-        sync_arrival_parallel.add_child(sync_arrival_stop)
-
         # Selecting straight path at intersection
         target_waypoint = generate_target_waypoint(
             CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), 0)
@@ -148,11 +131,10 @@ class SignalizedJunctionRightTurn(BasicScenario):
         sequence = py_trees.composites.Sequence()
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
         sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-        sequence.add_child(sync_arrival_parallel)
         sequence.add_child(move_actor_parallel)
         sequence.add_child(ActorDestroy(self.other_actors[0]))
-
         root.add_child(wait)
         root.add_child(sequence)
 
