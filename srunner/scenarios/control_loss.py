@@ -87,8 +87,8 @@ class ControlLoss(BasicScenario):
                                                               self.first_loc_prev.y,
                                                               self.first_loc_prev.z))
         self.sec_transform = carla.Transform(carla.Location(self.sec_loc_prev.x,
-                                                               self.sec_loc_prev.y,
-                                                               self.sec_loc_prev.z))
+                                                            self.sec_loc_prev.y,
+                                                            self.sec_loc_prev.z))
         self.third_transform = carla.Transform(carla.Location(self.third_loc_prev.x,
                                                               self.third_loc_prev.y,
                                                               self.third_loc_prev.z))
@@ -120,7 +120,7 @@ class ControlLoss(BasicScenario):
 
         # start condition
         start_end_parallel = py_trees.composites.Parallel("Jitter",
-                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
         for i in range(self._no_of_jitter):
             noise = random.gauss(self._noise_mean, self._noise_std)
