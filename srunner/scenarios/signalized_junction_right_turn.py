@@ -43,12 +43,9 @@ class SignalizedJunctionRightTurn(BasicScenario):
         Setup all relevant parameters and create scenario
         obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
         """
-
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
-        self._target_vel = 25
+        self._target_vel = 30
         self._brake_value = 0.5
-        self._ego_distance = 100
+        self._ego_distance = 110
         self._traffic_light = None
         self._other_actor_transform = None
         # Timeout of scenario in seconds
@@ -135,30 +132,29 @@ class SignalizedJunctionRightTurn(BasicScenario):
             target_waypoint = wp_choice[0]
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(1.0)
-        # adding flow of actors
-        actor_source = ActorSource(
-            self._world, ['vehicle.*', 'vehicle.tesla.model3', 'vehicle.nissan.micra'],
-            self._other_actor_transform, 20, self._blackboard_queue_name)
-        # destroying flow of actors
-        actor_sink = ActorSink(self._world, plan[-1][0].transform.location, 10)
-        # follow waypoints untill next intersection
-        move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan,
-                                      blackboard_queue_name=self._blackboard_queue_name, avoid_collision=False)
-        # wait
+
+        move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan, avoid_collision=True)
+        waypoint_follower_end = InTriggerDistanceToLocation(
+            self.other_actors[0], plan[-1][0].transform.location, 10)
+
+        move_actor_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        move_actor_parallel.add_child(move_actor)
+        move_actor_parallel.add_child(waypoint_follower_end)
+        # end condition
         wait = DriveDistance(self.ego_vehicle, self._ego_distance)
 
         # Behavior tree
+        sequence = py_trees.composites.Sequence()
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sequence = py_trees.composites.Sequence("Sequence behavior")
-        root.add_child(wait)
-        root.add_child(actor_source)
-        root.add_child(actor_sink)
-        root.add_child(move_actor)
-
         sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-        sequence.add_child(root)
+        sequence.add_child(sync_arrival_parallel)
+        sequence.add_child(move_actor_parallel)
         sequence.add_child(ActorDestroy(self.other_actors[0]))
+
+        root.add_child(wait)
+        root.add_child(sequence)
 
         return root
 
