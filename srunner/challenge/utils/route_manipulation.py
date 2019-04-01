@@ -19,6 +19,8 @@ from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 import xml.etree.ElementTree as ET
 
 
+
+
 def _location_to_gps(lat_ref, lon_ref, location):
     """
     Convert from world coordinates to GPS coordinates
@@ -52,8 +54,8 @@ def location_route_to_gps(route, lat_ref, lon_ref):
     """
     gps_route = []
 
-    for waypoint, connection in route:
-        gps_point = _location_to_gps(lat_ref, lon_ref, waypoint.transform.location)
+    for transform, connection in route:
+        gps_point = _location_to_gps(lat_ref, lon_ref, transform.location)
         gps_route.append((gps_point, connection))
 
     return gps_route
@@ -102,15 +104,12 @@ def interpolate_trajectory(world, waypoints_trajectory, hop_resolution = 2.0):
 
         waypoint = waypoints_trajectory[i]
         waypoint_next = waypoints_trajectory[i+1]
-        interpolated_trace = grp.trace_route(carla.Location(x=float(waypoint.attrib['x']),
-                                                y=float(waypoint.attrib['y']),
-                                                z=float(waypoint.attrib['z'])),
-                                 carla.Location(x=float(waypoint_next.attrib['x']),
-                                                y=float(waypoint_next.attrib['y']),
-                                                z=float(waypoint_next.attrib['z']))
-                                 )
+        interpolated_trace = grp.trace_route(waypoint, waypoint_next)
+        for wp_tuple in interpolated_trace:
+            route.append((wp_tuple[0].transform, wp_tuple[1]))
 
-        route += interpolated_trace
+
+    # Increase the route position to avoid fails
 
     lat_ref, lon_ref = _get_latlon_ref(world)
 

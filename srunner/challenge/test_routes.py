@@ -13,703 +13,124 @@ Provisional code to evaluate Autonomous Agents for the CARLA Autonomous Driving 
 from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
-import importlib
 import sys
 import os
-import json
-import random
-import py_trees
 
-import xml.etree.ElementTree as ET
 
 import carla
 import srunner.challenge.utils.route_configuration_parser as parser
-from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
-from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
-from srunner.challenge.autoagents.autonomous_agent import Track
 
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
-from srunner.scenariomanager.timer import GameTime, TimeOut
-
-from srunner.scenarios.control_loss import ControlLoss
-from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
-from srunner.scenarios.object_crash_vehicle import DynamicObjectCrossing
-from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
-from srunner.scenarios.opposite_vehicle_taking_priority import OppositeVehicleRunningRedLight
-from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLeftTurn
-from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
-from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
-from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
-from srunner.scenarios.master_scenario import MasterScenario
-
-# The configuration parser
-
-from srunner.scenarios.config_parser import ActorConfiguration, ScenarioConfiguration, \
-    RouteConfiguration, ActorConfigurationData
-from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
-
-from srunner.challenge.utils.route_manipulation import interpolate_trajectory
 
 
-number_class_translation = {
-
-    "Scenario1": [ControlLoss],
-    "Scenario2": [FollowLeadingVehicle],   # TODO there is more than one class depending on the scenario configuration
-    "Scenario3": [DynamicObjectCrossing],
-    "Scenario4": [VehicleTurningRight, VehicleTurningLeft],
-    "Scenario5": [],
-    "Scenario6": [ManeuverOppositeDirection],
-    "Scenario7": [OppositeVehicleRunningRedLight],
-    "Scenario8": [SignalizedJunctionLeftTurn],
-    "Scenario9": [SignalizedJunctionRightTurn],
-    "Scenario10": [NoSignalJunctionCrossing]
-
-}
-# Util functions
+# We import the challenge evaluator here
+from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator,
 
 
-def convert_json_to_actor(actor_dict):
-    node = ET.Element('waypoint')
-    node.set('x', actor_dict['x'])
-    node.set('y', actor_dict['y'])
-    node.set('z', actor_dict['z'])
-    node.set('yaw', actor_dict['yaw'])
+def create_configuration_scenario( scenario_desc, scenario_type):
+    waypoint = scenario_desc['transform']
+    parser.convert_waypoint_float(waypoint)
 
-    return ActorConfiguration(node)
+    if 'other_actors' in scenario_desc:
+        other_vehicles = scenario_desc['other_actors']
+    else:
+        other_vehicles = None
+
+    scenario_description = {
+        'name': scenario_type,
+        'other_actors': other_vehicles,
+        'trigger_position': waypoint
+    }
+
+    return scenario_description
 
 
-def convert_json_to_transform(actor_dict):
-
-    return carla.Transform(location=carla.Location(x=float(actor_dict['x']), y=float(actor_dict['y']),
-                                                   z=float(actor_dict['z'])),
-                           rotation=carla.Rotation(roll=0.0, pitch=0.0, yaw=float(actor_dict['yaw'])))
-
-
-class ChallengeEvaluator(object):
-
+def test_routes(args):
     """
-    Provisional code to evaluate AutonomousAgent performance
+    Run all routes according to provided commandline args
     """
-
-    def __init__(self, args):
-        phase_codename = args.split
-        self.phase = phase_codename.split("_")[0]
-        self.track = int(phase_codename.split("_")[-1])
-
-        self.ego_vehicle = None
-        self.actors = []
-        self.statistics_routes = []
-
-        # Tunable parameters
-        self.client_timeout = 15.0  # in seconds
-        self.wait_for_world = 10.0  # in seconds
-
-        # CARLA world and scenario handlers
-        self.world = None
-        self.agent_instance = None
-        self.timestamp = None
-
-        self.output_scenario = []
-        self.master_scenario = None
-        # first we instantiate the Agent
-        if args.agent is not None:
-            module_name = os.path.basename(args.agent).split('.')[0]
-            sys.path.insert(0, os.path.dirname(args.agent))
-            self.module_agent = importlib.import_module(module_name)
-        self._sensors_list = []
-        self._hop_resolution = 2.0
-
-    def cleanup(self, ego=False):
-        """
-        Remove and destroy all actors
-        """
-        # We need enumerate here, otherwise the actors are not properly removed
-        for i, _ in enumerate(self.actors):
-            if self.actors[i] is not None:
-                self.actors[i].destroy()
-                self.actors[i] = None
-        self.actors = []
-
-        for i, _ in enumerate(self._sensors_list):
-            if self._sensors_list[i] is not None:
-                self._sensors_list[i].destroy()
-                self._sensors_list[i] = None
-        self._sensors_list = []
-
-        if ego and self.ego_vehicle is not None:
-            self.ego_vehicle.destroy()
-            self.ego_vehicle = None
-
-    def __del__(self):
-        """
-        Cleanup and delete actors, ScenarioManager and CARLA world
-        """
-
-        self.cleanup(True)
-        if self.world is not None:
-            print("========= I am cleaning up!!")
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            self.world.apply_settings(settings)
-            self.world.wait_for_tick()
-            del self.world
-
-    def prepare_ego_car(self, start_transform):
-        """
-        Spawn or update all scenario actors according to
-        a certain start position.
-        """
-
-        # If ego_vehicle already exists, just update location
-        # Otherwise spawn ego vehicle
-        if self.ego_vehicle is None:
-            # TODO: the model is now hardcoded but that can change in a future.
-            self.ego_vehicle = CarlaActorPool.setup_actor('vehicle.lincoln.mkz2017', start_transform, True)
-        else:
-            self.ego_vehicle.set_transform(start_transform)
-
-        # setup sensors
-        if self.agent_instance is not None:
-            self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
-
-    def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
-        """
-        Draw a list of waypoints at a certain height given in vertical_shift.
-        :param waypoints: list or iterable container with the waypoints to draw
-        :param vertical_shift: height in meters
-        :return:
-        """
-        for w in waypoints:
-            wp = w[0].transform.location + carla.Location(z=vertical_shift)
-            self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
-
-    def scenario_sampling(self, potential_scenarios_definitions):
-        """
-        The function used to sample the scenarios that are going to happen for this route.
-        :param potential_scenarios_definitions: all the scenarios to be sampled
-        :return: return the ones sampled for this case.
-        """
-        # The idea is to randomly sample a scenario per trigger position.
-        sampled_scenarios = []
-        for trigger in potential_scenarios_definitions.keys():
-            possible_scenarios = potential_scenarios_definitions[trigger]
-            sampled_scenarios.append(random.choice(possible_scenarios))
-
-        return sampled_scenarios
-
-    def setup_sensors(self, sensors, vehicle):
-        """
-        Create the sensors defined by the user and attach them to the ego-vehicle
-        :param sensors: list of sensors
-        :param vehicle: ego vehicle
-        :return:
-        """
-        bp_library = self.world.get_blueprint_library()
-        for sensor_spec in sensors:
-            # These are the pseudosensors (not spawned)
-            if sensor_spec['type'].startswith('sensor.scene_layout'):
-                # Static sensor that gives you the entire information from the world (Just runs once)
-                sensor = SceneLayoutReader(self.world)
-            elif sensor_spec['type'].startswith('sensor.object_finder'):
-                # This sensor returns the position of the dynamic objects in the scene.
-                sensor = ObjectFinder(self.world, sensor_spec['reading_frequency'])
-            elif sensor_spec['type'].startswith('sensor.can_bus'):
-                # The speedometer pseudo sensor is created directly here
-                sensor = CANBusSensor(vehicle, sensor_spec['reading_frequency'])
-            elif sensor_spec['type'].startswith('sensor.hd_map'):
-                # The HDMap pseudo sensor is created directly here
-                sensor = HDMapReader(vehicle, sensor_spec['reading_frequency'])
-            # These are the sensors spawned on the carla world
-            else:
-                bp = bp_library.find(sensor_spec['type'])
-                if sensor_spec['type'].startswith('sensor.camera'):
-                    bp.set_attribute('image_size_x', str(sensor_spec['width']))
-                    bp.set_attribute('image_size_y', str(sensor_spec['height']))
-                    bp.set_attribute('fov', str(sensor_spec['fov']))
-                    sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'],
-                                                     z=sensor_spec['z'])
-                    sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'],
-                                                     roll=sensor_spec['roll'],
-                                                     yaw=sensor_spec['yaw'])
-                elif sensor_spec['type'].startswith('sensor.lidar'):
-                    bp.set_attribute('range', '200')
-                    bp.set_attribute('rotation_frequency', '10')
-                    bp.set_attribute('channels', '32')
-                    bp.set_attribute('upper_fov', '15')
-                    bp.set_attribute('lower_fov', '-30')
-                    bp.set_attribute('points_per_second', '500000')
-                    sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'],
-                                                     z=sensor_spec['z'])
-                    sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'],
-                                                     roll=sensor_spec['roll'],
-                                                     yaw=sensor_spec['yaw'])
-                elif sensor_spec['type'].startswith('sensor.other.gnss'):
-                    sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'],
-                                                     z=sensor_spec['z'])
-                    sensor_rotation = carla.Rotation()
-
-                # create sensor
-                sensor_transform = carla.Transform(sensor_location, sensor_rotation)
-                sensor = self.world.spawn_actor(bp, sensor_transform,
-                                                vehicle)
-            # setup callback
-            sensor.listen(CallBack(sensor_spec['id'], sensor, self.agent_instance.sensor_interface))
-            self._sensors_list.append(sensor)
-
-        # check that all sensors have initialized their data structure
-
-        while not self.agent_instance.all_sensors_ready():
-            print(" waiting for one data reading from sensors...")
-            self.world.tick()
-            self.world.wait_for_tick()
-
-    def get_actors_instances(self, list_of_antagonist_actors):
-        """
-        Get the full list of actor instances.
-        """
-
-        def get_actors_from_list(list_of_actor_def):
-            """
-                Receives a list of actor definitions and creates an actual list of ActorConfigurationObjects
-            """
-            sublist_of_actors = []
-            for actor_def in list_of_actor_def:
-                sublist_of_actors.append(convert_json_to_actor(actor_def))
-
-            return sublist_of_actors
-
-        list_of_actors = []
-        # Parse vehicles to the left
-        if 'front' in list_of_antagonist_actors:
-            list_of_actors += get_actors_from_list(list_of_antagonist_actors['front'])
-
-        if 'left' in list_of_antagonist_actors:
-            list_of_actors += get_actors_from_list(list_of_antagonist_actors['left'])
-
-        if 'right' in list_of_antagonist_actors:
-            list_of_actors += get_actors_from_list(list_of_antagonist_actors['right'])
-
-        return list_of_actors
-
-    def build_master_scenario(self, route, town_name):
-        # We have to find the target.
-        # we also have to convert the route to the expected format
-        master_scenario_configuration = ScenarioConfiguration()
-        master_scenario_configuration.target = route[-1][0]  # Take the last point and add as target.
-        master_scenario_configuration.route = route
-        master_scenario_configuration.town = town_name
-        # TODO THIS NAME IS BIT WEIRD SINCE THE EGO VEHICLE  IS ALREADY THERE, IT IS MORE ABOUT THE TRANSFORM
-        master_scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
-                                                                           self.ego_vehicle.get_transform())
-        master_scenario_configuration.trigger_point = self.ego_vehicle.get_transform()
-
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration)
-
-    def build_scenario_instances(self, scenario_definition_vec, town_name):
-        """
-            Based on the parsed route and possible scenarios, build all the scenario classes.
-        :param scenario_definition_vec: the dictionary defining the scenarios
-        :param town: the town where scenarios are going to be
-        :return:
-        """
-        scenario_instance_vec = []
-
-        for definition in scenario_definition_vec:
-            # Get the class possibilities for this scenario number
-            possibility_vec = number_class_translation[definition['name']]
-            #  TODO for now I dont know how to disambiguate this part.
-            ScenarioClass = possibility_vec[0]
-
-            # Create the other actors that are going to appear
-            if definition['other_actors'] is not None:
-                list_of_actor_conf_instances = self.get_actors_instances(definition['other_actors'])
-            else:
-                list_of_actor_conf_instances = []
-            # Create an actor configuration for the ego-vehicle trigger position
-
-            egoactor_trigger_position = convert_json_to_transform(definition['trigger_position'])
-            scenario_configuration = ScenarioConfiguration()
-            scenario_configuration.other_actors = list_of_actor_conf_instances
-            scenario_configuration.town = town_name
-            scenario_configuration.trigger_point = egoactor_trigger_position
-            scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
-                                                                        self.ego_vehicle.get_transform())
-
-            scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration)
-            # registering the used actors on the data provider so they can be updated.
-            CarlaDataProvider.register_actor(self.ego_vehicle)
-            CarlaDataProvider.register_actors(scenario_instance.other_actors)
-
-            scenario_instance_vec.append(scenario_instance)
-
-        return scenario_instance_vec
-
-    def route_is_running(self):
-        """
-            The master scenario tests if the route is still running.
-        """
-        return True
-
-    def record_route_statistics(self, route_id):
-        """
-          This function is intended to be called from outside and provide
-          statistics about the scenario (human-readable, for the CARLA challenge.)
-        """
-        PENALTY_COLLISION_STATIC = 10
-        PENALTY_COLLISION_VEHICLE = 10
-        PENALTY_COLLISION_PEDESTRIAN = 30
-        PENALTY_TRAFFIC_LIGHT = 10
-        PENALTY_WRONG_WAY = 5
-        PENALTY_SIDEWALK_INVASION = 5
-        PENALTY_STOP = 7
-
-        target_reached = False
-        failure = False
-        result = "SUCCESS"
-        score_composed = 0.0
-        score_penalty = 0.0
-        score_route = 0.0
-        return_message = ""
-
-        if self.master_scenario.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
-            failure = True
-            result = "FAILURE"
-        if self.master_scenario.scenario.timeout_node.timeout and not failure:
-            result = "TIMEOUT"
-
-        list_traffic_events = []
-        for node in self.master_scenario.scenario.test_criteria.children:
-            if node.list_traffic_events:
-                list_traffic_events.extend(node.list_traffic_events)
-
-        list_collisions = []
-        list_red_lights = []
-        list_wrong_way = []
-        list_route_dev = []
-        list_sidewalk_inv = []
-        list_stop_inf = []
-        # analyze all traffic events
-        for event in list_traffic_events:
-            if event.get_type() == TrafficEventType.COLLISION_STATIC:
-                score_penalty += PENALTY_COLLISION_STATIC
-                msg = event.get_message()
-                if msg:
-                    list_collisions.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.COLLISION_VEHICLE:
-                score_penalty += PENALTY_COLLISION_VEHICLE
-                msg = event.get_message()
-                if msg:
-                    list_collisions.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.COLLISION_PEDESTRIAN:
-                score_penalty += PENALTY_COLLISION_PEDESTRIAN
-                msg = event.get_message()
-                if msg:
-                    list_collisions.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.TRAFFIC_LIGHT_INFRACTION:
-                score_penalty += PENALTY_TRAFFIC_LIGHT
-                msg = event.get_message()
-                if msg:
-                    list_red_lights.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.WRONG_WAY_INFRACTION:
-                score_penalty += PENALTY_WRONG_WAY
-                msg = event.get_message()
-                if msg:
-                    list_wrong_way.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.ROUTE_DEVIATION:
-                msg = event.get_message()
-                if msg:
-                    list_route_dev.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.ON_SIDEWALK_INFRACTION:
-                score_penalty += PENALTY_SIDEWALK_INVASION
-                msg = event.get_message()
-                if msg:
-                    list_sidewalk_inv.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.STOP_INFRACTION:
-                score_penalty += PENALTY_STOP
-                msg = event.get_message()
-                if msg:
-                    list_stop_inf.append(event.get_message())
-
-            elif event.get_type() == TrafficEventType.ROUTE_COMPLETED:
-                score_route = 100.0
-                target_reached = True
-            elif event.get_type() == TrafficEventType.ROUTE_COMPLETION:
-                if not target_reached:
-                    score_route = event.get_dict()['route_completed']
-
-        final_score = max(score_route - score_penalty, 0)
-
-        return_message += "\n=================================="
-        return_message += "\n==[{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(result,
-                                                                                                 final_score,
-                                                                                                 score_route,
-                                                                                                 score_penalty)
-        if list_collisions:
-            return_message += "\n===== Collisions:"
-            for item in list_collisions:
-                return_message += "\n========== {}".format(item)
-
-        if list_red_lights:
-            return_message += "\n===== Red lights:"
-            for item in list_red_lights:
-                return_message += "\n========== {}".format(item)
-
-        if list_stop_inf:
-            return_message += "\n===== STOP infractions:"
-            for item in list_stop_inf:
-                return_message += "\n========== {}".format(item)
-
-        if list_wrong_way:
-            return_message += "\n===== Wrong way:"
-            for item in list_wrong_way:
-                return_message += "\n========== {}".format(item)
-
-        if list_sidewalk_inv:
-            return_message += "\n===== Sidewalk invasions:"
-            for item in list_sidewalk_inv:
-                return_message += "\n========== {}".format(item)
-
-        if list_route_dev:
-            return_message += "\n===== Route deviation:"
-            for item in list_route_dev:
-                return_message += "\n========== {}".format(item)
-
-        return_message += "\n=================================="
-
-        current_statistics = {'id': route_id,
-                              'score_composed': score_composed,
-                              'score_route': score_route,
-                              'score_penalty': score_penalty,
-                              'result': result,
-                              'help_text': return_message
-                              }
-
-        self.statistics_routes.append(current_statistics)
-
-    def report_challenge_statistics(self, filename, show_to_participant):
-        n_routes = len(self.statistics_routes)
-        score_composed = 0.0
-        score_route = 0.0
-        score_penalty = 0.0
-        help_message = ""
-
-        for stats in self.statistics_routes:
-            score_composed += stats['score_composed'] / float(n_routes)
-            score_route += stats['score_route'] / float(n_routes)
-            score_penalty += stats['score_penalty'] / float(n_routes)
-            help_message += "{}\n\n".format(stats['help_text'])
-
-        if self.phase == 'validation' or self.phase == 'test':
-            help_message = "No metadata available for this phase"
-
-        # create json structure
-        json_data = {
-            'submission_status': 'FINISHED',
-            'stderr': help_message,
-            'results': [
-                {
-                    'split': self.phase,
-                    'show_to_participant': show_to_participant,
-                    'accuracies': {
-                        'avg. route points': score_route,
-                        'infraction points': score_penalty,
-                        'total avg.': score_composed
-                    }
-                }],
-        }
-
-        with open(filename, "w+") as fd:
-            fd.write(json.dumps(json_data, indent=4))
-
-    def report_fatal_error(self, filename, show_to_participant, error_message):
-
-        # create json structure
-        json_data = {
-            'submission_status': 'FAILED',
-            'stderr': error_message,
-            'results': [
-                {
-                    'split': self.phase,
-                    'show_to_participant': show_to_participant,
-                    'accuracies': {
-                        'avg. route points': 0,
-                        'infraction points': 0,
-                        'total avg.': 0
-                    }
-                }],
-        }
-
-        with open(filename, "w+") as fd:
-            fd.write(json.dumps(json_data, indent=4))
-
-    def load_world(self, client, town_name):
-        if self.world is not None:
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            self.world.apply_settings(settings)
-        self.world = client.load_world(town_name)
-        self.timestamp = self.world.wait_for_tick()
-        settings = self.world.get_settings()
-        settings.synchronous_mode = True
-        self.world.apply_settings(settings)
-
-
-    def valid_sensors_configuration(self, agent, track):
-        if Track(track) != agent.track:
-            return False, "You are submitting to the wrong track [{}]!".format(Track(track))
-
-        sensors = agent.sensors()
-
-        for sensor in sensors:
-            if agent.track == Track.ALL_SENSORS:
-                if sensor['type'].startswith('sensor.scene_layout') or sensor['type'].startswith(
-                        'sensor.object_finder') or sensor['type'].startswith('sensor.hd_map'):
-                    return False, "Illegal sensor used for Track [{}]!".format(agent.track)
-
-            elif agent.track == Track.CAMERAS:
-                if not (sensor['type'].startswith('sensor.camera.rgb') or sensor['type'].startswith(
-                        'sensor.other.gnss') or sensor['type'].startswith('sensor.can_bus')):
-                    return False, "Illegal sensor used for Track [{}]!".format(agent.track)
-
-            elif agent.track == Track.ALL_SENSORS_HDMAP_WAYPOINTS:
-                if sensor['type'].startswith('sensor.scene_layout') or sensor['type'].startswith('sensor.object_finder'):
-                    return False, "Illegal sensor used for Track [{}]!".format(agent.track)
-            else:
-                if not (sensor['type'].startswith('sensor.scene_layout') or sensor['type'].startswith(
-                        'sensor.object_finder') or sensor['type'].startswith(
-                        'sensor.other.gnss')):
-                    return False, "Illegal sensor used for Track [{}]!".format(agent.track)
-
-        return True, ""
-
-    def create_configuration_scenario(self, scenario_desc, scenario_type):
-        waypoint = scenario_desc['transform']
-        parser.convert_waypoint_float(waypoint)
-
-        if 'other_actors' in scenario_desc:
-            other_vehicles = scenario_desc['other_actors']
-        else:
-            other_vehicles = None
-
-        scenario_description = {
-            'name': scenario_type,
-            'other_actors': other_vehicles,
-            'trigger_position': waypoint
-        }
-
-        return scenario_description
-
-
-    def run(self, args):
-        """
-        Run all routes according to provided commandline args
-        """
-        # retrieve worlds annotations
-        world_annotations = parser.parse_annotations_file(args.scenarios)
-        # retrieve routes
-
-        routes = []
-        route_descriptions_list = parser.parse_routes_file(args.routes)
-        for route_description in route_descriptions_list:
-            if route_description['town_name'] == args.debug_town:
-                routes.append(route_description)
-        # find and filter potential scenarios for each of the evaluated routes
-        # For each of the routes and corresponding possible scenarios to be evaluated.
-
-        list_scenarios_town = []
-        for scenarios_town in world_annotations:
-            if args.debug_town in scenarios_town.keys():
-                list_scenarios_town = scenarios_town[args.debug_town]
-                break
-
-        scenarios_current_type = []
-        for scenario in list_scenarios_town:
-            if args.debug_scenario == scenario['scenario_type']:
-                scenarios_current_type = scenario
-                break
-
-        for scenario_configuration in scenarios_current_type['available_event_configurations']:
-            scenario_conf = self.create_configuration_scenario(scenario_configuration, args.debug_scenario)
-
-            client = carla.Client(args.host, int(args.port))
-            client.set_timeout(self.client_timeout)
-
-            # load the self.world variable to be used during the route
-            self.load_world(client, args.debug_town)
-            # Set the actor pool so the scenarios can prepare themselves when needed
-            CarlaActorPool.set_world(self.world)
-            # Also se the Data provider pool.
-            CarlaDataProvider.set_world(self.world)
-            # tick world so we can start.
-
-            self.world.tick()
-
-            # create agent
-            self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
-            correct_sensors, error_message = self.valid_sensors_configuration(self.agent_instance, self.track)
-            if not correct_sensors:
-                # the sensor configuration is illegal
-                self.report_fatal_error(args.filename, args.show_to_participant, error_message)
-                return
-
-            waypoint = routes[0]['trajectory'][0]
-
-            location = carla.Location(x=float(waypoint.attrib['x']),
-                                         y=float(waypoint.attrib['y']),
-                                         z=float(waypoint.attrib['z']))
-
-            rotation = carla.Rotation(pitch=float(waypoint.attrib['pitch']),
-                                      yaw=float(waypoint.attrib['yaw']))
-
-            self.prepare_ego_car(carla.Transform(location, rotation))
-
-            list_scenarios = []
-            list_scenarios += self.build_scenario_instances([scenario_conf], args.debug_town)
-
-            # Tick once to start the scenarios.
-            print (" Running these scenarios  --- ", list_scenarios)
-            for scenario in list_scenarios:
-                scenario.scenario.scenario_tree.tick_once()
-
-            while self.route_is_running():
-                # update all scenarios
-                GameTime.on_carla_tick(self.timestamp)
-                CarlaDataProvider.on_carla_tick()
-                # update all scenarios
-                for scenario in list_scenarios:
-                    scenario.scenario.scenario_tree.tick_once()
-                # ego vehicle acts
-                ego_action = self.agent_instance()
-                self.ego_vehicle.apply_control(ego_action)
-
-                if args.route_visible:
-                    self.draw_waypoints(route_description['trajectory'],
-                                        vertical_shift=1.0, persistency=scenario.timeout)
-
-                # time continues
-                self.world.tick()
-                self.timestamp = self.world.wait_for_tick()
-
-            # statistics recording
-            self.record_route_statistics(route_description['id'])
-
-            # clean up
-            for scenario in list_scenarios:
-                del scenario
-            self.cleanup(ego=True)
-            self.agent_instance.destroy()
+    # instance a challenge
+    challenge = ChallengeEvaluator(args)
+
+    # retrieve worlds annotations
+    world_annotations = parser.parse_annotations_file(args.scenarios)
+    # retrieve routes
+
+    routes = []
+    route_descriptions_list = parser.parse_routes_file(args.routes)
+    for route_description in route_descriptions_list:
+        if route_description['town_name'] == args.debug_town:
+            routes.append(route_description)
+    # find and filter potential scenarios for each of the evaluated routes
+    # For each of the routes and corresponding possible scenarios to be evaluated.
+    list_scenarios_town = []
+    if args.debug_town in world_annotations.keys():
+        list_scenarios_town = world_annotations[args.debug_town]
+
+
+    scenarios_current_type = []
+    for scenario in list_scenarios_town:
+        if args.debug_scenario == scenario['scenario_type']:
+            scenarios_current_type = scenario
             break
 
-        # final measurements from the challenge
-        self.report_challenge_statistics(args.filename, args.show_to_participant)
+    for scenario_configuration in scenarios_current_type['available_event_configurations']:
+        scenario_conf = create_configuration_scenario(scenario_configuration, args.debug_scenario)
+
+        client = carla.Client(args.host, int(args.port))
+        client.set_timeout(challenge.client_timeout)
+
+        # load the challenge.world variable to be used during the route
+        challenge.load_world(client, args.debug_town)
+        # Set the actor pool so the scenarios can prepare themselves when needed
+        CarlaActorPool.set_world(challenge.world)
+        # Also se the Data provider pool.
+        CarlaDataProvider.set_world(challenge.world)
+        # tick world so we can start.
+
+        challenge.world.tick()
+
+        # create agent
+        challenge.agent_instance = getattr(challenge.module_agent, challenge.module_agent.__name__)(args.config)
+        correct_sensors, error_message = challenge.valid_sensors_configuration(challenge.agent_instance, challenge.track)
+        if not correct_sensors:
+            # the sensor configuration is illegal
+            challenge.report_fatal_error(args.filename, args.show_to_participant, error_message)
+            return
+
+        waypoint = routes[0]['trajectory'][0]
+
+        location = carla.Location(x=float(waypoint.attrib['x']),
+                                  y=float(waypoint.attrib['y']),
+                                  z=float(waypoint.attrib['z']))
+
+        rotation = carla.Rotation(pitch=float(waypoint.attrib['pitch']),
+                                  yaw=float(waypoint.attrib['yaw']))
+
+        challenge.prepare_ego_car(carla.Transform(location, rotation))
+        CarlaDataProvider.register_actor(challenge.ego_vehicle)
+
+        list_scenarios = []
+        list_scenarios += challenge.build_scenario_instances([scenario_conf], args.debug_town)
+
+        # Tick once to start the scenarios.
+        print (" Running these scenarios  --- ", list_scenarios)
+        for scenario in list_scenarios:
+            scenario.scenario.scenario_tree.tick_once()
+
+        challenge.run_route(list_scenarios, None, True)
+
+        # clean up
+        for scenario in list_scenarios:
+            del scenario
+        challenge.cleanup(ego=True)
+        challenge.agent_instance.destroy()
+        break
+
+    # final measurements from the challenge
+    challenge.report_challenge_statistics(args.filename, args.show_to_participant)
+    del challenge
 
 
 if __name__ == '__main__':
@@ -762,8 +183,6 @@ if __name__ == '__main__':
     ARGUMENTS.carla_root = CARLA_ROOT
     challenge_evaluator = None
     try:
-        challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
-        challenge_evaluator.run(ARGUMENTS)
+        test_routes(ARGUMENTS)
     finally:
         print("============ OK")
-        challenge_evaluator.__del__()

@@ -69,8 +69,8 @@ class MasterScenario(BasicScenario):
 
         collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
         target_criterion = InRadiusRegionTest(self.ego_vehicle,
-                                              x=self.target.transform.location.x,
-                                              y=self.target.transform.location.y,
+                                              x=self.target.location.x,
+                                              y=self.target.location.y,
                                               radius=self.radius)
 
         route_criterion = InRouteTest(self.ego_vehicle,

@@ -2,6 +2,7 @@ from __future__ import print_function
 import math
 import json
 import xml.etree.ElementTree as ET
+import carla
 """
     Module use to parse all the route and scenario configuration parameters .
 """
@@ -21,7 +22,12 @@ def parse_annotations_file(annotation_filename):
     with open(annotation_filename, 'r') as f:
         annotation_dict = json.loads(f.read())
 
-    return annotation_dict['available_scenarios']  # the file has a current maps name that is an one element vec
+    final_dict = {}
+
+    for town_dict in annotation_dict['available_scenarios']:
+        final_dict.update(town_dict)
+
+    return final_dict  # the file has a current maps name that is an one element vec
 
 
 def parse_routes_file(route_filename):
@@ -38,7 +44,9 @@ def parse_routes_file(route_filename):
         route_id = route.attrib['id']
         waypoint_list = []  # the list of waypoints that can be found on this route
         for waypoint in route.iter('waypoint'):
-             waypoint_list.append(waypoint)  # Waypoints is basically a list of XML nodes
+             waypoint_list.append(carla.Location(x=float(waypoint.attrib['x']),
+                                                 y=float(waypoint.attrib['y']),
+                                                 z=float(waypoint.attrib['z'])))  # Waypoints is basically a list of XML nodes
 
         list_route_descriptions.append({
                                     'id': route_id,
@@ -76,7 +84,6 @@ def convert_waypoint_float(waypoint):
     waypoint['yaw'] = float(waypoint['yaw'])
 
 
-
 def scan_route_for_scenarios(route_description, world_annotations):
 
     """
@@ -94,21 +101,18 @@ def scan_route_for_scenarios(route_description, world_annotations):
             route_description:
         """
         def match_waypoints(w1, wtransform):
-            dx = float(w1['x']) - wtransform.location.x
-            dy = float(w1['y']) - wtransform.location.y
-            dz = float(w1['z']) - wtransform.location.z
+            dx = float(w1['x']) - wtransform.x
+            dy = float(w1['y']) - wtransform.y
+            dz = float(w1['z']) - wtransform.z
             dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
 
-            dyaw = float(w1['yaw']) % 360 - wtransform.rotation.yaw % 360
-            dpitch = float(w1['pitch']) % 360 - wtransform.rotation.pitch % 360
+            #dist_angle = math.sqrt(dyaw * dyaw + dpitch * dpitch)
 
-            dist_angle = math.sqrt(dyaw * dyaw + dpitch * dpitch)
-
-            return dist_angle < TRIGGER_ANGLE_THRESHOLD and dist_position < TRIGGER_THRESHOLD
+            return  dist_position < TRIGGER_THRESHOLD  # dist_angle < TRIGGER_ANGLE_THRESHOLD and
 
         # TODO this function can be optimized to run on Log(N) time
         for route_waypoint in route_description:
-            if match_waypoints(world_location, route_waypoint[0].transform):
+            if match_waypoints(world_location, route_waypoint[0].location):
                 return True
 
         return False

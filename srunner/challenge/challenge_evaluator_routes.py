@@ -29,6 +29,7 @@ from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, Objec
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.challenge.autoagents.autonomous_agent import Track
 
+from srunner.scenariomanager.timer import GameTime, TimeOut
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 
@@ -43,6 +44,7 @@ from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionR
 from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 from srunner.scenarios.master_scenario import MasterScenario
+from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD
 
 # The configuration parser
 
@@ -87,6 +89,51 @@ def convert_json_to_transform(actor_dict):
                            rotation=carla.Rotation(roll=0.0, pitch=0.0, yaw=float(actor_dict['yaw'])))
 
 
+def compare_scenarios(scenario_choice, existent_scenario):
+
+    def transform_to_pos_vec(scenario):
+
+        position_vec = [scenario['trigger_position']]
+        if scenario['other_actors'] is not None:
+            if 'left' in scenario['other_actors']:
+                position_vec += scenario['other_actors']['left']
+            if 'front' in scenario['other_actors']:
+                position_vec += scenario['other_actors']['front']
+            if 'right' in scenario['other_actors']:
+                position_vec += scenario['other_actors']['right']
+
+        return position_vec
+
+    # put the positions of the scenario choice into a vec of positions to be able to compare
+
+    choice_vec = transform_to_pos_vec(scenario_choice)
+    existent_vec = transform_to_pos_vec(existent_scenario)
+    for pos_choice in choice_vec:
+
+        for pos_existent in existent_vec:
+
+            dx = float(pos_choice['x']) - float(pos_existent['x'])
+            dy = float(pos_choice['y']) - float(pos_existent['y'])
+            dz = float(pos_choice['z']) - float(pos_existent['z'])
+            dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
+            if dist_position < TRIGGER_THRESHOLD:
+                return True
+
+    return False
+
+def convert_transform_to_location(transform_vec):
+
+    location_vec = []
+    for transform_tuple in transform_vec:
+        location_vec.append((transform_tuple[0].location, transform_tuple[1]))
+
+    return location_vec
+
+
+
+Z_DISTANCE_AVOID_COLLISION = 0.5  # z vallue to add in oder to avoid spawning vehicles to close to the ground
+
+
 class ChallengeEvaluator(object):
 
     """
@@ -120,6 +167,10 @@ class ChallengeEvaluator(object):
             self.module_agent = importlib.import_module(module_name)
         self._sensors_list = []
         self._hop_resolution = 2.0
+        self.timestamp = None
+
+        # debugging parameters
+        self.route_visible = args.route_visible
 
     def cleanup(self, ego=False):
         """
@@ -180,7 +231,7 @@ class ChallengeEvaluator(object):
         :return:
         """
         for w in waypoints:
-            wp = w[0].transform.location + carla.Location(z=vertical_shift)
+            wp = w[0].location + carla.Location(z=vertical_shift)
             self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
 
     def scenario_sampling(self, potential_scenarios_definitions):
@@ -189,11 +240,31 @@ class ChallengeEvaluator(object):
         :param potential_scenarios_definitions: all the scenarios to be sampled
         :return: return the ones sampled for this case.
         """
+        def position_sampled(scenario_choice, sampled_scenarios):
+            # Check if this position was already sampled
+            for existent_scenario in sampled_scenarios:
+                # If the scenarios have equal positions then it is true.
+                if compare_scenarios(scenario_choice, existent_scenario):
+                    return True
+
+            return False
+
         # The idea is to randomly sample a scenario per trigger position.
         sampled_scenarios = []
         for trigger in potential_scenarios_definitions.keys():
             possible_scenarios = potential_scenarios_definitions[trigger]
-            sampled_scenarios.append(random.choice(possible_scenarios))
+            scenario_choice = random.choice(possible_scenarios)
+            del possible_scenarios[possible_scenarios.index(scenario_choice)]
+            # We keep sampling and testing if this position is present on any of the scenarios.
+            while position_sampled(scenario_choice, sampled_scenarios):
+                if len(possible_scenarios) == 0:
+                    scenario_choice = None
+                    break
+                scenario_choice = random.choice(possible_scenarios)
+                del possible_scenarios[possible_scenarios.index(scenario_choice)]
+
+            if scenario_choice is not None:
+                sampled_scenarios.append(scenario_choice)
 
         return sampled_scenarios
 
@@ -296,12 +367,13 @@ class ChallengeEvaluator(object):
         # we also have to convert the route to the expected format
         master_scenario_configuration = ScenarioConfiguration()
         master_scenario_configuration.target = route[-1][0]  # Take the last point and add as target.
-        master_scenario_configuration.route = route
+        master_scenario_configuration.route = convert_transform_to_location(route)
         master_scenario_configuration.town = town_name
         # TODO THIS NAME IS BIT WEIRD SINCE THE EGO VEHICLE  IS ALREADY THERE, IT IS MORE ABOUT THE TRANSFORM
         master_scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                            self.ego_vehicle.get_transform())
         master_scenario_configuration.trigger_point = self.ego_vehicle.get_transform()
+        CarlaDataProvider.register_actor(self.ego_vehicle)
 
         return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration)
 
@@ -315,11 +387,11 @@ class ChallengeEvaluator(object):
         scenario_instance_vec = []
 
         for definition in scenario_definition_vec:
-
             # Get the class possibilities for this scenario number
             possibility_vec = number_class_translation[definition['name']]
             #  TODO for now I dont know how to disambiguate this part.
             ScenarioClass = possibility_vec[0]
+
             # Create the other actors that are going to appear
             if definition['other_actors'] is not None:
                 list_of_actor_conf_instances = self.get_actors_instances(definition['other_actors'])
@@ -328,7 +400,6 @@ class ChallengeEvaluator(object):
             # Create an actor configuration for the ego-vehicle trigger position
 
             egoactor_trigger_position = convert_json_to_transform(definition['trigger_position'])
-
             scenario_configuration = ScenarioConfiguration()
             scenario_configuration.other_actors = list_of_actor_conf_instances
             scenario_configuration.town = town_name
@@ -337,6 +408,10 @@ class ChallengeEvaluator(object):
                                                                         self.ego_vehicle.get_transform())
 
             scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration)
+            # registering the used actors on the data provider so they can be updated.
+
+            CarlaDataProvider.register_actors(scenario_instance.other_actors)
+
             scenario_instance_vec.append(scenario_instance)
 
         return scenario_instance_vec
@@ -349,6 +424,31 @@ class ChallengeEvaluator(object):
             raise ValueError('You should not run a route without a master scenario')
 
         return self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING
+
+    def run_route(self, list_scenarios, trajectory, no_master=False):
+
+        while no_master or self.route_is_running():
+            # update all scenarios
+            GameTime.on_carla_tick(self.timestamp)
+            CarlaDataProvider.on_carla_tick()
+            # update all scenarios
+            for scenario in list_scenarios:
+                scenario.scenario.scenario_tree.tick_once()
+                # print("\n")
+                # py_trees.display.print_ascii_tree(
+                #    scenario.scenario.scenario_tree, show_status=True)
+                # sys.stdout.flush()
+
+            # ego vehicle acts
+            ego_action = self.agent_instance()
+            self.ego_vehicle.apply_control(ego_action)
+
+            if self.route_visible:
+                self.draw_waypoints(trajectory,
+                                    vertical_shift=1.0, persistency=scenario.timeout)
+            # time continues
+            self.world.tick()
+            self.timestamp = self.world.wait_for_tick()
 
     def record_route_statistics(self, route_id):
         """
@@ -555,7 +655,7 @@ class ChallengeEvaluator(object):
             settings.synchronous_mode = False
             self.world.apply_settings(settings)
         self.world = client.load_world(town_name)
-        self.world.wait_for_tick()
+        self.timestamp = self.world.wait_for_tick()
         settings = self.world.get_settings()
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
@@ -618,8 +718,10 @@ class ChallengeEvaluator(object):
             # tick world so we can start.
             self.world.tick()
             # prepare route's trajectory
+
             gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                 route_description['trajectory'])
+
 
             potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                                  world_annotations)
@@ -637,13 +739,18 @@ class ChallengeEvaluator(object):
 
             # prepare the ego car to run the route.
             # It starts on the first wp of the route
-            self.prepare_ego_car()
+
+            elevate_transform = route_description['trajectory'][0][0]
+            elevate_transform.location.z += 0.5
+            print (elevate_transform)
+            self.prepare_ego_car(elevate_transform)
 
             # build the master scenario based on the route and the target.
             self.master_scenario = self.build_master_scenario(route_description['trajectory'],
                                                               route_description['town_name'])
             list_scenarios = [self.master_scenario]
             # build the instance based on the parsed definitions.
+            print (sampled_scenarios_definitions)
             list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
                                                             route_description['town_name'])
 
@@ -652,20 +759,7 @@ class ChallengeEvaluator(object):
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
 
-            while self.route_is_running():
-                # update all scenarios
-                for scenario in list_scenarios:
-                    scenario.scenario.scenario_tree.tick_once()
-                # ego vehicle acts
-                ego_action = self.agent_instance()
-                self.ego_vehicle.apply_control(ego_action)
-
-                if args.route_visible:
-                    self.draw_waypoints(route_description['trajectory'],
-                                        vertical_shift=1.0, persistency=scenario.timeout)
-
-                # time continues
-                self.world.tick()
+            self.run_route(list_scenarios, route_description['trajectory'])
 
             # statistics recording
             self.record_route_statistics(route_description['id'])

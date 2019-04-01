@@ -9,6 +9,7 @@ import sys
 import py_trees
 
 import carla
+from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *

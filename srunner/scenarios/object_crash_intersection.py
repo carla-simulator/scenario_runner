@@ -63,7 +63,7 @@ class VehicleTurningRight(BasicScenario):
         waypoint = self._reference_waypoint
 
         _wp = generate_target_waypoint(waypoint, 1)
-        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.7}
+        offset = {"orientation": 270, "position": 90, "z": 1.0, "k": 0.7}
         _wp = _wp.next(10)[-1]
         lane_width = _wp.lane_width
         location = _wp.transform.location
@@ -184,7 +184,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         waypoint = self._reference_waypoint
         _wp = generate_target_waypoint(waypoint, -1)
-        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.7}
+        offset = {"orientation": 270, "position": 90, "z": 1.0, "k": 0.7}
         _wp = _wp.next(10)[-1]
         lane_width = _wp.lane_width
         location = _wp.transform.location

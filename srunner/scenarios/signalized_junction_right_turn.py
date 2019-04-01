@@ -9,12 +9,14 @@ import sys
 import py_trees
 
 import carla
+from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenarios.basic_scenario import *
 from srunner.scenarios.scenario_helper import *
+
 
 TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS = [
     "SignalizedJunctionRightTurn"
@@ -71,7 +73,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(config.other_actors[0].transform.location.x,
                            config.other_actors[0].transform.location.y,
-                           config.other_actors[0].transform.location.z - 5),
+                           config.other_actors[0].transform.location.z - 0),
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
         self.other_actors.append(first_vehicle)

@@ -319,7 +319,7 @@ class KeepLaneTest(Criterion):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         world = self.actor.get_world()
-        blueprint = world.get_blueprint_library().find('sensor.other.lane_detector')
+        blueprint = world.get_blueprint_library().find('sensor.other.lane_invasion')
         self._lane_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._lane_sensor.listen(lambda event: self._count_lane_invasion(weakref.ref(self), event))
 
@@ -497,7 +497,7 @@ class WrongLaneTest(Criterion):
         self._last_lane_id = None
         self._last_road_id = None
 
-        blueprint = self._world.get_blueprint_library().find('sensor.other.lane_detector')
+        blueprint = self._world.get_blueprint_library().find('sensor.other.lane_invasion')
         self._lane_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._lane_sensor.listen(lambda event: self._lane_change(weakref.ref(self), event))
 
@@ -687,6 +687,7 @@ class RouteCompletionTest(Criterion):
         self._current_index = 0
         self._route_length = len(self._route)
         self._waypoints, _ = zip(*self._route)
+        print (self._waypoints)
 
         self._traffic_event = TrafficEvent(type=TrafficEventType.ROUTE_COMPLETION)
         self.list_traffic_events.append(self._traffic_event)
