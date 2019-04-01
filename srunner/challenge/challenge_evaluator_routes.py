@@ -593,6 +593,22 @@ class ChallengeEvaluator(object):
 
         self.statistics_routes.append(current_statistics)
 
+    def _retrieve_phase_split(self):
+        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME')
+        if not phase_codename:
+            raise ValueError('environment variable CHALLENGE_PHASE_CODENAME not defined')
+
+        phase_codename = phase_codename.split("_")[0]
+
+        if phase_codename == 'dev':
+            split_name = 'dev_split'
+        elif phase_codename == 'validation':
+            split_name = 'val_split'
+        else:
+            split_name = 'test_split'
+
+        return phase_codename, split_name
+
     def report_challenge_statistics(self, filename, show_to_participant):
         n_routes = len(self.statistics_routes)
         score_composed = 0.0
@@ -600,22 +616,24 @@ class ChallengeEvaluator(object):
         score_penalty = 0.0
         help_message = ""
 
+        phase_codename, split_name = self._retrieve_phase_split()
+
         for stats in self.statistics_routes:
             score_composed += stats['score_composed'] / float(n_routes)
             score_route += stats['score_route'] / float(n_routes)
             score_penalty += stats['score_penalty'] / float(n_routes)
             help_message += "{}\n\n".format(stats['help_text'])
 
-        if self.phase == 'validation' or self.phase == 'test':
+        if phase_codename == 'validation' or phase_codename == 'test':
             help_message = "No metadata available for this phase"
 
         # create json structure
         json_data = {
             'submission_status': 'FINISHED',
             'stderr': help_message,
-            'results': [
+            'result': [
                 {
-                    'split': self.phase,
+                    'split': split_name,
                     'show_to_participant': show_to_participant,
                     'accuracies': {
                         'avg. route points': score_route,
@@ -630,13 +648,15 @@ class ChallengeEvaluator(object):
 
     def report_fatal_error(self, filename, show_to_participant, error_message):
 
+        _, split_name = self._retrieve_phase_split()
+
         # create json structure
         json_data = {
             'submission_status': 'FAILED',
             'stderr': error_message,
-            'results': [
+            'result': [
                 {
-                    'split': self.phase,
+                    'split': split_name,
                     'show_to_participant': show_to_participant,
                     'accuracies': {
                         'avg. route points': 0,
@@ -787,7 +807,6 @@ if __name__ == '__main__':
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
     PARSER.add_argument('--filename', type=str, help='Filename to store challenge results', default='results.json')
-    PARSER.add_argument('--split', type=str, help='Challenge split', default='dev_track_2')
     PARSER.add_argument('--route-visible', dest='route_visible',
                         action="store_true", help='Run with a visible route')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
