@@ -25,7 +25,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 
 
 # We import the challenge evaluator here
-from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator,
+from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator
 
 
 def create_configuration_scenario( scenario_desc, scenario_type):

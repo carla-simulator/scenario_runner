@@ -178,7 +178,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
 
         if ego_location is None or other_location is None:
             return new_status
-
+        print (ego_location, other_location)
         if calculate_distance(ego_location, other_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 
@@ -678,6 +678,7 @@ class SyncArrival(AtomicBehavior):
         Dynamic control update for actor velocity
         """
         new_status = py_trees.common.Status.RUNNING
+        print (CarlaDataProvider.get_location(self._actor_reference), self._target_location)
 
         distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
                                                 self._target_location)
