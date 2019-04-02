@@ -31,7 +31,7 @@ class HDMapReader(object):
         map_name = os.path.basename(CarlaDataProvider.get_map().name)
         transform = self._vehicle.get_transform()
 
-        return {'map_file': "{}/HDMaps/{}.ply".format(self._CARLA_ROOT, map_name),
+        return {'map_file': "{}/HDMaps/{}.pcd".format(self._CARLA_ROOT, map_name),
                 'transform': {'x': transform.location.x,
                               'y': transform.location.y,
                               'z': transform.location.z,
