@@ -865,7 +865,7 @@ class WaypointFollower(AtomicBehavior):
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
                 actor = self._queue.get()
-                if actor not in self._actor_list and actor is not None:
+                if actor is not None and actor not in self._actor_list:
                     self._actor_list.append(actor)
                     self._apply_local_planner(actor)
 
