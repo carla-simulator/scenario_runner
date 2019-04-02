@@ -43,20 +43,15 @@ class SignalizedJunctionRightTurn(BasicScenario):
         Setup all relevant parameters and create scenario
         obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
         """
-        self._target_vel = 30
+        self._world = world
+        self._map = CarlaDataProvider.get_map()
+        self._target_vel = 25
         self._brake_value = 0.5
         self._ego_distance = 110
         self._traffic_light = None
         self._other_actor_transform = None
-        # Timeout of scenario in seconds
-        self.timeout = timeout
-        self._source_transform = None
-        self._sink_location = None
         self._blackboard_queue_name = 'SignalizedJunctionRightTurn/actor_flow_queue'
         self._queue = Blackboard().set(self._blackboard_queue_name, Queue())
-        self._obstacle_type = obstacle_type
-        self._source_transform = self._map.get_waypoint(config.other_point.location)
-        print(self._source_transform)
 
         super(SignalizedJunctionRightTurn, self).__init__("HeroActorTurningRightAtSignalizedJunction",
                                                           ego_vehicle,
@@ -115,30 +110,32 @@ class SignalizedJunctionRightTurn(BasicScenario):
             target_waypoint = wp_choice[0]
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(1.0)
-
-        move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan, avoid_collision=True)
-        waypoint_follower_end = InTriggerDistanceToLocation(
-            self.other_actors[0], plan[-1][0].transform.location, 10)
-
-        move_actor_parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        move_actor_parallel.add_child(move_actor)
-        move_actor_parallel.add_child(waypoint_follower_end)
-        # end condition
+        # adding flow of actors
+        actor_source = ActorSource(
+            self._world, ['vehicle.*', 'vehicle.nissan.patrol', 'vehicle.nissan.micra'],
+            self._other_actor_transform, 20, self._blackboard_queue_name)
+        # destroying flow of actors
+        actor_sink = ActorSink(self._world, plan[-1][0].transform.location, 10)
+        # follow waypoints untill next intersection
+        move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan,
+                                      blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
+        # wait
         wait = DriveDistance(self.ego_vehicle, self._ego_distance)
 
         # Behavior tree
-        sequence = py_trees.composites.Sequence()
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-        sequence.add_child(move_actor_parallel)
-        sequence.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(wait)
-        root.add_child(sequence)
+        root.add_child(actor_source)
+        root.add_child(actor_sink)
+        root.add_child(move_actor)
 
-        return root
+        sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+        sequence.add_child(root)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
+
+        return sequence
 
     def _create_test_criteria(self):
         """
