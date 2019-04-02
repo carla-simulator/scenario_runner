@@ -62,7 +62,7 @@ class StationaryObjectCrossing(BasicScenario):
         lane_width = self._reference_waypoint.lane_width
         location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
-        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 0.2}
+        offset = {"orientation": 270, "position": 90, "z": 0.4, "k": 0.2}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
@@ -162,7 +162,7 @@ class DynamicObjectCrossing(BasicScenario):
         lane_width = self._reference_waypoint.lane_width
         location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
-        offset = {"orientation": 270, "position": 90, "z": 0.2, "k": 1.1}
+        offset = {"orientation": 270, "position": 90, "z": 0.4, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(

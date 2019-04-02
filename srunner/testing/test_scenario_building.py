@@ -47,13 +47,13 @@ class TestScenarioBuilder(unittest.TestCase):
         # For each of the routes to be evaluated.
         for route_description in list_route_descriptions:
 
-            if route_description['town_name'] == 'Town03' or route_description['town_name'] == 'Town04':
+            print (" TOWN  ", route_description['town_name'])
+            if route_description['town_name'] == 'Town01' or route_description['town_name'] == 'Town03':
                 continue
             challenge.world = client.load_world(route_description['town_name'])
 
             # Set the actor pool so the scenarios can prepare themselves when needed
             CarlaActorPool.set_world(challenge.world)
-
             CarlaDataProvider.set_world(challenge.world)
             # find and filter potential scenarios
             # Returns the iterpolation in a different format
@@ -67,19 +67,30 @@ class TestScenarioBuilder(unittest.TestCase):
             # Sample the scenarios
             sampled_scenarios = challenge.scenario_sampling(potential_scenarios_definitions)
 
+
             # prepare route's trajectory
-            elevate_transform = route_description['trajectory'][0][0].transform
+            elevate_transform = route_description['trajectory'][0][0]
             elevate_transform.location.z += 0.5
             challenge.prepare_ego_car(elevate_transform)
 
             # build the master scenario based on the route and the target.
-            master_scenario = challenge.build_master_scenario(route_description['trajectory'], route_description['town_name'])
+            print ("loading master")
+            master_scenario = challenge.build_master_scenario(route_description['trajectory'],
+                                                              route_description['town_name'])
             list_scenarios = [master_scenario]
-            print (" TOWN  ", route_description['town_name'])
             print (" Built the master scenario ")
             # build the instance based on the parsed definitions.
             print (sampled_scenarios)
-            list_scenarios += challenge.build_scenario_instances(sampled_scenarios, route_description['town_name'])
+            # remove scenario 8 and 9
+            scenario_removed = []
+            for possible_scenario in sampled_scenarios:
+                if possible_scenario['name'] == 'Scenario8' or possible_scenario['name'] == 'Scenario7' or \
+                        possible_scenario['name'] == 'Scenario9' or possible_scenario['name'] == 'Scenario5':
+                    continue
+                else:
+                    scenario_removed.append(possible_scenario)
+
+            list_scenarios += challenge.build_scenario_instances(scenario_removed, route_description['town_name'])
             print (" Scenarios present ", list_scenarios)
 
             challenge.cleanup(ego=True)

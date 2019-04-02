@@ -687,8 +687,6 @@ class RouteCompletionTest(Criterion):
         self._current_index = 0
         self._route_length = len(self._route)
         self._waypoints, _ = zip(*self._route)
-        print (self._waypoints)
-
         self._traffic_event = TrafficEvent(type=TrafficEventType.ROUTE_COMPLETION)
         self.list_traffic_events.append(self._traffic_event)
         self._percentage_route_completed = 0.0

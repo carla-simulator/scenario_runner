@@ -81,7 +81,7 @@ class VehicleTurningRight(BasicScenario):
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z - 5),
+                           self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
 
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
@@ -202,7 +202,7 @@ class VehicleTurningLeft(BasicScenario):
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z - 5),
+                           self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
 
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)

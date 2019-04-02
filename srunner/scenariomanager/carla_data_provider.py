@@ -169,10 +169,13 @@ class CarlaDataProvider(object):
 
         CarlaDataProvider.prepare_map()
         location = CarlaDataProvider.get_location(actor)
+
+        print(" location cached ", location)
         if not use_cached_location:
             location = actor.get_transform().location
 
         waypoint = CarlaDataProvider._map.get_waypoint(location)
+        print ("Waypoint ", waypoint)
 
         # Create list of all waypoints until next intersection
         list_of_waypoints = []
@@ -182,6 +185,7 @@ class CarlaDataProvider(object):
 
         # If the list is empty, the actor is in an intersection
         if not list_of_waypoints:
+            print ("agent is in an intersection")
             return None
 
         relevant_traffic_light = None

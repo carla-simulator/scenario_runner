@@ -50,7 +50,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
                                                           world,
                                                           debug_mode,
                                                           criteria_enable=criteria_enable)
-
+        print ("ego transform ", self.ego_vehicle)
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
@@ -73,7 +73,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(config.other_actors[0].transform.location.x,
                            config.other_actors[0].transform.location.y,
-                           config.other_actors[0].transform.location.z - 0),
+                           config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
         self.other_actors.append(first_vehicle)
