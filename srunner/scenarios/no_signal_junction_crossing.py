@@ -95,36 +95,37 @@ class NoSignalJunctionCrossing(BasicScenario):
         intersection_center = (left_boundary+right_boundary)/2
         intersection_width = left_boundary.distance(right_boundary)
 
-        stop_queue_name = "ts10/detect_for_stopping"
         negotiation_queue_name = "ts10/detect_for_negotiation"
         passthrough_queue_name = "ts10/passthrough_queue"
 
-        for queue_name in [stop_queue_name, negotiation_queue_name, passthrough_queue_name]:
+        for queue_name in [negotiation_queue_name, passthrough_queue_name]:
             Blackboard().set(queue_name, Queue())
 
         # leaves
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        scenario_sequence = py_trees.composites.Sequence()
+        move_all_to_intersection = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
-        for actor in self.other_actors:
-            current_waypoint = self._wmap.get_waypoint(actor.get_location())
-            waypoint = generate_target_waypoint(current_waypoint, 0)  # Straight across the intersection
-            plan = self._make_plan(waypoint)
+        for i, actor in enumerate(self.other_actors):
+            move_vehicle_to_intersection = py_trees.composites.Sequence()
+            waypoint_follow_reach = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            target_location = get_crossing_point(actor)
+            waypoint_follow_reach.add_child(BasicAgentBehavior(actor, target_location))
+            waypoint_follow_reach.add_child(InTriggerDistanceToNextIntersection(actor, 10))
+            move_vehicle_to_intersection.add_child(waypoint_follow_reach)
+            move_vehicle_to_intersection.add_child(StopVehicle(actor, 1.0))
+            move_all_to_intersection.add_child(move_vehicle_to_intersection)
 
-            root.add_child(WaypointFollower(actor, 30, plan=plan))
+        scenario_sequence.add_child(move_all_to_intersection)
 
-        detect_to_stop = DetectActorArrival(self._world, intersection_center, intersection_width, stop_queue_name)
         detect_to_passthrough = DetectActorArrival(
             self._world, intersection_center, intersection_width, negotiation_queue_name)
-        stop_actors = StopMultiActor(stop_queue_name)
-        negotiate = PriorityNegotiator(negotiation_queue_name, passthrough_queue_name, interval=5)
-        reset_actor_control = ResetActorControl(negotiation_queue_name)
+        negotiate = PriorityNegotiator(negotiation_queue_name, passthrough_queue_name, interval=10)
         passthrough_follower = WaypointFollower(None, 30, blackboard_queue_name=passthrough_queue_name)
 
-        root.add_child(detect_to_stop)
+        root.add_child(scenario_sequence)
         root.add_child(detect_to_passthrough)
-        root.add_child(stop_actors)
         root.add_child(negotiate)
-        root.add_child(reset_actor_control)
         root.add_child(passthrough_follower)
         root.add_child(DriveDistance(self.ego_vehicle, self._ego_vehicle_end_distance))
 

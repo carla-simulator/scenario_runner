@@ -823,7 +823,7 @@ class WaypointFollower(AtomicBehavior):
     """
 
     def __init__(self, actor, target_speed, plan=None, blackboard_queue_name=None,
-                 avoid_collision=True, name="FollowWaypoints"):
+                 avoid_collision=False, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
@@ -858,8 +858,6 @@ class WaypointFollower(AtomicBehavior):
             local_planner.set_global_plan(self._plan)
         self._local_planner_list.append(local_planner)
 
-        return True
-
     def update(self):
         """
         Run local planner, obtain and apply control to actor
@@ -870,8 +868,9 @@ class WaypointFollower(AtomicBehavior):
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
                 actor = self._queue.get()
-                self._actor_list.append(actor)
-                self._apply_local_planner(actor)
+                if actor is not None and actor not in self._actor_list:
+                    self._actor_list.append(actor)
+                    self._apply_local_planner(actor)
 
         for actor, local_planner in zip(self._actor_list, self._local_planner_list):
             if actor is not None and actor.is_alive and local_planner is not None:
@@ -1058,39 +1057,17 @@ class DetectActorArrival(AtomicBehavior):
         self._threshold = threshold
         self._blackboard_queue_name = blackboard_queue_name
         self._queue = Blackboard().get(blackboard_queue_name)
+        self._actor_map = dict()
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         world_actors = self._world.get_actors().filter('vehicle.*')
 
         for actor in world_actors:
-            if calculate_distance(actor.get_location(), self._location) < self._threshold:
+            if not actor.id in self._actor_map and \
+                    calculate_distance(actor.get_location(), self._location) < self._threshold:
                 self._queue.put(actor)
-
-        return new_status
-
-
-class StopMultiActor(AtomicBehavior):
-    """
-    Stops actors put into a specified blackboard queue
-    """
-
-    def __init__(self, blackboard_queue_name, name="StopMultiActor"):
-        """
-        Setup class members
-        """
-        super(StopMultiActor, self).__init__(name)
-        self._blackboard_queue_name = blackboard_queue_name
-        self._queue = Blackboard().get(blackboard_queue_name)
-
-    def update(self):
-        new_status = py_trees.common.Status.RUNNING
-
-        while not self._queue.empty():
-            actor = self._queue.get()
-            control, _ = get_actor_control(actor)
-            control.brake = 1.0
-            actor.apply_control(control)
+                self._actor_map[actor.id] = None
 
         return new_status
 
@@ -1108,42 +1085,22 @@ class PriorityNegotiator(AtomicBehavior):
         self._out_queue_name = out_queue_name
         self._in_queue = Blackboard().get(in_queue_name)
         self._out_queue = Blackboard().get(out_queue_name)
-        self._last_pass = time.time()
+        self._last_pass = None
         self._interval = interval
+
+    def setup(self, unused_timeout=5):
+        self._last_pass = time.time()
+        return True
 
     def update(self):
         """ pass actors in order """
-        if (time.time() - self._last_pass) > self._interval and not self._in_queue.empty():
+        new_status = py_trees.common.Status.RUNNING
+        if self._last_pass is not None and \
+            (time.time() - self._last_pass) > self._interval and \
+                not self._in_queue.empty():
             self._last_pass = time.time()
             actor = self._in_queue.get()
-            if actor.attributes['role_name'] == "hero":
+            if actor is not None and not actor.attributes['role_name'] == "hero":
                 self._out_queue.put(actor)
-
-        return py_trees.common.Status.RUNNING
-
-
-class ResetActorControl(AtomicBehavior):
-    """
-    Resets the actors control in a specified blackboard queue
-    """
-
-    def __init__(self, blackboard_queue_name, name="ResetActorControl"):
-        """
-        Setup class members
-        """
-        super(ResetActorControl, self).__init__(name)
-        self._blackboard_queue_name = blackboard_queue_name
-        self._queue = Blackboard().get(blackboard_queue_name)
-
-    def update(self):
-        new_status = py_trees.common.Status.RUNNING
-
-        while not self._queue.empty():
-            actor = self._queue.get()
-            control, _ = get_actor_control(actor)
-            control.brake = 0.0
-            control.throttle = 1.0
-
-            actor.apply_control(control)
 
         return new_status
