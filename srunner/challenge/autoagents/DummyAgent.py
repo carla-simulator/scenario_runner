@@ -2,11 +2,11 @@ import scipy.misc
 
 import carla
 
-from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent
+from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 
 class DummyAgent(AutonomousAgent):
     def setup(self, path_to_conf_file):
-        pass
+        self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
     def sensors(self):
         """
@@ -37,9 +37,6 @@ class DummyAgent(AutonomousAgent):
                    {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'},
                    {'type': 'sensor.can_bus', 'reading_frequency': 25, 'id': 'can_bus'},
                    {'type': 'sensor.hd_map', 'reading_frequency': 1, 'id': 'hdmap'},
-                   {'type': 'sensor.scene_layout', 'id': 'scene_layout'},
-                   {'type': 'sensor.object_finder', 'reading_frequency': 20, 'id': 'object_finder'}
-
                   ]
 
         return sensors
@@ -60,7 +57,7 @@ class DummyAgent(AutonomousAgent):
         # RETURN CONTROL
         control = carla.VehicleControl()
         control.steer = 0.0
-        control.throttle = 1.0
+        control.throttle = 0.0
         control.brake = 0.0
         control.hand_brake = False
 

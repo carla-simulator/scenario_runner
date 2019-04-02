@@ -35,7 +35,7 @@ except ImportError:
 import carla
 import time
 
-from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent
+from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 
 
 

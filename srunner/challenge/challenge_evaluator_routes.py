@@ -142,9 +142,23 @@ class ChallengeEvaluator(object):
     MAX_ALLOWED_RADIUS_SENSOR = 5.0
 
     def __init__(self, args):
-        phase_codename = args.split
-        self.phase = phase_codename.split("_")[0]
-        self.track = int(phase_codename.split("_")[-1])
+        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME')
+        if not phase_codename:
+            raise ValueError('environment variable CHALLENGE_PHASE_CODENAME not defined')
+
+        track = int(phase_codename.split("_")[2])
+        phase_codename = phase_codename.split("_")[0]
+
+        if phase_codename == 'dev':
+            split_name = 'dev_split'
+        elif phase_codename == 'validation':
+            split_name = 'val_split'
+        else:
+            split_name = 'test_split'
+
+        self.phase = phase_codename
+        self.split = split_name
+        self.track = track
 
         self.ego_vehicle = None
         self.actors = []
@@ -593,22 +607,6 @@ class ChallengeEvaluator(object):
 
         self.statistics_routes.append(current_statistics)
 
-    def _retrieve_phase_split(self):
-        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME')
-        if not phase_codename:
-            raise ValueError('environment variable CHALLENGE_PHASE_CODENAME not defined')
-
-        phase_codename = phase_codename.split("_")[0]
-
-        if phase_codename == 'dev':
-            split_name = 'dev_split'
-        elif phase_codename == 'validation':
-            split_name = 'val_split'
-        else:
-            split_name = 'test_split'
-
-        return phase_codename, split_name
-
     def report_challenge_statistics(self, filename, show_to_participant):
         n_routes = len(self.statistics_routes)
         score_composed = 0.0
@@ -616,15 +614,13 @@ class ChallengeEvaluator(object):
         score_penalty = 0.0
         help_message = ""
 
-        phase_codename, split_name = self._retrieve_phase_split()
-
         for stats in self.statistics_routes:
             score_composed += stats['score_composed'] / float(n_routes)
             score_route += stats['score_route'] / float(n_routes)
             score_penalty += stats['score_penalty'] / float(n_routes)
             help_message += "{}\n\n".format(stats['help_text'])
 
-        if phase_codename == 'validation' or phase_codename == 'test':
+        if self.phase == 'validation' or self.phase == 'test':
             help_message = "No metadata available for this phase"
 
         # create json structure
@@ -633,7 +629,7 @@ class ChallengeEvaluator(object):
             'stderr': help_message,
             'result': [
                 {
-                    'split': split_name,
+                    'split': self.split,
                     'show_to_participant': show_to_participant,
                     'accuracies': {
                         'avg. route points': score_route,
@@ -648,15 +644,13 @@ class ChallengeEvaluator(object):
 
     def report_fatal_error(self, filename, show_to_participant, error_message):
 
-        _, split_name = self._retrieve_phase_split()
-
         # create json structure
         json_data = {
             'submission_status': 'FAILED',
             'stderr': error_message,
             'result': [
                 {
-                    'split': split_name,
+                    'split': self.split,
                     'show_to_participant': show_to_participant,
                     'accuracies': {
                         'avg. route points': 0,
@@ -708,8 +702,9 @@ class ChallengeEvaluator(object):
                     return False, "Illegal sensor used for Track [{}]!".format(agent.track)
 
             # let's check the extrinsics of the sensor
-            if math.sqrt(sensor['x']**2 + sensor['y']**2 + sensor['z']**2) > self.MAX_ALLOWED_RADIUS_SENSOR:
-                return False, "Illegal sensor extrinsics used for Track [{}]!".format(agent.track)
+            if 'x' in sensor and 'y' in sensor and 'z' in sensor:
+                if math.sqrt(sensor['x']**2 + sensor['y']**2 + sensor['z']**2) > self.MAX_ALLOWED_RADIUS_SENSOR:
+                    return False, "Illegal sensor extrinsics used for Track [{}]!".format(agent.track)
 
         return True, ""
 
@@ -741,7 +736,6 @@ class ChallengeEvaluator(object):
 
             gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                 route_description['trajectory'])
-
 
             potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                                  world_annotations)
