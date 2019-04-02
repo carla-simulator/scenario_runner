@@ -456,7 +456,6 @@ class ChallengeEvaluator(object):
             # ego vehicle acts
             ego_action = self.agent_instance()
             self.ego_vehicle.apply_control(ego_action)
-            print (self.ego_vehicle.get_transform().location)
 
             if self.route_visible:
                 self.draw_waypoints(trajectory,
@@ -753,14 +752,6 @@ class ChallengeEvaluator(object):
 
             self.agent_instance.set_global_plan(gps_route)
 
-            scenario_removed = []
-            for possible_scenario in sampled_scenarios_definitions:
-                if possible_scenario['name'] == 'Scenario8' or possible_scenario['name'] == 'Scenario7' or \
-                        possible_scenario['name'] == 'Scenario9' or possible_scenario['name'] == 'Scenario5':
-                    continue
-                else:
-                    scenario_removed.append(possible_scenario)
-
             # prepare the ego car to run the route.
             # It starts on the first wp of the route
 
@@ -773,7 +764,7 @@ class ChallengeEvaluator(object):
                                                               route_description['town_name'])
             list_scenarios = [self.master_scenario]
             # build the instance based on the parsed definitions.
-            list_scenarios += self.build_scenario_instances(scenario_removed,
+            list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
                                                             route_description['town_name'])
 
             # Tick once to start the scenarios.
