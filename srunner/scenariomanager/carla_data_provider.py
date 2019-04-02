@@ -169,11 +169,11 @@ class CarlaDataProvider(object):
 
         CarlaDataProvider.prepare_map()
         location = CarlaDataProvider.get_location(actor)
+
         if not use_cached_location:
             location = actor.get_transform().location
 
         waypoint = CarlaDataProvider._map.get_waypoint(location)
-
         # Create list of all waypoints until next intersection
         list_of_waypoints = []
         while waypoint and not waypoint.is_intersection:

@@ -93,7 +93,7 @@ class FollowLeadingVehicle(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z - 5),
+                           self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         self.other_actors.append(first_vehicle)
@@ -209,7 +209,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         first_actor_transform = carla.Transform(
             carla.Location(first_actor_waypoint.transform.location.x,
                            first_actor_waypoint.transform.location.y,
-                           first_actor_waypoint.transform.location.z - 5),
+                           first_actor_waypoint.transform.location.z - 500),
             first_actor_waypoint.transform.rotation)
         self._first_actor_transform = carla.Transform(
             carla.Location(first_actor_waypoint.transform.location.x,
@@ -220,7 +220,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         second_actor_transform = carla.Transform(
             carla.Location(second_actor_waypoint.transform.location.x,
                            second_actor_waypoint.transform.location.y,
-                           second_actor_waypoint.transform.location.z - 5),
+                           second_actor_waypoint.transform.location.z - 500),
             carla.Rotation(second_actor_waypoint.transform.rotation.pitch, yaw_1,
                            second_actor_waypoint.transform.rotation.roll))
         self._second_actor_transform = carla.Transform(

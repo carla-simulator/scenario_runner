@@ -38,6 +38,7 @@ class OtherLeadingVehicle(BasicScenario):
     """
     This class holds everything required for a simple "Other Leading Vehicle"
     scenario involving a user controlled vehicle and two other actors.
+    Traffic Scenario 05
     """
     category = "OtherLeadingVehicle"
 
@@ -69,6 +70,7 @@ class OtherLeadingVehicle(BasicScenario):
                                                   debug_mode,
                                                   criteria_enable=criteria_enable)
         # traffic light
+        print(" other vehicle ", self.other_actors[0].get_transform())
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
 
         if self._traffic_light is None:
@@ -96,13 +98,13 @@ class OtherLeadingVehicle(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(first_vehicle_waypoint.transform.location.x,
                            first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z - 5),
+                           first_vehicle_waypoint.transform.location.z - 500),
             first_vehicle_waypoint.transform.rotation)
 
         second_vehicle_transform = carla.Transform(
             carla.Location(second_vehicle_waypoint.transform.location.x,
                            second_vehicle_waypoint.transform.location.y,
-                           second_vehicle_waypoint.transform.location.z - 5),
+                           second_vehicle_waypoint.transform.location.z - 500),
             second_vehicle_waypoint.transform.rotation)
 
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
