@@ -257,7 +257,6 @@ class CarlaActorPool(object):
                     break
         else:
             actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
-
         if actor is None:
             raise Exception(
                 "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
@@ -267,7 +266,9 @@ class CarlaActorPool(object):
                 actor.set_autopilot(autopilot)
             else:
                 pass
-
+        # wait for the actor to be spawned properly before we do anything
+        CarlaActorPool._world.tick()
+        CarlaActorPool._world.wait_for_tick()
         return actor
 
     @staticmethod

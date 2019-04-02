@@ -201,6 +201,7 @@ class ChallengeEvaluator(object):
         if self.world is not None:
             settings = self.world.get_settings()
             settings.synchronous_mode = False
+            print ( "remove the synch")
             self.world.apply_settings(settings)
             del self.world
 
@@ -433,18 +434,20 @@ class ChallengeEvaluator(object):
             # update all scenarios
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
-                # print("\n")
-                # py_trees.display.print_ascii_tree(
-                #    scenario.scenario.scenario_tree, show_status=True)
-                # sys.stdout.flush()
+                #print("\n")
+                #py_trees.display.print_ascii_tree(
+                #   scenario.scenario.scenario_tree, show_status=True)
+                #sys.stdout.flush()
 
             # ego vehicle acts
             ego_action = self.agent_instance()
             self.ego_vehicle.apply_control(ego_action)
+            print (self.ego_vehicle.get_transform().location)
 
             if self.route_visible:
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=scenario.timeout)
+                self.route_visible = False
             # time continues
             self.world.tick()
             self.timestamp = self.world.wait_for_tick()
@@ -741,7 +744,6 @@ class ChallengeEvaluator(object):
             gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                 route_description['trajectory'])
 
-
             potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                                  world_annotations)
             # Sample the scenarios to be used for this route instance.
@@ -756,12 +758,19 @@ class ChallengeEvaluator(object):
 
             self.agent_instance.set_global_plan(gps_route)
 
+            scenario_removed = []
+            for possible_scenario in sampled_scenarios_definitions:
+                if possible_scenario['name'] == 'Scenario8' or possible_scenario['name'] == 'Scenario7' or \
+                        possible_scenario['name'] == 'Scenario9' or possible_scenario['name'] == 'Scenario5':
+                    continue
+                else:
+                    scenario_removed.append(possible_scenario)
+
             # prepare the ego car to run the route.
             # It starts on the first wp of the route
 
             elevate_transform = route_description['trajectory'][0][0]
             elevate_transform.location.z += 0.5
-            print (elevate_transform)
             self.prepare_ego_car(elevate_transform)
 
             # build the master scenario based on the route and the target.
@@ -769,8 +778,7 @@ class ChallengeEvaluator(object):
                                                               route_description['town_name'])
             list_scenarios = [self.master_scenario]
             # build the instance based on the parsed definitions.
-            print (sampled_scenarios_definitions)
-            list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
+            list_scenarios += self.build_scenario_instances(scenario_removed,
                                                             route_description['town_name'])
 
             # Tick once to start the scenarios.
@@ -809,6 +817,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--route-visible', dest='route_visible',
                         action="store_true", help='Run with a visible route')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
+    PARSER.add_argument('--split', type=str, help='Challenge split', default='dev_track_2')
     PARSER.add_argument('--routes',
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
     PARSER.add_argument('--scenarios',
