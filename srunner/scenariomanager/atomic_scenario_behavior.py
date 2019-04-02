@@ -16,6 +16,7 @@ The atomic behaviors are implemented with py_trees.
 import carla
 import py_trees
 from py_trees.blackboard import Blackboard
+import numpy as np
 
 from agents.navigation.roaming_agent import *
 from agents.navigation.basic_agent import *
@@ -1002,16 +1003,24 @@ class ActorSource(AtomicBehavior):
         self._threshold = threshold
         self._queue = Blackboard().get(blackboard_queue_name)
         self._actor_limit = actor_limit
+        self._last_blocking_actor = None
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         if self._actor_limit > 0:
-            world_actors = self._world.get_actors().filter('vehicle.*')
+            world_actors = self._world.get_actors()
             spawn_point_blocked = False
-            for actor in world_actors:
-                if self._spawn_point.location.distance(actor.get_location()) < self._threshold:
-                    spawn_point_blocked = True
-                    break
+            if (self._last_blocking_actor and
+                self._spawn_point.location.distance(self._last_blocking_actor.get_location()) < self._threshold):
+                spawn_point_blocked = True
+
+            if not spawn_point_blocked:
+                for actor in world_actors:
+                    if self._spawn_point.location.distance(actor.get_location()) < self._threshold:
+                        spawn_point_blocked = True
+                        self._last_blocking_actor = actor
+                        break
+
             if not spawn_point_blocked:
                 new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
                 self._actor_limit -= 1
