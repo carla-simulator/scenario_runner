@@ -50,7 +50,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
                                                           world,
                                                           debug_mode,
                                                           criteria_enable=criteria_enable)
-        print ("ego transform ", self.ego_vehicle)
+
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")

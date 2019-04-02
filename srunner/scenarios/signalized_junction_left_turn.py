@@ -51,7 +51,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
                                                          world,
                                                          debug_mode,
                                                          criteria_enable=criteria_enable)
-        print (" ego vehicle ", self.ego_vehicle.get_transform())
+
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
@@ -59,7 +59,6 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._traffic_light.set_state(carla.TrafficLightState.Green)
         self._traffic_light.set_green_time(self.timeout)
         # other vehicle's traffic light
-        print(" other actor ", self.ego_vehicle.get_transform())
         traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
         if traffic_light_other is None:
             print("No traffic light for the given location of the other vehicle found")

@@ -240,12 +240,10 @@ class ChallengeEvaluator(object):
         :return: return the ones sampled for this case.
         """
         def position_sampled(scenario_choice, sampled_scenarios):
-            print ("Trying to insert ", scenario_choice)
             # Check if this position was already sampled
             for existent_scenario in sampled_scenarios:
                 # If the scenarios have equal positions then it is true.
                 if compare_scenarios(scenario_choice, existent_scenario):
-                    print ('This position was already sampled')
                     return True
 
             return False
