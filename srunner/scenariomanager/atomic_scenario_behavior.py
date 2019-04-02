@@ -821,7 +821,7 @@ class WaypointFollower(AtomicBehavior):
     """
 
     def __init__(self, actor, target_speed, plan=None, blackboard_queue_name=None,
-                 avoid_collision=True, name="FollowWaypoints"):
+                 avoid_collision=False, name="FollowWaypoints"):
         """
         Set up actor and local planner
         """
@@ -865,8 +865,9 @@ class WaypointFollower(AtomicBehavior):
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
                 actor = self._queue.get()
-                self._actor_list.append(actor)
-                self._apply_local_planner(actor)
+                if actor not in self._actor_list and actor is not None:
+                    self._actor_list.append(actor)
+                    self._apply_local_planner(actor)
 
         for actor, local_planner in zip(self._actor_list, self._local_planner_list):
             if actor is not None and actor.is_alive and local_planner is not None:
@@ -989,7 +990,8 @@ class ActorSource(AtomicBehavior):
     from the transform.
     """
 
-    def __init__(self, world, actor_type_list, transform, threshold, blackboard_queue_name, actor_limit=30, name="ActorSource"):
+    def __init__(self, world, actor_type_list, transform, threshold, blackboard_queue_name,
+                 actor_limit=7, name="ActorSource"):
         """
         Setup class members
         """
