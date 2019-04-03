@@ -48,7 +48,8 @@ class ManeuverOppositeDirection(BasicScenario):
         self._second_vehicle_location = self._first_vehicle_location + 60
         self._ego_vehicle_drive_distance = self._second_vehicle_location * 2
         self._start_distance = self._first_vehicle_location * 0.9
-        self._opposite_speed = 30  # km/h
+        self._opposite_speed = 20   # km/h
+        self._source_gap = 40   # m
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self._source_transform = None
         self._sink_location = None
@@ -122,7 +123,7 @@ class ManeuverOppositeDirection(BasicScenario):
         # Leaf nodes
         actor_source = ActorSource(
             self._world, ['vehicle.audi.tt', 'vehicle.tesla.model3', 'vehicle.nissan.micra'],
-            self._source_transform, 20, self._blackboard_queue_name)
+            self._source_transform, self._source_gap, self._blackboard_queue_name)
         actor_sink = ActorSink(self._world, self._sink_location, 10)
         ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
         waypoint_follower = WaypointFollower(
