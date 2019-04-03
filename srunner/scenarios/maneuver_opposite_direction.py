@@ -11,8 +11,7 @@ weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 """
 
-from queue import Queue
-
+from six.moves import queue
 import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
@@ -54,7 +53,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._source_transform = None
         self._sink_location = None
         self._blackboard_queue_name = 'ManeuverOppositeDirection/actor_flow_queue'
-        self._queue = Blackboard().set(self._blackboard_queue_name, Queue())
+        self._queue = Blackboard().set(self._blackboard_queue_name, queue())
         self._obstacle_type = obstacle_type
         self._first_actor_transform = None
         self._second_actor_transform = None
