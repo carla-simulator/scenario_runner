@@ -783,8 +783,8 @@ class ChallengeEvaluator(object):
                                                               route_description['town_name'])
             list_scenarios = [self.master_scenario]
             # build the instance based on the parsed definitions.
-            print (scenario_removed)
-            list_scenarios += self.build_scenario_instances(scenario_removed,
+            print (sampled_scenarios_definitions)
+            list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
                                                             route_description['town_name'])
 
             # Tick once to start the scenarios.
