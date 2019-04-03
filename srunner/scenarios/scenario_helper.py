@@ -258,28 +258,146 @@ def get_intersection(ego_actor, other_actor):
     return current_location
 
 
-def detect_lane_obstacle(actor, max_distance=10):
+def detect_lane_obstacle(actor, extention_factor=3):
     """
     This function identifies if an obstacle is present in front of the reference actor
     """
     world = CarlaDataProvider.get_world()
-    wmap = CarlaDataProvider.get_map()
     world_actors = world.get_actors().filter('vehicle.*')
-    reference_vehicle_location = actor.get_location()
-    reference_vehicle_waypoint = wmap.get_waypoint(reference_vehicle_location)
+    actor_bbox = actor.bounding_box
+    actor_transform = actor.get_transform()
+    actor_location = actor_transform.location
+    actor_vector = actor_transform.rotation.get_forward_vector()
+    actor_vector = np.array([actor_vector.x, actor_vector.y])
+    actor_vector = actor_vector / np.linalg.norm(actor_vector)
+    actor_vector = actor_vector*(extention_factor-1)*actor_bbox.extent.x
+    actor_location = actor_location + carla.Location(actor_vector[0], actor_vector[1])
+    actor_yaw = actor_transform.rotation.yaw
+
     is_hazard = False
     for adversary in world_actors:
         if adversary.id != actor.id:
-            # if the object is not in our lane it's not an obstacle
-            waypoint = wmap.get_waypoint(adversary.get_location())
-            if waypoint.road_id == reference_vehicle_waypoint.road_id and \
-                    waypoint.lane_id == reference_vehicle_waypoint.lane_id and\
-                is_within_distance_ahead(
-                    waypoint.transform.location,
-                                reference_vehicle_waypoint.transform.location,
-                                reference_vehicle_waypoint.transform.rotation.yaw,
-                                max_distance):
+            adversary_bbox = adversary.bounding_box
+            adversary_transform = adversary.get_transform()
+            adversary_loc = adversary_transform.location
+            adversary_yaw = adversary_transform.rotation.yaw
+            overlap_area = intersection_area(
+                (adversary_loc.x, adversary_loc.y,
+                 2*adversary_bbox.extent.x, 2*adversary_bbox.extent.y, adversary_yaw),
+                (actor_location.x, actor_location.y,
+                 2*actor_bbox.extent.x*extention_factor, 2*actor_bbox.extent.y, actor_yaw))
+            if  overlap_area > 0:
                 is_hazard = True
-                break
 
     return is_hazard
+
+
+class Vector:
+    """
+    Simple Vector class
+    """
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __add__(self, v):
+        if not isinstance(v, Vector):
+            return NotImplemented
+        return Vector(self.x + v.x, self.y + v.y)
+
+    def __sub__(self, v):
+        if not isinstance(v, Vector):
+            return NotImplemented
+        return Vector(self.x - v.x, self.y - v.y)
+
+    def cross(self, v):
+        if not isinstance(v, Vector):
+            return NotImplemented
+        return self.x*v.y - self.y*v.x
+
+
+class Line:
+    # ax + by + c = 0
+    def __init__(self, v1, v2):
+        self.a = v2.y - v1.y
+        self.b = v1.x - v2.x
+        self.c = v2.cross(v1)
+
+    def __call__(self, p):
+        return self.a*p.x + self.b*p.y + self.c
+
+    def intersection(self, other):
+
+        if not isinstance(other, Line):
+            return NotImplemented
+        w = self.a*other.b - self.b*other.a
+        return Vector(
+            (self.b*other.c - self.c*other.b)/w,
+            (self.c*other.a - self.a*other.c)/w
+        )
+
+
+def rectangle_vertices(cx, cy, w, h, r):
+    """
+    Converting from (center, dimension, rotation) to vertices' coordinates
+    """
+    angle = pi*r/180
+    dx = w/2
+    dy = h/2
+    dxcos = dx*cos(angle)
+    dxsin = dx*sin(angle)
+    dycos = dy*cos(angle)
+    dysin = dy*sin(angle)
+    return (
+        Vector(cx, cy) + Vector(-dxcos - -dysin, -dxsin + -dycos),
+        Vector(cx, cy) + Vector(dxcos - -dysin, dxsin + -dycos),
+        Vector(cx, cy) + Vector(dxcos -  dysin, dxsin +  dycos),
+        Vector(cx, cy) + Vector(-dxcos -  dysin, -dxsin +  dycos)
+    )
+
+def intersection_area(r1, r2):
+    """
+    Overlap area calculation
+    """
+    # r1 and r2 are in (center, width, height, rotation) representation
+    # First convert these into a sequence of vertices
+    rect1 = rectangle_vertices(*r1)
+    rect2 = rectangle_vertices(*r2)
+
+    # Use the vertices of the first rectangle as
+    # starting vertices of the intersection polygon.
+    intersection = rect1
+
+    # Loop over the edges of the second rectangle
+    for p, q in zip(rect2, rect2[1:] + rect2[:1]):
+        if len(intersection) <= 2:
+            break # No intersection
+
+        line = Line(p, q)
+
+        # Any point p with line(p) <= 0 is on the "inside" (or on the boundary),
+        # any point p with line(p) > 0 is on the "outside".
+
+        # Loop over the edges of the intersection polygon,
+        # and determine which part is inside and which is outside.
+        new_intersection = []
+        line_values = [line(t) for t in intersection]
+        for s, t, s_value, t_value in zip(
+                intersection, intersection[1:] + intersection[:1],
+                line_values, line_values[1:] + line_values[:1]):
+            if s_value <= 0:
+                new_intersection.append(s)
+            if s_value * t_value < 0:
+                # Points are on opposite sides.
+                # Add the intersection of the lines to new_intersection.
+                intersection_point = line.intersection(Line(s, t))
+                new_intersection.append(intersection_point)
+
+        intersection = new_intersection
+
+    # Calculate area
+    if len(intersection) <= 2:
+        return 0
+
+    return 0.5 * sum(p.x*q.y - p.y*q.x for p, q in
+                     zip(intersection, intersection[1:] + intersection[:1]))
