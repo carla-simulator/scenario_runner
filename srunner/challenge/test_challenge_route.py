@@ -15,11 +15,12 @@ import argparse
 from argparse import RawTextHelpFormatter
 import sys
 import os
+from pprint import pprint
 
 
 import carla
 import srunner.challenge.utils.route_configuration_parser as parser
-
+from srunner.challenge.utils.route_manipulation import interpolate_trajectory
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 
@@ -50,87 +51,87 @@ def test_routes(args):
     """
     Run all routes according to provided commandline args
     """
-    # instance a challenge
-    challenge = ChallengeEvaluator(args)
 
+    # Routes are always visible
+    args.route_visible = True
+    challenge = ChallengeEvaluator(args)
     # retrieve worlds annotations
     world_annotations = parser.parse_annotations_file(args.scenarios)
     # retrieve routes
-
-    routes = []
     route_descriptions_list = parser.parse_routes_file(args.routes)
-    for route_description in route_descriptions_list:
-        if route_description['town_name'] == args.debug_town:
-            routes.append(route_description)
     # find and filter potential scenarios for each of the evaluated routes
     # For each of the routes and corresponding possible scenarios to be evaluated.
-    list_scenarios_town = []
-    if args.debug_town in world_annotations.keys():
-        list_scenarios_town = world_annotations[args.debug_town]
+
+    route_description = route_descriptions_list[args.route_id]
+    # setup world and client assuming that the CARLA server is up and running
+    client = carla.Client(args.host, int(args.port))
+    client.set_timeout(challenge.client_timeout)
+
+    # load the challenge.world variable to be used during the route
+    challenge.load_world(client, route_description['town_name'])
+    # Set the actor pool so the scenarios can prepare themselves when needed
+    CarlaActorPool.set_world(challenge.world)
+    # Also se the Data provider pool.
+    CarlaDataProvider.set_world(challenge.world)
+    # tick world so we can start.
+    challenge.world.tick()
+    # prepare route's trajectory
+    gps_route, route_description['trajectory'] = interpolate_trajectory(challenge.world,
+                                                                        route_description['trajectory'])
+
+    potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
+                                                                                         world_annotations)
+    print(args.removed_scenarios)
+    potential_scenarios_definitions = challenge.filter_scenarios(potential_scenarios_definitions,
+                                                                 args.removed_scenarios)
+
+    # Sample the scenarios to be used for this route instance.
+    sampled_scenarios_definitions = challenge.scenario_sampling(potential_scenarios_definitions)
+    # create agent
+    challenge.agent_instance = getattr(challenge.module_agent, challenge.module_agent.__name__)(args.config)
+    correct_sensors, error_message = challenge.valid_sensors_configuration(challenge.agent_instance, challenge.track)
+    if not correct_sensors:
+        # the sensor configuration is illegal
+        challenge.report_fatal_error(args.filename, args.show_to_participant, error_message)
+        return
+
+    challenge.agent_instance.set_global_plan(gps_route)
+
+    # prepare the ego car to run the route.
+    # It starts on the first wp of the route
+
+    elevate_transform = route_description['trajectory'][0][0]
+    elevate_transform.location.z += 0.5
+
+    challenge.prepare_ego_car(elevate_transform)
+
+    # build the master scenario based on the route and the target.
+    challenge.master_scenario = challenge.build_master_scenario(route_description['trajectory'],
+                                                      route_description['town_name'])
+    list_scenarios = [challenge.master_scenario]
+    # build the instance based on the parsed definitions.
+    print ("Definition of the scenarios present on the route ")
+    pprint(sampled_scenarios_definitions)
+    list_scenarios += challenge.build_scenario_instances(sampled_scenarios_definitions,
+                                                    route_description['town_name'])
+
+    # Tick once to start the scenarios.
+    print(" Running these scenarios  --- ", list_scenarios)
+    for scenario in list_scenarios:
+        scenario.scenario.scenario_tree.tick_once()
+
+    challenge.run_route(list_scenarios, route_description['trajectory'])
+
+    # statistics recording
+    challenge.record_route_statistics(route_description['id'])
+
+    # clean up
+    for scenario in list_scenarios:
+        del scenario
+    challenge.cleanup(ego=True)
+    challenge.agent_instance.destroy()
 
 
-    scenarios_current_type = []
-    for scenario in list_scenarios_town:
-        if args.debug_scenario == scenario['scenario_type']:
-            scenarios_current_type = scenario
-            break
-
-    for scenario_configuration in scenarios_current_type['available_event_configurations']:
-        scenario_conf = create_configuration_scenario(scenario_configuration, args.debug_scenario)
-
-        client = carla.Client(args.host, int(args.port))
-        client.set_timeout(challenge.client_timeout)
-
-        # load the challenge.world variable to be used during the route
-        challenge.load_world(client, args.debug_town)
-        # Set the actor pool so the scenarios can prepare themselves when needed
-        CarlaActorPool.set_world(challenge.world)
-        # Also se the Data provider pool.
-        CarlaDataProvider.set_world(challenge.world)
-        # tick world so we can start.
-
-        challenge.world.tick()
-
-        # create agent
-        challenge.agent_instance = getattr(challenge.module_agent, challenge.module_agent.__name__)(args.config)
-        correct_sensors, error_message = challenge.valid_sensors_configuration(challenge.agent_instance, challenge.track)
-        if not correct_sensors:
-            # the sensor configuration is illegal
-            challenge.report_fatal_error(args.filename, args.show_to_participant, error_message)
-            return
-
-        waypoint = routes[0]['trajectory'][0]
-
-        location = carla.Location(x=float(waypoint.attrib['x']),
-                                  y=float(waypoint.attrib['y']),
-                                  z=float(waypoint.attrib['z']))
-
-        rotation = carla.Rotation(pitch=float(waypoint.attrib['pitch']),
-                                  yaw=float(waypoint.attrib['yaw']))
-
-        challenge.prepare_ego_car(carla.Transform(location, rotation))
-        CarlaDataProvider.register_actor(challenge.ego_vehicle)
-
-        list_scenarios = []
-        list_scenarios += challenge.build_scenario_instances([scenario_conf], args.debug_town)
-
-        # Tick once to start the scenarios.
-        print (" Running these scenarios  --- ", list_scenarios)
-        for scenario in list_scenarios:
-            scenario.scenario.scenario_tree.tick_once()
-
-        challenge.run_route(list_scenarios, None, True)
-
-        # clean up
-        for scenario in list_scenarios:
-            del scenario
-        challenge.cleanup(ego=True)
-        challenge.agent_instance.destroy()
-        break
-
-    # final measurements from the challenge
-    challenge.report_challenge_statistics(args.filename, args.show_to_participant)
-    del challenge
 
 
 if __name__ == '__main__':
@@ -145,19 +146,21 @@ if __name__ == '__main__':
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
     PARSER.add_argument('--filename', type=str, help='Filename to store challenge results', default='results.json')
-    PARSER.add_argument('--split', type=str, help='Challenge split', default='dev_track_2')
     PARSER.add_argument('--debug-town', type=str, help='Town used for test', default='Town01')
     PARSER.add_argument('--debug-scenario', type=str, help='Scenario used for test', default='Scenario1')
-
     PARSER.add_argument('--route-visible', dest='route_visible',
                         action="store_true", help='Run with a visible route')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
     PARSER.add_argument('--routes',
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
+    PARSER.add_argument('--remove', dest='removed_scenarios',  nargs='+',  default=[],
+                        help='Scenarios to remove')
     PARSER.add_argument('--scenarios',
                         help='Name of the scenario annotation file to be mixed with the route.')
 
+    PARSER.add_argument("-id", "--route_id", type=int, default=0, help="the id of the route you want to test")
     ARGUMENTS = PARSER.parse_args()
+
 
     CARLA_ROOT = os.environ.get('CARLA_ROOT')
     ROOT_SCENARIO_RUNNER = os.environ.get('ROOT_SCENARIO_RUNNER')

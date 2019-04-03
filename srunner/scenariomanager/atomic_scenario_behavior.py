@@ -178,7 +178,6 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
 
         if ego_location is None or other_location is None:
             return new_status
-
         if calculate_distance(ego_location, other_location) < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 

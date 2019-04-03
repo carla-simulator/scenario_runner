@@ -54,6 +54,8 @@ class ControlLoss(BasicScenario):
         self._ego_vehicle_max_throttle = 1.0
         self._ego_vehicle_target_velocity = 15
         self._map = CarlaDataProvider.get_map()
+        # The reference trigger for the control loss
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self.loc_list = []
         self.obj = []
         super(ControlLoss, self).__init__("ControlLoss",
@@ -69,16 +71,16 @@ class ControlLoss(BasicScenario):
         """
         self._distance = random.sample(range(10, 80), 3)
         self._distance = sorted(self._distance)
-        first_loc, _ = get_location_in_distance(self.ego_vehicle, self._distance[0])
-        second_loc, _ = get_location_in_distance(self.ego_vehicle, self._distance[1])
-        third_loc, _ = get_location_in_distance(self.ego_vehicle, self._distance[2])
+        first_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[0])
+        second_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[1])
+        third_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[2])
 
         self.loc_list.extend([first_loc, second_loc, third_loc])
         self._dist_prop = [x-2 for x in self._distance]
 
-        self.first_loc_prev, _ = get_location_in_distance(self.ego_vehicle, self._dist_prop[0])
-        self.sec_loc_prev, _ = get_location_in_distance(self.ego_vehicle, self._dist_prop[1])
-        self.third_loc_prev, _ = get_location_in_distance(self.ego_vehicle, self._dist_prop[2])
+        self.first_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[0])
+        self.sec_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[1])
+        self.third_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[2])
 
         self.first_transform = carla.Transform(self.first_loc_prev)
         self.sec_transform = carla.Transform(self.sec_loc_prev)

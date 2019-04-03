@@ -215,6 +215,7 @@ class ChallengeEvaluator(object):
         if self.world is not None:
             settings = self.world.get_settings()
             settings.synchronous_mode = False
+            print ( "remove the synch")
             self.world.apply_settings(settings)
             del self.world
 
@@ -447,18 +448,20 @@ class ChallengeEvaluator(object):
             # update all scenarios
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
-                # print("\n")
-                # py_trees.display.print_ascii_tree(
-                #    scenario.scenario.scenario_tree, show_status=True)
-                # sys.stdout.flush()
+                #print("\n")
+                #py_trees.display.print_ascii_tree(
+                #   scenario.scenario.scenario_tree, show_status=True)
+                #sys.stdout.flush()
 
             # ego vehicle acts
             ego_action = self.agent_instance()
             self.ego_vehicle.apply_control(ego_action)
+            print (self.ego_vehicle.get_transform().location)
 
             if self.route_visible:
                 self.draw_waypoints(trajectory,
-                                    vertical_shift=1.0, persistency=scenario.timeout)
+                                    vertical_shift=1.0, persistency=50000.0)
+                self.route_visible = False
             # time continues
             self.world.tick()
             self.timestamp = self.world.wait_for_tick()
@@ -672,6 +675,23 @@ class ChallengeEvaluator(object):
         settings = self.world.get_settings()
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
+
+    def filter_scenarios(self, potential_scenarios_all, scenarios_to_remove):
+        """
+
+        :param potential_scenarios: the scenarios that we want to check
+        :param scenarios_to_remove:  the scenarios that we still need to remove.
+        :return: a list with the pontential scenarios without the scenarios to remove.
+        """
+
+        scenarios_after_filter = {}
+        for trigger in potential_scenarios_all.keys():
+            scenarios_after_filter.update({trigger: []})
+            potential_scenarios_trigger = potential_scenarios_all[trigger]
+            for possible_scenario in potential_scenarios_trigger:
+                if possible_scenario['name'] not in set(scenarios_to_remove):
+                    scenarios_after_filter[trigger].append(possible_scenario)
+        return scenarios_after_filter
 
 
     def valid_sensors_configuration(self, agent, track):
