@@ -69,6 +69,7 @@ number_class_translation = {
     "Scenario10": [NoSignalJunctionCrossing]
 
 }
+
 # Util functions
 
 
@@ -141,7 +142,7 @@ class ChallengeEvaluator(object):
     MAX_ALLOWED_RADIUS_SENSOR = 5.0
 
     def __init__(self, args):
-        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME')
+        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
         if not phase_codename:
             raise ValueError('environment variable CHALLENGE_PHASE_CODENAME not defined')
 
@@ -159,6 +160,7 @@ class ChallengeEvaluator(object):
         self.split = split_name
         self.track = track
 
+        self.debug = args.debug
         self.ego_vehicle = None
         self.actors = []
         self.statistics_routes = []
@@ -183,7 +185,7 @@ class ChallengeEvaluator(object):
         self.timestamp = None
 
         # debugging parameters
-        self.route_visible = args.route_visible
+        self.route_visible = self.debug > 0
 
     def cleanup(self, ego=False):
         """
@@ -215,8 +217,8 @@ class ChallengeEvaluator(object):
         if self.world is not None:
             settings = self.world.get_settings()
             settings.synchronous_mode = False
-            print ( "remove the synch")
             self.world.apply_settings(settings)
+
             del self.world
 
     def prepare_ego_car(self, start_transform):
@@ -344,7 +346,8 @@ class ChallengeEvaluator(object):
         # check that all sensors have initialized their data structure
 
         while not self.agent_instance.all_sensors_ready():
-            print(" waiting for one data reading from sensors...")
+            if self.debug > 0:
+                print(" waiting for one data reading from sensors...")
             self.world.tick()
             self.world.wait_for_tick()
 
@@ -448,15 +451,17 @@ class ChallengeEvaluator(object):
             # update all scenarios
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
-                #print("\n")
-                #py_trees.display.print_ascii_tree(
-                #   scenario.scenario.scenario_tree, show_status=True)
-                #sys.stdout.flush()
+
+                if self.debug > 1:
+                    print("\n")
+                    py_trees.display.print_ascii_tree(scenario.scenario.scenario_tree, show_status=True)
+                    sys.stdout.flush()
 
             # ego vehicle acts
             ego_action = self.agent_instance()
             self.ego_vehicle.apply_control(ego_action)
-            print (self.ego_vehicle.get_transform().location)
+            if self.debug > 0:
+                print (self.ego_vehicle.get_transform().location)
 
             if self.route_visible:
                 self.draw_waypoints(trajectory,
@@ -775,7 +780,6 @@ class ChallengeEvaluator(object):
 
             elevate_transform = route_description['trajectory'][0][0]
             elevate_transform.location.z += 0.5
-            print (elevate_transform)
             self.prepare_ego_car(elevate_transform)
 
             # build the master scenario based on the route and the target.
@@ -783,15 +787,19 @@ class ChallengeEvaluator(object):
                                                               route_description['town_name'])
             list_scenarios = [self.master_scenario]
             # build the instance based on the parsed definitions.
-            print (sampled_scenarios_definitions)
+            if self.debug > 0:
+                print(sampled_scenarios_definitions)
             list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
                                                             route_description['town_name'])
 
             # Tick once to start the scenarios.
-            print (" Running these scenarios  --- ", list_scenarios)
+            if self.debug > 0:
+                print(" Running these scenarios  --- ", list_scenarios)
+
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
 
+            # main loop!
             self.run_route(list_scenarios, route_description['trajectory'])
 
             # statistics recording
@@ -802,7 +810,9 @@ class ChallengeEvaluator(object):
                 del scenario
             self.cleanup(ego=True)
             self.agent_instance.destroy()
-            break
+
+            if self.debug > 0:
+                break
 
         # final measurements from the challenge
         self.report_challenge_statistics(args.filename, args.show_to_participant)
@@ -818,10 +828,8 @@ if __name__ == '__main__':
     PARSER.add_argument('--port', default='2000', help='TCP port to listen to (default: 2000)')
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
-    PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
+    PARSER.add_argument('--debug', type=int, help='Run with debug output', default=0)
     PARSER.add_argument('--filename', type=str, help='Filename to store challenge results', default='results.json')
-    PARSER.add_argument('--route-visible', dest='route_visible',
-                        action="store_true", help='Run with a visible route')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
     PARSER.add_argument('--routes',
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
