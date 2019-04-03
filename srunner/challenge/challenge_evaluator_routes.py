@@ -823,7 +823,6 @@ if __name__ == '__main__':
     PARSER.add_argument('--route-visible', dest='route_visible',
                         action="store_true", help='Run with a visible route')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
-    PARSER.add_argument('--split', type=str, help='Challenge split', default='dev_track_2')
     PARSER.add_argument('--routes',
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
     PARSER.add_argument('--scenarios',

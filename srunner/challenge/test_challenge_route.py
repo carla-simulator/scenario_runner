@@ -146,10 +146,8 @@ if __name__ == '__main__':
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
     PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
     PARSER.add_argument('--filename', type=str, help='Filename to store challenge results', default='results.json')
-    PARSER.add_argument('--split', type=str, help='Challenge split', default='dev_track_2')
     PARSER.add_argument('--debug-town', type=str, help='Town used for test', default='Town01')
     PARSER.add_argument('--debug-scenario', type=str, help='Scenario used for test', default='Scenario1')
-
     PARSER.add_argument('--route-visible', dest='route_visible',
                         action="store_true", help='Run with a visible route')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
