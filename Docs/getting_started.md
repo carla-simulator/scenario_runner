@@ -15,27 +15,19 @@ The release package contains the following
   * A few example scenarios written in Python.
 
 ## Installing prerequisites
-The current version is designed to be used with Ubuntu 16.04, Python 2.7 (or
-Python 3.5) and python-py-trees (v0.8.3). To install python-py-trees select one
-of the following commands, depending on your Python version.
+The current version is designed to be used with Ubuntu 16.04, Python 2.7 or
+Python 3.5. Depending on your Python version, execute:
 ```
-pip2 install --user py_trees==0.8.3 # For Python 2.x
-pip3 install --user py_trees==0.8.3 # For Python 3.x
+#if installed, remove old version of networkx
+sudo apt remove python-networkx
+
+#Python 2.x
+pip2 install --user py_trees==0.8.3 networkx psutil
+
+#Python 3.x
+pip3 install --user py_trees==0.8.3 networkx psutil
 ```
 Note: py-trees newer than v0.8 is *NOT* supported.
-
-Other dependencies:
-
-In addition, you have to install Python networkx. You can install it via:
-```
-sudo apt-get install python-networkx
-```
-
-Also psutil is needed for running the challenge evaluation.
-    
-    pip install psutil
-
-Please make sure that you install networkx for the Python version you want to use.
 
 
 ## Running the follow vehicle example
