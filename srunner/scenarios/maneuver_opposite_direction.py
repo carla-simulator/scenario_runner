@@ -127,7 +127,8 @@ class ManeuverOppositeDirection(BasicScenario):
         actor_sink = ActorSink(self._world, self._sink_location, 10)
         ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
         waypoint_follower = WaypointFollower(
-            self.other_actors[1], self._opposite_speed, blackboard_queue_name=self._blackboard_queue_name)
+            self.other_actors[1], self._opposite_speed,
+            blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
 
         # Non-leaf nodes
         parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
