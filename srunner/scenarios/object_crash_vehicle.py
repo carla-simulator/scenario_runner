@@ -60,7 +60,7 @@ class StationaryObjectCrossing(BasicScenario):
         """
         _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
+        location, _ = get_location_in_distance_from_wp(self._reference_waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.4, "k": 0.2}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
@@ -160,7 +160,7 @@ class DynamicObjectCrossing(BasicScenario):
         # cyclist transform
         _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance(self.ego_vehicle, _start_distance)
+        location, _ = get_location_in_distance_from_wp(self._reference_waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.4, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']

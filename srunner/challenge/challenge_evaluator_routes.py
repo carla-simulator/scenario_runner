@@ -456,10 +456,11 @@ class ChallengeEvaluator(object):
             # ego vehicle acts
             ego_action = self.agent_instance()
             self.ego_vehicle.apply_control(ego_action)
+            print (self.ego_vehicle.get_transform().location)
 
             if self.route_visible:
                 self.draw_waypoints(trajectory,
-                                    vertical_shift=1.0, persistency=scenario.timeout)
+                                    vertical_shift=1.0, persistency=50000.0)
                 self.route_visible = False
             # time continues
             self.world.tick()
@@ -675,6 +676,23 @@ class ChallengeEvaluator(object):
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
 
+    def filter_scenarios(self, potential_scenarios_all, scenarios_to_remove):
+        """
+
+        :param potential_scenarios: the scenarios that we want to check
+        :param scenarios_to_remove:  the scenarios that we still need to remove.
+        :return: a list with the pontential scenarios without the scenarios to remove.
+        """
+
+        scenarios_after_filter = {}
+        for trigger in potential_scenarios_all.keys():
+            scenarios_after_filter.update({trigger: []})
+            potential_scenarios_trigger = potential_scenarios_all[trigger]
+            for possible_scenario in potential_scenarios_trigger:
+                if possible_scenario['name'] not in set(scenarios_to_remove):
+                    scenarios_after_filter[trigger].append(possible_scenario)
+        return scenarios_after_filter
+
 
     def valid_sensors_configuration(self, agent, track):
         if Track(track) != agent.track:
@@ -757,6 +775,7 @@ class ChallengeEvaluator(object):
 
             elevate_transform = route_description['trajectory'][0][0]
             elevate_transform.location.z += 0.5
+            print (elevate_transform)
             self.prepare_ego_car(elevate_transform)
 
             # build the master scenario based on the route and the target.
@@ -764,7 +783,8 @@ class ChallengeEvaluator(object):
                                                               route_description['town_name'])
             list_scenarios = [self.master_scenario]
             # build the instance based on the parsed definitions.
-            list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
+            print (scenario_removed)
+            list_scenarios += self.build_scenario_instances(scenario_removed,
                                                             route_description['town_name'])
 
             # Tick once to start the scenarios.
