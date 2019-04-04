@@ -471,6 +471,14 @@ class ChallengeEvaluator(object):
             # time continues
             self.world.tick()
             self.timestamp = self.world.wait_for_tick()
+            # check for scenario termination
+            for scenario in list_scenarios:
+                if scenario.scenario.scenario_tree.status != py_trees.common.Status.RUNNING:
+                    del list_scenarios[list_scenarios.index(scenario)]
+
+        # Route finished set for the background scenario to also finish
+        blackboard = py_trees.blackboard.Blackboard()
+        blackboard.set('master_scenario_command', 'scenarios_stop_request')
 
     def record_route_statistics(self, route_id):
         """
