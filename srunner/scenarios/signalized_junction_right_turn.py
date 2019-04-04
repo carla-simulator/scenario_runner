@@ -13,6 +13,7 @@ from __future__ import print_function
 
 import sys
 
+import sys
 import py_trees
 
 import carla
@@ -113,7 +114,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         # adding flow of actors
         actor_source = ActorSource(
             self._world, ['vehicle.*', 'vehicle.nissan.patrol', 'vehicle.nissan.micra'],
-            self._other_actor_transform, 20, self._blackboard_queue_name)
+            self._other_actor_transform, 15, self._blackboard_queue_name)
         # destroying flow of actors
         actor_sink = ActorSink(self._world, plan[-1][0].transform.location, 10)
         # follow waypoints untill next intersection
