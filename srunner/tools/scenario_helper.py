@@ -363,6 +363,7 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
     This function identifies if an obstacle is present in front of the reference actor
     """
     world = CarlaDataProvider.get_world()
+    wmap = CarlaDataProvider.get_map()
     world_actors = world.get_actors().filter('vehicle.*')
     actor_bbox = actor.bounding_box
     actor_transform = actor.get_transform()
@@ -391,6 +392,7 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
             overlap_area = overlap_adversary.intersection(overlap_actor).area
             if overlap_area > 0:
                 is_hazard = True
+                break
 
     return is_hazard
 
