@@ -461,7 +461,7 @@ class ChallengeEvaluator(object):
             ego_action = self.agent_instance()
             self.ego_vehicle.apply_control(ego_action)
             if self.debug > 0:
-                print (self.ego_vehicle.get_transform().location)
+                pass #print(self.ego_vehicle.get_transform().location)
 
             if self.route_visible:
                 self.draw_waypoints(trajectory,
@@ -788,7 +788,15 @@ class ChallengeEvaluator(object):
             list_scenarios = [self.master_scenario]
             # build the instance based on the parsed definitions.
             if self.debug > 0:
-                print(sampled_scenarios_definitions)
+                for scenario in sampled_scenarios_definitions:
+                    loc = carla.Location(scenario['trigger_position']['x'],
+                                         scenario['trigger_position']['y'],
+                                         scenario['trigger_position']['z']) + carla.Location(z=2.0)
+                    self.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
+                    self.world.debug.draw_string(loc, scenario['name'], draw_shadow=False,
+                                                 color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
+                    print(scenario)
+
             list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
                                                             route_description['town_name'])
 
