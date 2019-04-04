@@ -1,4 +1,5 @@
 ## Latest changes
+* Updated compatibility with Python 2.7 for the challenge evaluator
 * Updated WaypointFollower behavior
 * Added detect_lane_obstacle() helper function which identifies if an obstacle is present in front of the reference actor
 * Added test to detect vehicles running a stop
