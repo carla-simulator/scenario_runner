@@ -44,9 +44,11 @@ def parse_routes_file(route_filename):
         route_id = route.attrib['id']
         waypoint_list = []  # the list of waypoints that can be found on this route
         for waypoint in route.iter('waypoint'):
-             waypoint_list.append(carla.Location(x=float(waypoint.attrib['x']),
-                                                 y=float(waypoint.attrib['y']),
-                                                 z=float(waypoint.attrib['z'])))  # Waypoints is basically a list of XML nodes
+            waypoint_list.append(carla.Location(x=float(waypoint.attrib['x']),
+                                                y=float(waypoint.attrib['y']),
+                                                z=float(waypoint.attrib['z'])))
+
+            # Waypoints is basically a list of XML nodes
 
         list_route_descriptions.append({
                                     'id': route_id,
@@ -70,7 +72,11 @@ def check_trigger_position(new_trigger, existing_triggers):
         dx = trigger['x'] - new_trigger['x']
         dy = trigger['y'] - new_trigger['y']
         distance = math.sqrt(dx*dx + dy*dy)
-        if distance < TRIGGER_THRESHOLD:
+
+        dyaw = trigger['yaw'] - trigger['yaw']
+
+        dist_angle = math.sqrt(dyaw * dyaw)
+        if distance < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD:
             return trigger_id
 
     return None
@@ -101,18 +107,21 @@ def scan_route_for_scenarios(route_description, world_annotations):
             route_description:
         """
         def match_waypoints(w1, wtransform):
-            dx = float(w1['x']) - wtransform.x
-            dy = float(w1['y']) - wtransform.y
-            dz = float(w1['z']) - wtransform.z
+            dx = float(w1['x']) - wtransform.location.x
+            dy = float(w1['y']) - wtransform.location.y
+            dz = float(w1['z']) - wtransform.location.z
             dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
 
-            #dist_angle = math.sqrt(dyaw * dyaw + dpitch * dpitch)
+            dyaw = float(w1['yaw']) - wtransform.rotation.yaw
 
-            return  dist_position < TRIGGER_THRESHOLD  # dist_angle < TRIGGER_ANGLE_THRESHOLD and
+            dist_angle = math.sqrt(dyaw * dyaw)
+
+            return dist_position < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD
+
 
         # TODO this function can be optimized to run on Log(N) time
         for route_waypoint in route_description:
-            if match_waypoints(world_location, route_waypoint[0].location):
+            if match_waypoints(world_location, route_waypoint[0]):
                 return True
 
         return False

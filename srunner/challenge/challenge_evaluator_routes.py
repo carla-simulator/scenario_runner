@@ -44,7 +44,7 @@ from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionR
 from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 from srunner.scenarios.master_scenario import MasterScenario
-from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD
+from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 
 # The configuration parser
 
@@ -116,7 +116,11 @@ def compare_scenarios(scenario_choice, existent_scenario):
             dy = float(pos_choice['y']) - float(pos_existent['y'])
             dz = float(pos_choice['z']) - float(pos_existent['z'])
             dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
-            if dist_position < TRIGGER_THRESHOLD:
+
+            dyaw = float(pos_choice['yaw']) - float(pos_choice['yaw'])
+
+            dist_angle = math.sqrt(dyaw * dyaw)
+            if dist_position < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD:
                 return True
 
     return False
@@ -757,7 +761,6 @@ class ChallengeEvaluator(object):
             # tick world so we can start.
             self.world.tick()
             # prepare route's trajectory
-
             gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                 route_description['trajectory'])
 
@@ -774,7 +777,6 @@ class ChallengeEvaluator(object):
                 return
 
             self.agent_instance.set_global_plan(gps_route)
-
             # prepare the ego car to run the route.
             # It starts on the first wp of the route
 
