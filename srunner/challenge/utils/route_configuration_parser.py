@@ -72,9 +72,7 @@ def check_trigger_position(new_trigger, existing_triggers):
         dx = trigger['x'] - new_trigger['x']
         dy = trigger['y'] - new_trigger['y']
         distance = math.sqrt(dx*dx + dy*dy)
-
         dyaw = trigger['yaw'] - trigger['yaw']
-
         dist_angle = math.sqrt(dyaw * dyaw)
         if distance < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD:
             return trigger_id

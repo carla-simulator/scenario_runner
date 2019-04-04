@@ -116,9 +116,7 @@ def compare_scenarios(scenario_choice, existent_scenario):
             dy = float(pos_choice['y']) - float(pos_existent['y'])
             dz = float(pos_choice['z']) - float(pos_existent['z'])
             dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
-
             dyaw = float(pos_choice['yaw']) - float(pos_choice['yaw'])
-
             dist_angle = math.sqrt(dyaw * dyaw)
             if dist_position < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD:
                 return True
@@ -132,7 +130,6 @@ def convert_transform_to_location(transform_vec):
         location_vec.append((transform_tuple[0].location, transform_tuple[1]))
 
     return location_vec
-
 
 
 Z_DISTANCE_AVOID_COLLISION = 0.5  # z vallue to add in oder to avoid spawning vehicles to close to the ground
@@ -763,7 +760,6 @@ class ChallengeEvaluator(object):
             # prepare route's trajectory
             gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                 route_description['trajectory'])
-
             potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                                  world_annotations)
             # Sample the scenarios to be used for this route instance.
@@ -775,7 +771,6 @@ class ChallengeEvaluator(object):
                 # the sensor configuration is illegal
                 self.report_fatal_error(args.filename, args.show_to_participant, error_message)
                 return
-
             self.agent_instance.set_global_plan(gps_route)
             # prepare the ego car to run the route.
             # It starts on the first wp of the route
