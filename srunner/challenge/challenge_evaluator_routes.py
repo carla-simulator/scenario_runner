@@ -132,6 +132,7 @@ def convert_transform_to_location(transform_vec):
     return location_vec
 
 
+
 Z_DISTANCE_AVOID_COLLISION = 0.5  # z vallue to add in oder to avoid spawning vehicles to close to the ground
 
 
@@ -394,6 +395,32 @@ class ChallengeEvaluator(object):
         CarlaDataProvider.register_actor(self.ego_vehicle)
 
         return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration)
+
+    def build_background_scenario(self, town_name):
+        scenario_configuration = ScenarioConfiguration()
+        scenario_configuration.route = None
+        scenario_configuration.town = town_name
+
+        model = 'vehicle.*'
+        transform = carla.Transform()
+        autopilot = True
+        random = True
+
+        if town_name == 'Town01' or town_name == 'Town02':
+            amount = 40
+        elif town_name == 'Town03' or 'Town05':
+            amount = 80
+        elif town_name == 'Town04':
+            amount = 100
+        elif town_name == 'Town06' or town_name == 'Town07':
+            amount = 50
+        else:
+            amount = 1
+
+        actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
+        scenario_configuration.other_actors.append(actor_configuration_instance)
+
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name):
         """
@@ -760,6 +787,7 @@ class ChallengeEvaluator(object):
             # load the self.world variable to be used during the route
             self.load_world(client, route_description['town_name'])
             # Set the actor pool so the scenarios can prepare themselves when needed
+            CarlaActorPool.set_client(client)
             CarlaActorPool.set_world(self.world)
             # Also se the Data provider pool.
             CarlaDataProvider.set_world(self.world)
@@ -790,7 +818,10 @@ class ChallengeEvaluator(object):
             # build the master scenario based on the route and the target.
             self.master_scenario = self.build_master_scenario(route_description['trajectory'],
                                                               route_description['town_name'])
-            list_scenarios = [self.master_scenario]
+
+            self.background_scenario = self.build_background_scenario(route_description['town_name'])
+
+            list_scenarios = [self.master_scenario, self.background_scenario]
             # build the instance based on the parsed definitions.
             if self.debug > 0:
                 for scenario in sampled_scenarios_definitions:

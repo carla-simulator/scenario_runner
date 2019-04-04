@@ -66,11 +66,14 @@ class BasicScenario(object):
 
         # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
 
-        start_location = config.trigger_point.location     # start location of the scenario
+        start_location = None
+        if config.trigger_point:
+            start_location = config.trigger_point.location     # start location of the scenario
 
         time_to_start_location = 2.0                               # seconds
         behavior_seq = py_trees.composites.Sequence()
-        behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle, time_to_start_location, start_location))
+        if start_location:
+            behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle, time_to_start_location, start_location))
         behavior_seq.add_child(behavior)
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
@@ -81,16 +84,15 @@ class BasicScenario(object):
         Override this method in child class to provide custom initialization.
         """
         for actor in config.other_actors:
-            for i in range(actor.amount):
-                new_actor = CarlaActorPool.request_new_actor(actor.model,
-                                                             actor.transform,
-                                                             hero=False,
-                                                             autopilot=actor.autopilot,
-                                                             random_location=actor.random_location)
-                if new_actor is None:
-                    raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
+            new_actor = CarlaActorPool.request_new_actor(actor.model,
+                                                         actor.transform,
+                                                         hero=False,
+                                                         autopilot=actor.autopilot,
+                                                         random_location=actor.random_location)
+            if new_actor is None:
+                raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
-                self.other_actors.append(new_actor)
+            self.other_actors.append(new_actor)
 
     def _create_behavior(self):
         """

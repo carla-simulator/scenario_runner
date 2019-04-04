@@ -11,15 +11,13 @@ weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 """
 
-from six.moves.queue import Queue
 import py_trees
+from six.moves.queue import Queue
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.scenario_helper import get_waypoint_in_distance
-
+from srunner.tools.scenario_helper import get_waypoint_in_distance
 
 MANEUVER_OPPOSITE_DIRECTION = [
     "ManeuverOppositeDirection"

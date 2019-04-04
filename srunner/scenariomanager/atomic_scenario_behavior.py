@@ -14,16 +14,16 @@ The atomic behaviors are implemented with py_trees.
 """
 
 import carla
-import py_trees
-from py_trees.blackboard import Blackboard
 import numpy as np
-
-from agents.navigation.roaming_agent import *
+import py_trees
 from agents.navigation.basic_agent import *
+from agents.navigation.roaming_agent import *
+from py_trees.blackboard import Blackboard
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
-from srunner.scenarios.scenario_helper import detect_lane_obstacle
+from srunner.scenariomanager.timer import GameTime
+from srunner.tools.CollisionManager import *
+from srunner.tools.scenario_helper import detect_lane_obstacle
 
 EPSILON = 0.001
 

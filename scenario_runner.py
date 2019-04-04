@@ -14,29 +14,28 @@ and finally triggers the scenario execution.
 """
 
 from __future__ import print_function
+
 import argparse
+import traceback
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-import traceback
-
-import sys
 
 import carla
 
-from srunner.scenarios.follow_leading_vehicle import *
-from srunner.scenarios.opposite_vehicle_taking_priority import *
-from srunner.scenarios.object_crash_vehicle import *
-from srunner.scenarios.no_signal_junction_crossing import *
-from srunner.scenarios.object_crash_intersection import *
-from srunner.scenarios.control_loss import *
-from srunner.scenarios.maneuver_opposite_direction import *
-from srunner.scenarios.other_leading_vehicle import *
-from srunner.scenarios.signalized_junction_right_turn import *
-from srunner.scenarios.signalized_junction_left_turn import *
-from srunner.scenarios.config_parser import *
 from srunner.scenariomanager.carla_data_provider import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
-
+from srunner.scenarios.background_activity import *
+from srunner.scenarios.control_loss import *
+from srunner.scenarios.follow_leading_vehicle import *
+from srunner.scenarios.maneuver_opposite_direction import *
+from srunner.scenarios.no_signal_junction_crossing import *
+from srunner.scenarios.object_crash_intersection import *
+from srunner.scenarios.object_crash_vehicle import *
+from srunner.scenarios.opposite_vehicle_taking_priority import *
+from srunner.scenarios.other_leading_vehicle import *
+from srunner.scenarios.signalized_junction_left_turn import *
+from srunner.scenarios.signalized_junction_right_turn import *
+from srunner.tools.config_parser import *
 
 # Version of scenario_runner
 VERSION = 0.3
@@ -46,6 +45,7 @@ VERSION = 0.3
 # key = Name of config file in Configs/
 # value = List as defined in the scenario module
 SCENARIOS = {
+    "BackgroundActivity": BACKGROUND_ACTIVITY_SCENARIOS,
     "FollowLeadingVehicle": FOLLOW_LEADING_VEHICLE_SCENARIOS,
     "ObjectCrossing": OBJECT_CROSSING_SCENARIOS,
     "RunningRedLight": RUNNING_RED_LIGHT_SCENARIOS,
@@ -194,6 +194,7 @@ class ScenarioRunner(object):
             # Execute each configuration
             for config in scenario_configurations:
                 self.world = self.client.load_world(config.town)
+                CarlaActorPool.set_client(self.client)
                 CarlaDataProvider.set_world(self.world)
 
                 # Wait for the world to be ready

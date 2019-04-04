@@ -18,18 +18,14 @@ vehicle stopped close enough to the leading vehicle
 
 import random
 
-import py_trees
-
 import carla
+import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.scenario_helper import *
-from srunner.scenarios.config_parser import *
-
+from srunner.tools.scenario_helper import *
 
 FOLLOW_LEADING_VEHICLE_SCENARIOS = [
     "FollowLeadingVehicle",

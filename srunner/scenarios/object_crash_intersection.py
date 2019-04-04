@@ -9,15 +9,14 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encounters a cyclist ahead after taking a right or left turn.
 """
 
-import py_trees
 import carla
+import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.scenario_helper import *
+from srunner.tools.scenario_helper import *
 
 VEHICLE_TURNING_SCENARIOS = [
     "VehicleTurningRight",

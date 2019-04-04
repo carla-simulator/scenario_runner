@@ -19,7 +19,7 @@ import py_trees
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.scenario_helper import *
+from srunner.tools.scenario_helper import *
 
 CONTROL_LOSS_SCENARIOS = [
     "ControlLoss"
