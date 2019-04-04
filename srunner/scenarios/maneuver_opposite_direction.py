@@ -11,8 +11,7 @@ weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 """
 
-from queue import Queue
-
+from six.moves.queue import Queue
 import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
@@ -41,7 +40,6 @@ class ManeuverOppositeDirection(BasicScenario):
         Setup all relevant parameters and create scenario
         obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
         """
-
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 50

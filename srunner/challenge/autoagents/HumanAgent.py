@@ -90,6 +90,8 @@ class HumanInterface():
 class HumanAgent(AutonomousAgent):
 
     def setup(self, path_to_conf_file):
+        self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
+
         self.agent_engaged = False
         self.current_control = carla.VehicleControl()
         self.current_control.steer = 0.0
@@ -99,7 +101,6 @@ class HumanAgent(AutonomousAgent):
         self._hic = HumanInterface(self)
         self._thread = Thread(target=self._hic.run)
         self._thread.start()
-
 
 
     def sensors(self):
