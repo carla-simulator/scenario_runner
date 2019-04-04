@@ -51,7 +51,7 @@ class OtherLeadingVehicle(BasicScenario):
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location
         self._ego_vehicle_drive_distance = self._first_vehicle_location * 4
-        self.drive_distance_after_decelerate = 55
+        self.drive_distance_after_decelerate = 70
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 45
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
@@ -86,13 +86,13 @@ class OtherLeadingVehicle(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(first_vehicle_waypoint.transform.location.x,
                            first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z - 500),
+                           first_vehicle_waypoint.transform.location.z),
             first_vehicle_waypoint.transform.rotation)
 
         second_vehicle_transform = carla.Transform(
             carla.Location(second_vehicle_waypoint.transform.location.x,
                            second_vehicle_waypoint.transform.location.y,
-                           second_vehicle_waypoint.transform.location.z - 500),
+                           second_vehicle_waypoint.transform.location.z),
             second_vehicle_waypoint.transform.rotation)
 
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
@@ -111,11 +111,7 @@ class OtherLeadingVehicle(BasicScenario):
         If this does not happen within 90 seconds, a timeout stops the scenario or the ego vehicle
         drives certain distance and stops the scenario.
         """
-
-        sequence = py_trees.composites.Sequence("Scenario behavior")
-
         # start condition
-        parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         driving_in_same_direction = py_trees.composites.Parallel("All actors driving in same direction",
                                                                  policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         leading_actor_sequence_behavior = py_trees.composites.Sequence("Decelerating actor sequence behavior")
@@ -123,29 +119,26 @@ class OtherLeadingVehicle(BasicScenario):
         # both actors moving in same direction
         keep_velocity = py_trees.composites.Parallel("Trigger condition for deceleration",
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        keep_velocity.add_child(WaypointFollower(self.other_actors[0], self._first_vehicle_speed))
+        keep_velocity.add_child(WaypointFollower(self.other_actors[0], self._first_vehicle_speed, avoid_collision=True))
         keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 35))
 
-        # deceleration
-        deceleration = py_trees.composites.Parallel("Deceleration of leading actor",
-                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        decelerate = self._first_vehicle_speed / 3.2
-        deceleration.add_child(WaypointFollower(self.other_actors[0], decelerate))
-        deceleration.add_child(DriveDistance(self.other_actors[0], self.drive_distance_after_decelerate))
-
         # Decelerating actor sequence behavior
+        decelerate = self._first_vehicle_speed / 3.2
         leading_actor_sequence_behavior.add_child(keep_velocity)
-        leading_actor_sequence_behavior.add_child(deceleration)
-        leading_actor_sequence_behavior.add_child(StopVehicle(self.other_actors[0], self._other_actor_max_brake))
-
+        leading_actor_sequence_behavior.add_child(WaypointFollower(self.other_actors[0], decelerate,
+                                                                   avoid_collision=True))
         # end condition
         ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
 
         # Build behavior tree
+        sequence = py_trees.composites.Sequence("Scenario behavior")
+        parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
         parallel_root.add_child(ego_drive_distance)
         parallel_root.add_child(driving_in_same_direction)
         driving_in_same_direction.add_child(leading_actor_sequence_behavior)
-        driving_in_same_direction.add_child(WaypointFollower(self.other_actors[1], self._second_vehicle_speed))
+        driving_in_same_direction.add_child(WaypointFollower(self.other_actors[1], self._second_vehicle_speed,
+                                                             avoid_collision=True))
 
         sequence.add_child(ActorTransformSetter(self.other_actors[0], self._first_actor_transform))
         sequence.add_child(ActorTransformSetter(self.other_actors[1], self._second_actor_transform))
