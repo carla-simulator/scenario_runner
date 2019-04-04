@@ -16,6 +16,7 @@ import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 import importlib
+import imp
 import random
 import sys
 import time
@@ -57,12 +58,15 @@ class ChallengeEvaluator(object):
     def __init__(self, args):
         self.output_scenario = []
 
-        # first we instantiate the Agent
+	# first we instantiate the Agent            
         module_name = os.path.basename(args.agent).split('.')[0]
-        module_spec = importlib.util.spec_from_file_location(module_name, args.agent)
-        self.module_agent = importlib.util.module_from_spec(module_spec)
-        module_spec.loader.exec_module(self.module_agent)
-
+        if sys.version_info[0] > 3:
+            module_spec = importlib.util.spec_from_file_location(module_name, args.agent)
+            self.module_agent = importlib.util.module_from_spec(module_spec)
+            module_spec.loader.exec_module(self.module_agent)
+        else:
+            self.module_agent = imp.load_source(module_name, args.agent)
+	    
         self._sensors_list = []
         self._hop_resolution = 2.0
 
