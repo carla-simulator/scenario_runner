@@ -13,8 +13,10 @@ from __future__ import print_function
 import math
 
 import numpy as np
+import shapely.geometry
+import shapely.affinity
 import carla
-from agents.tools.misc import vector, is_within_distance_ahead
+from agents.tools.misc import vector
 from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -258,28 +260,66 @@ def get_intersection(ego_actor, other_actor):
     return current_location
 
 
-def detect_lane_obstacle(actor, max_distance=10):
+def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
     """
     This function identifies if an obstacle is present in front of the reference actor
     """
     world = CarlaDataProvider.get_world()
-    wmap = CarlaDataProvider.get_map()
     world_actors = world.get_actors().filter('vehicle.*')
-    reference_vehicle_location = actor.get_location()
-    reference_vehicle_waypoint = wmap.get_waypoint(reference_vehicle_location)
+    actor_bbox = actor.bounding_box
+    actor_transform = actor.get_transform()
+    actor_location = actor_transform.location
+    actor_vector = actor_transform.rotation.get_forward_vector()
+    actor_vector = np.array([actor_vector.x, actor_vector.y])
+    actor_vector = actor_vector / np.linalg.norm(actor_vector)
+    actor_vector = actor_vector*(extension_factor-1)*actor_bbox.extent.x
+    actor_location = actor_location + carla.Location(actor_vector[0], actor_vector[1])
+    actor_yaw = actor_transform.rotation.yaw
+
     is_hazard = False
     for adversary in world_actors:
-        if adversary.id != actor.id:
-            # if the object is not in our lane it's not an obstacle
-            waypoint = wmap.get_waypoint(adversary.get_location())
-            if waypoint.road_id == reference_vehicle_waypoint.road_id and \
-                    waypoint.lane_id == reference_vehicle_waypoint.lane_id and\
-                is_within_distance_ahead(
-                    waypoint.transform.location,
-                                reference_vehicle_waypoint.transform.location,
-                                reference_vehicle_waypoint.transform.rotation.yaw,
-                                max_distance):
+        if adversary.id != actor.id and \
+            actor_transform.location.distance(adversary.get_location()) < 50:
+            adversary_bbox = adversary.bounding_box
+            adversary_transform = adversary.get_transform()
+            adversary_loc = adversary_transform.location
+            adversary_yaw = adversary_transform.rotation.yaw
+            overlap_adversary = RotatedRectangle(
+                adversary_loc.x, adversary_loc.y,
+                2*margin*adversary_bbox.extent.x, 2*margin*adversary_bbox.extent.y, adversary_yaw)
+            overlap_actor = RotatedRectangle(
+                actor_location.x, actor_location.y,
+                2*margin*actor_bbox.extent.x*extension_factor, 2*margin*actor_bbox.extent.y, actor_yaw)
+            overlap_area = overlap_adversary.intersection(overlap_actor).area
+            if overlap_area > 0:
                 is_hazard = True
                 break
 
     return is_hazard
+
+class RotatedRectangle:
+    """
+    This class contains method to draw rectangle and find intersection point.
+    """
+    def __init__(self, c_x, c_y, w, h, angle):
+        self.c_x = c_x
+        self.c_y = c_y
+        self.w = w
+        self.h = h
+        self.angle = angle
+
+    def get_contour(self):
+        """
+        create contour
+        """
+        w = self.w
+        h = self.h
+        c = shapely.geometry.box(-w/2.0, -h/2.0, w/2.0, h/2.0)
+        rc = shapely.affinity.rotate(c, self.angle)
+        return shapely.affinity.translate(rc, self.c_x, self.c_y)
+
+    def intersection(self, other):
+        """
+        Obtain a intersection point between two contour.
+        """
+        return self.get_contour().intersection(other.get_contour())
