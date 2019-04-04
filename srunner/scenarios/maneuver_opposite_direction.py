@@ -85,10 +85,10 @@ class ManeuverOppositeDirection(BasicScenario):
             second_prop_waypoint = first_actor_waypoint.next(2.0)[0]
             position_yaw = second_prop_waypoint.transform.rotation.yaw + 90
             offset_location = carla.Location(
-                0.50*second_prop_waypoint.lane_width*math.cos(math.radians(position_yaw)),
-                0.50*second_prop_waypoint.lane_width*math.sin(math.radians(position_yaw)))
+                0.50 * second_prop_waypoint.lane_width * math.cos(math.radians(position_yaw)),
+                0.50 * second_prop_waypoint.lane_width * math.sin(math.radians(position_yaw)))
             second_prop_transform = carla.Transform(
-                second_prop_waypoint.transform.location+offset_location, first_actor_transform.rotation)
+                second_prop_waypoint.transform.location + offset_location, first_actor_transform.rotation)
             second_prop_actor = CarlaActorPool.request_new_actor(first_actor_model, second_prop_transform)
             second_prop_actor.set_simulate_physics(True)
         first_actor = CarlaActorPool.request_new_actor(first_actor_model, first_actor_transform)

@@ -59,6 +59,7 @@ class TargetConfiguration(object):
 
 
 class ActorConfigurationData(object):
+
     """
     This is a configuration base class to hold model and transform attributes
     """

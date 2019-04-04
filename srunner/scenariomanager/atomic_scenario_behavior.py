@@ -986,6 +986,7 @@ class ActorTransformSetter(AtomicBehavior):
 
 
 class ActorSource(AtomicBehavior):
+
     """
     Implementation for a behavior that will indefinitely create actors
     at a given transform if no other actor exists in a given radius
@@ -1030,6 +1031,7 @@ class ActorSource(AtomicBehavior):
 
 
 class ActorSink(AtomicBehavior):
+
     """
     Implementation for a behavior that will indefinitely destroy actors
     that wander near a given location within a specified threshold.

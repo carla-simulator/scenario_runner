@@ -66,8 +66,8 @@ class StationaryObjectCrossing(BasicScenario):
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
-            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
-            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
@@ -80,7 +80,7 @@ class StationaryObjectCrossing(BasicScenario):
         Only behavior here is to wait
         """
         lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width+(1.25*lane_width)
+        lane_width = lane_width + (1.25 * lane_width)
 
         # leaf nodes
         actor_stand = TimeOut(15)
@@ -120,6 +120,7 @@ class StationaryObjectCrossing(BasicScenario):
 
 
 class DynamicObjectCrossing(BasicScenario):
+
     """
     This class holds everything required for a simple object crash
     without prior vehicle action involving a vehicle and a cyclist/pedestrian,
@@ -166,8 +167,8 @@ class DynamicObjectCrossing(BasicScenario):
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
-            offset['k']*lane_width*math.cos(math.radians(position_yaw)),
-            offset['k']*lane_width*math.sin(math.radians(position_yaw)))
+            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset['z']
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
@@ -189,7 +190,7 @@ class DynamicObjectCrossing(BasicScenario):
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
-        transform2 = carla.Transform(carla.Location(x_static, y_static, transform.location.z+0.01))
+        transform2 = carla.Transform(carla.Location(x_static, y_static, transform.location.z + 0.01))
         static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', transform2)
         static.set_simulate_physics(True)
         self.other_actors.append(static)
@@ -203,12 +204,12 @@ class DynamicObjectCrossing(BasicScenario):
         """
 
         lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width+(1.25*lane_width)
+        lane_width = lane_width + (1.25 * lane_width)
 
         # leaf nodes
         start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity, self._walker_yaw)
-        actor_drive = DriveDistance(self.other_actors[0], 0.4*lane_width)
+        actor_drive = DriveDistance(self.other_actors[0], 0.4 * lane_width)
         actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
                                                       self._other_actor_target_velocity, self._walker_yaw)
         actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
