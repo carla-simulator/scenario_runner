@@ -114,6 +114,15 @@ def test_routes(args):
     pprint(sampled_scenarios_definitions)
     list_scenarios += challenge.build_scenario_instances(sampled_scenarios_definitions,
                                                     route_description['town_name'])
+    if args.debug > 0:
+        for scenario in sampled_scenarios_definitions:
+            loc = carla.Location(scenario['trigger_position']['x'],
+                                 scenario['trigger_position']['y'],
+                                 scenario['trigger_position']['z']) + carla.Location(z=2.0)
+            challenge.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
+            challenge.world.debug.draw_string(loc, scenario['name'], draw_shadow=False,
+                                         color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
+
 
     # Tick once to start the scenarios.
     print(" Running these scenarios  --- ", list_scenarios)
@@ -144,7 +153,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--port', default='2000', help='TCP port to listen to (default: 2000)')
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
-    PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
+    PARSER.add_argument('--debug', type=int, help='Run with debug output', default=0)
     PARSER.add_argument('--filename', type=str, help='Filename to store challenge results', default='results.json')
     PARSER.add_argument('--debug-town', type=str, help='Town used for test', default='Town01')
     PARSER.add_argument('--debug-scenario', type=str, help='Scenario used for test', default='Scenario1')
