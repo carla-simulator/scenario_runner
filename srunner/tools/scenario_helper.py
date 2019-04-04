@@ -391,7 +391,6 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
             overlap_area = overlap_adversary.intersection(overlap_actor).area
             if overlap_area > 0:
                 is_hazard = True
-                break
 
     return is_hazard
 
