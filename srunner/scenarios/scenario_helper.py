@@ -16,7 +16,7 @@ import numpy as np
 import shapely.geometry
 import shapely.affinity
 import carla
-from agents.tools.misc import vector, is_within_distance_ahead
+from agents.tools.misc import vector
 from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
