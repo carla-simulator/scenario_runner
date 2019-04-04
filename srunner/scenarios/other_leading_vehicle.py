@@ -51,7 +51,6 @@ class OtherLeadingVehicle(BasicScenario):
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location
         self._ego_vehicle_drive_distance = self._first_vehicle_location * 4
-        self.drive_distance_after_decelerate = 70
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 45
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
@@ -72,7 +71,6 @@ class OtherLeadingVehicle(BasicScenario):
         """
         Custom initialization
         """
-
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
         if second_vehicle_waypoint.lane_change & carla.LaneChange.Left:
@@ -86,13 +84,13 @@ class OtherLeadingVehicle(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(first_vehicle_waypoint.transform.location.x,
                            first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z),
+                           first_vehicle_waypoint.transform.location.z - 500),
             first_vehicle_waypoint.transform.rotation)
 
         second_vehicle_transform = carla.Transform(
             carla.Location(second_vehicle_waypoint.transform.location.x,
                            second_vehicle_waypoint.transform.location.y,
-                           second_vehicle_waypoint.transform.location.z),
+                           second_vehicle_waypoint.transform.location.z - 500),
             second_vehicle_waypoint.transform.rotation)
 
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
