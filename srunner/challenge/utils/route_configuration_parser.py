@@ -87,17 +87,7 @@ def convert_waypoint_float(waypoint):
     waypoint['z'] = float(waypoint['z'])
     waypoint['yaw'] = float(waypoint['yaw'])
 
-
-def scan_route_for_scenarios(route_description, world_annotations):
-
-    """
-    Just returns a plain list of possible scenarios that can happen in this route by matching
-    the locations from the scenario into the route description
-
-    :return:  A list of scenario definitions with their correspondent parameters
-    """
-
-    def match_world_location_to_route(world_location, route_description):
+def match_world_location_to_route(world_location, route_description):
 
         """
         We match this location to a given route.
@@ -124,6 +114,35 @@ def scan_route_for_scenarios(route_description, world_annotations):
 
         return False
 
+
+def match_scenario_route(scenario_type, other_actors, trigger_point, trajectory):
+
+
+    # All the scenarios that are not on intersection always affect the route
+    if scenario_type == 'Scenario1' or scenario_type == 'Scenario2' or scenario_type == 'Scenario3' \
+            or scenario_type == 'Scenario5' or scenario_type == 'Scenario6':
+
+        return True
+
+    elif scenario_type == 'Scenario4':
+        return True
+
+    else:
+        return True
+
+
+
+
+def scan_route_for_scenarios(route_description, world_annotations):
+
+    """
+    Just returns a plain list of possible scenarios that can happen in this route by matching
+    the locations from the scenario into the route description
+
+    :return:  A list of scenario definitions with their correspondent parameters
+    """
+
+
     # the triggers dictionaries:
     existent_triggers = {}
     # We have a table of IDs and trigger positions associated
@@ -140,33 +159,37 @@ def scan_route_for_scenarios(route_description, world_annotations):
         for scenario in scenarios:  # For each existent scenario
             scenario_type = scenario["scenario_type"]
             for event in scenario["available_event_configurations"]:
-                waypoint = event['transform']
+                waypoint = event['transform'] # trigger point of this scenario
                 convert_waypoint_float(waypoint)
                 if match_world_location_to_route(waypoint, route_description['trajectory']):
-                    # We match a location for this scenario, create a scenario object so this scenario
-                    # can be instantiated later
-                    if 'other_actors' in event:
-                        other_vehicles = event['other_actors']
-                    else:
-                        other_vehicles = None
+                    # We match trigger point to the  route, now we need to check if the route affects
+                    if match_scenario_route(scenario["scenario_type"], event['other_actors'],
+                                            waypoint, route_description['trajectory']):
+                        # We match a location for this scenario, create a scenario object so this scenario
+                        # can be instantiated later
 
-                    scenario_description = {
-                                           'name': scenario_type,
-                                           'other_actors': other_vehicles,
-                                           'trigger_position': waypoint
-                                           }
+                        if 'other_actors' in event:
+                            other_vehicles = event['other_actors']
+                        else:
+                            other_vehicles = None
 
-                    trigger_id = check_trigger_position(waypoint, existent_triggers)
-                    if trigger_id is None:
-                        # This trigger does not exist create a new reference on existent triggers
-                        existent_triggers.update({latest_trigger_id: waypoint})
-                        # Update a reference for this trigger on the possible scenarios
-                        possible_scenarios.update({latest_trigger_id: []})
-                        trigger_id = latest_trigger_id
-                        # Increment the latest trigger
-                        latest_trigger_id += 1
+                        scenario_description = {
+                                               'name': scenario_type,
+                                               'other_actors': other_vehicles,
+                                               'trigger_position': waypoint
+                                               }
 
-                    possible_scenarios[trigger_id].append(scenario_description)
+                        trigger_id = check_trigger_position(waypoint, existent_triggers)
+                        if trigger_id is None:
+                            # This trigger does not exist create a new reference on existent triggers
+                            existent_triggers.update({latest_trigger_id: waypoint})
+                            # Update a reference for this trigger on the possible scenarios
+                            possible_scenarios.update({latest_trigger_id: []})
+                            trigger_id = latest_trigger_id
+                            # Increment the latest trigger
+                            latest_trigger_id += 1
+
+                        possible_scenarios[trigger_id].append(scenario_description)
 
     return possible_scenarios, existent_triggers
 
