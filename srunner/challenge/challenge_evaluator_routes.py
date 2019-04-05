@@ -12,6 +12,7 @@ Provisional code to evaluate Autonomous Agents for the CARLA Autonomous Driving 
 """
 from __future__ import print_function
 import argparse
+import atexit
 from argparse import RawTextHelpFormatter
 import importlib
 import math
@@ -19,21 +20,20 @@ import sys
 import os
 import json
 import random
-import py_trees
-
+import signal
 import xml.etree.ElementTree as ET
 
 import carla
+import py_trees
+
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.challenge.autoagents.autonomous_agent import Track
-
-from srunner.scenariomanager.timer import GameTime, TimeOut
-
+from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
-
 from srunner.scenarios.control_loss import ControlLoss
+from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
 from srunner.scenarios.object_crash_vehicle import DynamicObjectCrossing
 from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
@@ -45,13 +45,8 @@ from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossi
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
-
-# The configuration parser
-
-from srunner.scenarios.config_parser import ActorConfiguration, ScenarioConfiguration, \
-    RouteConfiguration, ActorConfigurationData
-from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
-
+from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
+from srunner.scenariomanager.traffic_events import TrafficEventType
 from srunner.challenge.utils.route_manipulation import interpolate_trajectory
 
 
@@ -189,6 +184,11 @@ class ChallengeEvaluator(object):
         # debugging parameters
         self.route_visible = self.debug > 0
 
+        # set up atexit methods to prevent blocking the server
+        atexit.register(self.__del__)
+        signal.signal(signal.SIGTERM, self.__del__)
+        signal.signal(signal.SIGINT, self.__del__)
+
     def cleanup(self, ego=False):
         """
         Remove and destroy all actors
@@ -221,7 +221,7 @@ class ChallengeEvaluator(object):
             settings.synchronous_mode = False
             self.world.apply_settings(settings)
 
-            del self.world
+            self.world = None
 
     def prepare_ego_car(self, start_transform):
         """
@@ -407,7 +407,7 @@ class ChallengeEvaluator(object):
         random = True
 
         if town_name == 'Town01' or town_name == 'Town02':
-            amount = 40
+            amount = 250
         elif town_name == 'Town03' or 'Town05':
             amount = 80
         elif town_name == 'Town04':
@@ -471,7 +471,6 @@ class ChallengeEvaluator(object):
         return self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING
 
     def run_route(self, list_scenarios, trajectory, no_master=False):
-
         while no_master or self.route_is_running():
             # update all scenarios
             GameTime.on_carla_tick(self.timestamp)

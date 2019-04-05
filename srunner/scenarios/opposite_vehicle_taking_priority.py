@@ -18,7 +18,7 @@ import carla
 from agents.navigation.local_planner import RoadOption
 
 from srunner.scenarios.basic_scenario import *
-from srunner.scenarios.scenario_helper import *
+from srunner.tools.scenario_helper import *
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider

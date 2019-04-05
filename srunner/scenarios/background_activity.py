@@ -11,7 +11,6 @@ Scenario spawning elements to make the town dynamic and interesting
 import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
 
 
@@ -25,8 +24,7 @@ class BackgroundActivity(BasicScenario):
     """
 
     category = "BackgroundActivity"
-    radius = 10.0           # meters
-    timeout = 300           # Timeout of scenario in seconds
+    timeout = 35*60         # Timeout of scenario in seconds
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
         """
@@ -63,8 +61,8 @@ class BackgroundActivity(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        check_collisions = CheckCollisions(self.ego_vehicle)
-        sequence.add_child(check_collisions)
+        check_jam = TrafficJamChecker(self.ego_vehicle, debug=True)
+        sequence.add_child(check_jam)
 
         return sequence
 

@@ -12,6 +12,7 @@ local buffers to avoid blocking calls to CARLA
 
 import math
 import random
+from six import iteritems
 
 import carla
 
@@ -240,6 +241,10 @@ class CarlaActorPool(object):
         CarlaActorPool.generate_spawn_points()
 
     @staticmethod
+    def get_actors():
+        return iteritems(CarlaActorPool._carla_actor_pool)
+
+    @staticmethod
     def generate_spawn_points():
         spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
         random.shuffle(spawn_points)
@@ -259,6 +264,8 @@ class CarlaActorPool(object):
         blueprint = random.choice(blueprint_library.filter(model))
         if hero:
             blueprint.set_attribute('role_name', 'hero')
+        elif autopilot:
+            blueprint.set_attribute('role_name', 'autopilot')
         else:
             blueprint.set_attribute('role_name', 'scenario')
 
@@ -303,14 +310,21 @@ class CarlaActorPool(object):
             blueprint = random.choice(blueprint_library.filter(model))
             if hero:
                 blueprint.set_attribute('role_name', 'hero')
+            elif autopilot:
+                blueprint.set_attribute('role_name', 'autopilot')
             else:
                 blueprint.set_attribute('role_name', 'scenario')
 
             if random_location:
-                spawn_point = CarlaActorPool._spawn_points[CarlaActorPool._spawn_index]
-                CarlaActorPool._spawn_index += 1
+                if CarlaActorPool._spawn_index >= len(CarlaActorPool._spawn_points):
+                    CarlaActorPool._spawn_index = len(CarlaActorPool._spawn_points)
+                    spawn_point = None
+                else:
+                    spawn_point = CarlaActorPool._spawn_points[CarlaActorPool._spawn_index]
+                    CarlaActorPool._spawn_index += 1
 
-            batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
+            if spawn_point:
+                batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
 
         if CarlaActorPool._client:
             responses = CarlaActorPool._client.apply_batch_sync(batch)
@@ -319,15 +333,16 @@ class CarlaActorPool(object):
         CarlaActorPool._world.tick()
         CarlaActorPool._world.wait_for_tick()
 
-        #TODO: find the actors and add them
         actor_list = []
-        world_actors = CarlaActorPool._world.get_actors()
+        actor_ids = []
         if responses:
             for response in responses:
                 if not response.error:
-                    for actor in world_actors:
-                        if actor.id == response.actor_id:
-                            actor_list.append(actor)
+                    actor_ids.append(response.actor_id)
+
+        carla_actors = CarlaActorPool._world.get_actors(actor_ids)
+        for actor in carla_actors:
+            actor_list.append(actor)
 
         return actor_list
 
