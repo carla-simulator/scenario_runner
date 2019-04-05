@@ -70,6 +70,7 @@ def test_routes(args):
     # load the challenge.world variable to be used during the route
     challenge.load_world(client, route_description['town_name'])
     # Set the actor pool so the scenarios can prepare themselves when needed
+    CarlaActorPool.set_client(client)
     CarlaActorPool.set_world(challenge.world)
     # Also se the Data provider pool.
     CarlaDataProvider.set_world(challenge.world)
@@ -109,6 +110,11 @@ def test_routes(args):
     challenge.master_scenario = challenge.build_master_scenario(route_description['trajectory'],
                                                       route_description['town_name'])
     list_scenarios = [challenge.master_scenario]
+
+
+    if args.background:
+        background_scenario = challenge.build_background_scenario(route_description['town_name'])
+        list_scenarios.append(background_scenario)
     # build the instance based on the parsed definitions.
     print ("Definition of the scenarios present on the route ")
     pprint(sampled_scenarios_definitions)
@@ -159,6 +165,8 @@ if __name__ == '__main__':
     PARSER.add_argument('--debug-scenario', type=str, help='Scenario used for test', default='Scenario1')
     PARSER.add_argument('--route-visible', dest='route_visible',
                         action="store_true", help='Run with a visible route')
+    PARSER.add_argument('--background', dest='background',
+                        action="store_true", help='Add the background scenario around')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
     PARSER.add_argument('--routes',
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
