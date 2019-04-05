@@ -72,7 +72,8 @@ class BasicScenario(object):
         time_to_start_location = 2.0                               # seconds
         behavior_seq = py_trees.composites.Sequence()
         if start_transform:
-            behavior_seq.add_child(InTimeToArrivalToTransform(self.ego_vehicle, time_to_start_location, start_transform))
+            behavior_seq.add_child(InTimeToArrivalToTransform(self.ego_vehicle, time_to_start_location,
+                                                              start_transform))
 
         behavior_seq.add_child(behavior)
 

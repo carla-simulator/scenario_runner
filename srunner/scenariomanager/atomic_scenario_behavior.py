@@ -356,7 +356,6 @@ class TriggerVelocity(AtomicBehavior):
 
 
 class InTimeToArrivalToTransform(AtomicBehavior):
-    # TODO experiment doing it multi lane. instead of single transform by using a waypoint instead.
     """
     This class contains a check if a actor arrives within a given time
     at a given transform, It also consider the adjacent lanes.
@@ -400,6 +399,52 @@ class InTimeToArrivalToTransform(AtomicBehavior):
 
         return new_status
 
+class InTimeToArrivalToMultiLane(AtomicBehavior):
+    # TODO experiment doing it multi lane. instead of single transform by using a waypoint instead.
+    """
+    This class contains a check if a actor arrives within a given time
+    at a given transform, It also consider the adjacent lanes.
+    """
+
+    _max_time_to_arrival = float('inf')  # time to arrival in seconds
+
+    def __init__(self, actor, time, waypoint, name="TimeToArrival"):
+        """
+        Setup parameters
+        """
+        super(InTimeToArrivalToTransform, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._time = time
+        self._target_transform = waypoint
+
+    def update(self):
+        """
+        Check if the actor can arrive at target_location within time and has a correct transform
+        """
+
+        # DO it for each lane.
+        new_status = py_trees.common.Status.RUNNING
+
+        current_transform = CarlaDataProvider.get_transform(self._actor)
+
+        if current_transform is None:
+            return new_status
+
+        distance, angle_distance = calculate_distance_transform(current_transform, self._target_transform)
+        velocity = CarlaDataProvider.get_velocity(self._actor)
+
+        # if velocity is too small, simply use a large time to arrival
+        time_to_arrival = self._max_time_to_arrival
+        if velocity > EPSILON:
+            time_to_arrival = distance / velocity
+
+        if time_to_arrival < self._time and angle_distance < TRIGGER_ANGLE_THRESHOLD:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
 
 class InTimeToArrivalToVehicle(AtomicBehavior):
 
