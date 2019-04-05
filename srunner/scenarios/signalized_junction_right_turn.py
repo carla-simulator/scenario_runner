@@ -36,7 +36,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
     Vehicle turning right at signalized junction scenario,
     Traffic Scenario 09.
     """
-    category = "SignalizedJunctionLeftTurn"
+    category = "SignalizedJunctionRightTurn"
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
