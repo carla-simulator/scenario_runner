@@ -12,6 +12,7 @@ local buffers to avoid blocking calls to CARLA
 
 import math
 import random
+from six import iteritems
 
 import carla
 
@@ -221,9 +222,15 @@ class CarlaActorPool(object):
 
     Using CarlaActorPool, actors can be shared between scenarios.
     """
-
+    _client = None
     _world = None
     _carla_actor_pool = dict()
+    _spawn_points = None
+    _spawn_index = 0
+
+    @staticmethod
+    def set_client(client):
+        CarlaActorPool._client = client
 
     @staticmethod
     def set_world(world):
@@ -231,6 +238,18 @@ class CarlaActorPool(object):
         Set the CARLA world
         """
         CarlaActorPool._world = world
+        CarlaActorPool.generate_spawn_points()
+
+    @staticmethod
+    def get_actors():
+        return iteritems(CarlaActorPool._carla_actor_pool)
+
+    @staticmethod
+    def generate_spawn_points():
+        spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
+        random.shuffle(spawn_points)
+        CarlaActorPool._spawn_points = spawn_points
+        CarlaActorPool._spawn_index = 0
 
     @staticmethod
     def setup_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
@@ -245,18 +264,20 @@ class CarlaActorPool(object):
         blueprint = random.choice(blueprint_library.filter(model))
         if hero:
             blueprint.set_attribute('role_name', 'hero')
+        elif autopilot:
+            blueprint.set_attribute('role_name', 'autopilot')
         else:
             blueprint.set_attribute('role_name', 'scenario')
 
         if random_location:
-            spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
-            random.shuffle(spawn_points)
-            for spawn_point in spawn_points:
+            actor = None
+            while not actor:
+                spawn_point = random.choice(CarlaActorPool._spawn_points)
                 actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
-                if actor:
-                    break
+
         else:
             actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
+
         if actor is None:
             raise Exception(
                 "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
@@ -270,6 +291,75 @@ class CarlaActorPool(object):
         CarlaActorPool._world.tick()
         CarlaActorPool._world.wait_for_tick()
         return actor
+
+    @staticmethod
+    def setup_batch_actors(model, amount, spawn_point, hero=False, autopilot=False, random_location=False):
+        """
+        Function to setup a batch of actors with the most relevant parameters,
+        incl. spawn point and vehicle model.
+        """
+        SpawnActor = carla.command.SpawnActor
+        SetAutopilot = carla.command.SetAutopilot
+        FutureActor = carla.command.FutureActor
+
+        blueprint_library = CarlaActorPool._world.get_blueprint_library()
+
+        batch = []
+        for i in range(amount):
+            # Get vehicle by model
+            blueprint = random.choice(blueprint_library.filter(model))
+            if hero:
+                blueprint.set_attribute('role_name', 'hero')
+            elif autopilot:
+                blueprint.set_attribute('role_name', 'autopilot')
+            else:
+                blueprint.set_attribute('role_name', 'scenario')
+
+            if random_location:
+                if CarlaActorPool._spawn_index >= len(CarlaActorPool._spawn_points):
+                    CarlaActorPool._spawn_index = len(CarlaActorPool._spawn_points)
+                    spawn_point = None
+                else:
+                    spawn_point = CarlaActorPool._spawn_points[CarlaActorPool._spawn_index]
+                    CarlaActorPool._spawn_index += 1
+
+            if spawn_point:
+                batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
+
+        if CarlaActorPool._client:
+            responses = CarlaActorPool._client.apply_batch_sync(batch)
+
+        # wait for the actor to be spawned properly before we do anything
+        CarlaActorPool._world.tick()
+        CarlaActorPool._world.wait_for_tick()
+
+        actor_list = []
+        actor_ids = []
+        if responses:
+            for response in responses:
+                if not response.error:
+                    actor_ids.append(response.actor_id)
+
+        carla_actors = CarlaActorPool._world.get_actors(actor_ids)
+        for actor in carla_actors:
+            actor_list.append(actor)
+
+        return actor_list
+
+    @staticmethod
+    def request_new_batch_actors(model, amount, spawn_point, hero=False, autopilot=False, random_location=False):
+        """
+        This method tries to create a new actor. If this was
+        successful, the new actor is returned, None otherwise.
+        """
+        actors = CarlaActorPool.setup_batch_actors(model, amount, spawn_point, hero, autopilot, random_location)
+
+        if actors:
+            for actor in actors:
+                CarlaActorPool._carla_actor_pool[actor.id] = actor
+            return actors
+        else:
+            return None
 
     @staticmethod
     def request_new_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):

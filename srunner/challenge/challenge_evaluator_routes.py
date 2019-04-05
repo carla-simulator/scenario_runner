@@ -12,6 +12,7 @@ Provisional code to evaluate Autonomous Agents for the CARLA Autonomous Driving 
 """
 from __future__ import print_function
 import argparse
+import atexit
 from argparse import RawTextHelpFormatter
 import importlib
 import math
@@ -19,21 +20,20 @@ import sys
 import os
 import json
 import random
-import py_trees
-
+import signal
 import xml.etree.ElementTree as ET
 
 import carla
+import py_trees
+
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
 from srunner.challenge.autoagents.autonomous_agent import Track
-
-from srunner.scenariomanager.timer import GameTime, TimeOut
-
+from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
-
 from srunner.scenarios.control_loss import ControlLoss
+from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
 from srunner.scenarios.object_crash_vehicle import DynamicObjectCrossing
 from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
@@ -45,13 +45,8 @@ from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossi
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
-
-# The configuration parser
-
-from srunner.scenarios.config_parser import ActorConfiguration, ScenarioConfiguration, \
-    RouteConfiguration, ActorConfigurationData
-from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
-
+from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
+from srunner.scenariomanager.traffic_events import TrafficEventType
 from srunner.challenge.utils.route_manipulation import interpolate_trajectory
 
 
@@ -132,6 +127,7 @@ def convert_transform_to_location(transform_vec):
     return location_vec
 
 
+
 Z_DISTANCE_AVOID_COLLISION = 0.5  # z vallue to add in oder to avoid spawning vehicles to close to the ground
 
 
@@ -188,6 +184,11 @@ class ChallengeEvaluator(object):
         # debugging parameters
         self.route_visible = self.debug > 0
 
+        # set up atexit methods to prevent blocking the server
+        atexit.register(self.__del__)
+        signal.signal(signal.SIGTERM, self.__del__)
+        signal.signal(signal.SIGINT, self.__del__)
+
     def cleanup(self, ego=False):
         """
         Remove and destroy all actors
@@ -220,7 +221,7 @@ class ChallengeEvaluator(object):
             settings.synchronous_mode = False
             self.world.apply_settings(settings)
 
-            del self.world
+            self.world = None
 
     def prepare_ego_car(self, start_transform):
         """
@@ -395,6 +396,32 @@ class ChallengeEvaluator(object):
 
         return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration)
 
+    def build_background_scenario(self, town_name):
+        scenario_configuration = ScenarioConfiguration()
+        scenario_configuration.route = None
+        scenario_configuration.town = town_name
+
+        model = 'vehicle.*'
+        transform = carla.Transform()
+        autopilot = True
+        random = True
+
+        if town_name == 'Town01' or town_name == 'Town02':
+            amount = 250
+        elif town_name == 'Town03' or 'Town05':
+            amount = 80
+        elif town_name == 'Town04':
+            amount = 100
+        elif town_name == 'Town06' or town_name == 'Town07':
+            amount = 50
+        else:
+            amount = 1
+
+        actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
+        scenario_configuration.other_actors.append(actor_configuration_instance)
+
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration)
+
     def build_scenario_instances(self, scenario_definition_vec, town_name):
         """
             Based on the parsed route and possible scenarios, build all the scenario classes.
@@ -444,7 +471,6 @@ class ChallengeEvaluator(object):
         return self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING
 
     def run_route(self, list_scenarios, trajectory, no_master=False):
-
         while no_master or self.route_is_running():
             # update all scenarios
             GameTime.on_carla_tick(self.timestamp)
@@ -760,6 +786,7 @@ class ChallengeEvaluator(object):
             # load the self.world variable to be used during the route
             self.load_world(client, route_description['town_name'])
             # Set the actor pool so the scenarios can prepare themselves when needed
+            CarlaActorPool.set_client(client)
             CarlaActorPool.set_world(self.world)
             # Also se the Data provider pool.
             CarlaDataProvider.set_world(self.world)
@@ -790,7 +817,10 @@ class ChallengeEvaluator(object):
             # build the master scenario based on the route and the target.
             self.master_scenario = self.build_master_scenario(route_description['trajectory'],
                                                               route_description['town_name'])
-            list_scenarios = [self.master_scenario]
+
+            self.background_scenario = self.build_background_scenario(route_description['town_name'])
+
+            list_scenarios = [self.master_scenario, self.background_scenario]
             # build the instance based on the parsed definitions.
             if self.debug > 0:
                 for scenario in sampled_scenarios_definitions:
@@ -798,7 +828,7 @@ class ChallengeEvaluator(object):
                                          scenario['trigger_position']['y'],
                                          scenario['trigger_position']['z']) + carla.Location(z=2.0)
                     self.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
-                    self.world.debug.draw_string(loc, scenario['name'], draw_shadow=False,
+                    self.world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
                                                  color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
                     print(scenario)
 

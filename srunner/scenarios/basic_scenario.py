@@ -66,11 +66,14 @@ class BasicScenario(object):
 
         # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
 
-        start_location = config.trigger_point.location     # start location of the scenario
+        start_location = None
+        if config.trigger_point:
+            start_location = config.trigger_point.location     # start location of the scenario
 
         time_to_start_location = 2.0                               # seconds
         behavior_seq = py_trees.composites.Sequence()
-        behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle, time_to_start_location, start_location))
+        if start_location:
+            behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle, time_to_start_location, start_location))
         behavior_seq.add_child(behavior)
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)

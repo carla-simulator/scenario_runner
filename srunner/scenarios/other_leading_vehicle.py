@@ -16,17 +16,17 @@ either via a timeout, or if the ego vehicle drives some distance.
 """
 
 from __future__ import print_function
+
 import sys
 
-import py_trees
 import carla
+import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenarios.basic_scenario import *
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenarios.scenario_helper import get_waypoint_in_distance
-
+from srunner.scenarios.basic_scenario import *
+from srunner.tools.scenario_helper import get_waypoint_in_distance
 
 OTHER_LEADING_VEHICLE_SCENARIOS = [
     "OtherLeadingVehicle"

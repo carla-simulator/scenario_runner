@@ -41,7 +41,6 @@ class RouteConfiguration(object):
 
             self.data.append((carla.Location(x, y, z), connection))
 
-
 class TargetConfiguration(object):
 
     """
@@ -64,11 +63,12 @@ class ActorConfigurationData(object):
     This is a configuration base class to hold model and transform attributes
     """
 
-    def __init__(self, model, transform, autopilot=False, random=False):
+    def __init__(self, model, transform, autopilot=False, random=False, amount=1):
         self.model = model
         self.transform = transform
         self.autopilot = autopilot
         self.random_location = random
+        self.amount = amount
 
 
 class ActorConfiguration(ActorConfigurationData):
@@ -95,10 +95,14 @@ class ActorConfiguration(ActorConfigurationData):
         if 'autopilot' in node.keys():
             autopilot = True
 
+        amount = 1
+        if 'amount' in node.keys():
+            amount = int(node.attrib['amount'])
+        
         super(ActorConfiguration, self).__init__(
             set_attrib(node, 'model', 'vehicle.*'),
             carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw)),
-            autopilot, random_location)
+            autopilot, random_location, amount)
 
 
 class ScenarioConfiguration(object):
@@ -167,7 +171,8 @@ def parse_scenario_configuration(file_name, scenario_name):
 
         for route in scenario.iter("route"):
             route_conf = RouteConfiguration()
-            new_config.route = route_conf.parse_xml(route)
+            route_conf.parse_xml(route)
+            new_config.route = route_conf
 
         for other_actor in scenario.iter("other_actor"):
             new_config.other_actors.append(ActorConfiguration(other_actor))
