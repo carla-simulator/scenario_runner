@@ -70,8 +70,8 @@ class StationaryObjectCrossing(BasicScenario):
             offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset['z']
-        self.transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        static = CarlaActorPool.request_new_actor('static.prop.container', self.transform)
+        transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+        static = CarlaActorPool.request_new_actor('static.prop.container', transform)
         static.set_simulate_physics(True)
         self.other_actors.append(static)
 
@@ -94,7 +94,6 @@ class StationaryObjectCrossing(BasicScenario):
 
         # building tree
         root.add_child(scenario_sequence)
-        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self.transform))
         scenario_sequence.add_child(actor_stand)
         scenario_sequence.add_child(actor_removed)
         scenario_sequence.add_child(end_condition)
@@ -144,11 +143,9 @@ class DynamicObjectCrossing(BasicScenario):
         # other vehicle parameters
         self._other_actor_target_velocity = 5
         self._other_actor_max_brake = 1.0
-        self._time_to_reach = 10
-        self._adversary_type = adversary_type  # flag to select either pedestrian (False) or cyclist (True)
+        self._time_to_reach = 12
+        self._adversary_type = adversary_type  # flag to select either pedestrian (true) or cyclist (false)
         self._walker_yaw = 0
-        self._initialization_status = True
-        self._num_lane_changes = 1
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
@@ -161,27 +158,12 @@ class DynamicObjectCrossing(BasicScenario):
         """
         Custom initialization
         """
-
-        waypoint = self._reference_waypoint
-        while True:
-            wp_next = waypoint.get_right_lane()
-            self._num_lane_changes += 1
-            if wp_next is not None:
-                waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Sidewalk:
-                    break
-            else:
-                break
-
         # cyclist transform
         _start_distance = 40
-        lane_width = waypoint.lane_width
-        location, _ = get_location_in_distance_from_wp(waypoint, _start_distance)
+        lane_width = self._reference_waypoint.lane_width
+        location, _ = get_location_in_distance_from_wp(self._reference_waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
-        if self._adversary_type:
-            offset = {"orientation": 270, "position": 90, "z": 0.1, "k": 1.1}
-        else:
-            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": 1.1}
+        offset = {"orientation": 270, "position": 90, "z": 0.4, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
@@ -189,44 +171,40 @@ class DynamicObjectCrossing(BasicScenario):
             offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset['z']
-        self.transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+
+        self._opponent_transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+        disp_transform = carla.Transform(
+            carla.Location(self._opponent_transform.location.x,
+                           self._opponent_transform.location.y,
+                           self._opponent_transform.location.z - 500),
+            self._opponent_transform.rotation)
+
 
         if self._adversary_type is False:
-            walker = None
-            try:
-                walker = CarlaActorPool.request_new_actor('walker.*', self.transform)
-            except:
-                self._initialization_status = False
-                return
+            walker = CarlaActorPool.request_new_actor('walker.*', disp_transform)
             self._walker_yaw = orientation_yaw
-            self._other_actor_target_velocity = 3 + (0.4 * self._num_lane_changes)
+            self._other_actor_target_velocity = 2
             self.other_actors.append(walker)
         else:
-            self._time_to_reach *= self._num_lane_changes
-            self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
-            first_vehicle = None
-            try:
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', self.transform)
-            except:
-                self._initialization_status = False
-                return
+            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', disp_transform)
             self.other_actors.append(first_vehicle)
         # static object transform
         shift = 0.9
-        x_ego = self._reference_waypoint.transform.location.x
-        y_ego = self._reference_waypoint.transform.location.y
-        x_cycle = self.transform.location.x
-        y_cycle = self.transform.location.y
+        x_ego = self.ego_vehicle.get_location().x
+        y_ego = self.ego_vehicle.get_location().y
+        x_cycle = self._opponent_transform.location.x
+        y_cycle = self._opponent_transform.location.y
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
-        self.transform2 = carla.Transform(carla.Location(x_static, y_static, self.transform.location.z))
-        static = None
-        try:
-            static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
-        except:
-            self._initialization_status = False
-            return
+        self._prop_transform = carla.Transform(carla.Location(x_static, y_static, self._opponent_transform.location.z))
+        prop_disp_transform = carla.Transform(
+            carla.Location(self._prop_transform.location.x,
+                           self._prop_transform.location.y,
+                           self._prop_transform.location.z - 500),
+            self._prop_transform.rotation)
+        static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', prop_disp_transform)
+        static.set_simulate_physics(True)
         self.other_actors.append(static)
 
     def _create_behavior(self):
@@ -237,56 +215,51 @@ class DynamicObjectCrossing(BasicScenario):
         then after 60 seconds, a timeout stops the scenario
         """
 
+        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = lane_width + (1.25 * lane_width)
+
+        # leaf nodes
+        start_condition = InTimeToArrivalToVehicle(self.other_actors[0], self.ego_vehicle, self._time_to_reach)
+        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity, self._walker_yaw)
+        actor_drive = DriveDistance(self.other_actors[0], 0.4 * lane_width)
+        actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
+                                                      self._other_actor_target_velocity, self._walker_yaw)
+        actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
+        actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
+        timeout_other_actor = TimeOut(15)
+        actor_remove = ActorDestroy(self.other_actors[0])
+        static_remove = ActorDestroy(self.other_actors[1])
+        end_condition = DriveDistance(self.ego_vehicle, self._ego_vehicle_distance_driven)
+
+        # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        if self._initialization_status:
-            lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-            lane_width = lane_width+(1.25*lane_width * self._num_lane_changes)
+        scenario_sequence = py_trees.composites.Sequence()
+        keep_velocity_other = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        keep_velocity = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-            # leaf nodes
-            start_condition = InTimeToArrivalToVehicle(
-                self.other_actors[0], self.ego_vehicle, self._time_to_reach)
-            actor_velocity = KeepVelocity(
-                self.other_actors[0], self._other_actor_target_velocity, self._walker_yaw)
-            actor_drive = DriveDistance(self.other_actors[0], 0.5*lane_width)
-            actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
-                                                          self._other_actor_target_velocity, self._walker_yaw)
-            actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
-            actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
-            timeout_other_actor = TimeOut(10)
-            actor_remove = ActorDestroy(self.other_actors[0])
-            static_remove = ActorDestroy(self.other_actors[1])
-            end_condition = DriveDistance(self.ego_vehicle, self._ego_vehicle_distance_driven)
+        # building tree
+        root.add_child(scenario_sequence)
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._opponent_transform))
+        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._prop_transform))
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
+        scenario_sequence.add_child(start_condition)
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
+        scenario_sequence.add_child(keep_velocity)
+        scenario_sequence.add_child(keep_velocity_other)
+        scenario_sequence.add_child(actor_stop_crossed_lane)
+        scenario_sequence.add_child(timeout_other_actor)
+        scenario_sequence.add_child(actor_remove)
+        scenario_sequence.add_child(static_remove)
+        scenario_sequence.add_child(end_condition)
 
-            # non leaf nodes
-
-            scenario_sequence = py_trees.composites.Sequence()
-            keep_velocity_other = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-            keep_velocity = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-            # building tree
-
-            root.add_child(scenario_sequence)
-            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self.transform))
-            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self.transform2))
-            scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
-            scenario_sequence.add_child(start_condition)
-            scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
-            scenario_sequence.add_child(keep_velocity)
-            scenario_sequence.add_child(keep_velocity_other)
-            scenario_sequence.add_child(actor_stop_crossed_lane)
-            scenario_sequence.add_child(timeout_other_actor)
-            scenario_sequence.add_child(actor_remove)
-            scenario_sequence.add_child(static_remove)
-            scenario_sequence.add_child(end_condition)
-
-            keep_velocity.add_child(actor_velocity)
-            keep_velocity.add_child(actor_drive)
-            keep_velocity_other.add_child(actor_start_cross_lane)
-            keep_velocity_other.add_child(actor_cross_lane)
-            keep_velocity_other.add_child(TimeOut(5))
+        keep_velocity.add_child(actor_velocity)
+        keep_velocity.add_child(actor_drive)
+        keep_velocity_other.add_child(actor_start_cross_lane)
+        keep_velocity_other.add_child(actor_cross_lane)
+        keep_velocity_other.add_child(TimeOut(5))
 
         return root
 
