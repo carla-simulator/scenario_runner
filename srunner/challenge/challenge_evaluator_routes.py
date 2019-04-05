@@ -806,7 +806,7 @@ class ChallengeEvaluator(object):
                 # the sensor configuration is illegal
                 self.report_fatal_error(args.filename, args.show_to_participant, error_message)
                 return
-            self.agent_instance.set_global_plan(gps_route)
+            self.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
             # prepare the ego car to run the route.
             # It starts on the first wp of the route
 

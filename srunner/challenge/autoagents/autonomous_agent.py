@@ -80,5 +80,6 @@ class AutonomousAgent():
     def all_sensors_ready(self):
         return self.sensor_interface.all_sensors_ready()
 
-    def set_global_plan(self, global_plan):
-        self._global_plan = global_plan
+    def set_global_plan(self, global_plan_gps, global_plan_world_coord):
+        self._global_plan = global_plan_gps
+        self._global_plan_world_coord = global_plan_world_coord
