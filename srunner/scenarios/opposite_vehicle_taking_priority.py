@@ -118,7 +118,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         crossing_point_dynamic = get_crossing_point(self.ego_vehicle)
 
         # start condition
-        startcondition = InTriggerDistanceToTransform(
+        startcondition = InTriggerDistanceToLocation(
             self.ego_vehicle,
             crossing_point_dynamic,
             self._ego_distance_to_traffic_light,

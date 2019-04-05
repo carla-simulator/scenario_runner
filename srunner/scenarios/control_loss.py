@@ -71,29 +71,17 @@ class ControlLoss(BasicScenario):
         """
         self._distance = random.sample(range(10, 80), 3)
         self._distance = sorted(self._distance)
-        first_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[0])
-        second_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[1])
-        third_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[2])
+        first_loc, _ = get_waypoint_in_distance(self._reference_waypoint, self._distance[0]).transform
+        second_loc, _ = get_waypoint_in_distance(self._reference_waypoint, self._distance[1]).transform
+        third_loc, _ = get_waypoint_in_distance(self._reference_waypoint, self._distance[2]).transform
 
         self.loc_list.extend([first_loc, second_loc, third_loc])
         self._dist_prop = [x-2 for x in self._distance]
 
-        self.first_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[0])
-        self.sec_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[1])
-        self.third_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[2])
+        self.first_transform, _ = get_waypoint_in_distance(self._reference_waypoint, self._dist_prop[0]).transform
+        self.sec_transform, _ = get_waypoint_in_distance(self._reference_waypoint, self._dist_prop[1]).transform
+        self.third_transform, _ = get_waypoint_in_distance(self._reference_waypoint, self._dist_prop[2]).transform
 
-        self.first_transform = carla.Transform(self.first_loc_prev)
-        self.sec_transform = carla.Transform(self.sec_loc_prev)
-        self.third_transform = carla.Transform(self.third_loc_prev)
-        self.first_transform = carla.Transform(carla.Location(self.first_loc_prev.x,
-                                                              self.first_loc_prev.y,
-                                                              self.first_loc_prev.z))
-        self.sec_transform = carla.Transform(carla.Location(self.sec_loc_prev.x,
-                                                               self.sec_loc_prev.y,
-                                                               self.sec_loc_prev.z))
-        self.third_transform = carla.Transform(carla.Location(self.third_loc_prev.x,
-                                                              self.third_loc_prev.y,
-                                                              self.third_loc_prev.z))
         if self._map.name == 'Town02':
             self.first_transform.location.z += 0.2
             self.sec_transform.location.z += 0.2
@@ -123,7 +111,7 @@ class ControlLoss(BasicScenario):
         # start condition
         start_end_parallel = py_trees.composites.Parallel("Jitter",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        start_condition = InTriggerDistanceToTransform(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
+        start_condition = InTriggerDistanceToTransform(self.ego_vehicle, self.first_transform, self._trigger_dist)
         for i in range(self._no_of_jitter):
             noise = random.gauss(self._noise_mean, self._noise_std)
             noise = abs(noise)
@@ -148,9 +136,9 @@ class ControlLoss(BasicScenario):
         sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform))
         jitter = py_trees.composites.Sequence("Jitter Behavior")
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToTransform(self.ego_vehicle, self.sec_loc_prev, self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToTransform(self.ego_vehicle, self.sec_transform, self._trigger_dist))
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToTransform(self.ego_vehicle, self.third_loc_prev, self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToTransform(self.ego_vehicle, self.third_transform, self._trigger_dist))
         jitter.add_child(turn)
         jitter_action.add_child(jitter)
         jitter_action.add_child(jitter_abort)

@@ -89,7 +89,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         crossing_point_dynamic = get_crossing_point(self.other_actors[0])
         sync_arrival = SyncArrival(
             self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
-        sync_arrival_stop = InTriggerDistanceToTransform(self.other_actors[0], crossing_point_dynamic, 5)
+        sync_arrival_stop = InTriggerDistanceToLocation(self.other_actors[0], crossing_point_dynamic, 5)
 
         sync_arrival_parallel = py_trees.composites.Parallel(
             "Synchronize arrival times",
@@ -110,7 +110,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
         move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
         waypoint_follower_end = InTriggerDistanceToTransform(
-            self.other_actors[0], plan[-1][0].transform.location, 10)
+            self.other_actors[0], plan[-1][0].transform, 10)
 
         move_actor_parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)

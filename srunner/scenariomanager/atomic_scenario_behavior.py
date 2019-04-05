@@ -245,6 +245,43 @@ class InTriggerDistanceToTransform(AtomicBehavior):
 
         return new_status
 
+class InTriggerDistanceToLocation(AtomicBehavior):
+
+    """
+    This class contains the trigger (condition) for a distance to a fixed
+    location of a scenario and is at the same transform.
+    """
+
+    def __init__(self, actor, target_location, distance, name="InTriggerDistanceToLocation"):
+        """
+        Setup trigger distance
+        """
+        super(InTriggerDistanceToLocation, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._target_location = target_location
+        self._actor = actor
+        self._distance = distance
+
+    def update(self):
+        """
+        Check if the actor is within trigger distance to the target location
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        transform = CarlaDataProvider.get_transform(self._actor)
+
+        if transform is None:
+            return new_status
+
+        distance = calculate_distance(transform, self._target_location)
+        # The trigger angle distance is now general.
+        if distance < self._distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
 
 class InTriggerDistanceToNextIntersection(AtomicBehavior):
 

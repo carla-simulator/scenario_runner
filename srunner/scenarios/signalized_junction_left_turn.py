@@ -92,7 +92,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         target_wp = choose_at_junction(waypoint, waypoint.next(2), direction=-1)
         start_other_trigger = InTriggerDistanceToTransform(
             self.ego_vehicle,
-            target_wp.transform.location, self._dist_to_intersection)
+            target_wp.transform, self._dist_to_intersection)
         # Selecting straight path at intersection
         target_waypoint = generate_target_waypoint(
             CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), 0)
@@ -104,7 +104,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
             plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(5.0)
         location, _ = get_location_in_distance(self.ego_vehicle, self._start_distance)
-        start_condition = InTriggerDistanceToTransform(self.ego_vehicle, location, 2)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2)
         move_other_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
         move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan)
         drive_actor = DriveDistance(self.other_actors[0], self._drive_distance)
