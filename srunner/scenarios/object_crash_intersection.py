@@ -42,10 +42,12 @@ class VehicleTurningRight(BasicScenario):
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
         self.timeout = 60
-
+        self._initialization_status = True
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
+
+        self._num_lane_changes = 1
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -58,8 +60,13 @@ class VehicleTurningRight(BasicScenario):
         """
         Custom initialization
         """
-
         waypoint = self._reference_waypoint
+        while waypoint.lane_change & carla.LaneChange.Right:
+            wp_next = waypoint.get_right_lane()
+            if wp_next is not None:
+                waypoint = wp_next
+            else:
+                break
 
         _wp = generate_target_waypoint(waypoint, 1)
         offset = {"orientation": 270, "position": 90, "z": 1.0, "k": 0.7}
@@ -82,8 +89,11 @@ class VehicleTurningRight(BasicScenario):
                            self._other_actor_transform.location.y,
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
-
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
+        try:
+            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
+        except:
+            self._initialization_status = False
+            return
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -95,41 +105,43 @@ class VehicleTurningRight(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
-        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width + (1.10 * lane_width)
 
-        trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
-        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
-        post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
-        end_condition = TimeOut(5)
-
-        # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        scenario_sequence = py_trees.composites.Sequence()
-        actor_ego_sync = py_trees.composites.Parallel(
-            "Synchronization of actor and ego vehicle",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        after_timer_actor = py_trees.composites.Parallel(
-            "After timout actor will cross the remaining lane_width",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        if self._initialization_status:
+            lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+            lane_width = lane_width + (1.10 * lane_width)
 
-        # building the tree
-        root.add_child(scenario_sequence)
-        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-        scenario_sequence.add_child(trigger_distance)
-        scenario_sequence.add_child(actor_ego_sync)
-        scenario_sequence.add_child(after_timer_actor)
-        scenario_sequence.add_child(end_condition)
-        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
+            actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
+            actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
+            post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
+            post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
+            end_condition = TimeOut(5)
 
-        actor_ego_sync.add_child(actor_velocity)
-        actor_ego_sync.add_child(actor_traverse)
+            # non leaf nodes
+            scenario_sequence = py_trees.composites.Sequence()
+            actor_ego_sync = py_trees.composites.Parallel(
+                "Synchronization of actor and ego vehicle",
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            after_timer_actor = py_trees.composites.Parallel(
+                "After timout actor will cross the remaining lane_width",
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        after_timer_actor.add_child(post_timer_velocity_actor)
-        after_timer_actor.add_child(post_timer_traverse_actor)
+            # building the tree
+            root.add_child(scenario_sequence)
+            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+            scenario_sequence.add_child(trigger_distance)
+            scenario_sequence.add_child(actor_ego_sync)
+            scenario_sequence.add_child(after_timer_actor)
+            scenario_sequence.add_child(end_condition)
+            scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+
+            actor_ego_sync.add_child(actor_velocity)
+            actor_ego_sync.add_child(actor_traverse)
+
+            after_timer_actor.add_child(post_timer_velocity_actor)
+            after_timer_actor.add_child(post_timer_traverse_actor)
         return root
 
     def _create_test_criteria(self):
@@ -165,7 +177,7 @@ class VehicleTurningLeft(BasicScenario):
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
         self.timeout = 60
-
+        self._initialization_status = True
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
@@ -182,6 +194,13 @@ class VehicleTurningLeft(BasicScenario):
         Custom initialization
         """
         waypoint = self._reference_waypoint
+        while waypoint.lane_change & carla.LaneChange.Right:
+            wp_next = waypoint.get_right_lane()
+            if wp_next is not None:
+                waypoint = wp_next
+            else:
+                break
+
         _wp = generate_target_waypoint(waypoint, -1)
         offset = {"orientation": 270, "position": 90, "z": 1.0, "k": 0.7}
         _wp = _wp.next(10)[-1]
@@ -203,8 +222,11 @@ class VehicleTurningLeft(BasicScenario):
                            self._other_actor_transform.location.y,
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
-
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
+        try:
+            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
+        except:
+            self._initialization_status = False
+            return
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -216,43 +238,43 @@ class VehicleTurningLeft(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
-        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-        lane_width = lane_width + (1.10 * lane_width)
-
-        trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
-        actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
-        post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
-        end_condition = TimeOut(5)
-
-        # non leaf nodes
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        if self._initialization_status:
+            lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+            lane_width = lane_width + (1.10 * lane_width)
 
-        scenario_sequence = py_trees.composites.Sequence()
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
+            actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
+            actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
+            post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
+            post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
+            end_condition = TimeOut(5)
 
-        actor_ego_sync = py_trees.composites.Parallel(
-            "Synchronization of actor and ego vehicle",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        after_timer_actor = py_trees.composites.Parallel(
-            "After timout actor will cross the remaining lane_width",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            # non leaf nodes
+            scenario_sequence = py_trees.composites.Sequence()
 
-        # building the tree
-        root.add_child(scenario_sequence)
-        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-        scenario_sequence.add_child(trigger_distance)
-        scenario_sequence.add_child(actor_ego_sync)
-        scenario_sequence.add_child(after_timer_actor)
-        scenario_sequence.add_child(end_condition)
-        scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+            actor_ego_sync = py_trees.composites.Parallel(
+                "Synchronization of actor and ego vehicle",
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            after_timer_actor = py_trees.composites.Parallel(
+                "After timout actor will cross the remaining lane_width",
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        actor_ego_sync.add_child(actor_velocity)
-        actor_ego_sync.add_child(actor_traverse)
+            # building the tree
+            root.add_child(scenario_sequence)
+            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+            scenario_sequence.add_child(trigger_distance)
+            scenario_sequence.add_child(actor_ego_sync)
+            scenario_sequence.add_child(after_timer_actor)
+            scenario_sequence.add_child(end_condition)
+            scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
 
-        after_timer_actor.add_child(post_timer_velocity_actor)
-        after_timer_actor.add_child(post_timer_traverse_actor)
+            actor_ego_sync.add_child(actor_velocity)
+            actor_ego_sync.add_child(actor_traverse)
+
+            after_timer_actor.add_child(post_timer_velocity_actor)
+            after_timer_actor.add_child(post_timer_traverse_actor)
         return root
 
     def _create_test_criteria(self):
