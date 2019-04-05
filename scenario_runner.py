@@ -28,6 +28,7 @@ from srunner.scenarios.background_activity import *
 from srunner.scenarios.control_loss import *
 from srunner.scenarios.follow_leading_vehicle import *
 from srunner.scenarios.maneuver_opposite_direction import *
+from srunner.scenarios.master_scenario import *
 from srunner.scenarios.no_signal_junction_crossing import *
 from srunner.scenarios.object_crash_intersection import *
 from srunner.scenarios.object_crash_vehicle import *
@@ -55,7 +56,8 @@ SCENARIOS = {
     "OppositeDirection": MANEUVER_OPPOSITE_DIRECTION,
     "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS,
     "SignalizedJunctionRightTurn": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS,
-    "SignalizedJunctionLeftTurn": TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS
+    "SignalizedJunctionLeftTurn": TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS,
+    "MasterScenario": MASTER_SCENARIO
 }
 
 
