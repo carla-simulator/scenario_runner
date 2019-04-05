@@ -123,7 +123,7 @@ class ControlLoss(BasicScenario):
         # start condition
         start_end_parallel = py_trees.composites.Parallel("Jitter",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
+        start_condition = InTriggerDistanceToTransform(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
         for i in range(self._no_of_jitter):
             noise = random.gauss(self._noise_mean, self._noise_std)
             noise = abs(noise)
@@ -148,9 +148,9 @@ class ControlLoss(BasicScenario):
         sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform))
         jitter = py_trees.composites.Sequence("Jitter Behavior")
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.sec_loc_prev, self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToTransform(self.ego_vehicle, self.sec_loc_prev, self._trigger_dist))
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.third_loc_prev, self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToTransform(self.ego_vehicle, self.third_loc_prev, self._trigger_dist))
         jitter.add_child(turn)
         jitter_action.add_child(jitter)
         jitter_action.add_child(jitter_abort)

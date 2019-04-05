@@ -14,6 +14,9 @@ The atomic behaviors are implemented with py_trees.
 """
 
 import carla
+import math
+import py_trees
+from py_trees.blackboard import Blackboard
 import numpy as np
 import py_trees
 from agents.navigation.basic_agent import *
@@ -25,7 +28,8 @@ from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 
 EPSILON = 0.001
-
+# TODO: refactor this
+TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
 
 def calculate_distance(location, other_location):
     """
@@ -37,6 +41,24 @@ def calculate_distance(location, other_location):
           (shortest) route between the two locations.
     """
     return location.distance(other_location)
+
+def calculate_distance_transform(transform, other_transform):
+    """
+    Method to calculate the distance between two transforms
+
+    Returns both the angle and the distance position.
+    """
+
+    dx = transform.location.x - other_transform.location.x
+    dy = transform.location.y - other_transform.location.y
+    dz = transform.location.z - other_transform.location.z
+    dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+    dyaw = transform.rotation.yaw - other_transform.rotation.yaw
+
+    dist_angle = math.sqrt(dyaw * dyaw)
+
+    return dist_position, dist_angle
 
 
 def get_actor_control(actor):
@@ -186,20 +208,20 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         return new_status
 
 
-class InTriggerDistanceToLocation(AtomicBehavior):
+class InTriggerDistanceToTransform(AtomicBehavior):
 
     """
     This class contains the trigger (condition) for a distance to a fixed
-    location of a scenario
+    location of a scenario and is at the same transform.
     """
 
-    def __init__(self, actor, target_location, distance, name="InTriggerDistanceToLocation"):
+    def __init__(self, actor, target_transform, distance, name="InTriggerDistanceToTransform"):
         """
         Setup trigger distance
         """
-        super(InTriggerDistanceToLocation, self).__init__(name)
+        super(InTriggerDistanceToTransform, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._target_location = target_location
+        self._target_transform = target_transform
         self._actor = actor
         self._distance = distance
 
@@ -209,13 +231,14 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        location = CarlaDataProvider.get_location(self._actor)
+        transform = CarlaDataProvider.get_transform(self._actor)
 
-        if location is None:
+        if transform is None:
             return new_status
 
-        if calculate_distance(
-                location, self._target_location) < self._distance:
+        distance, angle_distance = calculate_distance_transform(transform, self._target_transform)
+        # The trigger angle distance is now general.
+        if distance < self._distance and angle_distance < TRIGGER_ANGLE_THRESHOLD:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -295,37 +318,37 @@ class TriggerVelocity(AtomicBehavior):
         return new_status
 
 
-class InTimeToArrivalToLocation(AtomicBehavior):
-
+class InTimeToArrivalToTransform(AtomicBehavior):
+    # TODO experiment doing it multi lane.
     """
     This class contains a check if a actor arrives within a given time
-    at a given location.
+    at a given transform, It also consider the adjacent lanes.
     """
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, actor, time, location, name="TimeToArrival"):
+    def __init__(self, actor, time, transform, name="TimeToArrival"):
         """
         Setup parameters
         """
-        super(InTimeToArrivalToLocation, self).__init__(name)
+        super(InTimeToArrivalToTransform, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._time = time
-        self._target_location = location
+        self._target_transform = transform
 
     def update(self):
         """
-        Check if the actor can arrive at target_location within time
+        Check if the actor can arrive at target_location within time and has a correct transform
         """
         new_status = py_trees.common.Status.RUNNING
 
-        current_location = CarlaDataProvider.get_location(self._actor)
+        current_transform = CarlaDataProvider.get_transform(self._actor)
 
-        if current_location is None:
+        if current_transform is None:
             return new_status
 
-        distance = calculate_distance(current_location, self._target_location)
+        distance, angle_distance = calculate_distance_transform(current_transform, self._target_transform)
         velocity = CarlaDataProvider.get_velocity(self._actor)
 
         # if velocity is too small, simply use a large time to arrival
@@ -333,12 +356,14 @@ class InTimeToArrivalToLocation(AtomicBehavior):
         if velocity > EPSILON:
             time_to_arrival = distance / velocity
 
-        if time_to_arrival < self._time:
+        if time_to_arrival < self._time and angle_distance < TRIGGER_ANGLE_THRESHOLD:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+
 
 
 class InTimeToArrivalToVehicle(AtomicBehavior):

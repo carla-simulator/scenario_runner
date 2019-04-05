@@ -1,5 +1,6 @@
 ## Latest changes
 * Added background scenario to generate dynamic traffic using autopilot
+* Comparisons to the trigger are made with transform
 * Updated compatibility with Python 2.7 for the challenge evaluator
 * Updated WaypointFollower behavior
 * Added detect_lane_obstacle() helper function which identifies if an obstacle is present in front of the reference actor
@@ -71,7 +72,7 @@
 * Added atomic behaviors using py_trees behavior trees library
     - InTriggerRegion: new behavior to check if an object is within a trigger region
     - InTriggerDistanceToVehicle: check if a vehicle is within certain distance with respect to a reference vehicle
-    - InTriggerDistanceToLocation: check if a vehicle is within certain distance with respect to a reference location
+    - InTriggerDistanceToTransform: check if a vehicle is within certain distance with respect to a reference location
     - TriggerVelocity: triggers if a velocity is met
     - InTimeToArrivalToLocation:  check if a vehicle arrives within a given time budget to a reference location
     - InTimeToArrivalToVehicle: check if a vehicle arrives within a given time budget to a reference vehicle
