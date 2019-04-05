@@ -134,6 +134,7 @@ def get_scenario_type(scenario, match_position, trajectory):
                     return 1
                 else:
                     return 0
+        return 0
 
     else:
 
