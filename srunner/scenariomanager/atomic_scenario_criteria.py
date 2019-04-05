@@ -436,23 +436,9 @@ class OnSidewalkTest(Criterion):
             new_status = py_trees.common.Status.FAILURE
 
         current_location = self._actor.get_location()
-        closet_waypoint = self._map.get_waypoint(current_location)
-        waypoint_adj_right = closet_waypoint.get_right_lane()
-        waypoint_adj_left = closet_waypoint.get_left_lane()
+        closest_waypoint = self._map.get_waypoint(current_location, lane_type=carla.LaneType.Any)
 
-        # skipping shoulders
-        if waypoint_adj_right and waypoint_adj_right.lane_type == 'shoulder':
-            waypoint_adj_right = waypoint_adj_right.get_right_lane()
-        if waypoint_adj_left and waypoint_adj_left.lane_type == 'shoulder':
-            waypoint_adj_left = waypoint_adj_left.get_left_lane()
-
-        distance = float('inf')
-        if waypoint_adj_right and waypoint_adj_right.lane_type == 'sidewalk':
-            distance = current_location.distance(waypoint_adj_right.transform.location)
-        elif waypoint_adj_left and waypoint_adj_left.lane_type == 'sidewalk':
-            distance = current_location.distance(waypoint_adj_left.transform.location)
-
-        if distance >= self.MAX_INVASION_ALLOWED:
+        if closest_waypoint.lane_type == carla.LaneType.Driving:
             # we are not on a sidewalk
             self._onsidewalk_active = False
         else:
@@ -778,6 +764,8 @@ class RunningRedLightTest(Criterion):
                     # you are running a red light
                     self.test_status = "FAILURE"
 
+                    print("--- You just ran a red light!")
+
                     red_light_event = TrafficEvent(type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
                     red_light_event.set_message("Agent ran a red light {} at (x={}, y={}, x={})".format(
                         self._target_traffic_light.id,
@@ -822,7 +810,7 @@ class RunningStopTest(Criterion):
     """
     PROXIMITY_THRESHOLD = 50.0  # meters
     SPEED_THRESHOLD = 0.1
-    WAYPOINT_STEP = 5.0  # meters
+    WAYPOINT_STEP = 1.0  # meters
 
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
         """
@@ -866,13 +854,15 @@ class RunningStopTest(Criterion):
 
         return am_ab > 0 and am_ab < ab_ab and am_ad > 0 and am_ad < ad_ad
 
-    def is_actor_affected_by_stop(self, actor, stop, multi_step=2):
+    def is_actor_affected_by_stop(self, actor, stop, multi_step=20):
+        affected = False
         # first we run a fast coarse test
         current_location = actor.get_location()
         stop_location = stop.get_transform().location
         if stop_location.distance(current_location) > self.PROXIMITY_THRESHOLD:
-            return False
+            return affected
 
+        #print("Affected by stop!")
         stop_t = stop.get_transform()
         transformed_tv = stop_t.transform(stop.trigger_volume.location)
 
@@ -880,16 +870,27 @@ class RunningStopTest(Criterion):
         list_locations = [current_location]
         waypoint = self._map.get_waypoint(current_location)
         for i in range(multi_step):
-            waypoint = waypoint.next(self.WAYPOINT_STEP)[0]
-            if not waypoint:
-                break
-            list_locations.append(waypoint.transform.location)
+            if waypoint:
+                waypoint = waypoint.next(self.WAYPOINT_STEP)[0]
+                if not waypoint:
+                    break
+                list_locations.append(waypoint.transform.location)
 
         for actor_location in list_locations:
             if self.point_inside_boundingbox(actor_location, transformed_tv, stop.trigger_volume.extent):
-                return True
+                affected = True
 
-        return False
+        return affected
+
+    def _scan_for_stop_sign(self):
+        target_stop_sign = None
+        for stop_sign in self._list_stop_signs:
+            if self.is_actor_affected_by_stop(self._actor, stop_sign):
+                # this stop sign is affecting the vehicle
+                target_stop_sign = stop_sign
+                break
+
+        return target_stop_sign
 
     def update(self):
         """
@@ -903,24 +904,13 @@ class RunningStopTest(Criterion):
 
         if not self._target_stop_sign:
             # scan for stop signs
-            for stop_sign in self._list_stop_signs:
-                if self.is_actor_affected_by_stop(self._actor, stop_sign):
-                    # this stop sign is affecting the vehicle
-                    self._target_stop_sign = stop_sign
-                else:
-                    self._target_stop_sign = None
-                    self._stop_completed = False
+            self._target_stop_sign = self._scan_for_stop_sign()
         else:
-            # if there is a stop sign affecting the vehicle
-            # we check for low speeds as a proxy of a stop
-            current_speed = CarlaDataProvider.get_velocity(self._actor)
-            if current_speed < self.SPEED_THRESHOLD:
-                self._stop_completed = True
-
-            # stop sign already identified
-            # is the vehicle still affected?
+            # we were in the middle of dealing with a stop sign
             if not self.is_actor_affected_by_stop(self._actor, self._target_stop_sign):
+                # is the vehicle out of the influence of this stop sign now?
                 if not self._stop_completed:
+                    # did we stop?
                     self.test_status == "FAILURE"
                     stop_location = self._target_stop_sign.get_transform().location
                     running_stop_event = TrafficEvent(type=TrafficEventType.STOP_INFRACTION)
@@ -939,6 +929,14 @@ class RunningStopTest(Criterion):
                 # reset state
                 self._target_stop_sign = None
                 self._stop_completed = False
+
+        if self._target_stop_sign:
+            # we are already dealing with a target stop sign
+            #
+            # did the ego-vehicle stop?
+            current_speed = CarlaDataProvider.get_velocity(self._actor)
+            if current_speed < self.SPEED_THRESHOLD:
+                self._stop_completed = True
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE

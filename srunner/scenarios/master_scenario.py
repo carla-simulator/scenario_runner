@@ -10,12 +10,13 @@ Basic CARLA Autonomous Driving training scenario
 
 import py_trees
 
+from srunner.tools.config_parser import TargetConfiguration, RouteConfiguration
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
 
 
-CHALLENGE_BASIC_SCENARIOS = ["MasterScenario"]
+MASTER_SCENARIO = ["MasterScenario"]
 
 
 class MasterScenario(BasicScenario):
@@ -67,19 +68,29 @@ class MasterScenario(BasicScenario):
         in parallel behavior tree.
         """
 
+        if isinstance(self.target, TargetConfiguration):
+            location = self.target.transform.location
+        else:
+            location = self.target.location
+
+        if isinstance(self.route, RouteConfiguration):
+            route = self.route.data
+        else:
+            route = self.route
+
         collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
         target_criterion = InRadiusRegionTest(self.ego_vehicle,
-                                              x=self.target.location.x,
-                                              y=self.target.location.y,
+                                              x=location.x,
+                                              y=location.y,
                                               radius=self.radius)
 
         route_criterion = InRouteTest(self.ego_vehicle,
                                       radius=30.0,
-                                      route=self.route,
+                                      route=route,
                                       offroad_max=20,
                                       terminate_on_failure=True)
 
-        completion_criterion = RouteCompletionTest(self.ego_vehicle, route=self.route)
+        completion_criterion = RouteCompletionTest(self.ego_vehicle, route=route)
 
         wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
 

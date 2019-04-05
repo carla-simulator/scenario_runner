@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <scenarios>
-	<scenario name="Challenge_Basic_00" type="ChallengeBasic" town="Town01">
+	<scenario name="Challenge_Basic_00" type="MasterScenario" town="Town01">
 		<ego_vehicle x="191.10000610351562" y="55.79999923706055" z="1.0" yaw="180.0" model="vehicle.lincoln.mkz2017"/>
 		<target x="-2.5" y="221.6999969482422" z="0.0" />
 		<route>
@@ -238,7 +238,7 @@
 
 	</scenario>
 
-	<scenario name="Challenge_Basic_01" type="ChallengeBasic" town="Town02">
+	<scenario name="Challenge_Basic_01" type="MasterScenario" town="Town02">
 		<ego_vehicle x="21.899999618530273" y="187.89999389648438" z="1.0" yaw="180.0" model="vehicle.lincoln.mkz2017"/>
 		<target x="136.60000610351562" y="213.10000610351562" z="1.0" />
 		<route>
@@ -443,7 +443,7 @@
         <other_actor random_location="True" autopilot="True" model="vehicle.*" />
 	</scenario>
 
-	<scenario name="Challenge_Basic_03" type="ChallengeBasic" town="Town04">
+	<scenario name="Challenge_Basic_03" type="MasterScenario" town="Town04">
 		<ego_vehicle x="404.1000061035156" y="-16.0" z="1.0" yaw="-80.0" model="vehicle.lincoln.mkz2017"/>
 		<target x="-394.1000061035156" y="30.799999237060547" z="1.0" />
 		<route>
@@ -1614,7 +1614,7 @@
         <other_actor random_location="True" autopilot="True" model="vehicle.*" />
 	</scenario>
 
-	<scenario name="Challenge_Basic_04" type="ChallengeBasic" town="Town05">
+	<scenario name="Challenge_Basic_04" type="MasterScenario" town="Town05">
 		<ego_vehicle x="-32.0" y="2.5999999046325684" z="1.0" yaw="0.0" model="vehicle.lincoln.mkz2017"/>
 		<target x="-240.60000610351562" y="-83.0" z="1.0" />
 		<route>
