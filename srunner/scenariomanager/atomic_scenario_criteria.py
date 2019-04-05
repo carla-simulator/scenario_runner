@@ -764,8 +764,6 @@ class RunningRedLightTest(Criterion):
                     # you are running a red light
                     self.test_status = "FAILURE"
 
-                    print("--- You just ran a red light!")
-
                     red_light_event = TrafficEvent(type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
                     red_light_event.set_message("Agent ran a red light {} at (x={}, y={}, x={})".format(
                         self._target_traffic_light.id,
