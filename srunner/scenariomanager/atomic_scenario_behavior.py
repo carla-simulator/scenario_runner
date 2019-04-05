@@ -268,12 +268,12 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        transform = CarlaDataProvider.get_transform(self._actor)
+        location = CarlaDataProvider.get_transform(self._actor).location
 
-        if transform is None:
+        if location is None:
             return new_status
 
-        distance = calculate_distance(transform, self._target_location)
+        distance = calculate_distance(location, self._target_location)
         # The trigger angle distance is now general.
         if distance < self._distance:
             new_status = py_trees.common.Status.SUCCESS
