@@ -1,4 +1,6 @@
-def get_adj_lanes_json()
+
+
+def get_adj_lanes_json():
     args = Arguments()
     client = carla.Client(args.host, int(args.port))
     client.set_timeout(25.0)
@@ -15,9 +17,7 @@ def get_adj_lanes_json()
     for town_name in world_annotations.keys():
         if town_name != 'Town01' and  town_name != 'Town02':
             continue
-        challenge.world = client.load_world(town_name)
-        CarlaActorPool.set_world(challenge.world)
-        CarlaDataProvider.set_world(challenge.world)
+
         print("Town Name ", town_name)
 
         scenarios = world_annotations[town_name]
