@@ -28,7 +28,7 @@ from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 
 EPSILON = 0.001
-# TODO: refactor this
+# TODO: refactor this, this should be in a unique neutral place
 TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
 
 def calculate_distance(location, other_location):
@@ -319,7 +319,7 @@ class TriggerVelocity(AtomicBehavior):
 
 
 class InTimeToArrivalToTransform(AtomicBehavior):
-    # TODO experiment doing it multi lane.
+    # TODO experiment doing it multi lane. instead of single transform by using a waypoint instead.
     """
     This class contains a check if a actor arrives within a given time
     at a given transform, It also consider the adjacent lanes.
@@ -362,8 +362,6 @@ class InTimeToArrivalToTransform(AtomicBehavior):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
-
-
 
 
 class InTimeToArrivalToVehicle(AtomicBehavior):
