@@ -85,6 +85,7 @@ def test_routes(args):
     print(args.removed_scenarios)
     potential_scenarios_definitions = challenge.filter_scenarios(potential_scenarios_definitions,
                                                                  args.removed_scenarios)
+    print ( "WE HAVE This number of posibilities : ", len(potential_scenarios_definitions))
 
     # Sample the scenarios to be used for this route instance.
     sampled_scenarios_definitions = challenge.scenario_sampling(potential_scenarios_definitions)

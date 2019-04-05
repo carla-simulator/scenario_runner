@@ -8,7 +8,7 @@ import carla
 """
 
 # TODO  check this threshold, it could be a bit larger but not so large that we cluster scenarios.
-TRIGGER_THRESHOLD = 5.0   # Threshold to say if a trigger position is new or repeated, works for matching positions
+TRIGGER_THRESHOLD = 2.0  # Threshold to say if a trigger position is new or repeated, works for matching positions
 TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
 
 
@@ -76,7 +76,7 @@ def check_trigger_position(new_trigger, existing_triggers):
         distance = math.sqrt(dx*dx + dy*dy)
         dyaw = trigger['yaw'] - trigger['yaw']
         dist_angle = math.sqrt(dyaw * dyaw)
-        if distance < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD:
+        if distance < (TRIGGER_THRESHOLD * 2) and dist_angle < TRIGGER_ANGLE_THRESHOLD:
             return trigger_id
 
     return None
@@ -118,12 +118,18 @@ def match_world_location_to_route(world_location, route_description):
 
         return None
 
-def get_scenario_type(scenario, match_position, route_description):
+def get_scenario_type(scenario, match_position, trajectory):
+    """
+    Some scenarios have different types depending on the route.
+    :param scenario: the scenario name
+    :param match_position: the matching position for the scenarion
+    :param trajectory: the route trajectory the ego is following
+    :return: 0 for option, 0 ,1 for option
+    """
 
     if scenario == 'Scenario4':
-        for tuple_wp_turn in route_description[match_position:]:
+        for tuple_wp_turn in trajectory[match_position:]:
             if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
-                print (tuple_wp_turn[1])
                 if RoadOption.LEFT == tuple_wp_turn[1]:
                     return 1
                 else:
@@ -160,7 +166,7 @@ def scan_route_for_scenarios(route_description, world_annotations):
         for scenario in scenarios:  # For each existent scenario
             scenario_name = scenario["scenario_type"]
             for event in scenario["available_event_configurations"]:
-                waypoint = event['transform'] # trigger point of this scenario
+                waypoint = event['transform']  # trigger point of this scenario
                 convert_waypoint_float(waypoint)
                 # We match trigger point to the  route, now we need to check if the route affects
                 match_position = match_world_location_to_route(waypoint, route_description['trajectory'])

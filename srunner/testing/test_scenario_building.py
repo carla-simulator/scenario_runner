@@ -22,6 +22,7 @@ class Arguments():
         self.port = 2000
         self.split = 'dev_track_1'
         self.route_visible = False
+        self.debug = 0
 
 class TestScenarioBuilder(unittest.TestCase):
 

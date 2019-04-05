@@ -86,7 +86,7 @@ def _get_latlon_ref(world):
     return lat_ref, lon_ref
 
 
-def interpolate_trajectory(world, waypoints_trajectory, hop_resolution = 2.0):
+def interpolate_trajectory(world, waypoints_trajectory, hop_resolution = 1.0):
     """
         Given some raw keypoints interpolate a full dense trajectory to be used by the user.
     :param world: an reference to the CARLA world so we can use the planner
