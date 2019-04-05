@@ -12,6 +12,8 @@ TRIGGER_THRESHOLD = 5.0   # Threshold to say if a trigger position is new or rep
 TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
 
 
+from agents.navigation.local_planner import RoadOption
+
 def parse_annotations_file(annotation_filename):
     """
     Return the annotations of which positions where the scenarios are going to happen.
@@ -107,30 +109,29 @@ def match_world_location_to_route(world_location, route_description):
             return dist_position < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD
 
 
+        match_position = 0
         # TODO this function can be optimized to run on Log(N) time
         for route_waypoint in route_description:
             if match_waypoints(world_location, route_waypoint[0]):
-                return True
+                return match_position
+            match_position += 1
 
-        return False
+        return None
 
+def get_scenario_type(scenario, match_position, route_description):
 
-def match_scenario_route(scenario_type, other_actors, trigger_point, trajectory):
-
-
-    # All the scenarios that are not on intersection always affect the route
-    if scenario_type == 'Scenario1' or scenario_type == 'Scenario2' or scenario_type == 'Scenario3' \
-            or scenario_type == 'Scenario5' or scenario_type == 'Scenario6':
-
-        return True
-
-    elif scenario_type == 'Scenario4':
-        return True
+    if scenario == 'Scenario4':
+        for tuple_wp_turn in route_description[match_position:]:
+            if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                print (tuple_wp_turn[1])
+                if RoadOption.LEFT == tuple_wp_turn[1]:
+                    return 1
+                else:
+                    return 0
 
     else:
-        return True
 
-
+        return 0
 
 
 def scan_route_for_scenarios(route_description, world_annotations):
@@ -157,39 +158,40 @@ def scan_route_for_scenarios(route_description, world_annotations):
 
         scenarios = world_annotations[town_name]
         for scenario in scenarios:  # For each existent scenario
-            scenario_type = scenario["scenario_type"]
+            scenario_name = scenario["scenario_type"]
             for event in scenario["available_event_configurations"]:
                 waypoint = event['transform'] # trigger point of this scenario
                 convert_waypoint_float(waypoint)
-                if match_world_location_to_route(waypoint, route_description['trajectory']):
-                    # We match trigger point to the  route, now we need to check if the route affects
-                    if match_scenario_route(scenario["scenario_type"], event['other_actors'],
-                                            waypoint, route_description['trajectory']):
-                        # We match a location for this scenario, create a scenario object so this scenario
-                        # can be instantiated later
+                # We match trigger point to the  route, now we need to check if the route affects
+                match_position = match_world_location_to_route(waypoint, route_description['trajectory'])
+                if match_position is not None:
+                    # We match a location for this scenario, create a scenario object so this scenario
+                    # can be instantiated later
 
-                        if 'other_actors' in event:
-                            other_vehicles = event['other_actors']
-                        else:
-                            other_vehicles = None
+                    if 'other_actors' in event:
+                        other_vehicles = event['other_actors']
+                    else:
+                        other_vehicles = None
+                    scenario_subtype = get_scenario_type(scenario_name, match_position,
+                                                         route_description['trajectory'])
+                    scenario_description = {
+                                           'name': scenario_name,
+                                           'other_actors': other_vehicles,
+                                           'trigger_position': waypoint,
+                                           'type': scenario_subtype,  # some scenarios have different configurations
+                                           }
 
-                        scenario_description = {
-                                               'name': scenario_type,
-                                               'other_actors': other_vehicles,
-                                               'trigger_position': waypoint
-                                               }
+                    trigger_id = check_trigger_position(waypoint, existent_triggers)
+                    if trigger_id is None:
+                        # This trigger does not exist create a new reference on existent triggers
+                        existent_triggers.update({latest_trigger_id: waypoint})
+                        # Update a reference for this trigger on the possible scenarios
+                        possible_scenarios.update({latest_trigger_id: []})
+                        trigger_id = latest_trigger_id
+                        # Increment the latest trigger
+                        latest_trigger_id += 1
 
-                        trigger_id = check_trigger_position(waypoint, existent_triggers)
-                        if trigger_id is None:
-                            # This trigger does not exist create a new reference on existent triggers
-                            existent_triggers.update({latest_trigger_id: waypoint})
-                            # Update a reference for this trigger on the possible scenarios
-                            possible_scenarios.update({latest_trigger_id: []})
-                            trigger_id = latest_trigger_id
-                            # Increment the latest trigger
-                            latest_trigger_id += 1
-
-                        possible_scenarios[trigger_id].append(scenario_description)
+                    possible_scenarios[trigger_id].append(scenario_description)
 
     return possible_scenarios, existent_triggers
 
