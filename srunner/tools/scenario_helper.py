@@ -195,9 +195,13 @@ def get_location_in_distance_from_wp(waypoint, distance):
     """
     traveled_distance = 0
     while not waypoint.is_intersection and traveled_distance < distance:
-        waypoint_new = waypoint.next(1.0)[-1]
-        traveled_distance += waypoint_new.transform.location.distance(waypoint.transform.location)
-        waypoint = waypoint_new
+        wp_next = waypoint.next(1.0)
+        if wp_next is not None and wp_next:
+            waypoint_new = wp_next[-1]
+            traveled_distance += waypoint_new.transform.location.distance(waypoint.transform.location)
+            waypoint = waypoint_new
+        else:
+            break
 
     return waypoint.transform.location, traveled_distance
 
