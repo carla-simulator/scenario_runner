@@ -53,7 +53,7 @@ from srunner.challenge.utils.route_manipulation import interpolate_trajectory
 number_class_translation = {
 
     "Scenario1": [ControlLoss],
-    "Scenario2": [FollowLeadingVehicle],   # TODO there is more than one class depending on the scenario configuration
+    "Scenario2": [FollowLeadingVehicle],
     "Scenario3": [DynamicObjectCrossing],
     "Scenario4": [VehicleTurningRight, VehicleTurningLeft],
     "Scenario5": [OtherLeadingVehicle],
@@ -434,8 +434,8 @@ class ChallengeEvaluator(object):
         for definition in scenario_definition_vec:
             # Get the class possibilities for this scenario number
             possibility_vec = number_class_translation[definition['name']]
-            #  TODO for now I dont know how to disambiguate this part.
-            ScenarioClass = possibility_vec[0]
+
+            ScenarioClass = possibility_vec[definition['type']]
 
             # Create the other actors that are going to appear
             if definition['other_actors'] is not None:
