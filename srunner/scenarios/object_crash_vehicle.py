@@ -9,7 +9,6 @@ moving along the road and encountering a cyclist ahead.
 """
 
 import py_trees
-import sys
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
@@ -224,7 +223,6 @@ class DynamicObjectCrossing(BasicScenario):
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
-        sys.stdout.flush()
         self.transform2 = carla.Transform(carla.Location(x_static, y_static, self.transform.location.z))
         prop_disp_transform = carla.Transform(
             carla.Location(self.transform2.location.x,
