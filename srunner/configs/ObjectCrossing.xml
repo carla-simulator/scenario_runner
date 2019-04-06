@@ -1,13 +1,7 @@
 <?xml version="1.0"?>
 <scenarios>
-    <scenario name="StationaryObjectCrossing_1" type="StationaryObjectCrossing" town="Town02">
-        <ego_vehicle x="7.63" y="109.91" z="1.22" yaw="359" model="vehicle.lincoln.mkz2017" />
-    </scenario>
     <scenario name="DynamicObjectCrossing_1" type="DynamicObjectCrossing" town="Town02">
         <ego_vehicle x="7.63" y="109.91" z="1.22" yaw="359" model="vehicle.lincoln.mkz2017" />
-    </scenario>
-    <scenario name="StationaryObjectCrossing_2" type="StationaryObjectCrossing" town="Town02">
-        <ego_vehicle x="180.93" y="105.31" z="1.22" yaw="180" model="vehicle.lincoln.mkz2017" />
     </scenario>
     <scenario name="DynamicObjectCrossing_2" type="DynamicObjectCrossing" town="Town02">
         <ego_vehicle x="180.93" y="105.31" z="1.22" yaw="180" model="vehicle.lincoln.mkz2017" />

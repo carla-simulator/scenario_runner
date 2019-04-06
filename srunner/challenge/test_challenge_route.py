@@ -97,7 +97,7 @@ def test_routes(args):
         challenge.report_fatal_error(args.filename, args.show_to_participant, error_message)
         return
 
-    challenge.agent_instance.set_global_plan(gps_route)
+    challenge.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
 
     # prepare the ego car to run the route.
     # It starts on the first wp of the route
@@ -117,10 +117,10 @@ def test_routes(args):
         background_scenario = challenge.build_background_scenario(route_description['town_name'])
         list_scenarios.append(background_scenario)
     # build the instance based on the parsed definitions.
-    print ("Definition of the scenarios present on the route ")
-    pprint(sampled_scenarios_definitions)
+    #print ("Definition of the scenarios present on the route ")
+    #pprint(sampled_scenarios_definitions)
     list_scenarios += challenge.build_scenario_instances(sampled_scenarios_definitions,
-                                                    route_description['town_name'])
+                                                         route_description['town_name'])
     if args.debug > 0:
         for scenario in sampled_scenarios_definitions:
             loc = carla.Location(scenario['trigger_position']['x'],
