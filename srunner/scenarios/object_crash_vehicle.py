@@ -9,7 +9,6 @@ moving along the road and encountering a cyclist ahead.
 """
 
 import py_trees
-
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
@@ -190,11 +189,15 @@ class DynamicObjectCrossing(BasicScenario):
         location += offset_location
         location.z += offset['z']
         self.transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-
+        disp_transform = carla.Transform(
+            carla.Location(self.transform.location.x,
+                           self.transform.location.y,
+                           self.transform.location.z - 500),
+            self.transform.rotation)
         if self._adversary_type is False:
             walker = None
             try:
-                walker = CarlaActorPool.request_new_actor('walker.*', self.transform)
+                walker = CarlaActorPool.request_new_actor('walker.*', disp_transform)
             except:
                 self._initialization_status = False
                 return
@@ -206,7 +209,7 @@ class DynamicObjectCrossing(BasicScenario):
             self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
             first_vehicle = None
             try:
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', self.transform)
+                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', disp_transform)
             except:
                 self._initialization_status = False
                 return
@@ -221,9 +224,14 @@ class DynamicObjectCrossing(BasicScenario):
         y_static = y_ego + shift * (y_cycle - y_ego)
 
         self.transform2 = carla.Transform(carla.Location(x_static, y_static, self.transform.location.z))
+        prop_disp_transform = carla.Transform(
+            carla.Location(self.transform2.location.x,
+                           self.transform2.location.y,
+                           self.transform2.location.z - 500),
+            self.transform2.rotation)
         static = None
         try:
-            static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
+            static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', prop_disp_transform)
         except:
             self._initialization_status = False
             return

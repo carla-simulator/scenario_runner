@@ -82,7 +82,6 @@ def test_routes(args):
 
     potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                          world_annotations)
-    print(args.removed_scenarios)
     potential_scenarios_definitions = challenge.filter_scenarios(potential_scenarios_definitions,
                                                                  args.removed_scenarios)
     print ( "WE HAVE This number of posibilities : ", len(potential_scenarios_definitions))
@@ -97,7 +96,7 @@ def test_routes(args):
         challenge.report_fatal_error(args.filename, args.show_to_participant, error_message)
         return
 
-    challenge.agent_instance.set_global_plan(gps_route)
+    challenge.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
 
     # prepare the ego car to run the route.
     # It starts on the first wp of the route
@@ -120,7 +119,7 @@ def test_routes(args):
     print ("Definition of the scenarios present on the route ")
     pprint(sampled_scenarios_definitions)
     list_scenarios += challenge.build_scenario_instances(sampled_scenarios_definitions,
-                                                    route_description['town_name'])
+                                                         route_description['town_name'])
     if args.debug > 0:
         for scenario in sampled_scenarios_definitions:
             loc = carla.Location(scenario['trigger_position']['x'],
@@ -129,7 +128,6 @@ def test_routes(args):
             challenge.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
             challenge.world.debug.draw_string(loc, scenario['name'], draw_shadow=False,
                                          color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
-
 
     # Tick once to start the scenarios.
     print(" Running these scenarios  --- ", list_scenarios)
