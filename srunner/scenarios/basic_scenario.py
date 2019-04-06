@@ -48,7 +48,6 @@ class BasicScenario(object):
         self.terminate_on_failure = terminate_on_failure
 
         # Initializing adversarial actors
-        print ("INITIALIZING ACTORS")
         self._initialize_actors(config)
         if not CarlaDataProvider.is_sync_mode():
             world.wait_for_tick()

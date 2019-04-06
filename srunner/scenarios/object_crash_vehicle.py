@@ -211,10 +211,8 @@ class DynamicObjectCrossing(BasicScenario):
             first_vehicle = None
             try:
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', disp_transform)
-                print ("Bije Spawn ")
             except:
                 self._initialization_status = False
-                print(" fAIL bike")
                 return
             self.other_actors.append(first_vehicle)
         # static object transform
@@ -236,9 +234,7 @@ class DynamicObjectCrossing(BasicScenario):
         static = None
         try:
             static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', prop_disp_transform)
-            print ( " SPAWN VENDING AT ", prop_disp_transform)
         except:
-            print (" fAIL ")
             self._initialization_status = False
             return
         self.other_actors.append(static)

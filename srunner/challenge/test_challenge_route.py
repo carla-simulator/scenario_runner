@@ -82,7 +82,6 @@ def test_routes(args):
 
     potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                          world_annotations)
-    print(args.removed_scenarios)
     potential_scenarios_definitions = challenge.filter_scenarios(potential_scenarios_definitions,
                                                                  args.removed_scenarios)
     print ( "WE HAVE This number of posibilities : ", len(potential_scenarios_definitions))
@@ -117,8 +116,8 @@ def test_routes(args):
         background_scenario = challenge.build_background_scenario(route_description['town_name'])
         list_scenarios.append(background_scenario)
     # build the instance based on the parsed definitions.
-    #print ("Definition of the scenarios present on the route ")
-    #pprint(sampled_scenarios_definitions)
+    print ("Definition of the scenarios present on the route ")
+    pprint(sampled_scenarios_definitions)
     list_scenarios += challenge.build_scenario_instances(sampled_scenarios_definitions,
                                                          route_description['town_name'])
     if args.debug > 0:
@@ -129,7 +128,6 @@ def test_routes(args):
             challenge.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
             challenge.world.debug.draw_string(loc, scenario['name'], draw_shadow=False,
                                          color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
-
 
     # Tick once to start the scenarios.
     print(" Running these scenarios  --- ", list_scenarios)

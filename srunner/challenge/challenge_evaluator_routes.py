@@ -451,7 +451,7 @@ class ChallengeEvaluator(object):
             scenario_configuration.trigger_point = egoactor_trigger_position
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
-            print ("SCENARIO BUILD ", ScenarioClass)
+
             scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration)
             # registering the used actors on the data provider so they can be updated.
 
