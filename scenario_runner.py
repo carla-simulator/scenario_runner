@@ -194,7 +194,7 @@ class ScenarioRunner(object):
                 scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
 
             # Execute each configuration
-            for config in scenario_configurations[3:]:
+            for config in scenario_configurations:
                 self.world = self.client.load_world(config.town)
                 CarlaActorPool.set_client(self.client)
                 CarlaDataProvider.set_world(self.world)
