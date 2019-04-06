@@ -181,7 +181,6 @@ class ControlLoss(BasicScenario):
         :param control: a carla vehicle control
         :return: a control to be changed by the scenario.
         """
-        print ("Current steering noise ", self._current_steer_noise[0])
         control.steer += self._current_steer_noise[0]
         control.throttle += self._current_throttle_noise[0]
 

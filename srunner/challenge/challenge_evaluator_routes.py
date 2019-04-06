@@ -477,13 +477,11 @@ class ChallengeEvaluator(object):
             # update all scenarios
 
             ego_action = self.agent_instance()
-            print ("action before ", ego_action)
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
                 # The scenarios may change the control if it applyes.
                 ego_action = scenario.change_control(ego_action)
 
-                print("action after ", ego_action)
 
                 if self.debug > 1:
                     print("\n")
