@@ -137,7 +137,6 @@ class DynamicObjectCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._wmap = CarlaDataProvider.get_map()
-        print (" Trigger Point ", config.trigger_point.location)
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         # ego vehicle parameters
         self._ego_vehicle_distance_driven = 40

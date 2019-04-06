@@ -479,9 +479,8 @@ class ChallengeEvaluator(object):
             ego_action = self.agent_instance()
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
-                # The scenarios may change the control if it applyes.
+                # The scenarios may change the control if it applies.
                 ego_action = scenario.change_control(ego_action)
-
 
                 if self.debug > 1:
                     print("\n")
@@ -490,9 +489,6 @@ class ChallengeEvaluator(object):
 
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
-            if self.debug > 0:
-                pass
-
             if self.route_visible:
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=50000.0)
