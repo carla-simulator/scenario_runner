@@ -43,13 +43,15 @@ class ControlLoss(BasicScenario):
         # ego vehicle parameters
         self._no_of_jitter = 10
         self._noise_mean = 0      # Mean value of steering noise
-        self._noise_std = 0.06   # Std. deviation of steering noise
-        self._dynamic_mean_for_steer = 0.01
-        self._dynamic_mean_for_throttle = 0.75
+        self._noise_std = 0.003   # Std. deviation of steering noise
+        self._dynamic_mean_for_steer = 0.001
+        self._dynamic_mean_for_throttle = 0.045
         self._abort_distance_to_intersection = 10
+        self._current_steer_noise = [0]  # This is a list, since lists are mutable
+        self._current_throttle_noise = [0]
         self._start_distance = 20
         self._trigger_dist = 2
-        self._end_distance = 150
+        self._end_distance = 70
         self._ego_vehicle_max_steer = 0.0
         self._ego_vehicle_max_throttle = 1.0
         self._ego_vehicle_target_velocity = 15
@@ -119,19 +121,20 @@ class ControlLoss(BasicScenario):
         has to reach a target point (_end_distance). If this does not happen within
         60 seconds, a timeout stops the scenario
         """
-
         # start condition
         start_end_parallel = py_trees.composites.Parallel("Jitter",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
         for i in range(self._no_of_jitter):
-            noise = random.gauss(self._noise_mean, self._noise_std)
-            noise = abs(noise)
-            self._ego_vehicle_max_steer = min(0, -(noise - self._dynamic_mean_for_steer))
-            self._ego_vehicle_max_throttle = min(noise + self._dynamic_mean_for_throttle, 1)
-            # turn vehicle
-            turn = AddNoiseToVehicle(self.ego_vehicle, self._ego_vehicle_max_steer,
-                                     self._ego_vehicle_max_throttle, name="jittering" + str(i))
+
+            # change the current noise to be applied
+            turn = ChangeNoiseParameters(self._current_steer_noise, self._current_throttle_noise,
+                                         self._noise_mean, self._noise_std, self._dynamic_mean_for_steer,
+                                         self._dynamic_mean_for_throttle)  # Mean value of steering noise
+        # Noise end! put again the added noise to zero.
+        noise_end = ChangeNoiseParameters(self._current_steer_noise, self._current_throttle_noise,
+                                          0, 0, 0, 0)
+
         jitter_action = py_trees.composites.Parallel("Jitter",
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         # Abort jitter_sequence, if the vehicle is approaching an intersection
@@ -157,6 +160,7 @@ class ControlLoss(BasicScenario):
         sequence.add_child(start_end_parallel)
         sequence.add_child(jitter_action)
         sequence.add_child(end_condition)
+        sequence.add_child(noise_end)
         return sequence
 
     def _create_test_criteria(self):
@@ -170,6 +174,19 @@ class ControlLoss(BasicScenario):
         criteria.append(collision_criterion)
 
         return criteria
+
+    def change_control(self, control):
+        """
+        This is a function that changes the control based on the scenario determination
+        :param control: a carla vehicle control
+        :return: a control to be changed by the scenario.
+        """
+        print ("Current steering noise ", self._current_steer_noise[0])
+        control.steer += self._current_steer_noise[0]
+        control.throttle += self._current_throttle_noise[0]
+
+        return control
+
 
     def __del__(self):
         """

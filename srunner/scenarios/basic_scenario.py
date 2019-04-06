@@ -117,6 +117,14 @@ class BasicScenario(object):
             print("This scenario requires to use map {}".format(self._town))
             raise Exception("The CARLA server uses the wrong map!")
 
+    def change_control(self, control):
+        """
+        This is a function that changes the control based on the scenario determination
+        :param control: a carla vehicle control
+        :return: a control to be changed by the scenario.
+        """
+        return control
+
     def remove_all_actors(self):
         """
         Remove all actors

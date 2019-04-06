@@ -15,6 +15,7 @@ The atomic behaviors are implemented with py_trees.
 
 import carla
 import numpy as np
+import random
 import py_trees
 from agents.navigation.basic_agent import *
 from agents.navigation.roaming_agent import *
@@ -749,6 +750,44 @@ class AddNoiseToVehicle(AtomicBehavior):
         self._actor.apply_control(self._control)
 
         return new_status
+
+
+
+class ChangeNoiseParameters(AtomicBehavior):
+
+    """
+    This class contains an atomic jitter behavior.
+    To add noise to steer as well as throttle of the vehicle.
+    """
+
+    def __init__(self, new_steer_noise, new_throttle_noise,
+                 noise_mean , noise_std, dynamic_mean_for_steer, dynamic_mean_for_throttle, name="ChangeJittering"):
+        """
+        Setup actor , maximum steer value and throttle value
+        """
+        super(ChangeNoiseParameters, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._new_steer_noise = new_steer_noise
+        self._new_throttle_noise = new_throttle_noise
+        self._noise_mean = noise_mean
+        self._noise_std = noise_std
+        self._dynamic_mean_for_steer = dynamic_mean_for_steer
+        self._dynamic_mean_for_throttle = dynamic_mean_for_throttle
+
+        self._noise_to_apply = abs(random.gauss(self._noise_mean, self._noise_std))
+
+    def update(self):
+        """
+        Change the noise parameters from the structure copy that it receives.
+        """
+
+        self._new_steer_noise[0] = min(0, -(self._noise_to_apply - self._dynamic_mean_for_steer))
+        self._new_throttle_noise[0] = min(self._noise_to_apply + self._dynamic_mean_for_throttle, 1)
+
+        new_status = py_trees.common.Status.SUCCESS
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
 
 
 class BasicAgentBehavior(AtomicBehavior):
