@@ -133,6 +133,7 @@ class ScenarioManager(object):
         Load a new scenario
         """
         self.restart()
+        self.scenario_class = scenario
         self.scenario = scenario.scenario
         self.scenario_tree = self.scenario.scenario_tree
         self.ego_vehicle = scenario.ego_vehicle
@@ -207,6 +208,7 @@ class ScenarioManager(object):
                 if self.agent:
                     # Invoke agent
                     action = self.agent()
+                    action = self.scenario_class.change_control(action)
                     self.ego_vehicle.apply_control(action)
 
                 if self._debug_mode:

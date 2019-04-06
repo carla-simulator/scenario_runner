@@ -475,8 +475,12 @@ class ChallengeEvaluator(object):
             GameTime.on_carla_tick(self.timestamp)
             CarlaDataProvider.on_carla_tick()
             # update all scenarios
+
+            ego_action = self.agent_instance()
             for scenario in list_scenarios:
                 scenario.scenario.scenario_tree.tick_once()
+                # The scenarios may change the control if it applies.
+                ego_action = scenario.change_control(ego_action)
 
                 if self.debug > 1:
                     print("\n")
@@ -484,11 +488,7 @@ class ChallengeEvaluator(object):
                     sys.stdout.flush()
 
             # ego vehicle acts
-            ego_action = self.agent_instance()
             self.ego_vehicle.apply_control(ego_action)
-            if self.debug > 0:
-                pass #print(self.ego_vehicle.get_transform().location)
-
             if self.route_visible:
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=50000.0)
