@@ -13,8 +13,8 @@ from __future__ import print_function
 import math
 
 import numpy as np
-import shapely.geometry
-import shapely.affinity
+#import shapely.geometry
+#import shapely.affinity
 import carla
 from agents.tools.misc import vector
 from agents.navigation.local_planner import RoadOption
