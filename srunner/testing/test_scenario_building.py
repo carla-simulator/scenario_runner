@@ -23,6 +23,7 @@ class Arguments():
         self.split = 'dev_track_1'
         self.route_visible = False
         self.debug = 0
+        self.background = True
 
 class TestScenarioBuilder(unittest.TestCase):
 
@@ -38,7 +39,7 @@ class TestScenarioBuilder(unittest.TestCase):
         client.set_timeout(25.0)
         challenge = ChallengeEvaluator(args)
 
-        filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios3_4.json')
+        filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios1_3_4_6.json')
         world_annotations = parser.parse_annotations_file(filename)
         # retrieve routes
         # Which type of file is expected ????
@@ -48,11 +49,11 @@ class TestScenarioBuilder(unittest.TestCase):
         # For each of the routes to be evaluated.
         for route_description in list_route_descriptions:
 
-            if route_description['town_name'] == 'Town01' or route_description['town_name'] == 'Town03':
-                continue
+            #if route_description['town_name'] == 'Town01' :#or route_description['town_name'] == 'Town03':
+            #    continue
             print (" TOWN  ", route_description['town_name'])
             challenge.world = client.load_world(route_description['town_name'])
-
+            CarlaActorPool.set_client(client)
             # Set the actor pool so the scenarios can prepare themselves when needed
             CarlaActorPool.set_world(challenge.world)
             CarlaDataProvider.set_world(challenge.world)
@@ -79,6 +80,9 @@ class TestScenarioBuilder(unittest.TestCase):
             master_scenario = challenge.build_master_scenario(route_description['trajectory'],
                                                               route_description['town_name'])
             list_scenarios = [master_scenario]
+            if args.background:
+                background_scenario = challenge.build_background_scenario(route_description['town_name'])
+                list_scenarios.append(background_scenario)
             print (" Built the master scenario ")
             # build the instance based on the parsed definitions.
             print (sampled_scenarios)

@@ -288,7 +288,7 @@ class CarlaActorPool(object):
             actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
 
         if actor is None:
-            raise Exception(
+            raise RuntimeError(
                 "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
         else:
             # Let's deactivate the autopilot of the actor if it belongs to vehicle
@@ -338,9 +338,7 @@ class CarlaActorPool(object):
         if CarlaActorPool._client:
             responses = CarlaActorPool._client.apply_batch_sync(batch)
 
-        # wait for the actor to be spawned properly before we do anything
-        CarlaActorPool._world.tick()
-        CarlaActorPool._world.wait_for_tick()
+
 
         actor_list = []
         actor_ids = []
@@ -348,6 +346,9 @@ class CarlaActorPool(object):
             for response in responses:
                 if not response.error:
                     actor_ids.append(response.actor_id)
+                    # wait for the actor to be spawned properly before we do anything
+                    CarlaActorPool._world.tick()
+                    CarlaActorPool._world.wait_for_tick()
 
         carla_actors = CarlaActorPool._world.get_actors(actor_ids)
         for actor in carla_actors:
