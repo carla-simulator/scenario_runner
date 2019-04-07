@@ -132,9 +132,11 @@ def get_scenario_type(scenario, match_position, trajectory):
             if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                 if RoadOption.LEFT == tuple_wp_turn[1]:
                     return 1
-                else:
+                elif RoadOption.RIGHT == tuple_wp_turn[1]:
                     return 0
-        return 0
+                else:
+                    return None
+        return None
 
     else:
 
@@ -181,6 +183,8 @@ def scan_route_for_scenarios(route_description, world_annotations):
                         other_vehicles = None
                     scenario_subtype = get_scenario_type(scenario_name, match_position,
                                                          route_description['trajectory'])
+                    if scenario_subtype is None:
+                        continue
                     scenario_description = {
                                            'name': scenario_name,
                                            'other_actors': other_vehicles,
