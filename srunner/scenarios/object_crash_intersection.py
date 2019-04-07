@@ -97,20 +97,24 @@ class VehicleTurningRight(BasicScenario):
         while True:
             try:
                 self._other_actor_transform = self._get_opponent_transform(_start_distance, waypoint)
-
-                actor_transform = carla.Transform(
-                    carla.Location(self._other_actor_transform.location.x,
-                                   self._other_actor_transform.location.y,
-                                   self._other_actor_transform.location.z - 500),
-                    self._other_actor_transform.rotation)
-
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
+                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                                                                 self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
-                self.other_actors.append(first_vehicle)
+
                 break
-            except RuntimeError: # TODO MAKE SPECIFIC EXCEPTION
+            except RuntimeError:  # TODO MAKE SPECIFIC EXCEPTION
+                # In the case there is an object just move a little bit and retry
                 print (" Base transform is blocking objects ", self._other_actor_transform)
                 _start_distance += 0.5
+        # Set the transform to -500 z after we are able to spawn it
+        actor_transform = carla.Transform(
+            carla.Location(self._other_actor_transform.location.x,
+                           self._other_actor_transform.location.y,
+                           self._other_actor_transform.location.z),
+            self._other_actor_transform.rotation)
+        first_vehicle.set_transform(actor_transform)
+        self.other_actors.append(first_vehicle)
+
 
 
     def _create_behavior(self):
@@ -233,7 +237,6 @@ class VehicleTurningLeft(BasicScenario):
         Custom initialization
         """
 
-
         waypoint = self._reference_waypoint
         waypoint = generate_target_waypoint(waypoint, -1)
         _start_distance = 8
@@ -248,42 +251,26 @@ class VehicleTurningLeft(BasicScenario):
             else:
                 break
 
-
-        #_wp = generate_target_waypoint(waypoint, -1)
-        #offset = {"orientation": 270, "position": 90, "z": 0.5, "k": 0.7}
-        #_wp = _wp.next(10)[-1]
-        #lane_width = _wp.lane_width
-        #location = _wp.transform.location
-        #orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
-        #position_yaw = _wp.transform.rotation.yaw + offset["position"]
-        #offset_location = carla.Location(
-        #    offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
-        #    offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
-        #location += offset_location
-        #location.z += offset["z"]
-        #transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-
-        #self._other_actor_transform = transform
-
-
         while True:
             try:
                 self._other_actor_transform = self._get_opponent_transform(_start_distance, waypoint)
-
-                actor_transform = carla.Transform(
-                    carla.Location(self._other_actor_transform.location.x,
-                                   self._other_actor_transform.location.y,
-                                   self._other_actor_transform.location.z -500),
-                    self._other_actor_transform.rotation)
-
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
+                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                                                                 self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
-                self.other_actors.append(first_vehicle)
-                break
-            except RuntimeError: # TODO MAKE SPECIFIC EXCEPTION
-                print (" Base transform is blocking objects ", self._other_actor_transform)
-                _start_distance += 0.5
 
+                break
+            except RuntimeError:  # TODO MAKE SPECIFIC EXCEPTION
+                # In the case there is an object just move a little bit and retry
+                print(" Base transform is blocking objects ", self._other_actor_transform)
+                _start_distance += 0.5
+            # Set the transform to -500 z after we are able to spawn it
+        actor_transform = carla.Transform(
+            carla.Location(self._other_actor_transform.location.x,
+                           self._other_actor_transform.location.y,
+                           self._other_actor_transform.location.z),
+            self._other_actor_transform.rotation)
+        first_vehicle.set_transform(actor_transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
