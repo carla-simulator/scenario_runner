@@ -46,7 +46,6 @@ class ManeuverOppositeDirection(BasicScenario):
         self._start_distance = self._first_vehicle_location * 0.9
         self._opposite_speed = 20   # km/h
         self._source_gap = 40   # m
-        print ("TRIGGER ", config.trigger_point.location)
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self._source_transform = None
         self._sink_location = None
@@ -93,7 +92,7 @@ class ManeuverOppositeDirection(BasicScenario):
         first_actor = CarlaActorPool.request_new_actor(first_actor_model, first_actor_transform)
         first_actor.set_simulate_physics(True)
         second_actor = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
-        #second_actor.set_simulate_physics(enabled=False)
+
 
         self.other_actors.append(first_actor)
         self.other_actors.append(second_actor)

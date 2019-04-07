@@ -338,6 +338,9 @@ class CarlaActorPool(object):
         if CarlaActorPool._client:
             responses = CarlaActorPool._client.apply_batch_sync(batch)
 
+        # wait for the actors to be spawned properly before we do anything
+        CarlaActorPool._world.tick()
+        CarlaActorPool._world.wait_for_tick()
 
 
         actor_list = []
@@ -346,9 +349,7 @@ class CarlaActorPool(object):
             for response in responses:
                 if not response.error:
                     actor_ids.append(response.actor_id)
-                    # wait for the actor to be spawned properly before we do anything
-                    CarlaActorPool._world.tick()
-                    CarlaActorPool._world.wait_for_tick()
+
 
         carla_actors = CarlaActorPool._world.get_actors(actor_ids)
         for actor in carla_actors:
