@@ -73,7 +73,7 @@ class BasicScenario(object):
             behavior_seq.add_child(InTriggerDistanceToLocationAlongRoute(self.ego_vehicle,
                                                                          CarlaDataProvider.get_ego_vehicle_route(),
                                                                          start_location,
-                                                                         30))
+                                                                         5))
         behavior_seq.add_child(behavior)
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)

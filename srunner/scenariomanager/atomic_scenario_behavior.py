@@ -1159,11 +1159,11 @@ class ActorTransformSetter(AtomicBehavior):
         Transform actor
         """
         new_status = py_trees.common.Status.RUNNING
-
         self._actor.set_velocity(carla.Vector3D(0, 0, 0))
         self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
         self._actor.set_transform(self._transform)
-        self._actor.set_simulate_physics(enabled=self.physics)
+        if self.physics:
+            self._actor.set_simulate_physics(enabled=True)
         new_status = py_trees.common.Status.SUCCESS
         return new_status
 
