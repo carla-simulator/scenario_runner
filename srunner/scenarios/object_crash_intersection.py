@@ -48,7 +48,7 @@ class VehicleTurningRight(BasicScenario):
         self._other_actor_transform = None
         print (" TRIGGER 4 ", config.trigger_point.location)
 
-        self._num_lane_changes = 1
+        self._num_lane_changes = 0
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -110,7 +110,7 @@ class VehicleTurningRight(BasicScenario):
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z),
+                           self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle.set_transform(actor_transform)
         self.other_actors.append(first_vehicle)
@@ -204,7 +204,7 @@ class VehicleTurningLeft(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
 
-        self._num_lane_changes = 1
+        self._num_lane_changes = 0
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
@@ -267,7 +267,7 @@ class VehicleTurningLeft(BasicScenario):
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z),
+                           self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle.set_transform(actor_transform)
         self.other_actors.append(first_vehicle)

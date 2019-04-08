@@ -1158,7 +1158,6 @@ class ActorTransformSetter(AtomicBehavior):
         Transform actor
         """
         new_status = py_trees.common.Status.RUNNING
-        print ("Updating for ", self.name )
 
         self._actor.set_velocity(carla.Vector3D(0, 0, 0))
         self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
