@@ -483,9 +483,10 @@ class ChallengeEvaluator(object):
                 ego_action = scenario.change_control(ego_action)
 
                 if self.debug > 1:
-                    print("\n")
-                    py_trees.display.print_ascii_tree(scenario.scenario.scenario_tree, show_status=True)
-                    sys.stdout.flush()
+                    for actor in self.world.get_actors():
+                        if 'vehicle' in actor.type_id:
+                            print(actor.get_transform())
+
 
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)

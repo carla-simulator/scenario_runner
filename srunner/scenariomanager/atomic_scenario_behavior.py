@@ -1143,7 +1143,7 @@ class ActorTransformSetter(AtomicBehavior):
     of an actor.
     """
 
-    def __init__(self, actor, transform, name="ActorTransformSetter"):
+    def __init__(self, actor, transform, physics=True, name="ActorTransformSetter"):
         """
         Init
         """
@@ -1151,6 +1151,8 @@ class ActorTransformSetter(AtomicBehavior):
         self._actor = actor
         self._transform = transform
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.name = name
+        self.physics = physics
 
     def update(self):
         """
@@ -1161,6 +1163,7 @@ class ActorTransformSetter(AtomicBehavior):
         self._actor.set_velocity(carla.Vector3D(0, 0, 0))
         self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
         self._actor.set_transform(self._transform)
+        self._actor.set_simulate_physics(enabled=self.physics)
         new_status = py_trees.common.Status.SUCCESS
         return new_status
 

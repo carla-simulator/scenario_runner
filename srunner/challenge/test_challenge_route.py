@@ -16,7 +16,7 @@ from argparse import RawTextHelpFormatter
 import sys
 import os
 from pprint import pprint
-
+import logging
 
 import carla
 import srunner.challenge.utils.route_configuration_parser as parser

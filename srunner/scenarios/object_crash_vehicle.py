@@ -156,30 +156,15 @@ class DynamicObjectCrossing(BasicScenario):
                                                     debug_mode,
                                                     criteria_enable=criteria_enable)
 
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
 
-        waypoint = self._reference_waypoint
-        while True:
-            wp_next = waypoint.get_right_lane()
-            self._num_lane_changes += 1
-            if wp_next is not None:
-                waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Sidewalk:
-                    break
-            else:
-                break
+    def _calculate_base_transform(self,_start_distance, waypoint):
 
-        # cyclist transform
-        _start_distance = 40
         lane_width = waypoint.lane_width
 
         location, _ = get_location_in_distance_from_wp(waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         if self._adversary_type:
-            offset = {"orientation": 270, "position": 90, "z": 0.1, "k": 1.1}
+            offset = {"orientation": 270, "position": 90, "z": 0.3, "k": 1.1}
         else:
             offset = {"orientation": 270, "position": 90, "z": 0.6, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
@@ -189,54 +174,103 @@ class DynamicObjectCrossing(BasicScenario):
             offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
         location.z += offset['z']
-        self.transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+        return carla.Transform(location, carla.Rotation(yaw=orientation_yaw)), orientation_yaw
+
+
+    def _spawn_adversary(self, transform, orientation_yaw):
+
+
+
+        if self._adversary_type is False:
+            walker = CarlaActorPool.request_new_actor('walker.*', transform)
+            self._initialization_status = False
+
+            self._walker_yaw = orientation_yaw
+            self._other_actor_target_velocity = 3 + (0.4 * self._num_lane_changes)
+            return walker
+
+        else:
+            self._time_to_reach *= self._num_lane_changes
+            self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
+
+            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+            first_vehicle.set_simulate_physics(enabled=False)
+            return first_vehicle
+
+
+    def _spawn_blocker(self, transform):
+
+        """
+        Spawn the blocker prop that blocks the vision from the egovehicle of the jaywalker
+        :return:
+        """
+        # static object transform
+        shift = 0.9
+        x_ego = self._reference_waypoint.transform.location.x
+        y_ego = self._reference_waypoint.transform.location.y
+        x_cycle = transform.location.x
+        y_cycle = transform.location.y
+        x_static = x_ego + shift * (x_cycle - x_ego)
+        y_static = y_ego + shift * (y_cycle - y_ego)
+
+        self.transform2 = carla.Transform(carla.Location(x_static, y_static, transform.location.z))
+
+
+        static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
+        static.set_simulate_physics(enabled=False)
+
+        return static
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+
+        # cyclist transform
+        _start_distance = 10
+        # We start by getting and waypoint in the closest sidewalk.
+        waypoint = self._reference_waypoint
+        while True:
+            wp_next = waypoint.get_right_lane()
+            self._num_lane_changes += 1
+            if wp_next is not None:
+                _start_distance += 2
+                waypoint = wp_next
+                if waypoint.lane_type == carla.LaneType.Sidewalk:
+                    break
+            else:
+                break
+
+        while True: # We keep trying to spawn avoiding props
+            try:
+                self.transform, orientation_yaw = self._calculate_base_transform(_start_distance, waypoint)
+                first_vehicle = self._spawn_adversary(self.transform, orientation_yaw)
+
+                blocker = self._spawn_blocker(self.transform)
+
+                break
+            except RuntimeError:
+                # We keep retrying until we spawn
+                print (" Base transform is blocking objects ", self.transform)
+                _start_distance += 0.5
+
+        # Now that we found a posible position we just put the vehicle to the underground
         disp_transform = carla.Transform(
             carla.Location(self.transform.location.x,
                            self.transform.location.y,
                            self.transform.location.z - 500),
             self.transform.rotation)
-        if self._adversary_type is False:
-            walker = None
-            try:
-                walker = CarlaActorPool.request_new_actor('walker.*', disp_transform)
-            except:
-                self._initialization_status = False
-                return
-            self._walker_yaw = orientation_yaw
-            self._other_actor_target_velocity = 3 + (0.4 * self._num_lane_changes)
-            self.other_actors.append(walker)
-        else:
-            self._time_to_reach *= self._num_lane_changes
-            self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
-            first_vehicle = None
-            try:
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', disp_transform)
-            except:
-                self._initialization_status = False
-                return
-            self.other_actors.append(first_vehicle)
-        # static object transform
-        shift = 0.9
-        x_ego = self._reference_waypoint.transform.location.x
-        y_ego = self._reference_waypoint.transform.location.y
-        x_cycle = self.transform.location.x
-        y_cycle = self.transform.location.y
-        x_static = x_ego + shift * (x_cycle - x_ego)
-        y_static = y_ego + shift * (y_cycle - y_ego)
 
-        self.transform2 = carla.Transform(carla.Location(x_static, y_static, self.transform.location.z))
         prop_disp_transform = carla.Transform(
             carla.Location(self.transform2.location.x,
                            self.transform2.location.y,
                            self.transform2.location.z - 500),
             self.transform2.rotation)
-        static = None
-        try:
-            static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', prop_disp_transform)
-        except:
-            self._initialization_status = False
-            return
-        self.other_actors.append(static)
+
+        first_vehicle.set_transform(disp_transform)
+        blocker.set_transform(prop_disp_transform)
+        self.other_actors.append(first_vehicle)
+        self.other_actors.append(blocker)
 
     def _create_behavior(self):
         """
@@ -278,8 +312,10 @@ class DynamicObjectCrossing(BasicScenario):
             # building tree
 
             root.add_child(scenario_sequence)
-            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self.transform))
-            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self.transform2))
+            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self.transform,
+                                                             name='TransformSetterTS3bike'))
+            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self.transform2,
+                                                             name='TransformSetterTS3coca'))
             scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
             scenario_sequence.add_child(start_condition)
             scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))

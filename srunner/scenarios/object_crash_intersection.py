@@ -47,7 +47,7 @@ class VehicleTurningRight(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
 
-        self._num_lane_changes = 1
+        self._num_lane_changes = 0
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -56,21 +56,11 @@ class VehicleTurningRight(BasicScenario):
                                                   debug_mode,
                                                   criteria_enable=criteria_enable)
 
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-        waypoint = self._reference_waypoint
-        while waypoint.lane_change & carla.LaneChange.Right:
-            wp_next = waypoint.get_right_lane()
-            if wp_next is not None:
-                waypoint = wp_next
-            else:
-                break
 
-        _wp = generate_target_waypoint(waypoint, 1)
-        offset = {"orientation": 270, "position": 90, "z": 1.0, "k": 0.7}
-        _wp = _wp.next(10)[-1]
+    def _get_opponent_transform(self, _start_distance, waypoint):
+
+        offset = {"orientation": 270, "position": 90, "z": 0.5, "k": 0.7}
+        _wp = waypoint.next(_start_distance)[-1]
         lane_width = _wp.lane_width
         location = _wp.transform.location
         orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
@@ -82,19 +72,49 @@ class VehicleTurningRight(BasicScenario):
         location.z += offset["z"]
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
 
-        self._other_actor_transform = transform
+        return transform
 
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+
+        waypoint = self._reference_waypoint
+        waypoint = generate_target_waypoint(waypoint, 1)
+        _start_distance = 8
+        while True:
+            wp_next = waypoint.get_right_lane()
+            self._num_lane_changes += 1
+            if wp_next is not None:
+                _start_distance += 1
+                waypoint = wp_next
+                if waypoint.lane_type == carla.LaneType.Sidewalk:
+                    break
+            else:
+                break
+
+        while True:
+            try:
+                self._other_actor_transform = self._get_opponent_transform(_start_distance, waypoint)
+                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                                                                 self._other_actor_transform)
+                first_vehicle.set_simulate_physics(enabled=False)
+
+                break
+            except RuntimeError:  # TODO MAKE SPECIFIC EXCEPTION
+                # In the case there is an object just move a little bit and retry
+                print (" Base transform is blocking objects ", self._other_actor_transform)
+                _start_distance += 0.5
+        # Set the transform to -500 z after we are able to spawn it
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
-        try:
-            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
-        except:
-            self._initialization_status = False
-            return
+        first_vehicle.set_transform(actor_transform)
         self.other_actors.append(first_vehicle)
+
+
 
     def _create_behavior(self):
         """
@@ -110,7 +130,7 @@ class VehicleTurningRight(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         if self._initialization_status:
             lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-            lane_width = lane_width + (1.10 * lane_width)
+            lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
             trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
             actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
@@ -130,7 +150,8 @@ class VehicleTurningRight(BasicScenario):
 
             # building the tree
             root.add_child(scenario_sequence)
-            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform,
+                                                             name='TransformSetterTS4'))
             scenario_sequence.add_child(trigger_distance)
             scenario_sequence.add_child(actor_ego_sync)
             scenario_sequence.add_child(after_timer_actor)
@@ -182,6 +203,8 @@ class VehicleTurningLeft(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
 
+        self._num_lane_changes = 0
+
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
                                                  config,
@@ -189,21 +212,11 @@ class VehicleTurningLeft(BasicScenario):
                                                  debug_mode,
                                                  criteria_enable=criteria_enable)
 
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-        waypoint = self._reference_waypoint
-        while waypoint.lane_change & carla.LaneChange.Right:
-            wp_next = waypoint.get_right_lane()
-            if wp_next is not None:
-                waypoint = wp_next
-            else:
-                break
 
-        _wp = generate_target_waypoint(waypoint, -1)
-        offset = {"orientation": 270, "position": 90, "z": 1.0, "k": 0.7}
-        _wp = _wp.next(10)[-1]
+    def _get_opponent_transform(self, _start_distance, waypoint):
+
+        offset = {"orientation": 270, "position": 90, "z": 0.5, "k": 0.7}
+        _wp = waypoint.next(_start_distance)[-1]
         lane_width = _wp.lane_width
         location = _wp.transform.location
         orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
@@ -215,18 +228,47 @@ class VehicleTurningLeft(BasicScenario):
         location.z += offset["z"]
         transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
 
-        self._other_actor_transform = transform
+        return transform
 
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+
+        waypoint = self._reference_waypoint
+        waypoint = generate_target_waypoint(waypoint, -1)
+        _start_distance = 8
+        while True:
+            wp_next = waypoint.get_right_lane()
+            self._num_lane_changes += 1
+            if wp_next is not None:
+                _start_distance += 1
+                waypoint = wp_next
+                if waypoint.lane_type == carla.LaneType.Sidewalk:
+                    break
+            else:
+                break
+
+        while True:
+            try:
+                self._other_actor_transform = self._get_opponent_transform(_start_distance, waypoint)
+                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                                                                 self._other_actor_transform)
+                first_vehicle.set_simulate_physics(enabled=False)
+
+                break
+            except RuntimeError:  # TODO MAKE SPECIFIC EXCEPTION
+                # In the case there is an object just move a little bit and retry
+                print(" Base transform is blocking objects ", self._other_actor_transform)
+                _start_distance += 0.5
+            # Set the transform to -500 z after we are able to spawn it
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
-        try:
-            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', actor_transform)
-        except:
-            self._initialization_status = False
-            return
+        first_vehicle.set_transform(actor_transform)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -242,7 +284,7 @@ class VehicleTurningLeft(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         if self._initialization_status:
             lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-            lane_width = lane_width + (1.10 * lane_width)
+            lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
             trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
             actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
@@ -263,7 +305,8 @@ class VehicleTurningLeft(BasicScenario):
 
             # building the tree
             root.add_child(scenario_sequence)
-            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+            scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform,
+                                                             name='TransformSetterTS4'))
             scenario_sequence.add_child(trigger_distance)
             scenario_sequence.add_child(actor_ego_sync)
             scenario_sequence.add_child(after_timer_actor)

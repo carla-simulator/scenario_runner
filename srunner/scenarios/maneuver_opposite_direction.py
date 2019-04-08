@@ -93,6 +93,7 @@ class ManeuverOppositeDirection(BasicScenario):
         first_actor.set_simulate_physics(True)
         second_actor = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
 
+
         self.other_actors.append(first_actor)
         self.other_actors.append(second_actor)
         if self._obstacle_type != 'vehicle':
