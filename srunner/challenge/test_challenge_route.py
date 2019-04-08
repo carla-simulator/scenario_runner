@@ -186,8 +186,6 @@ if __name__ == '__main__':
     PARSER.add_argument("-id", "--route_id", type=int, default=0, help="the id of the route you want to test")
     ARGUMENTS = PARSER.parse_args()
 
-    #logger = logging.getLogger(__name__)
-    #logger.setLevel(logging.DEBUG)
 
     CARLA_ROOT = os.environ.get('CARLA_ROOT')
     ROOT_SCENARIO_RUNNER = os.environ.get('ROOT_SCENARIO_RUNNER')
