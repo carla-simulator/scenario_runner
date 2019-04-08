@@ -96,6 +96,9 @@ class OtherLeadingVehicle(BasicScenario):
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_transform)
 
+        first_vehicle.set_transform(first_vehicle_transform)
+        second_vehicle.set_transform(second_vehicle_transform)
+
         self.other_actors.append(first_vehicle)
         self.other_actors.append(second_vehicle)
 
