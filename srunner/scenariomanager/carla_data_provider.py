@@ -49,6 +49,7 @@ class CarlaDataProvider(object):
     _map = None
     _world = None
     _sync_flag = False
+    _ego_vehicle_route = None
 
     @staticmethod
     def register_actor(actor):
@@ -199,6 +200,14 @@ class CarlaDataProvider(object):
                     distance_to_relevant_traffic_light = distance
 
         return relevant_traffic_light
+
+    @staticmethod
+    def set_ego_vehicle_route(route):
+        CarlaDataProvider._ego_vehicle_route = route
+
+    @staticmethod
+    def get_ego_vehicle_route():
+        return CarlaDataProvider._ego_vehicle_route
 
     @staticmethod
     def cleanup():

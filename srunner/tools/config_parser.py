@@ -41,6 +41,7 @@ class RouteConfiguration(object):
 
             self.data.append((carla.Location(x, y, z), connection))
 
+
 class TargetConfiguration(object):
 
     """
@@ -98,7 +99,7 @@ class ActorConfiguration(ActorConfigurationData):
         amount = 1
         if 'amount' in node.keys():
             amount = int(node.attrib['amount'])
-        
+
         super(ActorConfiguration, self).__init__(
             set_attrib(node, 'model', 'vehicle.*'),
             carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw)),
