@@ -46,7 +46,6 @@ class VehicleTurningRight(BasicScenario):
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._other_actor_transform = None
-        print (" TRIGGER 4 ", config.trigger_point.location)
 
         self._num_lane_changes = 0
 
