@@ -42,7 +42,7 @@ class BasicScenario(object):
         self._check_town(world)
 
         self.ego_vehicle = ego_vehicle
-        self.name = name + str(config.trigger_point)
+        self.name = name
         self.terminate_on_failure = terminate_on_failure
 
         # Initializing adversarial actors

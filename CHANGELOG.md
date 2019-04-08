@@ -17,6 +17,7 @@
 * Added running red light test
 * Added running stop test
 * Added various helper methods to allow generic scenario execution
+* Added method to calculate distance along a route
 * Updated folder structure and naming convention in lowercase
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
@@ -39,6 +40,7 @@
     - ActorTransformSetter: sets transform of given actor
     - ActorSource: creates actors indefinitely around a location if no other vehicles are present within a threshold
     - ActorSink: indefinitely destroys vehicles that wander close to a location within a threshold
+    - InTriggerDistanceToLocationAlongRoute: check if an actor is within a certain distance to a given location along a given route
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios

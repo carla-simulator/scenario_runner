@@ -28,6 +28,13 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 # We import the challenge evaluator here
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator
 
+def convert_transform_to_location(transform_vec):
+
+    location_vec = []
+    for transform_tuple in transform_vec:
+        location_vec.append((transform_tuple[0].location, transform_tuple[1]))
+
+    return location_vec
 
 def create_configuration_scenario( scenario_desc, scenario_type):
     waypoint = scenario_desc['transform']
@@ -79,6 +86,8 @@ def test_routes(args):
     # prepare route's trajectory
     gps_route, route_description['trajectory'] = interpolate_trajectory(challenge.world,
                                                                         route_description['trajectory'])
+
+    CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
 
     potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                          world_annotations)
