@@ -705,10 +705,17 @@ class ChallengeEvaluator(object):
             fd.write(json.dumps(json_data, indent=4))
 
     def load_world(self, client, town_name):
+        # A new world can only be loaded in async mode
         if self.world is not None:
             settings = self.world.get_settings()
             settings.synchronous_mode = False
             self.world.apply_settings(settings)
+        else:
+            world = client.get_world()
+            settings = world.get_settings()
+            settings.synchronous_mode = False
+            world.apply_settings(settings)
+            world = None
         self.world = client.load_world(town_name)
         self.timestamp = self.world.wait_for_tick()
         settings = self.world.get_settings()
