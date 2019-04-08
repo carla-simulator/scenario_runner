@@ -78,29 +78,19 @@ class OtherLeadingVehicle(BasicScenario):
         elif second_vehicle_waypoint.lane_change & carla.LaneChange.Right:
             second_vehicle_waypoint = first_vehicle_waypoint.get_right_lane()
 
-        self._first_actor_transform = first_vehicle_waypoint.transform
-        self._second_actor_transform = second_vehicle_waypoint.transform
-
-        first_vehicle_transform = carla.Transform(
-            carla.Location(first_vehicle_waypoint.transform.location.x,
-                           first_vehicle_waypoint.transform.location.y,
-                           first_vehicle_waypoint.transform.location.z - 500),
-            first_vehicle_waypoint.transform.rotation)
-
-        second_vehicle_transform = carla.Transform(
-            carla.Location(second_vehicle_waypoint.transform.location.x,
-                           second_vehicle_waypoint.transform.location.y,
-                           second_vehicle_waypoint.transform.location.z - 500),
-            second_vehicle_waypoint.transform.rotation)
+        first_vehicle_transform = carla.Transform(first_vehicle_waypoint.transform.location,
+                                                  first_vehicle_waypoint.transform.rotation)
+        second_vehicle_transform = carla.Transform(second_vehicle_waypoint.transform.location,
+                                                   second_vehicle_waypoint.transform.rotation)
 
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         second_vehicle = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_vehicle_transform)
 
-        first_vehicle.set_transform(first_vehicle_transform)
-        second_vehicle.set_transform(second_vehicle_transform)
-
         self.other_actors.append(first_vehicle)
         self.other_actors.append(second_vehicle)
+
+        self._first_actor_transform = first_vehicle_transform
+        self._second_actor_transform = second_vehicle_transform
 
     def _create_behavior(self):
         """
