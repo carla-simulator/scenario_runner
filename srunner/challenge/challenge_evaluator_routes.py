@@ -118,6 +118,7 @@ def compare_scenarios(scenario_choice, existent_scenario):
 
     return False
 
+
 def convert_transform_to_location(transform_vec):
 
     location_vec = []
@@ -125,7 +126,6 @@ def convert_transform_to_location(transform_vec):
         location_vec.append((transform_tuple[0].location, transform_tuple[1]))
 
     return location_vec
-
 
 
 Z_DISTANCE_AVOID_COLLISION = 0.5  # z vallue to add in oder to avoid spawning vehicles to close to the ground
@@ -739,7 +739,6 @@ class ChallengeEvaluator(object):
                     scenarios_after_filter[trigger].append(possible_scenario)
         return scenarios_after_filter
 
-
     def valid_sensors_configuration(self, agent, track):
         if Track(track) != agent.track:
             return False, "You are submitting to the wrong track [{}]!".format(Track(track))
@@ -803,6 +802,8 @@ class ChallengeEvaluator(object):
                                                                                 route_description['trajectory'])
             potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                                  world_annotations)
+            CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
+
             # Sample the scenarios to be used for this route instance.
             sampled_scenarios_definitions = self.scenario_sampling(potential_scenarios_definitions)
             # create agent

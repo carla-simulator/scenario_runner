@@ -14,6 +14,7 @@ The atomic behaviors are implemented with py_trees.
 """
 
 import carla
+import math
 import numpy as np
 import random
 import py_trees
@@ -23,7 +24,7 @@ from py_trees.blackboard import Blackboard
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
-from srunner.tools.scenario_helper import detect_lane_obstacle
+from srunner.tools.scenario_helper import detect_lane_obstacle, get_distance_along_route
 
 EPSILON = 0.001
 
@@ -391,6 +392,46 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         return new_status
 
 
+class InTriggerDistanceToLocationAlongRoute(AtomicBehavior):
+
+    """
+    Implementation for a behavior that will check if a given actor
+    is within a given distance to a given location considering a given route
+    """
+
+    def __init__(self, actor, route, location, distance, name="InTriggerDistanceToLocationAlongRoute"):
+        """
+        Setup class members
+        """
+        super(InTriggerDistanceToLocationAlongRoute, self).__init__(name)
+        self._map = CarlaDataProvider.get_map()
+        self._actor = actor
+        self._location = location
+        self._route = route
+        self._distance = distance
+
+        self._location_distance, _ = get_distance_along_route(self._route, self._location)
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self._actor)
+
+        if current_location is None:
+            return new_status
+
+        if current_location.distance(self._location) < self._distance + 20:
+
+            actor_distance, _ = get_distance_along_route(self._route, current_location)
+
+            if (self._location_distance < actor_distance + self._distance and \
+                actor_distance < self._location_distance) or \
+                self._location_distance < 1.0:
+                new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
 class AccelerateToVelocity(AtomicBehavior):
 
     """
@@ -584,7 +625,6 @@ class StopVehicle(AtomicBehavior):
             self._control.speed = 0
         self._actor = actor
         self._brake_value = brake_value
-
 
     def update(self):
         """
@@ -834,6 +874,7 @@ class BasicAgentBehavior(AtomicBehavior):
 
 
 class TrafficJamChecker(AtomicBehavior):
+
     """
     Atomic behavior that performs the followin actions:
        1. Instantiates a set of vehicles managed by a server autopilot
@@ -842,10 +883,10 @@ class TrafficJamChecker(AtomicBehavior):
 
     This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
     """
-    SOFT_NUMBER_BLOCKS = 10 # 10 seconds
-    HARD_NUMBER_BLOCKS = 30 # 30 seconds
+    SOFT_NUMBER_BLOCKS = 10  # 10 seconds
+    HARD_NUMBER_BLOCKS = 30  # 30 seconds
 
-    MINIMUM_DISTANCE = 5.0 # meters
+    MINIMUM_DISTANCE = 5.0  # meters
 
     def __init__(self, ego_vehicle, debug=False, name="TrafficJamChecker"):
         super(TrafficJamChecker, self).__init__(name)
@@ -903,13 +944,13 @@ class TrafficJamChecker(AtomicBehavior):
                         list_actors_to_destroy.append(id)
 
                         if self.debug:
-                            self.world.debug.draw_point(current_location ,
+                            self.world.debug.draw_point(current_location,
                                                         size=1.3,
                                                         color=carla.Color(255, 0, 0),
                                                         life_time=5)
 
                 # if the vehicle has been static for a short period of time...
-                elif (current_game_time - self.table_blocked_actors[id]['time'])  > self.SOFT_NUMBER_BLOCKS:
+                elif (current_game_time - self.table_blocked_actors[id]['time']) > self.SOFT_NUMBER_BLOCKS:
                         # check if this vehicle is at an intersection
                         current_waypoint = self.map.get_waypoint(current_location)
 
@@ -1152,7 +1193,7 @@ class ActorSource(AtomicBehavior):
             world_actors = self._world.get_actors()
             spawn_point_blocked = False
             if (self._last_blocking_actor and
-                self._spawn_point.location.distance(self._last_blocking_actor.get_location()) < self._threshold):
+                    self._spawn_point.location.distance(self._last_blocking_actor.get_location()) < self._threshold):
                 spawn_point_blocked = True
 
             if not spawn_point_blocked:

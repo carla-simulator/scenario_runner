@@ -23,6 +23,101 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.atomic_scenario_behavior import *
 
 
+def get_distance_along_route(route, target_location):
+    """
+    Calculate the distance of the given location along the route
+
+    Note: If the location is not along the route, the route length will be returned
+    """
+
+    map = CarlaDataProvider.get_map()
+    covered_distance = 0
+    prev_position = None
+    found = False
+
+    # Don't use the input location, use the corresponding wp as location
+    target_location_from_wp = map.get_waypoint(target_location).transform.location
+
+    for position, _ in route:
+
+        location = target_location_from_wp
+
+        # Don't perform any calculations for the first route point
+        if not prev_position:
+            prev_position = position
+            continue
+
+        # Calculate distance between previous and current route point
+        interval_length_squared = ((prev_position.x - position.x) ** 2) + ((prev_position.y - position.y) ** 2)
+        distance_squared = ((location.x - prev_position.x) ** 2) + ((location.y - prev_position.y) ** 2)
+
+        # Close to the current position? Stop calculation
+        if distance_squared < 0.01:
+            break
+
+        if distance_squared < 400 and not distance_squared < interval_length_squared:
+            # Check if a neighbor lane is closer to the route
+            # Do this only in a close distance to correct route interval, otherwise the computation load is too high
+            starting_wp = CarlaDataProvider.get_map().get_waypoint(location)
+            wp = starting_wp.get_left_lane()
+            while wp is not None:
+                new_location = wp.transform.location
+                new_distance_squared = ((new_location.x - prev_position.x) ** 2) + (
+                    (new_location.y - prev_position.y) ** 2)
+
+                if np.sign(starting_wp.lane_id) != np.sign(wp.lane_id):
+                    break
+
+                if new_distance_squared < distance_squared:
+                    distance_squared = new_distance_squared
+                    location = new_location
+                else:
+                    break
+
+                wp = wp.get_left_lane()
+
+            wp = starting_wp.get_right_lane()
+            while wp is not None:
+                new_location = wp.transform.location
+                new_distance_squared = ((new_location.x - prev_position.x) ** 2) + (
+                    (new_location.y - prev_position.y) ** 2)
+
+                if np.sign(starting_wp.lane_id) != np.sign(wp.lane_id):
+                    break
+
+                if new_distance_squared < distance_squared:
+                    distance_squared = new_distance_squared
+                    location = new_location
+                else:
+                    break
+
+                wp = wp.get_right_lane()
+
+        if distance_squared < interval_length_squared:
+            # The location could be inside the current route interval, if route/lane ids match
+            # Note: This assumes a sufficiently small route interval
+            # An alternative is to compare orientations, however, this also does not work for
+            # long route intervals
+
+            curr_wp = map.get_waypoint(position)
+            prev_wp = map.get_waypoint(prev_position)
+            wp = map.get_waypoint(location)
+
+            if prev_wp and curr_wp and wp:
+                if wp.road_id == prev_wp.road_id or wp.road_id == curr_wp.road_id:
+                    # Roads match, now compare the sign of the lane ids
+                    if np.sign(wp.lane_id) == np.sign(prev_wp.lane_id) or np.sign(wp.lane_id) == np.sign(curr_wp.lane_id):
+                        # The location is within the current route interval
+                        covered_distance += math.sqrt(distance_squared)
+                        found = True
+                        break
+
+        covered_distance += math.sqrt(interval_length_squared)
+        prev_position = position
+
+    return covered_distance, found
+
+
 def get_crossing_point(actor):
     """
     Get the next crossing point location in front of the ego vehicle
@@ -272,24 +367,24 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
     actor_vector = actor_transform.rotation.get_forward_vector()
     actor_vector = np.array([actor_vector.x, actor_vector.y])
     actor_vector = actor_vector / np.linalg.norm(actor_vector)
-    actor_vector = actor_vector*(extension_factor-1)*actor_bbox.extent.x
+    actor_vector = actor_vector * (extension_factor - 1) * actor_bbox.extent.x
     actor_location = actor_location + carla.Location(actor_vector[0], actor_vector[1])
     actor_yaw = actor_transform.rotation.yaw
 
     is_hazard = False
     for adversary in world_actors:
         if adversary.id != actor.id and \
-            actor_transform.location.distance(adversary.get_location()) < 50:
+                actor_transform.location.distance(adversary.get_location()) < 50:
             adversary_bbox = adversary.bounding_box
             adversary_transform = adversary.get_transform()
             adversary_loc = adversary_transform.location
             adversary_yaw = adversary_transform.rotation.yaw
             overlap_adversary = RotatedRectangle(
                 adversary_loc.x, adversary_loc.y,
-                2*margin*adversary_bbox.extent.x, 2*margin*adversary_bbox.extent.y, adversary_yaw)
+                2 * margin * adversary_bbox.extent.x, 2 * margin * adversary_bbox.extent.y, adversary_yaw)
             overlap_actor = RotatedRectangle(
                 actor_location.x, actor_location.y,
-                2*margin*actor_bbox.extent.x*extension_factor, 2*margin*actor_bbox.extent.y, actor_yaw)
+                2 * margin * actor_bbox.extent.x * extension_factor, 2 * margin * actor_bbox.extent.y, actor_yaw)
             overlap_area = overlap_adversary.intersection(overlap_actor).area
             if overlap_area > 0:
                 is_hazard = True
@@ -297,10 +392,13 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
 
     return is_hazard
 
+
 class RotatedRectangle:
+
     """
     This class contains method to draw rectangle and find intersection point.
     """
+
     def __init__(self, c_x, c_y, w, h, angle):
         self.c_x = c_x
         self.c_y = c_y
@@ -314,7 +412,7 @@ class RotatedRectangle:
         """
         w = self.w
         h = self.h
-        c = shapely.geometry.box(-w/2.0, -h/2.0, w/2.0, h/2.0)
+        c = shapely.geometry.box(-w / 2.0, -h / 2.0, w / 2.0, h / 2.0)
         rc = shapely.affinity.rotate(c, self.angle)
         return shapely.affinity.translate(rc, self.c_x, self.c_y)
 

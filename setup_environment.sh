@@ -34,7 +34,7 @@ then
     echo "export CARLA_ROOT=${CARLA_ROOT}" >> ${HOME}/.bashrc
     echo "export CARLA_SERVER=${CARLA_SERVER}" >> ${HOME}/.bashrc
     echo "export ROOT_SCENARIO_RUNNER=`pwd`" >> ${HOME}/.bashrc
-    echo "export PYTHONPATH=\"${CARLA_ROOT}/PythonAPI/:${ROOT_SCENARIO_RUNNER}:`pwd`:${PYTHONPATH}\" " >> ${HOME}/.bashrc
+    echo "export PYTHONPATH=\"${CARLA_ROOT}/PythonAPI/carla/:${CARLA_ROOT}/PythonAPI/carla/agents/:${ROOT_SCENARIO_RUNNER}:`pwd`:${PYTHONPATH}\" " >> ${HOME}/.bashrc
 
     echo "== CARLA server setup successfully!"
     echo "== Remember to run: source ${HOME}/.bashrc"
