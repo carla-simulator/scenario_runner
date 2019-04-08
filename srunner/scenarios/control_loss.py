@@ -146,9 +146,9 @@ class ControlLoss(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        sequence.add_child(ActorTransformSetter(self.other_actors[0], self.first_transform))
-        sequence.add_child(ActorTransformSetter(self.other_actors[1], self.sec_transform))
-        sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform))
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self.first_transform, physics=False))
+        sequence.add_child(ActorTransformSetter(self.other_actors[1], self.sec_transform, physics=False))
+        sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform, physics=False))
         jitter = py_trees.composites.Sequence("Jitter Behavior")
         jitter.add_child(turn)
         jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.sec_loc_prev, self._trigger_dist))
