@@ -21,7 +21,6 @@ import logging
 import carla
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.utils.route_manipulation import interpolate_trajectory
-from srunner.tools.exception_handling import ExceptionHandler
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 
@@ -139,8 +138,6 @@ def test_routes(args):
             challenge.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
             challenge.world.debug.draw_string(loc, scenario['name'], draw_shadow=False,
                                               color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
-    else:
-        ExceptionHandler.raise_mode = False
 
     # Tick once to start the scenarios.
     print(" Running these scenarios  --- ", list_scenarios)

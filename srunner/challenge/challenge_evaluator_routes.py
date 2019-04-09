@@ -50,7 +50,6 @@ from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD
 from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
 from srunner.scenariomanager.traffic_events import TrafficEventType
 from srunner.challenge.utils.route_manipulation import interpolate_trajectory
-from srunner.tools.exception_handling import ExceptionHandler
 
 
 number_class_translation = {
@@ -205,7 +204,6 @@ class ChallengeEvaluator(object):
 
         # debugging parameters
         self.route_visible = self.debug > 0
-        ExceptionHandler.raise_mode = self.debug > 0
 
         # set up atexit methods to prevent blocking the server
         atexit.register(self.__del__)
@@ -480,7 +478,14 @@ class ChallengeEvaluator(object):
             scenario_configuration.trigger_point = egoactor_trigger_position
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
-            scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout)
+            try:
+                scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout)
+            except Exception as e:
+                if self.debug > 0:
+                    raise e
+                else:
+                    print("Skipping scenario '{}' due to setup error: {}".format(definition['name'], e))
+                    continue
             # registering the used actors on the data provider so they can be updated.
 
             CarlaDataProvider.register_actors(scenario_instance.other_actors)
