@@ -1207,9 +1207,12 @@ class ActorSource(AtomicBehavior):
                         break
 
             if not spawn_point_blocked:
-                new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
-                self._actor_limit -= 1
-                self._queue.put(new_actor)
+                try:
+                    new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
+                    self._actor_limit -= 1
+                    self._queue.put(new_actor)
+                except:
+                    print("ActorSource unable to spawn actor")
         return new_status
 
 
