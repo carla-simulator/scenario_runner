@@ -145,6 +145,7 @@ class ChallengeEvaluator(object):
     Provisional code to evaluate AutonomousAgent performance
     """
     MAX_ALLOWED_RADIUS_SENSOR = 5.0
+    SECONDS_GIVEN_PER_METERS = 1.5
 
     def __init__(self, args):
         phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
@@ -407,7 +408,7 @@ class ChallengeEvaluator(object):
 
         return list_of_actors
 
-    def build_master_scenario(self, route, town_name):
+    def build_master_scenario(self, route, town_name, timeout=300):
         # We have to find the target.
         # we also have to convert the route to the expected format
         master_scenario_configuration = ScenarioConfiguration()
@@ -420,9 +421,9 @@ class ChallengeEvaluator(object):
         master_scenario_configuration.trigger_point = self.ego_vehicle.get_transform()
         CarlaDataProvider.register_actor(self.ego_vehicle)
 
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout=300)
+        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout)
 
-    def build_background_scenario(self, town_name):
+    def build_background_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
         scenario_configuration.route = None
         scenario_configuration.town = town_name
@@ -446,9 +447,9 @@ class ChallengeEvaluator(object):
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
         scenario_configuration.other_actors.append(actor_configuration_instance)
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=300)
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout)
 
-    def build_scenario_instances(self, scenario_definition_vec, town_name):
+    def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
             Based on the parsed route and possible scenarios, build all the scenario classes.
         :param scenario_definition_vec: the dictionary defining the scenarios
@@ -477,7 +478,7 @@ class ChallengeEvaluator(object):
             scenario_configuration.trigger_point = egoactor_trigger_position
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
-            scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout=300)
+            scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout)
             # registering the used actors on the data provider so they can be updated.
 
             CarlaDataProvider.register_actors(scenario_instance.other_actors)
@@ -485,6 +486,18 @@ class ChallengeEvaluator(object):
             scenario_instance_vec.append(scenario_instance)
 
         return scenario_instance_vec
+
+    def estimate_route_timeout(self, route):
+        route_length = 0.0 # in meters
+
+        prev_point = route[0][0]
+        for current_point, _ in route[1:]:
+            dist = current_point.location.distance(prev_point.location)
+            route_length += dist
+            prev_point = current_point
+
+        return int(self.SECONDS_GIVEN_PER_METERS * route_length)
+
 
     def route_is_running(self):
         """
@@ -850,6 +863,9 @@ class ChallengeEvaluator(object):
                 # prepare route's trajectory
                 gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                     route_description['trajectory'])
+
+                route_timeout = self.estimate_route_timeout(route_description['trajectory'])
+
                 potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
                                                                                                      world_annotations)
                 CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
@@ -873,9 +889,11 @@ class ChallengeEvaluator(object):
 
                 # build the master scenario based on the route and the target.
                 self.master_scenario = self.build_master_scenario(route_description['trajectory'],
-                                                                  route_description['town_name'])
+                                                                  route_description['town_name'],
+                                                                  timeout=route_timeout)
 
-                self.background_scenario = self.build_background_scenario(route_description['town_name'])
+                self.background_scenario = self.build_background_scenario(route_description['town_name'],
+                                                                          timeout=route_timeout)
 
                 list_scenarios = [self.master_scenario, self.background_scenario]
                 # build the instance based on the parsed definitions.
@@ -890,7 +908,8 @@ class ChallengeEvaluator(object):
                         print(scenario)
 
                 list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
-                                                                route_description['town_name'])
+                                                                route_description['town_name'],
+                                                                timeout=route_timeout)
 
                 # Tick once to start the scenarios.
                 if self.debug > 0:
