@@ -233,7 +233,7 @@ class ScenarioRunner(object):
 
                 # Stop scenario and cleanup
                 self.manager.stop_scenario()
-                del scenario
+                scenario.remove_all_actors()
 
                 self.cleanup()
 

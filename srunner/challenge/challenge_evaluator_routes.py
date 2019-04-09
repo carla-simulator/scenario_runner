@@ -192,6 +192,7 @@ class ChallengeEvaluator(object):
         self.weather_profiles = find_weather_presets()
         self.output_scenario = []
         self.master_scenario = None
+        self.background_scenario = None
 
         # first we instantiate the Agent
         if args.agent is not None:
@@ -227,8 +228,12 @@ class ChallengeEvaluator(object):
                 self.actors[i] = None
         self.actors = []
 
+        CarlaActorPool.cleanup()
+        CarlaDataProvider.cleanup()
+
         for i, _ in enumerate(self._sensors_list):
             if self._sensors_list[i] is not None:
+                self._sensors_list[i].stop()
                 self._sensors_list[i].destroy()
                 self._sensors_list[i] = None
         self._sensors_list = []
@@ -421,6 +426,10 @@ class ChallengeEvaluator(object):
         master_scenario_configuration.trigger_point = self.ego_vehicle.get_transform()
         CarlaDataProvider.register_actor(self.ego_vehicle)
 
+        # Provide an initial blackboard entry to ensure all scenarios are running correctly
+        blackboard = py_trees.blackboard.Blackboard()
+        blackboard.set('master_scenario_command', 'scenarios_running')
+
         return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout)
 
     def build_background_scenario(self, town_name, timeout=300):
@@ -445,7 +454,7 @@ class ChallengeEvaluator(object):
             amount = 1
 
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
-        scenario_configuration.other_actors.append(actor_configuration_instance)
+        scenario_configuration.other_actors = [actor_configuration_instance]
 
         return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout)
 
@@ -512,7 +521,14 @@ class ChallengeEvaluator(object):
         if self.master_scenario is None:
             raise ValueError('You should not run a route without a master scenario')
 
-        return self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING
+        # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
+        # indiciate that the scenario was running but terminated
+        # Therefore, return true when status is INVALID or RUNNING, false otherwise
+        if (self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING or
+            self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.INVALID):
+            return True
+        else:
+            return False
 
     def run_route(self, list_scenarios, trajectory, no_master=False):
         while no_master or self.route_is_running():
@@ -538,13 +554,21 @@ class ChallengeEvaluator(object):
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=50000.0)
                 self.route_visible = False
+
             # time continues
             self.world.tick()
             self.timestamp = self.world.wait_for_tick()
+
             # check for scenario termination
             for scenario in list_scenarios:
-                if scenario.scenario.scenario_tree.status != py_trees.common.Status.RUNNING:
-                    del list_scenarios[list_scenarios.index(scenario)]
+                    # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
+                    # indiciate that the scenario was running but terminated
+                    # Remove the scenario when termination is clear --> not INVALID, not RUNNING
+                if (scenario.scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
+                    scenario.scenario.scenario_tree.status != py_trees.common.Status.INVALID):
+                    scenario.remove_all_actors()
+                    scenario = None
+            list_scenarios[:] = [scenario for scenario in list_scenarios if scenario]
 
         # Route finished set for the background scenario to also finish
         blackboard = py_trees.blackboard.Blackboard()
@@ -689,7 +713,7 @@ class ChallengeEvaluator(object):
                               'score_penalty': score_penalty,
                               'result': result,
                               'help_text': return_message
-                              }
+                             }
 
         self.statistics_routes.append(current_statistics)
 
@@ -809,8 +833,7 @@ class ChallengeEvaluator(object):
                     return False, "Illegal sensor used for Track [{}]!".format(agent.track)
             else:
                 if not (sensor['type'].startswith('sensor.scene_layout') or sensor['type'].startswith(
-                        'sensor.object_finder') or sensor['type'].startswith(
-                        'sensor.other.gnss')):
+                        'sensor.object_finder') or sensor['type'].startswith('sensor.other.gnss')):
                     return False, "Illegal sensor used for Track [{}]!".format(agent.track)
 
             # let's check the extrinsics of the sensor
@@ -839,6 +862,10 @@ class ChallengeEvaluator(object):
 
         self.n_routes = len(route_descriptions_list) * args.repetitions
 
+        # setup world and client assuming that the CARLA server is up and running
+        client = carla.Client(args.host, int(args.port))
+        client.set_timeout(self.client_timeout)
+
         for route_idx, route_description in enumerate(route_descriptions_list):
             for repetition in range(args.repetitions):
             # check if we have enough wall time to run this specific route
@@ -848,9 +875,8 @@ class ChallengeEvaluator(object):
                     self.report_fatal_error(args.filename, args.show_to_participant, error_message)
                     return
 
-                # setup world and client assuming that the CARLA server is up and running
-                client = carla.Client(args.host, int(args.port))
-                client.set_timeout(self.client_timeout)
+                # For debugging
+                self.route_visible = self.debug > 0
 
                 # load the self.world variable to be used during the route
                 self.load_world(client, route_description['town_name'])
@@ -870,8 +896,8 @@ class ChallengeEvaluator(object):
 
                 route_timeout = self.estimate_route_timeout(route_description['trajectory'])
 
-                potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
-                                                                                                     world_annotations)
+                potential_scenarios_definitions, _ = parser.scan_route_for_scenarios(route_description,
+                                                                                     world_annotations)
                 CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
 
                 # Sample the scenarios to be used for this route instance.
@@ -929,10 +955,25 @@ class ChallengeEvaluator(object):
                 self.record_route_statistics(route_description['id'])
 
                 # clean up
+                settings = self.world.get_settings()
+                settings.synchronous_mode = False
+                self.world.apply_settings(settings)
+
                 for scenario in list_scenarios:
-                    del scenario
+                    # Reset scenario status for proper cleanup
+                    scenario.scenario.scenario_tree.terminate(py_trees.common.Status.INVALID)
+                    # Do not call del here! Directly enforce the actor removal
+                    scenario.remove_all_actors()
+                    scenario = None
+                list_scenarios = []
+
+                self.master_scenario = None
+                self.background_scenario = None
                 self.cleanup(ego=True)
                 self.agent_instance.destroy()
+
+                self.world.tick()
+                self.world.wait_for_tick()
 
                 if self.debug > 0:
                     break
