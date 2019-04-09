@@ -34,7 +34,8 @@ class VehicleTurningRight(BasicScenario):
     (Traffic Scenario 4)
     """
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -48,6 +49,8 @@ class VehicleTurningRight(BasicScenario):
         self._other_actor_transform = None
 
         self._num_lane_changes = 0
+        # Timeout of scenario in seconds
+        self.timeout = timeout
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -191,7 +194,8 @@ class VehicleTurningLeft(BasicScenario):
     a cyclist after taking a left turn. Scenario 4
     """
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -204,6 +208,8 @@ class VehicleTurningLeft(BasicScenario):
         self._other_actor_transform = None
 
         self._num_lane_changes = 0
+        # Timeout of scenario in seconds
+        self.timeout = timeout
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,

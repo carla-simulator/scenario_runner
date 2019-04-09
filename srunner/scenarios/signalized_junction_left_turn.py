@@ -28,12 +28,12 @@ class SignalizedJunctionLeftTurn(BasicScenario):
     Traffic Scenario 08.
     """
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=80):
         """
         Setup all relevant parameters and create scenario
         """
         self.category = "SignalizedJunctionLeftTurn"
-        self.timeout = 80  # Timeout of scenario in seconds
         self._target_vel = 35
         self._brake_value = 0.5
         self._drive_distance = 50
@@ -42,7 +42,8 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._start_distance = 3
         self._traffic_light = None
         self._other_actor_transform = None
-
+        # Timeout of scenario in seconds
+        self.timeout = timeout
         super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
                                                          ego_vehicle,
                                                          config,

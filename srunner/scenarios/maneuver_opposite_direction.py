@@ -31,9 +31,10 @@ class ManeuverOppositeDirection(BasicScenario):
     """
 
     category = "ManeuverOppositeDirection"
-    timeout = 120
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True, obstacle_type='barrier'):
+
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 obstacle_type='barrier', timeout=120):
         """
         Setup all relevant parameters and create scenario
         obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
@@ -55,6 +56,8 @@ class ManeuverOppositeDirection(BasicScenario):
         self._first_actor_transform = None
         self._second_actor_transform = None
         self._third_actor_transform = None
+        # Timeout of scenario in seconds
+        self.timeout = timeout
 
         super(ManeuverOppositeDirection, self).__init__(
             "ManeuverOppositeDirection",
