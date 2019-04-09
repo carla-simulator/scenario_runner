@@ -37,6 +37,7 @@ def convert_transform_to_location(transform_vec):
 
     return location_vec
 
+
 def create_configuration_scenario(scenario_desc, scenario_type):
     waypoint = scenario_desc['transform']
     parser.convert_waypoint_float(waypoint)

@@ -47,7 +47,6 @@ class OtherLeadingVehicle(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._map = CarlaDataProvider.get_map()
-
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location
         self._ego_vehicle_drive_distance = self._first_vehicle_location * 4
