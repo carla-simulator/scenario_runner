@@ -218,6 +218,9 @@ class CarlaDataProvider(object):
         CarlaDataProvider._actor_location_map.clear()
         CarlaDataProvider._traffic_light_map.clear()
         CarlaDataProvider._map = None
+        CarlaDataProvider._world = None
+        CarlaDataProvider._sync_flag = False
+        CarlaDataProvider._ego_vehicle_route = None
 
 
 class CarlaActorPool(object):
@@ -421,6 +424,9 @@ class CarlaActorPool(object):
 
         CarlaActorPool._carla_actor_pool = dict()
         CarlaActorPool._world = None
+        CarlaActorPool._client = None
+        CarlaActorPool._spawn_points = None
+        CarlaActorPool._spawn_index = 0
 
     @staticmethod
     def remove_all_actors_in_surrounding(location, distance):
