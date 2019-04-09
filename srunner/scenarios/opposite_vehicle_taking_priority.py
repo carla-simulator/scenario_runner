@@ -64,14 +64,16 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         self._other_actor_transform = None
 
+        # Timeout of scenario in seconds
+        self.timeout = timeout
+
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
                                                              ego_vehicle,
                                                              config,
                                                              world,
                                                              debug_mode,
                                                              criteria_enable=criteria_enable)
-        # Timeout of scenario in seconds
-        self.timeout = timeout
+
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
 
         if self._traffic_light is None:

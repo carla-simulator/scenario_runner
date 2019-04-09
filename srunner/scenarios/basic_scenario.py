@@ -14,7 +14,7 @@ from __future__ import print_function
 import py_trees
 import carla
 
-from srunner.scenariomanager.atomic_scenario_behavior import InTriggerDistanceToLocationAlongRoute
+from srunner.scenariomanager.atomic_scenario_behavior import InTriggerDistanceToLocationAlongRoute, InTimeToArrivalToLocation
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import Scenario
 
@@ -68,12 +68,20 @@ class BasicScenario(object):
         if config.trigger_point:
             start_location = config.trigger_point.location     # start location of the scenario
 
+        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+
         behavior_seq = py_trees.composites.Sequence()
         if start_location:
-            behavior_seq.add_child(InTriggerDistanceToLocationAlongRoute(self.ego_vehicle,
-                                                                         CarlaDataProvider.get_ego_vehicle_route(),
-                                                                         start_location,
-                                                                         5))
+            if ego_vehicle_route:
+                behavior_seq.add_child(InTriggerDistanceToLocationAlongRoute(self.ego_vehicle,
+                                                                             ego_vehicle_route,
+                                                                             start_location,
+                                                                             5))
+            else:
+                behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle,
+                                                                 2.0,
+                                                                 start_location))
+
         behavior_seq.add_child(behavior)
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
