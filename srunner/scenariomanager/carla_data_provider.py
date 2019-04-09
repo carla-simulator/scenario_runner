@@ -16,6 +16,8 @@ from six import iteritems
 
 import carla
 
+from srunner.tools.exception_handling import ExceptionHandler
+
 
 def calculate_velocity(actor):
     """
@@ -58,14 +60,14 @@ class CarlaDataProvider(object):
         If actor already exists, throw an exception
         """
         if actor in CarlaDataProvider._actor_velocity_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor))
+            ExceptionHandler.raise_exception("KeyError",
+                                             "Vehicle '{}' already registered. Cannot register twice!".format(actor))
         else:
             CarlaDataProvider._actor_velocity_map[actor] = 0.0
 
         if actor in CarlaDataProvider._actor_location_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+            ExceptionHandler.raise_exception("KeyError",
+                                             "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
         else:
             CarlaDataProvider._actor_location_map[actor] = None
 
@@ -129,8 +131,8 @@ class CarlaDataProvider(object):
             if traffic_light not in CarlaDataProvider._traffic_light_map.keys():
                 CarlaDataProvider._traffic_light_map[traffic_light] = traffic_light.get_transform()
             else:
-                raise KeyError(
-                    "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
+                ExceptionHandler.raise_exception(
+                    "KeyError", "Traffic light '{}' already registered. Cannot register twice!".format(traffic_light.id))
 
     @staticmethod
     def get_world():
@@ -155,7 +157,7 @@ class CarlaDataProvider(object):
         if CarlaDataProvider._map is None:
             if world is None:
                 if CarlaDataProvider._world is None:
-                    raise ValueError("class member \'world'\' not initialized yet")
+                    ExceptionHandler.raise_exception("ValueError", "class member \'world'\' not initialized yet")
                 else:
                     CarlaDataProvider._map = CarlaDataProvider._world.get_map()
             else:
@@ -288,8 +290,8 @@ class CarlaActorPool(object):
             actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
 
         if actor is None:
-            raise RuntimeError(
-                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
+            ExceptionHandler.raise_exception(
+                "RuntimeError", "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
         else:
             # Let's deactivate the autopilot of the actor if it belongs to vehicle
             if actor in blueprint_library.filter('vehicle.*'):
@@ -342,14 +344,12 @@ class CarlaActorPool(object):
         CarlaActorPool._world.tick()
         CarlaActorPool._world.wait_for_tick()
 
-
         actor_list = []
         actor_ids = []
         if responses:
             for response in responses:
                 if not response.error:
                     actor_ids.append(response.actor_id)
-
 
         carla_actors = CarlaActorPool._world.get_actors(actor_ids)
         for actor in carla_actors:
