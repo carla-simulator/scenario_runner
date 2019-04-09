@@ -36,7 +36,8 @@ class ControlLoss(BasicScenario):
 
     timeout = 60            # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -56,6 +57,8 @@ class ControlLoss(BasicScenario):
         self._ego_vehicle_max_throttle = 1.0
         self._ego_vehicle_target_velocity = 15
         self._map = CarlaDataProvider.get_map()
+        # Timeout of scenario in seconds
+        self.timeout = timeout
         # The reference trigger for the control loss
         self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
         self.loc_list = []

@@ -410,7 +410,7 @@ class ChallengeEvaluator(object):
         master_scenario_configuration.trigger_point = self.ego_vehicle.get_transform()
         CarlaDataProvider.register_actor(self.ego_vehicle)
 
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration)
+        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout=300)
 
     def build_background_scenario(self, town_name):
         scenario_configuration = ScenarioConfiguration()
@@ -436,7 +436,7 @@ class ChallengeEvaluator(object):
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
         scenario_configuration.other_actors.append(actor_configuration_instance)
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration)
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=300)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name):
         """
@@ -467,7 +467,7 @@ class ChallengeEvaluator(object):
             scenario_configuration.trigger_point = egoactor_trigger_position
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
-            scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration)
+            scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout=300)
             # registering the used actors on the data provider so they can be updated.
 
             CarlaDataProvider.register_actors(scenario_instance.other_actors)

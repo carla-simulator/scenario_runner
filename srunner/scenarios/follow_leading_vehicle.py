@@ -43,7 +43,8 @@ class FollowLeadingVehicle(BasicScenario):
 
     timeout = 120            # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=60):
         """
         Setup all relevant parameters and create scenario
 
@@ -57,6 +58,8 @@ class FollowLeadingVehicle(BasicScenario):
         self._other_actor_max_brake = 1.0
         self._other_actor_stop_in_front_intersection = 20
         self._other_actor_transform = None
+        # Timeout of scenario in seconds
+        self.timeout = timeout
 
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
                                                    ego_vehicle,

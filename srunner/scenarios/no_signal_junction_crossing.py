@@ -42,13 +42,15 @@ class NoSignalJunctionCrossing(BasicScenario):
     _other_actor_max_brake = 1.0
     _other_actor_target_velocity = 15
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=0):
         """
         Setup all relevant parameters and create scenario
         """
 
         self._other_actor_transform = None
-        self.timeout = 0
+        # Timeout of scenario in seconds
+        self.timeout = timeout
 
         super(NoSignalJunctionCrossing, self).__init__("NoSignalJunctionCrossing",
                                                        ego_vehicle,

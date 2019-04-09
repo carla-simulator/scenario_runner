@@ -41,8 +41,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     category = "RunningRedLight"
 
-    timeout = 180            # Timeout of scenario in seconds
-
     # ego vehicle parameters
     _ego_max_velocity_allowed = 20       # Maximum allowed velocity [m/s]
     _ego_avg_velocity_expected = 4       # Average expected velocity [m/s]
@@ -57,7 +55,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     _traffic_light = None
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=180):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -71,7 +70,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                                                              world,
                                                              debug_mode,
                                                              criteria_enable=criteria_enable)
-
+        # Timeout of scenario in seconds
+        self.timeout = timeout
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
 
         if self._traffic_light is None:

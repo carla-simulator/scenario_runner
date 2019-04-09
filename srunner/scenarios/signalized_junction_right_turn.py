@@ -30,9 +30,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
     """
     category = "SignalizedJunctionLeftTurn"
 
-    timeout = 80  # Timeout of scenario in seconds
-
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=80):
         """
         Setup all relevant parameters and create scenario
         """
@@ -41,7 +40,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._ego_distance = 40
         self._traffic_light = None
         self._other_actor_transform = None
-
+        # Timeout of scenario in seconds
+        self.timeout = timeout
         super(SignalizedJunctionRightTurn, self).__init__("HeroActorTurningRightAtSignalizedJunction",
                                                           ego_vehicle,
                                                           config,

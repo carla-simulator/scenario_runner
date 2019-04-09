@@ -32,9 +32,8 @@ class StationaryObjectCrossing(BasicScenario):
 
     category = "ObjectCrossing"
 
-    timeout = 60
-
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -45,6 +44,8 @@ class StationaryObjectCrossing(BasicScenario):
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
+        # Timeout of scenario in seconds
+        self.timeout = timeout
 
         super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
                                                        ego_vehicle,

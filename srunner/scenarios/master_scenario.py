@@ -27,15 +27,17 @@ class MasterScenario(BasicScenario):
 
     category = "Master"
     radius = 10.0           # meters
-    timeout = 300           # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=300):
         """
         Setup all relevant parameters and create scenario
         """
         self.config = config
         self.target = None
         self.route = None
+        # Timeout of scenario in seconds
+        self.timeout = timeout
 
         if hasattr(self.config, 'target'):
             self.target = self.config.target

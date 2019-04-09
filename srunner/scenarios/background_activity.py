@@ -24,13 +24,14 @@ class BackgroundActivity(BasicScenario):
     """
 
     category = "BackgroundActivity"
-    timeout = 35*60         # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, timeout=35*60):
         """
         Setup all relevant parameters and create scenario
         """
         self.config = config
+
+        self.timeout = timeout  # Timeout of scenario in seconds
 
         super(BackgroundActivity, self).__init__("BackgroundActivity",
                                              ego_vehicle,
