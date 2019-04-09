@@ -484,7 +484,7 @@ class ChallengeEvaluator(object):
 
                 if self.debug > 1:
                     for actor in self.world.get_actors():
-                        if 'vehicle' in actor.type_id:
+                        if 'vehicle' in actor.type_id or 'walker' in actor.type_id:
                             print(actor.get_transform())
 
 
