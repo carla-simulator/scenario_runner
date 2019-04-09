@@ -46,9 +46,10 @@ class OtherLeadingVehicle(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
+        self._world = world
         self._map = CarlaDataProvider.get_map()
-        self._first_vehicle_location = 50
-        self._second_vehicle_location = self._first_vehicle_location
+        self._first_vehicle_location = 35
+        self._second_vehicle_location = self._first_vehicle_location + 1
         self._ego_vehicle_drive_distance = self._first_vehicle_location * 4
         self._first_vehicle_speed = 55
         self._second_vehicle_speed = 45
@@ -72,10 +73,7 @@ class OtherLeadingVehicle(BasicScenario):
         """
         first_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         second_vehicle_waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._second_vehicle_location)
-        if second_vehicle_waypoint.lane_change & carla.LaneChange.Left:
-            second_vehicle_waypoint = first_vehicle_waypoint.get_left_lane()
-        elif second_vehicle_waypoint.lane_change & carla.LaneChange.Right:
-            second_vehicle_waypoint = first_vehicle_waypoint.get_right_lane()
+        second_vehicle_waypoint = second_vehicle_waypoint.get_left_lane()
 
         first_vehicle_transform = carla.Transform(first_vehicle_waypoint.transform.location,
                                                   first_vehicle_waypoint.transform.rotation)
@@ -110,7 +108,7 @@ class OtherLeadingVehicle(BasicScenario):
         keep_velocity = py_trees.composites.Parallel("Trigger condition for deceleration",
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity.add_child(WaypointFollower(self.other_actors[0], self._first_vehicle_speed, avoid_collision=True))
-        keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 35))
+        keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 55))
 
         # Decelerating actor sequence behavior
         decelerate = self._first_vehicle_speed / 3.2
