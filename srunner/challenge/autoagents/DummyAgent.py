@@ -41,8 +41,7 @@ class DummyAgent(AutonomousAgent):
 
         return sensors
 
-    def run_step(self, input_data):
-
+    def run_step(self, input_data, timestamp):
         print("=====================>")
         for key, val in input_data.items():
             if hasattr(val[1], 'shape'):
