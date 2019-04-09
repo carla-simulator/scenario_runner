@@ -825,11 +825,11 @@ class ChallengeEvaluator(object):
         for route_idx, route_description in enumerate(route_descriptions_list):
             for repetition in range(args.repetitions):
             # check if we have enough wall time to run this specific route
-            if not self.within_available_time():
-                error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx+1,
-                                                                                                   len(route_descriptions_list))
-                self.report_fatal_error(args.filename, args.show_to_participant, error_message)
-                return
+                if not self.within_available_time():
+                    error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx+1,
+                        len(route_descriptions_list))
+                    self.report_fatal_error(args.filename, args.show_to_participant, error_message)
+                    return
 
                 # setup world and client assuming that the CARLA server is up and running
                 client = carla.Client(args.host, int(args.port))
