@@ -139,7 +139,7 @@ class HumanAgent(AutonomousAgent):
 
         return sensors
 
-    def run_step(self, input_data):
+    def run_step(self, input_data, timestamp):
         self.agent_engaged = True
         time.sleep(0.1)
         return self.current_control

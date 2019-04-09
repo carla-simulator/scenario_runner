@@ -1,5 +1,6 @@
 from enum import Enum
 from srunner.challenge.envs.sensor_interface import SensorInterface
+from srunner.scenariomanager.timer import GameTime
 
 class Track(Enum):
     """
@@ -54,7 +55,7 @@ class AutonomousAgent():
 
         return sensors
 
-    def run_step(self):
+    def run_step(self, timestamp):
         """
         Execute one step of navigation.
         :return: control
@@ -71,8 +72,8 @@ class AutonomousAgent():
     def __call__(self):
         input_data = self.sensor_interface.get_data()
 
-
-        control = self.run_step(input_data)
+        timestamp = GameTime.get_time()
+        control = self.run_step(input_data, timestamp)
         control.manual_gear_shift = False
 
         return control
