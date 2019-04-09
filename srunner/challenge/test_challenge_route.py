@@ -151,7 +151,7 @@ def test_routes(args):
 
     # clean up
     for scenario in list_scenarios:
-        del scenario
+        scenario.remove_all_actors()
     challenge.cleanup(ego=True)
     challenge.agent_instance.destroy()
 
