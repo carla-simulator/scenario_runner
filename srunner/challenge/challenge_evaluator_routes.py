@@ -14,6 +14,7 @@ from __future__ import print_function
 import argparse
 import atexit
 from argparse import RawTextHelpFormatter
+import datetime
 import importlib
 import math
 import sys
@@ -143,6 +144,14 @@ class ChallengeEvaluator(object):
         if not phase_codename:
             raise ValueError('environment variable CHALLENGE_PHASE_CODENAME not defined')
 
+        # remaining simulation time available for this time in seconds
+        challenge_time_available = int(os.getenv('CHALLENGE_TIME_AVAILABLE', '1080000'))
+        if not challenge_time_available:
+            raise ValueError('environment variable CHALLENGE_TIME_AVAILABLE not defined')
+        self.challenge_time_available = challenge_time_available
+
+        self.start_wall_time = datetime.datetime.now()
+
         track = int(phase_codename.split("_")[2])
         phase_codename = phase_codename.split("_")[0]
 
@@ -188,6 +197,13 @@ class ChallengeEvaluator(object):
         atexit.register(self.__del__)
         signal.signal(signal.SIGTERM, self.__del__)
         signal.signal(signal.SIGINT, self.__del__)
+
+    def within_available_time(self):
+        current_time = datetime.datetime.now()
+        elapsed_seconds = (current_time - self.start_wall_time).seconds
+
+        return elapsed_seconds < self.challenge_time_available
+
 
     def cleanup(self, ego=False):
         """
@@ -777,6 +793,12 @@ class ChallengeEvaluator(object):
         """
         Run all routes according to provided commandline args
         """
+        # do we have enough simulation time for this team?
+        if not self.within_available_time():
+            error_message = 'Not enough simulation time available to continue'
+            self.report_fatal_error(args.filename, args.show_to_participant, error_message)
+            return
+
         # retrieve worlds annotations
         world_annotations = parser.parse_annotations_file(args.scenarios)
         # retrieve routes
@@ -784,7 +806,14 @@ class ChallengeEvaluator(object):
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
 
-        for route_description in route_descriptions_list:
+        for route_idx, route_description in enumerate(route_descriptions_list):
+            # check if we have enough wall time to run this specific route
+            if not self.within_available_time():
+                error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx+1,
+                                                                                                   len(route_descriptions_list))
+                self.report_fatal_error(args.filename, args.show_to_participant, error_message)
+                return
+
             # setup world and client assuming that the CARLA server is up and running
             client = carla.Client(args.host, int(args.port))
             client.set_timeout(self.client_timeout)
@@ -814,6 +843,7 @@ class ChallengeEvaluator(object):
                 # the sensor configuration is illegal
                 self.report_fatal_error(args.filename, args.show_to_participant, error_message)
                 return
+
             self.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
             # prepare the ego car to run the route.
             # It starts on the first wp of the route
