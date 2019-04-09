@@ -38,11 +38,12 @@ class SignalizedJunctionRightTurn(BasicScenario):
     """
     category = "SignalizedJunctionRightTurn"
 
+    timeout = 90  # Timeout of scenario in seconds
+
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
         """
         Setup all relevant parameters and create scenario
-        obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
         """
         self._world = world
         self._map = CarlaDataProvider.get_map()
@@ -53,7 +54,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._other_actor_transform = None
         self._blackboard_queue_name = 'SignalizedJunctionRightTurn/actor_flow_queue'
         self._queue = Blackboard().set(self._blackboard_queue_name, Queue())
-
+        # Timeout of scenario in seconds
+        self.timeout = timeout
         super(SignalizedJunctionRightTurn, self).__init__("HeroActorTurningRightAtSignalizedJunction",
                                                           ego_vehicle,
                                                           config,
@@ -87,10 +89,6 @@ class SignalizedJunctionRightTurn(BasicScenario):
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
         self.other_actors.append(first_vehicle)
-        sink_waypoint = self._source_transform.next(1)[0]
-        while not sink_waypoint.is_intersection:
-            sink_waypoint = sink_waypoint.next(1)[0]
-        self._sink_location = sink_waypoint.transform.location
 
     def _create_behavior(self):
         """
