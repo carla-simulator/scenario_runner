@@ -21,6 +21,7 @@ import sys
 import os
 import json
 import random
+import re
 import signal
 import xml.etree.ElementTree as ET
 
@@ -131,6 +132,12 @@ def convert_transform_to_location(transform_vec):
 
 Z_DISTANCE_AVOID_COLLISION = 0.5  # z vallue to add in oder to avoid spawning vehicles to close to the ground
 
+def find_weather_presets():
+    rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
+    name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
+    presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
+    return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
+
 
 class ChallengeEvaluator(object):
 
@@ -179,8 +186,11 @@ class ChallengeEvaluator(object):
         self.world = None
         self.agent_instance = None
 
+        self.n_routes = 0
+        self.weather_profiles = find_weather_presets()
         self.output_scenario = []
         self.master_scenario = None
+
         # first we instantiate the Agent
         if args.agent is not None:
             module_name = os.path.basename(args.agent).split('.')[0]
@@ -666,16 +676,15 @@ class ChallengeEvaluator(object):
         self.statistics_routes.append(current_statistics)
 
     def report_challenge_statistics(self, filename, show_to_participant):
-        n_routes = len(self.statistics_routes)
         score_composed = 0.0
         score_route = 0.0
         score_penalty = 0.0
         help_message = ""
 
         for stats in self.statistics_routes:
-            score_composed += stats['score_composed'] / float(n_routes)
-            score_route += stats['score_route'] / float(n_routes)
-            score_penalty += stats['score_penalty'] / float(n_routes)
+            score_composed += stats['score_composed'] / float(self.n_routes)
+            score_route += stats['score_route'] / float(self.n_routes)
+            score_penalty += stats['score_penalty'] / float(self.n_routes)
             help_message += "{}\n\n".format(stats['help_text'])
 
         if self.phase == 'validation' or self.phase == 'test':
@@ -720,6 +729,11 @@ class ChallengeEvaluator(object):
 
         with open(filename, "w+") as fd:
             fd.write(json.dumps(json_data, indent=4))
+
+    def set_weather_profile(self, index):
+        profile = self.weather_profiles[index % len(self.weather_profiles)]
+        self.world.set_weather(profile[0])
+
 
     def load_world(self, client, town_name):
         # A new world can only be loaded in async mode
@@ -806,94 +820,99 @@ class ChallengeEvaluator(object):
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
 
+        self.n_routes = len(route_descriptions_list) * args.repetitions
+
         for route_idx, route_description in enumerate(route_descriptions_list):
+            for repetition in range(args.repetitions):
             # check if we have enough wall time to run this specific route
-            if not self.within_available_time():
-                error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx+1,
-                                                                                                   len(route_descriptions_list))
-                self.report_fatal_error(args.filename, args.show_to_participant, error_message)
-                return
+                if not self.within_available_time():
+                    error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx+1,
+                        len(route_descriptions_list))
+                    self.report_fatal_error(args.filename, args.show_to_participant, error_message)
+                    return
 
-            # setup world and client assuming that the CARLA server is up and running
-            client = carla.Client(args.host, int(args.port))
-            client.set_timeout(self.client_timeout)
+                # setup world and client assuming that the CARLA server is up and running
+                client = carla.Client(args.host, int(args.port))
+                client.set_timeout(self.client_timeout)
 
-            # load the self.world variable to be used during the route
-            self.load_world(client, route_description['town_name'])
-            # Set the actor pool so the scenarios can prepare themselves when needed
-            CarlaActorPool.set_client(client)
-            CarlaActorPool.set_world(self.world)
-            # Also se the Data provider pool.
-            CarlaDataProvider.set_world(self.world)
-            # tick world so we can start.
-            self.world.tick()
-            # prepare route's trajectory
-            gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
-                                                                                route_description['trajectory'])
-            potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
-                                                                                                 world_annotations)
-            CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
+                # load the self.world variable to be used during the route
+                self.load_world(client, route_description['town_name'])
+                # set weather profile
+                self.set_weather_profile(repetition)
 
-            # Sample the scenarios to be used for this route instance.
-            sampled_scenarios_definitions = self.scenario_sampling(potential_scenarios_definitions)
-            # create agent
-            self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
-            correct_sensors, error_message = self.valid_sensors_configuration(self.agent_instance, self.track)
-            if not correct_sensors:
-                # the sensor configuration is illegal
-                self.report_fatal_error(args.filename, args.show_to_participant, error_message)
-                return
+                # Set the actor pool so the scenarios can prepare themselves when needed
+                CarlaActorPool.set_client(client)
+                CarlaActorPool.set_world(self.world)
+                # Also se the Data provider pool.
+                CarlaDataProvider.set_world(self.world)
+                # tick world so we can start.
+                self.world.tick()
+                # prepare route's trajectory
+                gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
+                                                                                    route_description['trajectory'])
+                potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
+                                                                                                     world_annotations)
+                CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
 
-            self.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
-            # prepare the ego car to run the route.
-            # It starts on the first wp of the route
+                # Sample the scenarios to be used for this route instance.
+                sampled_scenarios_definitions = self.scenario_sampling(potential_scenarios_definitions)
+                # create agent
+                self.agent_instance = getattr(self.module_agent, self.module_agent.__name__)(args.config)
+                correct_sensors, error_message = self.valid_sensors_configuration(self.agent_instance, self.track)
+                if not correct_sensors:
+                    # the sensor configuration is illegal
+                    self.report_fatal_error(args.filename, args.show_to_participant, error_message)
+                    return
+                self.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
+                # prepare the ego car to run the route.
+                # It starts on the first wp of the route
 
-            elevate_transform = route_description['trajectory'][0][0]
-            elevate_transform.location.z += 0.5
-            self.prepare_ego_car(elevate_transform)
+                elevate_transform = route_description['trajectory'][0][0]
+                elevate_transform.location.z += 0.5
+                self.prepare_ego_car(elevate_transform)
 
-            # build the master scenario based on the route and the target.
-            self.master_scenario = self.build_master_scenario(route_description['trajectory'],
-                                                              route_description['town_name'])
+                # build the master scenario based on the route and the target.
+                self.master_scenario = self.build_master_scenario(route_description['trajectory'],
+                                                                  route_description['town_name'])
 
-            self.background_scenario = self.build_background_scenario(route_description['town_name'])
+                self.background_scenario = self.build_background_scenario(route_description['town_name'])
 
-            list_scenarios = [self.master_scenario, self.background_scenario]
-            # build the instance based on the parsed definitions.
-            if self.debug > 0:
-                for scenario in sampled_scenarios_definitions:
-                    loc = carla.Location(scenario['trigger_position']['x'],
-                                         scenario['trigger_position']['y'],
-                                         scenario['trigger_position']['z']) + carla.Location(z=2.0)
-                    self.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
-                    self.world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
-                                                 color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
-                    print(scenario)
+                list_scenarios = [self.master_scenario, self.background_scenario]
+                # build the instance based on the parsed definitions.
+                if self.debug > 0:
+                    for scenario in sampled_scenarios_definitions:
+                        loc = carla.Location(scenario['trigger_position']['x'],
+                                             scenario['trigger_position']['y'],
+                                             scenario['trigger_position']['z']) + carla.Location(z=2.0)
+                        self.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
+                        self.world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
+                                                     color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
+                        print(scenario)
 
-            list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
-                                                            route_description['town_name'])
+                list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
+                                                                route_description['town_name'])
 
-            # Tick once to start the scenarios.
-            if self.debug > 0:
-                print(" Running these scenarios  --- ", list_scenarios)
+                # Tick once to start the scenarios.
+                if self.debug > 0:
+                    print(" Running these scenarios  --- ", list_scenarios)
 
-            for scenario in list_scenarios:
-                scenario.scenario.scenario_tree.tick_once()
+                for scenario in list_scenarios:
+                    scenario.scenario.scenario_tree.tick_once()
 
-            # main loop!
-            self.run_route(list_scenarios, route_description['trajectory'])
+                # main loop!
+                self.run_route(list_scenarios, route_description['trajectory'])
 
-            # statistics recording
-            self.record_route_statistics(route_description['id'])
+                # statistics recording
+                self.record_route_statistics(route_description['id'])
 
-            # clean up
-            for scenario in list_scenarios:
-                del scenario
-            self.cleanup(ego=True)
-            self.agent_instance.destroy()
+                # clean up
+                for scenario in list_scenarios:
+                    del scenario
+                self.cleanup(ego=True)
+                self.agent_instance.destroy()
 
-            if self.debug > 0:
-                break
+                if self.debug > 0:
+                    break
 
         # final measurements from the challenge
         self.report_challenge_statistics(args.filename, args.show_to_participant)
@@ -907,6 +926,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--host', default='localhost',
                         help='IP of the host server (default: localhost)')
     PARSER.add_argument('--port', default='2000', help='TCP port to listen to (default: 2000)')
+    PARSER.add_argument('--repetitions', type=int, help='Number of repetitions per route', default=3)
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
     PARSER.add_argument('--debug', type=int, help='Run with debug output', default=0)
