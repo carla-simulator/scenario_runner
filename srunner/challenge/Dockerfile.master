@@ -33,6 +33,7 @@ RUN pip2 install psutil py_trees==0.8.3 shapely six && \
 
 WORKDIR /workspace
 COPY PythonAPI /workspace/CARLA/PythonAPI
+COPY HDMaps /workspace/CARLA/HDMaps
 ENV CARLA_ROOT /workspace/CARLA
 
 # installing CARLA eggs

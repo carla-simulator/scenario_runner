@@ -13,6 +13,7 @@ fi
 
 # copy required resources from the host
 cp -fr ${CARLA_ROOT}/PythonAPI  .
+cp -fr ${CARLA_ROOT}/HDMaps  .
 
 mkdir .tmp
 git clone -b carla_challenge --single-branch https://github.com/carla-simulator/scenario_runner.git .tmp
