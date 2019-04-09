@@ -28,6 +28,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 # We import the challenge evaluator here
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator
 
+
 def convert_transform_to_location(transform_vec):
 
     location_vec = []
@@ -36,7 +37,8 @@ def convert_transform_to_location(transform_vec):
 
     return location_vec
 
-def create_configuration_scenario( scenario_desc, scenario_type):
+
+def create_configuration_scenario(scenario_desc, scenario_type):
     waypoint = scenario_desc['transform']
     parser.convert_waypoint_float(waypoint)
 
@@ -93,7 +95,7 @@ def test_routes(args):
                                                                                          world_annotations)
     potential_scenarios_definitions = challenge.filter_scenarios(potential_scenarios_definitions,
                                                                  args.removed_scenarios)
-    print ( "WE HAVE This number of posibilities : ", len(potential_scenarios_definitions))
+    print ("WE HAVE This number of posibilities : ", len(potential_scenarios_definitions))
 
     # Sample the scenarios to be used for this route instance.
     sampled_scenarios_definitions = challenge.scenario_sampling(potential_scenarios_definitions)
@@ -117,9 +119,8 @@ def test_routes(args):
 
     # build the master scenario based on the route and the target.
     challenge.master_scenario = challenge.build_master_scenario(route_description['trajectory'],
-                                                      route_description['town_name'])
+                                                                route_description['town_name'])
     list_scenarios = [challenge.master_scenario]
-
 
     if args.background:
         background_scenario = challenge.build_background_scenario(route_description['town_name'])
@@ -136,7 +137,7 @@ def test_routes(args):
                                  scenario['trigger_position']['z']) + carla.Location(z=2.0)
             challenge.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
             challenge.world.debug.draw_string(loc, scenario['name'], draw_shadow=False,
-                                         color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
+                                              color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
 
     # Tick once to start the scenarios.
     print(" Running these scenarios  --- ", list_scenarios)
@@ -153,8 +154,6 @@ def test_routes(args):
         del scenario
     challenge.cleanup(ego=True)
     challenge.agent_instance.destroy()
-
-
 
 
 if __name__ == '__main__':
@@ -185,7 +184,6 @@ if __name__ == '__main__':
 
     PARSER.add_argument("-id", "--route_id", type=int, default=0, help="the id of the route you want to test")
     ARGUMENTS = PARSER.parse_args()
-
 
     CARLA_ROOT = os.environ.get('CARLA_ROOT')
     ROOT_SCENARIO_RUNNER = os.environ.get('ROOT_SCENARIO_RUNNER')

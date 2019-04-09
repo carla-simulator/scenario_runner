@@ -21,6 +21,7 @@
 * Added various helper methods to allow generic scenario execution
 * Added method to calculate distance along a route
 * Updated folder structure and naming convention in lowercase
+* In challenge mode spawn exception are caught and the corresponding scenario is removed
 * Reworked scenario execution
     - Every scenario has to have a configuration provided as XML file.
       Currently there is one XML file for each scenario class

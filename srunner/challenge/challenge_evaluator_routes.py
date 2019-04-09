@@ -132,6 +132,7 @@ def convert_transform_to_location(transform_vec):
 
 Z_DISTANCE_AVOID_COLLISION = 0.5  # z vallue to add in oder to avoid spawning vehicles to close to the ground
 
+
 def find_weather_presets():
     rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
     name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
@@ -214,7 +215,6 @@ class ChallengeEvaluator(object):
         elapsed_seconds = (current_time - self.start_wall_time).seconds
 
         return elapsed_seconds < self.challenge_time_available
-
 
     def cleanup(self, ego=False):
         """
@@ -478,7 +478,14 @@ class ChallengeEvaluator(object):
             scenario_configuration.trigger_point = egoactor_trigger_position
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
-            scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout)
+            try:
+                scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout)
+            except Exception as e:
+                if self.debug > 0:
+                    raise e
+                else:
+                    print("Skipping scenario '{}' due to setup error: {}".format(definition['name'], e))
+                    continue
             # registering the used actors on the data provider so they can be updated.
 
             CarlaDataProvider.register_actors(scenario_instance.other_actors)
@@ -488,7 +495,7 @@ class ChallengeEvaluator(object):
         return scenario_instance_vec
 
     def estimate_route_timeout(self, route):
-        route_length = 0.0 # in meters
+        route_length = 0.0  # in meters
 
         prev_point = route[0][0]
         for current_point, _ in route[1:]:
@@ -497,7 +504,6 @@ class ChallengeEvaluator(object):
             prev_point = current_point
 
         return int(self.SECONDS_GIVEN_PER_METERS * route_length)
-
 
     def route_is_running(self):
         """
@@ -525,7 +531,6 @@ class ChallengeEvaluator(object):
                     for actor in self.world.get_actors():
                         if 'vehicle' in actor.type_id or 'walker' in actor.type_id:
                             print(actor.get_transform())
-
 
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
@@ -747,7 +752,6 @@ class ChallengeEvaluator(object):
         profile = self.weather_profiles[index % len(self.weather_profiles)]
         self.world.set_weather(profile[0])
 
-
     def load_world(self, client, town_name):
         # A new world can only be loaded in async mode
         if self.world is not None:
@@ -839,8 +843,8 @@ class ChallengeEvaluator(object):
             for repetition in range(args.repetitions):
             # check if we have enough wall time to run this specific route
                 if not self.within_available_time():
-                    error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx+1,
-                        len(route_descriptions_list))
+                    error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx + 1,
+                                                                                                       len(route_descriptions_list))
                     self.report_fatal_error(args.filename, args.show_to_participant, error_message)
                     return
 
