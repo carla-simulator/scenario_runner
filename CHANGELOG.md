@@ -1,4 +1,6 @@
 ## Latest changes
+
+* Added wall clock timeout for the CARLA challenge
 * Added background scenario to generate dynamic traffic using autopilot
 * Updated compatibility with Python 2.7 for the challenge evaluator
 * Updated WaypointFollower behavior
