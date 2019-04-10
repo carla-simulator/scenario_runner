@@ -1150,21 +1150,24 @@ class ActorTransformSetter(AtomicBehavior):
         super(ActorTransformSetter, self).__init__(name)
         self._actor = actor
         self._transform = transform
+        self._physics = physics
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self.name = name
-        self.physics = physics
 
     def update(self):
         """
         Transform actor
         """
         new_status = py_trees.common.Status.RUNNING
-        self._actor.set_velocity(carla.Vector3D(0, 0, 0))
-        self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
-        self._actor.set_transform(self._transform)
-        if self.physics:
-            self._actor.set_simulate_physics(enabled=True)
-        new_status = py_trees.common.Status.SUCCESS
+        if self._actor.is_alive:
+            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_transform(self._transform)
+            if self._physics:
+                self._actor.set_simulate_physics(enabled=True)
+            new_status = py_trees.common.Status.SUCCESS
+        else:
+            # For some reason the actor is gone...
+            new_status = py_trees.common.Status.FAILURE
         return new_status
 
 
