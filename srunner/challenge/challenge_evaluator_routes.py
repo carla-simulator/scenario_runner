@@ -567,7 +567,6 @@ class ChallengeEvaluator(object):
                     # Remove the scenario when termination is clear --> not INVALID, not RUNNING
                 if (list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
                         list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.INVALID):
-                    print("Removing {}".format(list_scenarios[i].scenario.scenario_tree.name))
                     list_scenarios[i].remove_all_actors()
                     list_scenarios[i] = None
             list_scenarios[:] = [scenario for scenario in list_scenarios if scenario]
