@@ -212,7 +212,6 @@ class VehicleTurningLeft(BasicScenario):
         self._num_lane_changes = 0
         # Timeout of scenario in seconds
         self.timeout = timeout
-        print("TRIGGER ", config.trigger_point.location)
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
                                                  config,
