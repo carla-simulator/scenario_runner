@@ -196,8 +196,6 @@ class CallBack(object):
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = copy.deepcopy(array)
         array = np.reshape(array, (image.height, image.width, 4))
-        array = array[:, :, :3]
-        array = array[:, :, ::-1]
         self._data_provider.update_sensor(tag, array, image.frame_number)
 
     def _parse_lidar_cb(self, lidar_data, tag):
