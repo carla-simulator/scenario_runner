@@ -209,7 +209,7 @@ class CallBack(object):
     def _parse_gnss_cb(self, gnss_data, tag):
         array = np.array([gnss_data.latitude,
                           gnss_data.longitude,
-                          gnss_data.altitude], dtype=np.float32)
+                          gnss_data.altitude], dtype=np.float64)
         self._data_provider.update_sensor(tag, array, gnss_data.frame_number)
 
     # The pseudo sensors already come properly parsed, so we can basically use a single function
