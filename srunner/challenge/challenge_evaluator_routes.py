@@ -354,7 +354,7 @@ class ChallengeEvaluator(object):
                                                      roll=sensor_spec['roll'],
                                                      yaw=sensor_spec['yaw'])
                 elif sensor_spec['type'].startswith('sensor.lidar'):
-                    bp.set_attribute('range', '200')
+                    bp.set_attribute('range', '5000')
                     bp.set_attribute('rotation_frequency', '10')
                     bp.set_attribute('channels', '32')
                     bp.set_attribute('upper_fov', '15')
