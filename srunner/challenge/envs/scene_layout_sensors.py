@@ -56,6 +56,10 @@ class SceneLayoutReader(object):
         # Tell that this function receives what the producer does.
         self._callback = callback
 
+    def stop(self):
+        # Nothing to stop here.
+        pass
+
     def destroy(self):
         # Nothing to destroy here.
         pass
@@ -110,6 +114,9 @@ class ObjectFinder(object):
     def listen(self, callback):
         # Tell that this function receives what the producer does.
         self._callback = callback
+
+    def stop(self):
+        self._run_ps = False
 
     def destroy(self):
         self._run_ps = False
