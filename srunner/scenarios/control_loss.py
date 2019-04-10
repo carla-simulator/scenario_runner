@@ -81,7 +81,7 @@ class ControlLoss(BasicScenario):
         third_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[2])
 
         self.loc_list.extend([first_loc, second_loc, third_loc])
-        self._dist_prop = [x-2 for x in self._distance]
+        self._dist_prop = [x - 2 for x in self._distance]
 
         self.first_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[0])
         self.sec_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[1])
@@ -94,8 +94,8 @@ class ControlLoss(BasicScenario):
                                                               self.first_loc_prev.y,
                                                               self.first_loc_prev.z))
         self.sec_transform = carla.Transform(carla.Location(self.sec_loc_prev.x,
-                                                               self.sec_loc_prev.y,
-                                                               self.sec_loc_prev.z))
+                                                            self.sec_loc_prev.y,
+                                                            self.sec_loc_prev.z))
         self.third_transform = carla.Transform(carla.Location(self.third_loc_prev.x,
                                                               self.third_loc_prev.y,
                                                               self.third_loc_prev.z))
@@ -126,9 +126,9 @@ class ControlLoss(BasicScenario):
         """
         # start condition
         start_end_parallel = py_trees.composites.Parallel("Jitter",
-                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
-        for i in range(self._no_of_jitter):
+        for _ in range(self._no_of_jitter):
 
             # change the current noise to be applied
             turn = ChangeNoiseParameters(self._current_steer_noise, self._current_throttle_noise,
@@ -188,7 +188,6 @@ class ControlLoss(BasicScenario):
         control.throttle += self._current_throttle_noise[0]
 
         return control
-
 
     def __del__(self):
         """

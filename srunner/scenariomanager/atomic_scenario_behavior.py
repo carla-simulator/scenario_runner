@@ -13,14 +13,17 @@ etc.
 The atomic behaviors are implemented with py_trees.
 """
 
-import carla
-import math
-import numpy as np
+from __future__ import print_function
+
 import random
+
+import numpy as np
 import py_trees
+from py_trees.blackboard import Blackboard
+
+import carla
 from agents.navigation.basic_agent import *
 from agents.navigation.roaming_agent import *
-from py_trees.blackboard import Blackboard
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
@@ -424,9 +427,9 @@ class InTriggerDistanceToLocationAlongRoute(AtomicBehavior):
 
             actor_distance, _ = get_distance_along_route(self._route, current_location)
 
-            if (self._location_distance < actor_distance + self._distance and \
+            if (self._location_distance < actor_distance + self._distance and
                 actor_distance < self._location_distance) or \
-                self._location_distance < 1.0:
+                    self._location_distance < 1.0:
                 new_status = py_trees.common.Status.SUCCESS
 
         return new_status
@@ -792,7 +795,6 @@ class AddNoiseToVehicle(AtomicBehavior):
         return new_status
 
 
-
 class ChangeNoiseParameters(AtomicBehavior):
 
     """
@@ -801,7 +803,7 @@ class ChangeNoiseParameters(AtomicBehavior):
     """
 
     def __init__(self, new_steer_noise, new_throttle_noise,
-                 noise_mean , noise_std, dynamic_mean_for_steer, dynamic_mean_for_throttle, name="ChangeJittering"):
+                 noise_mean, noise_std, dynamic_mean_for_steer, dynamic_mean_for_throttle, name="ChangeJittering"):
         """
         Setup actor , maximum steer value and throttle value
         """
@@ -827,7 +829,6 @@ class ChangeNoiseParameters(AtomicBehavior):
         new_status = py_trees.common.Status.SUCCESS
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
-
 
 
 class BasicAgentBehavior(AtomicBehavior):
@@ -907,12 +908,12 @@ class TrafficJamChecker(AtomicBehavior):
         # prepare a table to check for stalled vehicles during the execution of the scenario
         self.table_blocked_actors = {}
         current_game_time = GameTime.get_time()
-        for id, actor in CarlaActorPool.get_actors():
+        for actor_id, actor in CarlaActorPool.get_actors():
             if actor.attributes['role_name'] == 'autopilot':
                 actor.set_autopilot(True)
-                self.table_blocked_actors[id] = {'location': actor.get_location(),
-                                                 'time': current_game_time
-                                                 }
+                self.table_blocked_actors[actor_id] = {'location': actor.get_location(),
+                                                       'time': current_game_time
+                                                       }
 
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -926,51 +927,47 @@ class TrafficJamChecker(AtomicBehavior):
 
         current_game_time = GameTime.get_time()
 
-        items = list(CarlaActorPool._carla_actor_pool.items())
         list_actors_to_destroy = []
-        for id, actor in CarlaActorPool.get_actors():
+        for actor_id, actor in CarlaActorPool.get_actors():
             if actor.attributes['role_name'] == 'autopilot':
-                block_info = self.table_blocked_actors[id]
+                block_info = self.table_blocked_actors[actor_id]
                 current_location = actor.get_location()
                 distance = current_location.distance(block_info['location'])
 
                 # if vehicle is moving we reset the current time
                 if distance >= self.MINIMUM_DISTANCE:
-                    self.table_blocked_actors[id]['location'] = current_location
-                    self.table_blocked_actors[id]['time'] = current_game_time
+                    self.table_blocked_actors[actor_id]['location'] = current_location
+                    self.table_blocked_actors[actor_id]['time'] = current_game_time
 
                 # if vehicle has been static for a long time we get rid of it
-                if (current_game_time - self.table_blocked_actors[id]['time']) > self.HARD_NUMBER_BLOCKS:
-                        list_actors_to_destroy.append(id)
+                if (current_game_time - self.table_blocked_actors[actor_id]['time']) > self.HARD_NUMBER_BLOCKS:
+                    list_actors_to_destroy.append(actor_id)
 
+                    if self.debug:
+                        self.world.debug.draw_point(current_location,
+                                                    size=1.3,
+                                                    color=carla.Color(255, 0, 0),
+                                                    life_time=5)
+
+                # if the vehicle has been static for a short period of time...
+                elif (current_game_time - self.table_blocked_actors[actor_id]['time']) > self.SOFT_NUMBER_BLOCKS:
+                    # check if this vehicle is at an intersection
+                    current_waypoint = self.map.get_waypoint(current_location)
+
+                    # is it blocked at an intersection? Then we need to get rid of it!
+                    if current_waypoint.is_intersection:
                         if self.debug:
                             self.world.debug.draw_point(current_location,
                                                         size=1.3,
-                                                        color=carla.Color(255, 0, 0),
+                                                        color=carla.Color(0, 0, 255),
                                                         life_time=5)
+                        list_actors_to_destroy.append(actor_id)
 
-                # if the vehicle has been static for a short period of time...
-                elif (current_game_time - self.table_blocked_actors[id]['time']) > self.SOFT_NUMBER_BLOCKS:
-                        # check if this vehicle is at an intersection
-                        current_waypoint = self.map.get_waypoint(current_location)
-
-                        # is it blocked at an intersection? Then we need to get rid of it!
-                        if current_waypoint.is_intersection:
-                            if self.debug:
-                                self.world.debug.draw_point(current_location,
-                                                            size=1.3,
-                                                            color=carla.Color(0, 0, 255),
-                                                            life_time=5)
-                            list_actors_to_destroy.append(id)
-
-        for id in list_actors_to_destroy:
-            CarlaActorPool.remove_actor_by_id(id)
-            self.table_blocked_actors[id] = None
+        for actor_id in list_actors_to_destroy:
+            CarlaActorPool.remove_actor_by_id(actor_id)
+            self.table_blocked_actors[actor_id] = None
 
         return new_status
-
-    def terminate(self, new_status):
-        super(TrafficJamChecker, self).terminate(new_status)
 
 
 class Idle(AtomicBehavior):
@@ -1237,5 +1234,5 @@ class ActorSink(AtomicBehavior):
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
-        CarlaActorPool.remove_all_actors_in_surrounding(self._sink_location, self._threshold)
+        CarlaActorPool.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status

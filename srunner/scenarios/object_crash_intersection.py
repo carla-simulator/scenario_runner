@@ -9,8 +9,9 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encounters a cyclist ahead after taking a right or left turn.
 """
 
-import carla
 import py_trees
+
+import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
@@ -22,6 +23,26 @@ VEHICLE_TURNING_SCENARIOS = [
     "VehicleTurningRight",
     "VehicleTurningLeft"
 ]
+
+def get_opponent_transform(_start_distance, waypoint):
+    """
+    Calculate the transform of the adversary
+    """
+
+    offset = {"orientation": 270, "position": 90, "z": 0.5, "k": 0.7}
+    _wp = waypoint.next(_start_distance)[-1]
+    lane_width = _wp.lane_width
+    location = _wp.transform.location
+    orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
+    position_yaw = _wp.transform.rotation.yaw + offset["position"]
+    offset_location = carla.Location(
+        offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+        offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
+    location += offset_location
+    location.z += offset["z"]
+    transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
+
+    return transform
 
 
 class VehicleTurningRight(BasicScenario):
@@ -60,22 +81,6 @@ class VehicleTurningRight(BasicScenario):
                                                   criteria_enable=criteria_enable)
 
 
-    def _get_opponent_transform(self, _start_distance, waypoint):
-
-        offset = {"orientation": 270, "position": 90, "z": 0.5, "k": 0.7}
-        _wp = waypoint.next(_start_distance)[-1]
-        lane_width = _wp.lane_width
-        location = _wp.transform.location
-        orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
-        position_yaw = _wp.transform.rotation.yaw + offset["position"]
-        offset_location = carla.Location(
-            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
-            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
-        location += offset_location
-        location.z += offset["z"]
-        transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-
-        return transform
 
     def _initialize_actors(self, config):
         """
@@ -98,13 +103,13 @@ class VehicleTurningRight(BasicScenario):
 
         while True:
             try:
-                self._other_actor_transform = self._get_opponent_transform(_start_distance, waypoint)
+                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
 
                 break
-            except RuntimeError:  # TODO MAKE SPECIFIC EXCEPTION
+            except RuntimeError:
                 # In the case there is an object just move a little bit and retry
                 print (" Base transform is blocking objects ", self._other_actor_transform)
                 _start_distance += 0.5
@@ -116,8 +121,6 @@ class VehicleTurningRight(BasicScenario):
             self._other_actor_transform.rotation)
         first_vehicle.set_transform(actor_transform)
         self.other_actors.append(first_vehicle)
-
-
 
     def _create_behavior(self):
         """
@@ -218,25 +221,6 @@ class VehicleTurningLeft(BasicScenario):
                                                  debug_mode,
                                                  criteria_enable=criteria_enable)
 
-
-    def _get_opponent_transform(self, _start_distance, waypoint):
-
-        offset = {"orientation": 270, "position": 90, "z": 0.5, "k": 0.7}
-        _wp = waypoint.next(_start_distance)[-1]
-        lane_width = _wp.lane_width
-        location = _wp.transform.location
-        orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
-        position_yaw = _wp.transform.rotation.yaw + offset["position"]
-        offset_location = carla.Location(
-            offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
-            offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
-        location += offset_location
-        location.z += offset["z"]
-        transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-
-        return transform
-
-
     def _initialize_actors(self, config):
         """
         Custom initialization
@@ -258,13 +242,13 @@ class VehicleTurningLeft(BasicScenario):
 
         while True:
             try:
-                self._other_actor_transform = self._get_opponent_transform(_start_distance, waypoint)
+                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
 
                 break
-            except RuntimeError:  # TODO MAKE SPECIFIC EXCEPTION
+            except RuntimeError:
                 # In the case there is an object just move a little bit and retry
                 print(" Base transform is blocking objects ", self._other_actor_transform)
                 _start_distance += 0.5

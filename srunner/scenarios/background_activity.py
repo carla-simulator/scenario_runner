@@ -25,7 +25,7 @@ class BackgroundActivity(BasicScenario):
 
     category = "BackgroundActivity"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, timeout=35*60):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, timeout=35 * 60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -34,12 +34,12 @@ class BackgroundActivity(BasicScenario):
         self.timeout = timeout  # Timeout of scenario in seconds
 
         super(BackgroundActivity, self).__init__("BackgroundActivity",
-                                             ego_vehicle,
-                                             config,
-                                             world,
-                                             debug_mode,
-                                             terminate_on_failure=True,
-                                             criteria_enable=True)
+                                                 ego_vehicle,
+                                                 config,
+                                                 world,
+                                                 debug_mode,
+                                                 terminate_on_failure=True,
+                                                 criteria_enable=True)
 
     def _initialize_actors(self, config):
         for actor in config.other_actors:
@@ -52,8 +52,8 @@ class BackgroundActivity(BasicScenario):
             if new_actors is None:
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
-            for actor in new_actors:
-                self.other_actors.append(actor)
+            for _actor in new_actors:
+                self.other_actors.append(_actor)
 
     def _create_behavior(self):
         """

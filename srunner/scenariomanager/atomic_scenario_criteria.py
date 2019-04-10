@@ -296,7 +296,7 @@ class CollisionTest(Criterion):
         elif 'walker' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_PEDESTRIAN
 
-        collision_event = TrafficEvent(type=actor_type)
+        collision_event = TrafficEvent(event_type=actor_type)
         collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
         collision_event.set_message("Agent collided against object with type={} and id={}".format(
             event.other_actor.type_id, event.other_actor.id))
@@ -443,7 +443,7 @@ class OnSidewalkTest(Criterion):
             self._onsidewalk_active = False
         else:
             if not self._onsidewalk_active:
-                onsidewalk_event = TrafficEvent(type=TrafficEventType.ON_SIDEWALK_INFRACTION)
+                onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
                 onsidewalk_event.set_message('Agent invaded the sidewalk')
                 onsidewalk_event.set_dict({'x': current_location.x, 'y': current_location.y})
                 self.list_traffic_events.append(onsidewalk_event)
@@ -454,12 +454,6 @@ class OnSidewalkTest(Criterion):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
-
-    def terminate(self, new_status):
-        """
-        Cleanup sensor
-        """
-        super(OnSidewalkTest, self).terminate(new_status)
 
 
 class WrongLaneTest(Criterion):
@@ -514,6 +508,8 @@ class WrongLaneTest(Criterion):
         """
         Callback to update lane invasion count
         """
+        # pylint: disable=protected-access
+
         self = weak_self()
         if not self:
             return
@@ -543,7 +539,7 @@ class WrongLaneTest(Criterion):
                 # direction?
                 self._infractions += 1
 
-                wrong_way_event = TrafficEvent(type=TrafficEventType.WRONG_WAY_INFRACTION)
+                wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
                 wrong_way_event.set_message('Agent invaded a lane in opposite direction: road_id={}, lane_id={}'.format(
                     current_road_id, current_lane_id))
                 wrong_way_event.set_dict({'road_id': current_road_id, 'lane_id': current_lane_id})
@@ -566,8 +562,8 @@ class InRadiusRegionTest(Criterion):
         super(InRadiusRegionTest, self).__init__(name, actor, 0)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
-        self._x = x
-        self._y = y
+        self._x = x     # pylint: disable=invalid-name
+        self._y = y     # pylint: disable=invalid-name
         self._radius = radius
 
     def update(self):
@@ -583,7 +579,7 @@ class InRadiusRegionTest(Criterion):
         if self.test_status != "SUCCESS":
             in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
             if in_radius:
-                route_completion_event = TrafficEvent(type=TrafficEventType.ROUTE_COMPLETED)
+                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED)
                 route_completion_event.set_message("Destination was successfully reached")
                 self.list_traffic_events.append(route_completion_event)
                 self.test_status = "SUCCESS"
@@ -642,7 +638,7 @@ class InRouteTest(Criterion):
                 self._counter_off_route += 1
 
             if self._counter_off_route > self._offroad_max:
-                route_deviation_event = TrafficEvent(type=TrafficEventType.ROUTE_DEVIATION)
+                route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION)
                 route_deviation_event.set_message("Agent deviated from the route at (x={}, y={}, z={})".format(
                     location.x, location.y, location.z))
                 route_deviation_event.set_dict({'x': location.x, 'y': location.y, 'z': location.z})
@@ -673,7 +669,7 @@ class RouteCompletionTest(Criterion):
         self._current_index = 0
         self._route_length = len(self._route)
         self._waypoints, _ = zip(*self._route)
-        self._traffic_event = TrafficEvent(type=TrafficEventType.ROUTE_COMPLETION)
+        self._traffic_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETION)
         self.list_traffic_events.append(self._traffic_event)
         self._percentage_route_completed = 0.0
 
@@ -717,6 +713,7 @@ class RunningRedLightTest(Criterion):
 
     def __init__(self, actor, name="RunningRedLightTest", terminate_on_failure=False):
         """
+        Init
         """
         super(RunningRedLightTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -727,13 +724,16 @@ class RunningRedLightTest(Criterion):
         self._in_red_light = False
 
         all_actors = self._world.get_actors()
-        for actor in all_actors:
-            if 'traffic_light' in actor.type_id:
-                self._list_traffic_lights.append(actor)
+        for _actor in all_actors:
+            if 'traffic_light' in _actor.type_id:
+                self._list_traffic_lights.append(_actor)
 
     @staticmethod
-    def length(v):
-        return math.sqrt(v.x**2 + v.y**2 + v.z**2)
+    def length(vector):
+        """
+        @return length of a given vector
+        """
+        return math.sqrt(vector.x**2 + vector.y**2 + vector.z**2)
 
     def update(self):
         """
@@ -757,14 +757,14 @@ class RunningRedLightTest(Criterion):
                 tl_t = self._target_traffic_light.get_transform()
                 transformed_tv = tl_t.transform(self._target_traffic_light.trigger_volume.location)
                 distance = carla.Location(transformed_tv).distance(location)
-                s = self.length(self._target_traffic_light.trigger_volume.extent) + self.length(
+                extent = self.length(self._target_traffic_light.trigger_volume.extent) + self.length(
                     self._actor.bounding_box.extent)
 
-                if distance > s and self._target_traffic_light.state == carla.TrafficLightState.Red:
+                if distance > extent and self._target_traffic_light.state == carla.TrafficLightState.Red:
                     # you are running a red light
                     self.test_status = "FAILURE"
 
-                    red_light_event = TrafficEvent(type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
+                    red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
                     red_light_event.set_message("Agent ran a red light {} at (x={}, y={}, x={})".format(
                         self._target_traffic_light.id,
                         location.x,
@@ -785,8 +785,8 @@ class RunningRedLightTest(Criterion):
 
                 transformed_tv = tl_t.transform(traffic_light.trigger_volume.location)
                 distance = carla.Location(transformed_tv).distance(location)
-                s = self.length(traffic_light.trigger_volume.extent) + self.length(self._actor.bounding_box.extent)
-                if distance <= s:
+                extent = self.length(traffic_light.trigger_volume.extent) + self.length(self._actor.bounding_box.extent)
+                if distance <= extent:
                     # this traffic light is affecting the vehicle
                     if traffic_light.state == carla.TrafficLightState.Red:
                         self._target_traffic_light = traffic_light
@@ -823,24 +823,25 @@ class RunningStopTest(Criterion):
         self._stop_completed = False
 
         all_actors = self._world.get_actors()
-        for actor in all_actors:
-            if 'traffic.stop' in actor.type_id:
-                self._list_stop_signs.append(actor)
+        for _actor in all_actors:
+            if 'traffic.stop' in _actor.type_id:
+                self._list_stop_signs.append(_actor)
 
     @staticmethod
-    def point_inside_boundingbox(p, bb_center, bb_extent):
+    def point_inside_boundingbox(point, bb_center, bb_extent):
         """
         X
-        :param p:
+        :param point:
         :param bb_center:
         :param bb_extent:
         :return:
         """
 
+        # pylint: disable=invalid-name
         A = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y - bb_extent.y)
         B = carla.Vector2D(bb_center.x + bb_extent.x, bb_center.y - bb_extent.y)
         D = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y + bb_extent.y)
-        M = carla.Vector2D(p.x, p.y)
+        M = carla.Vector2D(point.x, point.y)
 
         AB = B - A
         AD = D - A
@@ -853,6 +854,9 @@ class RunningStopTest(Criterion):
         return am_ab > 0 and am_ab < ab_ab and am_ad > 0 and am_ad < ad_ad
 
     def is_actor_affected_by_stop(self, actor, stop, multi_step=20):
+        """
+        Check if the given actor is affected by the stop
+        """
         affected = False
         # first we run a fast coarse test
         current_location = actor.get_location()
@@ -860,14 +864,14 @@ class RunningStopTest(Criterion):
         if stop_location.distance(current_location) > self.PROXIMITY_THRESHOLD:
             return affected
 
-        #print("Affected by stop!")
+        # print("Affected by stop!")
         stop_t = stop.get_transform()
         transformed_tv = stop_t.transform(stop.trigger_volume.location)
 
         # slower and accurate test based on waypoint's horizon and geometric test
         list_locations = [current_location]
         waypoint = self._map.get_waypoint(current_location)
-        for i in range(multi_step):
+        for _ in range(multi_step):
             if waypoint:
                 waypoint = waypoint.next(self.WAYPOINT_STEP)[0]
                 if not waypoint:
@@ -909,9 +913,9 @@ class RunningStopTest(Criterion):
                 # is the vehicle out of the influence of this stop sign now?
                 if not self._stop_completed:
                     # did we stop?
-                    self.test_status == "FAILURE"
+                    self.test_status = "FAILURE"
                     stop_location = self._target_stop_sign.get_transform().location
-                    running_stop_event = TrafficEvent(type=TrafficEventType.STOP_INFRACTION)
+                    running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION)
                     running_stop_event.set_message("Agent ran a stop {} at (x={}, y={}, x={})".format(
                         self._target_stop_sign.id,
                         stop_location.x,

@@ -10,6 +10,8 @@ This module provides all frequently used data from CARLA via
 local buffers to avoid blocking calls to CARLA
 """
 
+from __future__ import print_function
+
 import math
 import random
 from six import iteritems
@@ -99,8 +101,8 @@ class CarlaDataProvider(object):
             # We are initentionally not throwing here
             # This may cause exception loops in py_trees
             return 0.0
-        else:
-            return CarlaDataProvider._actor_velocity_map[actor]
+
+        return CarlaDataProvider._actor_velocity_map[actor]
 
     @staticmethod
     def get_location(actor):
@@ -111,8 +113,8 @@ class CarlaDataProvider(object):
             # We are initentionally not throwing here
             # This may cause exception loops in py_trees
             return None
-        else:
-            return CarlaDataProvider._actor_location_map[actor]
+
+        return CarlaDataProvider._actor_location_map[actor]
 
     @staticmethod
     def prepare_map():
@@ -134,14 +136,23 @@ class CarlaDataProvider(object):
 
     @staticmethod
     def get_world():
+        """
+        Return world
+        """
         return CarlaDataProvider._world
 
     @staticmethod
     def is_sync_mode():
+        """
+        @return true if syncronuous mode is used
+        """
         return CarlaDataProvider._sync_flag
 
     @staticmethod
     def set_world(world):
+        """
+        Set the world and world settings
+        """
         CarlaDataProvider._world = world
         settings = world.get_settings()
         CarlaDataProvider._sync_flag = settings.synchronous_mode
@@ -203,10 +214,17 @@ class CarlaDataProvider(object):
 
     @staticmethod
     def set_ego_vehicle_route(route):
+        """
+        Set the route of the ego vehicle
+        """
         CarlaDataProvider._ego_vehicle_route = route
 
     @staticmethod
     def get_ego_vehicle_route():
+        """
+        returns the currently set route of the ego vehicle
+        Note: Can be None
+        """
         return CarlaDataProvider._ego_vehicle_route
 
     @staticmethod
@@ -242,6 +260,9 @@ class CarlaActorPool(object):
 
     @staticmethod
     def set_client(client):
+        """
+        Set the CARLA client
+        """
         CarlaActorPool._client = client
 
     @staticmethod
@@ -254,10 +275,18 @@ class CarlaActorPool(object):
 
     @staticmethod
     def get_actors():
+        """
+        Return list of actors and their ids
+
+        Note: iteritems from six is used to allow compatibility with Python 2 and 3
+        """
         return iteritems(CarlaActorPool._carla_actor_pool)
 
     @staticmethod
     def generate_spawn_points():
+        """
+        Generate spawn points for the current map
+        """
         spawn_points = list(CarlaDataProvider.get_map(CarlaActorPool._world).get_spawn_points())
         random.shuffle(spawn_points)
         CarlaActorPool._spawn_points = spawn_points
@@ -310,14 +339,14 @@ class CarlaActorPool(object):
         Function to setup a batch of actors with the most relevant parameters,
         incl. spawn point and vehicle model.
         """
-        SpawnActor = carla.command.SpawnActor
-        SetAutopilot = carla.command.SetAutopilot
-        FutureActor = carla.command.FutureActor
+        SpawnActor = carla.command.SpawnActor       # pylint: disable=invalid-name
+        SetAutopilot = carla.command.SetAutopilot   # pylint: disable=invalid-name
+        FutureActor = carla.command.FutureActor     # pylint: disable=invalid-name
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
 
         batch = []
-        for i in range(amount):
+        for _ in range(amount):
             # Get vehicle by model
             blueprint = random.choice(blueprint_library.filter(model))
             if hero:
@@ -345,14 +374,12 @@ class CarlaActorPool(object):
         CarlaActorPool._world.tick()
         CarlaActorPool._world.wait_for_tick()
 
-
         actor_list = []
         actor_ids = []
         if responses:
             for response in responses:
                 if not response.error:
                     actor_ids.append(response.actor_id)
-
 
         carla_actors = CarlaActorPool._world.get_actors(actor_ids)
         for actor in carla_actors:
@@ -368,12 +395,12 @@ class CarlaActorPool(object):
         """
         actors = CarlaActorPool.setup_batch_actors(model, amount, spawn_point, hero, autopilot, random_location)
 
-        if actors:
-            for actor in actors:
-                CarlaActorPool._carla_actor_pool[actor.id] = actor
-            return actors
-        else:
+        if actors is None:
             return None
+
+        for actor in actors:
+            CarlaActorPool._carla_actor_pool[actor.id] = actor
+        return actors
 
     @staticmethod
     def request_new_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
@@ -383,11 +410,11 @@ class CarlaActorPool(object):
         """
         actor = CarlaActorPool.setup_actor(model, spawn_point, hero, autopilot, random_location)
 
-        if actor is not None:
-            CarlaActorPool._carla_actor_pool[actor.id] = actor
-            return actor
-        else:
+        if actor is None:
             return None
+
+        CarlaActorPool._carla_actor_pool[actor.id] = actor
+        return actor
 
     @staticmethod
     def get_actor_by_id(actor_id):
@@ -397,9 +424,9 @@ class CarlaActorPool(object):
         """
         if actor_id in CarlaActorPool._carla_actor_pool:
             return CarlaActorPool._carla_actor_pool[actor_id]
-        else:
-            print("Non-existing actor id {}".format(actor_id))
-            return None
+
+        print("Non-existing actor id {}".format(actor_id))
+        return None
 
     @staticmethod
     def remove_actor_by_id(actor_id):
@@ -429,7 +456,7 @@ class CarlaActorPool(object):
         CarlaActorPool._spawn_index = 0
 
     @staticmethod
-    def remove_all_actors_in_surrounding(location, distance):
+    def remove_actors_in_surrounding(location, distance):
         """
         Remove all actors from the pool that are closer than distance to the
         provided location

@@ -14,13 +14,13 @@ from __future__ import print_function
 import sys
 import time
 import threading
+
 import py_trees
 
-import srunner
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
-from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
+from srunner.scenariomanager.traffic_events import TrafficEventType
 
 
 class Scenario(object):
@@ -111,6 +111,7 @@ class ScenarioManager(object):
         """
         self.scenario = None
         self.scenario_tree = None
+        self.scenario_class = None
         self.ego_vehicle = None
         self.other_actors = None
 
@@ -241,7 +242,7 @@ class ScenarioManager(object):
         result = "SUCCESS"
 
         if self.scenario.test_criteria is None:
-            return
+            return True
 
         if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
             if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
@@ -271,13 +272,13 @@ class ScenarioManager(object):
         This function is intended to be called from outside and provide
         statistics about the scenario (human-readable, for the CARLA challenge.)
         """
-        PENALTY_COLLISION_STATIC = 10
-        PENALTY_COLLISION_VEHICLE = 10
-        PENALTY_COLLISION_PEDESTRIAN = 30
-        PENALTY_TRAFFIC_LIGHT = 10
-        PENALTY_WRONG_WAY = 5
-        PENALTY_SIDEWALK_INVASION = 5
-        PENALTY_STOP = 7
+        PENALTY_COLLISION_STATIC = 10       # pylint: disable=invalid-name
+        PENALTY_COLLISION_VEHICLE = 10      # pylint: disable=invalid-name
+        PENALTY_COLLISION_PEDESTRIAN = 30   # pylint: disable=invalid-name
+        PENALTY_TRAFFIC_LIGHT = 10          # pylint: disable=invalid-name
+        PENALTY_WRONG_WAY = 5               # pylint: disable=invalid-name
+        PENALTY_SIDEWALK_INVASION = 5       # pylint: disable=invalid-name
+        PENALTY_STOP = 7                    # pylint: disable=invalid-name
 
         target_reached = False
         failure = False
