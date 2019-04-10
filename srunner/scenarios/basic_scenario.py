@@ -12,9 +12,9 @@ This module provide the basic class for all user-defined scenarios.
 from __future__ import print_function
 
 import py_trees
-import carla
 
-from srunner.scenariomanager.atomic_scenario_behavior import InTriggerDistanceToLocationAlongRoute, InTimeToArrivalToLocation
+from srunner.scenariomanager.atomic_scenario_behavior import InTriggerDistanceToLocationAlongRoute
+from srunner.scenariomanager.atomic_scenario_behavior import InTimeToArrivalToLocation
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import Scenario
 
@@ -25,13 +25,14 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
-    def __init__(self, name, ego_vehicle, config, world, debug_mode=False, terminate_on_failure=False, criteria_enable=False):
+    def __init__(self, name, ego_vehicle, config, world,
+                 debug_mode=False, terminate_on_failure=False, criteria_enable=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
         self.other_actors = []
-        if not self.timeout:
+        if not self.timeout:     # pylint: disable=access-member-before-definition
             self.timeout = 60    # If no timeout was provided, set it to 60 seconds
 
         self.category = None     # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
@@ -125,11 +126,13 @@ class BasicScenario(object):
             print("This scenario requires to use map {}".format(self._town))
             raise Exception("The CARLA server uses the wrong map!")
 
-    def change_control(self, control):
+    def change_control(self, control):  # pylint: disable=no-self-use
         """
         This is a function that changes the control based on the scenario determination
         :param control: a carla vehicle control
         :return: a control to be changed by the scenario.
+
+        Note: This method should be overriden by the user-defined scenario behavior
         """
         return control
 

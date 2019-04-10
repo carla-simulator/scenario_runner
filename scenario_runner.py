@@ -15,8 +15,8 @@ and finally triggers the scenario execution.
 
 from __future__ import print_function
 
-import argparse
 import traceback
+import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 

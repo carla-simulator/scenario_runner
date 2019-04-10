@@ -12,8 +12,8 @@ Provisional code to evaluate Autonomous Agents for the CARLA Autonomous Driving 
 """
 from __future__ import print_function
 import argparse
-import atexit
 from argparse import RawTextHelpFormatter
+import atexit
 import datetime
 import importlib
 import math
@@ -25,8 +25,9 @@ import re
 import signal
 import xml.etree.ElementTree as ET
 
-import carla
 import py_trees
+
+import carla
 
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
@@ -525,7 +526,7 @@ class ChallengeEvaluator(object):
         # indiciate that the scenario was running but terminated
         # Therefore, return true when status is INVALID or RUNNING, false otherwise
         if (self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING or
-            self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.INVALID):
+                self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.INVALID):
             return True
         else:
             return False
@@ -565,7 +566,7 @@ class ChallengeEvaluator(object):
                     # indiciate that the scenario was running but terminated
                     # Remove the scenario when termination is clear --> not INVALID, not RUNNING
                 if (scenario.scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
-                    scenario.scenario.scenario_tree.status != py_trees.common.Status.INVALID):
+                        scenario.scenario.scenario_tree.status != py_trees.common.Status.INVALID):
                     scenario.remove_all_actors()
                     scenario = None
             list_scenarios[:] = [scenario for scenario in list_scenarios if scenario]
@@ -713,7 +714,7 @@ class ChallengeEvaluator(object):
                               'score_penalty': score_penalty,
                               'result': result,
                               'help_text': return_message
-                             }
+                              }
 
         self.statistics_routes.append(current_statistics)
 

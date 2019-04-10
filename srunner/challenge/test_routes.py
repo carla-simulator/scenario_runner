@@ -28,7 +28,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator
 
 
-def create_configuration_scenario( scenario_desc, scenario_type):
+def create_configuration_scenario(scenario_desc, scenario_type):
     waypoint = scenario_desc['transform']
     parser.convert_waypoint_float(waypoint)
 
@@ -68,7 +68,6 @@ def test_routes(args):
     if args.debug_town in world_annotations.keys():
         list_scenarios_town = world_annotations[args.debug_town]
 
-
     scenarios_current_type = []
     for scenario in list_scenarios_town:
         if args.debug_scenario == scenario['scenario_type']:
@@ -93,7 +92,8 @@ def test_routes(args):
 
         # create agent
         challenge.agent_instance = getattr(challenge.module_agent, challenge.module_agent.__name__)(args.config)
-        correct_sensors, error_message = challenge.valid_sensors_configuration(challenge.agent_instance, challenge.track)
+        correct_sensors, error_message = challenge.valid_sensors_configuration(
+            challenge.agent_instance, challenge.track)
         if not correct_sensors:
             # the sensor configuration is illegal
             challenge.report_fatal_error(args.filename, args.show_to_participant, error_message)

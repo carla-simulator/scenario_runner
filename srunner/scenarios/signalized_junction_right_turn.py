@@ -4,17 +4,24 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
+"""
+Collection of traffic scenarios where the ego vehicle (hero)
+is making a right turn
+"""
+
+from __future__ import print_function
+
 import sys
 
-import carla
 import py_trees
+
+import carla
 from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
 from srunner.tools.scenario_helper import *
-
 
 TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS = [
     "SignalizedJunctionRightTurn"

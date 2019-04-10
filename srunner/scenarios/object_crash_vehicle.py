@@ -9,6 +9,7 @@ moving along the road and encountering a cyclist ahead.
 """
 
 import py_trees
+
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import TimeOut
@@ -133,7 +134,8 @@ class DynamicObjectCrossing(BasicScenario):
 
     timeout = 60
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True, adversary_type=False):
+    def __init__(self, world, ego_vehicle, config, randomize=False,
+                 debug_mode=False, criteria_enable=True, adversary_type=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -149,6 +151,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._walker_yaw = 0
         self._initialization_status = True
         self._num_lane_changes = 1
+        self.transform2 = None
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
@@ -157,8 +160,7 @@ class DynamicObjectCrossing(BasicScenario):
                                                     debug_mode,
                                                     criteria_enable=criteria_enable)
 
-
-    def _calculate_base_transform(self,_start_distance, waypoint):
+    def _calculate_base_transform(self, _start_distance, waypoint):
 
         lane_width = waypoint.lane_width
 
@@ -177,31 +179,26 @@ class DynamicObjectCrossing(BasicScenario):
         location.z += offset['z']
         return carla.Transform(location, carla.Rotation(yaw=orientation_yaw)), orientation_yaw
 
-
     def _spawn_adversary(self, transform, orientation_yaw):
 
         self._time_to_reach *= self._num_lane_changes
+        adversary = None
 
         if self._adversary_type is False:
-
             self._walker_yaw = orientation_yaw
             self._other_actor_target_velocity = 3 + (0.4 * self._num_lane_changes)
-
             walker = CarlaActorPool.request_new_actor('walker*', transform)
             walker.set_simulate_physics(enabled=False)
-            return walker
-
+            adversary = walker
         else:
-
             self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
-
             first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
             first_vehicle.set_simulate_physics(enabled=False)
-            return first_vehicle
+            adversary = first_vehicle
 
+        return adversary
 
     def _spawn_blocker(self, transform):
-
         """
         Spawn the blocker prop that blocks the vision from the egovehicle of the jaywalker
         :return:
@@ -285,14 +282,14 @@ class DynamicObjectCrossing(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         if self._initialization_status:
             lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
-            lane_width = lane_width+(1.25*lane_width * self._num_lane_changes)
+            lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
 
             # leaf nodes
             start_condition = InTimeToArrivalToVehicle(
                 self.other_actors[0], self.ego_vehicle, self._time_to_reach)
             actor_velocity = KeepVelocity(
                 self.other_actors[0], self._other_actor_target_velocity, self._walker_yaw)
-            actor_drive = DriveDistance(self.other_actors[0], 0.5*lane_width)
+            actor_drive = DriveDistance(self.other_actors[0], 0.5 * lane_width)
             actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
                                                           self._other_actor_target_velocity, self._walker_yaw)
             actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)

@@ -11,8 +11,9 @@ weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 """
 
+from six.moves.queue import Queue   # pylint: disable=relative-import
+
 import py_trees
-from six.moves.queue import Queue
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
@@ -31,7 +32,6 @@ class ManeuverOppositeDirection(BasicScenario):
     """
 
     category = "ManeuverOppositeDirection"
-
 
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
                  obstacle_type='barrier', timeout=120):
@@ -95,7 +95,6 @@ class ManeuverOppositeDirection(BasicScenario):
         first_actor = CarlaActorPool.request_new_actor(first_actor_model, first_actor_transform)
         first_actor.set_simulate_physics(True)
         second_actor = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
-
 
         self.other_actors.append(first_actor)
         self.other_actors.append(second_actor)

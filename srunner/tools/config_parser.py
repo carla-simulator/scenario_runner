@@ -30,6 +30,9 @@ class RouteConfiguration(object):
             self.data = None
 
     def parse_xml(self, node):
+        """
+        Parse route config XML
+        """
         self.data = []
 
         for waypoint in node.iter("waypoint"):
@@ -100,10 +103,10 @@ class ActorConfiguration(ActorConfigurationData):
         if 'amount' in node.keys():
             amount = int(node.attrib['amount'])
 
-        super(ActorConfiguration, self).__init__(
-            set_attrib(node, 'model', 'vehicle.*'),
-            carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw)),
-            autopilot, random_location, amount)
+        super(ActorConfiguration, self).__init__(set_attrib(node, 'model', 'vehicle.*'),
+                                                 carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z),
+                                                 carla.Rotation(yaw=yaw)),
+                                                 autopilot, random_location, amount)
 
 
 class ScenarioConfiguration(object):

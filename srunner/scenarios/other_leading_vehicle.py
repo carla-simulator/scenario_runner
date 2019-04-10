@@ -19,8 +19,9 @@ from __future__ import print_function
 
 import sys
 
-import carla
 import py_trees
+
+import carla
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *

@@ -10,15 +10,11 @@ Module to manipulate the routes, by making then more or less dense (Up to a cert
 It also contains functions to convert the CARLA world location do GPS coordinates.
 """
 
-
 import math
-import carla
+import xml.etree.ElementTree as ET
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
-import xml.etree.ElementTree as ET
-
-
 
 
 def _location_to_gps(lat_ref, lon_ref, location):
@@ -30,7 +26,7 @@ def _location_to_gps(lat_ref, lon_ref, location):
     :return: dictionary with lat, lon and height
     """
 
-    EARTH_RADIUS_EQUA = 6378137.0
+    EARTH_RADIUS_EQUA = 6378137.0   # pylint: disable=invalid-name
     scale = math.cos(lat_ref * math.pi / 180.0)
     mx = scale * lon_ref * math.pi * EARTH_RADIUS_EQUA / 180.0
     my = scale * EARTH_RADIUS_EQUA * math.log(math.tan((90.0 + lat_ref) * math.pi / 360.0))
@@ -86,7 +82,7 @@ def _get_latlon_ref(world):
     return lat_ref, lon_ref
 
 
-def interpolate_trajectory(world, waypoints_trajectory, hop_resolution = 1.0):
+def interpolate_trajectory(world, waypoints_trajectory, hop_resolution=1.0):
     """
         Given some raw keypoints interpolate a full dense trajectory to be used by the user.
     :param world: an reference to the CARLA world so we can use the planner
@@ -103,7 +99,7 @@ def interpolate_trajectory(world, waypoints_trajectory, hop_resolution = 1.0):
     for i in range(len(waypoints_trajectory) - 1):   # Goes until the one before the last.
 
         waypoint = waypoints_trajectory[i]
-        waypoint_next = waypoints_trajectory[i+1]
+        waypoint_next = waypoints_trajectory[i + 1]
         interpolated_trace = grp.trace_route(waypoint, waypoint_next)
         for wp_tuple in interpolated_trace:
             route.append((wp_tuple[0].transform, wp_tuple[1]))
@@ -113,4 +109,3 @@ def interpolate_trajectory(world, waypoints_trajectory, hop_resolution = 1.0):
     lat_ref, lon_ref = _get_latlon_ref(world)
 
     return location_route_to_gps(route, lat_ref, lon_ref), route
-

@@ -11,16 +11,16 @@ Summary of useful helper functions for scenarios
 
 from __future__ import print_function
 import math
-
-import numpy as np
 import shapely.geometry
 import shapely.affinity
+
+import numpy as np
+
 import carla
 from agents.tools.misc import vector
 from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.atomic_scenario_behavior import *
 
 
 def get_distance_along_route(route, target_location):
@@ -30,13 +30,13 @@ def get_distance_along_route(route, target_location):
     Note: If the location is not along the route, the route length will be returned
     """
 
-    map = CarlaDataProvider.get_map()
+    wmap = CarlaDataProvider.get_map()
     covered_distance = 0
     prev_position = None
     found = False
 
     # Don't use the input location, use the corresponding wp as location
-    target_location_from_wp = map.get_waypoint(target_location).transform.location
+    target_location_from_wp = wmap.get_waypoint(target_location).transform.location
 
     for position, _ in route:
 
@@ -58,7 +58,7 @@ def get_distance_along_route(route, target_location):
         if distance_squared < 400 and not distance_squared < interval_length_squared:
             # Check if a neighbor lane is closer to the route
             # Do this only in a close distance to correct route interval, otherwise the computation load is too high
-            starting_wp = CarlaDataProvider.get_map().get_waypoint(location)
+            starting_wp = wmap.get_waypoint(location)
             wp = starting_wp.get_left_lane()
             while wp is not None:
                 new_location = wp.transform.location
@@ -99,14 +99,15 @@ def get_distance_along_route(route, target_location):
             # An alternative is to compare orientations, however, this also does not work for
             # long route intervals
 
-            curr_wp = map.get_waypoint(position)
-            prev_wp = map.get_waypoint(prev_position)
-            wp = map.get_waypoint(location)
+            curr_wp = wmap.get_waypoint(position)
+            prev_wp = wmap.get_waypoint(prev_position)
+            wp = wmap.get_waypoint(location)
 
             if prev_wp and curr_wp and wp:
                 if wp.road_id == prev_wp.road_id or wp.road_id == curr_wp.road_id:
                     # Roads match, now compare the sign of the lane ids
-                    if np.sign(wp.lane_id) == np.sign(prev_wp.lane_id) or np.sign(wp.lane_id) == np.sign(curr_wp.lane_id):
+                    if (np.sign(wp.lane_id) == np.sign(prev_wp.lane_id) or
+                            np.sign(wp.lane_id) == np.sign(curr_wp.lane_id)):
                         # The location is within the current route interval
                         covered_distance += math.sqrt(distance_squared)
                         found = True
@@ -126,7 +127,7 @@ def get_crossing_point(actor):
     """
     wp_cross = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
 
-    while(not wp_cross.is_intersection):
+    while not wp_cross.is_intersection:
         wp_cross = wp_cross.next(2)[0]
 
     crossing = carla.Location(x=wp_cross.transform.location.x,
@@ -227,9 +228,7 @@ def generate_target_waypoint_list(waypoint, turn=0):
     Turn input: LEFT -> -1, RIGHT -> 1, STRAIGHT -> 0
     @returns a waypoint list from the starting point to the end point according to turn input
     """
-    sampling_radius = 1
     reached_junction = False
-    wp_list = []
     threshold = math.radians(0.1)
     plan = []
     while True:
@@ -397,17 +396,17 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
     return is_hazard
 
 
-class RotatedRectangle:
+class RotatedRectangle(object):
 
     """
     This class contains method to draw rectangle and find intersection point.
     """
 
-    def __init__(self, c_x, c_y, w, h, angle):
+    def __init__(self, c_x, c_y, width, height, angle):
         self.c_x = c_x
         self.c_y = c_y
-        self.w = w
-        self.h = h
+        self.w = width      # pylint: disable=invalid-name
+        self.h = height     # pylint: disable=invalid-name
         self.angle = angle
 
     def get_contour(self):
