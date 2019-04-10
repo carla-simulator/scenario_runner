@@ -22,7 +22,7 @@ class Arguments():
         self.port = 2000
         self.split = 'dev_track_1'
         self.route_visible = False
-        self.debug = 0
+        self.debug = 1
         self.background = True
 
 class TestScenarioBuilder(unittest.TestCase):
@@ -39,7 +39,7 @@ class TestScenarioBuilder(unittest.TestCase):
         client.set_timeout(25.0)
         challenge = ChallengeEvaluator(args)
 
-        filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios1_3_4_6.json')
+        filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios1_3_4.json')
         world_annotations = parser.parse_annotations_file(filename)
         # retrieve routes
         # Which type of file is expected ????
@@ -49,7 +49,8 @@ class TestScenarioBuilder(unittest.TestCase):
         # For each of the routes to be evaluated.
         for route_description in list_route_descriptions:
 
-            #if route_description['town_name'] == 'Town01' :#or route_description['town_name'] == 'Town03':
+            #if route_description['town_name'] == 'Town01' or route_description['town_name'] == 'Town03' or \
+            #        route_description['town_name'] == 'Town04':
             #    continue
             print (" TOWN  ", route_description['town_name'])
             challenge.world = client.load_world(route_description['town_name'])

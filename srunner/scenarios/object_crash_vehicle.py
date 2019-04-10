@@ -132,10 +132,8 @@ class DynamicObjectCrossing(BasicScenario):
 
     category = "ObjectCrossing"
 
-    timeout = 60
-
     def __init__(self, world, ego_vehicle, config, randomize=False,
-                 debug_mode=False, criteria_enable=True, adversary_type=False):
+                 debug_mode=False, criteria_enable=True, adversary_type=False, timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -152,6 +150,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._initialization_status = True
         self._num_lane_changes = 1
         self.transform2 = None
+        self.timeout = timeout
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,

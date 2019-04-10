@@ -431,7 +431,7 @@ class ChallengeEvaluator(object):
         blackboard = py_trees.blackboard.Blackboard()
         blackboard.set('master_scenario_command', 'scenarios_running')
 
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout)
+        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout=timeout)
 
     def build_background_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -457,7 +457,7 @@ class ChallengeEvaluator(object):
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
         scenario_configuration.other_actors = [actor_configuration_instance]
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout)
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -489,7 +489,8 @@ class ChallengeEvaluator(object):
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
             try:
-                scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout)
+                scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration,
+                                                  timeout=timeout)
             except Exception as e:
                 if self.debug > 0:
                     raise e
