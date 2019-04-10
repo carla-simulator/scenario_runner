@@ -561,14 +561,15 @@ class ChallengeEvaluator(object):
             self.timestamp = self.world.wait_for_tick()
 
             # check for scenario termination
-            for scenario in list_scenarios:
+            for i, _ in enumerate(list_scenarios):
                     # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
                     # indiciate that the scenario was running but terminated
                     # Remove the scenario when termination is clear --> not INVALID, not RUNNING
-                if (scenario.scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
-                        scenario.scenario.scenario_tree.status != py_trees.common.Status.INVALID):
-                    scenario.remove_all_actors()
-                    scenario = None
+                if (list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
+                        list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.INVALID):
+                    print("Removing {}".format(list_scenarios[i].scenario.scenario_tree.name))
+                    list_scenarios[i].remove_all_actors()
+                    list_scenarios[i] = None
             list_scenarios[:] = [scenario for scenario in list_scenarios if scenario]
 
         # Route finished set for the background scenario to also finish
