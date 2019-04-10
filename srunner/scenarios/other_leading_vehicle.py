@@ -61,7 +61,6 @@ class OtherLeadingVehicle(BasicScenario):
         self._second_actor_transform = None
         # Timeout of scenario in seconds
         self.timeout = timeout
-        self._traffic_light = None
 
         super(OtherLeadingVehicle, self).__init__("VehicleDeceleratingInMultiLaneSetUp",
                                                   ego_vehicle,
@@ -69,16 +68,6 @@ class OtherLeadingVehicle(BasicScenario):
                                                   world,
                                                   debug_mode,
                                                   criteria_enable=criteria_enable)
-        # traffic light
-        print(" other vehicle ", self.other_actors[0].get_transform())
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
-
-        if self._traffic_light is None:
-            print("No traffic light for the given location found")
-            sys.exit(-1)
-
-        self._traffic_light.set_state(carla.TrafficLightState.Green)
-        self._traffic_light.set_green_time(self.timeout)
 
     def _initialize_actors(self, config):
         """
