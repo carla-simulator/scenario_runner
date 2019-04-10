@@ -69,11 +69,12 @@ You can add --file option to save logs with respect to the challenge
 evaluation results.
 
 
-Finally, you can also add your own agent 
-into the system by following [this tutorial](agent_evaluation.md)
+## Implement your own Agent
+
+Finally, you can also add your own agent into the system by following [this tutorial](agent_evaluation.md)
 
 
+### ROS-based Agent
 
-
-
+Implement an Agent for a ROS-based stack is described [here](ros_agent.md).
 

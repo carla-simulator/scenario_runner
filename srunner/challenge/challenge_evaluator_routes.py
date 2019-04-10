@@ -12,8 +12,8 @@ Provisional code to evaluate Autonomous Agents for the CARLA Autonomous Driving 
 """
 from __future__ import print_function
 import argparse
-from argparse import RawTextHelpFormatter
 import atexit
+from argparse import RawTextHelpFormatter
 import datetime
 import importlib
 import math
@@ -25,9 +25,8 @@ import re
 import signal
 import xml.etree.ElementTree as ET
 
-import py_trees
-
 import carla
+import py_trees
 
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
@@ -247,7 +246,9 @@ class ChallengeEvaluator(object):
         """
         Cleanup and delete actors, ScenarioManager and CARLA world
         """
-
+        if self.agent_instance:
+            self.agent_instance.destroy()
+            self.agent_instance = None
         self.cleanup(True)
         if self.world is not None:
             settings = self.world.get_settings()
@@ -355,7 +356,7 @@ class ChallengeEvaluator(object):
                                                      yaw=sensor_spec['yaw'])
                 elif sensor_spec['type'].startswith('sensor.lidar'):
                     bp.set_attribute('range', '5000')
-                    bp.set_attribute('rotation_frequency', '10')
+                    bp.set_attribute('rotation_frequency', '20')
                     bp.set_attribute('channels', '32')
                     bp.set_attribute('upper_fov', '15')
                     bp.set_attribute('lower_fov', '-30')
@@ -431,7 +432,7 @@ class ChallengeEvaluator(object):
         blackboard = py_trees.blackboard.Blackboard()
         blackboard.set('master_scenario_command', 'scenarios_running')
 
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout=timeout)
+        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout)
 
     def build_background_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -457,7 +458,7 @@ class ChallengeEvaluator(object):
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
         scenario_configuration.other_actors = [actor_configuration_instance]
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -489,8 +490,7 @@ class ChallengeEvaluator(object):
             scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                         self.ego_vehicle.get_transform())
             try:
-                scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration,
-                                                  timeout=timeout)
+                scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration, timeout)
             except Exception as e:
                 if self.debug > 0:
                     raise e
@@ -527,7 +527,7 @@ class ChallengeEvaluator(object):
         # indiciate that the scenario was running but terminated
         # Therefore, return true when status is INVALID or RUNNING, false otherwise
         if (self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.RUNNING or
-                self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.INVALID):
+            self.master_scenario.scenario.scenario_tree.status == py_trees.common.Status.INVALID):
             return True
         else:
             return False
@@ -562,14 +562,14 @@ class ChallengeEvaluator(object):
             self.timestamp = self.world.wait_for_tick()
 
             # check for scenario termination
-            for i, _ in enumerate(list_scenarios):
+            for scenario in list_scenarios:
                     # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
                     # indiciate that the scenario was running but terminated
                     # Remove the scenario when termination is clear --> not INVALID, not RUNNING
-                if (list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
-                        list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.INVALID):
-                    list_scenarios[i].remove_all_actors()
-                    list_scenarios[i] = None
+                if (scenario.scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
+                    scenario.scenario.scenario_tree.status != py_trees.common.Status.INVALID):
+                    scenario.remove_all_actors()
+                    scenario = None
             list_scenarios[:] = [scenario for scenario in list_scenarios if scenario]
 
         # Route finished set for the background scenario to also finish
@@ -715,7 +715,7 @@ class ChallengeEvaluator(object):
                               'score_penalty': score_penalty,
                               'result': result,
                               'help_text': return_message
-                              }
+                             }
 
         self.statistics_routes.append(current_statistics)
 
@@ -892,10 +892,6 @@ class ChallengeEvaluator(object):
                 CarlaDataProvider.set_world(self.world)
                 # tick world so we can start.
                 self.world.tick()
-
-                # start recording logs for the current route
-                client.start_recorder('log_{}_track{}_route_{:0>4d}.log'.format(self.phase, self.track, route_idx))
-
                 # prepare route's trajectory
                 gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                     route_description['trajectory'])
@@ -959,7 +955,6 @@ class ChallengeEvaluator(object):
 
                 # statistics recording
                 self.record_route_statistics(route_description['id'])
-                client.stop_recorder()
 
                 # clean up
                 settings = self.world.get_settings()
