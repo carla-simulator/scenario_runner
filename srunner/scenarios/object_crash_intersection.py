@@ -30,7 +30,11 @@ def get_opponent_transform(_start_distance, waypoint):
     """
 
     offset = {"orientation": 270, "position": 90, "z": 0.5, "k": 0.7}
-    _wp = waypoint.next(_start_distance)[-1]
+    _wp = waypoint.next(_start_distance)
+    if _wp:
+        _wp = _wp[-1]
+    else:
+        raise RuntimeError("Cannot get next waypoint !")
     lane_width = _wp.lane_width
     location = _wp.transform.location
     orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
