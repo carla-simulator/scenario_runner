@@ -225,6 +225,7 @@ class DynamicObjectCrossing(BasicScenario):
 
         # cyclist transform
         _start_distance = 10
+        counter = 10
         # We start by getting and waypoint in the closest sidewalk.
         waypoint = self._reference_waypoint
         while True:
@@ -239,6 +240,10 @@ class DynamicObjectCrossing(BasicScenario):
                 break
 
         while True:  # We keep trying to spawn avoiding props
+            counter -=1
+            if counter == 0:
+                self._initialization_status =False
+                return
             try:
                 self.transform, orientation_yaw = self._calculate_base_transform(_start_distance, waypoint)
                 first_vehicle = self._spawn_adversary(self.transform, orientation_yaw)
