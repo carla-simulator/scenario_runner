@@ -344,7 +344,7 @@ class ChallengeEvaluator(object):
                 sensor = HDMapReader(vehicle, sensor_spec['reading_frequency'])
             # These are the sensors spawned on the carla world
             else:
-                bp = bp_library.find(sensor_spec['type'])
+                bp = bp_library.find(str(sensor_spec['type']))
                 if sensor_spec['type'].startswith('sensor.camera'):
                     bp.set_attribute('image_size_x', str(sensor_spec['width']))
                     bp.set_attribute('image_size_y', str(sensor_spec['height']))
