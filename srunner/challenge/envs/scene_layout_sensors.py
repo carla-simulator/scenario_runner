@@ -31,7 +31,7 @@ class SceneLayoutReader(object):
 
         # The static scene dictionary of all the entire scene layout.
 
-        self.static_scene_dict = scene_layout_parser.get_scene_layout(world, CarlaDataProvider.get_map())
+        self.static_scene_dict = scene_layout_parser.get_scene_layout(CarlaDataProvider.get_map())
         print("Map loaded. Number of waypoints:  ", len(self.static_scene_dict))
 
         # Callback attribute to set the function being used.

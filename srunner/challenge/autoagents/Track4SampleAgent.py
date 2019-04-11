@@ -168,6 +168,7 @@ class Track4SampleAgent(AutonomousAgent):
     THis is a human controlled agent with track 4 access for testing
     """
     def setup(self, path_to_conf_file):
+        self.track = Track.SCENE_LAYOUT
         self.agent_engaged = False
         self.current_control = carla.VehicleControl()
         self.current_control.steer = 0.0
