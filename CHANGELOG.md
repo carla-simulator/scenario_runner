@@ -1,5 +1,5 @@
 ## Latest changes
-
+* Added logging functionalities to challenge_evaluator_routes.py
 * Added wall clock timeout for the CARLA challenge
 * Added background scenario to generate dynamic traffic using autopilot
 * Updated compatibility with Python 2.7 for the challenge evaluator
