@@ -458,7 +458,8 @@ class ChallengeEvaluator(object):
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
         scenario_configuration.other_actors = [actor_configuration_instance]
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
+                                  criteria_enable=False, timeout=timeout)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -491,7 +492,7 @@ class ChallengeEvaluator(object):
                                                                         self.ego_vehicle.get_transform())
             try:
                 scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration,
-                                                  timeout=timeout)
+                                                  criteria_enable=False, timeout=timeout)
             except Exception as e:
                 if self.debug > 0:
                     raise e
@@ -569,6 +570,7 @@ class ChallengeEvaluator(object):
                     # Remove the scenario when termination is clear --> not INVALID, not RUNNING
                 if (self.list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.RUNNING and
                         self.list_scenarios[i].scenario.scenario_tree.status != py_trees.common.Status.INVALID):
+                    self.list_scenarios[i].scenario.terminate()
                     self.list_scenarios[i].remove_all_actors()
                     self.list_scenarios[i] = None
             self.list_scenarios[:] = [scenario for scenario in self.list_scenarios if scenario]
@@ -885,10 +887,10 @@ class ChallengeEvaluator(object):
                                                           route_description['town_name'],
                                                           timeout=route_timeout)
 
-        #self.background_scenario = self.build_background_scenario(route_description['town_name'],
-        #                                                          timeout=route_timeout)
+        self.background_scenario = self.build_background_scenario(route_description['town_name'],
+                                                                  timeout=route_timeout)
 
-        self.list_scenarios = [self.master_scenario] #, self.background_scenario]
+        self.list_scenarios = [self.master_scenario, self.background_scenario]
         # build the instance based on the parsed definitions.
         if self.debug > 0:
             for scenario in sampled_scenarios_definitions:
@@ -989,7 +991,7 @@ class ChallengeEvaluator(object):
 
                 for scenario in self.list_scenarios:
                     # Reset scenario status for proper cleanup
-                    scenario.scenario.scenario_tree.terminate(py_trees.common.Status.INVALID)
+                    scenario.scenario.terminate()
                     # Do not call del here! Directly enforce the actor removal
                     scenario.remove_all_actors()
                     scenario = None
