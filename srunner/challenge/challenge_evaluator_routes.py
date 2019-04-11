@@ -344,7 +344,7 @@ class ChallengeEvaluator(object):
                 sensor = HDMapReader(vehicle, sensor_spec['reading_frequency'])
             # These are the sensors spawned on the carla world
             else:
-                bp = bp_library.find(sensor_spec['type'])
+                bp = bp_library.find(str(sensor_spec['type']))
                 if sensor_spec['type'].startswith('sensor.camera'):
                     bp.set_attribute('image_size_x', str(sensor_spec['width']))
                     bp.set_attribute('image_size_y', str(sensor_spec['height']))
@@ -356,7 +356,7 @@ class ChallengeEvaluator(object):
                                                      yaw=sensor_spec['yaw'])
                 elif sensor_spec['type'].startswith('sensor.lidar'):
                     bp.set_attribute('range', '5000')
-                    bp.set_attribute('rotation_frequency', '10')
+                    bp.set_attribute('rotation_frequency', '20')
                     bp.set_attribute('channels', '32')
                     bp.set_attribute('upper_fov', '15')
                     bp.set_attribute('lower_fov', '-30')
