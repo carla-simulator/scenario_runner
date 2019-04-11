@@ -89,6 +89,7 @@ class VehicleTurningRight(BasicScenario):
         waypoint = self._reference_waypoint
         waypoint = generate_target_waypoint(waypoint, 1)
         _start_distance = 8
+        counter = 10
         while True:
             wp_next = waypoint.get_right_lane()
             self._num_lane_changes += 1
@@ -101,6 +102,10 @@ class VehicleTurningRight(BasicScenario):
                 break
 
         while True:
+            counter -=1
+            if counter == 0:
+                self._initialization_status =False
+                return
             try:
                 self._other_actor_transform = get_opponent_transform(_start_distance, waypoint)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
@@ -227,6 +232,7 @@ class VehicleTurningLeft(BasicScenario):
         waypoint = self._reference_waypoint
         waypoint = generate_target_waypoint(waypoint, -1)
         _start_distance = 8
+        counter = 10
         while True:
             wp_next = waypoint.get_right_lane()
             self._num_lane_changes += 1
@@ -239,6 +245,10 @@ class VehicleTurningLeft(BasicScenario):
                 break
 
         while True:
+            counter -= 1
+            if counter == 0:
+                self._initialization_status = False
+                return
             try:
                 self._other_actor_transform = get_opponent_transform(_start_distance, waypoint)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
