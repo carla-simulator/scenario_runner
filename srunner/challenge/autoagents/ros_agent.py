@@ -226,7 +226,7 @@ class RosAgent(AutonomousAgent):
         Function to publish lidar data
         """
         header = self.get_header()
-        header.frame_id = 'velodyne'
+        header.frame_id = 'ego_vehicle/lidar/{}'.format(sensor_id)
 
         lidar_data = numpy.frombuffer(
             data, dtype=numpy.float32)
@@ -265,6 +265,7 @@ class RosAgent(AutonomousAgent):
         msg = self.cv_bridge.cv2_to_imgmsg(data, encoding='rgba8')
         # the camera data is in respect to the camera's own frame
         msg.header = self.get_header()
+        msg.header.frame_id = 'ego_vehicle/camera/rgb/{}'.format(sensor_id)
 
         cam_info = self.id_to_camera_info_map[sensor_id]
         cam_info.header = msg.header
