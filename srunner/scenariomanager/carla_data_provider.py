@@ -345,6 +345,10 @@ class CarlaActorPool(object):
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
 
+        if not hero:
+            hero_actor = CarlaActorPool.get_hero_actor()
+        else:
+            hero_actor = None
         batch = []
         for _ in range(amount):
             # Get vehicle by model
@@ -360,6 +364,12 @@ class CarlaActorPool(object):
                 if CarlaActorPool._spawn_index >= len(CarlaActorPool._spawn_points):
                     CarlaActorPool._spawn_index = len(CarlaActorPool._spawn_points)
                     spawn_point = None
+                elif hero_actor is not None:
+                    spawn_point = CarlaActorPool._spawn_points[CarlaActorPool._spawn_index]
+                    CarlaActorPool._spawn_index += 1
+                    # if the spawn point is to close to hero we just ignore this position
+                    if hero_actor.get_transform().location.distance(spawn_point.location) < 8.0:
+                        spawn_point = None
                 else:
                     spawn_point = CarlaActorPool._spawn_points[CarlaActorPool._spawn_index]
                     CarlaActorPool._spawn_index += 1
@@ -424,6 +434,17 @@ class CarlaActorPool(object):
             return True
         else:
             return False
+
+    @staticmethod
+    def get_hero_actor():
+        """
+        Get the actor object of the hero actor if it exists, returns none otherwise.
+        """
+        for actor_id in CarlaActorPool._carla_actor_pool:
+            if CarlaActorPool._carla_actor_pool[actor_id].attributes['role_name'] == 'hero':
+                return CarlaActorPool._carla_actor_pool[actor_id]
+        return None
+
     @staticmethod
     def get_actor_by_id(actor_id):
         """

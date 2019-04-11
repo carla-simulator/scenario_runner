@@ -268,7 +268,7 @@ class ChallengeEvaluator(object):
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
             # TODO: the model is now hardcoded but that can change in a future.
-            self.ego_vehicle = CarlaActorPool.setup_actor('vehicle.lincoln.mkz2017', start_transform, True)
+            self.ego_vehicle = CarlaActorPool.request_new_actor('vehicle.lincoln.mkz2017', start_transform, hero=True)
         else:
             self.ego_vehicle.set_transform(start_transform)
 
