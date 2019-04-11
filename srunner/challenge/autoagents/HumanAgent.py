@@ -67,10 +67,10 @@ class HumanInterface():
 
             # process sensor data
             input_data = self._parent.sensor_interface.get_data()
-            image_center = input_data['Center'][1]
-            image_left = input_data['Left'][1]
-            image_right = input_data['Right'][1]
-            image_rear = input_data['Rear'][1]
+            image_center = input_data['Center'][1][:,:,-2::-1]
+            image_left = input_data['Left'][1][:,:,-2::-1]
+            image_right = input_data['Right'][1][:,:,-2::-1]
+            image_rear = input_data['Rear'][1][:,:,-2::-1]
 
             top_row = np.hstack((image_left, image_center, image_right))
             bottom_row = np.hstack((0*image_rear, image_rear, 0*image_rear))
