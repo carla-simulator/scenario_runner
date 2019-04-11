@@ -154,11 +154,9 @@ class DynamicObjectCrossing(BasicScenario):
         self.timeout = timeout
         self._trigger_location = config.trigger_point.location
         # Total Number of attempts to relocate a vehicle before spawning
-        self._number_of_attempts = 10
+        self._number_of_attempts = 20
         # Number of attempts made so far
         self._spawn_attempted = 0
-        print (" TRIGGER ", config.trigger_point.location)
-        print ("REFERENCE ", self._reference_waypoint)
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
@@ -174,12 +172,11 @@ class DynamicObjectCrossing(BasicScenario):
         location, _ = get_location_in_distance_from_wp(waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         if self._adversary_type:
-            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": 1.1}
+            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
         else:
-            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": 1.1}
+            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
-        print ("LOCATION before ", location)
         offset_location = carla.Location(
             offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
             offset['k'] * lane_width * math.sin(math.radians(position_yaw)))

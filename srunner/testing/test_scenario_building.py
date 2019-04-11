@@ -50,9 +50,10 @@ class TestScenarioBuilder(unittest.TestCase):
         # For each of the routes to be evaluated.
         for route_description in list_route_descriptions:
 
-            if route_description['town_name'] == 'Town01':
+            if route_description['town_name'] == 'Town03'\
+                    or route_description['town_name'] == 'Town04':
                 continue
-            #        route_description['town_name'] == 'Town04' or route_description['town_name'] == 'Town02':
+            #         or route_description['town_name'] == 'Town02':
             #    continue
             print (" TOWN  ", route_description['town_name'])
             challenge.world = client.load_world(route_description['town_name'])

@@ -76,7 +76,7 @@ class VehicleTurningRight(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
         # Total Number of attempts to relocate a vehicle before spawning
-        self._number_of_attempts = 10
+        self._number_of_attempts = 20
         # Number of attempts made so far
         self._spawn_attempted = 0
 
@@ -233,7 +233,6 @@ class VehicleTurningLeft(BasicScenario):
         # Number of attempts made so far
         self._spawn_attempted = 0
 
-        print (" TRIGGER ", config.trigger_point.location)
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
                                                  config,
