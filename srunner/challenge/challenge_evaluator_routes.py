@@ -182,8 +182,8 @@ class ChallengeEvaluator(object):
         self.statistics_routes = []
 
         # Tunable parameters
-        self.client_timeout = 15.0  # in seconds
-        self.wait_for_world = 10.0  # in seconds
+        self.client_timeout = 30.0  # in seconds
+        self.wait_for_world = 20.0  # in seconds
 
         # CARLA world and scenario handlers
         self.world = None
@@ -445,13 +445,13 @@ class ChallengeEvaluator(object):
         random = True
 
         if town_name == 'Town01' or town_name == 'Town02':
-            amount = 250
+            amount = 120
         elif town_name == 'Town03' or 'Town05':
-            amount = 80
+            amount = 120
         elif town_name == 'Town04':
-            amount = 100
+            amount = 200
         elif town_name == 'Town06' or town_name == 'Town07':
-            amount = 50
+            amount = 150
         else:
             amount = 1
 
