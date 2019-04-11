@@ -415,7 +415,15 @@ class CarlaActorPool(object):
 
         CarlaActorPool._carla_actor_pool[actor.id] = actor
         return actor
-
+    @staticmethod
+    def actor_id_exists(actor_id):
+        """
+        Check if a certain id is still at the simulation
+        """
+        if actor_id in CarlaActorPool._carla_actor_pool:
+            return True
+        else:
+            return False
     @staticmethod
     def get_actor_by_id(actor_id):
         """
