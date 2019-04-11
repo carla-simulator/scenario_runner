@@ -181,6 +181,7 @@ class ChallengeEvaluator(object):
         self.ego_vehicle = None
         self.actors = []
         self.statistics_routes = []
+        self._current_route_broke = False
 
         # Tunable parameters
         self.client_timeout = 30.0  # in seconds
@@ -585,10 +586,42 @@ class ChallengeEvaluator(object):
         blackboard.set('master_scenario_command', 'scenarios_stop_request')
 
     def record_route_statistics(self, route_id):
+        if self._current_route_broke:
+            self.record_route_statistics_crash(route_id)
+        else:
+            self.record_route_statistics_default(route_id)
+
+    def record_route_statistics_crash(self, route_id):
+        result = "CRASH"
+        final_score = 0.0
+        score_composed = 0.0
+        score_penalty = 0.0
+        score_route = 0.0
+
+        return_message = ""
+        return_message += "\n=================================="
+        return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(route_id, result,
+                                                                                                 final_score,
+                                                                                                 score_route,
+                                                                                                 score_penalty)
+        return_message += "\n=================================="
+
+        current_statistics = {'id': route_id,
+                              'score_composed': score_composed,
+                              'score_route': score_route,
+                              'score_penalty': score_penalty,
+                              'result': result,
+                              'help_text': return_message
+                              }
+
+        self.statistics_routes.append(current_statistics)
+
+    def record_route_statistics_default(self, route_id):
         """
           This function is intended to be called from outside and provide
           statistics about the scenario (human-readable, for the CARLA challenge.)
         """
+
         PENALTY_COLLISION_STATIC = 10
         PENALTY_COLLISION_VEHICLE = 10
         PENALTY_COLLISION_PEDESTRIAN = 30
@@ -684,7 +717,7 @@ class ChallengeEvaluator(object):
         final_score = max(score_route - score_penalty, 0)
 
         return_message += "\n=================================="
-        return_message += "\n==[{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(result,
+        return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(route_id, result,
                                                                                                  final_score,
                                                                                                  score_route,
                                                                                                  score_penalty)
@@ -986,10 +1019,11 @@ class ChallengeEvaluator(object):
                 # Try to run the route
                 # If something goes wrong, still take the current score, and continue
                 try:
+                    self._current_route_broke = False
                     self.load_environment_and_run(args, world_annotations, route_description)
 
                 except:
-                    pass
+                    self._current_route_broke = True
 
                 # statistics recording
                 self.record_route_statistics(route_description['id'])
@@ -999,15 +1033,16 @@ class ChallengeEvaluator(object):
                 settings = self.world.get_settings()
                 settings.synchronous_mode = False
                 self.world.apply_settings(settings)
-
                 self.agent_instance.destroy()
                 self.cleanup(ego=True)
+
                 for scenario in self.list_scenarios:
                     # Reset scenario status for proper cleanup
                     scenario.scenario.terminate()
                     # Do not call del here! Directly enforce the actor removal
                     scenario.remove_all_actors()
                     scenario = None
+
                 self.list_scenarios = []
 
                 self.master_scenario = None
@@ -1070,5 +1105,7 @@ if __name__ == '__main__':
     try:
         challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
+    except:
+        challenge_evaluator.report_challenge_statistics(ARGUMENTS.filename, ARGUMENTS.show_to_participant)
     finally:
         del challenge_evaluator
