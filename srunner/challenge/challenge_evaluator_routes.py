@@ -23,6 +23,7 @@ import json
 import random
 import re
 import signal
+import subprocess
 import xml.etree.ElementTree as ET
 
 import py_trees
@@ -788,17 +789,22 @@ class ChallengeEvaluator(object):
         if self.world is not None:
             settings = self.world.get_settings()
             settings.synchronous_mode = False
+            settings.no_rendering_mode = False
             self.world.apply_settings(settings)
         else:
             world = client.get_world()
             settings = world.get_settings()
             settings.synchronous_mode = False
+            settings.no_rendering_mode = False
             world.apply_settings(settings)
             world = None
+
         self.world = client.load_world(town_name)
         self.timestamp = self.world.wait_for_tick()
         settings = self.world.get_settings()
         settings.synchronous_mode = True
+        if self.track == 4:
+            settings.no_rendering_mode = True
         self.world.apply_settings(settings)
 
     def filter_scenarios(self, potential_scenarios_all, scenarios_to_remove):
@@ -976,6 +982,7 @@ class ChallengeEvaluator(object):
                 # If something goes wrong, still take the current score, and continue
                 try:
                     self.load_environment_and_run(args, world_annotations, route_description)
+
                 except:
                     pass
 
