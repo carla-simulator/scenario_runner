@@ -458,8 +458,7 @@ class ChallengeEvaluator(object):
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
         scenario_configuration.other_actors = [actor_configuration_instance]
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
-                                  criteria_enable=False, timeout=timeout)
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
