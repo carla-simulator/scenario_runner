@@ -996,7 +996,7 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(description=DESCRIPTION, formatter_class=RawTextHelpFormatter)
     PARSER.add_argument('--host', default='localhost',
                         help='IP of the host server (default: localhost)')
-    PARSER.add_argument('--port', default='3000', help='TCP port to listen to (default: 2000)')
+    PARSER.add_argument('--port', default='2000', help='TCP port to listen to (default: 2000)')
     PARSER.add_argument('--repetitions', type=int, help='Number of repetitions per route', default=3)
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
