@@ -988,6 +988,7 @@ class ChallengeEvaluator(object):
                 settings.synchronous_mode = False
                 self.world.apply_settings(settings)
 
+                self.agent_instance.destroy()
                 for scenario in self.list_scenarios:
                     # Reset scenario status for proper cleanup
                     scenario.scenario.terminate()
@@ -999,7 +1000,6 @@ class ChallengeEvaluator(object):
                 self.master_scenario = None
                 self.background_scenario = None
                 self.cleanup(ego=True)
-                self.agent_instance.destroy()
 
                 self.world.tick()
                 self.world.wait_for_tick()
