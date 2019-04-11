@@ -554,6 +554,11 @@ class ChallengeEvaluator(object):
 
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
+            if self.debug:
+                spectator = self.world.get_spectator()
+                ego_trans = self.ego_vehicle.get_transform()
+                spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
+                                                        carla.Rotation(pitch=-90)))
             if self.route_visible:
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=50000.0)
