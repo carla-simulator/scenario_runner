@@ -892,6 +892,10 @@ class ChallengeEvaluator(object):
                 CarlaDataProvider.set_world(self.world)
                 # tick world so we can start.
                 self.world.tick()
+
+                # start recording logs for the current route
+                client.start_recorder('log_{}_track{}_route_{:0>4d}.log'.format(self.phase, self.track, route_idx))
+
                 # prepare route's trajectory
                 gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                                     route_description['trajectory'])
@@ -955,6 +959,7 @@ class ChallengeEvaluator(object):
 
                 # statistics recording
                 self.record_route_statistics(route_description['id'])
+                client.stop_recorder()
 
                 # clean up
                 settings = self.world.get_settings()
@@ -991,7 +996,7 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(description=DESCRIPTION, formatter_class=RawTextHelpFormatter)
     PARSER.add_argument('--host', default='localhost',
                         help='IP of the host server (default: localhost)')
-    PARSER.add_argument('--port', default='2000', help='TCP port to listen to (default: 2000)')
+    PARSER.add_argument('--port', default='3000', help='TCP port to listen to (default: 2000)')
     PARSER.add_argument('--repetitions', type=int, help='Number of repetitions per route', default=3)
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
