@@ -5,4 +5,4 @@ python ${ROOT_SCENARIO_RUNNER}/srunner/challenge/challenge_evaluator_routes.py \
 --repetitions=1 \
 --routes=${ROOT_SCENARIO_RUNNER}/srunner/challenge/routes_training.xml \
 --debug=0 \
---agent=${ROOT_SCENARIO_RUNNER}/srunner/challenge/autoagents/HumanAgent.py
+--agent=${ROOT_SCENARIO_RUNNER}/srunner/challenge/autoagents/NPCAgent.py
