@@ -445,7 +445,7 @@ class ChallengeEvaluator(object):
         random = True
 
         if town_name == 'Town01' or town_name == 'Town02':
-            amount = 250
+            amount = 30
         elif town_name == 'Town03' or 'Town05':
             amount = 80
         elif town_name == 'Town04':
@@ -989,6 +989,7 @@ class ChallengeEvaluator(object):
                 self.world.apply_settings(settings)
 
                 self.agent_instance.destroy()
+                self.cleanup(ego=True)
                 for scenario in self.list_scenarios:
                     # Reset scenario status for proper cleanup
                     scenario.scenario.terminate()
@@ -999,7 +1000,6 @@ class ChallengeEvaluator(object):
 
                 self.master_scenario = None
                 self.background_scenario = None
-                self.cleanup(ego=True)
 
                 self.world.tick()
                 self.world.wait_for_tick()
