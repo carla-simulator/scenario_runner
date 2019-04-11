@@ -24,7 +24,7 @@ VEHICLE_TURNING_SCENARIOS = [
     "VehicleTurningLeft"
 ]
 
-def get_opponent_transform(_start_distance, waypoint):
+def get_opponent_transform(_start_distance, waypoint, trigger_location):
     """
     Calculate the transform of the adversary
     """
@@ -43,7 +43,7 @@ def get_opponent_transform(_start_distance, waypoint):
         offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
         offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
     location += offset_location
-    location.z += offset["z"]
+    location.z = trigger_location.z + offset["z"]
     transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
 
     return transform
@@ -67,14 +67,18 @@ class VehicleTurningRight(BasicScenario):
         # other vehicle parameters
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
-        self.timeout = 60
         self._initialization_status = True
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._trigger_location = config.trigger_point.location
         self._other_actor_transform = None
         self._num_lane_changes = 0
         # Timeout of scenario in seconds
         self.timeout = timeout
+        # Total Number of attempts to relocate a vehicle before spawning
+        self._number_of_attempts = 10
+        # Number of attempts made so far
+        self._spawn_attempted = 0
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
@@ -111,16 +115,19 @@ class VehicleTurningRight(BasicScenario):
                 self._initialization_status =False
                 return
             try:
-                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint)
+                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint, self._trigger_location)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
 
                 break
-            except RuntimeError:
+            except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
                 print (" Base transform is blocking objects ", self._other_actor_transform)
-                _start_distance += 0.5
+                _start_distance += 0.4
+                self._spawn_attempted += 1
+                if self._spawn_attempted >= self._number_of_attempts:
+                    raise r
         # Set the transform to -500 z after we are able to spawn it
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
@@ -212,15 +219,21 @@ class VehicleTurningLeft(BasicScenario):
         """
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
-        self.timeout = 60
         self._initialization_status = True
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._trigger_location = config.trigger_point.location
         self._other_actor_transform = None
 
         self._num_lane_changes = 0
         # Timeout of scenario in seconds
         self.timeout = timeout
+        # Total Number of attempts to relocate a vehicle before spawning
+        self._number_of_attempts = 10
+        # Number of attempts made so far
+        self._spawn_attempted = 0
+
+        print (" TRIGGER ", config.trigger_point.location)
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
                                                  config,
@@ -254,16 +267,19 @@ class VehicleTurningLeft(BasicScenario):
                 self._initialization_status = False
                 return
             try:
-                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint)
+                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint, self._trigger_location)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
 
                 break
-            except RuntimeError:
+            except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
                 print(" Base transform is blocking objects ", self._other_actor_transform)
-                _start_distance += 0.5
+                _start_distance += 0.4
+                self._spawn_attempted += 1
+                if self._spawn_attempted >= self._number_of_attempts:
+                    raise r
             # Set the transform to -500 z after we are able to spawn it
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,

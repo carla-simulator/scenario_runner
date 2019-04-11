@@ -138,6 +138,7 @@ class DynamicObjectCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._wmap = CarlaDataProvider.get_map()
+
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         # ego vehicle parameters
         self._ego_vehicle_distance_driven = 40
@@ -151,6 +152,13 @@ class DynamicObjectCrossing(BasicScenario):
         self._num_lane_changes = 1
         self.transform2 = None
         self.timeout = timeout
+        self._trigger_location = config.trigger_point.location
+        # Total Number of attempts to relocate a vehicle before spawning
+        self._number_of_attempts = 10
+        # Number of attempts made so far
+        self._spawn_attempted = 0
+        print (" TRIGGER ", config.trigger_point.location)
+        print ("REFERENCE ", self._reference_waypoint)
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
@@ -171,11 +179,12 @@ class DynamicObjectCrossing(BasicScenario):
             offset = {"orientation": 270, "position": 90, "z": 0.6, "k": 1.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
+        print ("LOCATION before ", location)
         offset_location = carla.Location(
             offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
             offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
         location += offset_location
-        location.z += offset['z']
+        location.z = self._trigger_location.z + offset['z']
         return carla.Transform(location, carla.Rotation(yaw=orientation_yaw)), orientation_yaw
 
     def _spawn_adversary(self, transform, orientation_yaw):
@@ -251,10 +260,13 @@ class DynamicObjectCrossing(BasicScenario):
                 blocker = self._spawn_blocker(self.transform)
 
                 break
-            except RuntimeError:
+            except RuntimeError as r:
                 # We keep retrying until we spawn
                 print (" Base transform is blocking objects ", self.transform)
-                _start_distance += 0.5
+                _start_distance += 0.4
+                self._spawn_attempted += 1
+                if self._spawn_attempted >= self._number_of_attempts:
+                    raise r
 
         # Now that we found a posible position we just put the vehicle to the underground
         disp_transform = carla.Transform(

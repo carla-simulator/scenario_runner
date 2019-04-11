@@ -22,7 +22,7 @@ class Arguments():
         self.port = 2000
         self.split = 'dev_track_1'
         self.route_visible = False
-        self.debug = 1
+        self.debug = 0
         self.background = True
 
 class TestScenarioBuilder(unittest.TestCase):
@@ -44,13 +44,15 @@ class TestScenarioBuilder(unittest.TestCase):
         # retrieve routes
         # Which type of file is expected ????
 
-        filename = os.path.join(self.root_route_file_position, 'routes_training.xml')
-        list_route_descriptions = parser.parse_routes_file(filename)
+        filename_train = os.path.join(self.root_route_file_position, 'routes_training.xml')
+        filename_val = os.path.join(self.root_route_file_position, 'routes_devtest.xml')
+        list_route_descriptions = parser.parse_routes_file(filename_train) + parser.parse_routes_file(filename_val)
         # For each of the routes to be evaluated.
         for route_description in list_route_descriptions:
 
-            #if route_description['town_name'] == 'Town01' or route_description['town_name'] == 'Town03' or \
-            #        route_description['town_name'] == 'Town04':
+            if route_description['town_name'] == 'Town01':
+                continue
+            #        route_description['town_name'] == 'Town04' or route_description['town_name'] == 'Town02':
             #    continue
             print (" TOWN  ", route_description['town_name'])
             challenge.world = client.load_world(route_description['town_name'])
