@@ -23,6 +23,7 @@ import json
 import random
 import re
 import signal
+import subprocess
 import xml.etree.ElementTree as ET
 
 import py_trees
@@ -981,6 +982,7 @@ class ChallengeEvaluator(object):
                 # If something goes wrong, still take the current score, and continue
                 try:
                     self.load_environment_and_run(args, world_annotations, route_description)
+
                 except:
                     pass
 
