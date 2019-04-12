@@ -14,6 +14,7 @@ from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
 import atexit
+import copy
 import datetime
 import importlib
 import math
@@ -903,16 +904,20 @@ class ChallengeEvaluator(object):
         return True, ""
 
     def load_environment_and_run(self, args, world_annotations, route_description):
+
+        # We need to copy the route_description to not override route_description
+        _route_description = copy.copy(route_description)
+
         # prepare route's trajectory
-        gps_route, route_description['trajectory'] = interpolate_trajectory(self.world,
-                                                                            route_description['trajectory'])
+        gps_route, _route_description['trajectory'] = interpolate_trajectory(self.world,
+                                                                             _route_description['trajectory'])
 
-        route_timeout = self.estimate_route_timeout(route_description['trajectory'])
+        route_timeout = self.estimate_route_timeout(_route_description['trajectory'])
 
-        potential_scenarios_definitions, _ = parser.scan_route_for_scenarios(route_description,
+        potential_scenarios_definitions, _ = parser.scan_route_for_scenarios(_route_description,
                                                                              world_annotations)
 
-        CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
+        CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(_route_description['trajectory']))
 
         # Sample the scenarios to be used for this route instance.
         sampled_scenarios_definitions = self.scenario_sampling(potential_scenarios_definitions)
@@ -927,20 +932,20 @@ class ChallengeEvaluator(object):
             self._system_error = True
             sys.exit(-1)
 
-        self.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
+        self.agent_instance.set_global_plan(gps_route, _route_description['trajectory'])
         # prepare the ego car to run the route.
         # It starts on the first wp of the route
 
-        elevate_transform = route_description['trajectory'][0][0]
+        elevate_transform = _route_description['trajectory'][0][0]
         elevate_transform.location.z += 0.5
         self.prepare_ego_car(elevate_transform)
 
         # build the master scenario based on the route and the target.
-        self.master_scenario = self.build_master_scenario(route_description['trajectory'],
-                                                          route_description['town_name'],
+        self.master_scenario = self.build_master_scenario(_route_description['trajectory'],
+                                                          _route_description['town_name'],
                                                           timeout=route_timeout)
 
-        self.background_scenario = self.build_background_scenario(route_description['town_name'],
+        self.background_scenario = self.build_background_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
 
         self.list_scenarios = [self.master_scenario, self.background_scenario]
@@ -956,7 +961,7 @@ class ChallengeEvaluator(object):
                 print(scenario)
 
         self.list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
-                                                             route_description['town_name'],
+                                                             _route_description['town_name'],
                                                              timeout=route_timeout)
 
         # Tick once to start the scenarios.
@@ -967,7 +972,7 @@ class ChallengeEvaluator(object):
             scenario.scenario.scenario_tree.tick_once()
 
         # main loop!
-        self.run_route(route_description['trajectory'])
+        self.run_route(_route_description['trajectory'])
 
     def run(self, args):
         """
