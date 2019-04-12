@@ -156,6 +156,9 @@ class ChallengeEvaluator(object):
         if not phase_codename:
             raise ValueError('environment variable CHALLENGE_PHASE_CODENAME not defined')
 
+        # retrieving scenario_runner root
+        scenario_runner_root = os.getenv('ROOT_SCENARIO_RUNNER', '/workspace/scenario_runner')
+
         # remaining simulation time available for this time in seconds
         challenge_time_available = int(os.getenv('CHALLENGE_TIME_AVAILABLE', '1080000'))
         self.challenge_time_available = challenge_time_available
@@ -167,13 +170,26 @@ class ChallengeEvaluator(object):
 
         if phase_codename == 'dev':
             split_name = 'dev_split'
+            self.routes =  '{}/srunner/challenge/routes_devtest.xml'.format(scenario_runner_root)
             repetitions = 1
         elif phase_codename == 'validation':
             split_name = 'val_split'
+            self.routes =  '{}/srunner/challenge/routes_testprep.xml'.format(scenario_runner_root)
+            repetitions = 3
+        elif phase_codename == 'test':
+            split_name = 'test_split'
+            self.routes =  '{}/srunner/challenge/routes_testchallenge.xml'.format(scenario_runner_root)
             repetitions = 3
         else:
-            split_name = 'test_split'
-            repetitions = 3
+            # debug mode
+            # using short routes
+            split_name = 'debug_split'
+            self.routes = '{}/srunner/challenge/routes_debug.xml'.format(scenario_runner_root)
+            repetitions = 1
+
+        # overwriting routes in case users passed their own
+        if args.routes:
+            self.routes = args.routes
 
         if args.debug > 0:
             repetitions = 1
@@ -879,7 +895,8 @@ class ChallengeEvaluator(object):
         return scenarios_after_filter
 
     def valid_sensors_configuration(self, agent, track):
-        if Track(track) != agent.track:
+
+        if self.phase != 'debug' and Track(track) != agent.track:
             return False, "You are submitting to the wrong track [{}]!".format(Track(track))
 
         sensors = agent.sensors()
@@ -996,10 +1013,9 @@ class ChallengeEvaluator(object):
         # retrieve worlds annotations
         world_annotations = parser.parse_annotations_file(args.scenarios)
         # retrieve routes
-        route_descriptions_list = parser.parse_routes_file(args.routes)
+        route_descriptions_list = parser.parse_routes_file(self.routes)
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
-
         self.n_routes = len(route_descriptions_list) * self.repetitions
 
         # setup world and client assuming that the CARLA server is up and running
@@ -1115,10 +1131,6 @@ if __name__ == '__main__':
         print("Error. ROOT_SCENARIO_RUNNER not found. Please run setup_environment.sh first.")
         sys.exit(0)
 
-    if ARGUMENTS.routes is None:
-        print("Please specify a path to a route file  '--routes path-to-route'\n\n")
-        PARSER.print_help(sys.stdout)
-        sys.exit(0)
 
     if ARGUMENTS.scenarios is None:
         print("Please specify a path to a scenario specification file  '--scenarios path-to-file'\n\n")
