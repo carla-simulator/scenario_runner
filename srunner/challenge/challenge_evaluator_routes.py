@@ -157,8 +157,6 @@ class ChallengeEvaluator(object):
 
         # remaining simulation time available for this time in seconds
         challenge_time_available = int(os.getenv('CHALLENGE_TIME_AVAILABLE', '1080000'))
-        if not challenge_time_available:
-            raise ValueError('environment variable CHALLENGE_TIME_AVAILABLE not defined')
         self.challenge_time_available = challenge_time_available
 
         self.start_wall_time = datetime.datetime.now()
@@ -182,6 +180,7 @@ class ChallengeEvaluator(object):
         self.actors = []
         self.statistics_routes = []
         self._current_route_broke = False
+        self._system_error = False
 
         # Tunable parameters
         self.client_timeout = 30.0  # in seconds
@@ -591,6 +590,26 @@ class ChallengeEvaluator(object):
         else:
             self.record_route_statistics_default(route_id)
 
+    def record_fatal_error(self, error_message):
+        result = "ERROR"
+        score_composed = 0.0
+        score_penalty = 0.0
+        score_route = 0.0
+
+        return_message = error_message
+        return_message += "\n=================================="
+
+
+        current_statistics = {'id': -1,
+                              'score_composed': score_composed,
+                              'score_route': score_route,
+                              'score_penalty': score_penalty,
+                              'result': result,
+                              'help_text': return_message
+                              }
+
+        self.statistics_routes.append(current_statistics)
+
     def record_route_statistics_crash(self, route_id):
         result = "CRASH"
         final_score = 0.0
@@ -769,18 +788,28 @@ class ChallengeEvaluator(object):
         score_penalty = 0.0
         help_message = ""
 
-        for stats in self.statistics_routes:
-            score_composed += stats['score_composed'] / float(self.n_routes)
-            score_route += stats['score_route'] / float(self.n_routes)
-            score_penalty += stats['score_penalty'] / float(self.n_routes)
-            help_message += "{}\n\n".format(stats['help_text'])
+        if self._system_error:
+            submission_status = 'FAILED'
 
-        if self.phase == 'validation' or self.phase == 'test':
-            help_message = "No metadata available for this phase"
+            for stats in self.statistics_routes:
+                help_message += "{}\n\n".format(stats['help_text'])
+
+
+        else:
+            submission_status = 'FINISHED'
+
+            for stats in self.statistics_routes:
+                score_composed += stats['score_composed'] / float(self.n_routes)
+                score_route += stats['score_route'] / float(self.n_routes)
+                score_penalty += stats['score_penalty'] / float(self.n_routes)
+                help_message += "{}\n\n".format(stats['help_text'])
+
+            if self.phase == 'validation' or self.phase == 'test':
+                help_message = "No metadata available for this phase"
 
         # create json structure
         json_data = {
-            'submission_status': 'FINISHED',
+            'submission_status': submission_status,
             'stderr': help_message,
             'result': [
                 {
@@ -790,27 +819,6 @@ class ChallengeEvaluator(object):
                         'avg. route points': score_route,
                         'infraction points': score_penalty,
                         'total avg.': score_composed
-                    }
-                }],
-        }
-
-        with open(filename, "w+") as fd:
-            fd.write(json.dumps(json_data, indent=4))
-
-    def report_fatal_error(self, filename, show_to_participant, error_message):
-
-        # create json structure
-        json_data = {
-            'submission_status': 'FAILED',
-            'stderr': error_message,
-            'result': [
-                {
-                    'split': self.split,
-                    'show_to_participant': show_to_participant,
-                    'accuracies': {
-                        'avg. route points': 0,
-                        'infraction points': 0,
-                        'total avg.': 0
                     }
                 }],
         }
@@ -915,8 +923,10 @@ class ChallengeEvaluator(object):
 
         if not correct_sensors:
             # the sensor configuration is illegal
-            self.report_fatal_error(args.filename, args.show_to_participant, error_message)
-            return
+            self.record_fatal_error(error_message)
+            self._system_error = True
+            sys.exit(-1)
+
         self.agent_instance.set_global_plan(gps_route, route_description['trajectory'])
         # prepare the ego car to run the route.
         # It starts on the first wp of the route
@@ -966,8 +976,9 @@ class ChallengeEvaluator(object):
         # do we have enough simulation time for this team?
         if not self.within_available_time():
             error_message = 'Not enough simulation time available to continue'
-            self.report_fatal_error(args.filename, args.show_to_participant, error_message)
-            return
+            self.record_fatal_error(error_message)
+            self._system_error = True
+            sys.exit(-1)
 
         # retrieve worlds annotations
         world_annotations = parser.parse_annotations_file(args.scenarios)
@@ -988,8 +999,9 @@ class ChallengeEvaluator(object):
                 if not self.within_available_time():
                     error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx + 1,
                                                                                                        len(route_descriptions_list))
-                    self.report_fatal_error(args.filename, args.show_to_participant, error_message)
-                    return
+                    self.record_fatal_error(error_message)
+                    self._system_error = True
+                    sys.exit(-1)
 
                 # For debugging
                 self.route_visible = self.debug > 0
@@ -1021,8 +1033,9 @@ class ChallengeEvaluator(object):
                 try:
                     self._current_route_broke = False
                     self.load_environment_and_run(args, world_annotations, route_description)
-
                 except:
+                    if self._system_error:
+                        sys.exit(-1)
                     self._current_route_broke = True
 
                 # statistics recording

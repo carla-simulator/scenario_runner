@@ -9,7 +9,6 @@ from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 
 class NPCAgent(AutonomousAgent):
     def setup(self, path_to_conf_file):
-        #self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
         self.track = Track.SCENE_LAYOUT
 
         self.route_assigned = False
@@ -33,18 +32,6 @@ class NPCAgent(AutonomousAgent):
 
 
         """
-        # sensors = [{'type': 'sensor.camera.rgb', 'x': 0.7, 'y': 0.0, 'z': 1.60, 'roll':0.0, 'pitch':0.0, 'yaw': 0.0,
-        #             'width': 800, 'height': 600, 'fov':100, 'id': 'Center'},
-        #            {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
-        #             'yaw': -45.0, 'width': 800, 'height': 600, 'fov': 100, 'id': 'Left'},
-        #            {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 45.0,
-        #             'width': 800, 'height': 600, 'fov': 100, 'id': 'Right'},
-        #            {'type': 'sensor.lidar.ray_cast', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
-        #             'yaw': -45.0, 'id': 'LIDAR'},
-        #            {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'},
-        #            {'type': 'sensor.can_bus', 'reading_frequency': 25, 'id': 'can_bus'},
-        #            {'type': 'sensor.hd_map', 'reading_frequency': 1, 'id': 'hdmap'},
-        #           ]
 
         sensors = [
             {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'},
