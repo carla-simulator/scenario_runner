@@ -22,11 +22,11 @@ Python 3.5. Depending on your Python version, execute:
 
 #Python 2.x
 sudo apt remove python-networkx #if installed, remove old version of networkx
-pip2 install --user py_trees==0.8.3 networkx psutil
+pip2 install --user py_trees==0.8.3 networkx==2.2 psutil
 pip2 install shapely
 #Python 3.x
 sudo apt remove python3-networkx #if installed, remove old version of networkx
-pip3 install --user py_trees==0.8.3 networkx psutil
+pip3 install --user py_trees==0.8.3 networkx==2.2 psutil
 pip3 install shapely
 ```
 Note: py-trees newer than v0.8 is *NOT* supported.
