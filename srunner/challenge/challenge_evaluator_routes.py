@@ -1000,7 +1000,7 @@ class ChallengeEvaluator(object):
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
 
-        self.n_routes = len(route_descriptions_list) * args.repetitions
+        self.n_routes = len(route_descriptions_list) * self.repetitions
 
         # setup world and client assuming that the CARLA server is up and running
         client = carla.Client(args.host, int(args.port))
