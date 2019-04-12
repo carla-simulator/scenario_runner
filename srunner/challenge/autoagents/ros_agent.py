@@ -20,7 +20,7 @@ from nav_msgs.msg import Path
 from sensor_msgs.msg import Image, PointCloud2, NavSatFix, NavSatStatus, CameraInfo
 from std_msgs.msg import Header
 from nav_msgs.msg import Odometry
-from carla_ros_bridge_msgs.msg import CarlaEgoVehicleStatus, CarlaEgoVehicleInfo, CarlaEgoVehicleInfoWheel, CarlaEgoVehicleControl, CarlaMapInfo
+from carla_msgs.msg import CarlaEgoVehicleStatus, CarlaEgoVehicleInfo, CarlaEgoVehicleInfoWheel, CarlaEgoVehicleControl, CarlaMapInfo
 
 from roslaunch.parent import ROSLaunchParent
 from sensor_msgs.point_cloud2 import create_cloud_xyz32
