@@ -216,7 +216,8 @@ class DynamicObjectCrossing(BasicScenario):
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
-        self.transform2 = carla.Transform(carla.Location(x_static, y_static, transform.location.z))
+        self.transform2 = carla.Transform(carla.Location(x_static, y_static,
+                                                         self._reference_waypoint.transform.location.z))
 
         static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
         static.set_simulate_physics(enabled=False)
@@ -319,7 +320,7 @@ class DynamicObjectCrossing(BasicScenario):
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self.transform,
                                                          name='TransformSetterTS3walker', physics=False))
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self.transform2,
-                                                         name='TransformSetterTS3coca'))
+                                                         name='TransformSetterTS3coca', physics=False))
         scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
         scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
