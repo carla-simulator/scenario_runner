@@ -119,16 +119,20 @@ def get_distance_along_route(route, target_location):
     return covered_distance, found
 
 
-def get_crossing_point(actor):
+def get_crossing_point(location):
     """
     Get the next crossing point location in front of the ego vehicle
 
     @return point of crossing
     """
-    wp_cross = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
+    wp_cross = CarlaDataProvider.get_map().get_waypoint(location)
 
     while not wp_cross.is_intersection:
-        wp_cross = wp_cross.next(2)[0]
+        wps = wp_cross.next(2)
+        if wps:
+            wp_cross = wps[0]
+        else:
+            break
 
     crossing = carla.Location(x=wp_cross.transform.location.x,
                               y=wp_cross.transform.location.y, z=wp_cross.transform.location.z)
@@ -136,21 +140,21 @@ def get_crossing_point(actor):
     return crossing
 
 
-def get_geometric_linear_intersection(ego_actor, other_actor):
+def get_geometric_linear_intersection(ego_location, other_location):
     """
     Obtain a intersection point between two actor's location by using their waypoints (wp)
 
     @return point of intersection of the two vehicles
     """
 
-    wp_ego_1 = CarlaDataProvider.get_map().get_waypoint(ego_actor.get_location())
+    wp_ego_1 = CarlaDataProvider.get_map().get_waypoint(ego_location)
     wp_ego_2 = wp_ego_1.next(1)[0]
     x_ego_1 = wp_ego_1.transform.location.x
     y_ego_1 = wp_ego_1.transform.location.y
     x_ego_2 = wp_ego_2.transform.location.x
     y_ego_2 = wp_ego_2.transform.location.y
 
-    wp_other_1 = CarlaDataProvider.get_world().get_map().get_waypoint(other_actor.get_location())
+    wp_other_1 = CarlaDataProvider.get_world().get_map().get_waypoint(other_location)
     wp_other_2 = wp_other_1.next(1)[0]
     x_other_1 = wp_other_1.transform.location.x
     y_other_1 = wp_other_1.transform.location.y

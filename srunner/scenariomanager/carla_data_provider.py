@@ -308,6 +308,16 @@ class CarlaDataProvider(object):
         if not use_cached_location:
             location = actor.get_transform().location
 
+        return CarlaDataProvider.get_next_traffic_light_for_location(location)
+
+    @staticmethod
+    def get_next_traffic_light_for_location(location):
+        """
+        returns the next relevant traffic light for the provided actor
+        """
+
+        CarlaDataProvider.prepare_map()
+
         waypoint = CarlaDataProvider._map.get_waypoint(location)
         # Create list of all waypoints until next intersection
         list_of_waypoints = []

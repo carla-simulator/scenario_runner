@@ -92,8 +92,9 @@ class SignalizedJunctionRightTurn(BasicScenario):
         After 80 seconds, a timeout stops the scenario.
         """
 
-        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
-        crossing_point_dynamic = get_crossing_point(self.other_actors[0])
+        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle.get_location(),
+                                                                          self.other_actors[0].get_location())
+        crossing_point_dynamic = get_crossing_point(self.other_actors[0].get_location())
         sync_arrival = SyncArrival(
             self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
         sync_arrival_stop = InTriggerDistanceToLocation(self.other_actors[0], crossing_point_dynamic, 5)

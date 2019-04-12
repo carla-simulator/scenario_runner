@@ -44,6 +44,7 @@
     - ActorSource: creates actors indefinitely around a location if no other vehicles are present within a threshold
     - ActorSink: indefinitely destroys vehicles that wander close to a location within a threshold
     - InTriggerDistanceToLocationAlongRoute: check if an actor is within a certain distance to a given location along a given route
+    - CleanupIntersection: Remove all actors that block the path between a given actor and the next intersection
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios

@@ -387,7 +387,6 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         if current_velocity > other_velocity:
             time_to_arrival = 2 * distance / (current_velocity - other_velocity)
 
-
         if time_to_arrival < self._time:
             new_status = py_trees.common.Status.SUCCESS
 
@@ -1331,5 +1330,58 @@ class TrafficLightManipulator(AtomicBehavior):
                         self.reset_annotations = None
                         self.annotations = None
                         self.intervention = False
+
+        return new_status
+
+
+class CleanupIntersection(AtomicBehavior):
+
+    """
+    Remove all actors between a given actor and the next intersection
+    """
+
+    def __init__(self, actor, name="bla"):
+        super(CleanupIntersection, self).__init__(name)
+        self._wpmap = CarlaDataProvider.get_map()
+        self._actor = actor
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self._actor)
+        current_waypoint = self._wpmap.get_waypoint(current_location)
+
+        intersection_free = True
+        actor_ids_to_remove = []
+
+        for actor_id, actor in CarlaActorPool.get_actors():
+            if actor_id != self._actor.id:
+                actor_location = actor.get_location()
+                actor_waypoint = self._wpmap.get_waypoint(actor_location)
+                if (current_waypoint.road_id == actor_waypoint.road_id and
+                        current_waypoint.lane_id == actor_waypoint.lane_id):
+                    # This actor is on the same lane as self._actor
+                    # If it is closer to the intersection than self._actor move it somewhere else
+
+                    closer_to_intersection = False
+                    distance_current = calculate_distance(current_location, actor_location)
+
+                    next_wp = current_waypoint.next(2.0)
+                    if next_wp and not next_wp[0].is_intersection:
+                        distance_next = calculate_distance(next_wp[0].transform.location, actor_location)
+                        if distance_next < distance_current:
+                            closer_to_intersection = True
+
+                    if closer_to_intersection:
+                        intersection_free = False
+                        # Ideally, we could make use of the "leading" actor
+                        # Or we could move the actors out of the way instead of removing them
+                        actor_ids_to_remove.append(actor_id)
+
+        if intersection_free:
+            new_status = py_trees.common.Status.SUCCESS
+        else:
+            for actor_id in actor_ids_to_remove:
+                CarlaActorPool.remove_actor_by_id(actor_id)
 
         return new_status

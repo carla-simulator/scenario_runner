@@ -55,8 +55,10 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     _traffic_light = None
 
+    _starting_point = None
+
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=180):
+                 timeout=60):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
@@ -64,9 +66,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         self._other_actor_transform = None
 
+        if config.trigger_point:
+            self._starting_point = config.trigger_point
+        else:
+            self._starting_point = ego_vehicle.get_transform()
+
         # Timeout of scenario in seconds
         self.timeout = timeout
-
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
                                                              ego_vehicle,
                                                              config,
@@ -74,24 +80,34 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                                                              debug_mode,
                                                              criteria_enable=criteria_enable)
 
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
+        print("da")
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light_for_location(self._starting_point.location)
+        print("da")
 
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
             sys.exit(-1)
 
         self._traffic_light.set_state(carla.TrafficLightState.Green)
-        self._traffic_light.set_green_time(self.timeout)
+        self._traffic_light.set_green_time(10000)
 
+        print("da")
         # other vehicle's traffic light
-        traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
+        traffic_light_other = CarlaDataProvider.get_next_traffic_light_for_location(
+            self._other_actor_transform.location)
+
+        print("da")
 
         if traffic_light_other is None:
             print("No traffic light for the given location of the other vehicle found")
             sys.exit(-1)
 
         traffic_light_other.set_state(carla.TrafficLightState.Red)
-        traffic_light_other.set_red_time(self.timeout)
+        traffic_light_other.set_red_time(10000)
+
+        print("da")
+
+        print("da")
 
     def _initialize_actors(self, config):
         """
@@ -101,9 +117,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         first_vehicle_transform = carla.Transform(
             carla.Location(config.other_actors[0].transform.location.x,
                            config.other_actors[0].transform.location.y,
-                           config.other_actors[0].transform.location.z),
+                           config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
-        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+        first_vehicle = CarlaActorPool.request_new_actor("vehicle.tesla.model3", first_vehicle_transform)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -117,7 +133,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         If this does not happen within 120 seconds, a timeout stops the scenario
         """
-        crossing_point_dynamic = get_crossing_point(self.ego_vehicle)
+        crossing_point_dynamic = get_crossing_point(self._starting_point.location)
+
+        print("crossin {}".format(crossing_point_dynamic))
 
         # start condition
         startcondition = InTriggerDistanceToLocation(
@@ -130,7 +148,10 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
+        location_of_collision_dynamic = get_geometric_linear_intersection(self._starting_point.location,
+                                                                          self._other_actor_transform.location)
+
+        print("location_of_collision_dynamic {}".format(location_of_collision_dynamic))
 
         sync_arrival = SyncArrival(
             self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
@@ -145,7 +166,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # generating waypoints until intersection (target_waypoint)
         plan, target_waypoint = generate_target_waypoint_list(
-            CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), turn)
+            CarlaDataProvider.get_map().get_waypoint(self._other_actor_transform.location, turn))
 
         # Generating waypoint list till next intersection
         wp_choice = target_waypoint.next(5.0)
@@ -181,6 +202,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+        sequence.add_child(CleanupIntersection(self.other_actors[0]))
         sequence.add_child(startcondition)
         sequence.add_child(sync_arrival_parallel)
         sequence.add_child(continue_driving)
