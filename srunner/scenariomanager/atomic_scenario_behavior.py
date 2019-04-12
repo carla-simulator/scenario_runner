@@ -939,6 +939,16 @@ class TrafficJamChecker(AtomicBehavior):
                     self.table_blocked_actors[actor_id]['location'] = current_location
                     self.table_blocked_actors[actor_id]['time'] = current_game_time
 
+                # if the vehicle is on a trigger box than it should have the time reset
+                if actor.is_at_traffic_light():
+                    self.table_blocked_actors[actor_id]['location'] = current_location
+                    self.table_blocked_actors[actor_id]['time'] = current_game_time
+                    if self.debug:
+                        self.world.debug.draw_point(current_location,
+                                                    size=1.3,
+                                                    color=carla.Color(0, 255, 0),
+                                                    life_time=5)
+
                 # if vehicle has been static for a long time we get rid of it
                 if (current_game_time - self.table_blocked_actors[actor_id]['time']) > self.HARD_NUMBER_BLOCKS:
                     list_actors_to_destroy.append(actor_id)
