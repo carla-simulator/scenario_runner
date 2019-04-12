@@ -167,11 +167,18 @@ class ChallengeEvaluator(object):
 
         if phase_codename == 'dev':
             split_name = 'dev_split'
+            repetitions = 1
         elif phase_codename == 'validation':
             split_name = 'val_split'
+            repetitions = 3
         else:
             split_name = 'test_split'
+            repetitions = 3
 
+        if args.debug:
+            repetitions = 1
+
+        self.repetitions = repetitions
         self.phase = phase_codename
         self.split = split_name
         self.track = track
@@ -1000,7 +1007,7 @@ class ChallengeEvaluator(object):
         client.set_timeout(self.client_timeout)
 
         for route_idx, route_description in enumerate(route_descriptions_list):
-            for repetition in range(args.repetitions):
+            for repetition in range(self.repetitions):
                 # check if we have enough wall time to run this specific route
                 if not self.within_available_time():
                     error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx + 1,
@@ -1085,7 +1092,6 @@ if __name__ == '__main__':
     PARSER.add_argument('--host', default='localhost',
                         help='IP of the host server (default: localhost)')
     PARSER.add_argument('--port', default='2000', help='TCP port to listen to (default: 2000)')
-    PARSER.add_argument('--repetitions', type=int, help='Number of repetitions per route', default=3)
     PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
     PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
     PARSER.add_argument('--debug', type=int, help='Run with debug output', default=0)
