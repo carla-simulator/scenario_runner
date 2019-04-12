@@ -893,7 +893,8 @@ class ChallengeEvaluator(object):
                     return False, "Illegal sensor used for Track [{}]!".format(agent.track)
             else:
                 if not (sensor['type'].startswith('sensor.scene_layout') or sensor['type'].startswith(
-                        'sensor.object_finder') or sensor['type'].startswith('sensor.other.gnss')):
+                        'sensor.object_finder') or sensor['type'].startswith('sensor.other.gnss')
+                        or sensor['type'].startswith('sensor.can_bus')):
                     return False, "Illegal sensor used for Track [{}]!".format(agent.track)
 
             # let's check the extrinsics of the sensor
