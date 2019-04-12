@@ -425,6 +425,7 @@ class CarlaActorPool(object):
 
         CarlaActorPool._carla_actor_pool[actor.id] = actor
         return actor
+
     @staticmethod
     def actor_id_exists(actor_id):
         """
@@ -432,8 +433,8 @@ class CarlaActorPool(object):
         """
         if actor_id in CarlaActorPool._carla_actor_pool:
             return True
-        else:
-            return False
+
+        return False
 
     @staticmethod
     def get_hero_actor():

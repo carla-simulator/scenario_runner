@@ -24,6 +24,7 @@ VEHICLE_TURNING_SCENARIOS = [
     "VehicleTurningLeft"
 ]
 
+
 def get_opponent_transform(_start_distance, waypoint, trigger_location):
     """
     Calculate the transform of the adversary
@@ -85,8 +86,6 @@ class VehicleTurningRight(BasicScenario):
                                                   world,
                                                   debug_mode,
                                                   criteria_enable=criteria_enable)
-
-
 
     def _initialize_actors(self, config):
         """
