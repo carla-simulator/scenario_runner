@@ -34,8 +34,6 @@ class ControlLoss(BasicScenario):
 
     category = "ControlLoss"
 
-    timeout = 60            # Timeout of scenario in seconds
-
     def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
@@ -52,7 +50,7 @@ class ControlLoss(BasicScenario):
         self._current_throttle_noise = [0]
         self._start_distance = 20
         self._trigger_dist = 2
-        self._end_distance = 70
+        self._end_distance = 30
         self._ego_vehicle_max_steer = 0.0
         self._ego_vehicle_max_throttle = 1.0
         self._ego_vehicle_target_velocity = 15
