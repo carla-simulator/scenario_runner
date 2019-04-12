@@ -175,7 +175,7 @@ class ChallengeEvaluator(object):
             split_name = 'test_split'
             repetitions = 3
 
-        if args.debug:
+        if args.debug > 0:
             repetitions = 1
 
         self.repetitions = repetitions
