@@ -65,9 +65,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
         traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
         if self._traffic_light is None or traffic_light_other is None:
-            print("No traffic light for the given location found")
-            self._initialized = False
-            return
+            raise RuntimeError("No traffic light for the given location found")
         self._traffic_light.set_state(carla.TrafficLightState.Green)
         self._traffic_light.set_green_time(self.timeout)
         # other vehicle's traffic light
@@ -78,16 +76,18 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         """
         Custom initialization
         """
-        if self._initialized:
-            self._other_actor_transform = config.other_actors[0].transform
-            first_vehicle_transform = carla.Transform(
-                carla.Location(config.other_actors[0].transform.location.x,
-                            config.other_actors[0].transform.location.y,
-                            config.other_actors[0].transform.location.z - 500),
-                config.other_actors[0].transform.rotation)
+        self._other_actor_transform = config.other_actors[0].transform
+        first_vehicle_transform = carla.Transform(
+            carla.Location(config.other_actors[0].transform.location.x,
+                        config.other_actors[0].transform.location.y,
+                        config.other_actors[0].transform.location.z - 500),
+            config.other_actors[0].transform.rotation)
+        try:
             first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, self._other_actor_transform)
-            first_vehicle.set_transform(first_vehicle_transform)
-            self.other_actors.append(first_vehicle)
+        except RuntimeError as r:
+            raise r
+        first_vehicle.set_transform(first_vehicle_transform)
+        self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
         """
@@ -100,40 +100,39 @@ class SignalizedJunctionLeftTurn(BasicScenario):
 
         sequence = py_trees.composites.Sequence("Sequence Behavior")
 
-        if self._initialized:
-            # Selecting straight path at intersection
-            target_waypoint = generate_target_waypoint(
-                CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), 0)
-            # Generating waypoint list till next intersection
-            plan = []
+        # Selecting straight path at intersection
+        target_waypoint = generate_target_waypoint(
+            CarlaDataProvider.get_map().get_waypoint(self.other_actors[0].get_location()), 0)
+        # Generating waypoint list till next intersection
+        plan = []
+        wp_choice = target_waypoint.next(1.0)
+        while not wp_choice[0].is_intersection:
+            target_waypoint = wp_choice[0]
+            plan.append((target_waypoint, RoadOption.LANEFOLLOW))
             wp_choice = target_waypoint.next(1.0)
-            while not wp_choice[0].is_intersection:
-                target_waypoint = wp_choice[0]
-                plan.append((target_waypoint, RoadOption.LANEFOLLOW))
-                wp_choice = target_waypoint.next(1.0)
-            # adding flow of actors
-            actor_source = ActorSource(
-                self._world, ['vehicle.tesla.model3', 'vehicle.audi.tt'],
-                self._other_actor_transform, 15, self._blackboard_queue_name)
-            # destroying flow of actors
-            actor_sink = ActorSink(self._world, plan[-1][0].transform.location, 10)
-            # follow waypoints untill next intersection
-            move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan,
-                                          blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
-            # wait
-            wait = DriveDistance(self.ego_vehicle, self._ego_distance)
+        # adding flow of actors
+        actor_source = ActorSource(
+            self._world, ['vehicle.tesla.model3', 'vehicle.audi.tt'],
+            self._other_actor_transform, 15, self._blackboard_queue_name)
+        # destroying flow of actors
+        actor_sink = ActorSink(self._world, plan[-1][0].transform.location, 10)
+        # follow waypoints untill next intersection
+        move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan,
+                                        blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
+        # wait
+        wait = DriveDistance(self.ego_vehicle, self._ego_distance)
 
-            # Behavior tree
-            root = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-            root.add_child(wait)
-            root.add_child(actor_source)
-            root.add_child(actor_sink)
-            root.add_child(move_actor)
+        # Behavior tree
+        root = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        root.add_child(wait)
+        root.add_child(actor_source)
+        root.add_child(actor_sink)
+        root.add_child(move_actor)
 
-            sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
-            sequence.add_child(root)
-            sequence.add_child(ActorDestroy(self.other_actors[0]))
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform))
+        sequence.add_child(root)
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
 
