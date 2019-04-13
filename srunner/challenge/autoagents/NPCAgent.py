@@ -9,7 +9,7 @@ from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 
 class NPCAgent(AutonomousAgent):
     def setup(self, path_to_conf_file):
-        self.track = Track.SCENE_LAYOUT
+        self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
         self.route_assigned = False
         self._agent = None
@@ -34,9 +34,8 @@ class NPCAgent(AutonomousAgent):
         """
 
         sensors = [
-            {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'},
-            {'type': 'sensor.scene_layout', 'id': 'scene_layout'},
-            {'type': 'sensor.object_finder', 'reading_frequency': 20, 'id': 'object_finder'},
+            {'type':'sensor.camera.rgb', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+             'width': 300, 'height': 200, 'fov': 100, 'id': 'Left'},
         ]
 
         return sensors

@@ -1255,7 +1255,7 @@ class TrafficLightManipulator(AtomicBehavior):
     This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
     """
     MAX_DISTANCE_TRAFFIC_LIGHT = 15
-    RANDOM_VALUE_INTERVENTION = 0.75
+    RANDOM_VALUE_INTERVENTION = 0.3
     RED = carla.TrafficLightState.Red
     GREEN = carla.TrafficLightState.Green
 
@@ -1300,6 +1300,12 @@ class TrafficLightManipulator(AtomicBehavior):
                 self.intervention = random.random() > self.RANDOM_VALUE_INTERVENTION
 
                 if self.intervention:
+                    if self.debug:
+                        print("--- We are going to affect the following intersection")
+                        loc = self.target_traffic_light.get_location()
+                        CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
+                                                                       size=0.5, color=carla.Color(255, 255, 0),
+                                                                       life_time=50000)
                     self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
         else:
             if not self.reset_annotations:
