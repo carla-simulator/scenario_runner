@@ -81,6 +81,8 @@ class VehicleTurningRight(BasicScenario):
         # Number of attempts made so far
         self._spawn_attempted = 0
 
+        self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
+
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
                                                   config,
@@ -145,10 +147,10 @@ class VehicleTurningRight(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
-
-        trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
+        trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
+                                                                 self.other_actors[0].get_location(), 15)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
@@ -225,6 +227,8 @@ class VehicleTurningLeft(BasicScenario):
         # Number of attempts made so far
         self._spawn_attempted = 0
 
+        self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
+
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
                                                  ego_vehicle,
                                                  config,
@@ -288,7 +292,8 @@ class VehicleTurningLeft(BasicScenario):
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
-        trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
+        trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
+                                                                 self.other_actors[0].get_location(), 15)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
