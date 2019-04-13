@@ -171,9 +171,9 @@ class DynamicObjectCrossing(BasicScenario):
         location, _ = get_location_in_distance_from_wp(waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         if self._adversary_type:
-            offset = {"orientation": 270, "position": 90, "z": 0.8, "k": -0.1}
+            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
         else:
-            offset = {"orientation": 270, "position": 90, "z": 0.8, "k": -0.1}
+            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
@@ -182,6 +182,7 @@ class DynamicObjectCrossing(BasicScenario):
         location += offset_location
         location.z = self._trigger_location.z + offset['z']
         return carla.Transform(location, carla.Rotation(yaw=orientation_yaw)), orientation_yaw
+
 
     def _spawn_adversary(self, transform, orientation_yaw):
 
@@ -290,7 +291,6 @@ class DynamicObjectCrossing(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
-
         # leaf nodes
         start_condition = InTimeToArrivalToVehicle(
             self.other_actors[0], self.ego_vehicle, self._time_to_reach)

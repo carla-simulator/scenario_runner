@@ -80,7 +80,7 @@ class VehicleTurningRight(BasicScenario):
         self._number_of_attempts = 20
         # Number of attempts made so far
         self._spawn_attempted = 0
-        # Get the town so we can change the distance
+
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
                                                   ego_vehicle,
                                                   config,
@@ -173,7 +173,6 @@ class VehicleTurningRight(BasicScenario):
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
         scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
-
         actor_ego_sync.add_child(actor_velocity)
         actor_ego_sync.add_child(actor_traverse)
 
@@ -237,7 +236,6 @@ class VehicleTurningLeft(BasicScenario):
         """
         Custom initialization
         """
-
         waypoint = self._reference_waypoint
         waypoint = generate_target_waypoint(waypoint, -1)
         _start_distance = 8
@@ -247,7 +245,7 @@ class VehicleTurningLeft(BasicScenario):
             if wp_next is not None:
                 _start_distance += 1
                 waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Shoulder:
+                if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
                     break
             else:
                 break
@@ -296,7 +294,6 @@ class VehicleTurningLeft(BasicScenario):
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
         end_condition = TimeOut(5)
-
         # non leaf nodes
         scenario_sequence = py_trees.composites.Sequence()
 
