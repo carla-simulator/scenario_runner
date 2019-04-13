@@ -321,7 +321,7 @@ class DynamicObjectCrossing(BasicScenario):
                                                          name='TransformSetterTS3walker', physics=False))
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self.transform2,
                                                          name='TransformSetterTS3coca', physics=False))
-        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
         scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
         scenario_sequence.add_child(keep_velocity)
