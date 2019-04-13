@@ -63,15 +63,15 @@ COPY team_code /workspace/team_code
 RUN mkdir -p /workspace/results
 RUN chmod +x /workspace/scenario_runner/srunner/challenge/run_evaluator.sh
 
+
 ########################################################################################################################
 ########################################################################################################################
 ############                                BEGINNING OF USER COMMANDS                                      ############
 ########################################################################################################################
 ########################################################################################################################
 
-ENV TEAM_AGENT /workspace/team_code/YOUR_CODE.py
+ENV TEAM_AGENT /workspace/team_code/YOUR_PYTHON_CODE.py
 ENV TEAM_CONFIG /workspace/team_code/YOUR_CONFIG_FILE
-
 
 
 ########################################################################################################################
@@ -84,3 +84,6 @@ ENV HTTP_PROXY ""
 ENV HTTPS_PROXY ""
 ENV http_proxy ""
 ENV https_proxy ""
+
+
+CMD ["/bin/bash"]
