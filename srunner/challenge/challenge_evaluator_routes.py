@@ -462,7 +462,8 @@ class ChallengeEvaluator(object):
         blackboard = py_trees.blackboard.Blackboard()
         blackboard.set('master_scenario_command', 'scenarios_running')
 
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration, timeout=timeout)
+        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration,
+                              timeout=timeout, debug_mode=self.debug>0)
 
     def build_background_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -488,14 +489,16 @@ class ChallengeEvaluator(object):
         actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
         scenario_configuration.other_actors = [actor_configuration_instance]
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
+        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
+                                  timeout=timeout, debug_mode=self.debug>0)
 
     def build_trafficlight_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
         scenario_configuration.route = None
         scenario_configuration.town = town_name
 
-        return TrafficLightScenario(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
+        return TrafficLightScenario(self.world, self.ego_vehicle, scenario_configuration,
+                                    timeout=timeout, debug_mode=self.debug>0)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -591,11 +594,10 @@ class ChallengeEvaluator(object):
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
             if self.debug:
-                pass
-                # spectator = self.world.get_spectator()
-                # ego_trans = self.ego_vehicle.get_transform()
-                # spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
-                #                                         carla.Rotation(pitch=-90)))
+                spectator = self.world.get_spectator()
+                ego_trans = self.ego_vehicle.get_transform()
+                spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
+                                                        carla.Rotation(pitch=-90)))
             if self.route_visible:
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=50000.0)

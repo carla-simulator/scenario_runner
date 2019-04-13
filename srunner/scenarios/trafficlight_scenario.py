@@ -31,6 +31,7 @@ class TrafficLightScenario(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self.config = config
+        self.debug = debug_mode
 
         self.timeout = timeout  # Timeout of scenario in seconds
 
@@ -49,7 +50,7 @@ class TrafficLightScenario(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        traffic_manipulator = TrafficLightManipulator(self.ego_vehicle, debug=False)
+        traffic_manipulator = TrafficLightManipulator(self.ego_vehicle, debug=self.debug)
         sequence.add_child(traffic_manipulator)
 
         return sequence
