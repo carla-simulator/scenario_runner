@@ -36,6 +36,7 @@ def get_opponent_transform(_start_distance, waypoint, trigger_location):
         _wp = _wp[-1]
     else:
         raise RuntimeError("Cannot get next waypoint !")
+
     lane_width = _wp.lane_width
     location = _wp.transform.location
     orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
@@ -101,8 +102,9 @@ class VehicleTurningRight(BasicScenario):
             if wp_next is not None:
                 _start_distance += 1
                 waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Sidewalk:
+                if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
                     break
+
             else:
                 break
 
@@ -171,7 +173,6 @@ class VehicleTurningRight(BasicScenario):
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
         scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
-
         actor_ego_sync.add_child(actor_velocity)
         actor_ego_sync.add_child(actor_traverse)
 
@@ -216,7 +217,6 @@ class VehicleTurningLeft(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
         self._trigger_location = config.trigger_point.location
         self._other_actor_transform = None
-
         self._num_lane_changes = 0
         # Timeout of scenario in seconds
         self.timeout = timeout
@@ -236,7 +236,6 @@ class VehicleTurningLeft(BasicScenario):
         """
         Custom initialization
         """
-
         waypoint = self._reference_waypoint
         waypoint = generate_target_waypoint(waypoint, -1)
         _start_distance = 8
@@ -246,7 +245,7 @@ class VehicleTurningLeft(BasicScenario):
             if wp_next is not None:
                 _start_distance += 1
                 waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Sidewalk:
+                if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
                     break
             else:
                 break
@@ -286,7 +285,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        lane_width = CarlaDataProvider.get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
         trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
@@ -295,7 +294,6 @@ class VehicleTurningLeft(BasicScenario):
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
         end_condition = TimeOut(5)
-
         # non leaf nodes
         scenario_sequence = py_trees.composites.Sequence()
 

@@ -387,6 +387,7 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         if current_velocity > other_velocity:
             time_to_arrival = 2 * distance / (current_velocity - other_velocity)
 
+
         if time_to_arrival < self._time:
             new_status = py_trees.common.Status.SUCCESS
 

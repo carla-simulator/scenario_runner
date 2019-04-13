@@ -183,16 +183,15 @@ class DynamicObjectCrossing(BasicScenario):
         location.z = self._trigger_location.z + offset['z']
         return carla.Transform(location, carla.Rotation(yaw=orientation_yaw)), orientation_yaw
 
+
     def _spawn_adversary(self, transform, orientation_yaw):
 
         self._time_to_reach *= self._num_lane_changes
-        adversary = None
 
         if self._adversary_type is False:
             self._walker_yaw = orientation_yaw
             self._other_actor_target_velocity = 3 + (0.4 * self._num_lane_changes)
             walker = CarlaActorPool.request_new_actor('walker*', transform)
-            walker.set_simulate_physics(enabled=False)
             adversary = walker
         else:
             self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
@@ -216,8 +215,10 @@ class DynamicObjectCrossing(BasicScenario):
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
+        spawn_point_wp = self.ego_vehicle.get_world().get_map().get_waypoint(transform.location)
+
         self.transform2 = carla.Transform(carla.Location(x_static, y_static,
-                                                         self._reference_waypoint.transform.location.z))
+                                                         spawn_point_wp.transform.location.z+0.3))
 
         static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
         static.set_simulate_physics(enabled=False)
@@ -254,7 +255,7 @@ class DynamicObjectCrossing(BasicScenario):
                 break
             except RuntimeError as r:
                 # We keep retrying until we spawn
-                print (" Base transform is blocking objects ", self.transform)
+                print("Base transform is blocking objects ", self.transform)
                 _start_distance += 0.4
                 self._spawn_attempted += 1
                 if self._spawn_attempted >= self._number_of_attempts:
@@ -288,9 +289,8 @@ class DynamicObjectCrossing(BasicScenario):
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
-
         # leaf nodes
         start_condition = InTimeToArrivalToVehicle(
             self.other_actors[0], self.ego_vehicle, self._time_to_reach)
