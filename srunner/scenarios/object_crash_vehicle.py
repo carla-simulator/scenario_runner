@@ -171,9 +171,9 @@ class DynamicObjectCrossing(BasicScenario):
         location, _ = get_location_in_distance_from_wp(waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         if self._adversary_type:
-            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
+            offset = {"orientation": 270, "position": 90, "z": 0.8, "k": -0.1}
         else:
-            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
+            offset = {"orientation": 270, "position": 90, "z": 0.8, "k": -0.1}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
@@ -186,13 +186,11 @@ class DynamicObjectCrossing(BasicScenario):
     def _spawn_adversary(self, transform, orientation_yaw):
 
         self._time_to_reach *= self._num_lane_changes
-        adversary = None
 
         if self._adversary_type is False:
             self._walker_yaw = orientation_yaw
             self._other_actor_target_velocity = 3 + (0.4 * self._num_lane_changes)
             walker = CarlaActorPool.request_new_actor('walker*', transform)
-            walker.set_simulate_physics(enabled=False)
             adversary = walker
         else:
             self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
@@ -216,8 +214,10 @@ class DynamicObjectCrossing(BasicScenario):
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
+        spawn_point_wp = self.ego_vehicle.get_world().get_map().get_waypoint(transform.location)
+
         self.transform2 = carla.Transform(carla.Location(x_static, y_static,
-                                                         self._reference_waypoint.transform.location.z))
+                                                         spawn_point_wp.transform.location.z+0.3))
 
         static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
         static.set_simulate_physics(enabled=False)
@@ -254,7 +254,7 @@ class DynamicObjectCrossing(BasicScenario):
                 break
             except RuntimeError as r:
                 # We keep retrying until we spawn
-                print (" Base transform is blocking objects ", self.transform)
+                print("Base transform is blocking objects ", self.transform)
                 _start_distance += 0.4
                 self._spawn_attempted += 1
                 if self._spawn_attempted >= self._number_of_attempts:
@@ -288,7 +288,7 @@ class DynamicObjectCrossing(BasicScenario):
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
 
         # leaf nodes
@@ -321,7 +321,7 @@ class DynamicObjectCrossing(BasicScenario):
                                                          name='TransformSetterTS3walker', physics=False))
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self.transform2,
                                                          name='TransformSetterTS3coca', physics=False))
-        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
         scenario_sequence.add_child(start_condition)
         scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
         scenario_sequence.add_child(keep_velocity)
