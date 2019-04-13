@@ -1286,6 +1286,10 @@ class TrafficLightManipulator(AtomicBehavior):
         # find a suitable target
         if not self.target_traffic_light:
             traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
+            if not traffic_light:
+                # nothing else to do in this iteration...
+                return new_status
+
             distance_to_traffic_light = traffic_light.get_location().distance(self.ego_vehicle.get_location())
 
             if self.debug:
