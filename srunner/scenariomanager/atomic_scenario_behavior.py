@@ -1255,7 +1255,7 @@ class TrafficLightManipulator(AtomicBehavior):
     This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
     """
     MAX_DISTANCE_TRAFFIC_LIGHT = 15
-    RANDOM_VALUE_INTERVENTION = 0.60
+    RANDOM_VALUE_INTERVENTION = 0.75
     RED = carla.TrafficLightState.Red
     GREEN = carla.TrafficLightState.Green
 
