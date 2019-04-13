@@ -175,6 +175,128 @@ class CarlaDataProvider(object):
         return CarlaDataProvider._map
 
     @staticmethod
+    def annotate_trafficlight_in_group(traffic_light):
+        dict_annotations = {'ref': [], 'opposite': [], 'left': [], 'right': []}
+
+        ref_yaw = traffic_light.get_transform().rotation.yaw
+        group_tl = traffic_light.get_group_traffic_lights()
+        for target_tl in group_tl:
+            target_yaw = target_tl.get_transform().rotation.yaw
+            diff = target_yaw - ref_yaw
+            if diff < 0.0:
+                diff = 360.0 + diff
+
+            if diff <= 45.0 or diff > 340.0:
+                dict_annotations['ref'].append(target_tl)
+            elif diff > 240 and diff < 300:
+                dict_annotations['left'].append(target_tl)
+            elif diff > 160.0 and diff <= 240.0:
+                dict_annotations['opposite'].append(target_tl)
+            else:
+                dict_annotations['right'].append(target_tl)
+
+        return dict_annotations
+
+    @staticmethod
+    def update_light_states(ego_light, annotations, states, freeze=False, timeout=1000000000):
+        reset_params = []
+
+        if 'ego' in states:
+            prev_state = ego_light.get_state()
+            prev_green_time = ego_light.get_green_time()
+            prev_red_time = ego_light.get_red_time()
+            prev_yellow_time = ego_light.get_yellow_time()
+            reset_params.append({'light': ego_light,
+                                 'state': prev_state,
+                                 'green_time': prev_green_time,
+                                 'red_time': prev_red_time,
+                                 'yellow_time': prev_yellow_time})
+
+            ego_light.set_state(states['ego'])
+            if freeze:
+                ego_light.set_green_time(timeout)
+                ego_light.set_red_time(timeout)
+                ego_light.set_yellow_time(timeout)
+        if 'ref' in states:
+            for light in annotations['ref']:
+                prev_state = light.get_state()
+                prev_green_time = light.get_green_time()
+                prev_red_time = light.get_red_time()
+                prev_yellow_time = light.get_yellow_time()
+                reset_params.append({'light': light,
+                                     'state': prev_state,
+                                     'green_time': prev_green_time,
+                                     'red_time': prev_red_time,
+                                     'yellow_time': prev_yellow_time})
+
+                light.set_state(states['ref'])
+                if freeze:
+                    light.set_green_time(timeout)
+                    light.set_red_time(timeout)
+                    light.set_yellow_time(timeout)
+        if 'left' in states:
+            for light in annotations['left']:
+                prev_state = light.get_state()
+                prev_green_time = light.get_green_time()
+                prev_red_time = light.get_red_time()
+                prev_yellow_time = light.get_yellow_time()
+                reset_params.append({'light': light,
+                                     'state': prev_state,
+                                     'green_time': prev_green_time,
+                                     'red_time': prev_red_time,
+                                     'yellow_time': prev_yellow_time})
+
+                light.set_state(states['left'])
+                if freeze:
+                    light.set_green_time(timeout)
+                    light.set_red_time(timeout)
+                    light.set_yellow_time(timeout)
+        if 'right' in states:
+            for light in annotations['right']:
+                prev_state = light.get_state()
+                prev_green_time = light.get_green_time()
+                prev_red_time = light.get_red_time()
+                prev_yellow_time = light.get_yellow_time()
+                reset_params.append({'light': light,
+                                     'state': prev_state,
+                                     'green_time': prev_green_time,
+                                     'red_time': prev_red_time,
+                                     'yellow_time': prev_yellow_time})
+
+                light.set_state(states['right'])
+                if freeze:
+                    light.set_green_time(timeout)
+                    light.set_red_time(timeout)
+                    light.set_yellow_time(timeout)
+        if 'opposite' in states:
+            for light in annotations['opposite']:
+                prev_state = light.get_state()
+                prev_green_time = light.get_green_time()
+                prev_red_time = light.get_red_time()
+                prev_yellow_time = light.get_yellow_time()
+                reset_params.append({'light': light,
+                                     'state': prev_state,
+                                     'green_time': prev_green_time,
+                                     'red_time': prev_red_time,
+                                     'yellow_time': prev_yellow_time})
+
+                light.set_state(states['opposite'])
+                if freeze:
+                    light.set_green_time(timeout)
+                    light.set_red_time(timeout)
+                    light.set_yellow_time(timeout)
+
+        return reset_params
+
+    @staticmethod
+    def reset_lights(reset_params):
+        for param in reset_params:
+            param['light'].set_state(param['state'])
+            param['light'].set_green_time(param['green_time'])
+            param['light'].set_red_time(param['red_time'])
+            param['light'].set_yellow_time(param['yellow_time'])
+
+    @staticmethod
     def get_next_traffic_light(actor, use_cached_location=True):
         """
         returns the next relevant traffic light for the provided actor

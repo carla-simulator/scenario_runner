@@ -1247,3 +1247,83 @@ class ActorSink(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
         CarlaActorPool.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
+
+class TrafficLightManipulator(AtomicBehavior):
+
+    """
+    Atomic behavior that manipulate traffic lights to simulate TS07, TS08 and TS09
+    This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
+    """
+    MAX_DISTANCE_TRAFFIC_LIGHT = 15
+    RANDOM_VALUE_INTERVENTION = 0.75
+    RED = carla.TrafficLightState.Red
+    GREEN = carla.TrafficLightState.Green
+
+    INT_CONF_OPP = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
+    INT_CONF_LFT = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
+    INT_CONF_RGT = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
+    INTERSECTION_CONFIGURATIONS = [INT_CONF_OPP, INT_CONF_LFT, INT_CONF_RGT]
+
+    def __init__(self, ego_vehicle, debug=False, name="TrafficLightManipulator"):
+        super(TrafficLightManipulator, self).__init__(name)
+        self.ego_vehicle = ego_vehicle
+        self.debug = debug
+        self.blackboard = Blackboard()
+        self.target_traffic_light = None
+        self.annotations = None
+        self.reset_annotations = None
+        self.intervention = False
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        master_scenario_command = self.blackboard.get('master_scenario_command')
+        if master_scenario_command and master_scenario_command == 'scenarios_stop_request':
+            new_status = py_trees.common.Status.SUCCESS
+            return new_status
+        else:
+            new_status = py_trees.common.Status.RUNNING
+
+        # find a suitable target
+        if not self.target_traffic_light:
+            traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
+            if not traffic_light:
+                # nothing else to do in this iteration...
+                return new_status
+
+            distance_to_traffic_light = traffic_light.get_location().distance(self.ego_vehicle.get_location())
+
+            if self.debug:
+                print("[{}] distance={}".format(traffic_light.id, distance_to_traffic_light))
+
+            if distance_to_traffic_light < self.MAX_DISTANCE_TRAFFIC_LIGHT:
+                self.target_traffic_light = traffic_light
+                self.intervention = random.random() > self.RANDOM_VALUE_INTERVENTION
+
+                if self.intervention:
+                    self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
+        else:
+            if not self.reset_annotations:
+                if self.intervention:
+                    # the light has not been manipulated yet
+                    choice = random.choice(self.INTERSECTION_CONFIGURATIONS)
+                    self.reset_annotations = CarlaDataProvider.update_light_states(
+                        self.target_traffic_light,
+                        self.annotations,
+                        choice,
+                        freeze=True)
+
+            else:
+                # the traffic light has been manipulated...
+                distance_to_traffic_light = self.target_traffic_light.get_location().distance(self.ego_vehicle.get_location())
+                if self.debug:
+                    print("++ distance={}".format(distance_to_traffic_light))
+
+                if distance_to_traffic_light > self.MAX_DISTANCE_TRAFFIC_LIGHT:
+                    if self.reset_annotations:
+                        CarlaDataProvider.reset_lights(self.reset_annotations)
+                        self.target_traffic_light = None
+                        self.reset_annotations = None
+                        self.annotations = None
+                        self.intervention = False
+
+        return new_status

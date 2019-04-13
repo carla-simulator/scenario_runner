@@ -49,6 +49,7 @@ from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionR
 from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 from srunner.scenarios.master_scenario import MasterScenario
+from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
 from srunner.scenariomanager.traffic_events import TrafficEventType
@@ -484,6 +485,13 @@ class ChallengeEvaluator(object):
         scenario_configuration.other_actors = [actor_configuration_instance]
 
         return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
+
+    def build_trafficlight_scenario(self, town_name, timeout=300):
+        scenario_configuration = ScenarioConfiguration()
+        scenario_configuration.route = None
+        scenario_configuration.town = town_name
+
+        return TrafficLightScenario(self.world, self.ego_vehicle, scenario_configuration, timeout=timeout)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -973,7 +981,10 @@ class ChallengeEvaluator(object):
         self.background_scenario = self.build_background_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
 
-        self.list_scenarios = [self.master_scenario, self.background_scenario]
+        self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
+                                                                  timeout=route_timeout)
+
+        self.list_scenarios = [self.master_scenario, self.background_scenario, self.traffic_light_scenario]
         # build the instance based on the parsed definitions.
         if self.debug > 0:
             for scenario in sampled_scenarios_definitions:
