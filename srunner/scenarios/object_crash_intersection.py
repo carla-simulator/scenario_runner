@@ -149,8 +149,13 @@ class VehicleTurningRight(BasicScenario):
 
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
-        trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
-                                                                 self.other_actors[0].get_location(), 15)
+
+        if self._ego_route is not None:
+            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
+                                                                     self.other_actors[0].get_location(), 15)
+        else:
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
+
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
@@ -291,9 +296,12 @@ class VehicleTurningLeft(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
+        if self._ego_route is not None:
+            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
+                                                                     self.other_actors[0].get_location(), 15)
+        else:
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
 
-        trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
-                                                                 self.other_actors[0].get_location(), 15)
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
