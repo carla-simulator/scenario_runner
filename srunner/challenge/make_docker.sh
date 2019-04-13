@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ "$#" -gt 0 ]; then
+    TAG_NAME=$1
+else
+    TAG_NAME=carla-challenge-master
+fi
+
 if [ -z "$CARLA_ROOT" ]
 then
     echo "Error $CARLA_ROOT is empty. Set \$CARLA_ROOT as an environment variable first."
@@ -23,6 +29,6 @@ git clone -b carla_challenge --single-branch https://github.com/carla-simulator/
 docker build --force-rm --build-arg HTTP_PROXY=${HTTP_PROXY} \
              --build-arg HTTPS_PROXY=${HTTPS_PROXY} \
              --build-arg http_proxy=${http_proxy} \
-             -t carla-challenge-master -f ${ROOT_SCENARIO_RUNNER}/srunner/challenge/Dockerfile.master .
+             -t ${TAG_NAME} -f ${ROOT_SCENARIO_RUNNER}/srunner/challenge/Dockerfile.master .
 
 rm -fr .tmp
