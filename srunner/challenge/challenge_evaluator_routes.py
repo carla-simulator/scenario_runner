@@ -311,6 +311,10 @@ class ChallengeEvaluator(object):
         for w in waypoints:
             wp = w[0].location + carla.Location(z=vertical_shift)
             self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
+        self.world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=0.2,
+                                    color=carla.Color(0, 0, 255), life_time=persistency)
+        self.world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=0.2,
+                                    color=carla.Color(255, 0, 0), life_time=persistency)
 
     def scenario_sampling(self, potential_scenarios_definitions):
         """
@@ -587,10 +591,11 @@ class ChallengeEvaluator(object):
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
             if self.debug:
-                spectator = self.world.get_spectator()
-                ego_trans = self.ego_vehicle.get_transform()
-                spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
-                                                        carla.Rotation(pitch=-90)))
+                pass
+                # spectator = self.world.get_spectator()
+                # ego_trans = self.ego_vehicle.get_transform()
+                # spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
+                #                                         carla.Rotation(pitch=-90)))
             if self.route_visible:
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=50000.0)
