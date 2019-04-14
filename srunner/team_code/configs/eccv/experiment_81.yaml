@@ -1,0 +1,90 @@
+
+#### General Configuration Parameters ####
+SAVE_SCHEDULE: [2000, 4000, 8000, 16000, 32000, 64000, 100000, 200000, 300000, 400000, 500000]
+
+NUMBER_OF_LOADING_WORKERS: 12   # Number of threads used in the data loader
+
+#### Input related parameters ####
+SENSORS:
+  rgb: (3, 88, 200)
+MEASUREMENTS:
+  targets: (31)
+
+BATCH_SIZE: 120
+NUMBER_ITERATIONS: 500000
+STEERING_DIVISION: [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
+LABELS_DIVISION: [[0, 2, 5], [3], [4]]
+TARGETS: ['steer', 'throttle', 'brake']
+INPUTS: ['speed_module']
+NUMBER_FRAMES_FUSION: 1
+NUMBER_IMAGES_SEQUENCE: 1
+SEQUENCE_STRIDE: 1
+AUGMENT_LATERAL_STEERINGS: 6  # Depending on this value there is a constant multiplying lateral steers
+SPEED_FACTOR: 40.0
+TRAIN_DATASET_NAME: '02HoursW1-3-6-8'
+AUGMENTATION: None
+DATA_USED: 'all'
+USE_NOISE_DATA: True
+
+#### Testing Related Parameters ####
+TEST_SCHEDULE: [2000, 4000, 8000, 16000, 32000, 64000, 100000, 200000, 300000, 400000, 500000]  # The frequency the model is actually tested.
+
+
+#### Network Related Parameters ####
+
+
+MODEL_TYPE: 'coil-icra'
+MODEL_CONFIGURATION:  # good place to check integrity. All sizes should match
+  perception:
+    conv:
+      channels: [32, 32, 64, 64, 128, 128, 256, 256]
+      kernels: [5, 3, 3, 3, 3, 3, 3, 3]
+      strides: [2, 1, 2, 1, 2, 1, 1, 1]
+      dropouts: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    fc:
+      neurons: [512, 512]
+      dropouts: [0.0, 0.5]
+
+  measurements:
+    fc:
+      neurons: [128, 128]
+      dropouts: [0.0, 0.5]
+  join:
+    fc:
+      neurons: [512]
+      dropouts: [0.0]
+  speed_branch:
+    fc:
+      neurons: [256, 256]
+      dropouts: [0.5, 0.5]
+  branches:
+    number_of_branches: 4
+    fc:
+      neurons: [256, 256]
+      dropouts: [0.5, 0.5]
+
+
+
+LEARNING_RATE: 0.0002  # First
+LEARNING_RATE_DECAY_INTERVAL: 50000
+LEARNING_RATE_DECAY_LEVEL: 0.5
+
+#TODO check how to use this part
+BRANCH_LOSS_WEIGHT: [0.95, 0.95, 0.95, 0.95, 0.05]
+LOSS_FUNCTION: 'L2'
+
+VARIABLE_WEIGHT:
+  Steer: 0.5
+  Gas: 0.45
+  Brake: 0.05
+
+
+
+
+#### Simulation Related Parameters ####
+IMAGE_CUT: [115, 510]  # How you should cut the input image that is received from the server
+USE_ORACLE: True
+
+
+
+

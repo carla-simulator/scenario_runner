@@ -1,0 +1,80 @@
+#### General Configuration Parameters ####
+SAVE_SCHEDULE: range(0,1000001, 10000) # The iterations where training checkpoints are going to be saved
+NUMBER_OF_LOADING_WORKERS: 12   # Number of threads used in the data loader
+MAGICAL_SEED: 26957017
+#### Input related parameters ####
+# A dictionary with all the sensors that are going to be used as input
+# this should match the train dataset
+SENSORS:
+  rgb: [3, 88, 200] # A RGB input sensor with three channels that is resized to 200x88
+MEASUREMENTS:
+  float_data: [31]  # Number of float data that must be read from the dataset
+BATCH_SIZE: 120
+NUMBER_ITERATIONS: 100000
+TARGETS: ['steer', 'throttle', 'brake']  # From the float data, the ones that the network should estimate
+INPUTS: ['speed_module'] # From the float data, the ones that are input to the neural network
+NUMBER_FRAMES_FUSION: 1  # Number of frames fused
+NUMBER_IMAGES_SEQUENCE: 1  # Number of frames sent in sequence
+SEQUENCE_STRIDE: 1  # Number of frames skipped when reading the data
+AUGMENT_LATERAL_STEERINGS: 6  # Depending on this value there is a constant multiplying lateral steers
+SPEED_FACTOR: 12.0  # The constant that is divides the speed_module in order to make it from 0-1
+TRAIN_DATASET_NAME: 'CoILTrainTown03'  # The name of the training dataset used. Must be inside COIL_DATASET_PATH folder
+AUGMENTATION: None  # The image augmentation applied on every input image
+DATA_USED: 'all'  # The part of the data to be used
+USE_NOISE_DATA: True  # If we use the noise data.
+NUMBER_OF_HOURS: 50  # Number of hours to be taken from the input data
+PRELOAD_MODEL_ALIAS: 'resnet34imnet10'
+PRELOAD_MODEL_BATCH: 'nocrash'
+PRELOAD_MODEL_CHECKPOINT: '320000'
+
+#### Testing Related Parameters ####
+TEST_SCHEDULE: [2000, 100000]  # The frequency the model is actually tested.
+
+#### Model Related Parameters ####
+# Network Parameters #
+MODEL_TYPE: 'coil-icra' # The type of model. Defines which modules the model has.
+MODEL_CONFIGURATION:  # Based on the MODEL_TYPE, we specify the structure
+  perception:  # The module that process the image input, it ouput the number of classes
+    res:
+      name: 'resnet34'
+      num_classes: 512
+
+  measurements:  # The module the process the input float data, in this case speed_input
+    fc:  # Easy to configure fully connected layer
+      neurons: [128, 128] # Each position add a new layer with the specified number of neurons
+      dropouts: [0.0, 0.0]
+  join:  # The module that joins both the measurements and the perception
+    fc:
+      neurons: [512]
+      dropouts: [0.0]
+  speed_branch:  # The prediction branch speed branch
+    fc:
+      neurons: [256, 256]
+      dropouts: [0.0, 0.5]
+  branches:  # The output branches for the different possible directions ( Straight, Left, Right, None)
+    number_of_branches: 4
+    fc:
+      neurons: [256, 256]
+      dropouts: [0.0, 0.5]
+PRE_TRAINED: True  # If the weights are started with imagenet.
+
+# Optimizer Parameters #
+# For now we use only use adam
+LEARNING_RATE: 0.00001  # First learning rate
+LEARNING_RATE_DECAY_INTERVAL: 75000 # Number of iterations where the learning rate is reduced
+LEARNING_RATE_DECAY_LEVEL: 0.5 # Th factor of reduction applied to the learning rate
+
+# Loss Parameters #
+BRANCH_LOSS_WEIGHT: [0.95, 0.95, 0.95, 0.95, 0.05] # how much each branch is weighted when computing loss
+LOSS_FUNCTION: 'L1' # The loss function used
+VARIABLE_WEIGHT: # how much each of the outputs specified on TARGETS are weighted for learning.
+  Steer: 0.5
+  Gas: 0.45
+  Brake: 0.05
+
+
+#### Simulation Related Parameters ####
+IMAGE_CUT: [90, 485]  # How you should cut the input image that is received from the server
+USE_ORACLE: False
+USE_FULL_ORACLE: False
+AVOID_STOPPING: False
