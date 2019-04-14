@@ -150,7 +150,7 @@ class ChallengeEvaluator(object):
     Provisional code to evaluate AutonomousAgent performance
     """
     MAX_ALLOWED_RADIUS_SENSOR = 5.0
-    SECONDS_GIVEN_PER_METERS = 1.5
+    SECONDS_GIVEN_PER_METERS = 0.4
 
     def __init__(self, args):
         phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
