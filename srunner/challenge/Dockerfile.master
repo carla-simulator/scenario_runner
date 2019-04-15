@@ -70,7 +70,7 @@ RUN chmod +x /workspace/scenario_runner/srunner/challenge/run_evaluator.sh
 ########################################################################################################################
 ########################################################################################################################
 
-RUN  pip3 install torch==1.0.1.post2  dlib  tensorflow  scipy==1.1.0 pyyaml matplotlib pillow==5.3.0
+RUN  pip install torch==1.0.1.post2  dlib  tensorflow  scipy==1.1.0 pyyaml matplotlib pillow==5.3.0
 
 ENV TEAM_AGENT /workspace/team_code/CoILBaseline.py
 ENV TEAM_CONFIG /workspace/team_code/sample_agent.json
