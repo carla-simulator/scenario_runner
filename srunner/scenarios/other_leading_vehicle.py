@@ -17,6 +17,8 @@ either via a timeout, or if the ego vehicle drives some distance.
 
 from __future__ import print_function
 
+import sys
+
 import py_trees
 
 import carla
@@ -149,4 +151,5 @@ class OtherLeadingVehicle(BasicScenario):
         return criteria
 
     def __del__(self):
+        self._traffic_light = None
         self.remove_all_actors()
