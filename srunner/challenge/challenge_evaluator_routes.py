@@ -31,6 +31,8 @@ import py_trees
 
 import carla
 
+from agents.navigation.local_planner import RoadOption
+
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
@@ -53,7 +55,7 @@ from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
 from srunner.scenariomanager.traffic_events import TrafficEventType
-from srunner.challenge.utils.route_manipulation import interpolate_trajectory
+from srunner.challenge.utils.route_manipulation import interpolate_trajectory, clean_route
 
 
 number_class_translation = {
@@ -302,7 +304,7 @@ class ChallengeEvaluator(object):
         if self.agent_instance is not None:
             self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
 
-    def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
+    def draw_waypoints(self, waypoints, turn_positions_and_labels, vertical_shift, persistency=-1):
         """
         Draw a list of waypoints at a certain height given in vertical_shift.
         :param waypoints: list or iterable container with the waypoints to draw
@@ -312,6 +314,23 @@ class ChallengeEvaluator(object):
         for w in waypoints:
             wp = w[0].location + carla.Location(z=vertical_shift)
             self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
+        for start, end, conditions in turn_positions_and_labels:
+
+            if conditions == RoadOption.LEFT:  # Yellow
+                color = carla.Color(255, 255, 0)
+            elif conditions == RoadOption.RIGHT:  # Cyan
+                color = carla.Color(0, 255, 255)
+            elif conditions == RoadOption.CHANGELANELEFT:  # Orange
+                color = carla.Color(255, 64, 0)
+            elif conditions == RoadOption.CHANGELANERIGHT:  # Dark Cyan
+                color = carla.Color(0, 64, 255)
+            else:  # STRAIGHT
+                color = carla.Color(128, 128, 128)  # Gray
+
+            for position in range(start, end):
+                self.world.debug.draw_point(waypoints[position][0].location + carla.Location(z=vertical_shift),
+                                       size=0.2, color=color, life_time=persistency)
+
         self.world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=0.2,
                                     color=carla.Color(0, 0, 255), life_time=persistency)
         self.world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=0.2,
@@ -599,8 +618,10 @@ class ChallengeEvaluator(object):
                 ego_trans = self.ego_vehicle.get_transform()
                 spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
                                                         carla.Rotation(pitch=-90)))
+
             if self.route_visible:
-                self.draw_waypoints(trajectory,
+                turn_positions_and_labels = clean_route(trajectory)
+                self.draw_waypoints(trajectory, turn_positions_and_labels,
                                     vertical_shift=1.0, persistency=50000.0)
                 self.route_visible = False
 
@@ -633,6 +654,7 @@ class ChallengeEvaluator(object):
                     self.list_scenarios[i].remove_all_actors()
                     self.list_scenarios[i] = None
             self.list_scenarios[:] = [scenario for scenario in self.list_scenarios if scenario]
+
 
         # Route finished set for the background scenario to also finish
         blackboard = py_trees.blackboard.Blackboard()
@@ -1009,7 +1031,7 @@ class ChallengeEvaluator(object):
 
         self.background_scenario = self.build_background_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
-
+        
         self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
 
@@ -1023,6 +1045,7 @@ class ChallengeEvaluator(object):
                 self.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
                 self.world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
                                              color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
+
                 print(scenario)
 
         self.list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
