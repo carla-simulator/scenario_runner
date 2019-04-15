@@ -66,7 +66,7 @@ class CoILBaseline(AutonomousAgent):
                                               'team_code',
                                              yaml_conf.split('/')[-2], yaml_conf.split('/')[-1].split('.')[-2]
                                              , 'checkpoints', str(checkpoint_number) + '.pth'))
-        
+
         # Load the model and prepare set it for evaluation
         self._model.load_state_dict(checkpoint['state_dict'])
         self._model.cuda()

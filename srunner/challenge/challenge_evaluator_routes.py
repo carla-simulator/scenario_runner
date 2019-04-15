@@ -1129,6 +1129,7 @@ class ChallengeEvaluator(object):
                 except Exception as e:
                     if self._system_error or not self.agent_instance:
                         print(e)
+
                         sys.exit(-1)
                     self._current_route_broke = True
 
@@ -1206,6 +1207,7 @@ if __name__ == '__main__':
     try:
         challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
+
 
     except Exception as e:
         print(e)
