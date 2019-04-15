@@ -1,0 +1,16 @@
+# Carla 0.8.2 weather IDs to Carla 0.9.x weather names
+weather:
+  1: Clear Noon
+  2: Cloudy Noon
+  3: Wet Noon
+  4: Wet Cloudy Noon
+  5: Mid Rainy Noon
+  6: Hard Rain Noon
+  7: Soft Rain Noon
+  8: Clear Sunset
+  9: Cloudy Sunset
+  10: Wet Sunset
+  11: Wet Cloudy Sunset
+  12: Mid Rain Sunset
+  13: Hard Rain Sunset
+  14: Soft Rain Sunset
