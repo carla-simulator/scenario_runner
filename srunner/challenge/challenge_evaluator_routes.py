@@ -1125,6 +1125,7 @@ class ChallengeEvaluator(object):
                 try:
                     self._current_route_broke = False
                     self.load_environment_and_run(args, world_annotations, route_description)
+
                 except Exception as e:
                     if self._system_error or not self.agent_instance:
                         print(e)
@@ -1195,7 +1196,6 @@ if __name__ == '__main__':
         print("Error. ROOT_SCENARIO_RUNNER not found. Please run setup_environment.sh first.")
         sys.exit(0)
 
-
     if ARGUMENTS.scenarios is None:
         print("Please specify a path to a scenario specification file  '--scenarios path-to-file'\n\n")
         PARSER.print_help(sys.stdout)
@@ -1206,9 +1206,11 @@ if __name__ == '__main__':
     try:
         challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
+
     except Exception as e:
         print(e)
         if challenge_evaluator:
             challenge_evaluator.report_challenge_statistics(ARGUMENTS.filename, ARGUMENTS.show_to_participant)
+
     finally:
         del challenge_evaluator
