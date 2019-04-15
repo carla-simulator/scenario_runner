@@ -57,7 +57,6 @@ from srunner.challenge.utils.route_manipulation import interpolate_trajectory
 
 
 number_class_translation = {
-
     "Scenario1": [ControlLoss],
     "Scenario2": [FollowLeadingVehicle],
     "Scenario3": [DynamicObjectCrossing],
@@ -68,7 +67,11 @@ number_class_translation = {
     "Scenario8": [SignalizedJunctionLeftTurn],
     "Scenario9": [SignalizedJunctionRightTurn],
     "Scenario10": [NoSignalJunctionCrossing]
+}
 
+master_scenario_translation = {
+    "challenge": ChallengeMasterScenario,
+    "benchmark": BenchmarkMasterScenario,
 }
 
 # Util functions
@@ -445,7 +448,7 @@ class ChallengeEvaluator(object):
 
         return list_of_actors
 
-    def build_master_scenario(self, route, town_name, timeout=300):
+    def build_master_scenario(self, kind, route, town_name, timeout=300):
         # We have to find the target.
         # we also have to convert the route to the expected format
         master_scenario_configuration = ScenarioConfiguration()
@@ -462,8 +465,9 @@ class ChallengeEvaluator(object):
         blackboard = py_trees.blackboard.Blackboard()
         blackboard.set('master_scenario_command', 'scenarios_running')
 
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration,
-                              timeout=timeout, debug_mode=self.debug>0)
+        cls = master_scenario_translation[kind]
+        return cls(self.world, self.ego_vehicle, master_scenario_configuration,
+                   timeout=timeout, debug_mode=self.debug > 0)
 
     def build_background_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -949,8 +953,7 @@ class ChallengeEvaluator(object):
 
         return True, ""
 
-    def load_environment_and_run(self, args, world_annotations, route_description):
-
+    def load_environment_and_run(self, args, experiment_cfg, route_description):
         # We need to copy the route_description to not override route_description
         _route_description = copy.copy(route_description)
 
@@ -961,7 +964,7 @@ class ChallengeEvaluator(object):
         route_timeout = self.estimate_route_timeout(_route_description['trajectory'])
 
         potential_scenarios_definitions, _ = parser.scan_route_for_scenarios(_route_description,
-                                                                             world_annotations)
+                                                                             experiment_cfg['available_scenarios'])
 
         CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(_route_description['trajectory']))
 
@@ -987,7 +990,8 @@ class ChallengeEvaluator(object):
         self.prepare_ego_car(elevate_transform)
 
         # build the master scenario based on the route and the target.
-        self.master_scenario = self.build_master_scenario(_route_description['trajectory'],
+        self.master_scenario = self.build_master_scenario(experiment_cfg['master_scenario'],
+                                                          _route_description['trajectory'],
                                                           _route_description['town_name'],
                                                           timeout=route_timeout)
 
@@ -1035,7 +1039,7 @@ class ChallengeEvaluator(object):
             sys.exit(-1)
 
         # retrieve worlds annotations
-        world_annotations = parser.parse_annotations_file(args.scenarios)
+        world_annotations = parser.parse_config_file(args.scenarios)
         # retrieve routes
         route_descriptions_list = parser.parse_routes_file(self.routes)
         # find and filter potential scenarios for each of the evaluated routes

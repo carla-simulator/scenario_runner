@@ -45,7 +45,7 @@ class TestSpawn(unittest.TestCase):
         challenge = ChallengeEvaluator(args)
 
         filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios.json')
-        world_annotations = parser.parse_annotations_file(filename)
+        world_annotations = parser.parse_config_file(filename)['annotations']
         # retrieve routes
         # Which type of file is expected ????
 

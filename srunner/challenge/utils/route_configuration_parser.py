@@ -20,22 +20,23 @@ TRIGGER_THRESHOLD = 2.0  # Threshold to say if a trigger position is new or repe
 TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
 
 
-def parse_annotations_file(annotation_filename):
+def parse_config_file(config_filename):
     """
     Return the annotations of which positions where the scenarios are going to happen.
-    :param annotation_filename: the filename for the anotations file
+    :param config_filename: the filename for the anotations file
     :return:
     """
 
-    with open(annotation_filename, 'r') as f:
-        annotation_dict = json.loads(f.read())
+    with open(config_filename, 'r') as f:
+        cfg = json.loads(f.read())
 
-    final_dict = {}
+    available_scenarios = cfg.pop('available_scenarios')
+    annotations = {}
+    for town_dict in available_scenarios:
+        annotations.update(town_dict)
+    cfg['annotations'] = annotations
 
-    for town_dict in annotation_dict['available_scenarios']:
-        final_dict.update(town_dict)
-
-    return final_dict  # the file has a current maps name that is an one element vec
+    return cfg
 
 
 def parse_routes_file(route_filename):
@@ -60,8 +61,8 @@ def parse_routes_file(route_filename):
 
         list_route_descriptions.append({
             'id': route_id,
-                                    'town_name': route_town,
-                                    'trajectory': waypoint_list
+            'town_name': route_town,
+            'trajectory': waypoint_list
         })
 
     return list_route_descriptions
@@ -104,6 +105,7 @@ def match_world_location_to_route(world_location, route_description):
         world_location:
         route_description:
     """
+
     def match_waypoints(waypoint1, wtransform):
         """
         Check if waypoint1 and wtransform are similar
@@ -178,7 +180,8 @@ def scan_route_for_scenarios(route_description, world_annotations):
                 waypoint = event['transform']  # trigger point of this scenario
                 convert_waypoint_float(waypoint)
                 # We match trigger point to the  route, now we need to check if the route affects
-                match_position = match_world_location_to_route(waypoint, route_description['trajectory'])
+                match_position = match_world_location_to_route(waypoint,
+                                                               route_description['trajectory'])
                 if match_position is not None:
                     # We match a location for this scenario, create a scenario object so this scenario
                     # can be instantiated later
@@ -193,9 +196,9 @@ def scan_route_for_scenarios(route_description, world_annotations):
                         continue
                     scenario_description = {
                         'name': scenario_name,
-                                           'other_actors': other_vehicles,
-                                           'trigger_position': waypoint,
-                                           'type': scenario_subtype,  # some scenarios have different configurations
+                        'other_actors': other_vehicles,
+                        'trigger_position': waypoint,
+                        'type': scenario_subtype,  # some scenarios have different configurations
                     }
 
                     trigger_id = check_trigger_position(waypoint, existent_triggers)

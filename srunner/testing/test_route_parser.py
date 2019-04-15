@@ -43,7 +43,7 @@ class TestRouteGenerator(unittest.TestCase):
         challenge = ChallengeEvaluator(args)
 
         filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios.json')
-        world_annotations = parser.parse_annotations_file(filename)
+        experiment_cfg = parser.parse_config_file(filename)
         # retrieve routes
         # Which type of file is expected ????
 
@@ -68,7 +68,7 @@ class TestRouteGenerator(unittest.TestCase):
                                                                                 route_description['trajectory'])
 
             potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
-                                                                                                 world_annotations)
+                                                                                                 experiment_cfg['annotations'])
 
             for trigger_id, possible_scenarios in potential_scenarios_definitions.items():
 

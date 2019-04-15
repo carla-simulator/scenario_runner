@@ -17,7 +17,6 @@ from srunner.scenarios.basic_scenario import BasicScenario
 
 
 class MasterScenario(BasicScenario):
-
     """
     Implementation of a Master scenario that controls the route.
     """

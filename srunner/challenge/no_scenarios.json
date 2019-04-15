@@ -1,6 +1,7 @@
 {
-"available_scenarios": [
-{
-}
-]
+  "available_scenarios": [
+    {
+    }
+  ],
+  "master_scenario": "challenge"
 }

@@ -65,7 +65,7 @@ def test_routes(args):
     args.route_visible = True
     challenge = ChallengeEvaluator(args)
     # retrieve worlds annotations
-    world_annotations = parser.parse_annotations_file(args.scenarios)
+    experiment_cfg = parser.parse_config_file(args.scenarios)
     # retrieve routes
     route_descriptions_list = parser.parse_routes_file(args.routes)
     # find and filter potential scenarios for each of the evaluated routes
@@ -92,7 +92,7 @@ def test_routes(args):
     CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route_description['trajectory']))
 
     potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
-                                                                                         world_annotations)
+                                                                                         experiment_cfg['annotations'])
     potential_scenarios_definitions = challenge.filter_scenarios(potential_scenarios_definitions,
                                                                  args.removed_scenarios)
     print ("WE HAVE This number of posibilities : ", len(potential_scenarios_definitions))

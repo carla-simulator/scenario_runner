@@ -54,7 +54,8 @@ def test_routes(args):
     challenge = ChallengeEvaluator(args)
 
     # retrieve worlds annotations
-    world_annotations = parser.parse_annotations_file(args.scenarios)
+    experiment_cfg = parser.parse_config_file(args.scenarios)
+    world_annotations = experiment_cfg['annotations']
     # retrieve routes
 
     routes = []
