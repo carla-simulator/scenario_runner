@@ -217,7 +217,7 @@ class DynamicObjectCrossing(BasicScenario):
         spawn_point_wp = self.ego_vehicle.get_world().get_map().get_waypoint(transform.location)
 
         self.transform2 = carla.Transform(carla.Location(x_static, y_static,
-                                                         spawn_point_wp.transform.location.z+0.3))
+                                                         spawn_point_wp.transform.location.z + 0.3))
 
         static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
         static.set_simulate_physics(enabled=False)
