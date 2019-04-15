@@ -16,20 +16,19 @@ from argparse import RawTextHelpFormatter
 import atexit
 import copy
 import datetime
-import importlib
-import math
-import sys
-import os
 import json
+import importlib
+import logging
+import math
+import os
 import random
 import re
 import signal
-import subprocess
-import xml.etree.ElementTree as ET
-
-import py_trees
+import sys
 
 import carla
+import xml.etree.ElementTree as ET
+import py_trees
 
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
@@ -647,6 +646,8 @@ class ChallengeEvaluator(object):
                               'help_text': return_message
                               }
 
+        logging.warning('Agent encountered fatal error: {}'.format(current_statistics))
+
         self.statistics_routes.append(current_statistics)
 
     def record_route_statistics_crash(self, route_id):
@@ -671,6 +672,8 @@ class ChallengeEvaluator(object):
                               'result': result,
                               'help_text': return_message
                               }
+
+        logging.warning('Agent terminated abnormally: {}'.format(current_statistics))
 
         self.statistics_routes.append(current_statistics)
 
@@ -818,6 +821,8 @@ class ChallengeEvaluator(object):
                               'result': result,
                               'help_text': return_message
                               }
+
+        logging.info('Agent completed episode: {}'.format(current_statistics))
 
         self.statistics_routes.append(current_statistics)
 
@@ -1080,7 +1085,8 @@ class ChallengeEvaluator(object):
                 try:
                     self._current_route_broke = False
                     self.load_environment_and_run(args, world_annotations, route_description)
-                except:
+                except Exception as e:
+                    logging.error("Exception running agent: {}".format(e))
                     if self._system_error:
                         sys.exit(-1)
                     self._current_route_broke = True
@@ -1137,6 +1143,10 @@ if __name__ == '__main__':
                         help='Name of the scenario annotation file to be mixed with the route.')
 
     ARGUMENTS = PARSER.parse_args()
+
+    if ARGUMENTS.show_to_participant:
+        log_level = logging.DEBUG if ARGUMENTS.debug else logging.INFO
+        logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
     CARLA_ROOT = os.environ.get('CARLA_ROOT')
     ROOT_SCENARIO_RUNNER = os.environ.get('ROOT_SCENARIO_RUNNER')
