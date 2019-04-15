@@ -464,7 +464,7 @@ class ChallengeEvaluator(object):
         blackboard.set('master_scenario_command', 'scenarios_running')
 
         return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration,
-                              timeout=timeout, debug_mode=self.debug>0)
+                              timeout=timeout, debug_mode=self.debug>1)
 
     def build_background_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -491,7 +491,7 @@ class ChallengeEvaluator(object):
         scenario_configuration.other_actors = [actor_configuration_instance]
 
         return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
-                                  timeout=timeout, debug_mode=self.debug>0)
+                                  timeout=timeout, debug_mode=self.debug>1)
 
     def build_trafficlight_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -499,7 +499,7 @@ class ChallengeEvaluator(object):
         scenario_configuration.town = town_name
 
         return TrafficLightScenario(self.world, self.ego_vehicle, scenario_configuration,
-                                    timeout=timeout, debug_mode=self.debug>0)
+                                    timeout=timeout, debug_mode=self.debug>1)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -610,6 +610,20 @@ class ChallengeEvaluator(object):
 
             # check for scenario termination
             for i, _ in enumerate(self.list_scenarios):
+
+                if self.debug==1:
+                    behavior = self.list_scenarios[i].scenario.scenario_tree.children[0]
+                    if behavior.tip():
+                        print("{} {} {} {}".format(self.list_scenarios[i].scenario.scenario_tree.name,
+                                                   self.list_scenarios[i].scenario.scenario_tree.status,
+                                                   behavior.tip().name,
+                                                   behavior.tip().status))
+                    if (behavior.tip().name != "InTriggerDistanceToLocationAlongRoute" and
+                        self.list_scenarios[i].scenario.scenario_tree.name != "MasterScenario" and
+                        self.list_scenarios[i].scenario.scenario_tree.name != "BackgroundActivity" and
+                        self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
+                        py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
+
                     # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
                     # indiciate that the scenario was running but terminated
                     # Remove the scenario when termination is clear --> not INVALID, not RUNNING
@@ -1081,8 +1095,9 @@ class ChallengeEvaluator(object):
                 try:
                     self._current_route_broke = False
                     self.load_environment_and_run(args, world_annotations, route_description)
-                except:
-                    if self._system_error:
+                except Exception as e:
+                    if self._system_error or not self.agent_instance:
+                        print(e)
                         sys.exit(-1)
                     self._current_route_broke = True
 
@@ -1161,7 +1176,9 @@ if __name__ == '__main__':
     try:
         challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
-    except:
-        challenge_evaluator.report_challenge_statistics(ARGUMENTS.filename, ARGUMENTS.show_to_participant)
+    except Exception as e:
+        print(e)
+        if challenge_evaluator:
+            challenge_evaluator.report_challenge_statistics(ARGUMENTS.filename, ARGUMENTS.show_to_participant)
     finally:
         del challenge_evaluator
