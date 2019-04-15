@@ -893,6 +893,13 @@ class ChallengeEvaluator(object):
             settings.no_rendering_mode = True
         self.world.apply_settings(settings)
 
+        # update traffic lights to make traffic more dynamic
+        traffic_lights = self.world.get_actors().filter('*traffic_light*')
+        for tl in traffic_lights:
+            tl.set_green_time(9.0)
+            tl.set_yellow_time(0.05)
+            tl.set_red_time(0.08)
+
     def filter_scenarios(self, potential_scenarios_all, scenarios_to_remove):
         """
 
