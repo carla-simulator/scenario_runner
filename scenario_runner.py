@@ -15,8 +15,9 @@ and finally triggers the scenario execution.
 
 from __future__ import print_function
 
-import traceback
 import argparse
+import sys
+import traceback
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 
@@ -24,18 +25,19 @@ import carla
 
 from srunner.scenariomanager.carla_data_provider import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
-from srunner.scenarios.background_activity import *
-from srunner.scenarios.control_loss import *
-from srunner.scenarios.follow_leading_vehicle import *
-from srunner.scenarios.maneuver_opposite_direction import *
-from srunner.scenarios.master_scenario import *
-from srunner.scenarios.no_signal_junction_crossing import *
-from srunner.scenarios.object_crash_intersection import *
-from srunner.scenarios.object_crash_vehicle import *
-from srunner.scenarios.opposite_vehicle_taking_priority import *
-from srunner.scenarios.other_leading_vehicle import *
-from srunner.scenarios.signalized_junction_left_turn import *
-from srunner.scenarios.signalized_junction_right_turn import *
+from srunner.scenarios.background_activity import BACKGROUND_ACTIVITY_SCENARIOS
+from srunner.scenarios.control_loss import CONTROL_LOSS_SCENARIOS
+from srunner.scenarios.follow_leading_vehicle import FOLLOW_LEADING_VEHICLE_SCENARIOS
+from srunner.scenarios.maneuver_opposite_direction import MANEUVER_OPPOSITE_DIRECTION
+from srunner.scenarios.benchmark_master_scenario import BENCHMARK_MASTER_SCENARIO
+from srunner.scenarios.challenge_master_scenario import CHALLENGE_MASTER_SCENARIO
+from srunner.scenarios.no_signal_junction_crossing import NO_SIGNAL_JUNCTION_SCENARIOS
+from srunner.scenarios.object_crash_intersection import VEHICLE_TURNING_SCENARIOS
+from srunner.scenarios.object_crash_vehicle import OBJECT_CROSSING_SCENARIOS
+from srunner.scenarios.opposite_vehicle_taking_priority import RUNNING_RED_LIGHT_SCENARIOS
+from srunner.scenarios.other_leading_vehicle import OTHER_LEADING_VEHICLE_SCENARIOS
+from srunner.scenarios.signalized_junction_left_turn import TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS
+from srunner.scenarios.signalized_junction_right_turn import TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS
 from srunner.tools.config_parser import *
 
 # Version of scenario_runner
@@ -57,7 +59,8 @@ SCENARIOS = {
     "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS,
     "SignalizedJunctionRightTurn": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS,
     "SignalizedJunctionLeftTurn": TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS,
-    "MasterScenario": MASTER_SCENARIO
+    "BenchmarkMasterScenario": BENCHMARK_MASTER_SCENARIO,
+    "ChallengeMasterScenario": CHALLENGE_MASTER_SCENARIO,
 }
 
 
@@ -183,7 +186,6 @@ class ScenarioRunner(object):
         for _ in range(int(args.repetitions)):
 
             # Load the scenario configurations provided in the config file
-            scenario_configurations = None
             if args.scenario.startswith("group:"):
                 scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
             else:

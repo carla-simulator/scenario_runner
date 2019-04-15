@@ -10,47 +10,59 @@ Basic CARLA Autonomous Driving training scenario
 
 import py_trees
 
-from srunner.tools.config_parser import TargetConfiguration, RouteConfiguration
-from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenarios.basic_scenario import *
-
-
-MASTER_SCENARIO = ["MasterScenario"]
+from srunner.tools.config_parser import RouteConfiguration, TargetConfiguration
+from srunner.scenariomanager.atomic_scenario_behavior import Idle
+from srunner.scenariomanager.atomic_scenario_criteria import InRadiusRegionTest, InRouteTest, RouteCompletionTest
+from srunner.scenarios.basic_scenario import BasicScenario
 
 
 class MasterScenario(BasicScenario):
 
     """
-    Implementation of a  Master scenario that controls the route.
+    Implementation of a Master scenario that controls the route.
     """
 
     category = "Master"
     radius = 10.0           # meters
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=300):
+    def __init__(self, world, ego_vehicle, config, debug_mode=False, criteria_enable=True,
+                 name="MasterScenario", timeout=300):
         """
         Setup all relevant parameters and create scenario
         """
         self.config = config
-        self.target = None
-        self.route = None
+        self._target = None
+        self._route = None
         # Timeout of scenario in seconds
         self.timeout = timeout
 
         if hasattr(self.config, 'target'):
-            self.target = self.config.target
+            self._target = self.config.target
         else:
             raise ValueError("Master scenario must have a target")
+
         if hasattr(self.config, 'route'):
-            self.route = self.config.route
+            self._route = self.config.route
         else:
             raise ValueError("Master scenario must have a route")
 
-        super(MasterScenario, self).__init__("MasterScenario", ego_vehicle=ego_vehicle, config=config,
-                                             world=world, debug_mode=debug_mode,
+        super(MasterScenario, self).__init__(name=name, ego_vehicle=ego_vehicle,
+                                             config=config, world=world, debug_mode=debug_mode,
                                              terminate_on_failure=True, criteria_enable=criteria_enable)
+
+    @property
+    def route(self):
+        if isinstance(self._route, RouteConfiguration):
+            return self._route.data
+        else:
+            return self._route
+
+    @property
+    def target(self):
+        if isinstance(self._target, TargetConfiguration):
+            return self._target.transform.location
+        else:
+            return self._target.location
 
     def _create_behavior(self):
         """
@@ -69,50 +81,23 @@ class MasterScenario(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-
-        if isinstance(self.target, TargetConfiguration):
-            location = self.target.transform.location
-        else:
-            location = self.target.location
-
-        if isinstance(self.route, RouteConfiguration):
-            route = self.route.data
-        else:
-            route = self.route
-
-        collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
         target_criterion = InRadiusRegionTest(self.ego_vehicle,
-                                              x=location.x,
-                                              y=location.y,
+                                              x=self.target.x,
+                                              y=self.target.y,
                                               radius=self.radius)
-
         route_criterion = InRouteTest(self.ego_vehicle,
                                       radius=30.0,
-                                      route=route,
+                                      route=self.route,
                                       offroad_max=20,
                                       terminate_on_failure=True)
+        completion_criterion = RouteCompletionTest(self.ego_vehicle, route=self.route)
 
-        completion_criterion = RouteCompletionTest(self.ego_vehicle, route=route)
-
-        wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
-
-        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicle)
-
-        red_light_criterion = RunningRedLightTest(self.ego_vehicle)
-
-        stop_criterion = RunningStopTest(self.ego_vehicle)
 
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        parallel_criteria.add_child(completion_criterion)
-        parallel_criteria.add_child(collision_criterion)
         parallel_criteria.add_child(target_criterion)
         parallel_criteria.add_child(route_criterion)
-        parallel_criteria.add_child(wrong_way_criterion)
-        parallel_criteria.add_child(onsidewalk_criterion)
-        parallel_criteria.add_child(red_light_criterion)
-        parallel_criteria.add_child(stop_criterion)
+        parallel_criteria.add_child(completion_criterion)
 
         return parallel_criteria
 

@@ -47,7 +47,8 @@ from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLe
 from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
 from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
-from srunner.scenarios.master_scenario import MasterScenario
+from srunner.scenarios.benchmark_master_scenario import BenchmarkMasterScenario
+from srunner.scenarios.challenge_master_scenario import ChallengeMasterScenario
 from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
