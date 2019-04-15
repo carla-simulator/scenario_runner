@@ -4,9 +4,6 @@ import math
 import os
 import sys
 
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.misc import imresize
@@ -121,28 +118,6 @@ class CoILBaseline(AutonomousAgent):
         self.first_iter = False
         return control
 
-    def get_attentions(self, layers=None):
-        """
-        Returns
-            The activations obtained from the first layers of the latest iteration.
-
-        """
-        if layers is None:
-            layers = [0, 1, 2]
-        if self.latest_image_tensor is None:
-            raise ValueError('No step was ran yet. '
-                             'No image to compute the activations, Try Running ')
-        all_layers = self._model.get_perception_layers(self.latest_image_tensor)
-        cmap = plt.get_cmap('inferno')
-        attentions = []
-        for layer in layers:
-            y = all_layers[layer]
-            att = torch.abs(y).mean(1)[0].data.cpu().numpy()
-            att = att / att.max()
-            att = cmap(att)
-            att = np.delete(att, 3, 2)
-            attentions.append(imresize(att, [88, 200]))
-        return attentions
 
     def _process_sensors(self, sensor):
         sensor = sensor[:, :, 0:3]  # BGRA->BRG drop alpha channel
