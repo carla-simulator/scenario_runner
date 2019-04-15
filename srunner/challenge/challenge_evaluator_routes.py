@@ -1010,11 +1010,11 @@ class ChallengeEvaluator(object):
 
         self.background_scenario = self.build_background_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
-
+        
         self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
 
-        self.list_scenarios = [self.master_scenario]#, self.background_scenario, self.traffic_light_scenario]
+        self.list_scenarios = [self.master_scenario, self.background_scenario, self.traffic_light_scenario]
         # build the instance based on the parsed definitions.
         if self.debug > 0:
             for scenario in sampled_scenarios_definitions:
