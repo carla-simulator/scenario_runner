@@ -183,7 +183,6 @@ class DynamicObjectCrossing(BasicScenario):
         location.z = self._trigger_location.z + offset['z']
         return carla.Transform(location, carla.Rotation(yaw=orientation_yaw)), orientation_yaw
 
-
     def _spawn_adversary(self, transform, orientation_yaw):
 
         self._time_to_reach *= self._num_lane_changes

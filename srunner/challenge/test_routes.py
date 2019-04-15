@@ -115,7 +115,7 @@ def test_routes(args):
         list_scenarios += challenge.build_scenario_instances([scenario_conf], args.debug_town)
 
         # Tick once to start the scenarios.
-        print (" Running these scenarios  --- ", list_scenarios)
+        print(" Running these scenarios  --- ", list_scenarios)
         for scenario in list_scenarios:
             scenario.scenario.scenario_tree.tick_once()
 
