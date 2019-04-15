@@ -55,6 +55,7 @@ class ControlLoss(BasicScenario):
         self._ego_vehicle_max_throttle = 1.0
         self._ego_vehicle_target_velocity = 15
         self._map = CarlaDataProvider.get_map()
+        self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
         # Timeout of scenario in seconds
         self.timeout = timeout
         # The reference trigger for the control loss
@@ -126,15 +127,22 @@ class ControlLoss(BasicScenario):
         start_end_parallel = py_trees.composites.Parallel("Jitter",
                                                           policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
-        for _ in range(self._no_of_jitter):
 
+        route = bool(self._ego_route)
+
+        for _ in range(self._no_of_jitter):
             # change the current noise to be applied
-            turn = ChangeNoiseParameters(self._current_steer_noise, self._current_throttle_noise,
-                                         self._noise_mean, self._noise_std, self._dynamic_mean_for_steer,
-                                         self._dynamic_mean_for_throttle)  # Mean value of steering noise
-        # Noise end! put again the added noise to zero.
-        noise_end = ChangeNoiseParameters(self._current_steer_noise, self._current_throttle_noise,
-                                          0, 0, 0, 0)
+            turn = ChangeNoiseParameters(self.ego_vehicle,
+                                         self._current_steer_noise,
+                                         self._current_throttle_noise,
+                                         self._noise_mean,
+                                         self._noise_std,
+                                         self._dynamic_mean_for_steer,
+                                         self._dynamic_mean_for_throttle, route=route)  # Mean value of steering noise
+
+        noise_end = ChangeNoiseParameters(self.ego_vehicle, self._current_steer_noise,
+                                          self._current_throttle_noise,
+                                          0, 0, 0, 0)  # Noise end! put again the added noise to zero.
 
         jitter_action = py_trees.composites.Parallel("Jitter",
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)

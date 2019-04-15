@@ -387,7 +387,6 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         if current_velocity > other_velocity:
             time_to_arrival = 2 * distance / (current_velocity - other_velocity)
 
-
         if time_to_arrival < self._time:
             new_status = py_trees.common.Status.SUCCESS
 
@@ -803,8 +802,8 @@ class ChangeNoiseParameters(AtomicBehavior):
     To add noise to steer as well as throttle of the vehicle.
     """
 
-    def __init__(self, new_steer_noise, new_throttle_noise,
-                 noise_mean, noise_std, dynamic_mean_for_steer, dynamic_mean_for_throttle, name="ChangeJittering"):
+    def __init__(self, actor, new_steer_noise, new_throttle_noise,
+                 noise_mean, noise_std, dynamic_mean_for_steer, dynamic_mean_for_throttle, route=False, name="ChangeJittering"):
         """
         Setup actor , maximum steer value and throttle value
         """
@@ -816,6 +815,9 @@ class ChangeNoiseParameters(AtomicBehavior):
         self._noise_std = noise_std
         self._dynamic_mean_for_steer = dynamic_mean_for_steer
         self._dynamic_mean_for_throttle = dynamic_mean_for_throttle
+        self._control = carla.VehicleControl()
+        self._actor = actor
+        self._route = route
 
         self._noise_to_apply = abs(random.gauss(self._noise_mean, self._noise_std))
 
@@ -826,6 +828,11 @@ class ChangeNoiseParameters(AtomicBehavior):
 
         self._new_steer_noise[0] = min(0, -(self._noise_to_apply - self._dynamic_mean_for_steer))
         self._new_throttle_noise[0] = min(self._noise_to_apply + self._dynamic_mean_for_throttle, 1)
+        if self._route is not True:
+            self._control = self._actor.get_control()
+            self._control.steer = self._new_steer_noise[0]
+            self._control.throttle = self._new_throttle_noise[0]
+            self._actor.apply_control(self._control)
 
         new_status = py_trees.common.Status.SUCCESS
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -1247,6 +1254,7 @@ class ActorSink(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
         CarlaActorPool.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
+
 
 class TrafficLightManipulator(AtomicBehavior):
 
