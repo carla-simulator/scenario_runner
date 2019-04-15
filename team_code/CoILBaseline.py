@@ -51,18 +51,22 @@ class CoILBaseline(AutonomousAgent):
 
         # Take the checkpoint name and load it
         checkpoint = torch.load(os.path.join('/', os.path.join(*os.path.realpath(__file__).split('/')[:-2]),
-                                              '_logs',
+                                              'team_code',
                                              yaml_conf.split('/')[-2], yaml_conf.split('/')[-1].split('.')[-2]
                                              , 'checkpoints', str(checkpoint_number) + '.pth'))
 
         # do the merge here
-        merge_with_yaml(os.path.join('/', os.path.join(*os.path.realpath(__file__).split('/')[:-2]),
+        merge_with_yaml(os.path.join('/', os.path.join(*os.path.realpath(__file__).split('/')[:-2]), 'team_code',
                                      yaml_conf))
 
         self.checkpoint = checkpoint  # We save the checkpoint for some interesting future use.
         self._model = CoILModel(g_conf.MODEL_TYPE, g_conf.MODEL_CONFIGURATION)
         self.first_iter = True
-        logging.info("Setup Model")
+        print ("SETUP MODEL  ", os.path.join('/', os.path.join(*os.path.realpath(__file__).split('/')[:-2]),
+                                              'team_code',
+                                             yaml_conf.split('/')[-2], yaml_conf.split('/')[-1].split('.')[-2]
+                                             , 'checkpoints', str(checkpoint_number) + '.pth'))
+        
         # Load the model and prepare set it for evaluation
         self._model.load_state_dict(checkpoint['state_dict'])
         self._model.cuda()
