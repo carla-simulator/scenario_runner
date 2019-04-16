@@ -14,6 +14,7 @@ from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
 import atexit
+import collections
 import copy
 import datetime
 import json
@@ -73,6 +74,17 @@ master_scenario_translation = {
     "challenge": ChallengeMasterScenario,
     "benchmark": BenchmarkMasterScenario,
 }
+
+default_background_activity = collections.defaultdict(lambda: {'vehicle.*': 1})
+default_background_activity.update({
+    "Town01": {'vehicle.*': 120},
+    "Town02": {'vehicle.*': 120},
+    "Town03": {'vehicle.*': 120},
+    "Town04": {'vehicle.*': 200},
+    "Town05": {'vehicle.*': 120},
+    "Town06": {'vehicle.*': 150},
+    "Town07": {'vehicle.*': 150},
+})
 
 # Util functions
 
@@ -222,7 +234,7 @@ class ChallengeEvaluator(object):
         self.weather_profiles = find_weather_presets()
         self.output_scenario = []
         self.master_scenario = None
-        self.background_scenario = None
+        self.background_scenarios = None
         self.list_scenarios = []
 
         # first we instantiate the Agent
@@ -469,32 +481,41 @@ class ChallengeEvaluator(object):
         return cls(self.world, self.ego_vehicle, master_scenario_configuration,
                    timeout=timeout, debug_mode=self.debug > 0)
 
-    def build_background_scenario(self, town_name, timeout=300):
+    def build_background_scenario(self, cfg, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
         scenario_configuration.route = None
         scenario_configuration.town = town_name
 
-        model = 'vehicle.*'
-        transform = carla.Transform()
-        autopilot = True
-        random = True
+        if cfg is None:
+            cfg = default_background_activity
+        town_cfg = cfg[town_name]
 
-        if town_name == 'Town01' or town_name == 'Town02':
-            amount = 120
-        elif town_name == 'Town03' or 'Town05':
-            amount = 120
-        elif town_name == 'Town04':
-            amount = 200
-        elif town_name == 'Town06' or town_name == 'Town07':
-            amount = 150
-        else:
-            amount = 1
+        def make_background(model, amount):
+            if model == 'walker.*':
+                # TODO: Need pedestrian 'autopilot' (earmarked for 0.9.6?)
+                # TODO: Have pedestrian specific 'spawn points' (currently they start in the road)
+                # TODO: Disable the 'traffic jam detector' in BackgroundActivity for pedestrians?
+                logging.warning("Pedestrian background activity currently unsupported.")
+                return None
 
-        actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
-        scenario_configuration.other_actors = [actor_configuration_instance]
+            transform = carla.Transform()
+            autopilot = True
+            random = True
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
-                                  timeout=timeout, debug_mode=self.debug>0)
+            actor_configuration_instance = ActorConfigurationData(model, transform, autopilot,
+                                                                  random, amount)
+            scenario_configuration.other_actors = [actor_configuration_instance]
+
+            return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
+                                      timeout=timeout, debug_mode=self.debug > 0)
+
+        res = []
+        for model, amount in town_cfg.items():
+            scenario = make_background(model, amount)
+            if scenario is not None:
+                res.append(scenario)
+
+        return res
 
     def build_trafficlight_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -996,13 +1017,14 @@ class ChallengeEvaluator(object):
                                                           _route_description['town_name'],
                                                           timeout=route_timeout)
 
-        self.background_scenario = self.build_background_scenario(_route_description['town_name'],
-                                                                  timeout=route_timeout)
+        self.background_scenarios = self.build_background_scenario(experiment_cfg.get('background_activity'),
+                                                                   _route_description['town_name'],
+                                                                   timeout=route_timeout)
+        self.list_scenarios = [self.master_scenario] + self.background_scenarios
 
         self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
 
-        self.list_scenarios = [self.master_scenario, self.background_scenario, self.traffic_light_scenario]
         # build the instance based on the parsed definitions.
         if self.debug > 0:
             for scenario in sampled_scenarios_definitions:
@@ -1118,7 +1140,7 @@ class ChallengeEvaluator(object):
                 self.list_scenarios = []
 
                 self.master_scenario = None
-                self.background_scenario = None
+                self.background_scenarios = None
 
                 self.world.tick()
                 self.world.wait_for_tick()

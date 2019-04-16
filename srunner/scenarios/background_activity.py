@@ -25,7 +25,7 @@ class BackgroundActivity(BasicScenario):
 
     category = "BackgroundActivity"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, timeout=35 * 60):
+    def __init__(self, world, ego_vehicle, config, debug_mode=False, timeout=35 * 60):
         """
         Setup all relevant parameters and create scenario
         """
