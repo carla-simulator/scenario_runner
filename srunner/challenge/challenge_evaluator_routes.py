@@ -550,7 +550,7 @@ class ChallengeEvaluator(object):
 
         return scenario_instance_vec
 
-    def estimate_route_timeout(self, route):
+    def estimate_route_timeout(self, route, seconds_given_per_meters):
         route_length = 0.0  # in meters
 
         prev_point = route[0][0]
@@ -559,7 +559,7 @@ class ChallengeEvaluator(object):
             route_length += dist
             prev_point = current_point
 
-        return int(self.SECONDS_GIVEN_PER_METERS * route_length)
+        return int(seconds_given_per_meters * route_length)
 
     def route_is_running(self):
         """
@@ -961,10 +961,11 @@ class ChallengeEvaluator(object):
         gps_route, _route_description['trajectory'] = interpolate_trajectory(self.world,
                                                                              _route_description['trajectory'])
 
-        route_timeout = self.estimate_route_timeout(_route_description['trajectory'])
+        seconds_given_per_meters = experiment_cfg.get('seconds_given_per_meters', self.SECONDS_GIVEN_PER_METERS)
+        route_timeout = self.estimate_route_timeout(seconds_given_per_meters, _route_description['trajectory'])
 
         potential_scenarios_definitions, _ = parser.scan_route_for_scenarios(_route_description,
-                                                                             experiment_cfg['available_scenarios'])
+                                                                             experiment_cfg['annotations'])
 
         CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(_route_description['trajectory']))
 
