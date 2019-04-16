@@ -30,6 +30,6 @@ pedestrians:
     navigation_light: 50
     navigation_heavy: 150
 weather:
-  Town01: [1, 3, 6, 8]
-  Town02: [10, 14]
+  train: [1, 3, 6, 8]
+  test: [10, 14]
 # TODO: Carla 100 also disabled two-wheeled vehicles

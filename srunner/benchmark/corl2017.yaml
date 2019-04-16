@@ -54,5 +54,5 @@ pedestrians:
     navigation_static: 0
     navigation_dynamic: 50
 weather:
-  Town01: [1, 3, 6, 8]
-  Town02: [4, 14]
+  train: [1, 3, 6, 8]
+  test: [4, 14]
