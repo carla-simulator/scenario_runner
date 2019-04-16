@@ -22,7 +22,6 @@ from std_msgs.msg import Header
 from nav_msgs.msg import Odometry
 from carla_msgs.msg import CarlaEgoVehicleStatus, CarlaEgoVehicleInfo, CarlaEgoVehicleInfoWheel, CarlaEgoVehicleControl, CarlaMapInfo
 
-from roslaunch.parent import ROSLaunchParent
 from sensor_msgs.point_cloud2 import create_cloud_xyz32
 import tf
 from cv_bridge import CvBridge
@@ -41,6 +40,8 @@ class RosAgent(AutonomousAgent):
 
     The sensor data is published on similar topics as with the carla-ros-bridge. You can find details about
     the utilized datatypes there.
+
+    This agent expects a roscore to be running.
     """
 
     def setup(self, path_to_conf_file):
@@ -57,14 +58,6 @@ class RosAgent(AutonomousAgent):
         start_script = "{}/start.sh".format(team_code_path)
         if not os.path.exists(start_script):
             raise FileNotFoundError("File '{}' defined by TEAM_CODE_ROOT invalid".format(start_script))
-
-        #startup roscore (if not already running)
-        self.roscore = None
-        if rosgraph.is_master_online():
-            rospy.logdebug("ROS core already running.")
-        else:
-            self.roscore = ROSLaunchParent("", [], is_core=True)
-            self.roscore.start()
 
         #set use_sim_time via commandline before init-node
         process = subprocess.Popen("rosparam set use_sim_time true", shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
@@ -141,9 +134,6 @@ class RosAgent(AutonomousAgent):
             self.stack_process.wait()
             rospy.loginfo("Terminated stack.")
             self.stack_process = None
-            
-        if self.roscore:
-            self.roscore.shutdown()
 
     def on_vehicle_control(self, data):
         """
