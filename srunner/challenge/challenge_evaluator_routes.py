@@ -1022,8 +1022,10 @@ class ChallengeEvaluator(object):
                                                                    timeout=route_timeout)
         self.list_scenarios = [self.master_scenario] + self.background_scenarios
 
-        self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
-                                                                  timeout=route_timeout)
+        if experiment_cfg.get('manipulate_traffic_lights', True):
+            self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
+                                                                           timeout=route_timeout)
+            self.list_scenarios.append(self.traffic_light_scenario)
 
         # build the instance based on the parsed definitions.
         if self.debug > 0:
