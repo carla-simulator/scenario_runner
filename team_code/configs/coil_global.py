@@ -11,7 +11,6 @@ import os
 import yaml
 
 from configs.namer import generate_name
-from logger.coil_logger import create_log, add_message
 
 
 
@@ -126,66 +125,6 @@ def get_names(folder):
         experiments_in_folder.update({experiment_alias: g_conf.EXPERIMENT_GENERATED_NAME})
 
     return experiments_in_folder
-
-
-# TODO: Make this nicer, now it receives only one parameter
-def set_type_of_process(process_type, param=None):
-    """
-    This function is used to set which is the type of the current process, test, train or val
-    and also the details of each since there could be many vals and tests for a single
-    experiment.
-
-    NOTE: AFTER CALLING THIS FUNCTION, THE CONFIGURATION CLOSES
-
-    Args:
-        type:
-
-    Returns:
-
-    """
-
-    if _g_conf.PROCESS_NAME == "default":
-        raise RuntimeError(" You should merge with some exp file before setting the type")
-
-    if process_type == 'train':
-        _g_conf.PROCESS_NAME = process_type
-    elif process_type == "validation":
-        _g_conf.PROCESS_NAME = process_type + '_' + param
-    if process_type == "drive":  # FOR drive param is city name.
-        _g_conf.CITY_NAME = param.split('_')[-1]
-        _g_conf.PROCESS_NAME = process_type + '_' + param
-
-    #else:  # FOr the test case we join with the name of the experimental suite.
-
-    create_log(_g_conf.EXPERIMENT_BATCH_NAME,
-               _g_conf.EXPERIMENT_NAME,
-               _g_conf.PROCESS_NAME,
-               _g_conf.LOG_SCALAR_WRITING_FREQUENCY,
-               _g_conf.LOG_IMAGE_WRITING_FREQUENCY)
-
-    if process_type == "train":
-        if not os.path.exists(os.path.join('_logs', _g_conf.EXPERIMENT_BATCH_NAME,
-                                            _g_conf.EXPERIMENT_NAME,
-                                            'checkpoints') ):
-                os.mkdir(os.path.join('_logs', _g_conf.EXPERIMENT_BATCH_NAME,
-                                      _g_conf.EXPERIMENT_NAME,
-                                      'checkpoints'))
-
-    if process_type == "validation" or process_type == 'drive':
-        if not os.path.exists(os.path.join('_logs', _g_conf.EXPERIMENT_BATCH_NAME,
-                                           _g_conf.EXPERIMENT_NAME,
-                                           _g_conf.PROCESS_NAME + '_csv')):
-            os.mkdir(os.path.join('_logs', _g_conf.EXPERIMENT_BATCH_NAME,
-                                          _g_conf.EXPERIMENT_NAME,
-                                           _g_conf.PROCESS_NAME + '_csv'))
-
-
-    # TODO: check if there is some integrity.
-
-    add_message('Loading', {'ProcessName': _g_conf.EXPERIMENT_GENERATED_NAME,
-                            'FullConfiguration': _g_conf.TRAIN_DATASET_NAME + 'dict'})
-
-    _g_conf.immutable(True)
 
 
 def _merge_a_into_b(a, b, stack=None):
