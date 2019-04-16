@@ -910,10 +910,10 @@ class ChallengeEvaluator(object):
             subset = [name for profile, name in self.weather_profiles]
 
         target = subset[index % len(subset)]
-        for profile, name in self.weather_profile:
+        for profile, name in self.weather_profiles:
             if name == target:
-                self.world.set_weather(profile[0])
-                break
+                self.world.set_weather(profile)
+                return
 
         assert False
 
@@ -1000,7 +1000,7 @@ class ChallengeEvaluator(object):
                                                                              _route_description['trajectory'])
 
         seconds_given_per_meters = experiment_cfg.get('seconds_given_per_meters', self.SECONDS_GIVEN_PER_METERS)
-        route_timeout = self.estimate_route_timeout(seconds_given_per_meters, _route_description['trajectory'])
+        route_timeout = self.estimate_route_timeout(_route_description['trajectory'], seconds_given_per_meters)
 
         potential_scenarios_definitions, _ = parser.scan_route_for_scenarios(_route_description,
                                                                              experiment_cfg['annotations'])
@@ -1090,11 +1090,14 @@ class ChallengeEvaluator(object):
         self.n_routes = len(route_descriptions_list) * repetitions
 
         # setup world and client assuming that the CARLA server is up and running
+        logging.info('Connecting to {}:{}'.format(args.host, args.port))
         client = carla.Client(args.host, int(args.port))
         client.set_timeout(self.client_timeout)
 
         for route_idx, route_description in enumerate(route_descriptions_list):
+            logging.info('Starting route {}'.format(route_idx + 1))
             for repetition in range(repetitions):
+                logging.debug('Starting repetition {} of route {}'.format(repetition, route_idx + 1))
                 # check if we have enough wall time to run this specific route
                 if not self.within_available_time():
                     error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx + 1,
@@ -1124,7 +1127,8 @@ class ChallengeEvaluator(object):
 
                     # start recording logs for the current route
                     client.start_recorder('log_{}_track{}_route_{:0>4d}.log'.format(self.phase, self.track, route_idx))
-                except:
+                except Exception:
+                    logging.error('Error setting up world for route {}: {}'.format(route_idx, traceback.format_exc()))
                     client.stop_recorder()
                     continue
 
