@@ -86,6 +86,13 @@ default_background_activity.update({
     "Town07": {'vehicle.*': 150},
 })
 
+default_repetitions = {
+    'dev': 1,
+    'validation': 3,
+    'test': 3,
+    'debug': 1,
+}
+
 # Util functions
 
 
@@ -187,30 +194,22 @@ class ChallengeEvaluator(object):
         if phase_codename == 'dev':
             split_name = 'dev_split'
             self.routes =  '{}/srunner/challenge/routes_devtest.xml'.format(scenario_runner_root)
-            repetitions = 1
         elif phase_codename == 'validation':
             split_name = 'val_split'
             self.routes =  '{}/srunner/challenge/routes_testprep.xml'.format(scenario_runner_root)
-            repetitions = 3
         elif phase_codename == 'test':
             split_name = 'test_split'
             self.routes =  '{}/srunner/challenge/routes_testchallenge.xml'.format(scenario_runner_root)
-            repetitions = 3
         else:
             # debug mode
             # using short routes
             split_name = 'debug_split'
             self.routes = '{}/srunner/challenge/routes_debug.xml'.format(scenario_runner_root)
-            repetitions = 1
 
         # overwriting routes in case users passed their own
         if args.routes:
             self.routes = args.routes
 
-        if args.debug > 0:
-            repetitions = 1
-
-        self.repetitions = repetitions
         self.phase = phase_codename
         self.split = split_name
         self.track = track
@@ -253,6 +252,14 @@ class ChallengeEvaluator(object):
         atexit.register(self.__del__)
         signal.signal(signal.SIGTERM, self.__del__)
         signal.signal(signal.SIGINT, self.__del__)
+
+    def repetitions(self, rep_cfg=None):
+        if self.debug:
+            return 1
+        elif rep_cfg is not None:
+            return rep_cfg
+        else:
+            return default_repetitions[self.phase]
 
     def within_available_time(self):
         current_time = datetime.datetime.now()
@@ -896,9 +903,17 @@ class ChallengeEvaluator(object):
         with open(filename, "w+") as fd:
             fd.write(json.dumps(json_data, indent=4))
 
-    def set_weather_profile(self, index):
-        profile = self.weather_profiles[index % len(self.weather_profiles)]
-        self.world.set_weather(profile[0])
+    def set_weather_profile(self, index, subset=None):
+        if subset is None:
+            subset = [name for profile, name in self.weather_profiles]
+
+        target = subset[index % len(subset)]
+        for profile, name in self.weather_profile:
+            if name == target:
+                self.world.set_weather(profile[0])
+                break
+
+        assert False
 
     def load_world(self, client, town_name):
         # A new world can only be loaded in async mode
@@ -1064,19 +1079,20 @@ class ChallengeEvaluator(object):
             sys.exit(-1)
 
         # retrieve worlds annotations
-        world_annotations = parser.parse_config_file(args.scenarios)
+        experiment_cfg = parser.parse_config_file(args.scenarios)
         # retrieve routes
         route_descriptions_list = parser.parse_routes_file(self.routes)
+        repetitions = self.repetitions(experiment_cfg.get('repetitions'))
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
-        self.n_routes = len(route_descriptions_list) * self.repetitions
+        self.n_routes = len(route_descriptions_list) * repetitions
 
         # setup world and client assuming that the CARLA server is up and running
         client = carla.Client(args.host, int(args.port))
         client.set_timeout(self.client_timeout)
 
         for route_idx, route_description in enumerate(route_descriptions_list):
-            for repetition in range(self.repetitions):
+            for repetition in range(repetitions):
                 # check if we have enough wall time to run this specific route
                 if not self.within_available_time():
                     error_message = 'Not enough simulation time available to run route [{}/{}]'.format(route_idx + 1,
@@ -1094,7 +1110,7 @@ class ChallengeEvaluator(object):
                     # load the self.world variable to be used during the route
                     self.load_world(client, route_description['town_name'])
                     # set weather profile
-                    self.set_weather_profile(repetition)
+                    self.set_weather_profile(repetition, experiment_cfg.get('weather_profiles'))
 
                     # Set the actor pool so the scenarios can prepare themselves when needed
                     CarlaActorPool.set_client(client)
@@ -1114,9 +1130,9 @@ class ChallengeEvaluator(object):
                 # If something goes wrong, still take the current score, and continue
                 try:
                     self._current_route_broke = False
-                    self.load_environment_and_run(args, world_annotations, route_description)
-                except Exception as e:
-                    logging.error("Exception running agent: {}".format(e))
+                    self.load_environment_and_run(args, experiment_cfg, route_description)
+                except Exception:
+                    logging.error("Exception running agent: {}".format(traceback.format_exc()))
                     if self._system_error:
                         sys.exit(-1)
                     self._current_route_broke = True
