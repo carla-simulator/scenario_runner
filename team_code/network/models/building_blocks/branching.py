@@ -1,4 +1,3 @@
-from logger import coil_logger
 import torch.nn as nn
 
 
