@@ -1,4 +1,3 @@
-from logger import coil_logger
 import torch.nn as nn
 import torch
 import importlib
@@ -10,6 +9,7 @@ from .building_blocks import Conv
 from .building_blocks import Branching
 from .building_blocks import FC
 from .building_blocks import Join
+
 
 class CoILICRA(nn.Module):
 
