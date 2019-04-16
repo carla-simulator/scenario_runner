@@ -250,9 +250,7 @@ class RosAgent(AutonomousAgent):
         """
         Function to publish camera data
         """
-        #dtype, n_channels = self.cv_bridge.encoding_as_cvtype('8UC3')
-        #im = numpy.ndarray(shape=(600,800, 3), dtype='8UC3', buffer=data)
-        msg = self.cv_bridge.cv2_to_imgmsg(data, encoding='rgba8')
+        msg = self.cv_bridge.cv2_to_imgmsg(data, encoding='bgra8')
         # the camera data is in respect to the camera's own frame
         msg.header = self.get_header()
         msg.header.frame_id = 'ego_vehicle/camera/rgb/{}'.format(sensor_id)
@@ -291,7 +289,6 @@ class RosAgent(AutonomousAgent):
             self.vehicle_info_publisher.publish(info_msg)
         msg = CarlaEgoVehicleStatus()
         msg.header = self.get_header()
-        #msg.header
         msg.velocity = data['speed']
         #todo msg.acceleration
         msg.control.throttle = self.current_control.throttle
@@ -338,7 +335,7 @@ class RosAgent(AutonomousAgent):
             if self.current_map_name != map_name:
                 self.current_map_name = map_name
                 map_info = CarlaMapInfo()
-                #map_info.header = self.get_header()
+                map_info.header = self.get_header()
                 map_info.map_name = self.current_map_name
                 self.map_publisher.publish(map_info)
             
