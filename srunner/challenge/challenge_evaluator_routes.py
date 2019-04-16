@@ -26,6 +26,7 @@ import random
 import re
 import signal
 import sys
+import traceback
 
 import carla
 import xml.etree.ElementTree as ET
@@ -568,7 +569,8 @@ class ChallengeEvaluator(object):
                 if self.debug > 0:
                     raise e
                 else:
-                    print("Skipping scenario '{}' due to setup error: {}".format(definition['name'], e))
+                    logging.error("Skipping scenario '{}' due to setup error: {}".format(definition['name'],
+                                                                                         traceback.format_exc()))
                     continue
             # registering the used actors on the data provider so they can be updated.
 
