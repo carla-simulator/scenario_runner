@@ -157,6 +157,8 @@ class DynamicObjectCrossing(BasicScenario):
         # Number of attempts made so far
         self._spawn_attempted = 0
 
+        self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
+
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
                                                     ego_vehicle,
                                                     config,
@@ -287,31 +289,56 @@ class DynamicObjectCrossing(BasicScenario):
         """
 
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Root")
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
         # leaf nodes
-        start_condition = InTimeToArrivalToVehicle(
-            self.other_actors[0], self.ego_vehicle, self._time_to_reach)
-        actor_velocity = KeepVelocity(
-            self.other_actors[0], self._other_actor_target_velocity, self._walker_yaw)
-        actor_drive = DriveDistance(self.other_actors[0], 0.5 * lane_width)
-        actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0], 1.0,
-                                                      self._other_actor_target_velocity, self._walker_yaw)
-        actor_cross_lane = DriveDistance(self.other_actors[0], lane_width)
-        actor_stop_crossed_lane = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
-        timeout_other_actor = TimeOut(10)
-        actor_remove = ActorDestroy(self.other_actors[0])
-        static_remove = ActorDestroy(self.other_actors[1])
-        end_condition = DriveDistance(self.ego_vehicle, self._ego_vehicle_distance_driven)
+        if self._ego_route is not None:
+            start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle,
+                                                                    self._ego_route,
+                                                                    self.other_actors[0].get_location(),
+                                                                    15)
+        else:
+            start_condition = InTimeToArrivalToVehicle(self.other_actors[0],
+                                                       self.ego_vehicle,
+                                                       self._time_to_reach)
+
+        actor_velocity = KeepVelocity(self.other_actors[0],
+                                      self._other_actor_target_velocity,
+                                      self._walker_yaw,
+                                      name="walker velocity")
+        actor_drive = DriveDistance(self.other_actors[0],
+                                    0.5 * lane_width,
+                                    name="walker drive distance")
+        actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0],
+                                                      1.0,
+                                                      self._other_actor_target_velocity,
+                                                      self._walker_yaw,
+                                                      name="walker crossing lane accelerate velocity")
+        actor_cross_lane = DriveDistance(self.other_actors[0],
+                                         lane_width,
+                                         name="walker drive distance for lane crossing ")
+        actor_stop_crossed_lane = StopVehicle(self.other_actors[0],
+                                              self._other_actor_max_brake,
+                                              name="walker stop")
+        ego_pass_machine = DriveDistance(self.ego_vehicle,
+                                         5,
+                                         name="ego vehicle passed prop")
+        actor_remove = ActorDestroy(self.other_actors[0],
+                                    name="Destroying walker")
+        static_remove = ActorDestroy(self.other_actors[1],
+                                     name="Destroying Prop")
+        end_condition = DriveDistance(self.ego_vehicle,
+                                      self._ego_vehicle_distance_driven,
+                                      name="End condition ego drive distance")
 
         # non leaf nodes
 
         scenario_sequence = py_trees.composites.Sequence()
         keep_velocity_other = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="keep velocity other")
         keep_velocity = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="keep velocity")
 
         # building tree
 
@@ -326,7 +353,6 @@ class DynamicObjectCrossing(BasicScenario):
         scenario_sequence.add_child(keep_velocity)
         scenario_sequence.add_child(keep_velocity_other)
         scenario_sequence.add_child(actor_stop_crossed_lane)
-        scenario_sequence.add_child(timeout_other_actor)
         scenario_sequence.add_child(actor_remove)
         scenario_sequence.add_child(static_remove)
         scenario_sequence.add_child(end_condition)
@@ -335,7 +361,7 @@ class DynamicObjectCrossing(BasicScenario):
         keep_velocity.add_child(actor_drive)
         keep_velocity_other.add_child(actor_start_cross_lane)
         keep_velocity_other.add_child(actor_cross_lane)
-        keep_velocity_other.add_child(TimeOut(5))
+        keep_velocity_other.add_child(ego_pass_machine)
 
         return root
 
