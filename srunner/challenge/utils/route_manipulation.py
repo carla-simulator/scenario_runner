@@ -112,6 +112,36 @@ def clean_route(route):
     return curves_start_end
 
 
+def downsample_route(route, sample_factor):
+    """
+    Downsample the route by some factor.
+    :param route: the trajectory , has to contain the waypoints and the road options
+    :param sample_factor: the downsampling factor
+    :return: returns the ids of the final route that can
+    """
+    route_size = len(route)
+
+    turn_positions_and_labels = clean_route(route)
+    ids_to_sample = []
+
+    lane_follow_set = set(range(0, route_size))
+
+    # we take all the positions that are actually non lane follow and downsample by the factor, sample_factor
+    for start, end, conditions in turn_positions_and_labels:
+        initial_condition_range = [x for x in range(start, end)]
+
+        lane_follow_set = lane_follow_set - set(initial_condition_range)
+        # now we resample the turn points
+        ids_to_sample += initial_condition_range[::sample_factor]
+
+    # We take all the lane following segments and reduce them
+    ids_to_sample += list(lane_follow_set)[::sample_factor]
+    ids_to_sample = sorted(ids_to_sample)
+
+    return ids_to_sample
+
+
+
 def interpolate_trajectory(world, waypoints_trajectory, hop_resolution=1.0):
     """
         Given some raw keypoints interpolate a full dense trajectory to be used by the user.
