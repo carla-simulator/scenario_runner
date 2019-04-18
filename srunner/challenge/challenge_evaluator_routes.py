@@ -248,6 +248,7 @@ class ChallengeEvaluator(object):
 
         # debugging parameters
         self.route_visible = self.debug > 0
+        self.spectator_camera = args.spectator or ('topdown' if self.debug > 0 else None)
 
         # set up atexit methods to prevent blocking the server
         atexit.register(self.__del__)
@@ -627,11 +628,33 @@ class ChallengeEvaluator(object):
 
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
-            if self.debug:
+            if self.spectator_camera:
                 spectator = self.world.get_spectator()
                 ego_trans = self.ego_vehicle.get_transform()
-                spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
-                                                        carla.Rotation(pitch=-90)))
+
+                x_shift, z_shift = 0, 0
+                if self.spectator_camera == 'behind':
+                    x_shift = -5.5
+                    z_shift = 2.8
+                    rotation = carla.Rotation(pitch=ego_trans.rotation.pitch - 15,
+                                              yaw=ego_trans.rotation.yaw,
+                                              roll=ego_trans.rotation.roll)
+                elif self.spectator_camera == 'firstperson':
+                    # This feels very jerky as the updates lag a bit behind vehicle motion.
+                    x_shift = 1.7
+                    z_shift = 1.3
+                    rotation = ego_trans.rotation
+                elif self.spectator_camera == 'topdown':
+                    z_shift = 50
+                    rotation = carla.Rotation(pitch=-90)
+
+                vehicle_bearing = ego_trans.get_forward_vector()
+                location_shift = carla.Location(x=x_shift * vehicle_bearing.x,
+                                                y=x_shift * vehicle_bearing.y,
+                                                z=z_shift)
+                transform = carla.Transform(ego_trans.location + location_shift, rotation)
+                spectator.set_transform(transform)
+
             if self.route_visible:
                 self.draw_waypoints(trajectory,
                                     vertical_shift=1.0, persistency=50000.0)
@@ -1184,9 +1207,11 @@ if __name__ == '__main__':
     PARSER.add_argument('--host', default='localhost',
                         help='IP of the host server (default: localhost)')
     PARSER.add_argument('--port', default='2000', help='TCP port to listen to (default: 2000)')
-    PARSER.add_argument("-a", "--agent", type=str, help="Path to Agent's py file to evaluate")
-    PARSER.add_argument("--config", type=str, help="Path to Agent's configuration file", default="")
+    PARSER.add_argument('-a', '--agent', type=str, help="Path to Agent's py file to evaluate")
+    PARSER.add_argument('--config', type=str, help="Path to Agent's configuration file", default='')
     PARSER.add_argument('--debug', type=int, help='Run with debug output', default=0)
+    PARSER.add_argument('--spectator', type=str,  default=None,
+                        help='Spectactor camera angle. Options: None (does not follow), firstperson, behind, topdown.')
     PARSER.add_argument('--filename', type=str, help='Filename to store challenge results', default='results.json')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
     PARSER.add_argument('--routes',
