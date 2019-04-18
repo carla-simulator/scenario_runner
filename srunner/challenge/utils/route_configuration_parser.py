@@ -20,15 +20,18 @@ TRIGGER_THRESHOLD = 2.0  # Threshold to say if a trigger position is new or repe
 TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
 
 
-def parse_config_file(config_filename):
+def parse_config_file(config_paths):
     """
-    Return the annotations of which positions where the scenarios are going to happen.
-    :param config_filename: the filename for the anotations file
-    :return:
+    Returns the parsed configuration, from merging configs in order and some minimal post-processing.
+    :param config_paths: (list<str)> paths to annotation files.
+    :return: A parsed configuration dictionary.
     """
 
-    with open(config_filename, 'r') as f:
-        cfg = json.loads(f.read())
+    cfg = {}
+    for path in config_paths:
+        with open(path, 'r') as f:
+            d = json.loads(f.read())
+            cfg.update(d)
 
     available_scenarios = cfg.pop('available_scenarios')
     annotations = {}
