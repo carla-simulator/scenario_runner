@@ -52,7 +52,7 @@ MODEL_CONFIGURATION:  # Based on the MODEL_TYPE, we specify the structure
     fc:
       neurons: [256, 256]
       dropouts: [0.0, 0.5]
-PRE_TRAINED: True  # If the weights are started with imagenet.
+PRE_TRAINED: False  # If the weights are started with imagenet.
 
 # Optimizer Parameters #
 # For now we use only use adam
