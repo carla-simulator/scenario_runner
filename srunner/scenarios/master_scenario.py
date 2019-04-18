@@ -81,10 +81,6 @@ class MasterScenario(BasicScenario):
             route = self.route
 
         collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
-        target_criterion = InRadiusRegionTest(self.ego_vehicle,
-                                              x=location.x,
-                                              y=location.y,
-                                              radius=self.radius)
 
         route_criterion = InRouteTest(self.ego_vehicle,
                                       radius=30.0,
@@ -107,7 +103,6 @@ class MasterScenario(BasicScenario):
 
         parallel_criteria.add_child(completion_criterion)
         parallel_criteria.add_child(collision_criterion)
-        parallel_criteria.add_child(target_criterion)
         parallel_criteria.add_child(route_criterion)
         parallel_criteria.add_child(wrong_way_criterion)
         parallel_criteria.add_child(onsidewalk_criterion)

@@ -593,12 +593,13 @@ class InRadiusRegionTest(Criterion):
 
         return new_status
 
-
 class InRouteTest(Criterion):
 
     """
     The test is a success if the actor is never outside route
     """
+    DISTANCE_THRESHOLD = 10.0 # meters
+    WINDOWS_SIZE = 2
 
     def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
         """
@@ -606,12 +607,12 @@ class InRouteTest(Criterion):
         super(InRouteTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
-        self._radius = radius
         self._route = route
-        self._offroad_max = offroad_max
 
-        self._counter_off_route = 0
+        self._wsize = self.WINDOWS_SIZE
         self._waypoints, _ = zip(*self._route)
+        self._route_length = len(self._route)
+        self._current_index = 0
 
     def update(self):
         """
@@ -629,15 +630,19 @@ class InRouteTest(Criterion):
         elif self.test_status == "RUNNING" or self.test_status == "INIT":
             # are we too far away from the route waypoints (i.e., off route)?
             off_route = True
-            for waypoint in self._waypoints:
-                distance = math.sqrt(((location.x - waypoint.x) ** 2) + ((location.y - waypoint.y) ** 2))
-                if distance < self._radius:
-                    off_route = False
-                    break
-            if off_route:
-                self._counter_off_route += 1
 
-            if self._counter_off_route > self._offroad_max:
+            shortest_distance = float('inf')
+            for index in range(max(0, self._current_index - self._wsize),
+                               min(self._current_index + self._wsize + 1, self._route_length)):
+                # look for the distance to the current waipoint + windows_size
+                ref_waypoint = self._waypoints[index]
+                distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
+
+                if distance < self.DISTANCE_THRESHOLD and distance < shortest_distance and index >= self._current_index:
+                    shortest_distance = distance
+                    self._current_index = index
+                    off_route = False
+            if off_route:
                 route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION)
                 route_deviation_event.set_message("Agent deviated from the route at (x={}, y={}, z={})".format(
                     location.x, location.y, location.z))
@@ -657,6 +662,8 @@ class RouteCompletionTest(Criterion):
     """
     Check at which stage of the route is the actor at each tick
     """
+    DISTANCE_THRESHOLD = 10.0 # meters
+    WINDOWS_SIZE = 2
 
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
         """
@@ -666,9 +673,12 @@ class RouteCompletionTest(Criterion):
         self._actor = actor
         self._route = route
 
+        self._wsize = self.WINDOWS_SIZE
         self._current_index = 0
         self._route_length = len(self._route)
         self._waypoints, _ = zip(*self._route)
+        self.target = self._waypoints[-1]
+
         self._traffic_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETION)
         self.list_traffic_events.append(self._traffic_event)
         self._percentage_route_completed = 0.0
@@ -679,6 +689,7 @@ class RouteCompletionTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
+        print("===== route completed = {}".format(self._percentage_route_completed))
         location = CarlaDataProvider.get_location(self._actor)
         if location is None:
             return new_status
@@ -687,19 +698,28 @@ class RouteCompletionTest(Criterion):
             new_status = py_trees.common.Status.FAILURE
 
         elif self.test_status == "RUNNING" or self.test_status == "INIT":
-            best_distance = float("inf")
-            best_index = self._current_index
-            for index in range(self._current_index, self._route_length):
+
+            for index in range(self._current_index, min(self._current_index + self._wsize + 1, self._route_length)):
+                # look for the distance to the current waipoint + windows_size
                 ref_waypoint = self._waypoints[index]
                 distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
-                if distance < best_distance:
-                    best_distance = distance
-                    best_index = index
-            self._current_index = best_index
-            self._percentage_route_completed = 100.0 * float(self._current_index) / float(self._route_length)
-            self._traffic_event.set_dict({'route_completed': self._percentage_route_completed})
-            self._traffic_event.set_message(
-                "Agent has completed > {:.2f}% of the route".format(self._percentage_route_completed))
+                if distance < self.DISTANCE_THRESHOLD:
+                    # good! segment completed!
+                    self._current_index = index
+                    self._percentage_route_completed = 100.0 * float(self._current_index) / float(self._route_length)
+                    self._traffic_event.set_dict({'route_completed': self._percentage_route_completed})
+                    self._traffic_event.set_message(
+                        "Agent has completed > {:.2f}% of the route".format(self._percentage_route_completed))
+
+            if self._percentage_route_completed > 98.0 and location.distance(self.target) < self.DISTANCE_THRESHOLD:
+                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED)
+                route_completion_event.set_message("Destination was successfully reached")
+                self.list_traffic_events.append(route_completion_event)
+                self.test_status = "SUCCESS"
+
+        elif self.test_status == "SUCCESS":
+            new_status = py_trees.common.Status.SUCCESS
+
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
