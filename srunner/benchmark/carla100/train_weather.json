@@ -1,0 +1,9 @@
+{
+  "weather_profiles": [
+    "Clear Noon",
+    "Wet Noon",
+    "Hard Rain Noon",
+    "Clear Sunset"
+  ],
+  "repetitions": 4
+}

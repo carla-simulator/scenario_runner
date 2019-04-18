@@ -1,3 +1,4 @@
+# Used by pose_to_route.py
 poses:
   Town01:
     straight: [[36, 40], [39, 35], [110, 114], [7, 3], [0, 4],
@@ -31,6 +32,7 @@ poses:
                  [66, 3], [27, 12], [79, 19], [2, 29], [16, 14],
                  [5, 57], [70, 73], [46, 67], [57, 50], [61, 49],
                  [21, 12], [51, 81], [77, 68], [56, 65], [43, 54]]
+# Below is not currently used by any script, included only as form of documentation.
 vehicles:
   Town01:
     straight: 0

@@ -1,0 +1,12 @@
+{
+  "background_activity": {
+    "Town01": {
+      "vehicle.*": 20,
+      "walker.*": 50
+    },
+    "Town02": {
+      "vehicle.*": 15,
+      "walker.*": 50
+    }
+  }
+}
