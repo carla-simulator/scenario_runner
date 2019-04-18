@@ -3,6 +3,10 @@
 Interfacing CARLA from ROS is normally done via [CARLA ROS Bridge](https://github.com/carla-simulator/ros-bridge).
 In Challenge Mode this bridging functionality is provided by a RosAgent. It uses the same topics and message-types for the sensors but does not publish tf-transformations.
  
+# Requirements
+
+* `roscore` is expected to be running in the docker container. Please adapt your entrypoint.
+
 ## Setup
 
 To enable your stack within challenge mode, the following steps need to be taken:
