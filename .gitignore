@@ -1,3 +1,4 @@
+data/
 *.pyc
 srunner/challenge/*.pyc
 srunner/challenge/__pycache__/

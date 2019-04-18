@@ -24,6 +24,7 @@ class BenchmarkMasterScenario(MasterScenario):
       - The route plan is constructed by agents.navigation.global_route_planner.GlobalRoutePlanner
         instead of carla.planner.CityTrack.compute_route. I believe they produce similar directions
         but there are some implementation differences.
+      - For Carla 100, two wheeled vehicles are included, which were excluded in the original benchmark.
       - Pedestrians are not currently supported in 0.9.x (to be added soon).
 
     Differences form ChallengeMasterScenario:
