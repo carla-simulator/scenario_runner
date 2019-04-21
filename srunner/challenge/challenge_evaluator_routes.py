@@ -878,6 +878,7 @@ class ChallengeEvaluator(object):
                               'score_composed': score_composed,
                               'score_route': score_route,
                               'score_penalty': score_penalty,
+                              'target_reached': int(target_reached),
                               'result': result,
                               'help_text': return_message
                               }
@@ -890,6 +891,7 @@ class ChallengeEvaluator(object):
         score_composed = 0.0
         score_route = 0.0
         score_penalty = 0.0
+        target_reached = 0.0
         help_message = ""
 
         if self._system_error:
@@ -906,6 +908,7 @@ class ChallengeEvaluator(object):
                 score_composed += stats['score_composed'] / float(self.n_routes)
                 score_route += stats['score_route'] / float(self.n_routes)
                 score_penalty += stats['score_penalty'] / float(self.n_routes)
+                target_reached += stats['target_reached'] * 100 / float(self.n_routes)
                 help_message += "{}\n\n".format(stats['help_text'])
 
             if self.phase == 'validation' or self.phase == 'test':
@@ -922,7 +925,8 @@ class ChallengeEvaluator(object):
                     'accuracies': {
                         'avg. route points': score_route,
                         'infraction points': score_penalty,
-                        'total avg.': score_composed
+                        'total avg.': score_composed,
+                        'target reached %': target_reached,
                     }
                 }],
         }
