@@ -490,11 +490,7 @@ class ChallengeEvaluator(object):
         return cls(self.world, self.ego_vehicle, master_scenario_configuration,
                    timeout=timeout, debug_mode=self.debug > 0)
 
-    def build_background_scenario(self, cfg, town_name, timeout=300):
-        scenario_configuration = ScenarioConfiguration()
-        scenario_configuration.route = None
-        scenario_configuration.town = town_name
-
+    def build_background_scenario(self, cfg, town_name, traffic_jam_checker=True, timeout=300):
         if cfg is None:
             cfg = default_background_activity
         town_cfg = cfg[town_name]
@@ -507,6 +503,10 @@ class ChallengeEvaluator(object):
                 logging.warning("Pedestrian background activity currently unsupported.")
                 return None
 
+            scenario_configuration = ScenarioConfiguration()
+            scenario_configuration.route = None
+            scenario_configuration.town = town_name
+
             transform = carla.Transform()
             autopilot = True
             random = True
@@ -516,6 +516,7 @@ class ChallengeEvaluator(object):
             scenario_configuration.other_actors = [actor_configuration_instance]
 
             return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
+                                      traffic_jam_checker=traffic_jam_checker,
                                       timeout=timeout, debug_mode=self.debug > 0)
 
         res = []
@@ -1057,8 +1058,10 @@ class ChallengeEvaluator(object):
                                                           _route_description['town_name'],
                                                           timeout=route_timeout)
 
+        traffic_jam_checker = experiment_cfg.get('traffic_jam_checker', True)
         self.background_scenarios = self.build_background_scenario(experiment_cfg.get('background_activity'),
                                                                    _route_description['town_name'],
+                                                                   traffic_jam_checker=traffic_jam_checker,
                                                                    timeout=route_timeout)
         self.list_scenarios = [self.master_scenario] + self.background_scenarios
 

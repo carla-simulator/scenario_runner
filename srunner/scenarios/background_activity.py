@@ -25,11 +25,13 @@ class BackgroundActivity(BasicScenario):
 
     category = "BackgroundActivity"
 
-    def __init__(self, world, ego_vehicle, config, debug_mode=False, timeout=35 * 60):
+    def __init__(self, world, ego_vehicle, config, traffic_jam_checker=True,
+                 debug_mode=False, timeout=35 * 60):
         """
         Setup all relevant parameters and create scenario
         """
         self.config = config
+        self.traffic_jam_checker = traffic_jam_checker
         self.debug = debug_mode
 
         self.timeout = timeout  # Timeout of scenario in seconds
@@ -63,8 +65,12 @@ class BackgroundActivity(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        check_jam = TrafficJamChecker(self.ego_vehicle, debug=self.debug)
-        sequence.add_child(check_jam)
+        if self.traffic_jam_checker:
+            check_jam = TrafficJamChecker(self.ego_vehicle, debug=self.debug)
+            sequence.add_child(check_jam)
+        else:
+            idle_behavior = Idle()
+            sequence.add_child(idle_behavior)
 
         return sequence
 

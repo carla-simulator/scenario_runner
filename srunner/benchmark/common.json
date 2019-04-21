@@ -5,5 +5,6 @@
   ],
   "master_scenario": "benchmark",
   "seconds_given_per_meters": 0.36,
-  "manipulate_traffic_lights": false
+  "manipulate_traffic_lights": false,
+  "traffic_jam_checker": false
 }
