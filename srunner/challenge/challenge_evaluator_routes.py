@@ -32,6 +32,8 @@ import carla
 import xml.etree.ElementTree as ET
 import py_trees
 
+from agents.navigation.local_planner import RoadOption
+
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
@@ -55,7 +57,7 @@ from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
 from srunner.scenariomanager.traffic_events import TrafficEventType
-from srunner.challenge.utils.route_manipulation import interpolate_trajectory
+from srunner.challenge.utils.route_manipulation import interpolate_trajectory, clean_route
 
 
 number_class_translation = {
@@ -173,7 +175,7 @@ class ChallengeEvaluator(object):
     Provisional code to evaluate AutonomousAgent performance
     """
     MAX_ALLOWED_RADIUS_SENSOR = 5.0
-    SECONDS_GIVEN_PER_METERS = 1.5
+    SECONDS_GIVEN_PER_METERS = 0.4
 
     def __init__(self, args):
         phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
@@ -326,7 +328,7 @@ class ChallengeEvaluator(object):
         if self.agent_instance is not None:
             self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
 
-    def draw_waypoints(self, waypoints, vertical_shift, persistency=-1):
+    def draw_waypoints(self, waypoints, turn_positions_and_labels, vertical_shift, persistency=-1):
         """
         Draw a list of waypoints at a certain height given in vertical_shift.
         :param waypoints: list or iterable container with the waypoints to draw
@@ -336,6 +338,23 @@ class ChallengeEvaluator(object):
         for w in waypoints:
             wp = w[0].location + carla.Location(z=vertical_shift)
             self.world.debug.draw_point(wp, size=0.1, color=carla.Color(0, 255, 0), life_time=persistency)
+        for start, end, conditions in turn_positions_and_labels:
+
+            if conditions == RoadOption.LEFT:  # Yellow
+                color = carla.Color(255, 255, 0)
+            elif conditions == RoadOption.RIGHT:  # Cyan
+                color = carla.Color(0, 255, 255)
+            elif conditions == RoadOption.CHANGELANELEFT:  # Orange
+                color = carla.Color(255, 64, 0)
+            elif conditions == RoadOption.CHANGELANERIGHT:  # Dark Cyan
+                color = carla.Color(0, 64, 255)
+            else:  # STRAIGHT
+                color = carla.Color(128, 128, 128)  # Gray
+
+            for position in range(start, end):
+                self.world.debug.draw_point(waypoints[position][0].location + carla.Location(z=vertical_shift),
+                                       size=0.2, color=color, life_time=persistency)
+
         self.world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=0.2,
                                     color=carla.Color(0, 0, 255), life_time=persistency)
         self.world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=0.2,
@@ -489,7 +508,7 @@ class ChallengeEvaluator(object):
 
         cls = master_scenario_translation[kind]
         return cls(self.world, self.ego_vehicle, master_scenario_configuration,
-                   timeout=timeout, debug_mode=self.debug > 0)
+                   timeout=timeout, debug_mode=self.debug > 1)
 
     def build_background_scenario(self, cfg, town_name, traffic_jam_checker=True, timeout=300):
         if cfg is None:
@@ -518,7 +537,7 @@ class ChallengeEvaluator(object):
 
             return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
                                       traffic_jam_checker=traffic_jam_checker,
-                                      timeout=timeout, debug_mode=self.debug > 0)
+                                      timeout=timeout, debug_mode=self.debug > 1)
 
         res = []
         for model, amount in town_cfg.items():
@@ -534,7 +553,7 @@ class ChallengeEvaluator(object):
         scenario_configuration.town = town_name
 
         return TrafficLightScenario(self.world, self.ego_vehicle, scenario_configuration,
-                                    timeout=timeout, debug_mode=self.debug>0)
+                                    timeout=timeout, debug_mode=self.debug>1)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -658,7 +677,8 @@ class ChallengeEvaluator(object):
                 spectator.set_transform(transform)
 
             if self.route_visible:
-                self.draw_waypoints(trajectory,
+                turn_positions_and_labels = clean_route(trajectory)
+                self.draw_waypoints(trajectory, turn_positions_and_labels,
                                     vertical_shift=1.0, persistency=50000.0)
                 self.route_visible = False
 
@@ -668,6 +688,20 @@ class ChallengeEvaluator(object):
 
             # check for scenario termination
             for i, _ in enumerate(self.list_scenarios):
+
+                if self.debug==1:
+                    behavior = self.list_scenarios[i].scenario.scenario_tree.children[0]
+                    if behavior.tip():
+                        print("{} {} {} {}".format(self.list_scenarios[i].scenario.scenario_tree.name,
+                                                   self.list_scenarios[i].scenario.scenario_tree.status,
+                                                   behavior.tip().name,
+                                                   behavior.tip().status))
+                    if (behavior.tip().name != "InTriggerDistanceToLocationAlongRoute" and
+                        self.list_scenarios[i].scenario.scenario_tree.name != "MasterScenario" and
+                        self.list_scenarios[i].scenario.scenario_tree.name != "BackgroundActivity" and
+                        self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
+                        py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
+
                     # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
                     # indiciate that the scenario was running but terminated
                     # Remove the scenario when termination is clear --> not INVALID, not RUNNING
@@ -969,6 +1003,13 @@ class ChallengeEvaluator(object):
             settings.no_rendering_mode = True
         self.world.apply_settings(settings)
 
+        # update traffic lights to make traffic more dynamic
+        traffic_lights = self.world.get_actors().filter('*traffic_light*')
+        for tl in traffic_lights:
+            tl.set_green_time(9.0)
+            tl.set_yellow_time(0.05)
+            tl.set_red_time(0.08)
+
     def filter_scenarios(self, potential_scenarios_all, scenarios_to_remove):
         """
 
@@ -1084,6 +1125,7 @@ class ChallengeEvaluator(object):
                 self.world.debug.draw_point(loc, size=1.0, color=carla.Color(255, 0, 0), life_time=100000)
                 self.world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
                                              color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
+
                 print(scenario)
 
         self.list_scenarios += self.build_scenario_instances(sampled_scenarios_definitions,
@@ -1256,8 +1298,8 @@ if __name__ == '__main__':
         challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
     except Exception as e:
-        if ARGUMENTS.show_to_participant:
-            logging.error('Exception during evaluation: {}'.format(traceback.format_exc()))
-        challenge_evaluator.report_challenge_statistics(ARGUMENTS.filename, ARGUMENTS.show_to_participant)
+        logging.error('Exception during evaluation: {}'.format(traceback.format_exc()))
+        if challenge_evaluator is not None:
+            challenge_evaluator.report_challenge_statistics(ARGUMENTS.filename, ARGUMENTS.show_to_participant)
     finally:
         del challenge_evaluator

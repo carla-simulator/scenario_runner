@@ -10,7 +10,6 @@ is making a left turn
 """
 
 from __future__ import print_function
-import sys
 from six.moves.queue import Queue
 
 import py_trees
@@ -79,8 +78,8 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._other_actor_transform = config.other_actors[0].transform
         first_vehicle_transform = carla.Transform(
             carla.Location(config.other_actors[0].transform.location.x,
-                        config.other_actors[0].transform.location.y,
-                        config.other_actors[0].transform.location.z - 500),
+                           config.other_actors[0].transform.location.y,
+                           config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
         try:
             first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, self._other_actor_transform)
@@ -118,7 +117,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         actor_sink = ActorSink(self._world, plan[-1][0].transform.location, 10)
         # follow waypoints untill next intersection
         move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan,
-                                        blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
+                                      blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
         # wait
         wait = DriveDistance(self.ego_vehicle, self._ego_distance)
 

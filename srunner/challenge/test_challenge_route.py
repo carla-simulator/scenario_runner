@@ -126,7 +126,7 @@ def test_routes(args):
         background_scenario = challenge.build_background_scenario(route_description['town_name'])
         list_scenarios.append(background_scenario)
     # build the instance based on the parsed definitions.
-    print ("Definition of the scenarios present on the route ")
+    print("Definition of the scenarios present on the route ")
     pprint(sampled_scenarios_definitions)
     list_scenarios += challenge.build_scenario_instances(sampled_scenarios_definitions,
                                                          route_description['town_name'])

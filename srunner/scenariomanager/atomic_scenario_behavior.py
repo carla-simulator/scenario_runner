@@ -387,7 +387,6 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         if current_velocity > other_velocity:
             time_to_arrival = 2 * distance / (current_velocity - other_velocity)
 
-
         if time_to_arrival < self._time:
             new_status = py_trees.common.Status.SUCCESS
 
@@ -1248,12 +1247,14 @@ class ActorSink(AtomicBehavior):
         CarlaActorPool.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
 
+
 class TrafficLightManipulator(AtomicBehavior):
 
     """
     Atomic behavior that manipulate traffic lights to simulate TS07, TS08 and TS09
     This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
     """
+
     MAX_DISTANCE_TRAFFIC_LIGHT = 15
     RANDOM_VALUE_INTERVENTION = 0.3
     RED = carla.TrafficLightState.Red
@@ -1320,7 +1321,8 @@ class TrafficLightManipulator(AtomicBehavior):
 
             else:
                 # the traffic light has been manipulated...
-                distance_to_traffic_light = self.target_traffic_light.get_location().distance(self.ego_vehicle.get_location())
+                distance_to_traffic_light = self.target_traffic_light.get_location().distance(
+                    self.ego_vehicle.get_location())
                 if self.debug:
                     print("++ distance={}".format(distance_to_traffic_light))
 

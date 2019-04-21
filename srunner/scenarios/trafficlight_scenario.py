@@ -14,8 +14,6 @@ from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenarios.basic_scenario import *
 
 
-
-
 class TrafficLightScenario(BasicScenario):
 
     """
@@ -36,12 +34,12 @@ class TrafficLightScenario(BasicScenario):
         self.timeout = timeout  # Timeout of scenario in seconds
 
         super(TrafficLightScenario, self).__init__("TrafficLightScenario",
-                                                 ego_vehicle,
-                                                 config,
-                                                 world,
-                                                 debug_mode,
-                                                 terminate_on_failure=True,
-                                                 criteria_enable=True)
+                                                   ego_vehicle,
+                                                   config,
+                                                   world,
+                                                   debug_mode,
+                                                   terminate_on_failure=True,
+                                                   criteria_enable=True)
 
     def _create_behavior(self):
         """

@@ -176,6 +176,9 @@ class CarlaDataProvider(object):
 
     @staticmethod
     def annotate_trafficlight_in_group(traffic_light):
+        """
+        Get dictionary with traffic light group info for a given traffic light
+        """
         dict_annotations = {'ref': [], 'opposite': [], 'left': [], 'right': []}
 
         ref_yaw = traffic_light.get_transform().rotation.yaw
@@ -199,6 +202,9 @@ class CarlaDataProvider(object):
 
     @staticmethod
     def update_light_states(ego_light, annotations, states, freeze=False, timeout=1000000000):
+        """
+        Update traffic light states
+        """
         reset_params = []
 
         if 'ego' in states:
@@ -290,6 +296,9 @@ class CarlaDataProvider(object):
 
     @staticmethod
     def reset_lights(reset_params):
+        """
+        Reset traffic lights
+        """
         for param in reset_params:
             param['light'].set_state(param['state'])
             param['light'].set_green_time(param['green_time'])
