@@ -12,7 +12,8 @@ import py_trees
 
 from srunner.tools.config_parser import RouteConfiguration, TargetConfiguration
 from srunner.scenariomanager.atomic_scenario_behavior import Idle
-from srunner.scenariomanager.atomic_scenario_criteria import InRadiusRegionTest, InRouteTest, RouteCompletionTest
+from srunner.scenariomanager.atomic_scenario_criteria import (InRadiusRegionTest, OnSidewalkTest, RouteCompletionTest,
+                                                              RunningRedLightTest, RunningStopTest, WrongLaneTest)
 from srunner.scenarios.basic_scenario import BasicScenario
 
 
@@ -84,19 +85,20 @@ class MasterScenario(BasicScenario):
                                               x=self.target.x,
                                               y=self.target.y,
                                               radius=self.radius)
-        route_criterion = InRouteTest(self.ego_vehicle,
-                                      radius=30.0,
-                                      route=self.route,
-                                      offroad_max=20,
-                                      terminate_on_failure=True)
         completion_criterion = RouteCompletionTest(self.ego_vehicle, route=self.route)
-
+        wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
+        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicle)
+        red_light_criterion = RunningRedLightTest(self.ego_vehicle)
+        stop_criterion = RunningStopTest(self.ego_vehicle)
 
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         parallel_criteria.add_child(target_criterion)
-        parallel_criteria.add_child(route_criterion)
         parallel_criteria.add_child(completion_criterion)
+        parallel_criteria.add_child(wrong_way_criterion)
+        parallel_criteria.add_child(onsidewalk_criterion)
+        parallel_criteria.add_child(red_light_criterion)
+        parallel_criteria.add_child(stop_criterion)
 
         return parallel_criteria
 

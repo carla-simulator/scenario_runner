@@ -8,8 +8,7 @@
 Master scenario for the Carla Challenge.
 """
 
-from srunner.scenariomanager.atomic_scenario_criteria import (CollisionTest, WrongLaneTest, OnSidewalkTest,
-                                                              RunningRedLightTest, RunningStopTest)
+from srunner.scenariomanager.atomic_scenario_criteria import (CollisionTest, InRouteTest)
 from srunner.scenarios.master_scenario import MasterScenario
 
 
@@ -37,16 +36,14 @@ class ChallengeMasterScenario(MasterScenario):
         """
         parallel_criteria = super(ChallengeMasterScenario, self)._create_test_criteria()
 
+        route_criterion = InRouteTest(self.ego_vehicle,
+                                      radius=30.0,
+                                      route=self.route,
+                                      offroad_max=20,
+                                      terminate_on_failure=True)
         collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
-        wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
-        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicle)
-        red_light_criterion = RunningRedLightTest(self.ego_vehicle)
-        stop_criterion = RunningStopTest(self.ego_vehicle)
 
+        parallel_criteria.add_child(route_criterion)
         parallel_criteria.add_child(collision_criterion)
-        parallel_criteria.add_child(wrong_way_criterion)
-        parallel_criteria.add_child(onsidewalk_criterion)
-        parallel_criteria.add_child(red_light_criterion)
-        parallel_criteria.add_child(stop_criterion)
 
         return parallel_criteria

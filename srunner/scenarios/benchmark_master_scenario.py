@@ -9,6 +9,7 @@ Master Scenario for the CoRL 2017 / Carla 100 benchmarks.
 """
 
 from srunner.scenarios.master_scenario import MasterScenario
+from srunner.scenariomanager.atomic_scenario_criteria import CollisionTest
 
 
 BENCHMARK_MASTER_SCENARIO = ["BenchmarkMasterScenario"]
@@ -29,7 +30,6 @@ class BenchmarkMasterScenario(MasterScenario):
 
     Differences form ChallengeMasterScenario:
       - No extra termination conditions, e.g. when crashing or running a red light.
-      - Timeout is computed dynamically based on route distance rather than being fixed.
     """
 
     def __init__(self, world, ego_vehicle, config, debug_mode=False, criteria_enable=True, timeout=300):
@@ -39,3 +39,10 @@ class BenchmarkMasterScenario(MasterScenario):
         super(BenchmarkMasterScenario, self).__init__(name="BenchmarkMasterScenario", world=world,
                                                       ego_vehicle=ego_vehicle, config=config, debug_mode=debug_mode,
                                                       criteria_enable=criteria_enable, timeout=timeout)
+
+    def _create_test_criteria(self):
+        parallel_criteria = super(BenchmarkMasterScenario, self)._create_test_criteria()
+        collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=False)
+        parallel_criteria.add_child(collision_criterion)
+
+        return parallel_criteria
