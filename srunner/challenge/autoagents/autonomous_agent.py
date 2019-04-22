@@ -93,5 +93,5 @@ class AutonomousAgent():
 
         else:   # No downsampling is performed
 
-            self._global_plan = global_plan_gps
+            self._global_plan_gps = global_plan_gps
             self._global_plan_world_coord = global_plan_world_coord

@@ -736,6 +736,7 @@ class ChallengeEvaluator(object):
                               'score_composed': score_composed,
                               'score_route': score_route,
                               'score_penalty': score_penalty,
+                              'target_reached': False,
                               'result': result,
                               'help_text': return_message
                               }
@@ -763,6 +764,7 @@ class ChallengeEvaluator(object):
                               'score_composed': score_composed,
                               'score_route': score_route,
                               'score_penalty': score_penalty,
+                              'target_reached': False,
                               'result': result,
                               'help_text': return_message
                               }
@@ -912,7 +914,7 @@ class ChallengeEvaluator(object):
                               'score_composed': score_composed,
                               'score_route': score_route,
                               'score_penalty': score_penalty,
-                              'target_reached': int(target_reached),
+                              'target_reached': target_reached,
                               'result': result,
                               'help_text': return_message
                               }
@@ -942,7 +944,7 @@ class ChallengeEvaluator(object):
                 score_composed += stats['score_composed'] / float(self.n_routes)
                 score_route += stats['score_route'] / float(self.n_routes)
                 score_penalty += stats['score_penalty'] / float(self.n_routes)
-                target_reached += stats['target_reached'] * 100 / float(self.n_routes)
+                target_reached += int(stats['target_reached']) * 100.0 / float(self.n_routes)
                 help_message += "{}\n\n".format(stats['help_text'])
 
             if self.phase == 'validation' or self.phase == 'test':
