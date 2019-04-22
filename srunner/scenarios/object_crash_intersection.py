@@ -139,7 +139,7 @@ class VehicleTurningRight(BasicScenario):
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z ),
+                           self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle.set_transform(actor_transform)
         self.other_actors.append(first_vehicle)
@@ -291,7 +291,7 @@ class VehicleTurningLeft(BasicScenario):
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
-                           self._other_actor_transform.location.z ),
+                           self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle.set_transform(actor_transform)
         self.other_actors.append(first_vehicle)
