@@ -637,8 +637,9 @@ class InRouteTest(Criterion):
                 # look for the distance to the current waipoint + windows_size
                 ref_waypoint = self._waypoints[index]
                 distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
-
-                if distance < self.DISTANCE_THRESHOLD and distance < shortest_distance and index >= self._current_index:
+                if distance < self.DISTANCE_THRESHOLD \
+                        and distance <= shortest_distance \
+                        and index >= self._current_index:
                     shortest_distance = distance
                     self._current_index = index
                     off_route = False
@@ -689,7 +690,6 @@ class RouteCompletionTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        print("===== route completed = {}".format(self._percentage_route_completed))
         location = CarlaDataProvider.get_location(self._actor)
         if location is None:
             return new_status
