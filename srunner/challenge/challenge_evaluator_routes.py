@@ -252,12 +252,13 @@ class ChallengeEvaluator(object):
         Remove and destroy all actors
         """
         # We need enumerate here, otherwise the actors are not properly removed
-        for i, _ in enumerate(self._sensors_list):
-            if self._sensors_list[i] is not None:
-                self._sensors_list[i].stop()
-                self._sensors_list[i].destroy()
-                self._sensors_list[i] = None
-        self._sensors_list = []
+        if hasattr(self, '_sensors_list'):
+            for i, _ in enumerate(self._sensors_list):
+                if self._sensors_list[i] is not None:
+                    self._sensors_list[i].stop()
+                    self._sensors_list[i].destroy()
+                    self._sensors_list[i] = None
+            self._sensors_list = []
 
         for i, _ in enumerate(self.actors):
             if self.actors[i] is not None:
