@@ -25,6 +25,7 @@ import random
 import re
 import signal
 import subprocess
+import traceback
 import xml.etree.ElementTree as ET
 
 import py_trees
@@ -640,8 +641,9 @@ class ChallengeEvaluator(object):
                                                    self.list_scenarios[i].scenario.scenario_tree.status,
                                                    behavior.tip().name,
                                                    behavior.tip().status))
-                    if (behavior.tip().name != "InTriggerDistanceToLocationAlongRoute" and
-                        self.list_scenarios[i].scenario.scenario_tree.name != "MasterScenario" and
+                    if (behavior and behavior.tip() and behavior.tip().name !=
+                        "InTriggerDistanceToLocationAlongRoute" and self.list_scenarios[
+                        i].scenario.scenario_tree.name != "MasterScenario" and
                         self.list_scenarios[i].scenario.scenario_tree.name != "BackgroundActivity" and
                         self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
                         py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
@@ -880,6 +882,9 @@ class ChallengeEvaluator(object):
                 score_route += stats['score_route'] / float(self.n_routes)
                 score_penalty += stats['score_penalty'] / float(self.n_routes)
                 help_message += "{}\n\n".format(stats['help_text'])
+
+            if self.debug > 0:
+                print(help_message)
 
             if self.phase == 'validation' or self.phase == 'test':
                 help_message = "No metadata available for this phase"
@@ -1127,6 +1132,9 @@ class ChallengeEvaluator(object):
                     self._current_route_broke = False
                     self.load_environment_and_run(args, world_annotations, route_description)
                 except Exception as e:
+                    if self.debug > 0:
+                        traceback.print_exc()
+                        raise
                     if self._system_error or not self.agent_instance:
                         print(e)
                         sys.exit(-1)
@@ -1208,7 +1216,7 @@ if __name__ == '__main__':
         challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         if challenge_evaluator:
             challenge_evaluator.report_challenge_statistics(ARGUMENTS.filename, ARGUMENTS.show_to_participant)
     finally:
