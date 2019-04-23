@@ -42,7 +42,7 @@ class ControlLoss(BasicScenario):
         # ego vehicle parameters
         self._no_of_jitter = 10
         self._noise_mean = 0      # Mean value of steering noise
-        self._noise_std = 0.003   # Std. deviation of steering noise
+        self._noise_std = 0.01   # Std. deviation of steering noise
         self._dynamic_mean_for_steer = 0.001
         self._dynamic_mean_for_throttle = 0.045
         self._abort_distance_to_intersection = 10

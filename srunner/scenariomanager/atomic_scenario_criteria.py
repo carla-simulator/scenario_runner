@@ -16,6 +16,8 @@ import weakref
 import math
 import numpy as np
 import py_trees
+import shapely
+
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -407,7 +409,6 @@ class ReachedRegionTest(Criterion):
 
         return new_status
 
-
 class OnSidewalkTest(Criterion):
 
     """
@@ -426,6 +427,10 @@ class OnSidewalkTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._onsidewalk_active = False
 
+        self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 2.0)])
+        self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -2.0)])
+
+
     def update(self):
         """
         Check lane invasion count
@@ -435,12 +440,31 @@ class OnSidewalkTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        current_location = self._actor.get_location()
-        closest_waypoint = self._map.get_waypoint(current_location, lane_type=carla.LaneType.Any)
+        current_transform = self._actor.get_transform()
+        current_location = current_transform.location
+        current_yaw = current_transform.rotation.yaw
 
-        if closest_waypoint.lane_type == carla.LaneType.Driving:
+
+        rot_x = shapely.affinity.rotate(self.positive_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
+        rot_nx = shapely.affinity.rotate(self.negative_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
+
+        sample_point_right = current_location + carla.Location(x=rot_x.coords[1][0], y=rot_x.coords[1][1])
+        sample_point_left = current_location + carla.Location(x=rot_nx.coords[1][0], y=rot_nx.coords[1][1])
+
+        closest_waypoint_right = self._map.get_waypoint(sample_point_right, lane_type=carla.LaneType.Any)
+        closest_waypoint_left = self._map.get_waypoint(sample_point_left, lane_type=carla.LaneType.Any)
+
+        # CarlaDataProvider.get_world().debug.draw_point(closest_waypoint_right.transform.location,
+        #                                                size=0.1, color=carla.Color(0, 255, 0), life_time=5.0)
+        # CarlaDataProvider.get_world().debug.draw_point(closest_waypoint_left.transform.location,
+        #                                                size=0.1, color=carla.Color(0, 255, 0), life_time=5.0)
+
+        if closest_waypoint_right and closest_waypoint_left \
+                and closest_waypoint_right.lane_type != carla.LaneType.Sidewalk \
+                and closest_waypoint_left.lane_type != carla.LaneType.Sidewalk:
             # we are not on a sidewalk
             self._onsidewalk_active = False
+
         else:
             if not self._onsidewalk_active:
                 onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
