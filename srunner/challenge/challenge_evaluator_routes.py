@@ -699,7 +699,6 @@ class ChallengeEvaluator(object):
 
         return_message = ""
         return_message += "\n=================================="
-
         return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(route_id, result,
                                                                                                      final_score,
                                                                                                      score_route,
@@ -1199,7 +1198,6 @@ if __name__ == '__main__':
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
     PARSER.add_argument('--scenarios',
                         help='Name of the scenario annotation file to be mixed with the route.')
-
 
     ARGUMENTS = PARSER.parse_args()
 
