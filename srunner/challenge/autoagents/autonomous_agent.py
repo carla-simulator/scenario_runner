@@ -89,7 +89,7 @@ class AutonomousAgent():
 
             self._global_plan_world_coord = [(global_plan_world_coord[x][0], global_plan_world_coord[x][1])
                                              for x in ds_ids]
-            self._global_plan_gps = [global_plan_gps[x] for x in ds_ids]
+            self._global_plan = [global_plan_gps[x] for x in ds_ids]
 
         else:   # No downsampling is performed
 
