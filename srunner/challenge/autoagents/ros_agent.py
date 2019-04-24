@@ -18,7 +18,7 @@ import rosgraph
 from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 from nav_msgs.msg import Path
 from sensor_msgs.msg import Image, PointCloud2, NavSatFix, NavSatStatus, CameraInfo
-from std_msgs.msg import Header
+from std_msgs.msg import Header, String
 from nav_msgs.msg import Odometry
 from carla_msgs.msg import CarlaEgoVehicleStatus, CarlaEgoVehicleInfo, CarlaEgoVehicleInfoWheel, CarlaEgoVehicleControl, CarlaMapInfo
 
@@ -84,6 +84,7 @@ class RosAgent(AutonomousAgent):
         self.vehicle_status_publisher = None
         self.odometry_publisher = None
         self.map_publisher = None
+        self.map_file_publisher = None
         self.current_map_name = None
         self.tf_broadcaster = None
 
@@ -121,6 +122,8 @@ class RosAgent(AutonomousAgent):
                     self.odometry_publisher = rospy.Publisher('/carla/ego_vehicle/odometry', Odometry)
                 if not self.map_publisher:
                     self.map_publisher = rospy.Publisher('/carla/map', CarlaMapInfo, queue_size=1, latch=True)
+                if not self.map_file_publisher:
+                    self.map_file_publisher = rospy.Publisher('/carla/map_file', String, queue_size=1, latch=True)
                 if not self.tf_broadcaster:
                     self.tf_broadcaster = tf.TransformBroadcaster()
             else:
@@ -337,7 +340,10 @@ class RosAgent(AutonomousAgent):
                 map_info = CarlaMapInfo()
                 map_info.header = self.get_header()
                 map_info.map_name = self.current_map_name
+                map_info.opendrive = data['opendrive']
                 self.map_publisher.publish(map_info)
+        if self.map_file_publisher:
+            self.map_file_publisher.publish(data['map_file'])
             
     def run_step(self, input_data, timestamp):
         self.timestamp = timestamp

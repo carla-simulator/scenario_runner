@@ -32,6 +32,7 @@ class HDMapReader(object):
         transform = self._vehicle.get_transform()
 
         return {'map_file': "{}/HDMaps/{}.pcd".format(self._CARLA_ROOT, map_name),
+                'opendrive': CarlaDataProvider.get_map().to_opendrive(),
                 'transform': {'x': transform.location.x,
                               'y': transform.location.y,
                               'z': transform.location.z,
