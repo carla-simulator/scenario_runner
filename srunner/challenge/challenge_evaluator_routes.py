@@ -700,11 +700,12 @@ class ChallengeEvaluator(object):
         return_message = ""
         return_message += "\n=================================="
 
-        return_message += "\nCrash message: {}".format(self._error_message)
         return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(route_id, result,
                                                                                                      final_score,
                                                                                                      score_route,
                                                                                                      score_penalty)
+        return_message += "\n=================================="
+        return_message += "\nCrash message: {}".format(self._error_message)
         return_message += "\n=================================="
 
         current_statistics = {'id': route_id,
