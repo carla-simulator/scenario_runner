@@ -202,6 +202,7 @@ class ChallengeEvaluator(object):
         self.phase = phase_codename
         self.split = split_name
         self.track = track
+        self._error_message = ''
 
         self.debug = args.debug
         self.ego_vehicle = None
@@ -698,10 +699,12 @@ class ChallengeEvaluator(object):
 
         return_message = ""
         return_message += "\n=================================="
+
+        return_message += "\nCrash message: {}".format(self._error_message)
         return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(route_id, result,
-                                                                                                 final_score,
-                                                                                                 score_route,
-                                                                                                 score_penalty)
+                                                                                                     final_score,
+                                                                                                     score_route,
+                                                                                                     score_penalty)
         return_message += "\n=================================="
 
         current_statistics = {'id': route_id,
@@ -1123,6 +1126,8 @@ class ChallengeEvaluator(object):
                     # start recording logs for the current route
                     client.start_recorder('log_{}_track{}_route_{:0>4d}.log'.format(self.phase, self.track, route_idx))
                 except:
+                    if args.show_to_participant:
+                        self._error_message = traceback.format_exc()
                     client.stop_recorder()
                     continue
 
@@ -1138,6 +1143,9 @@ class ChallengeEvaluator(object):
                     if self._system_error or not self.agent_instance:
                         print(e)
                         sys.exit(-1)
+                    if args.show_to_participant:
+                        self._error_message = traceback.format_exc()
+
                     self._current_route_broke = True
 
                 # statistics recording
@@ -1190,6 +1198,7 @@ if __name__ == '__main__':
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
     PARSER.add_argument('--scenarios',
                         help='Name of the scenario annotation file to be mixed with the route.')
+
 
     ARGUMENTS = PARSER.parse_args()
 
