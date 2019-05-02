@@ -105,21 +105,21 @@ class RosAgent(AutonomousAgent):
         for sensor in self.sensors():
             self.id_to_sensor_type_map[sensor['id']] = sensor['type']
             if sensor['type'] == 'sensor.camera.rgb':
-                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/image_color", Image)
+                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/image_color", Image, queue_size=1)
                 self.id_to_camera_info_map[sensor['id']] = self.build_camera_info(sensor)
-                self.publisher_map[sensor['id'] + '_info'] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/camera_info", CameraInfo)
+                self.publisher_map[sensor['id'] + '_info'] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/camera_info", CameraInfo, queue_size=1)
             elif sensor['type'] == 'sensor.lidar.ray_cast':
-                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/lidar/' + sensor['id'] + "/point_cloud", PointCloud2)
+                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/lidar/' + sensor['id'] + "/point_cloud", PointCloud2, queue_size=1)
             elif sensor['type'] == 'sensor.other.gnss':
-                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/gnss/' + sensor['id'] + "/fix", NavSatFix)
+                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/gnss/' + sensor['id'] + "/fix", NavSatFix, queue_size=1)
             elif sensor['type'] == 'sensor.can_bus':
                 if not self.vehicle_info_publisher:
                     self.vehicle_info_publisher = rospy.Publisher('/carla/ego_vehicle/vehicle_info', CarlaEgoVehicleInfo, queue_size=1, latch=True)
                 if not self.vehicle_status_publisher:
-                    self.vehicle_status_publisher = rospy.Publisher('/carla/ego_vehicle/vehicle_status', CarlaEgoVehicleStatus)
+                    self.vehicle_status_publisher = rospy.Publisher('/carla/ego_vehicle/vehicle_status', CarlaEgoVehicleStatus, queue_size=1)
             elif sensor['type'] == 'sensor.hd_map':
                 if not self.odometry_publisher:
-                    self.odometry_publisher = rospy.Publisher('/carla/ego_vehicle/odometry', Odometry)
+                    self.odometry_publisher = rospy.Publisher('/carla/ego_vehicle/odometry', Odometry, queue_size=1)
                 if not self.map_publisher:
                     self.map_publisher = rospy.Publisher('/carla/map', CarlaMapInfo, queue_size=1, latch=True)
                 if not self.map_file_publisher:
