@@ -395,6 +395,19 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
 
     return is_hazard
 
+def get_forward_speed(vehicle):
+    """ Convert the vehicle transform directly to forward speed """
+
+    velocity = vehicle.get_velocity()
+    transform = vehicle.get_transform()
+    vel_np = np.array([velocity.x, velocity.y, velocity.z])
+    pitch = np.deg2rad(transform.rotation.pitch)
+    yaw = np.deg2rad(transform.rotation.yaw)
+    orientation = np.array([np.cos(pitch) * np.cos(yaw), np.cos(pitch) * np.sin(yaw), np.sin(pitch)])
+    speed = np.dot(vel_np, orientation)
+    return speed
+
+
 
 class RotatedRectangle(object):
 

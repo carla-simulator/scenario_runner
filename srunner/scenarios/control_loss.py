@@ -140,6 +140,7 @@ class ControlLoss(BasicScenario):
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         # Abort jitter_sequence, if the vehicle is approaching an intersection
         jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
+
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
         end_condition = DriveDistance(self.ego_vehicle, self._end_distance)
         start_end_parallel.add_child(start_condition)
@@ -182,8 +183,10 @@ class ControlLoss(BasicScenario):
         :param control: a carla vehicle control
         :return: a control to be changed by the scenario.
         """
-        control.steer += self._current_steer_noise[0]
-        control.throttle += self._current_throttle_noise[0]
+        # At the moment of adding noise, the noise is only applied if the vehicle is faster than 18 km/h
+        if get_forward_speed(self.ego_vehicle) > 5.0:
+            control.steer += self._current_steer_noise[0]
+            control.throttle += self._current_throttle_noise[0]
 
         return control
 
