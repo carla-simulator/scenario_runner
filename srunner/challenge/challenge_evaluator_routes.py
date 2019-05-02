@@ -506,6 +506,8 @@ class ChallengeEvaluator(object):
             amount = 200
         elif town_name == 'Town06' or town_name == 'Town07':
             amount = 150
+        elif town_name == 'Town08' or town_name == 'Town08':
+            amount = 180
         else:
             amount = 1
 
@@ -723,13 +725,13 @@ class ChallengeEvaluator(object):
           statistics about the scenario (human-readable, for the CARLA challenge.)
         """
 
-        PENALTY_COLLISION_STATIC = 10
-        PENALTY_COLLISION_VEHICLE = 10
-        PENALTY_COLLISION_PEDESTRIAN = 30
-        PENALTY_TRAFFIC_LIGHT = 10
-        PENALTY_WRONG_WAY = 5
-        PENALTY_SIDEWALK_INVASION = 5
-        PENALTY_STOP = 7
+        PENALTY_COLLISION_STATIC = 6
+        PENALTY_COLLISION_VEHICLE = 6
+        PENALTY_COLLISION_PEDESTRIAN = 9
+        PENALTY_TRAFFIC_LIGHT = 3
+        PENALTY_WRONG_WAY = 2
+        PENALTY_SIDEWALK_INVASION = 2
+        PENALTY_STOP = 2
 
         target_reached = False
         failure = False

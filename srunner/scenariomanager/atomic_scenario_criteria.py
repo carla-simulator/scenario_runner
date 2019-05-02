@@ -260,11 +260,6 @@ class CollisionTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if self.actual_value > 0:
-            self.test_status = "FAILURE"
-        else:
-            self.test_status = "SUCCESS"
-
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
@@ -293,6 +288,7 @@ class CollisionTest(Criterion):
         actor_type = None
         if 'static' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
+            self.test_status = "FAILURE"
         elif 'vehicle' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
@@ -304,7 +300,6 @@ class CollisionTest(Criterion):
             event.other_actor.type_id, event.other_actor.id))
 
         self.list_traffic_events.append(collision_event)
-        self.actual_value += 1
 
 
 class KeepLaneTest(Criterion):
@@ -414,7 +409,6 @@ class OnSidewalkTest(Criterion):
     """
     This class contains an atomic test to detect sidewalk invasions.
     """
-    MAX_INVASION_ALLOWED = 2.0  # meters
 
     def __init__(self, actor, optional=False, name="WrongLaneTest"):
         """
@@ -427,8 +421,8 @@ class OnSidewalkTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._onsidewalk_active = False
 
-        self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 2.0)])
-        self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -2.0)])
+        self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 1.2)])
+        self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -1.2)])
 
 
     def update(self):
@@ -453,11 +447,6 @@ class OnSidewalkTest(Criterion):
 
         closest_waypoint_right = self._map.get_waypoint(sample_point_right, lane_type=carla.LaneType.Any)
         closest_waypoint_left = self._map.get_waypoint(sample_point_left, lane_type=carla.LaneType.Any)
-
-        # CarlaDataProvider.get_world().debug.draw_point(closest_waypoint_right.transform.location,
-        #                                                size=0.1, color=carla.Color(0, 255, 0), life_time=5.0)
-        # CarlaDataProvider.get_world().debug.draw_point(closest_waypoint_left.transform.location,
-        #                                                size=0.1, color=carla.Color(0, 255, 0), life_time=5.0)
 
         if closest_waypoint_right and closest_waypoint_left \
                 and closest_waypoint_right.lane_type != carla.LaneType.Sidewalk \
