@@ -15,7 +15,7 @@ class Track(Enum):
     SENSORS = 1
     NO_RENDERING = 2
 
-class ServerManager():
+class ServerManager(object):
     def __init__(self, opt_dict):
         log_level = logging.INFO
         logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
@@ -50,7 +50,8 @@ class ServerManagerBinary(ServerManager):
             self._proc.kill()
             self._outs, self._errs = self._proc.communicate()
 
-        exec_command = "{} -world-port={} -benchmark -fps=20 >/dev/null".format(self._carla_server_binary, port)
+        exec_command = "{} -carla-rpc-port={} -benchmark -fps=20 -quality-level=Epic >/dev/null".format(
+            self._carla_server_binary, port)
         print(exec_command)
         self._proc = subprocess.Popen(exec_command, shell=True)
 

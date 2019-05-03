@@ -4,10 +4,6 @@ This repository contains traffic scenario definition and an execution engine
 for CARLA. It also allows  the execution of a simulation of the CARLA Challenge.
 You can use this system to prepare your agent for the CARLA Challenge.
 
-Disclaimer
-----------
-
-This is work in progress and may not reflect the final API
 
 Building the ScenarioRunner
 ---------------------------
@@ -24,12 +20,13 @@ Using the ScenarioRunner
 Please take a look at our [Getting started](Docs/getting_started.md)
 documentation.
 
+
 Challenge Evaluation
 ---------------------
+For the CARLA AD Challenge, please choose the carla_challenge branch instead of the master branch.
 
-You can evaluate your own agents using a reproduction
-of the CARLA Challenge by following [this tutorial](Docs/challenge_evaluation.md)
-
+You can evaluate your own agents using a reproduction  of the CARLA challenge by following
+[this tutorial](Docs/challenge_evaluation.md)
 
 
 Contributing
@@ -39,11 +36,13 @@ Please take a look at our [Contribution guidelines][contriblink].
 
 [contriblink]: http://carla.readthedocs.io/en/latest/CONTRIBUTING
 
+
 F.A.Q.
 ------
 
 If you run into problems, check our
 [FAQ](http://carla.readthedocs.io/en/latest/faq/).
+
 
 License
 -------

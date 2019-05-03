@@ -19,10 +19,13 @@ follows:
        """
 
        timeout = 60            # Timeout of scenario in seconds
+       category = "NewScenarioCategory"
+
        # some ego vehicle parameters
        # some parameters for the other vehicles
 
-       def __init__(self, world, ego_vehice, other_actors, town, debug_mode=False):
+       def __init__(self, world, ego_vehice, config, randomize=False, debug_mode=False, criteria_enable=True,
+                    timeout=60)):
            """
            Initialize all parameters required for NewScenario
            """
@@ -31,10 +34,10 @@ follows:
            super(NewScenario, self).__init__(
              name="NewScenario",
              ego_vehicle=ego_vehicle,
-             other_actors=other_actors,
-             town=town,
+             config=config,
              world=world,
-             debug_mode=debug_mode)
+             debug_mode=debug_mode,
+             criteria_enable=criteria_enable)
 
 
        def create_behavior(self):
@@ -57,7 +60,8 @@ in the code example.
 The initialize method is intended to setup all parameters required
 for the scenario and all vehicles. This includes selecting the correct vehicles,
 spawning them at the correct location, etc. To simplify this, you may want to
-use the _setup_vehicle()_ function defined in basic_scenario.py
+use the _setup_vehicle()_ function defined in basic_scenario.py. Please also
+update the category and the scenario config in configs/.
 
 ### CreateBehavior method
 This method should setup the behavior tree that contains the behavior of all

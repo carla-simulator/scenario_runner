@@ -108,6 +108,7 @@ def get_actor_display_name(actor, truncate=250):
 class World(object):
     def __init__(self, carla_world, hud):
         self.world = carla_world
+        self.mapname = carla_world.get_map().name
         self.hud = hud
         self.world.on_tick(hud.on_world_tick)
         self.world.wait_for_tick(10.0)
@@ -158,7 +159,7 @@ class World(object):
             print("Scenario ended -- Terminating")
             return False
 
-        self.hud.tick(self, clock)
+        self.hud.tick(self, self.mapname, clock)
         return True
 
     def render(self, display):
@@ -272,7 +273,7 @@ class HUD(object):
         self.frame_number = timestamp.frame_count
         self.simulation_time = timestamp.elapsed_seconds
 
-    def tick(self, world, clock):
+    def tick(self, world, mapname, clock):
         if not self._show_info:
             return
         t = world.vehicle.get_transform()
@@ -292,7 +293,7 @@ class HUD(object):
             'Client:  % 16d FPS' % clock.get_fps(),
             '',
             'Vehicle: % 20s' % get_actor_display_name(world.vehicle, truncate=20),
-            'Map:     % 20s' % world.world.get_map().name,
+            'Map:     % 20s' % mapname,
             'Simulation time: % 12s' % datetime.timedelta(seconds=int(self.simulation_time)),
             '',
             'Speed:   % 15.0f km/h' % (3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2)),
@@ -477,7 +478,7 @@ class LaneInvasionSensor(object):
         self._parent = parent_actor
         self._hud = hud
         world = self._parent.get_world()
-        bp = world.get_blueprint_library().find('sensor.other.lane_detector')
+        bp = world.get_blueprint_library().find('sensor.other.lane_invasion')
         self.sensor = world.spawn_actor(bp, carla.Transform(), attach_to=self._parent)
         # We need to pass the lambda a weak reference to self to avoid circular
         # reference.

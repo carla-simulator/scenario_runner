@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (c) 2018-2019 Intel Labs.
-# authors: Fabian Oboril (fabian.oboril@intel.com)
+
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -9,44 +9,55 @@
 Welcome to CARLA scenario_runner
 
 This is the main script to be executed when running a scenario.
-It loeads the scenario coniguration, loads the scenario and manager,
+It loads the scenario configuration, loads the scenario and manager,
 and finally triggers the scenario execution.
 """
 
 from __future__ import print_function
+
+import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-import traceback
-
-import sys
 
 import carla
 
+from srunner.scenariomanager.carla_data_provider import *
+from srunner.scenariomanager.scenario_manager import ScenarioManager
+from srunner.scenarios.background_activity import *
+from srunner.scenarios.control_loss import *
 from srunner.scenarios.follow_leading_vehicle import *
-from srunner.scenarios.opposite_vehicle_taking_priority import *
-from srunner.scenarios.object_crash_vehicle import *
+from srunner.scenarios.maneuver_opposite_direction import *
+from srunner.scenarios.master_scenario import *
 from srunner.scenarios.no_signal_junction_crossing import *
 from srunner.scenarios.object_crash_intersection import *
-from srunner.scenarios.control_loss import *
-from srunner.scenarios.config_parser import *
-from srunner.scenariomanager.scenario_manager import ScenarioManager
-
+from srunner.scenarios.object_crash_vehicle import *
+from srunner.scenarios.opposite_vehicle_taking_priority import *
+from srunner.scenarios.other_leading_vehicle import *
+from srunner.scenarios.signalized_junction_left_turn import *
+from srunner.scenarios.signalized_junction_right_turn import *
+from srunner.tools.config_parser import *
 
 # Version of scenario_runner
-VERSION = 0.2
+VERSION = 0.3
 
 
 # Dictionary of all supported scenarios.
 # key = Name of config file in Configs/
 # value = List as defined in the scenario module
 SCENARIOS = {
+    "BackgroundActivity": BACKGROUND_ACTIVITY_SCENARIOS,
     "FollowLeadingVehicle": FOLLOW_LEADING_VEHICLE_SCENARIOS,
     "ObjectCrossing": OBJECT_CROSSING_SCENARIOS,
     "RunningRedLight": RUNNING_RED_LIGHT_SCENARIOS,
     "NoSignalJunction": NO_SIGNAL_JUNCTION_SCENARIOS,
     "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
-    "ControlLoss": CONTROL_LOSS_SCENARIOS
+    "ControlLoss": CONTROL_LOSS_SCENARIOS,
+    "OppositeDirection": MANEUVER_OPPOSITE_DIRECTION,
+    "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS,
+    "SignalizedJunctionRightTurn": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS,
+    "SignalizedJunctionLeftTurn": TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS,
+    "MasterScenario": MASTER_SCENARIO
 }
 
 
@@ -63,7 +74,6 @@ class ScenarioRunner(object):
     """
 
     ego_vehicle = None
-    actors = []
 
     # Tunable parameters
     client_timeout = 10.0  # in seconds
@@ -82,18 +92,13 @@ class ScenarioRunner(object):
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
         # requests in the localhost at port 2000.
-        client = carla.Client(args.host, int(args.port))
-        client.set_timeout(self.client_timeout)
+        self.client = carla.Client(args.host, int(args.port))
+        self.client.set_timeout(self.client_timeout)
 
         # Once we have a client we can retrieve the world that is currently
         # running.
-        self.world = client.get_world()
-
-        # Wait for the world to be ready
-        self.world.wait_for_tick(self.wait_for_world)
-
-        # Create scenario manager
-        self.manager = ScenarioManager(self.world, args.debug)
+        self.world = self.client.get_world()
+        CarlaDataProvider.set_world(self.world)
 
     def __del__(self):
         """
@@ -126,61 +131,30 @@ class ScenarioRunner(object):
         Remove and destroy all actors
         """
 
-        # We need enumerate here, otherwise the actors are not properly removed
-        for i, _ in enumerate(self.actors):
-            if self.actors[i] is not None:
-                self.actors[i].destroy()
-                self.actors[i] = None
-
-        self.actors = []
+        CarlaDataProvider.cleanup()
+        CarlaActorPool.cleanup()
 
         if ego and self.ego_vehicle is not None:
             self.ego_vehicle.destroy()
             self.ego_vehicle = None
 
-    def setup_vehicle(self, model, spawn_point, hero=False):
+    def prepare_ego_vehicle(self, config):
         """
-        Function to setup the most relevant vehicle parameters,
-        incl. spawn point and vehicle model.
-        """
-
-        blueprint_library = self.world.get_blueprint_library()
-
-        # Get vehicle by model
-        blueprint = random.choice(blueprint_library.filter(model))
-        if hero:
-            blueprint.set_attribute('role_name', 'hero')
-        else:
-            blueprint.set_attribute('role_name', 'scenario')
-
-        vehicle = self.world.try_spawn_actor(blueprint, spawn_point)
-
-        if vehicle is None:
-            raise Exception(
-                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
-        else:
-            # Let's deactivate the autopilot of the vehicle
-            vehicle.set_autopilot(False)
-
-        return vehicle
-
-    def prepare_actors(self, config):
-        """
-        Spawn or update all scenario actors according to
-        their parameters provided in config
+        Spawn or update the ego vehicle according to
+        its parameters provided in config
         """
 
         # If ego_vehicle already exists, just update location
         # Otherwise spawn ego vehicle
         if self.ego_vehicle is None:
-            self.ego_vehicle = self.setup_vehicle(config.ego_vehicle.model, config.ego_vehicle.transform, True)
+            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model,
+                                                          config.ego_vehicle.transform,
+                                                          True)
         else:
             self.ego_vehicle.set_transform(config.ego_vehicle.transform)
 
-        # spawn all other actors
-        for actor in config.other_actors:
-            new_actor = self.setup_vehicle(actor.model, actor.transform)
-            self.actors.append(new_actor)
+        # sync state
+        CarlaDataProvider.get_world().wait_for_tick()
 
     def analyze_scenario(self, args, config):
         """
@@ -221,21 +195,31 @@ class ScenarioRunner(object):
 
             # Execute each configuration
             for config in scenario_configurations:
+                self.world = self.client.load_world(config.town)
+                CarlaActorPool.set_client(self.client)
+                CarlaDataProvider.set_world(self.world)
+
+                # Wait for the world to be ready
+                self.world.wait_for_tick(self.wait_for_world)
+
+                # Create scenario manager
+                self.manager = ScenarioManager(self.world, args.debug)
 
                 # Prepare scenario
                 print("Preparing scenario: " + config.name)
                 scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.type)
                 try:
-                    self.prepare_actors(config)
+                    CarlaActorPool.set_world(self.world)
+                    self.prepare_ego_vehicle(config)
                     scenario = scenario_class(self.world,
                                               self.ego_vehicle,
-                                              self.actors,
-                                              config.town,
+                                              config,
                                               args.randomize,
                                               args.debug)
                 except Exception as exception:
                     print("The scenario cannot be loaded")
-                    traceback.print_exc()
+                    if args.debug:
+                        traceback.print_exc()
                     print(exception)
                     self.cleanup()
                     continue
@@ -249,7 +233,7 @@ class ScenarioRunner(object):
 
                 # Stop scenario and cleanup
                 self.manager.stop_scenario()
-                del scenario
+                scenario.remove_all_actors()
 
                 self.cleanup()
 
@@ -297,8 +281,10 @@ if __name__ == '__main__':
         PARSER.print_help(sys.stdout)
         sys.exit(0)
 
+    SCENARIORUNNER = None
     try:
         SCENARIORUNNER = ScenarioRunner(ARGUMENTS)
         SCENARIORUNNER.run(ARGUMENTS)
     finally:
-        del SCENARIORUNNER
+        if SCENARIORUNNER is not None:
+            del SCENARIORUNNER
