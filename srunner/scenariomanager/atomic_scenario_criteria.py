@@ -693,6 +693,18 @@ class RouteCompletionTest(Criterion):
         self._waypoints, _ = zip(*self._route)
         self.target = self._waypoints[-1]
 
+        self._accum_meters = []
+        prev_wp = self._waypoints[0]
+        for i, wp in enumerate(self._waypoints):
+            d = wp.distance(prev_wp)
+            if i > 0:
+                accum = self._accum_meters[i-1]
+            else:
+                accum = 0
+
+            self._accum_meters.append(d + accum)
+            prev_wp = wp
+
         self._traffic_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETION)
         self.list_traffic_events.append(self._traffic_event)
         self._percentage_route_completed = 0.0
@@ -719,12 +731,13 @@ class RouteCompletionTest(Criterion):
                 if distance < self.DISTANCE_THRESHOLD:
                     # good! segment completed!
                     self._current_index = index
-                    self._percentage_route_completed = 100.0 * float(self._current_index) / float(self._route_length)
+                    self._percentage_route_completed = 100.0 * float(self._accum_meters[self._current_index]) \
+                                                       / float(self._accum_meters[-1])
                     self._traffic_event.set_dict({'route_completed': self._percentage_route_completed})
                     self._traffic_event.set_message(
                         "Agent has completed > {:.2f}% of the route".format(self._percentage_route_completed))
 
-            if self._percentage_route_completed > 98.0 and location.distance(self.target) < self.DISTANCE_THRESHOLD:
+            if self._percentage_route_completed > 99.0 and location.distance(self.target) < self.DISTANCE_THRESHOLD:
                 route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED)
                 route_completion_event.set_message("Destination was successfully reached")
                 self.list_traffic_events.append(route_completion_event)
