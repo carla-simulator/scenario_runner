@@ -74,6 +74,14 @@ number_class_translation = {
 
 }
 
+PENALTY_COLLISION_STATIC = 6
+PENALTY_COLLISION_VEHICLE = 6
+PENALTY_COLLISION_PEDESTRIAN = 9
+PENALTY_TRAFFIC_LIGHT = 3
+PENALTY_WRONG_WAY = 2
+PENALTY_SIDEWALK_INVASION = 2
+PENALTY_STOP = 2
+
 # Util functions
 
 
@@ -506,6 +514,8 @@ class ChallengeEvaluator(object):
             amount = 200
         elif town_name == 'Town06' or town_name == 'Town07':
             amount = 150
+        elif town_name == 'Town08' or town_name == 'Town08':
+            amount = 180
         else:
             amount = 1
 
@@ -622,6 +632,15 @@ class ChallengeEvaluator(object):
                 spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
                                                         carla.Rotation(pitch=-90)))
 
+                # show current score
+                total_score, route_score, infractions_score = self.compute_current_statistics()
+                print("{}/{}".format(route_score, infractions_score))
+                self.world.debug.draw_string(ego_trans.location + carla.Location(z=15),
+                                             "[{:.2f}/{:.2f}]".format(route_score, infractions_score),
+                                             draw_shadow=False, color=carla.Color(255, 255, 255),
+                                             life_time=0.01)
+
+
             if self.route_visible:
                 turn_positions_and_labels = clean_route(trajectory)
                 self.draw_waypoints(trajectory, turn_positions_and_labels,
@@ -717,19 +736,93 @@ class ChallengeEvaluator(object):
 
         self.statistics_routes.append(current_statistics)
 
+    def compute_current_statistics(self):
+
+        target_reached = False
+        score_composed = 0.0
+        score_penalty = 0.0
+        score_route = 0.0
+
+        list_traffic_events = []
+        for node in self.master_scenario.scenario.test_criteria.children:
+            if node.list_traffic_events:
+                list_traffic_events.extend(node.list_traffic_events)
+
+        list_collisions = []
+        list_red_lights = []
+        list_wrong_way = []
+        list_route_dev = []
+        list_sidewalk_inv = []
+        list_stop_inf = []
+        # analyze all traffic events
+        for event in list_traffic_events:
+            if event.get_type() == TrafficEventType.COLLISION_STATIC:
+                score_penalty += PENALTY_COLLISION_STATIC
+                msg = event.get_message()
+                if msg:
+                    list_collisions.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.COLLISION_VEHICLE:
+                score_penalty += PENALTY_COLLISION_VEHICLE
+                msg = event.get_message()
+                if msg:
+                    list_collisions.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.COLLISION_PEDESTRIAN:
+                score_penalty += PENALTY_COLLISION_PEDESTRIAN
+                msg = event.get_message()
+                if msg:
+                    list_collisions.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.TRAFFIC_LIGHT_INFRACTION:
+                score_penalty += PENALTY_TRAFFIC_LIGHT
+                msg = event.get_message()
+                if msg:
+                    list_red_lights.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.WRONG_WAY_INFRACTION:
+                score_penalty += PENALTY_WRONG_WAY
+                msg = event.get_message()
+                if msg:
+                    list_wrong_way.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.ROUTE_DEVIATION:
+                msg = event.get_message()
+                if msg:
+                    list_route_dev.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.ON_SIDEWALK_INFRACTION:
+                score_penalty += PENALTY_SIDEWALK_INVASION
+                msg = event.get_message()
+                if msg:
+                    list_sidewalk_inv.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.STOP_INFRACTION:
+                score_penalty += PENALTY_STOP
+                msg = event.get_message()
+                if msg:
+                    list_stop_inf.append(event.get_message())
+
+            elif event.get_type() == TrafficEventType.ROUTE_COMPLETED:
+                score_route = 100.0
+                target_reached = True
+            elif event.get_type() == TrafficEventType.ROUTE_COMPLETION:
+                if not target_reached:
+                    if event.get_dict():
+                        score_route = event.get_dict()['route_completed']
+                    else:
+                        score_route = 0
+
+        score_composed = max(score_route - score_penalty, 0.0)
+
+        return score_composed, score_route, score_penalty
+
+
     def record_route_statistics_default(self, route_id):
         """
           This function is intended to be called from outside and provide
           statistics about the scenario (human-readable, for the CARLA challenge.)
         """
-
-        PENALTY_COLLISION_STATIC = 10
-        PENALTY_COLLISION_VEHICLE = 10
-        PENALTY_COLLISION_PEDESTRIAN = 30
-        PENALTY_TRAFFIC_LIGHT = 10
-        PENALTY_WRONG_WAY = 5
-        PENALTY_SIDEWALK_INVASION = 5
-        PENALTY_STOP = 7
 
         target_reached = False
         failure = False

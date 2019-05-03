@@ -260,11 +260,6 @@ class CollisionTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if self.actual_value > 0:
-            self.test_status = "FAILURE"
-        else:
-            self.test_status = "SUCCESS"
-
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
@@ -290,21 +285,26 @@ class CollisionTest(Criterion):
         if not self:
             return
 
+        registered = False
         actor_type = None
         if 'static' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
+            self.test_status = "FAILURE"
         elif 'vehicle' in event.other_actor.type_id:
+            for traffic_event in self.list_traffic_events:
+                if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
+                    and traffic_event.get_dict()['id'] == event.other_actor.id:
+                        registered = True
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_PEDESTRIAN
 
-        collision_event = TrafficEvent(event_type=actor_type)
-        collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
-        collision_event.set_message("Agent collided against object with type={} and id={}".format(
-            event.other_actor.type_id, event.other_actor.id))
-
-        self.list_traffic_events.append(collision_event)
-        self.actual_value += 1
+        if not registered:
+            collision_event = TrafficEvent(event_type=actor_type)
+            collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
+            collision_event.set_message("Agent collided against object with type={} and id={}".format(
+                event.other_actor.type_id, event.other_actor.id))
+            self.list_traffic_events.append(collision_event)
 
 
 class KeepLaneTest(Criterion):
@@ -414,7 +414,6 @@ class OnSidewalkTest(Criterion):
     """
     This class contains an atomic test to detect sidewalk invasions.
     """
-    MAX_INVASION_ALLOWED = 2.0  # meters
 
     def __init__(self, actor, optional=False, name="WrongLaneTest"):
         """
@@ -427,8 +426,8 @@ class OnSidewalkTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._onsidewalk_active = False
 
-        self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 2.0)])
-        self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -2.0)])
+        self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 1.2)])
+        self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -1.2)])
 
 
     def update(self):
@@ -453,11 +452,6 @@ class OnSidewalkTest(Criterion):
 
         closest_waypoint_right = self._map.get_waypoint(sample_point_right, lane_type=carla.LaneType.Any)
         closest_waypoint_left = self._map.get_waypoint(sample_point_left, lane_type=carla.LaneType.Any)
-
-        # CarlaDataProvider.get_world().debug.draw_point(closest_waypoint_right.transform.location,
-        #                                                size=0.1, color=carla.Color(0, 255, 0), life_time=5.0)
-        # CarlaDataProvider.get_world().debug.draw_point(closest_waypoint_left.transform.location,
-        #                                                size=0.1, color=carla.Color(0, 255, 0), life_time=5.0)
 
         if closest_waypoint_right and closest_waypoint_left \
                 and closest_waypoint_right.lane_type != carla.LaneType.Sidewalk \
@@ -704,6 +698,18 @@ class RouteCompletionTest(Criterion):
         self._waypoints, _ = zip(*self._route)
         self.target = self._waypoints[-1]
 
+        self._accum_meters = []
+        prev_wp = self._waypoints[0]
+        for i, wp in enumerate(self._waypoints):
+            d = wp.distance(prev_wp)
+            if i > 0:
+                accum = self._accum_meters[i-1]
+            else:
+                accum = 0
+
+            self._accum_meters.append(d + accum)
+            prev_wp = wp
+
         self._traffic_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETION)
         self.list_traffic_events.append(self._traffic_event)
         self._percentage_route_completed = 0.0
@@ -730,12 +736,13 @@ class RouteCompletionTest(Criterion):
                 if distance < self.DISTANCE_THRESHOLD:
                     # good! segment completed!
                     self._current_index = index
-                    self._percentage_route_completed = 100.0 * float(self._current_index) / float(self._route_length)
+                    self._percentage_route_completed = 100.0 * float(self._accum_meters[self._current_index]) \
+                                                       / float(self._accum_meters[-1])
                     self._traffic_event.set_dict({'route_completed': self._percentage_route_completed})
                     self._traffic_event.set_message(
                         "Agent has completed > {:.2f}% of the route".format(self._percentage_route_completed))
 
-            if self._percentage_route_completed > 98.0 and location.distance(self.target) < self.DISTANCE_THRESHOLD:
+            if self._percentage_route_completed > 99.0 and location.distance(self.target) < self.DISTANCE_THRESHOLD:
                 route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED)
                 route_completion_event.set_message("Destination was successfully reached")
                 self.list_traffic_events.append(route_completion_event)
