@@ -285,21 +285,26 @@ class CollisionTest(Criterion):
         if not self:
             return
 
+        registered = False
         actor_type = None
         if 'static' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
             self.test_status = "FAILURE"
         elif 'vehicle' in event.other_actor.type_id:
+            for traffic_event in self.list_traffic_events:
+                if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
+                    and traffic_event.get_dict()['id'] == event.other_actor.id:
+                        registered = True
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_PEDESTRIAN
 
-        collision_event = TrafficEvent(event_type=actor_type)
-        collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
-        collision_event.set_message("Agent collided against object with type={} and id={}".format(
-            event.other_actor.type_id, event.other_actor.id))
-
-        self.list_traffic_events.append(collision_event)
+        if not registered:
+            collision_event = TrafficEvent(event_type=actor_type)
+            collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
+            collision_event.set_message("Agent collided against object with type={} and id={}".format(
+                event.other_actor.type_id, event.other_actor.id))
+            self.list_traffic_events.append(collision_event)
 
 
 class KeepLaneTest(Criterion):

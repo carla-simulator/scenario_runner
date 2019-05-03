@@ -74,6 +74,14 @@ number_class_translation = {
 
 }
 
+PENALTY_COLLISION_STATIC = 6
+PENALTY_COLLISION_VEHICLE = 6
+PENALTY_COLLISION_PEDESTRIAN = 9
+PENALTY_TRAFFIC_LIGHT = 3
+PENALTY_WRONG_WAY = 2
+PENALTY_SIDEWALK_INVASION = 2
+PENALTY_STOP = 2
+
 # Util functions
 
 
@@ -730,14 +738,6 @@ class ChallengeEvaluator(object):
 
     def compute_current_statistics(self):
 
-        PENALTY_COLLISION_STATIC = 6
-        PENALTY_COLLISION_VEHICLE = 6
-        PENALTY_COLLISION_PEDESTRIAN = 9
-        PENALTY_TRAFFIC_LIGHT = 3
-        PENALTY_WRONG_WAY = 2
-        PENALTY_SIDEWALK_INVASION = 2
-        PENALTY_STOP = 2
-
         target_reached = False
         score_composed = 0.0
         score_penalty = 0.0
@@ -823,14 +823,6 @@ class ChallengeEvaluator(object):
           This function is intended to be called from outside and provide
           statistics about the scenario (human-readable, for the CARLA challenge.)
         """
-
-        PENALTY_COLLISION_STATIC = 6
-        PENALTY_COLLISION_VEHICLE = 6
-        PENALTY_COLLISION_PEDESTRIAN = 9
-        PENALTY_TRAFFIC_LIGHT = 3
-        PENALTY_WRONG_WAY = 2
-        PENALTY_SIDEWALK_INVASION = 2
-        PENALTY_STOP = 2
 
         target_reached = False
         failure = False
