@@ -6,25 +6,23 @@ namespace traffic_manager{
 
 SimpleWaypoint::SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint>) {
     this->waypoint = waypoint;
-    this->next_waypoint = NULL;
-    this->previous_waypoint = NULL;
+    this->next_waypoints = std::vector<SimpleWaypoint*>();
 }
 SimpleWaypoint::~SimpleWaypoint(){}
 
-void SimpleWaypoint::setNextWaypoint(SimpleWaypoint* next_waypoint) {
-    this->next_waypoint = next_waypoint;
+void SimpleWaypoint::setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints) {
+    this->next_waypoints.insert(
+        this->next_waypoints.end(),
+        next_waypoints.begin(),
+        next_waypoints.end());
 }
 
-void SimpleWaypoint::setPreviousWaypoint(SimpleWaypoint* previous_waypoint) {
-    this->previous_waypoint = previous_waypoint;
+std::vector<SimpleWaypoint*> SimpleWaypoint::getNextWaypoint() {
+    return this->next_waypoints;
 }
 
-SimpleWaypoint* SimpleWaypoint::getNextWaypoint() {
-    return this->next_waypoint;
-}
-
-SimpleWaypoint* SimpleWaypoint::getPreviousWaypoint() {
-    return this->previous_waypoint;
+float SimpleWaypoint::distance(carla::geom::Location location) {
+    return this->waypoint->GetTransform().location.Distance(location);
 }
 
 } // namespace traffic_manager

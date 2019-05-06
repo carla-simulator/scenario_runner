@@ -163,6 +163,60 @@ src/CarlaDataAccessLayer.cpp.s:
 	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.s
 .PHONY : src/CarlaDataAccessLayer.cpp.s
 
+src/InMemoryMap.o: src/InMemoryMap.cpp.o
+
+.PHONY : src/InMemoryMap.o
+
+# target to build an object file
+src/InMemoryMap.cpp.o:
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o
+.PHONY : src/InMemoryMap.cpp.o
+
+src/InMemoryMap.i: src/InMemoryMap.cpp.i
+
+.PHONY : src/InMemoryMap.i
+
+# target to preprocess a source file
+src/InMemoryMap.cpp.i:
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.i
+.PHONY : src/InMemoryMap.cpp.i
+
+src/InMemoryMap.s: src/InMemoryMap.cpp.s
+
+.PHONY : src/InMemoryMap.s
+
+# target to generate assembly for a file
+src/InMemoryMap.cpp.s:
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.s
+.PHONY : src/InMemoryMap.cpp.s
+
+src/SimpleWaypoint.o: src/SimpleWaypoint.cpp.o
+
+.PHONY : src/SimpleWaypoint.o
+
+# target to build an object file
+src/SimpleWaypoint.cpp.o:
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o
+.PHONY : src/SimpleWaypoint.cpp.o
+
+src/SimpleWaypoint.i: src/SimpleWaypoint.cpp.i
+
+.PHONY : src/SimpleWaypoint.i
+
+# target to preprocess a source file
+src/SimpleWaypoint.cpp.i:
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.i
+.PHONY : src/SimpleWaypoint.cpp.i
+
+src/SimpleWaypoint.s: src/SimpleWaypoint.cpp.s
+
+.PHONY : src/SimpleWaypoint.s
+
+# target to generate assembly for a file
+src/SimpleWaypoint.cpp.s:
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.s
+.PHONY : src/SimpleWaypoint.cpp.s
+
 test/main.o: test/main.cpp.o
 
 .PHONY : test/main.o
@@ -203,6 +257,12 @@ help:
 	@echo "... src/CarlaDataAccessLayer.o"
 	@echo "... src/CarlaDataAccessLayer.i"
 	@echo "... src/CarlaDataAccessLayer.s"
+	@echo "... src/InMemoryMap.o"
+	@echo "... src/InMemoryMap.i"
+	@echo "... src/InMemoryMap.s"
+	@echo "... src/SimpleWaypoint.o"
+	@echo "... src/SimpleWaypoint.i"
+	@echo "... src/SimpleWaypoint.s"
 	@echo "... test/main.o"
 	@echo "... test/main.i"
 	@echo "... test/main.s"

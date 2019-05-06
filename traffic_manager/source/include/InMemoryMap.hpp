@@ -21,7 +21,7 @@ class InMemoryMap
 private:
     TopologyList topology;
     std::vector<SimpleWaypoint> dense_topology;
-    typedef std::map<std::pair<int, int>, carla::SharedPtr<carla::client::Waypoint>> NodeMap;
+    typedef std::map<std::pair<int, int>, SimpleWaypoint*> NodeMap;
     NodeMap entry_node_map;
     NodeMap exit_node_map;
     std::pair<int, int> make_node_key(carla::SharedPtr<carla::client::Waypoint> waypooint);
@@ -29,7 +29,7 @@ public:
     InMemoryMap(TopologyList topology);
     ~InMemoryMap();
     void setUp(int sampling_resolution);
-    traffic_manager::SimpleWaypoint getWaypoint(carla::geom::Location location);
+    traffic_manager::SimpleWaypoint* getWaypoint(carla::geom::Location location);
 };
 
 }

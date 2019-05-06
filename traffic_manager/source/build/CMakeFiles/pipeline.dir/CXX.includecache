@@ -18,6 +18,30 @@ carla/client/Waypoint.h
 carla/Memory.h
 ../include/carla/Memory.h
 
+../include/InMemoryMap.hpp
+map
+-
+cmath
+-
+carla/Memory.h
+../include/carla/Memory.h
+carla/client/Waypoint.h
+../include/carla/client/Waypoint.h
+carla/geom/Location.h
+../include/carla/geom/Location.h
+SimpleWaypoint.hpp
+../include/SimpleWaypoint.hpp
+
+../include/SimpleWaypoint.hpp
+carla/Memory.h
+../include/carla/Memory.h
+carla/geom/Vector3D.h
+../include/carla/geom/Vector3D.h
+carla/geom/Location.h
+../include/carla/geom/Location.h
+carla/client/Waypoint.h
+../include/carla/client/Waypoint.h
+
 /home/praveen/opt/libcarla/include/carla/Buffer.h
 carla/Debug.h
 /home/praveen/opt/libcarla/include/carla/carla/Debug.h
@@ -22657,4 +22681,12 @@ rpc/msgpack/v2/zone_decl.hpp
 /home/praveen/workspace/scenario_runner/traffic_manager/source/src/CarlaDataAccessLayer.cpp
 CarlaDataAccessLayer.hpp
 /home/praveen/workspace/scenario_runner/traffic_manager/source/src/CarlaDataAccessLayer.hpp
+
+/home/praveen/workspace/scenario_runner/traffic_manager/source/src/InMemoryMap.cpp
+InMemoryMap.hpp
+/home/praveen/workspace/scenario_runner/traffic_manager/source/src/InMemoryMap.hpp
+
+/home/praveen/workspace/scenario_runner/traffic_manager/source/src/SimpleWaypoint.cpp
+SimpleWaypoint.hpp
+/home/praveen/workspace/scenario_runner/traffic_manager/source/src/SimpleWaypoint.hpp
 

@@ -11,12 +11,13 @@ class SimpleWaypoint
 {
 private:
     carla::SharedPtr<carla::client::Waypoint> waypoint;
-    SimpleWaypoint* next_waypoint;
+    std::vector<SimpleWaypoint*> next_waypoints;
 public:
     SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint> waypoint);
     ~SimpleWaypoint();
-    SimpleWaypoint* getNextWaypoint();
-    void setNextWaypoint(SimpleWaypoint* next_waypoint);
+    std::vector<SimpleWaypoint*> getNextWaypoint();
+    void setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints);
+    float distance(carla::geom::Location location);
 };
 
 } // namespace traffic_manager

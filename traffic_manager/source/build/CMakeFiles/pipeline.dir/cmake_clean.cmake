@@ -1,5 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o"
+  "CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o"
+  "CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o"
   "libpipeline.pdb"
   "libpipeline.a"
 )

@@ -81,17 +81,69 @@ CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o.provides: CMakeFiles/pipe
 CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o.provides.build: CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o
 
 
+CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o: CMakeFiles/pipeline.dir/flags.make
+CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o: ../src/InMemoryMap.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/praveen/workspace/scenario_runner/traffic_manager/source/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o"
+	/usr/bin/clang++-6.0  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o -c /home/praveen/workspace/scenario_runner/traffic_manager/source/src/InMemoryMap.cpp
+
+CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.i"
+	/usr/bin/clang++-6.0 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/praveen/workspace/scenario_runner/traffic_manager/source/src/InMemoryMap.cpp > CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.i
+
+CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.s"
+	/usr/bin/clang++-6.0 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/praveen/workspace/scenario_runner/traffic_manager/source/src/InMemoryMap.cpp -o CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.s
+
+CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.requires:
+
+.PHONY : CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.requires
+
+CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.provides: CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.requires
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.provides.build
+.PHONY : CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.provides
+
+CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.provides.build: CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o
+
+
+CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o: CMakeFiles/pipeline.dir/flags.make
+CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o: ../src/SimpleWaypoint.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/praveen/workspace/scenario_runner/traffic_manager/source/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o"
+	/usr/bin/clang++-6.0  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o -c /home/praveen/workspace/scenario_runner/traffic_manager/source/src/SimpleWaypoint.cpp
+
+CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.i"
+	/usr/bin/clang++-6.0 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/praveen/workspace/scenario_runner/traffic_manager/source/src/SimpleWaypoint.cpp > CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.i
+
+CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.s"
+	/usr/bin/clang++-6.0 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/praveen/workspace/scenario_runner/traffic_manager/source/src/SimpleWaypoint.cpp -o CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.s
+
+CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.requires:
+
+.PHONY : CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.requires
+
+CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.provides: CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.requires
+	$(MAKE) -f CMakeFiles/pipeline.dir/build.make CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.provides.build
+.PHONY : CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.provides
+
+CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.provides.build: CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o
+
+
 # Object files for target pipeline
 pipeline_OBJECTS = \
-"CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o"
+"CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o" \
+"CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o" \
+"CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o"
 
 # External object files for target pipeline
 pipeline_EXTERNAL_OBJECTS =
 
 libpipeline.a: CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o
+libpipeline.a: CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o
+libpipeline.a: CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o
 libpipeline.a: CMakeFiles/pipeline.dir/build.make
 libpipeline.a: CMakeFiles/pipeline.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/praveen/workspace/scenario_runner/traffic_manager/source/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library libpipeline.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/praveen/workspace/scenario_runner/traffic_manager/source/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library libpipeline.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/pipeline.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/pipeline.dir/link.txt --verbose=$(VERBOSE)
 
@@ -101,6 +153,8 @@ CMakeFiles/pipeline.dir/build: libpipeline.a
 .PHONY : CMakeFiles/pipeline.dir/build
 
 CMakeFiles/pipeline.dir/requires: CMakeFiles/pipeline.dir/src/CarlaDataAccessLayer.cpp.o.requires
+CMakeFiles/pipeline.dir/requires: CMakeFiles/pipeline.dir/src/InMemoryMap.cpp.o.requires
+CMakeFiles/pipeline.dir/requires: CMakeFiles/pipeline.dir/src/SimpleWaypoint.cpp.o.requires
 
 .PHONY : CMakeFiles/pipeline.dir/requires
 
