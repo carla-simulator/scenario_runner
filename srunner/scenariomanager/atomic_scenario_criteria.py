@@ -616,8 +616,8 @@ class InRouteTest(Criterion):
     """
     The test is a success if the actor is never outside route
     """
-    DISTANCE_THRESHOLD = 10.0 # meters
-    WINDOWS_SIZE = 2
+    DISTANCE_THRESHOLD = 10.0  # meters
+    WINDOWS_SIZE = 3
 
     def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
         """
