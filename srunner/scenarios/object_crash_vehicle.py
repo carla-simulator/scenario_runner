@@ -309,7 +309,7 @@ class DynamicObjectCrossing(BasicScenario):
                                       name="walker velocity")
         actor_drive = DriveDistance(self.other_actors[0],
                                     0.5 * lane_width,
-                                    name="walker drive distance")
+                                    name="walker drive distance " + str(self.transform.location.x))
         actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0],
                                                       1.0,
                                                       self._other_actor_target_velocity,
@@ -317,20 +317,20 @@ class DynamicObjectCrossing(BasicScenario):
                                                       name="walker crossing lane accelerate velocity")
         actor_cross_lane = DriveDistance(self.other_actors[0],
                                          lane_width,
-                                         name="walker drive distance for lane crossing ")
+                                         name="walker drive distance for lane crossing "+ str(self.transform.location.x))
         actor_stop_crossed_lane = StopVehicle(self.other_actors[0],
                                               self._other_actor_max_brake,
                                               name="walker stop")
         ego_pass_machine = DriveDistance(self.ego_vehicle,
                                          5,
-                                         name="ego vehicle passed prop")
+                                         name="ego vehicle passed prop "+ str(self.transform.location.x))
         actor_remove = ActorDestroy(self.other_actors[0],
                                     name="Destroying walker")
         static_remove = ActorDestroy(self.other_actors[1],
                                      name="Destroying Prop")
         end_condition = DriveDistance(self.ego_vehicle,
                                       self._ego_vehicle_distance_driven,
-                                      name="End condition ego drive distance")
+                                      name="End condition ego drive distance " + str(self.transform.location.x))
 
         # non leaf nodes
 

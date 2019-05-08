@@ -27,6 +27,7 @@ class TrafficEventType(Enum):
     WRONG_WAY_INFRACTION = 8
     ON_SIDEWALK_INFRACTION = 9
     STOP_INFRACTION = 10
+    COLLISION_OTHER = 11
 
 
 class TrafficEvent(object):

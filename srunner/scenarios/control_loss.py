@@ -141,7 +141,9 @@ class ControlLoss(BasicScenario):
         # Abort jitter_sequence, if the vehicle is approaching an intersection
         jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
-        end_condition = DriveDistance(self.ego_vehicle, self._end_distance)
+        print (" EGO VEHICLE POSITION ", self.ego_vehicle.get_transform().location)
+        end_condition = DriveDistance(self.ego_vehicle, self._end_distance + self.first_transform.location.distance(self._reference_waypoint.transform.location),
+                                      name='Control Loss ' + str(self._end_distance + self.first_transform.location.distance(self._reference_waypoint.transform.location)))
         start_end_parallel.add_child(start_condition)
         start_end_parallel.add_child(end_condition)
 

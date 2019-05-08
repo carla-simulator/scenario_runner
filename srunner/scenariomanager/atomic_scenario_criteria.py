@@ -250,9 +250,11 @@ class CollisionTest(Criterion):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         world = self.actor.get_world()
+        self._latest_event = None
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
+        print (" COLLISION TEST SPAWN")
 
     def update(self):
         """
@@ -266,6 +268,8 @@ class CollisionTest(Criterion):
             self.test_status = "SUCCESS"
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            print (" COLLISION STATUS FOR FAILURE")
+            print (new_status)
             new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -276,6 +280,7 @@ class CollisionTest(Criterion):
         """
         Cleanup sensor
         """
+
         if self._collision_sensor is not None:
             self._collision_sensor.destroy()
         self._collision_sensor = None
@@ -288,6 +293,7 @@ class CollisionTest(Criterion):
         """
         self = weak_self()
         if not self:
+            print(" NOT SELF ON COUNTING COLLISIONS")
             return
 
         actor_type = None
@@ -297,9 +303,22 @@ class CollisionTest(Criterion):
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_PEDESTRIAN
+        else:
+            actor_type = TrafficEventType.COLLISION_OTHER
+
+        print("###########################")
+        print("###########################")
+        print(" FAILURE DUE TO COLLISION")
+        print("###########################")
+        print("###########################")
+
 
         collision_event = TrafficEvent(event_type=actor_type)
         collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
+        print ("Agent collided against object with type={} and id={}".format(
+            event.other_actor.type_id, event.other_actor.id))
+
+        self._latest_event = event
         collision_event.set_message("Agent collided against object with type={} and id={}".format(
             event.other_actor.type_id, event.other_actor.id))
 
@@ -438,6 +457,11 @@ class OnSidewalkTest(Criterion):
         new_status = py_trees.common.Status.RUNNING
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            print("###########################")
+            print("###########################")
+            print (" FAILURE DUE TO SIDEWALK")
+            print ("###########################")
+            print("###########################")
             new_status = py_trees.common.Status.FAILURE
 
         current_transform = self._actor.get_transform()
@@ -512,6 +536,11 @@ class WrongLaneTest(Criterion):
         new_status = py_trees.common.Status.RUNNING
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            print("###########################")
+            print("###########################")
+            print (" FAILURE DUE TO WRONG LANE")
+            print ("###########################")
+            print("###########################")
             new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -622,7 +651,7 @@ class InRouteTest(Criterion):
     """
     The test is a success if the actor is never outside route
     """
-    DISTANCE_THRESHOLD = 10.0 # meters
+    DISTANCE_THRESHOLD = 10.0  # meters
     WINDOWS_SIZE = 2
 
     def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
@@ -656,15 +685,18 @@ class InRouteTest(Criterion):
             off_route = True
 
             shortest_distance = float('inf')
+            print ("current index", self._current_index)
             for index in range(max(0, self._current_index - self._wsize),
                                min(self._current_index + self._wsize + 1, self._route_length)):
                 # look for the distance to the current waipoint + windows_size
                 ref_waypoint = self._waypoints[index]
                 distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
+                print ("distance  ", distance)
                 if distance < self.DISTANCE_THRESHOLD \
                         and distance <= shortest_distance \
                         and index >= self._current_index:
                     shortest_distance = distance
+                    print (" distance ", distance, " on route ")
                     self._current_index = index
                     off_route = False
             if off_route:
@@ -673,6 +705,12 @@ class InRouteTest(Criterion):
                     location.x, location.y, location.z))
                 route_deviation_event.set_dict({'x': location.x, 'y': location.y, 'z': location.z})
                 self.list_traffic_events.append(route_deviation_event)
+
+                print("###########################")
+                print("###########################")
+                print(" FAILURE DUE TO OFF ROUTE")
+                print("###########################")
+                print("###########################")
 
                 self.test_status = "FAILURE"
                 new_status = py_trees.common.Status.FAILURE
@@ -687,7 +725,7 @@ class RouteCompletionTest(Criterion):
     """
     Check at which stage of the route is the actor at each tick
     """
-    DISTANCE_THRESHOLD = 10.0 # meters
+    DISTANCE_THRESHOLD = 10.0  # meters
     WINDOWS_SIZE = 2
 
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
@@ -719,6 +757,7 @@ class RouteCompletionTest(Criterion):
             return new_status
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
+
             new_status = py_trees.common.Status.FAILURE
 
         elif self.test_status == "RUNNING" or self.test_status == "INIT":
@@ -742,6 +781,13 @@ class RouteCompletionTest(Criterion):
                 self.test_status = "SUCCESS"
 
         elif self.test_status == "SUCCESS":
+
+            print("###########################")
+            print("###########################")
+            print (" SUCCESS DUE TO COMPLETION")
+            print ("###########################")
+            print("###########################")
+
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))

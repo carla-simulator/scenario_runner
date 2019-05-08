@@ -556,7 +556,7 @@ class ChallengeEvaluator(object):
                 scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration,
                                                   criteria_enable=False, timeout=timeout)
             except Exception as e:
-                if self.debug > 0:
+                if self.debug > 1:
                     raise e
                 else:
                     print("Skipping scenario '{}' due to setup error: {}".format(definition['name'], e))
@@ -597,6 +597,7 @@ class ChallengeEvaluator(object):
             return False
 
     def run_route(self, trajectory, no_master=False):
+
         while no_master or self.route_is_running():
             # update all scenarios
             GameTime.on_carla_tick(self.timestamp)
@@ -635,19 +636,19 @@ class ChallengeEvaluator(object):
             # check for scenario termination
             for i, _ in enumerate(self.list_scenarios):
 
-                if self.debug==1:
+                if self.debug == 1:
                     behavior = self.list_scenarios[i].scenario.scenario_tree.children[0]
-                    if behavior.tip():
-                        print("{} {} {} {}".format(self.list_scenarios[i].scenario.scenario_tree.name,
-                                                   self.list_scenarios[i].scenario.scenario_tree.status,
-                                                   behavior.tip().name,
-                                                   behavior.tip().status))
-                    if (behavior and behavior.tip() and behavior.tip().name !=
-                        "InTriggerDistanceToLocationAlongRoute" and self.list_scenarios[
-                        i].scenario.scenario_tree.name != "MasterScenario" and
-                        self.list_scenarios[i].scenario.scenario_tree.name != "BackgroundActivity" and
-                        self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
-                        py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
+                    #if behavior.tip():
+                    #    print("{} {} {} {}".format(self.list_scenarios[i].scenario.scenario_tree.name,
+                    #                               self.list_scenarios[i].scenario.scenario_tree.status,
+                    #                               behavior.tip().name,
+                    #                               behavior.tip().status))
+                    #if (behavior and behavior.tip() and behavior.tip().name !=
+                    #    "InTriggerDistanceToLocationAlongRoute" and self.list_scenarios[
+                    #    i].scenario.scenario_tree.name != "MasterScenario" and
+                    #    self.list_scenarios[i].scenario.scenario_tree.name != "BackgroundActivity" and
+                    #    self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
+                    #    py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
 
                     # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
                     # indiciate that the scenario was running but terminated
@@ -1122,7 +1123,6 @@ class ChallengeEvaluator(object):
                     CarlaDataProvider.set_world(self.world)
                     # tick world so we can start.
                     self.world.tick()
-
                     # start recording logs for the current route
                     client.start_recorder('log_{}_track{}_route_{:0>4d}.log'.format(self.phase, self.track, route_idx))
                 except:
