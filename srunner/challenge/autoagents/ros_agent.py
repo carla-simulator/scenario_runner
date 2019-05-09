@@ -78,6 +78,7 @@ class RosAgent(AutonomousAgent):
     
         self.vehicle_control_event = threading.Event()
         self.timestamp = None
+        self.speed = 0
         self.global_plan_published = False
 
         self.vehicle_info_publisher = None
@@ -293,6 +294,7 @@ class RosAgent(AutonomousAgent):
         msg = CarlaEgoVehicleStatus()
         msg.header = self.get_header()
         msg.velocity = data['speed']
+        self.speed = data['speed']
         #todo msg.acceleration
         msg.control.throttle = self.current_control.throttle
         msg.control.steer = self.current_control.steer
@@ -320,6 +322,7 @@ class RosAgent(AutonomousAgent):
 
             odometry = Odometry()
             odometry.header.frame_id = 'map'
+            odometry.header.stamp = rospy.Time.from_sec(self.timestamp)
             odometry.child_frame_id = 'base_link'
             odometry.pose.pose.position.x = x
             odometry.pose.pose.position.y = y
@@ -329,6 +332,10 @@ class RosAgent(AutonomousAgent):
             odometry.pose.pose.orientation.y = quat[1]
             odometry.pose.pose.orientation.z = quat[2]
             odometry.pose.pose.orientation.w = quat[3]
+
+            odometry.twist.twist.linear.x = self.speed
+            odometry.twist.twist.linear.y = 0
+            odometry.twist.twist.linear.z = 0
 
             self.odometry_publisher.publish(odometry)
 
