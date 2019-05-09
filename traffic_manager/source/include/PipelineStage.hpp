@@ -4,15 +4,18 @@
 #include <mutex>
 #include <queue>
 #include "PipelineMessage.hpp"
-#include "PipelineThread.hpp"
+#include "PipelineCallable.hpp"
+
+namespace traffic_manager {
 
 class PipelineStage
 {
 private:
-    const std::queue<PipelineMessage>* input_queue;
-    const std::queue<PipelineMessage>* output_queue;
+    std::queue<PipelineMessage>* const input_queue;
+    std::queue<PipelineMessage>* const output_queue;
     std::vector<std::thread> threads;
-    const std::mutex& mutex;
+    std::mutex read_mutex;
+    std::mutex write_mutex;
     void runThread();
 
 protected:
@@ -23,7 +26,9 @@ protected:
 public:
     PipelineStage(
         int pool_size,
-        const std::queue<PipelineMessage>* input_queue,
-        const std::queue<PipelineMessage>* output_queue);
+        std::queue<PipelineMessage>* const input_queue,
+        std::queue<PipelineMessage>* const output_queue);
     ~PipelineStage();
 };
+
+}
