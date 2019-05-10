@@ -20,6 +20,7 @@ private:
 protected:
     const int pool_size;
     const int output_buffer_size;
+    PipelineMessage* shared_data;
     std::vector<PipelineCallable*> threadCallables;
     virtual void createPipelineCallables()=0;
 
@@ -27,7 +28,8 @@ public:
     PipelineStage(
         int pool_size, int output_buffer_size,
         std::queue<PipelineMessage>* input_queue,
-        std::queue<PipelineMessage>* output_queue);
+        std::queue<PipelineMessage>* output_queue,
+        PipelineMessage* shared_data);
     virtual ~PipelineStage();
     void start();
 };

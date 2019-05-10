@@ -1,12 +1,18 @@
-#include "ReadActorState.hpp"
+
+#include "ActorReadState.hpp"
 
 namespace traffic_manager {
 
-    ReadActorState::ReadActorState (carla::SharedPtr<carla::client::ActorList> _actor_list){
-        this->_actor_list  = _actor_list;
+    ActorReadState::ActorReadState( carla::SharedPtr<carla::client::ActorList> _actor_list ){
+         this->_actor_list  = _actor_list;
     }
-    ReadActorState::~ReadActorState(){}
-    std::vector<carla::geom::Location> ReadActorState::getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list){
+    ActorReadState::~ActorReadState(){}
+    void createPipelineCallables()
+    {
+        
+    }
+
+    std::vector<carla::geom::Location> ActorReadState::getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list){
         
         std::pair<int, int> location_coordinates;
         std::vector<carla::geom::Location> actor_current_location_list;
@@ -25,4 +31,4 @@ namespace traffic_manager {
     
         
     }
-}// namespace traffic_manager
+}
