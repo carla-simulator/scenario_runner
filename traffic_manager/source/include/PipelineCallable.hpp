@@ -29,8 +29,8 @@ public:
         std::mutex& write_mutex,
         int output_buffer_size
         );
-    ~PipelineCallable();
-    void operator()();
+    virtual ~PipelineCallable();
+    void run();
 };
 
 }

@@ -3,7 +3,6 @@
 #include <thread>
 #include <mutex>
 #include <queue>
-#include "PipelineMessage.hpp"
 #include "PipelineCallable.hpp"
 
 namespace traffic_manager {
@@ -21,7 +20,7 @@ private:
 protected:
     const int pool_size;
     const int output_buffer_size;
-    std::vector<PipelineCallable> threadCallables;
+    std::vector<PipelineCallable*> threadCallables;
     virtual void createPipelineCallables()=0;
 
 public:
@@ -29,7 +28,7 @@ public:
         int pool_size, int output_buffer_size,
         std::queue<PipelineMessage>* input_queue,
         std::queue<PipelineMessage>* output_queue);
-    ~PipelineStage();
+    virtual ~PipelineStage();
     void start();
 };
 

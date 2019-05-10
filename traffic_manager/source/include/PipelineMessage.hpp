@@ -8,7 +8,7 @@ private:
     /* data */
 public:
     PipelineMessage(/* args */);
-    ~PipelineMessage();
+    virtual ~PipelineMessage();
 };
 
 }

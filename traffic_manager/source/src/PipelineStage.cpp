@@ -15,7 +15,10 @@ PipelineStage::~PipelineStage(){}
 
 void PipelineStage::runThreads(){
     for (auto threadCallable: threadCallables)
-        threads.push_back(std::thread(threadCallable));
+        threads.push_back(
+            std::thread(
+                &PipelineCallable::run,
+                threadCallable));
 }
 
 void PipelineStage::start() {
