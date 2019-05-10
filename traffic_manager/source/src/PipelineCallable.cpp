@@ -5,15 +5,14 @@
 namespace traffic_manager {
 
 PipelineCallable::PipelineCallable(
-    std::queue<PipelineMessage>* const input_queue,
-    std::queue<PipelineMessage>* const output_queue,
+    std::queue<PipelineMessage>* input_queue,
+    std::queue<PipelineMessage>* output_queue,
     std::mutex& read_mutex,
     std::mutex& write_mutex,
     int output_buffer_size):
     read_mutex(read_mutex), write_mutex(write_mutex),
-    input_queue(input_queue), output_queue(output_queue){
-    
-    this->output_buffer_size = output_buffer_size;
+    input_queue(input_queue), output_queue(output_queue),
+    output_buffer_size(output_buffer_size){
 }
 PipelineCallable::~PipelineCallable(){}
 

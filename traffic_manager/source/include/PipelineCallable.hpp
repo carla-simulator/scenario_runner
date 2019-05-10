@@ -13,7 +13,7 @@ private:
     std::queue<PipelineMessage>* const output_queue;
     std::mutex& read_mutex;
     std::mutex& write_mutex;
-    int output_buffer_size;
+    const int output_buffer_size;
     
     PipelineMessage readQueue();
     void writeQueue(PipelineMessage);
@@ -23,8 +23,8 @@ protected:
 
 public:
     PipelineCallable(
-        std::queue<PipelineMessage>* const input_queue,
-        std::queue<PipelineMessage>* const output_queue,
+        std::queue<PipelineMessage>* input_queue,
+        std::queue<PipelineMessage>* output_queue,
         std::mutex& read_mutex,
         std::mutex& write_mutex,
         int output_buffer_size
