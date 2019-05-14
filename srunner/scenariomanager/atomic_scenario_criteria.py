@@ -773,6 +773,7 @@ class RunningRedLightTest(Criterion):
         self._list_traffic_lights = []
         self._target_traffic_light = None
         self._in_red_light = False
+        self._last_red_light_id = None
 
         all_actors = self._world.get_actors()
         for _actor in all_actors:
@@ -811,9 +812,11 @@ class RunningRedLightTest(Criterion):
                 extent = self.length(self._target_traffic_light.trigger_volume.extent) + self.length(
                     self._actor.bounding_box.extent)
 
-                if distance > extent and self._target_traffic_light.state == carla.TrafficLightState.Red:
+                if (distance > extent and self._target_traffic_light.state == carla.TrafficLightState.Red and
+                    self._last_red_light_id != self._target_traffic_light.id):
                     # you are running a red light
                     self.test_status = "FAILURE"
+                    self._last_red_light_id = self._target_traffic_light.id
 
                     red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
                     red_light_event.set_message("Agent ran a red light {} at (x={}, y={}, x={})".format(
