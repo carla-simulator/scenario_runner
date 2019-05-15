@@ -16,10 +16,10 @@ namespace traffic_manager {
     
 
     
-    std::vector<carla::geom::Location> ActorReadState::getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list){
+    std::vector<carla::SharedPtr<carla::geom::Location>> ActorReadState::getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list){
         
         std::pair<int, int> location_coordinates;
-        std::vector<carla::geom::Location> actor_current_location_list;
+        std::vector<carla::SharedPtr<carla::geom::Location>> actor_current_location_list;
        
         for(auto  it = _actor_list->begin() ; it != _actor_list->end(); it++ ) {
             

@@ -1,6 +1,7 @@
 // Implementation for an in memory descrete map representation
 
 #include "InMemoryMap.hpp"
+#include<typeinfo>
 
 namespace traffic_manager {
 
@@ -63,6 +64,7 @@ SimpleWaypoint* InMemoryMap::getWaypoint(carla::geom::Location location) {
     SimpleWaypoint* closest_waypoint;
     float min_distance = std::numeric_limits<float>::max();
     for(auto &simple_waypoint : this->dense_topology){
+        std::cout<<typeid(simple_waypoint).name()<<std::endl;
         float current_distance = simple_waypoint.distance(location);
         if (current_distance < min_distance) {
             min_distance = current_distance;
@@ -72,5 +74,13 @@ SimpleWaypoint* InMemoryMap::getWaypoint(carla::geom::Location location) {
 
     return closest_waypoint;
 }
+
+// void listofAllWaypoint(){
+    
+//     for(auto &simple_waypoint : this->dense_topology){
+//         std::cout<<typeid(simple_waypoint).name()<<std::endl;
+//     }
+// }
+
 
 }
