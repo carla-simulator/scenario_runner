@@ -5,7 +5,7 @@
 #include "CarlaDataAccessLayer.hpp"
 #include "InMemoryMap.hpp"
 #include "carla/client/Waypoint.h"
-#include "ReadActorState.hpp"
+#include "ActorReadState.hpp"
 #include "carla/client/Actor.h"
 
 
@@ -38,7 +38,7 @@ int main(){
 
 void test_closest_waypoint(carla::SharedPtr<carla::client::ActorList> vehicle_list ,carla::SharedPtr<carla::client::Map> world_map){
 
-    auto actor_obj = traffic_manager::ReadActorState(vehicle_list);
+    auto actor_obj = traffic_manager::ActorReadState(vehicle_list);
     
     auto actor_location = actor_obj.getLocation(vehicle_list);
 

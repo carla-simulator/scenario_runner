@@ -1,5 +1,7 @@
 #include "PipelineMessage.hpp"
-#include <carla/geom/Transform.h>
+//#include "carla/geom/Transform.h"
+#include "carla/client/Actor.h"
+#include "carla/client/ActorList.h"
 
 namespace traffic_manager{
 
@@ -7,13 +9,11 @@ class ActorStateMessage:PipelineMessage
 {
 private:
     carla::geom::Transform actor_transform;
-    int actor_id;
+    carla::SharedPtr<carla::client::ActorList> _actor_list;
 public:    
-    ActorStateMessage(/* args */);
+    ActorStateMessage(carla::SharedPtr<carla::client::ActorList> _actor_list);
     ~ActorStateMessage();
-    int getActorID();
-    void setActorID( int actor_id);
-    carla::geom::Transform getActorTransform();
+    carla::geom::Transform getActorTransform(int actor_id);
     void setActorTransform(carla::geom::Transform actor_transform);
 };
 
