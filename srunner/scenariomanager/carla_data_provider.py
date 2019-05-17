@@ -434,6 +434,11 @@ class CarlaActorPool(object):
 
         # Get vehicle by model
         blueprint = random.choice(blueprint_library.filter(model))
+
+        # is it a pedestrian? -> make it mortal
+        if blueprint.has_attribute('is_invincible'):
+            blueprint.set_attribute('is_invincible', 'false')
+
         if hero:
             blueprint.set_attribute('role_name', 'hero')
         elif autopilot:
@@ -484,6 +489,10 @@ class CarlaActorPool(object):
         for _ in range(amount):
             # Get vehicle by model
             blueprint = random.choice(blueprint_library.filter(model))
+            # is it a pedestrian? -> make it mortal
+            if blueprint.has_attribute('is_invincible'):
+                blueprint.set_attribute('is_invincible', 'false')
+
             if hero:
                 blueprint.set_attribute('role_name', 'hero')
             elif autopilot:

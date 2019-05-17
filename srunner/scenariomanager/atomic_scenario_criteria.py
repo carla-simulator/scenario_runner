@@ -297,6 +297,10 @@ class CollisionTest(Criterion):
                         registered = True
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
+            for traffic_event in self.list_traffic_events:
+                if traffic_event.get_type() == TrafficEventType.COLLISION_PEDESTRIAN \
+                        and traffic_event.get_dict()['id'] == event.other_actor.id:
+                    registered = True
             actor_type = TrafficEventType.COLLISION_PEDESTRIAN
 
         if not registered:
