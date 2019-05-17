@@ -514,8 +514,10 @@ class ChallengeEvaluator(object):
             amount = 200
         elif town_name == 'Town06' or town_name == 'Town07':
             amount = 150
-        elif town_name == 'Town08' or town_name == 'Town08':
+        elif town_name == 'Town08':
             amount = 180
+        elif town_name == 'Town09':
+            amount = 240
         else:
             amount = 1
 
