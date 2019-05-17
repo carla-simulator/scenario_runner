@@ -71,11 +71,11 @@ class RosAgent(AutonomousAgent):
         #publish first clock value '0'
         self.clock_publisher = rospy.Publisher('clock', Clock, queue_size=10, latch=True)
         self.clock_publisher.publish(Clock(rospy.Time.from_sec(0)))
-        
+
         #execute script that starts the ad stack (remains running)
         rospy.loginfo("Executing stack...")
         self.stack_process = subprocess.Popen(start_script, shell=True, preexec_fn=os.setpgrp)
-    
+
         self.vehicle_control_event = threading.Event()
         self.timestamp = None
         self.speed = 0
@@ -88,6 +88,7 @@ class RosAgent(AutonomousAgent):
         self.map_file_publisher = None
         self.current_map_name = None
         self.tf_broadcaster = None
+        self.step_mode_possible = False
 
         self.vehicle_control_subscriber = rospy.Subscriber('/carla/ego_vehicle/vehicle_control_cmd', CarlaEgoVehicleControl, self.on_vehicle_control)
 
@@ -106,21 +107,21 @@ class RosAgent(AutonomousAgent):
         for sensor in self.sensors():
             self.id_to_sensor_type_map[sensor['id']] = sensor['type']
             if sensor['type'] == 'sensor.camera.rgb':
-                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/image_color", Image, queue_size=1)
+                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/image_color", Image, queue_size=1, latch=True)
                 self.id_to_camera_info_map[sensor['id']] = self.build_camera_info(sensor)
-                self.publisher_map[sensor['id'] + '_info'] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/camera_info", CameraInfo, queue_size=1)
+                self.publisher_map[sensor['id'] + '_info'] = rospy.Publisher('/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/camera_info", CameraInfo, queue_size=1, latch=True)
             elif sensor['type'] == 'sensor.lidar.ray_cast':
-                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/lidar/' + sensor['id'] + "/point_cloud", PointCloud2, queue_size=1)
+                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/lidar/' + sensor['id'] + "/point_cloud", PointCloud2, queue_size=1, latch=True)
             elif sensor['type'] == 'sensor.other.gnss':
-                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/gnss/' + sensor['id'] + "/fix", NavSatFix, queue_size=1)
+                self.publisher_map[sensor['id']] = rospy.Publisher('/carla/ego_vehicle/gnss/' + sensor['id'] + "/fix", NavSatFix, queue_size=1, latch=True)
             elif sensor['type'] == 'sensor.can_bus':
                 if not self.vehicle_info_publisher:
                     self.vehicle_info_publisher = rospy.Publisher('/carla/ego_vehicle/vehicle_info', CarlaEgoVehicleInfo, queue_size=1, latch=True)
                 if not self.vehicle_status_publisher:
-                    self.vehicle_status_publisher = rospy.Publisher('/carla/ego_vehicle/vehicle_status', CarlaEgoVehicleStatus, queue_size=1)
+                    self.vehicle_status_publisher = rospy.Publisher('/carla/ego_vehicle/vehicle_status', CarlaEgoVehicleStatus, queue_size=1, latch=True)
             elif sensor['type'] == 'sensor.hd_map':
                 if not self.odometry_publisher:
-                    self.odometry_publisher = rospy.Publisher('/carla/ego_vehicle/odometry', Odometry, queue_size=1)
+                    self.odometry_publisher = rospy.Publisher('/carla/ego_vehicle/odometry', Odometry, queue_size=1, latch=True)
                 if not self.map_publisher:
                     self.map_publisher = rospy.Publisher('/carla/map', CarlaMapInfo, queue_size=1, latch=True)
                 if not self.map_file_publisher:
@@ -154,6 +155,8 @@ class RosAgent(AutonomousAgent):
         self.current_control = cmd
         if not self.vehicle_control_event.is_set():
             self.vehicle_control_event.set()
+        # After the first vehicle control is sent out, it is possible to use the stepping mode
+        self.step_mode_possible = True
 
     def build_camera_info(self, attributes):
         """
@@ -351,8 +354,15 @@ class RosAgent(AutonomousAgent):
                 self.map_publisher.publish(map_info)
         if self.map_file_publisher:
             self.map_file_publisher.publish(data['map_file'])
-            
+
+    def use_stepping_mode(self):
+        """
+        Overload this function to use stepping mode!
+        """
+        return False
+
     def run_step(self, input_data, timestamp):
+        self.vehicle_control_event.clear()
         self.timestamp = timestamp
         self.clock_publisher.publish(Clock(rospy.Time.from_sec(timestamp)))
 
@@ -365,8 +375,11 @@ class RosAgent(AutonomousAgent):
             self.global_plan_published = True
             self.publish_plan()
 
+        new_data_available = False
+
         #publish data of all sensors
         for key, val in input_data.items():
+            new_data_available = True
             sensor_type = self.id_to_sensor_type_map[key]
             if sensor_type == 'sensor.camera.rgb':
                 self.publish_camera(key, val[1])
@@ -381,8 +394,9 @@ class RosAgent(AutonomousAgent):
             else:
                 raise TypeError("Invalid sensor type: {}".format(sensor['type']))
 
-        #wait for next vehicle control command from ROS
-        #Currently the current_control is sent as long as no new control is available.
-        #self.vehicle_control_event.wait()
-        #self.vehicle_control_event.clear()
+        if self.use_stepping_mode():
+            if self.step_mode_possible and new_data_available:
+                self.vehicle_control_event.wait()
+        # if the stepping mode is not used or active, there is no need to wait here
+
         return self.current_control
