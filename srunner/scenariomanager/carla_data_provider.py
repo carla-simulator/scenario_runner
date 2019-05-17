@@ -487,12 +487,12 @@ class CarlaActorPool(object):
             hero_actor = None
         batch = []
         for _ in range(amount):
+            # Get vehicle by model
+            blueprint = random.choice(blueprint_library.filter(model))
             # is it a pedestrian? -> make it mortal
             if blueprint.has_attribute('is_invincible'):
                 blueprint.set_attribute('is_invincible', 'false')
 
-            # Get vehicle by model
-            blueprint = random.choice(blueprint_library.filter(model))
             if hero:
                 blueprint.set_attribute('role_name', 'hero')
             elif autopilot:
