@@ -24,9 +24,9 @@ namespace traffic_manager {
         SimpleWaypoint*  simple_waypoint;
         auto closest_waypoint = topology->getWaypoint(current_location);
         waypointBuffer.push_back(closest_waypoint);
-        for(int i = 0 ; i < 10; i++){
-           std::cout << &(simple_waypoint->getNextWaypoint());
-        }
+        // for(int i = 0 ; i < 10; i++){
+        //    std::cout << &(simple_waypoint->getNextWaypoint());
+        // }
 
         // std::vector<int>::iterator it;
         // it = std::find (InMemoryMap::dense_topology.begin(), vec.end(), ser); 

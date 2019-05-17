@@ -3,7 +3,7 @@
 #include "PipelineStage.hpp"
 #include <vector>
 #include "carla/Memory.h"
-#include "carla/geom/Location.h"
+#include "carla/geom/Transform.h"
 #include "carla/client/ActorList.h"
 #include "carla/client/Actor.h"
 #include "ActorStateMessage.hpp"
@@ -19,8 +19,9 @@ private:
 public:
     ActorReadState(carla::SharedPtr<carla::client::ActorList> _actor_list);
     ~ActorReadState();
-    std::vector<carla::geom::Location> getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list);
-    //void createPipelineCallables(); 
+    std::vector<carla::geom::Transform> getTransform(carla::SharedPtr<carla::client::ActorList> _actor_list);
+    void createPipelineCallables();       
+    //PipelineMessage action(PipelineMessage message);
 };
 
 } //namespace traffic_manager

@@ -3,36 +3,30 @@
 
 namespace traffic_manager {
 
-    ActorReadState::ActorReadState(){}
+    ActorReadState::ActorReadState(carla::SharedPtr<carla::client::ActorList> _actor_list)
+    {
+        this->_actor_list = _actor_list;
+    }
+    
     ActorReadState::~ActorReadState(){}
-
-    // _actor_list = getActorList();
-
+    
+    std::vector<carla::geom::Transform> ActorReadState::getTransform(carla::SharedPtr<carla::client::ActorList> _actor_list)
+    {
+        std::vector<carla::geom::Transform> all_actor_transform;   
+        for(auto  it = _actor_list->begin() ; it != _actor_list->end(); it++ )
+        {
+            auto actor_transform = (*it)->GetTransform();
+            all_actor_transform.push_back(actor_transform);
+        }
+        return all_actor_transform;   
+    }
+   
     // void createPipelineCallables()
+    // {
+    //     return ActorReadState();
+    // }
+    // PipelineMessage action(PipelineMessage message)
     // {
         
     // }
-
-    
-
-    
-    std::vector<carla::SharedPtr<carla::geom::Location>> ActorReadState::getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list){
-        
-        std::pair<int, int> location_coordinates;
-        std::vector<carla::SharedPtr<carla::geom::Location>> actor_current_location_list;
-       
-        for(auto  it = _actor_list->begin() ; it != _actor_list->end(); it++ ) {
-            
-            auto current_location = (*it)->GetTransform().location;
-            actor_current_location_list.push_back(current_location);
-            // int rounded_x = static_cast<int>(std::round(current_location.x));
-            // int rounded_y = static_cast<int>(std::round(current_location.y));
-            // location_coordinates.first = rounded_x;
-            // location_coordinates.second = rounded_y;
-            // std::cout<< location_coordinates.first <<"\t" << location_coordinates.second <<"\n";   
-        }
-        return actor_current_location_list;
-    
-        
-    }
 }

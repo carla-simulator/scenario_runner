@@ -1,6 +1,6 @@
 // Declaration for common base class of all pipeline stages
 
-#include <thread>
+#include <thread> 
 #include <mutex>
 #include <queue>
 #include "PipelineCallable.hpp"

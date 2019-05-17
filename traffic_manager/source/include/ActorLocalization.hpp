@@ -6,7 +6,7 @@
 #include "carla/client/ActorList.h"
 #include "carla/client/Actor.h"
 #include "InMemoryMap.hpp"
-#include "ActorReadState.hpp"
+//#include "ActorReadState.hpp"
 
 namespace traffic_manager {
 

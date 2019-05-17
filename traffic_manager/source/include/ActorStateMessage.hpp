@@ -1,11 +1,11 @@
 #include "PipelineMessage.hpp"
-//#include "carla/geom/Transform.h"
 #include "carla/client/Actor.h"
 #include "carla/client/ActorList.h"
+#include "ActorReadState.hpp"
 
 namespace traffic_manager{
 
-class ActorStateMessage:PipelineMessage
+class ActorStateMessage:public PipelineCallable
 {
 private:
     carla::geom::Transform actor_transform;
@@ -15,6 +15,7 @@ public:
     ~ActorStateMessage();
     carla::geom::Transform getActorTransform(int actor_id);
     void setActorTransform(carla::geom::Transform actor_transform);
+    PipelineMessage action(PipelineMessage message);
 };
 
 }
