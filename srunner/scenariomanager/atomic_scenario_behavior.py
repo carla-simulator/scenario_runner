@@ -1256,7 +1256,7 @@ class TrafficLightManipulator(AtomicBehavior):
     """
 
     MAX_DISTANCE_TRAFFIC_LIGHT = 15
-    RANDOM_VALUE_INTERVENTION = 0.3
+    RANDOM_VALUE_INTERVENTION = 0.4
     RED = carla.TrafficLightState.Red
     GREEN = carla.TrafficLightState.Green
 
@@ -1291,7 +1291,9 @@ class TrafficLightManipulator(AtomicBehavior):
                 # nothing else to do in this iteration...
                 return new_status
 
-            distance_to_traffic_light = traffic_light.get_location().distance(self.ego_vehicle.get_location())
+            base_transform = traffic_light.get_transform()
+            area_loc = carla.Location(base_transform.transform(traffic_light.trigger_volume.location))
+            distance_to_traffic_light = area_loc.distance(self.ego_vehicle.get_location())
 
             if self.debug:
                 print("[{}] distance={}".format(traffic_light.id, distance_to_traffic_light))
@@ -1321,8 +1323,10 @@ class TrafficLightManipulator(AtomicBehavior):
 
             else:
                 # the traffic light has been manipulated...
-                distance_to_traffic_light = self.target_traffic_light.get_location().distance(
-                    self.ego_vehicle.get_location())
+                base_transform =  self.target_traffic_light.get_transform()
+                area_loc = carla.Location(base_transform.transform( self.target_traffic_light.trigger_volume.location))
+                distance_to_traffic_light = area_loc.distance(self.ego_vehicle.get_location())
+
                 if self.debug:
                     print("++ distance={}".format(distance_to_traffic_light))
 
