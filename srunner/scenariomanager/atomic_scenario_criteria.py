@@ -765,6 +765,7 @@ class RunningRedLightTest(Criterion):
     """
     Check if an actor is running a red light
     """
+    DISTANCE_LIGHT = 10 # m
 
     def __init__(self, actor, name="RunningRedLightTest", terminate_on_failure=False):
         """
@@ -777,7 +778,7 @@ class RunningRedLightTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._list_traffic_lights = []
         self._last_red_light_id = None
-        self.debug = True
+        self.debug = False
 
         all_actors = self._world.get_actors()
         for _actor in all_actors:
@@ -818,18 +819,6 @@ class RunningRedLightTest(Criterion):
         for traffic_light, center, area, waypoints in self._list_traffic_lights:
 
             if self.debug:
-                wpx = self._map.get_waypoint(carla.Location(center))
-                while not wpx.is_intersection:
-                    next = wpx.next(1.0)[0]
-                    if next:
-                        wpx = next
-                    else:
-                        break
-
-                self._world.debug.draw_point(wpx.transform.location + carla.Location(z=1.5), size=0.2,
-                                             color=carla.Color(255, 255, 255),
-                                             life_time=0.01)
-
                 Z = 2.1
                 if traffic_light.state == carla.TrafficLightState.Red:
                     color = carla.Color(255, 0, 0)
@@ -849,7 +838,7 @@ class RunningRedLightTest(Criterion):
 
             if self._last_red_light_id and self._last_red_light_id == traffic_light.id:
                 continue
-            if center_loc.distance(location) > 10.0:
+            if center_loc.distance(location) > self.DISTANCE_LIGHT:
                 continue
             if traffic_light.state != carla.TrafficLightState.Red:
                 continue
@@ -908,9 +897,6 @@ class RunningRedLightTest(Criterion):
         for x in x_values:
             pt = self.rotate_point(carla.Vector3D(x, 0, area_ext.z), base_rot)
             area.append(wpx_location + carla.Location(x=pt.x, y=pt.y))
-
-
-
 
         return area_loc, area
 
