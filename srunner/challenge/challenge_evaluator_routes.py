@@ -984,9 +984,6 @@ class ChallengeEvaluator(object):
             if self.debug > 0:
                 print(help_message)
 
-            if self.phase == 'validation' or self.phase == 'test':
-                help_message = "No metadata available for this phase"
-
         # create json structure
         json_data = {
             'submission_status': submission_status,
