@@ -36,10 +36,6 @@ COPY PythonAPI /workspace/CARLA/PythonAPI
 COPY HDMaps /workspace/CARLA/HDMaps
 ENV CARLA_ROOT /workspace/CARLA
 
-# installing CARLA eggs
-RUN easy_install3 CARLA/PythonAPI/carla/dist/*-py3.5-linux-x86_64.egg && \
-    easy_install CARLA/PythonAPI/carla/dist/*-py2.7-linux-x86_64.egg
-
 # installing conda
 RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
      chmod +x ~/miniconda.sh && \
@@ -47,16 +43,13 @@ RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-la
      rm ~/miniconda.sh && \
      /opt/conda/bin/conda clean -ya && \
      /opt/conda/bin/conda create -n python35 python=3.5 numpy networkx scipy six
-ENV PATH /opt/conda/envs/python35/bin:/opt/conda/envs/bin:$PATH
+ENV PATH "/workspace/CARLA/PythonAPI/carla/dist/carla-0.9.5-py3.5-linux-x86_64.egg":/opt/conda/envs/python35/bin:/opt/conda/envs/bin:$PATH
 
 # adding CARLA egg to default python environment
-RUN easy_install CARLA/PythonAPI/carla/dist/*-py3.5-linux-x86_64.egg && \
-    pip install --user setuptools py_trees==0.8.3 psutil shapely six
-
-
+RUN pip install --user setuptools py_trees==0.8.3 psutil shapely six
 
 ENV ROOT_SCENARIO_RUNNER "/workspace/scenario_runner"
-ENV PYTHONPATH "${ROOT_SCENARIO_RUNNER}":"${CARLA_ROOT}/PythonAPI/carla":${PYTHONPATH}
+ENV PYTHONPATH "/workspace/CARLA/PythonAPI/carla/dist/carla-0.9.5-py3.5-linux-x86_64.egg":"${ROOT_SCENARIO_RUNNER}":"${CARLA_ROOT}/PythonAPI/carla":${PYTHONPATH}
 
 COPY .tmp /workspace/scenario_runner
 COPY team_code /workspace/team_code
