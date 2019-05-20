@@ -987,7 +987,7 @@ class ChallengeEvaluator(object):
         # create json structure
         json_data = {
             'submission_status': submission_status,
-            'stderr': help_message,
+            'stderr': help_message if self.phase == 'dev' else 'No metadata provided for this phase',
             'result': [
                 {
                     'split': self.split,
@@ -998,6 +998,16 @@ class ChallengeEvaluator(object):
                         'total avg.': score_composed
                     }
                 }],
+            'metadata': [
+                {
+                    'stderr': help_message,
+                    'accuracies': {
+                        'avg. route points': score_route,
+                        'infraction points': score_penalty,
+                        'total avg.': score_composed
+                    }
+                }
+            ]
         }
 
         with open(filename, "w+") as fd:
