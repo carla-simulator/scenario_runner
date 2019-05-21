@@ -30,7 +30,7 @@ public:
     ~InMemoryMap();
     void setUp(int sampling_resolution);
     traffic_manager::SimpleWaypoint* getWaypoint(carla::geom::Location location);
-    //void listofAllWaypoint(std::vector<SimpleWaypoint> dense_topology);
+    std::vector<SimpleWaypoint*> listofAllWaypoint();
 };
 
 }

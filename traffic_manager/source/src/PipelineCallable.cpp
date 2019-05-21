@@ -3,7 +3,7 @@
 #include "PipelineCallable.hpp"
 
 namespace traffic_manager {
-
+    
 PipelineCallable::PipelineCallable(
     std::queue<PipelineMessage>* input_queue,
     std::queue<PipelineMessage>* output_queue,

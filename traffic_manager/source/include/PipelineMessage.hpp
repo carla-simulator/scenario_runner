@@ -3,7 +3,7 @@
 
 namespace traffic_manager {
 
-class PipelineMessage
+class PipelineMessage: public PipelineFeeder
 {
 private:
    int actor_id;

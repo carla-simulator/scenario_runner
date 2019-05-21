@@ -75,14 +75,14 @@ SimpleWaypoint* InMemoryMap::getWaypoint(carla::geom::Location location) {
     return closest_waypoint;
 }
 
-std::vector<SimpleWaypoint*> listofAllWaypoint(){
-    std::vector<SimpleWaypoint*> way_points;
+std::vector<SimpleWaypoint*> InMemoryMap::listofAllWaypoint(){
+    std::vector<SimpleWaypoint*> all_waypoints;
     SimpleWaypoint* _waypoint;
     for(auto &simple_waypoint : this->dense_topology){
         _waypoint = &simple_waypoint;
-        way_points.push_back(_waypoint);
+        all_waypoints.push_back(_waypoint);
     }
-    return way_points;
+    return all_waypoints;
 }
 
 
