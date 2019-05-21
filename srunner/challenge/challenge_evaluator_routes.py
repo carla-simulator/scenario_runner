@@ -446,7 +446,7 @@ class ChallengeEvaluator(object):
             if self.debug > 0:
                 print(" waiting for one data reading from sensors...")
             self.world.tick()
-            self.world.wait_for_tick()
+            self.world.wait_for_tick(self.wait_for_world)
 
     def get_actors_instances(self, list_of_antagonist_actors):
         """
@@ -651,7 +651,7 @@ class ChallengeEvaluator(object):
 
             # time continues
             self.world.tick()
-            self.timestamp = self.world.wait_for_tick()
+            self.timestamp = self.world.wait_for_tick(self.wait_for_world)
 
             # check for scenario termination
             for i, _ in enumerate(self.list_scenarios):
@@ -1033,7 +1033,7 @@ class ChallengeEvaluator(object):
             world = None
 
         self.world = client.load_world(town_name)
-        self.timestamp = self.world.wait_for_tick()
+        self.timestamp = self.world.wait_for_tick(self.wait_for_world)
         settings = self.world.get_settings()
         settings.synchronous_mode = True
         if self.track == 4:
@@ -1274,7 +1274,7 @@ class ChallengeEvaluator(object):
                 self.background_scenario = None
 
                 self.world.tick()
-                self.world.wait_for_tick()
+                self.world.wait_for_tick(self.wait_for_world)
 
                 if self.debug > 0:
                     break
