@@ -36,12 +36,10 @@ COPY --from=carla /home/carla/HDMaps /workspace/CARLA/HDMaps
 
 ENV CARLA_ROOT /workspace/CARLA
 
-# installing CARLA eggs
-RUN /usr/bin/easy_install /workspace/CARLA/PythonAPI/carla/dist/*-py2.7-linux-x86_64.egg
-RUN /usr/bin/easy_install3 /workspace/CARLA/PythonAPI/carla/dist/*-py3.5-linux-x86_64.egg
-
 ENV ROOT_SCENARIO_RUNNER /workspace/scenario_runner
-ENV PYTHONPATH "${ROOT_SCENARIO_RUNNER}":"${CARLA_ROOT}/PythonAPI/carla":${PYTHONPATH}
+
+#assuming ROS kinetic using Python 2.7
+ENV PYTHONPATH "${ROOT_SCENARIO_RUNNER}":"${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.5-py2.7-linux-x86_64.egg":"${CARLA_ROOT}/PythonAPI/carla":${PYTHONPATH}
 
 RUN mkdir -p /workspace/results
 
