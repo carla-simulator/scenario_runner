@@ -2,38 +2,35 @@
 
 # Copyright (c) 2017 Computer Vision Center (CVC) at the Universitat Autonoma de
 # Barcelona (UAB).
+# Copyright (c) 2019 University of Leicester / University of Sao Paulo
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-# Allows controlling a vehicle with a keyboard.
+# Allows controlling a vehicle with a keyboard and steering wheel. For a simpler and more
+# documented example, please take a look at tutorial.py.
 
 """
-Welcome to CARLA manual control.
+Welcome to CARLA manual control with steering wheel Logitech G29.
 
-Use ARROWS or WASD keys for control.
+To drive start by preshing the brake pedal.
+Change your wheel_config.ini according to your steering wheel.
 
-    W            : throttle
-    S            : brake
-    AD           : steer
-    Q            : toggle reverse
-    Space        : hand-brake
-    P            : toggle autopilot
+To find out the values of your steering wheel use jstest-gtk in Ubuntu.
 
-    TAB          : change sensor position
-    `            : next sensor
-    [1-9]        : change to sensor [1-9]
-    C            : change weather (Shift+C reverse)
-    Backspace    : change vehicle
-
-    R            : toggle recording images to disk
-
-    F1           : toggle HUD
-    H/?          : toggle help
-    ESC          : quit
 """
 
 from __future__ import print_function
+
+
+# ==============================================================================
+# -- find carla module ---------------------------------------------------------
+# ==============================================================================
+
+
+import glob
+import os
+import sys
 
 # ==============================================================================
 # -- imports -------------------------------------------------------------------
@@ -477,7 +474,7 @@ class LaneInvasionSensor(object):
         self._parent = parent_actor
         self._hud = hud
         world = self._parent.get_world()
-        bp = world.get_blueprint_library().find('sensor.other.lane_detector')
+        bp = world.get_blueprint_library().find('sensor.other.lane_invasion')
         self.sensor = world.spawn_actor(bp, carla.Transform(), attach_to=self._parent)
         # We need to pass the lambda a weak reference to self to avoid circular
         # reference.

@@ -89,7 +89,7 @@ class FollowLeadingVehicle(BasicScenario):
         # start condition
         startcondition = py_trees.composites.Parallel(
             "Waiting for start position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         startcondition.add_child(InTimeToArrivalToLocation(self.ego_vehicle,
                                                            self._ego_other_distance_start,
@@ -102,7 +102,7 @@ class FollowLeadingVehicle(BasicScenario):
         # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
         driving_to_next_intersection = py_trees.composites.Parallel(
             "Waiting for end position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         driving_to_next_intersection.add_child(UseAutoPilot(self.other_actors[0]))
         driving_to_next_intersection.add_child(InTriggerDistanceToNextIntersection(
             self.other_actors[0], self._other_actor_stop_in_front_intersection))
@@ -112,7 +112,7 @@ class FollowLeadingVehicle(BasicScenario):
 
         # end condition
         endcondition = py_trees.composites.Parallel("Waiting for end position",
-                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                                                    policy=py_trees.common.ParallelPolicy.SuccessOnAll())
         endcondition_part1 = InTriggerDistanceToVehicle(self.other_actors[0],
                                                         self.ego_vehicle,
                                                         distance=20,
@@ -214,11 +214,11 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
         driving_to_next_intersection = py_trees.composites.Parallel(
             "Waiting for end position",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         driving_considering_bike = py_trees.composites.Parallel(
             "Drive with AutoPilot",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+            policy=py_trees.common.ParallelPolicy.SuccessOnAll())
         driving_considering_bike.add_child(UseAutoPilot(self.other_actors[0]))
         obstacle_sequence = py_trees.composites.Sequence("Obstacle sequence behavior")
         obstacle_sequence.add_child(InTriggerDistanceToVehicle(self.other_actors[0],
@@ -226,7 +226,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
                                                                10))
         obstacle_sequence.add_child(TimeOut(5))
         obstacle_clear_road = py_trees.composites.Parallel("Obstalce clearing road",
-                                                           policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+                                                           policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         obstacle_clear_road.add_child(DriveDistance(self.other_actors[1], 4))
         obstacle_clear_road.add_child(KeepVelocity(self.other_actors[1], 5))
 
@@ -243,7 +243,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
         # end condition
         endcondition = py_trees.composites.Parallel("Waiting for end position",
-                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                                                    policy=py_trees.common.ParallelPolicy.SuccessOnAll())
         endcondition_part1 = InTriggerDistanceToVehicle(self.other_actors[0],
                                                         self.ego_vehicle,
                                                         distance=20,

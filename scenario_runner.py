@@ -19,6 +19,8 @@ from argparse import RawTextHelpFormatter
 from datetime import datetime
 import traceback
 
+import glob
+import os
 import sys
 
 import carla
@@ -62,16 +64,10 @@ class ScenarioRunner(object):
     del scenario_runner
     """
 
-    ego_vehicle = None
-    actors = []
-
     # Tunable parameters
     client_timeout = 10.0  # in seconds
     wait_for_world = 10.0  # in seconds
 
-    # CARLA world and scenario handlers
-    world = None
-    manager = None
 
     def __init__(self, args):
         """
@@ -79,15 +75,18 @@ class ScenarioRunner(object):
         Setup ScenarioManager
         """
 
+        self.ego_vehicle = None
+        self.actors = []
+
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
         # requests in the localhost at port 2000.
-        client = carla.Client(args.host, int(args.port))
-        client.set_timeout(self.client_timeout)
+        self.client = carla.Client(args.host, int(args.port))
+        self.client.set_timeout(self.client_timeout)
 
         # Once we have a client we can retrieve the world that is currently
         # running.
-        self.world = client.get_world()
+        self.world = self.client.get_world()
 
         # Wait for the world to be ready
         self.world.wait_for_tick(self.wait_for_world)
@@ -169,6 +168,16 @@ class ScenarioRunner(object):
         Spawn or update all scenario actors according to
         their parameters provided in config
         """
+
+        weather = carla.WeatherParameters(
+            cloudyness=config.cloudyness,
+            precipitation=config.precipitation,
+            precipitation_deposits=config.precipitation_deposit,
+            wind_intensity=config.wind_intensity,
+            sun_azimuth_angle=config.sun_azimuth,
+            sun_altitude_angle=config.sun_altitude
+        )
+        self.world.set_weather(weather)
 
         # If ego_vehicle already exists, just update location
         # Otherwise spawn ego vehicle

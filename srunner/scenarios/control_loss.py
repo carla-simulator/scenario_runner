@@ -84,7 +84,7 @@ class ControlLoss(BasicScenario):
             turn = SteerVehicle(self.ego_vehicle, ego_vehicle_max_steer, name='Steering ' + str(i))
 
             jitter_action = py_trees.composites.Parallel("Jitter Actions with Timeouts",
-                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                                                         policy=py_trees.common.ParallelPolicy.SuccessOnAll())
             jitter_action.add_child(turn)
             jitter_action.add_child(jitter_timeout)
             jitter_sequence.add_child(jitter_action)
@@ -93,7 +93,7 @@ class ControlLoss(BasicScenario):
         jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
 
         jitter = py_trees.composites.Parallel("Jitter",
-                                              policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+                                              policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         jitter.add_child(jitter_sequence)
         jitter.add_child(jitter_abort)
 

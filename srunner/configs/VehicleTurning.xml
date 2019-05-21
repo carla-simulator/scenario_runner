@@ -1,11 +1,27 @@
 <?xml version="1.0"?>
 <scenarios>
     <scenario name="VehicleTurningRight" type="VehicleTurningRight" town="Town01">
-        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.tesla.model3" />
         <other_actor x="95.5" y="42" z="38.5" yaw="180" model="vehicle.diamondback.century" />
+        <weather
+                cloudyness="55"
+                precipitation="95"
+                precipitation_deposit="70"
+                wind_intensity="100"
+                sun_azimuth="0"
+                sun_altitude="2"
+        />
     </scenario>
     <scenario name="VehicleTurningLeft" type="VehicleTurningLeft" town="Town01">
-        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="130" y="55" z="38.5" yaw="180" model="vehicle.tesla.model3" />
         <other_actor x="85" y="78.8" z="38.5" yaw="0" model="vehicle.diamondback.century" />
+        <weather
+                cloudyness="55"
+                precipitation="95"
+                precipitation_deposit="70"
+                wind_intensity="100"
+                sun_azimuth="0"
+                sun_altitude="2"
+        />
     </scenario>
 </scenarios>

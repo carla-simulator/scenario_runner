@@ -21,7 +21,7 @@ import sys
 import time
 
 import carla
-from agents.navigation.local_planner import RoadOption
+# from agents.navigation.local_planner import RoadOption
 
 from srunner.challenge.envs.server_manager import ServerManagerBinary, ServerManagerDocker
 from srunner.challenge.envs.sensor_interface import CallBack, Speedometer, HDMapReader

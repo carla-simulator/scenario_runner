@@ -17,8 +17,8 @@ The atomic behaviors are implemented with py_trees.
 import carla
 import py_trees
 
-from agents.navigation.roaming_agent import *
-from agents.navigation.basic_agent import *
+# from agents.navigation.roaming_agent import *
+# from agents.navigation.basic_agent import *
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 

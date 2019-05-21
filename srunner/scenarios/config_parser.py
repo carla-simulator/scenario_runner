@@ -15,7 +15,7 @@ import os
 import xml.etree.ElementTree as ET
 
 import carla
-from agents.navigation.local_planner import RoadOption
+# from agents.navigation.local_planner import RoadOption
 
 
 class RouteConfiguration(object):
@@ -97,8 +97,15 @@ class ScenarioConfiguration(object):
     town = None
     name = None
     type = None
+    type = None
     target = None
     route = None
+    cloudyness = 0
+    precipitation = 0
+    precipitation_deposits = 0
+    wind_intensity = 0
+    sun_azimuth = 360
+    sun_altitude = 90
 
 
 def set_attrib(node, key, default):
@@ -137,6 +144,14 @@ def parse_scenario_configuration(file_name, scenario_name):
         new_config.name = set_attrib(scenario, 'name', None)
         new_config.type = set_attrib(scenario, 'type', None)
         new_config.other_actors = []
+
+        for weather in scenario.iter("weather"):
+            new_config.cloudyness = int(set_attrib(weather, "cloudyness", 0))
+            new_config.precipitation = int(set_attrib(weather, "precipitation", 0))
+            new_config.precipitation_deposit = int(set_attrib(weather, "precipitation_deposit", 0))
+            new_config.wind_intensity = int(set_attrib(weather, "wind_intensity", 0))
+            new_config.sun_azimuth = int(set_attrib(weather, "sun_azimuth", 360))
+            new_config.sun_altitude = int(set_attrib(weather, "sun_altitude", 90))
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
             new_config.ego_vehicle = ActorConfiguration(ego_vehicle)

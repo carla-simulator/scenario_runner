@@ -13,6 +13,7 @@ These must not be modified and are for reference only!
 
 from __future__ import print_function
 import sys
+import os
 import time
 import threading
 
@@ -61,7 +62,7 @@ class Scenario(object):
         self.timeout_node = TimeOut(self.timeout, name="TimeOut")
 
         # Create overall py_tree
-        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         self.scenario_tree.add_child(self.behavior)
         self.scenario_tree.add_child(self.timeout_node)
         self.scenario_tree.add_child(self.criteria_tree)
@@ -213,7 +214,7 @@ class ScenarioManager(object):
 
                 if self._debug_mode:
                     print("\n")
-                    py_trees.display.print_ascii_tree(
+                    py_trees.display.ascii_tree(
                         self.scenario_tree, show_status=True)
                     sys.stdout.flush()
 
