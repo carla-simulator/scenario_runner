@@ -162,6 +162,7 @@ class ChallengeEvaluator(object):
     """
     MAX_ALLOWED_RADIUS_SENSOR = 5.0
     SECONDS_GIVEN_PER_METERS = 0.4
+    MAX_CONNECTION_ATTEMPTS = 5
 
     def __init__(self, args):
         phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
@@ -650,8 +651,18 @@ class ChallengeEvaluator(object):
                 self.route_visible = False
 
             # time continues
-            self.world.tick()
-            self.timestamp = self.world.wait_for_tick(self.wait_for_world)
+            attempts = 0
+            while attempts < self.MAX_CONNECTION_ATTEMPTS:
+                try:
+                    self.world.tick()
+                    self.timestamp = self.world.wait_for_tick(self.wait_for_world)
+                    break
+                except Exception:
+                    attempts += 1
+                    print('======[WARNING] The server is frozen [{}/{} attempts]!!'.format(attempts,
+                                                                                           self.MAX_CONNECTION_ATTEMPTS))
+                    continue
+
 
             # check for scenario termination
             for i, _ in enumerate(self.list_scenarios):
