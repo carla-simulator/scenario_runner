@@ -14,5 +14,4 @@ namespace traffic_manager {
     void PipelineMessage::setActorID(int actor_id){
         this->actor_id = actor_id;
     }
-
 }

@@ -15,10 +15,9 @@ private:
     std::mutex& write_mutex;
     const int output_buffer_size;
     
+protected:
     PipelineMessage readQueue();
     void writeQueue(PipelineMessage);
-
-protected:
     virtual PipelineMessage action(PipelineMessage message)=0;
 
 public:
@@ -29,6 +28,7 @@ public:
         std::mutex& write_mutex,
         int output_buffer_size
         );
+    //PipelineCallable() = delete;
     virtual ~PipelineCallable();
     void run();
 };

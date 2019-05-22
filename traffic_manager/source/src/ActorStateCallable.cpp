@@ -4,11 +4,9 @@
 
 namespace traffic_manager {
 
-    ActorStateCallable::ActorStateCallable(carla::SharedPtr<carla::client::ActorList> _actor_list, int _actor_id)
-    {
-        this->_actor_list = _actor_list;
-        this->_actor_id = _actor_id;
-    }
+    ActorStateCallable::ActorStateCallable(
+        carla::SharedPtr<carla::client::ActorList> _actor_list, int _actor_id):
+        _actor_list(_actor_list),_actor_id(_actor_id){}
 
     ActorStateCallable::~ActorStateCallable(){}
 

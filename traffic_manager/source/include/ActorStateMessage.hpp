@@ -7,8 +7,12 @@ namespace traffic_manager{
 
     class ActorStateMessage: public PipelineMessage
     {
-        ActorStateMessage();
+    private:
+        PipelineMessage in_message;
+        PipelineMessage out_message;
+    public:
+        ActorStateMessage(PipelineMessage in_message, PipelineMessage out_message);
         ~ActorStateMessage();
-        
+        //PipelineMessage getStageMessage(PipelineMessage in_message);    
     };
 }

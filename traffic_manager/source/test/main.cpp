@@ -5,12 +5,13 @@
 #include "CarlaDataAccessLayer.hpp"
 #include "InMemoryMap.hpp"
 #include "carla/client/Waypoint.h"
-#include "ActorReadState.hpp"
+#include "ActorReadStage.hpp"
 #include "carla/client/Actor.h"
+#include "RegisteredActorMessage.hpp"
 
 
 //void test_closest_waypoint(carla::SharedPtr<carla::client::ActorList> vehicle_list, carla::SharedPtr<carla::client::Map> world_map);
-carla::geom::Location getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list);
+std::vector<int> getActors(carla::SharedPtr<carla::client::ActorList> _actor_list);
 int main(){
     auto client_conn = carla::client::Client("localhost", 2000);
     std::cout<<"Connected with client object : "<<client_conn.GetClientVersion()<<std::endl;
@@ -20,15 +21,21 @@ int main(){
     auto vehicle_list = actorList->Filter("vehicle.*");
     auto topology = world_map->GetTopology();
     auto newtopo = traffic_manager::InMemoryMap(topology);
-    auto location = getLocation(vehicle_list);
-    auto allwayp = newtopo.getWaypoint(location);
+    auto all_actors = getActors(vehicle_list);
+    traffic_manager::RegisteredActorMessage actorobj;
+    int actorId = actorobj.getActorID();
+    std::cout << actorId << std::endl;
+    // auto location = getLocation(vehicle_list);
+    // auto allwayp = newtopo.getWaypoint(location);
     return 0;
 }
 
-carla::geom::Location getLocation(carla::SharedPtr<carla::client::ActorList> _actor_list){
+std::vector<int> getActors(carla::SharedPtr<carla::client::ActorList> _actor_list){
+        std::vector<int> actor_id_list;
         for(auto  it = _actor_list->begin() ; it != _actor_list->end(); it++ ) {
-            auto current_location = (*it)->GetTransform().location;
-            return current_location;  
+            auto actor_id = (*it)->GetId();
+            actor_id_list.push_back(actor_id);
+            return actor_id_list;  
         }
     }
 
