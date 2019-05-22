@@ -569,7 +569,7 @@ class ChallengeEvaluator(object):
                 scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration,
                                                   criteria_enable=False, timeout=timeout)
             except Exception as e:
-                if self.debug > 0:
+                if self.debug > 1:
                     raise e
                 else:
                     print("Skipping scenario '{}' due to setup error: {}".format(definition['name'], e))
