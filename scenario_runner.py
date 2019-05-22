@@ -172,7 +172,7 @@ class ScenarioRunner(object):
         weather = carla.WeatherParameters(
             cloudyness=config.cloudyness,
             precipitation=config.precipitation,
-            precipitation_deposits=config.precipitation_deposit,
+            precipitation_deposits=config.precipitation_deposits,
             wind_intensity=config.wind_intensity,
             sun_azimuth_angle=config.sun_azimuth,
             sun_altitude_angle=config.sun_altitude

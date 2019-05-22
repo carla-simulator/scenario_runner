@@ -6,7 +6,7 @@
         <weather
                 cloudyness="55"
                 precipitation="95"
-                precipitation_deposit="70"
+                precipitation_deposits="70"
                 wind_intensity="100"
                 sun_azimuth="0"
                 sun_altitude="2"
@@ -18,7 +18,7 @@
         <weather
                 cloudyness="55"
                 precipitation="95"
-                precipitation_deposit="70"
+                precipitation_deposits="70"
                 wind_intensity="100"
                 sun_azimuth="0"
                 sun_altitude="2"

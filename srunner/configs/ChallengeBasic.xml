@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <scenarios>
 	<scenario name="Challenge_Basic_00" type="ChallengeBasic" town="Town01">
-		<ego_vehicle x="191.10000610351562" y="55.79999923706055" z="1.0" yaw="180.0" model="vehicle.lincoln.mkz2017"/>
+		<ego_vehicle x="191.10000610351562" y="55.79999923706055" z="1.0" yaw="180.0" model="vehicle.tesla.model3" />
 		<target x="-2.5" y="221.6999969482422" z="0.0" />
 		<route>
 			<waypoint  x="187.1006317138672" y="55.254920959472656" z="0.0" connection="RoadOption.LANEFOLLOW"/>

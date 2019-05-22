@@ -148,7 +148,7 @@ def parse_scenario_configuration(file_name, scenario_name):
         for weather in scenario.iter("weather"):
             new_config.cloudyness = int(set_attrib(weather, "cloudyness", 0))
             new_config.precipitation = int(set_attrib(weather, "precipitation", 0))
-            new_config.precipitation_deposit = int(set_attrib(weather, "precipitation_deposit", 0))
+            new_config.precipitation_deposits = int(set_attrib(weather, "precipitation_deposits", 0))
             new_config.wind_intensity = int(set_attrib(weather, "wind_intensity", 0))
             new_config.sun_azimuth = int(set_attrib(weather, "sun_azimuth", 360))
             new_config.sun_altitude = int(set_attrib(weather, "sun_altitude", 90))
