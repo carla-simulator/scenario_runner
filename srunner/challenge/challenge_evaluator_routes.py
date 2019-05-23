@@ -294,14 +294,14 @@ class ChallengeEvaluator(object):
         """
         Cleanup and delete actors, ScenarioManager and CARLA world
         """
+        if hasattr(self, 'cleanup'):
+            self.cleanup(True)
+            if self.world is not None:
+                settings = self.world.get_settings()
+                settings.synchronous_mode = False
+                self.world.apply_settings(settings)
 
-        self.cleanup(True)
-        if self.world is not None:
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            self.world.apply_settings(settings)
-
-            self.world = None
+                self.world = None
 
     def prepare_ego_car(self, start_transform):
         """
