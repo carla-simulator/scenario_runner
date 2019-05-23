@@ -31,12 +31,15 @@ void PipelineCallable::writeQueue(PipelineMessage message) {
 }
 
 void PipelineCallable::run() {
-    PipelineMessage in_message;
-    if (input_queue != NULL)
-        in_message = readQueue();
-    auto out_message = action(in_message);
-    if (output_queue != NULL)
-        writeQueue(out_message);
+    while(true)
+    {
+        PipelineMessage in_message;
+        if (input_queue != NULL)
+            in_message = readQueue();
+        auto out_message = action(in_message);
+        if (output_queue != NULL)
+            writeQueue(out_message);
+    }
 }
 
 }

@@ -37,8 +37,6 @@ namespace traffic_manager {
         {
             this->_actor_transform = *it;
             return (PipelineMessage*)_actor_transform;
-        }
-
- 
+        } 
     }
 }
