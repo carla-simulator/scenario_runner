@@ -4,9 +4,9 @@
 
 namespace traffic_manager
 {
-    Feedercallable::Feedercallable(RegisteredActorMessage* reg_actor):PipelineCallable(NULL,NULL,inmutex,outmutex,20)
+    Feedercallable::Feedercallable(RegisteredActorMessage* reg_actor):reg_actor(reg_actor),PipelineCallable(NULL,NULL,inmutex,outmutex,20)
     {
-        this-> reg_actor = reg_actor;
+        
     }
     Feedercallable::~Feedercallable(){}
     PipelineMessage Feedercallable::action (PipelineMessage message)
@@ -17,6 +17,7 @@ namespace traffic_manager
             {
                 message.setActorID(*it);
                 writeQueue(message);
+                std::cout << "out queue: "<< std::endl;
             }
         }
         PipelineMessage empty_message;

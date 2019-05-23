@@ -6,7 +6,7 @@ namespace traffic_manager {
 
     ActorStateCallable::ActorStateCallable(
         carla::SharedPtr<carla::client::ActorList> _actor_list, int _actor_id):
-        _actor_list(_actor_list),_actor_id(_actor_id){}
+        _actor_list(_actor_list),_actor_id(_actor_id), PipelineCallable(NULL,NULL,inmutex,outmutex,20){}
 
     ActorStateCallable::~ActorStateCallable(){}
 

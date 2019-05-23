@@ -13,7 +13,9 @@ private:
     int _actor_id;
     carla::geom::Transform _actor_transform;
     carla::SharedPtr<carla::client::ActorList> _actor_list;
-public:    
+public:
+    std::mutex inmutex;
+    std::mutex outmutex;
     ActorStateCallable(carla::SharedPtr<carla::client::ActorList> _actor_list, int _actor_id);
     ~ActorStateCallable();
     carla::geom::Transform getActorTransform();

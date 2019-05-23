@@ -4,10 +4,8 @@
 
 namespace traffic_manager
 {
-    RegisteredActorMessage::RegisteredActorMessage()
-    {
-        
-    }
+    RegisteredActorMessage::RegisteredActorMessage(){}
+    
     RegisteredActorMessage::~RegisteredActorMessage(){}
 
     void RegisteredActorMessage::addActorID(int actor_id){

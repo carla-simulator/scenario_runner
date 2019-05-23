@@ -8,10 +8,10 @@ namespace traffic_manager{
     class ActorStateMessage: public PipelineMessage
     {
     private:
-        PipelineMessage in_message;
-        PipelineMessage out_message;
+        carla::geom::Transform _actor_transform;
+        
     public:
-        ActorStateMessage(PipelineMessage in_message, PipelineMessage out_message);
+        ActorStateMessage(carla::geom::Transform _actor_transform);
         ~ActorStateMessage();
         //PipelineMessage getStageMessage(PipelineMessage in_message);    
     };

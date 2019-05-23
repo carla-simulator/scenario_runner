@@ -9,7 +9,7 @@ namespace traffic_manager
     private:
         RegisteredActorMessage* reg_actor;
     public:
-        FeederStage();
+        FeederStage(RegisteredActorMessage* reg_actor);
         ~FeederStage();
         void createPipelineCallables();
     };

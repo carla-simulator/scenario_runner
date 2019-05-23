@@ -4,10 +4,8 @@
 
 namespace traffic_manager {
 
-    ActorLocalizationStage::ActorLocalizationStage(carla::geom::Transform actor_transform)
-    {
-        this->actor_transform = actor_transform;
-    }
+    ActorLocalizationStage::ActorLocalizationStage(
+        carla::geom::Transform actor_transform):actor_transform(actor_transform){}
 
     ActorLocalizationStage::~ActorLocalizationStage(){}
 

@@ -2,9 +2,8 @@
 
 namespace traffic_manager
 {
-    FeederStage::FeederStage(RegisteredActorMessage* reg_actor):PipelineStage(1,20,NULL,NULL,nullptr){
-        this->reg_actor = reg_actor;
-    }
+    FeederStage::FeederStage(
+        RegisteredActorMessage* reg_actor):reg_actor(reg_actor),PipelineStage(1,20,NULL,NULL,nullptr){}
 
     FeederStage::~FeederStage(){}
 
