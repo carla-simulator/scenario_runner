@@ -207,6 +207,11 @@ class ChallengeEvaluator(object):
         if args.debug > 0:
             repetitions = 1
 
+        if args.spectator:
+            self.spectator = args.spectator
+        else:
+            self.spectator = False
+
         self.repetitions = repetitions
         self.phase = phase_codename
         self.split = split_name
@@ -629,7 +634,7 @@ class ChallengeEvaluator(object):
 
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
-            if self.debug:
+            if self.spectator:
                 spectator = self.world.get_spectator()
                 ego_trans = self.ego_vehicle.get_transform()
                 spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
@@ -679,7 +684,8 @@ class ChallengeEvaluator(object):
                         i].scenario.scenario_tree.name != "MasterScenario" and
                         self.list_scenarios[i].scenario.scenario_tree.name != "BackgroundActivity" and
                         self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
-                        py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
+                        pass # TODO: find a fix for this ascii bug
+                        # py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
 
                     # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
                     # indiciate that the scenario was running but terminated
@@ -1307,6 +1313,8 @@ if __name__ == '__main__':
     PARSER.add_argument('--debug', type=int, help='Run with debug output', default=0)
     PARSER.add_argument('--filename', type=str, help='Filename to store challenge results', default='results.json')
     PARSER.add_argument('--show-to-participant', type=bool, help='Show results to participant?', default=True)
+    PARSER.add_argument('--spectator', type=bool, help='Switch spectator view on?', default=True)
+
     PARSER.add_argument('--routes',
                         help='Name of the route to be executed. Point to the route_xml_file to be executed.')
     PARSER.add_argument('--scenarios',
