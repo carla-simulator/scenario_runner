@@ -1004,7 +1004,8 @@ class ChallengeEvaluator(object):
         # create json structure
         json_data = {
             'submission_status': submission_status,
-            'stderr': help_message if self.phase == 'dev' else 'No metadata provided for this phase',
+            'stderr': help_message if self.phase == 'dev' or  self.phase == 'debug' else 'No metadata provided for '
+                                                                                         'this phase',
             'result': [
                 {
                     'split': self.split,
