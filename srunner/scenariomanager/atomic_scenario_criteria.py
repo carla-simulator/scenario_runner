@@ -287,7 +287,7 @@ class CollisionTest(Criterion):
 
         registered = False
         actor_type = None
-        if 'static' in event.other_actor.type_id:
+        if 'static' in event.other_actor.type_id and 'sidewalk' not in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
             self.test_status = "FAILURE"
         elif 'vehicle' in event.other_actor.type_id:
