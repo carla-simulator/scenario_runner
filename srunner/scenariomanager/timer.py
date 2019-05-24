@@ -10,6 +10,7 @@ This module provides access to the CARLA game time and contains a py_trees
 timeout behavior using the CARLA game time
 """
 
+import datetime
 import py_trees
 
 
@@ -24,6 +25,7 @@ class GameTime(object):
 
     _current_game_time = 0.0  # Elapsed game time after starting this Timer
     _last_frame = 0
+    _platform_timestamp = 0
 
     @staticmethod
     def on_carla_tick(timestamp):
@@ -34,6 +36,7 @@ class GameTime(object):
         if GameTime._last_frame < timestamp.frame_count:
             GameTime._current_game_time += timestamp.delta_seconds
             GameTime._last_frame = timestamp.frame_count
+            GameTime._platform_timestamp = datetime.datetime.now()
 
     @staticmethod
     def restart():
@@ -48,6 +51,13 @@ class GameTime(object):
         Returns elapsed game time
         """
         return GameTime._current_game_time
+
+    @staticmethod
+    def get_wallclocktime():
+        """
+        Returns elapsed game time
+        """
+        return GameTime._platform_timestamp
 
 
 class TimeOut(py_trees.behaviour.Behaviour):
