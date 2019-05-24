@@ -252,10 +252,6 @@ class ChallengeEvaluator(object):
         # debugging parameters
         self.route_visible = self.debug > 0
 
-        # set up atexit methods to prevent blocking the server
-        atexit.register(self.__del__)
-        signal.signal(signal.SIGTERM, self.__del__)
-        signal.signal(signal.SIGINT, self.__del__)
 
     def within_available_time(self):
         current_time = datetime.datetime.now()
