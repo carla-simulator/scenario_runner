@@ -685,7 +685,7 @@ class RouteCompletionTest(Criterion):
     """
     Check at which stage of the route is the actor at each tick
     """
-    DISTANCE_THRESHOLD = 10.0 # meters
+    DISTANCE_THRESHOLD = 15.0 # meters
     WINDOWS_SIZE = 2
 
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
