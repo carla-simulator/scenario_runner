@@ -25,6 +25,7 @@ import random
 import re
 import signal
 import subprocess
+import time
 import traceback
 import xml.etree.ElementTree as ET
 
@@ -661,7 +662,8 @@ class ChallengeEvaluator(object):
                 except Exception:
                     attempts += 1
                     print('======[WARNING] The server is frozen [{}/{} attempts]!!'.format(attempts,
-                                                                                           self.MAX_CONNECTION_ATTEMPTS))
+                                                                                       self.MAX_CONNECTION_ATTEMPTS))
+                    time.sleep(2.0)
                     continue
 
 
