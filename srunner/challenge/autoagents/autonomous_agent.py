@@ -1,3 +1,4 @@
+import datetime
 from enum import Enum
 from srunner.challenge.envs.sensor_interface import SensorInterface
 from srunner.scenariomanager.timer import GameTime
@@ -74,7 +75,10 @@ class AutonomousAgent():
         input_data = self.sensor_interface.get_data()
 
         timestamp = GameTime.get_time()
-        print('======[Agent] Timestamp = {}'.format(timestamp))
+        wallclock = GameTime.get_wallclocktime()
+        wallclock_dt = datetime.datetime.fromtimestamp(wallclock)
+        print('======[Agent] Wallclock_time = {} / Sim_time = {}'.format(wallclock_dt, timestamp))
+
         control = self.run_step(input_data, timestamp)
         control.manual_gear_shift = False
 
