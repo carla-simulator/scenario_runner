@@ -1,6 +1,6 @@
 *.pyc
 .vscode*
-traffic_manager/build*
+traffic_manager/source/build*
 srunner/challenge/*.pyc
 srunner/challenge/__pycache__/
 srunner/challenge/envs/*.pyc

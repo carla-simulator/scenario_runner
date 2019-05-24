@@ -1,4 +1,5 @@
 //Declaration of FeederCallable class members
+#pragma once
 
 #include "PipelineCallable.hpp"
 #include "RegisteredActorMessage.hpp"
@@ -15,7 +16,12 @@ namespace traffic_manager{
         std::mutex inmutex;
         std::mutex outmutex;
         PipelineMessage action (PipelineMessage message);
-        Feedercallable(RegisteredActorMessage* reg_actor);
+        Feedercallable(RegisteredActorMessage* reg_actor,
+            std::queue<PipelineMessage>* input_queue,
+            std::queue<PipelineMessage>* output_queue,
+            std::mutex& read_mutex,
+            std::mutex& write_mutex,
+            int output_buffer_size);
         ~Feedercallable();
     };
 }

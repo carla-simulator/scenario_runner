@@ -4,39 +4,19 @@
 
 namespace traffic_manager {
 
-    ActorStateCallable::ActorStateCallable(
-        carla::SharedPtr<carla::client::ActorList> _actor_list, int _actor_id):
-        _actor_list(_actor_list),_actor_id(_actor_id), PipelineCallable(NULL,NULL,inmutex,outmutex,20){}
+    ActorStateCallable::ActorStateCallable(ActorStateMessage* actorstate_msg,
+        std::queue<PipelineMessage>* input_queue,
+        std::queue<PipelineMessage>* output_queue,
+        std::mutex& read_mutex,
+        std::mutex& write_mutex,
+        int output_buffer_size):actorstate_msg(actorstate_msg),
+        PipelineCallable(input_queue,output_queue,read_mutex,write_mutex,output_buffer_size){}
 
     ActorStateCallable::~ActorStateCallable(){}
 
-    carla::geom::Transform ActorStateCallable::getActorTransform(){
-        // ActorReadState* all_actors_state;
-        // std::vector<carla::geom::Transform> all_actor_transform = all_actors_state->getTransform(_actor_list);
-        // std::vector<carla::geom::Transform>::iterator it;
-        // it = std::find (all_actor_transform.begin(), all_actor_transform.end(), actor_id);
-        // if(it != all_actor_transform.end())
-        // {
-        //     this->actor_transform = *it;
-        return _actor_transform;
-        // }
-        //_actor_list->Find(actor_id)->GetTransform();
-    }
-
-    void ActorStateCallable::setActorTransform(carla::geom::Transform _actor_transform){
-        this->_actor_transform = _actor_transform;
-    }
-    
     PipelineMessage ActorStateCallable::action(PipelineMessage message)
     {
-        ActorReadStage* all_actors_state;
-        std::vector<carla::geom::Transform> all_actor_transform = all_actors_state->getTransform(_actor_list);
-        std::vector<carla::geom::Transform>::iterator it;
-        it = std::find (all_actor_transform.begin(), all_actor_transform.end(), _actor_id);
-        if(it != all_actor_transform.end())
-        {
-            this->_actor_transform = *it;
-            return (PipelineMessage*)_actor_transform;
-        } 
+        message.getActor()->GetTransform();
+        return message;
     }
 }

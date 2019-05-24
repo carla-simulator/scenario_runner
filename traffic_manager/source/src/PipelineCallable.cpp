@@ -26,7 +26,7 @@ PipelineMessage PipelineCallable::readQueue() {
 
 void PipelineCallable::writeQueue(PipelineMessage message) {
     std::lock_guard<std::mutex> lock(write_mutex);
-    while(input_queue->size() > output_buffer_size);
+    while(output_queue->size() > output_buffer_size);
     output_queue->push(message);
 }
 
@@ -34,10 +34,10 @@ void PipelineCallable::run() {
     while(true)
     {
         PipelineMessage in_message;
-        if (input_queue != NULL)
+        if (input_queue!=NULL && !input_queue->empty())
             in_message = readQueue();
         auto out_message = action(in_message);
-        if (output_queue != NULL)
+        if (output_queue!=NULL)
             writeQueue(out_message);
     }
 }

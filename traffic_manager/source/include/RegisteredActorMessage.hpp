@@ -1,5 +1,5 @@
 // Declaration of RegisteredActorMessage class
-
+#pragma once
 #include "PipelineMessage.hpp"
 
 namespace traffic_manager
@@ -7,10 +7,10 @@ namespace traffic_manager
     class RegisteredActorMessage: public PipelineMessage
     {
         public:
-        std::vector<int> shared_actor_list;
+        std::vector<carla::SharedPtr<carla::client::Actor>> shared_actor_list;
         RegisteredActorMessage();
         ~RegisteredActorMessage();
-        void addActorID(int actor_id);
-        void removeActorID(int actor_id);
+        void addActor(carla::SharedPtr<carla::client::Actor> actor);
+        void removeActor(carla::SharedPtr<carla::client::Actor> actor);
     };
 }

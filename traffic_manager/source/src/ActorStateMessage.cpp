@@ -4,8 +4,16 @@
 
 namespace traffic_manager{
 
-    ActorStateMessage::ActorStateMessage(
-        carla::geom::Transform _actor_transform):_actor_transform(_actor_transform){}
+    ActorStateMessage::ActorStateMessage(){}
 
     ActorStateMessage::~ActorStateMessage(){}
+
+    void ActorStateMessage::setActorTransform(carla::geom::Transform actor_transform)
+    {
+        this->actor_transform = actor_transform;
+    }
+    carla::geom::Transform ActorStateMessage::getActorTransform()
+    {
+        return actor_transform;
+    }
 }

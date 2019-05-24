@@ -1,5 +1,5 @@
 // Declaration for common base class of all pipeline stages
-
+#pragma once
 #include <thread> 
 #include <mutex>
 #include <queue>
@@ -10,14 +10,14 @@ namespace traffic_manager {
 class PipelineStage
 {
 private:
-    std::queue<PipelineMessage>* const input_queue;
-    std::queue<PipelineMessage>* const output_queue;
     std::vector<std::thread> threads;
-    std::mutex read_mutex;
-    std::mutex write_mutex;
     void runThreads();
 
 protected:
+    std::queue<PipelineMessage>* const input_queue;
+    std::queue<PipelineMessage>* const output_queue;
+    std::mutex read_mutex;
+    std::mutex write_mutex;
     const int pool_size;
     const int output_buffer_size;
     PipelineMessage* shared_data;

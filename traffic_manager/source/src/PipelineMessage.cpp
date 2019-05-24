@@ -11,7 +11,14 @@ namespace traffic_manager {
     int PipelineMessage::getActorID(){
         return actor_id;
     }
-    void PipelineMessage::setActorID(int actor_id){
-        this->actor_id = actor_id;
+    void PipelineMessage::setActor( carla::SharedPtr<carla::client::Actor> actor)
+    {
+        this->actor = actor;
+        this->actor_id = actor->GetId();
+    }
+    
+    carla::SharedPtr<carla::client::Actor> PipelineMessage::getActor()
+    {
+        return actor;
     }
 }

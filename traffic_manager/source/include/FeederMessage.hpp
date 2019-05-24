@@ -1,4 +1,5 @@
 //Declaration of FeederMessage class members
+#pragma once
 
 #include "PipelineMessage.hpp"
 
