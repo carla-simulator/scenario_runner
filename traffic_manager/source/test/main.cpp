@@ -20,10 +20,10 @@ void test(traffic_manager::RegisteredActorMessage registerActorObj,
     std::queue <traffic_manager::PipelineMessage> input_queue,
     std::queue <traffic_manager::PipelineMessage> out_queue);
 
-void test2(traffic_manager::ActorStateMessage actor_state_obj,
-    int pull, int buffer_size,
-    std::queue <traffic_manager::PipelineMessage> input_queue,
-    std::queue <traffic_manager::PipelineMessage> out_queue);
+// void test2(traffic_manager::ActorStateMessage actor_state_obj,
+//     int pull, int buffer_size,
+//     std::queue <traffic_manager::PipelineMessage> input_queue,
+//     std::queue <traffic_manager::PipelineMessage> out_queue);
 
 int main()
 {   
@@ -33,7 +33,7 @@ int main()
     auto world_map = world.GetMap();
     auto actorList = world.GetActors();
     auto vehicle_list = actorList->Filter("vehicle.*");
-    traffic_manager::ActorStateMessage actor_state_obj;
+    //traffic_manager::ActorStateMessage actor_state_obj;
     traffic_manager::RegisteredActorMessage registerActorObj;
     //auto registerActorObj.shared_actor_list;
     for(auto it = vehicle_list->begin(); it != vehicle_list->end(); it++)
@@ -45,8 +45,8 @@ int main()
     std::queue <traffic_manager::PipelineMessage> input_queue;
     std::queue <traffic_manager::PipelineMessage> out_queue;
 
-    //test(registerActorObj, 1, 20, input_queue, out_queue);
-    test2(actor_state_obj, 1, 20,input_queue,out_queue);
+    test(registerActorObj, 1, 20, input_queue, out_queue);
+    //test2(actor_state_obj, 1, 20,input_queue,out_queue);
     //traffic_manager::FeederStage feeder_stage(&registerActorObj, 20, &input_queue, &out_queue);
     
 }
@@ -59,7 +59,7 @@ void test(traffic_manager::RegisteredActorMessage registerActorObj,
     traffic_manager::FeederStage feeder_stage(&registerActorObj, buffer_size, &input_queue, &out_queue);
     feeder_stage.start();
     sleep(1);
-    //std::cout <<"out_queue size : " <<out_queue.size()<< std::endl;
+    std::cout <<"out_queue size : " <<out_queue.size()<< std::endl;
     int count = 20;
     while(!out_queue.empty() && count > 0)
     {
@@ -70,31 +70,33 @@ void test(traffic_manager::RegisteredActorMessage registerActorObj,
         std::cout << "Actor_id " << out.getActor()->GetId() << std::endl;
         count--;
     }
-    while(true);
+    while(true) {
+        sleep(5);
+    };
 }
 
-void test2(traffic_manager::ActorStateMessage actor_state_obj,
-    int pull, int buffer_size,
-    std::queue <traffic_manager::PipelineMessage> input_queue,
-    std::queue <traffic_manager::PipelineMessage> out_queue)
-{
-    traffic_manager::ActorStateStage actorstage_obj(&actor_state_obj, buffer_size, &input_queue, &out_queue);
-    actorstage_obj.start();
-    sleep(1);
+// void test2(traffic_manager::ActorStateMessage actor_state_obj,
+//     int pull, int buffer_size,
+//     std::queue <traffic_manager::PipelineMessage> input_queue,
+//     std::queue <traffic_manager::PipelineMessage> out_queue)
+// {
+//     traffic_manager::ActorStateStage actorstage_obj(&actor_state_obj, buffer_size, &input_queue, &out_queue);
+//     actorstage_obj.start();
+//     sleep(1);
 
-     int count = 20;
-    while(!out_queue.empty() && count > 0)
-    {
-        auto out = out_queue.front();
-        out_queue.pop();
+//      int count = 20;
+//     while(!out_queue.empty() && count > 0)
+//     {
+//         auto out = out_queue.front();
+//         out_queue.pop();
 
-        std::cout << "Actor_Type_id " << out_queue.size()<< std::endl;
-        //std::cout << "Actor_id " << out.getActor()->GetId() << std::endl;
-        count--;
-    }
-    while(true);
+//         std::cout << "Actor_Type_id " << out_queue.size()<< std::endl;
+//         //std::cout << "Actor_id " << out.getActor()->GetId() << std::endl;
+//         count--;
+//     }
+//     while(true);
 
-}
+// }
 
 
 
