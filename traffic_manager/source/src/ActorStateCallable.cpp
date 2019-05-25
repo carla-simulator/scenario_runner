@@ -4,12 +4,12 @@
 
 namespace traffic_manager {
 
-    ActorStateCallable::ActorStateCallable(ActorStateMessage* actorstate_msg,
+    ActorStateCallable::ActorStateCallable(
         std::queue<PipelineMessage>* input_queue,
         std::queue<PipelineMessage>* output_queue,
         std::mutex& read_mutex,
         std::mutex& write_mutex,
-        int output_buffer_size):actorstate_msg(actorstate_msg),
+        int output_buffer_size):
         PipelineCallable(input_queue,output_queue,read_mutex,write_mutex,output_buffer_size){}
 
     ActorStateCallable::~ActorStateCallable(){}

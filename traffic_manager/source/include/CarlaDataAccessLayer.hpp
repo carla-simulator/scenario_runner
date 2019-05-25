@@ -1,6 +1,4 @@
 // Data access layer to carla server
-#pragma once
-
 #include <vector>
 #include <array>
 
