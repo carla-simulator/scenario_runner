@@ -1,5 +1,5 @@
 // Declaration of RegisteredActorMessage class
-#pragma once
+# pragma once
 #include "PipelineMessage.hpp"
 
 namespace traffic_manager
@@ -13,4 +13,4 @@ namespace traffic_manager
         void addActor(carla::SharedPtr<carla::client::Actor> actor);
         void removeActor(carla::SharedPtr<carla::client::Actor> actor);
     };
-}
+}   

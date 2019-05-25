@@ -15,7 +15,7 @@ private:
     ActorStateMessage* actorstate_msg;
 
 public:
-    ActorStateCallable(ActorStateMessage* actorstate_msg,
+    ActorStateCallable(
         std::queue<PipelineMessage>* input_queue,
         std::queue<PipelineMessage>* output_queue,
         std::mutex& read_mutex,

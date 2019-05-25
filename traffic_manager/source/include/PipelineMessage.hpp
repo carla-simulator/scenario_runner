@@ -1,6 +1,5 @@
 // Declaration for a common base class to all messages between pipeline stages
 #pragma once
-
 #include "carla/client/Actor.h"
 
 namespace traffic_manager {

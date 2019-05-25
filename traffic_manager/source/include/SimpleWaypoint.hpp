@@ -1,5 +1,4 @@
 // A simple waypoint class
-#pragma once
 #include "carla/Memory.h"
 #include "carla/geom/Vector3D.h"
 #include "carla/geom/Location.h"
