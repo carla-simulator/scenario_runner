@@ -141,8 +141,8 @@ class CANBusSensor(object):
             'mass': vehicle_physics.mass,
             'drag_coefficient': vehicle_physics.drag_coefficient,
             'center_of_mass': {'x': vehicle_physics.center_of_mass.x,
-                               'y': vehicle_physics.center_of_mass.x,
-                               'z': vehicle_physics.center_of_mass.x
+                               'y': vehicle_physics.center_of_mass.y,
+                               'z': vehicle_physics.center_of_mass.z
                                },
             'steering_curve': steering_curve,
             'wheels': wheels_list_dict
