@@ -5,7 +5,6 @@
 #include "CarlaDataAccessLayer.hpp"
 #include "InMemoryMap.hpp"
 #include "carla/client/Waypoint.h"
-//#include "ActorReadStage.hpp"
 #include "carla/client/ActorList.h"
 #include "carla/client/Actor.h"
 #include "RegisteredActorMessage.hpp"
@@ -15,15 +14,10 @@
 #include "ActorStateMessage.hpp"
 #include "ActorStateStage.hpp"
 
-void test(traffic_manager::RegisteredActorMessage registerActorObj,
-    int pull, int buffer_size,
-    std::queue <traffic_manager::PipelineMessage> input_queue,
-    std::queue <traffic_manager::PipelineMessage> out_queue);
+void test_get_topology(carla::SharedPtr<carla::client::Map> world_map);
+void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 
-// void test2(traffic_manager::ActorStateMessage actor_state_obj,
-//     int pull, int buffer_size,
-//     std::queue <traffic_manager::PipelineMessage> input_queue,
-//     std::queue <traffic_manager::PipelineMessage> out_queue);
+void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 
 int main()
 {   
@@ -33,33 +27,46 @@ int main()
     auto world_map = world.GetMap();
     auto actorList = world.GetActors();
     auto vehicle_list = actorList->Filter("vehicle.*");
-    //traffic_manager::ActorStateMessage actor_state_obj;
+
+    test_get_topology(world_map);
+    // test_feeder_stage(vehicle_list);
+    test_actor_state_stage(vehicle_list);
+
+    return 0;
+}
+
+void test_get_topology(carla::SharedPtr<carla::client::Map> world_map) {
+
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+
+    typedef std::vector<
+        std::pair<
+            carla::SharedPtr<carla::client::Waypoint>,
+            carla::SharedPtr<carla::client::Waypoint>
+        >
+    > toplist;
+    for(toplist::iterator it = topology.begin(); it != topology.end(); it++) {
+        auto wp1 = it->first;
+        auto wp2 = it->second;
+        std::cout << "Segment end road IDs : " << wp1->GetRoadId() << " -- " << wp2->GetRoadId() << std::endl;
+    }
+}
+
+void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
+{
+    std::queue <traffic_manager::PipelineMessage> input_queue;
+    std::queue <traffic_manager::PipelineMessage> out_queue;
+
     traffic_manager::RegisteredActorMessage registerActorObj;
-    //auto registerActorObj.shared_actor_list;
-    for(auto it = vehicle_list->begin(); it != vehicle_list->end(); it++)
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
     {
         registerActorObj.shared_actor_list.push_back(*it);
     }
 
-
-    std::queue <traffic_manager::PipelineMessage> input_queue;
-    std::queue <traffic_manager::PipelineMessage> out_queue;
-
-    test(registerActorObj, 1, 20, input_queue, out_queue);
-    //test2(actor_state_obj, 1, 20,input_queue,out_queue);
-    //traffic_manager::FeederStage feeder_stage(&registerActorObj, 20, &input_queue, &out_queue);
-    
-}
-
-void test(traffic_manager::RegisteredActorMessage registerActorObj,
-    int pull, int buffer_size,
-    std::queue <traffic_manager::PipelineMessage> input_queue,
-    std::queue <traffic_manager::PipelineMessage> out_queue)
-{
-    traffic_manager::FeederStage feeder_stage(&registerActorObj, buffer_size, &input_queue, &out_queue);
+    traffic_manager::FeederStage feeder_stage(&registerActorObj, 20, &input_queue, &out_queue);
     feeder_stage.start();
     sleep(1);
-    std::cout <<"out_queue size : " <<out_queue.size()<< std::endl;
     int count = 20;
     while(!out_queue.empty() && count > 0)
     {
@@ -75,50 +82,46 @@ void test(traffic_manager::RegisteredActorMessage registerActorObj,
     };
 }
 
-// void test2(traffic_manager::ActorStateMessage actor_state_obj,
-//     int pull, int buffer_size,
-//     std::queue <traffic_manager::PipelineMessage> input_queue,
-//     std::queue <traffic_manager::PipelineMessage> out_queue)
-// {
-//     traffic_manager::ActorStateStage actorstage_obj(&actor_state_obj, buffer_size, &input_queue, &out_queue);
-//     actorstage_obj.start();
-//     sleep(1);
+void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
+{
+    std::queue <traffic_manager::PipelineMessage> input_queue;
+    std::queue <traffic_manager::PipelineMessage> out_queue;
+    std::queue <traffic_manager::PipelineMessage> in_queue_to_actorstage;
+    std::queue <traffic_manager::PipelineMessage> out_queue_to_actorstage;
 
-//      int count = 20;
-//     while(!out_queue.empty() && count > 0)
-//     {
-//         auto out = out_queue.front();
-//         out_queue.pop();
+    traffic_manager::RegisteredActorMessage registerActorObj;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+    {
+        registerActorObj.shared_actor_list.push_back(*it);
+    }
 
-//         std::cout << "Actor_Type_id " << out_queue.size()<< std::endl;
-//         //std::cout << "Actor_id " << out.getActor()->GetId() << std::endl;
-//         count--;
-//     }
-//     while(true);
+    traffic_manager::FeederStage feeder_stage(&registerActorObj, 20, &input_queue, &out_queue);
+    feeder_stage.start();
+    sleep(1);
 
-// }
+    //call_feeder_stage(&registerActorObj, &input_queue, &out_queue);
+    // int count = 20;
+    // while(!in_queue_to_actorstage.empty() && count > 0)
+    // {
+    //     auto out = in_queue_to_actorstage.front();
+    //     in_queue_to_actorstage.pop();
 
+    //     std::cout << "Actor_id " << out.getActor()->GetId() << std::endl;
+    //     count--;
+    // }
 
+    traffic_manager::ActorStateStage actorstage_obj(20, &out_queue, &out_queue_to_actorstage);
+    actorstage_obj.start();
+    sleep(1);
 
+    // int count1 = 20;
+    // while(!out_queue_to_actorstage.empty() && count1 > 0)
+    // {
+    //     auto out = out_queue_to_actorstage.front();
+    //     out_queue_to_actorstage.pop();
 
-
-
-// //void test_closest_waypoint(carla::SharedPtr<carla::client::ActorList> vehicle_list, carla::SharedPtr<carla::client::Map> world_map);
-// std::vector<int> getActors(carla::SharedPtr<carla::client::ActorList> _actor_list);
-// int main(){
-//     auto client_conn = carla::client::Client("localhost", 2000);
-//     std::cout<<"Connected with client object : "<<client_conn.GetClientVersion()<<std::endl;
-//     auto world = client_conn.GetWorld();
-//     auto world_map = world.GetMap();
-//     auto actorList = world.GetActors();
-//     auto vehicle_list = actorList->Filter("vehicle.*");
-//     auto topology = world_map->GetTopology();
-//     auto newtopo = traffic_manager::InMemoryMap(topology);
-//     auto all_actors = getActors(vehicle_list);
-//     traffic_manager::RegisteredActorMessage actorobj;
-//     int actorId = actorobj.getActorID();
-//     std::cout << actorId << std::endl;
-//     // auto location = getLocation(vehicle_list);
-//     // auto allwayp = newtopo.getWaypoint(location);
-//     return 0;
-// }
+    //     std::cout << "actor state actor_id " << out.getActor()->GetId() << std::endl;
+    //     count1--;
+    // }
+    while(true);
+}

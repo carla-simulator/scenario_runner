@@ -3,11 +3,11 @@
 
 namespace traffic_manager {
 
-    ActorStateStage::ActorStateStage(ActorStateMessage* actorstate_msg, int output_buffer_size,
+    ActorStateStage::ActorStateStage(int output_buffer_size,
         std::queue<PipelineMessage>* input_queue,
-        std::queue<PipelineMessage>* output_queue):actorstate_msg(actorstate_msg),
+        std::queue<PipelineMessage>* output_queue):
         PipelineStage(1, output_buffer_size,
-        input_queue,output_queue,actorstate_msg){}
+        input_queue,output_queue,NULL){}
     
     ActorStateStage::~ActorStateStage(){}
     
@@ -25,10 +25,10 @@ namespace traffic_manager {
    
     void ActorStateStage::createPipelineCallables()
     {
-        ActorStateCallable* actorstate_callable = new ActorStateCallable(actorstate_msg, 
+        ActorStateCallable* actorstate_callable = new ActorStateCallable( 
         input_queue, output_queue, 
         read_mutex, write_mutex, 
         output_buffer_size);
-       threadCallables.push_back(actorstate_callable);
+        threadCallables.push_back(actorstate_callable);
     }
 }

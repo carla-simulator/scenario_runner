@@ -1,6 +1,4 @@
 // Class for in memory representation of descrete map
-#pragma once
-
 #include <map>
 #include <cmath>
 #include "carla/Memory.h"

@@ -33,7 +33,11 @@ void PipelineCallable::writeQueue(PipelineMessage message) {
 void PipelineCallable::run() {
     while(true)
     {
-        PipelineMessage in_message;
+        PipelineMessage in_message;        
+        if (input_queue!=NULL && input_queue->empty())
+        {
+            continue;
+        }
         if (input_queue!=NULL && !input_queue->empty())
             in_message = readQueue();
         auto out_message = action(in_message);

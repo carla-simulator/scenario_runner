@@ -1,7 +1,5 @@
 // Declaration for base class of all pipeline threads
-
 #pragma once
-
 #include <queue>
 #include <mutex>
 #include "PipelineMessage.hpp"

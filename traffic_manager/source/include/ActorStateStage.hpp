@@ -18,7 +18,7 @@ private:
     ActorStateMessage* actorstate_msg;
 
 public:
-    ActorStateStage(ActorStateMessage* actorstate_msg, int output_buffer_size,
+    ActorStateStage(int output_buffer_size,
         std::queue<PipelineMessage>* input_queue,
         std::queue<PipelineMessage>* output_queue);
     ~ActorStateStage();
