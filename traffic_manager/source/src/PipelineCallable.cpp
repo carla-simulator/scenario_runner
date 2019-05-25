@@ -3,7 +3,7 @@
 #include "PipelineCallable.hpp"
 
 namespace traffic_manager {
-
+    
 PipelineCallable::PipelineCallable(
     std::queue<PipelineMessage>* input_queue,
     std::queue<PipelineMessage>* output_queue,
@@ -26,17 +26,20 @@ PipelineMessage PipelineCallable::readQueue() {
 
 void PipelineCallable::writeQueue(PipelineMessage message) {
     std::lock_guard<std::mutex> lock(write_mutex);
-    while(input_queue->size() > output_buffer_size);
+    while(output_queue->size() > output_buffer_size);
     output_queue->push(message);
 }
 
 void PipelineCallable::run() {
-    PipelineMessage in_message;
-    if (input_queue != NULL)
-        in_message = readQueue();
-    auto out_message = action(in_message);
-    if (output_queue != NULL)
-        writeQueue(out_message);
+    while(true)
+    {
+        PipelineMessage in_message;
+        if (input_queue!=NULL && !input_queue->empty())
+            in_message = readQueue();
+        auto out_message = action(in_message);
+        if (output_queue!=NULL)
+            writeQueue(out_message);
+    }
 }
 
 }

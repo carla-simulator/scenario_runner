@@ -1,4 +1,5 @@
 // Class for in memory representation of descrete map
+#pragma once
 
 #include <map>
 #include <cmath>
@@ -30,6 +31,7 @@ public:
     ~InMemoryMap();
     void setUp(int sampling_resolution);
     traffic_manager::SimpleWaypoint* getWaypoint(carla::geom::Location location);
+    std::vector<SimpleWaypoint*> listofAllWaypoint();
 };
 
 }
