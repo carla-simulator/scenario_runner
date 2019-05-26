@@ -1,1 +1,0 @@
-/usr/bin/clang++-6.0   -std=c++14 -O3 -DNDEBUG   CMakeFiles/traffic_manager.dir/test/main.cpp.o  -o traffic_manager  -L/home/praveen/opt/libcarla/lib -Wl,-rpath,/home/praveen/opt/libcarla/lib libpipeline.a -lcarla_client -lrpc -lpthread -lboost_system 

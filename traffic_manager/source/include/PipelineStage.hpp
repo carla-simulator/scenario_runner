@@ -1,8 +1,6 @@
 // Declaration for common base class of all pipeline stages
 #pragma once
-#include <thread> 
-#include <mutex>
-#include <queue>
+#include <thread>
 #include "PipelineCallable.hpp"
 
 namespace traffic_manager {
@@ -14,22 +12,13 @@ private:
     void runThreads();
 
 protected:
-    std::queue<PipelineMessage>* const input_queue;
-    std::queue<PipelineMessage>* const output_queue;
-    std::mutex read_mutex;
-    std::mutex write_mutex;
     const int pool_size;
-    const int output_buffer_size;
-    PipelineMessage* shared_data;
-    std::vector<PipelineCallable*> threadCallables;
-    virtual void createPipelineCallables()=0;
+    PipelineCallable& thread_callable;
 
 public:
     PipelineStage(
-        int pool_size, int output_buffer_size,
-        std::queue<PipelineMessage>* input_queue,
-        std::queue<PipelineMessage>* output_queue,
-        PipelineMessage* shared_data);
+        int pool_size,
+        PipelineCallable& thread_callable);
     virtual ~PipelineStage();
     void start();
 };

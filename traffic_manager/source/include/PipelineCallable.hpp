@@ -1,7 +1,6 @@
 // Declaration for base class of all pipeline threads
 #pragma once
-#include <queue>
-#include <mutex>
+#include "SyncQueue.hpp"
 #include "PipelineMessage.hpp"
 
 namespace traffic_manager {
@@ -9,26 +8,20 @@ namespace traffic_manager {
 class PipelineCallable
 {
 private:
-    std::queue<PipelineMessage>* const input_queue;
-    std::queue<PipelineMessage>* const output_queue;
-    std::mutex& read_mutex;
-    std::mutex& write_mutex;
-    const int output_buffer_size;
-    
+    SyncQueue<PipelineMessage>* const input_queue;
+    SyncQueue<PipelineMessage>* const output_queue;
+
 protected:
+    PipelineMessage* const shared_data;
     PipelineMessage readQueue();
     void writeQueue(PipelineMessage);
     virtual PipelineMessage action(PipelineMessage message)=0;
 
 public:
     PipelineCallable(
-        std::queue<PipelineMessage>* input_queue,
-        std::queue<PipelineMessage>* output_queue,
-        std::mutex& read_mutex,
-        std::mutex& write_mutex,
-        int output_buffer_size
-        );
-    //PipelineCallable() = delete;
+        SyncQueue<PipelineMessage>* input_queue,
+        SyncQueue<PipelineMessage>* output_queue,
+        PipelineMessage* shared_data);
     virtual ~PipelineCallable();
     void run();
 };
