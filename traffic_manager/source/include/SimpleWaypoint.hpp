@@ -1,4 +1,6 @@
 // A simple waypoint class
+#pragma once
+
 #include "carla/Memory.h"
 #include "carla/geom/Vector3D.h"
 #include "carla/geom/Location.h"
@@ -17,6 +19,7 @@ public:
     std::vector<SimpleWaypoint*> getNextWaypoint();
     void setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints);
     float distance(carla::geom::Location location);
+    carla::geom::Vector3D getVector();
 };
 
 } // namespace traffic_manager

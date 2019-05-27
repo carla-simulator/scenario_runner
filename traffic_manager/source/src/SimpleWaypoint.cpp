@@ -25,4 +25,9 @@ float SimpleWaypoint::distance(carla::geom::Location location) {
     return this->waypoint->GetTransform().location.Distance(location);
 }
 
+carla::geom::Vector3D SimpleWaypoint::getVector(){
+    return waypoint->GetTransform().rotation.GetForwardVector();
+}
+
+
 } // namespace traffic_manager
