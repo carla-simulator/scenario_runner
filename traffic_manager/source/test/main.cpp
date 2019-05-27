@@ -10,9 +10,9 @@
 #include "InMemoryMap.hpp"
 #include "RegisteredActorMessage.hpp"
 #include "PipelineMessage.hpp"
-#include "ActorStateMessage.hpp"
 #include "PipelineStage.hpp"
 #include "FeederCallable.hpp"
+#include "ActorStateCallable.hpp"
 #include "SyncQueue.hpp"
 
 void test_get_topology(carla::SharedPtr<carla::client::Map> world_map);
@@ -29,58 +29,49 @@ int main()
     auto vehicle_list = actorList->Filter("vehicle.*");
 
     // test_get_topology(world_map);
-    test_feeder_stage(vehicle_list);
+    // test_feeder_stage(vehicle_list);
     // std::cout << vehicle_list->size();
-    // test_actor_state_stage(vehicle_list);
+    test_actor_state_stage(vehicle_list);
 
     return 0;
 }
 
 void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
 {
-    // std::queue <traffic_manager::PipelineMessage> input_queue;
-    // std::queue <traffic_manager::PipelineMessage> out_queue;
-    // // std::queue <traffic_manager::PipelineMessage> in_queue_to_actorstage;
-    // std::queue <traffic_manager::PipelineMessage> out_queue_to_actorstage;
 
-    // traffic_manager::RegisteredActorMessage registered_actors;
-    // for(auto it = actor_list->begin(); it != actor_list->end(); it++)
-    // {
-    //     registered_actors.shared_actor_list.push_back(*it);
-    // }
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
 
-    // traffic_manager::FeederStage feeder_stage(&registered_actors, 20, &input_queue, &out_queue);
-    // feeder_stage.start();
-    // sleep(1);
+    traffic_manager::RegisteredActorMessage registered_actors;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+    {
+        registered_actors.shared_actor_list.push_back(*it);
+    }
 
-    //call_feeder_stage(&registered_actors, &input_queue, &out_queue);
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &registered_actors);
+    traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
+    feeder_stage.start();
+    sleep(1);
 
-    // auto in_queue_to_actorstage = &out_queue;
-    // int count = 20;
-    // while( count > 0 )
-    // {
-    //     auto out = in_queue_to_actorstage.front();
-    //     in_queue_to_actorstage.pop();
+    std::cout << "Size of feeder queue : " << feeder_queue.size() << std::endl;
+    traffic_manager::ActorStateCallable actor_state_callable(&feeder_queue, &actor_state_queue);
+    traffic_manager::PipelineStage actor_state_stage(4, actor_state_callable);
+    actor_state_stage.start();
+    sleep(1);
 
-    //     std::cout << "Actor_id " << out.getActor()->GetId() << std::endl;
-    //     count--;
-    // }
+    int count = 10;
+    while(!actor_state_queue.empty() && count > 0)
+    {
+        auto out = actor_state_queue.pop();
 
-    // std::cout << "Size of feeder queue : " << 
-    // traffic_manager::ActorStateStage actorstage_obj(20, &out_queue, &out_queue_to_actorstage);
-    // actorstage_obj.start();
-    // sleep(1);
-
-    // int count1 = 20;
-    // while(!out_queue_to_actorstage.empty() && count1 > 0)
-    // {
-    //     auto out = out_queue_to_actorstage.front();
-    //     out_queue_to_actorstage.pop();
-
-    //     std::cout << "actor state actor_id " << out.getActor()->GetId() << std::endl;
-    //     count1--;
-    // }
-    // while(true);
+        std::cout << "Actor type id " << out.getActor()->GetTypeId() << std::endl;
+        std::cout << "Actor id " << out.getActorID() << std::endl;
+        std::cout << "Actor velocity " << out.getAttribute("velocity") << std::endl;
+        std::cout << "Actor x " << out.getAttribute("x") << std::endl;
+        count--;
+    }
+    while(true)
+        sleep(1);
 }
 
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list)

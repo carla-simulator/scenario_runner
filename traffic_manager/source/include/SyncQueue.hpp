@@ -34,6 +34,18 @@ public:
         this->full_condition.notify_one();
         return rc;
     }
+
+    int size() {
+        return queue.size();
+    }
+
+    bool empty() {
+        return queue.empty();
+    }
+
+    bool full() {
+        return queue.size() >= buffer_size;
+    }
 };
 
 }
