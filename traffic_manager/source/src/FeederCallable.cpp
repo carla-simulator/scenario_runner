@@ -5,25 +5,20 @@
 namespace traffic_manager
 {
     Feedercallable::Feedercallable(
-        RegisteredActorMessage* reg_actor,
-        std::queue<PipelineMessage>* input_queue,
-        std::queue<PipelineMessage>* output_queue,
-        std::mutex& read_mutex,
-        std::mutex& write_mutex,
-        int output_buffer_size):
-        reg_actor(reg_actor),
-        PipelineCallable(input_queue,output_queue,read_mutex,write_mutex,output_buffer_size)
-    {
-        
-    }
+        SyncQueue<PipelineMessage>* input_queue,
+        SyncQueue<PipelineMessage>* output_queue,
+        RegisteredActorMessage* shared_data):
+        PipelineCallable(input_queue,output_queue, shared_data){}
     Feedercallable::~Feedercallable(){}
+
     PipelineMessage Feedercallable::action (PipelineMessage message)
-    {   
+    {
+        auto reg_actors = (RegisteredActorMessage*) shared_data; 
         while(true)
-        {     
-            for (std::vector<carla::SharedPtr<carla::client::Actor>>::iterator it = reg_actor->shared_actor_list.begin(); it != reg_actor->shared_actor_list.end(); it++)
+        {
+            for (auto actor: reg_actors->shared_actor_list)
             {
-                message.setActor(*it);
+                message.setActor(actor);
                 writeQueue(message);
             }
         }

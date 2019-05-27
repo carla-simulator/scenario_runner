@@ -5,26 +5,20 @@
 namespace traffic_manager {
 
 PipelineStage::PipelineStage(
-    int pool_size, int output_buffer_size,
-    std::queue<PipelineMessage>* input_queue,
-    std::queue<PipelineMessage>* output_queue,
-    PipelineMessage* shared_data):
-    input_queue(input_queue), output_queue(output_queue),
-    pool_size(pool_size), output_buffer_size(output_buffer_size), 
-    shared_data(shared_data){
-    }
+    int pool_size,
+    PipelineCallable& thread_callable):
+    pool_size(pool_size), thread_callable(thread_callable){}
 PipelineStage::~PipelineStage(){}
 
 void PipelineStage::runThreads(){
-    for (auto threadCallable: threadCallables)
+    for (int range=pool_size; range>0; range--)
         threads.push_back(
             std::thread(
                 &PipelineCallable::run,
-                threadCallable));
+                &thread_callable));
 }
 
 void PipelineStage::start() {
-    this->createPipelineCallables();
     this->runThreads();
 }
 

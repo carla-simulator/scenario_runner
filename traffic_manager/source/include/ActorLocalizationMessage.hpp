@@ -1,5 +1,5 @@
-//Declaration of Class ActorLocalizationMessage
-//#pragma once
+// Declaration of Class ActorLocalizationMessage
+// #pragma once
 
 // #include "PipelineMessage.hpp"
 // #include "carla/client/Actor.h"

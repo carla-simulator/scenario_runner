@@ -5,40 +5,26 @@
 namespace traffic_manager {
     
 PipelineCallable::PipelineCallable(
-    std::queue<PipelineMessage>* input_queue,
-    std::queue<PipelineMessage>* output_queue,
-    std::mutex& read_mutex,
-    std::mutex& write_mutex,
-    int output_buffer_size):
-    read_mutex(read_mutex), write_mutex(write_mutex),
+    SyncQueue<PipelineMessage>* input_queue,
+    SyncQueue<PipelineMessage>* output_queue,
+    PipelineMessage* shared_data):
     input_queue(input_queue), output_queue(output_queue),
-    output_buffer_size(output_buffer_size){
-}
+    shared_data(shared_data){}
 PipelineCallable::~PipelineCallable(){}
 
 PipelineMessage PipelineCallable::readQueue() {
-    std::lock_guard<std::mutex> lock(read_mutex);
-    while(input_queue->empty());
-    PipelineMessage message = input_queue->front();
-    input_queue->pop();
-    return message;
+    return input_queue->pop();
 }
 
 void PipelineCallable::writeQueue(PipelineMessage message) {
-    std::lock_guard<std::mutex> lock(write_mutex);
-    while(output_queue->size() > output_buffer_size);
     output_queue->push(message);
 }
 
 void PipelineCallable::run() {
     while(true)
     {
-        PipelineMessage in_message;        
-        if (input_queue!=NULL && input_queue->empty())
-        {
-            continue;
-        }
-        if (input_queue!=NULL && !input_queue->empty())
+        PipelineMessage in_message;
+        if (input_queue!=NULL)
             in_message = readQueue();
         auto out_message = action(in_message);
         if (output_queue!=NULL)
