@@ -97,9 +97,26 @@ class CANBusSensor(object):
         vel_np = np.array([velocity.x, velocity.y, velocity.z])
         pitch = np.deg2rad(transform.rotation.pitch)
         yaw = np.deg2rad(transform.rotation.yaw)
-        orientation = np.array([np.cos(pitch) * np.cos(yaw), np.cos(pitch) * np.sin(yaw), np.sin(pitch)])
+        orientation = np.array([np.cos(pitch) * np.cos(yaw), np.cos(pitch) * np.sin(yaw), -np.sin(pitch)])
         speed = np.dot(vel_np, orientation)
         return speed
+
+    def _get_lateral_speed(self):
+        """ Convert the vehicle transform directly to forward and lateral speed
+            Reference: https://i0.wp.com/slideplayer.com/4241728/14/images/34/Roll+Pitch+Yaw+The+rotation+matrix+for+the+following+operations%3A+X+Y+Z.jpg
+        """
+        velocity = self._vehicle.get_velocity()
+        transform = self._vehicle.get_transform()
+        vel_np = np.array([velocity.x, velocity.y, velocity.z])
+        roll = np.deg2rad(transform.rotation.roll)
+        pitch = np.deg2rad(transform.rotation.pitch)
+        yaw = np.deg2rad(transform.rotation.yaw)
+        orientationY  = np.array([-np.sin(yaw)*np.sin(roll) + np.cos(yaw)*np.sin(pitch)*np.sin(roll),
+                                  np.cos(yaw)*np.sin(pitch)*np.sin(roll) + np.cos(yaw)*np.sin(roll),
+                                  np.cos(pitch)*np.sin(roll)])
+        lateral_speed   = np.dot(vel_np, orientationY)
+        return lateral_speed
+    
 
     def __call__(self):
 
@@ -129,7 +146,12 @@ class CANBusSensor(object):
                                 })
 
         return {
-            'speed': self._get_forward_speed(),
+            'transform':self._vehicle.get_transform(),
+            'dimensions':{'length':self._vehicle.bounding_box.extent.x,
+                          'width':self._vehicle.bounding_box.extent.y,
+                          'height':self._vehicle.bounding_box.extent.z},
+            'speed':  self._get_forward_speed(),
+            'lateral_speed':  self._get_lateral_speed(),
             'torque_curve': torque_curve,
             'max_rpm': vehicle_physics.max_rpm,
             'moi': vehicle_physics.moi,
@@ -141,8 +163,8 @@ class CANBusSensor(object):
             'mass': vehicle_physics.mass,
             'drag_coefficient': vehicle_physics.drag_coefficient,
             'center_of_mass': {'x': vehicle_physics.center_of_mass.x,
-                               'y': vehicle_physics.center_of_mass.x,
-                               'z': vehicle_physics.center_of_mass.x
+                               'y': vehicle_physics.center_of_mass.y,
+                               'z': vehicle_physics.center_of_mass.z
                                },
             'steering_curve': steering_curve,
             'wheels': wheels_list_dict
