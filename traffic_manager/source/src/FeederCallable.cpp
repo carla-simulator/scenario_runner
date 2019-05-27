@@ -1,7 +1,7 @@
 //definition of FeederCallable class members
 
 #include "FeederCallable.hpp"
-#include "carla/client/Actor.h"
+
 namespace traffic_manager
 {
     Feedercallable::Feedercallable(
