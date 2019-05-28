@@ -17,7 +17,7 @@ private:
     int                     buffer_size;
 
 public:
-    SyncQueue(int buffer_size):buffer_size(buffer_size){}
+    SyncQueue(int buffer_size = 20):buffer_size(buffer_size){}
     
     void push(T value){
         std::unique_lock<std::mutex> lock(this->q_mutex);
@@ -32,6 +32,11 @@ public:
         T rc(std::move(this->queue.front()));
         this->queue.pop();
         this->full_condition.notify_one();
+        return rc;
+    }
+
+    T peek(){
+        T rc(std::move(this->queue.front()));
         return rc;
     }
 

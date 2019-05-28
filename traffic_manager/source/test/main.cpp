@@ -2,6 +2,7 @@
 #include <iostream>
 #include <typeinfo>
 #include <queue>
+#include <chrono>
 #include "carla/client/Client.h"
 #include "CarlaDataAccessLayer.hpp"
 #include "carla/client/Waypoint.h"
@@ -18,6 +19,7 @@
 void test_get_topology(carla::SharedPtr<carla::client::Map> world_map);
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
+void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list);
 
 int main()
 {   
@@ -31,9 +33,51 @@ int main()
     // test_get_topology(world_map);
     // test_feeder_stage(vehicle_list);
     // std::cout << vehicle_list->size();
-    test_actor_state_stage(vehicle_list);
+    // test_actor_state_stage(vehicle_list);
+    test_actor_state_stress(vehicle_list);
 
     return 0;
+}
+
+void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list)
+{
+
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
+
+    traffic_manager::RegisteredActorMessage registered_actors;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+    {
+        registered_actors.shared_actor_list.push_back(*it);
+    }
+
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &registered_actors);
+    traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
+    feeder_stage.start();
+    
+    traffic_manager::ActorStateCallable actor_state_callable(&feeder_queue, &actor_state_queue);
+    traffic_manager::PipelineStage actor_state_stage(8, actor_state_callable);
+    actor_state_stage.start();
+    
+    long count = 0;
+    auto last_time = std::chrono::system_clock::now();
+    while(true)
+    {
+        auto out = actor_state_queue.pop();
+
+        // std::cout << "Actor type id " << out.getActor()->GetTypeId();
+        // std::cout << "\t Actor velocity " << out.getAttribute("velocity") << std::endl;
+        count++;
+        auto current_time = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = current_time - last_time;
+
+        if(diff.count() > 1.0)
+        {
+            last_time = current_time;
+            std::cout << "Vehicles processed per second " << count << std::endl;
+            count = 0;
+        }
+    }
 }
 
 void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
@@ -73,7 +117,6 @@ void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_lis
     while(true)
         sleep(1);
 }
-
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
 {
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> out_queue(20);
