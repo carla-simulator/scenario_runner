@@ -138,6 +138,11 @@ class RosAgent(AutonomousAgent):
             rospy.loginfo("Waiting for termination of stack...")
             self.stack_process.wait()
             rospy.loginfo("Terminated stack.")
+            self.map_publisher.unregister()
+            self.map_file_publisher.unregister()
+            self.vehicle_status_publisher.unregister()
+            self.vehicle_info_publisher.unregister()
+            self.waypoint_publisher.unregister()
             self.stack_process = None
 
     def on_vehicle_control(self, data):
