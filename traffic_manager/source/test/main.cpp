@@ -9,17 +9,18 @@
 #include "carla/client/ActorList.h"
 #include "carla/client/Actor.h"
 #include "InMemoryMap.hpp"
-#include "RegisteredActorMessage.hpp"
 #include "PipelineMessage.hpp"
 #include "PipelineStage.hpp"
 #include "FeederCallable.hpp"
 #include "ActorStateCallable.hpp"
 #include "SyncQueue.hpp"
+#include "ActorLocalizationCallable.hpp"
 
 void test_get_topology(carla::SharedPtr<carla::client::Map> world_map);
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list);
+void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 
 int main()
 {   
@@ -34,9 +35,48 @@ int main()
     // test_feeder_stage(vehicle_list);
     // std::cout << vehicle_list->size();
     // test_actor_state_stage(vehicle_list);
-    test_actor_state_stress(vehicle_list);
-
+    //test_actor_state_stress(vehicle_list);
+    test_actor_localization_stage(vehicle_list);
     return 0;
+}
+
+void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
+{
+
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
+
+    traffic_manager::SharedData shared_data;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+    {
+        shared_data.registered_actors.push_back(*it);
+    }
+
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
+    traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
+    feeder_stage.start();
+    
+    traffic_manager::ActorLocalizationCallable actor_localization_callable(&feeder_queue, &actor_state_queue, &shared_data);
+    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
+    actor_localization_stage.start();
+    
+    long count = 0;
+    auto last_time = std::chrono::system_clock::now();
+    while(true)
+    {
+        auto out = actor_state_queue.pop();
+
+        count++;
+        auto current_time = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = current_time - last_time;
+
+        if(diff.count() > 1.0)
+        {
+            last_time = current_time;
+            std::cout << "Vehicles processed per second " << count << std::endl;
+            count = 0;
+        }
+    }
 }
 
 void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list)
@@ -45,13 +85,13 @@ void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_li
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
 
-    traffic_manager::RegisteredActorMessage registered_actors;
+    traffic_manager::SharedData shared_data;
     for(auto it = actor_list->begin(); it != actor_list->end(); it++)
     {
-        registered_actors.shared_actor_list.push_back(*it);
+        shared_data.registered_actors.push_back(*it);
     }
 
-    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &registered_actors);
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
     feeder_stage.start();
     
@@ -65,8 +105,6 @@ void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_li
     {
         auto out = actor_state_queue.pop();
 
-        // std::cout << "Actor type id " << out.getActor()->GetTypeId();
-        // std::cout << "\t Actor velocity " << out.getAttribute("velocity") << std::endl;
         count++;
         auto current_time = std::chrono::system_clock::now();
         std::chrono::duration<double> diff = current_time - last_time;
@@ -86,13 +124,13 @@ void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_lis
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
 
-    traffic_manager::RegisteredActorMessage registered_actors;
+    traffic_manager::SharedData shared_data;
     for(auto it = actor_list->begin(); it != actor_list->end(); it++)
     {
-        registered_actors.shared_actor_list.push_back(*it);
+        shared_data.registered_actors.push_back(*it);
     }
 
-    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &registered_actors);
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
     feeder_stage.start();
     sleep(1);
@@ -121,13 +159,13 @@ void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
 {
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> out_queue(20);
 
-    traffic_manager::RegisteredActorMessage registered_actors;
+    traffic_manager::SharedData shared_data;
     for(auto it = actor_list->begin(); it != actor_list->end(); it++)
     {
-        registered_actors.shared_actor_list.push_back(*it);
+        shared_data.registered_actors.push_back(*it);
     }
 
-    traffic_manager::Feedercallable feeder_callable(NULL, &out_queue, &registered_actors);
+    traffic_manager::Feedercallable feeder_callable(NULL, &out_queue, &shared_data);
     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
     feeder_stage.start();
     sleep(1);

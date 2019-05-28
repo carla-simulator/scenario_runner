@@ -2,6 +2,7 @@
 #pragma once
 #include "SyncQueue.hpp"
 #include "PipelineMessage.hpp"
+#include "SharedData.hpp"
 
 namespace traffic_manager {
 
@@ -12,7 +13,7 @@ private:
     SyncQueue<PipelineMessage>* const output_queue;
 
 protected:
-    PipelineMessage* const shared_data;
+    SharedData* const shared_data;
     PipelineMessage readQueue();
     void writeQueue(PipelineMessage);
     virtual PipelineMessage action(PipelineMessage message)=0;
@@ -21,7 +22,7 @@ public:
     PipelineCallable(
         SyncQueue<PipelineMessage>* input_queue,
         SyncQueue<PipelineMessage>* output_queue,
-        PipelineMessage* shared_data);
+        SharedData* shared_data);
     virtual ~PipelineCallable();
     void run();
 };

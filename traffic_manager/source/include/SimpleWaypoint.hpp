@@ -20,6 +20,7 @@ public:
     void setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints);
     float distance(carla::geom::Location location);
     carla::geom::Vector3D getVector();
+    std::vector<float> getXYZ();
 };
 
 } // namespace traffic_manager
