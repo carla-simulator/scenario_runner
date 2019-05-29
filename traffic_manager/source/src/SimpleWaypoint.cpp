@@ -10,11 +10,13 @@ SimpleWaypoint::SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint>) {
 }
 SimpleWaypoint::~SimpleWaypoint(){}
 
-void SimpleWaypoint::setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints) {
+int SimpleWaypoint::setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints) {
     this->next_waypoints.insert(
         this->next_waypoints.end(),
         next_waypoints.begin(),
         next_waypoints.end());
+
+    return 0;
 }
 
 std::vector<SimpleWaypoint*> SimpleWaypoint::getNextWaypoint() {

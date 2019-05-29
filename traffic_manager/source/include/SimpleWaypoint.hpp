@@ -17,7 +17,7 @@ public:
     SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint> waypoint);
     ~SimpleWaypoint();
     std::vector<SimpleWaypoint*> getNextWaypoint();
-    void setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints);
+    int setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints);
     float distance(carla::geom::Location location);
     carla::geom::Vector3D getVector();
     std::vector<float> getXYZ();
