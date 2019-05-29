@@ -29,5 +29,12 @@ carla::geom::Vector3D SimpleWaypoint::getVector(){
     return waypoint->GetTransform().rotation.GetForwardVector();
 }
 
+std::vector<float> SimpleWaypoint::getXYZ(){
+    float x = waypoint->GetTransform().location.x;
+    float y = waypoint->GetTransform().location.y;
+    float z = waypoint->GetTransform().location.z;
+    std::vector<float> coordinates = {x,y,z};
+    return coordinates;
+}
 
 } // namespace traffic_manager

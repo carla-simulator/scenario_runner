@@ -3,7 +3,6 @@
 
 #include "carla/client/Actor.h"
 #include "PipelineCallable.hpp"
-#include "RegisteredActorMessage.hpp"
 
 namespace traffic_manager{
 
@@ -13,7 +12,7 @@ namespace traffic_manager{
         Feedercallable(
             SyncQueue<PipelineMessage>* input_queue,
             SyncQueue<PipelineMessage>* output_queue,
-            RegisteredActorMessage* reg_actor);
+            SharedData* shared_data);
         ~Feedercallable();
 
         PipelineMessage action (PipelineMessage message);

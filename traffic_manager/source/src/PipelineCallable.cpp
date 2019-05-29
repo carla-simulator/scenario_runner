@@ -7,7 +7,7 @@ namespace traffic_manager {
 PipelineCallable::PipelineCallable(
     SyncQueue<PipelineMessage>* input_queue,
     SyncQueue<PipelineMessage>* output_queue,
-    PipelineMessage* shared_data):
+    SharedData* shared_data):
     input_queue(input_queue), output_queue(output_queue),
     shared_data(shared_data){}
 PipelineCallable::~PipelineCallable(){}

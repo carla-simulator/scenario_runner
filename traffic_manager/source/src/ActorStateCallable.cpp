@@ -22,6 +22,10 @@ namespace traffic_manager {
         out_message.setAttribute("z", transform.location.z);
         out_message.setAttribute("yaw", transform.rotation.yaw);
         out_message.setAttribute("velocity", actor->GetVelocity().Length());
+        auto heading = transform.GetForwardVector();
+        out_message.setAttribute("heading_x", heading.x);
+        out_message.setAttribute("heading_y", heading.y);
+        out_message.setAttribute("heading_z", heading.z);
         return out_message;
     }
 }
