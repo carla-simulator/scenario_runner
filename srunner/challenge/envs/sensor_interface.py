@@ -95,7 +95,7 @@ class CANBusSensor(object):
         velocity = self._vehicle.get_velocity()
         transform = self._vehicle.get_transform()
         vel_np = np.array([velocity.x, velocity.y, velocity.z])
-        pitch = np.deg2rad(transform.rotation.pitch)
+        pitch = np.deg2rad(-transform.rotation.pitch)
         yaw = np.deg2rad(transform.rotation.yaw)
         orientation = np.array([np.cos(pitch) * np.cos(yaw), np.cos(pitch) * np.sin(yaw), -np.sin(pitch)])
         speed = np.dot(vel_np, orientation)
@@ -108,8 +108,8 @@ class CANBusSensor(object):
         velocity = self._vehicle.get_velocity()
         transform = self._vehicle.get_transform()
         vel_np = np.array([velocity.x, velocity.y, velocity.z])
-        roll = np.deg2rad(transform.rotation.roll)
-        pitch = np.deg2rad(transform.rotation.pitch)
+        roll = np.deg2rad(-transform.rotation.roll)
+        pitch = np.deg2rad(-transform.rotation.pitch)
         yaw = np.deg2rad(transform.rotation.yaw)
         orientationY  = np.array([-np.sin(yaw)*np.sin(roll) + np.cos(yaw)*np.sin(pitch)*np.sin(roll),
                                   np.cos(yaw)*np.sin(pitch)*np.sin(roll) + np.cos(yaw)*np.sin(roll),
