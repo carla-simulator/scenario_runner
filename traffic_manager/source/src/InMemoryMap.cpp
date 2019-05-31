@@ -22,6 +22,7 @@ std::pair<int, int> InMemoryMap::make_node_key(carla::SharedPtr<carla::client::W
 
 void InMemoryMap::setUp(int sampling_resolution){
     for(auto const &pair : this->topology) {
+        std::cout << "inMemoryMap::setUp" << std::endl;
 
         auto begin_waypoint = pair.first;
         auto end_waypoint = pair.second;
@@ -31,7 +32,7 @@ void InMemoryMap::setUp(int sampling_resolution){
         auto end_node_key = this->make_node_key(end_waypoint);
 
         typedef std::pair<std::pair<int, int>, SimpleWaypoint*> NodeEntry;
-
+        std::cout << "35" << std::endl;
         this->dense_topology.push_back(SimpleWaypoint(begin_waypoint));
         if(this->entry_node_map.find(begin_node_key) == this->entry_node_map.end())
             this->entry_node_map.insert(NodeEntry(begin_node_key, &(this->dense_topology.back())));
@@ -40,14 +41,22 @@ void InMemoryMap::setUp(int sampling_resolution){
             auto exit_node_ptr = this->exit_node_map[begin_node_key];
             exit_node_ptr->setNextWaypoint({&(this->dense_topology.back())});
         }
-
-        while (true) {
+        std::cout << "44" << std::endl;
+        while (
+            current_waypoint->GetTransform().location.Distance(
+                end_waypoint->GetTransform().location) > sampling_resolution) {
+            std::cout << "48" << std::endl;
             current_waypoint = current_waypoint->GetNext(1.0)[0];
+            std::cout << "50" << std::endl;
+            SimpleWaypoint& previous_wp = this->dense_topology.back();
             this->dense_topology.push_back(SimpleWaypoint(current_waypoint));
-            auto end_ptr = this->dense_topology.end();
-            (end_ptr-1)->setNextWaypoint({&(this->dense_topology.back())});
+            auto topology_ptr = &(this->dense_topology.back());
+            topology_ptr->getXYZ();
+            std::cout << "53" << std::endl;
+            previous_wp.setNextWaypoint({&(this->dense_topology.back())});
+            std::cout << "55" << std::endl;
         }
-
+        std::cout << "57" << std::endl;
         this->dense_topology.push_back(SimpleWaypoint(end_waypoint));
         if(this->exit_node_map.find(end_node_key) == this->exit_node_map.end())
             this->exit_node_map.insert(NodeEntry(end_node_key, &(this->dense_topology.back())));
@@ -55,7 +64,7 @@ void InMemoryMap::setUp(int sampling_resolution){
         else {
             this->dense_topology.back().setNextWaypoint({this->entry_node_map[end_node_key]});
         }
-
+        std::cout << "65" << std::endl;
     }
 }
 
