@@ -20,7 +20,10 @@ void test_get_topology(carla::SharedPtr<carla::client::Map> world_map);
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
 void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list);
-void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map);
+void test_actor_localization_stage(
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map);
+void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map);
 
 int main()
 {   
@@ -33,9 +36,9 @@ int main()
 
     // test_get_topology(world_map);
     // test_feeder_stage(vehicle_list);
-    // std::cout << vehicle_list->size();
     // test_actor_state_stage(vehicle_list);
     // test_actor_state_stress(vehicle_list);
+    // test_in_memory_map(world_map);
     test_actor_localization_stage(vehicle_list, world_map);
     return 0;
 }
@@ -57,9 +60,7 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
     auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
     auto topology = dao.getTopology();
     traffic_manager::InMemoryMap local_map(topology);
-    std::cout << "setup starting" << std::endl;
     local_map.setUp(1.0);
-    std::cout << "setup complete" << std::endl;
     shared_data.local_map = &local_map;
 
     traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
@@ -74,10 +75,10 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
     traffic_manager::PipelineStage actor_localization_stage(1, actor_localization_callable);
     actor_localization_stage.start();
 
-    std::cout << "All stage pipeline started" <<std::endl;
+    std::cout << "All stage pipeline started !" <<std::endl;
 
     sleep(1);
-    std::cout << "Loc Queue size" << localization_queue.size() << std::endl;
+    std::cout << "Localization queue size : " << localization_queue.size() << std::endl;
     
     while(true)
     {
@@ -86,6 +87,15 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
             << out.getAttribute("velocity")
             << "\t Deviation" << out.getAttribute("deviation") << std::endl;
     }
+}
+
+void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+    traffic_manager::InMemoryMap local_map(topology);
+    std::cout << "setup starting" << std::endl;
+    local_map.setUp(1.0);
+    std::cout << "setup complete" << std::endl;
 }
 
 void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list)

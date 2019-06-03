@@ -3,6 +3,7 @@
 
 #include <map>
 #include <cmath>
+#include <memory.h>
 #include "carla/Memory.h"
 #include "carla/client/Waypoint.h"
 #include "carla/geom/Location.h"
@@ -21,8 +22,8 @@ class InMemoryMap
 {
 private:
     TopologyList topology;
-    std::vector<SimpleWaypoint> dense_topology;
-    typedef std::map<std::pair<int, int>, SimpleWaypoint*> NodeMap;
+    std::vector<std::shared_ptr<SimpleWaypoint>> dense_topology;
+    typedef std::map<std::pair<int, int>, std::shared_ptr<SimpleWaypoint>> NodeMap;
     NodeMap entry_node_map;
     NodeMap exit_node_map;
     std::pair<int, int> make_node_key(carla::SharedPtr<carla::client::Waypoint> waypooint);
@@ -30,7 +31,7 @@ public:
     InMemoryMap(TopologyList topology);
     ~InMemoryMap();
     void setUp(int sampling_resolution);
-    traffic_manager::SimpleWaypoint* getWaypoint(carla::geom::Location location);
+    std::shared_ptr<SimpleWaypoint> getWaypoint(carla::geom::Location location);
 };
 
 }

@@ -4,22 +4,21 @@
 
 namespace traffic_manager{
 
-SimpleWaypoint::SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint>) {
+SimpleWaypoint::SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint> waypoint) {
     this->waypoint = waypoint;
-    this->next_waypoints = std::vector<SimpleWaypoint*>();
 }
 SimpleWaypoint::~SimpleWaypoint(){}
 
-int SimpleWaypoint::setNextWaypoint(std::vector<SimpleWaypoint*> next_waypoints) {
+int SimpleWaypoint::setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> waypoints) {
     this->next_waypoints.insert(
-        this->next_waypoints.end(),
-        next_waypoints.begin(),
-        next_waypoints.end());
-
-    return 0;
+        std::end(this->next_waypoints),
+        std::begin(waypoints),
+        std::end(waypoints));
+    return waypoints.size();
 }
 
-std::vector<SimpleWaypoint*> SimpleWaypoint::getNextWaypoint() {
+std::vector<std::shared_ptr<SimpleWaypoint>> SimpleWaypoint::getNextWaypoint() {
+    std::cout << "Size of next_waypoints : " << this->next_waypoints.size() << std::endl;
     return this->next_waypoints;
 }
 
