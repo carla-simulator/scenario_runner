@@ -14,51 +14,42 @@ namespace traffic_manager
     PipelineMessage ActorLocalizationCallable::action(PipelineMessage message)
     {   
         int actor_id = message.getActorID();
+        std::cout << "Inside action !" << std::endl;
         if(shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()){
-            std::cout << "existing actor" << std::endl;
-            float dot_product = -1;
+            std::cout << "Registered actor found ! " << std::endl;
+            float dot_product = nearestDotProduct(shared_data, &message);
             while(dot_product <= 0){
+                shared_data->buffer_map[actor_id].pop();
                 dot_product = nearestDotProduct(shared_data, &message);
-                if(dot_product <= 0)
-                {
-                    shared_data->buffer_map[actor_id].pop();
-                    auto feed_waypoint = shared_data->buffer_map[actor_id].back()->getNextWaypoint()[0];
-                    while(!shared_data->buffer_map[actor_id].full())
-                    {
-                        shared_data->buffer_map[actor_id].push(feed_waypoint);
-                    }
-                }
+            }
+            while(!shared_data->buffer_map[actor_id].full()) {
+                auto feed_waypoint = shared_data->buffer_map[actor_id].back()->getNextWaypoint()[0];
+                shared_data->buffer_map[actor_id].push(feed_waypoint);
             }
         }
         else
         {
-            std::cout << "new actor" << std::endl;
+            std::cout << "New actor found ! " << std::endl;
             auto actor_location = carla::geom::Location(
                 message.getAttribute("x"), 
                 message.getAttribute("y"), 
                 message.getAttribute("z"));
             auto closest_waypoint = shared_data->local_map->getWaypoint(actor_location);
-            std::cout << "closest waypoint" << std::endl;
             while(!shared_data->buffer_map[actor_id].full())
             {   
-                std::cout << "inside while" << std::endl;
                 shared_data->buffer_map[actor_id].push(closest_waypoint);
-                std::cout << "between" << std::endl;
                 closest_waypoint = closest_waypoint->getNextWaypoint()[0];
-                std::cout << "end of while" << std::endl;
             }
-            std::cout << "after while" << std::endl;
         }
-        std::cout << "Buffer map size " << shared_data->buffer_map.size() << std::endl;
+
         PipelineMessage out_message;
         float dot_product = nearestDotProduct(shared_data, &message);
-        float cross_product = nearestCrossProduct(shared_data, &message);
-        std::cout << "cross_product : " << cross_product << std::endl;
-        if(cross_product < 0)
-            dot_product *= -1;
+        // float cross_product = nearestCrossProduct(shared_data, &message);
+        // if(cross_product < 0)
+        //     dot_product *= -1;
         out_message.setAttribute("velocity", message.getAttribute("velocity"));
         out_message.setAttribute("deviation", dot_product);
-        std::cout << "deviation : " << dot_product << std::endl;
+
         return out_message;
     }
     
