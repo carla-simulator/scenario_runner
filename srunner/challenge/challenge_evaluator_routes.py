@@ -31,6 +31,8 @@ import xml.etree.ElementTree as ET
 
 import py_trees
 
+import networkx
+import shapely.geometry
 import carla
 
 from agents.navigation.local_planner import RoadOption
