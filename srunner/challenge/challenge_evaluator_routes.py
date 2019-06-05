@@ -1279,6 +1279,7 @@ class ChallengeEvaluator(object):
                 settings.synchronous_mode = False
                 self.world.apply_settings(settings)
                 self.agent_instance.destroy()
+                self.agent_instance = None
                 self.cleanup(ego=True)
 
                 for scenario in self.list_scenarios:

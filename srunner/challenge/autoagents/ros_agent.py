@@ -28,6 +28,7 @@ from cv_bridge import CvBridge
 import os
 import subprocess
 import signal
+import time
 
 class RosAgent(AutonomousAgent):
     """
@@ -137,13 +138,17 @@ class RosAgent(AutonomousAgent):
             os.killpg(os.getpgid(self.stack_process.pid), signal.SIGTERM)
             rospy.loginfo("Waiting for termination of stack...")
             self.stack_process.wait()
+            time.sleep(5)
             rospy.loginfo("Terminated stack.")
-            self.map_publisher.unregister()
-            self.map_file_publisher.unregister()
-            self.vehicle_status_publisher.unregister()
-            self.vehicle_info_publisher.unregister()
-            self.waypoint_publisher.unregister()
-            self.stack_process = None
+
+        rospy.loginfo("Stack is no longer running")
+        self.map_publisher.unregister()
+        self.map_file_publisher.unregister()
+        self.vehicle_status_publisher.unregister()
+        self.vehicle_info_publisher.unregister()
+        self.waypoint_publisher.unregister()
+        self.stack_process = None
+        rospy.loginfo("Cleanup finished")
 
     def on_vehicle_control(self, data):
         """
