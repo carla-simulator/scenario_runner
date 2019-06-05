@@ -101,6 +101,44 @@ class CANBusSensor(object):
         speed = np.dot(vel_np, orientation)
         return speed
 
+    def _get_rotation_matrix(self):
+        """
+        Generate the rotation matrix from Euler angles (actually, Tait-Bryan angles)
+        with intrinsic sequence ZYX
+        """
+        transform = self._vehicle.get_transform()
+        roll  = np.deg2rad(-transform.rotation.roll)
+        pitch = np.deg2rad(-transform.rotation.pitch)
+        yaw = np.deg2rad(transform.rotation.yaw)
+        sr, cr = np.sin(roll),  np.cos(roll)
+        sp, cp = np.sin(pitch), np.cos(pitch)
+        sy, cy = np.sin(yaw),   np.cos(yaw)
+        rotation_matrix= np.array([[cy * cp,      -sy * sr + cy * sp * sr,  cy * sp * cr +      sy * sr],
+                                   [sy * cp,  cy * sp * sr +      cy * sr,      -cy * sr + sy * sp * cr],
+                                   [    -sp,                      cp * sr,                      cp * cr]])
+        return rotation_matrix
+
+    def _get_linear_velocity_vrf(self):
+        """ Convert linear velocity from world frame to vehicle reference frame """
+        linear_velocity = self._vehicle.get_velocity()
+        rotation_matrix = _get_rotation_matrix()
+        linear_velocity_vrf = rotation_matrix.transpose().dot(linear_velocity)
+        return linear_velocity_vrf
+
+    def _get_linear_acceleration_vrf(self):
+        """ Convert linear acceleration from world frame to vehicle reference frame """
+        linear_acceleration = self._vehicle.get_acceleration()
+        rotation_matrix = _get_rotation_matrix()
+        linear_acceleration_vrf = rotation_matrix.transpose().dot(linear_acceleration)
+        return linear_acceleration_vrf
+
+    def _get_angular_velocity_vrf(self):
+        """ Convert angular velocity from world frame to vehicle reference frame """
+        angular_velocity = self._vehicle.get_angular_velocity()
+        rotation_matrix = _get_rotation_matrix()
+        angular_velocity_vrf = rotation_matrix.transpose().dot(angular_velocity)
+        return angular_velocity_vrf
+
     def __call__(self):
 
         """ We convert the vehicle physics information into a convenient dictionary """
@@ -129,6 +167,9 @@ class CANBusSensor(object):
                                 })
 
         return {
+            'linear_velocity_vrf': self._get_linear_velocity_vrf(),
+            'linear_acceleration_vrf': self._get_linear_acceleration_vrf(),
+            'angular_velocity_vrf': self._get_angular_velocity_vrf(),
             'speed': self._get_forward_speed(),
             'torque_curve': torque_curve,
             'max_rpm': vehicle_physics.max_rpm,
@@ -141,8 +182,8 @@ class CANBusSensor(object):
             'mass': vehicle_physics.mass,
             'drag_coefficient': vehicle_physics.drag_coefficient,
             'center_of_mass': {'x': vehicle_physics.center_of_mass.x,
-                               'y': vehicle_physics.center_of_mass.x,
-                               'z': vehicle_physics.center_of_mass.x
+                               'y': vehicle_physics.center_of_mass.y,
+                               'z': vehicle_physics.center_of_mass.z
                                },
             'steering_curve': steering_curve,
             'wheels': wheels_list_dict
