@@ -137,7 +137,7 @@ def set_attrib(node, key, default):
     return node.attrib[key] if key in node.attrib else default
 
 
-def parse_scenario_configuration(file_name, scenario_name):
+def parse_scenario_configuration(scenario_config_file, scenario_name):
     """
     Parse scenario configuration file and provide a list of
     ScenarioConfigurations @return
@@ -151,9 +151,7 @@ def parse_scenario_configuration(file_name, scenario_name):
     if scenario_name.startswith("group:"):
         single_scenario_only = False
         scenario_name = scenario_name[6:]
-        file_name = scenario_name
 
-    scenario_config_file = os.getenv('ROOT_SCENARIO_RUNNER', "./") + "/srunner/configs/" + file_name + ".xml"
     tree = ET.parse(scenario_config_file)
 
     scenario_configurations = []
@@ -190,12 +188,15 @@ def parse_scenario_configuration(file_name, scenario_name):
     return scenario_configurations
 
 
-def get_list_of_scenarios():
+def get_list_of_scenarios(config_file_name):
     """
     Parse *all* config files and provide a list with all scenarios @return
     """
 
     list_of_config_files = glob.glob("{}/srunner/configs/*.xml".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
+
+    if config_file_name != '':
+        list_of_config_files.append(config_file_name)
 
     scenarios = []
     for file_name in list_of_config_files:
@@ -206,17 +207,30 @@ def get_list_of_scenarios():
     return scenarios
 
 
-def find_scenario_config(scenario_name):
+def find_scenario_config(scenario_name, config_file_name):
     """
     Parse *all* config files and find first match for scenario config
     """
 
     list_of_config_files = glob.glob("{}/srunner/configs/*.xml".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
 
-    for file_name in list_of_config_files:
-        tree = ET.parse(file_name)
-        for scenario in tree.iter("scenario"):
-            if set_attrib(scenario, 'name', None) == scenario_name:
-                return os.path.basename(file_name).split(".")[0]
+    if config_file_name != '':
+        list_of_config_files.append(config_file_name)
+
+    if scenario_name.startswith("group:"):
+        scenario_name = scenario_name[6:]
+
+        for file_name in list_of_config_files:
+            tree = ET.parse(file_name)
+            for scenario in tree.iter("scenario"):
+                if set_attrib(scenario, 'type', None) == scenario_name:
+                    return file_name
+
+    else:
+        for file_name in list_of_config_files:
+            tree = ET.parse(file_name)
+            for scenario in tree.iter("scenario"):
+                if set_attrib(scenario, 'name', None) == scenario_name:
+                    return file_name
 
     return None

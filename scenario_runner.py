@@ -184,14 +184,12 @@ class ScenarioRunner(object):
 
             # Load the scenario configurations provided in the config file
             scenario_configurations = None
-            if args.scenario.startswith("group:"):
-                scenario_configurations = parse_scenario_configuration(args.scenario, args.scenario)
-            else:
-                scenario_config_file = find_scenario_config(args.scenario)
-                if scenario_config_file is None:
-                    print("Configuration for scenario {} cannot be found!".format(args.scenario))
-                    continue
-                scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
+            scenario_config_file = find_scenario_config(args.scenario, args.configFile)
+            if scenario_config_file is None:
+                print("Configuration for scenario {} cannot be found!".format(args.scenario))
+                continue
+
+            scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
 
             # Execute each configuration
             for config in scenario_configurations:
@@ -255,6 +253,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--output', action="store_true", help='Provide results on stdout')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
     PARSER.add_argument('--junit', action="store_true", help='Write results into a junit file')
+    PARSER.add_argument('--configFile', default='', help='Provide an additional scenario configuration file')
     # pylint: disable=line-too-long
     PARSER.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
@@ -268,7 +267,7 @@ if __name__ == '__main__':
 
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")
-        print(*get_list_of_scenarios(), sep='\n')
+        print(*get_list_of_scenarios(ARGUMENTS.configFile), sep='\n')
         sys.exit(0)
 
     if ARGUMENTS.list_class:
