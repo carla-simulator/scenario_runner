@@ -18,7 +18,6 @@ int SimpleWaypoint::setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>>
 }
 
 std::vector<std::shared_ptr<SimpleWaypoint>> SimpleWaypoint::getNextWaypoint() {
-    std::cout << "Size of next_waypoints : " << this->next_waypoints.size() << std::endl;
     return this->next_waypoints;
 }
 
