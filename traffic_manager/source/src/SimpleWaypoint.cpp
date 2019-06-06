@@ -9,20 +9,12 @@ SimpleWaypoint::SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint> waypoin
 }
 SimpleWaypoint::~SimpleWaypoint(){}
 
-int SimpleWaypoint::setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> waypoints) {
-    this->next_waypoints.insert(
-        std::end(this->next_waypoints),
-        std::begin(waypoints),
-        std::end(waypoints));
-    return waypoints.size();
-}
-
 std::vector<std::shared_ptr<SimpleWaypoint>> SimpleWaypoint::getNextWaypoint() {
     return this->next_waypoints;
 }
 
-float SimpleWaypoint::distance(carla::geom::Location location) {
-    return this->waypoint->GetTransform().location.Distance(location);
+carla::geom::Location SimpleWaypoint::getLocation() {
+    return this->waypoint->GetTransform().location;
 }
 
 carla::geom::Vector3D SimpleWaypoint::getVector(){
@@ -35,6 +27,18 @@ std::vector<float> SimpleWaypoint::getXYZ(){
     float z = waypoint->GetTransform().location.z;
     std::vector<float> coordinates = {x,y,z};
     return coordinates;
+}
+
+int SimpleWaypoint::setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> waypoints) {
+    this->next_waypoints.insert(
+        std::end(this->next_waypoints),
+        std::begin(waypoints),
+        std::end(waypoints));
+    return waypoints.size();
+}
+
+float SimpleWaypoint::distance(carla::geom::Location location) {
+    return this->waypoint->GetTransform().location.Distance(location);
 }
 
 } // namespace traffic_manager

@@ -43,25 +43,6 @@ int main()
     return 0;
 }
 
-void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
-    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
-    auto topology = dao.getTopology();
-    traffic_manager::InMemoryMap local_map(topology);
-    std::cout << "setup starting" << std::endl;
-    local_map.setUp(1.0);
-    std::cout << "setup complete" << std::endl;
-    int loose_ends_count = 0;
-    auto dense_topology = local_map.get_dense_topology();
-    for (auto& swp : dense_topology) {
-        if (swp->getNextWaypoint().size() < 1) {
-            loose_ends_count += 1;
-            auto xyz = swp->getXYZ();
-            // std::cout << "x, y : " << xyz[0] << " " << xyz[1] << std::endl;
-        }
-    }
-    std::cout << "Number of loose ends : " << loose_ends_count << std::endl;
-}
-
 void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map)
 {
 
@@ -78,9 +59,9 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
    
     auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
     auto topology = dao.getTopology();
-    traffic_manager::InMemoryMap local_map(topology);
-    local_map.setUp(1.0);
-    shared_data.local_map = &local_map;
+    auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
+    local_map->setUp(1.0);
+    shared_data.local_map = local_map;
 
     traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
@@ -99,13 +80,31 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
     sleep(1);
     std::cout << "Localization queue size : " << localization_queue.size() << std::endl;
     
-    while(true)
-    {
-        auto out = localization_queue.pop();
-        std::cout << "Velocity : "
-            << out.getAttribute("velocity")
-            << "\t Deviation" << out.getAttribute("deviation") << std::endl;
+    // while(true)
+    // {
+    //     auto out = localization_queue.pop();
+    //     std::cout << "Velocity : "
+    //         << out.getAttribute("velocity")
+    //         << "\t Deviation" << out.getAttribute("deviation") << std::endl;
+    // }
+}
+
+void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+    traffic_manager::InMemoryMap local_map(topology);
+
+    std::cout << "setup starting" << std::endl;
+    local_map.setUp(1.0);
+    std::cout << "setup complete" << std::endl;
+    int loose_ends_count = 0;
+    auto dense_topology = local_map.get_dense_topology();
+    for (auto& swp : dense_topology) {
+        if (swp->getNextWaypoint().size() < 1) {
+            loose_ends_count += 1;
+        }
     }
+    std::cout << "Number of loose ends : " << loose_ends_count << std::endl;
 }
 
 void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list)

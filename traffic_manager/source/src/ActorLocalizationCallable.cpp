@@ -39,14 +39,16 @@ namespace traffic_manager
             {   
                 shared_data->buffer_map[actor_id].push(closest_waypoint);
                 closest_waypoint = closest_waypoint->getNextWaypoint()[0];
+                shared_data->buffer_map[actor_id].front()->getXYZ();
+                std::cout <<"Able to getXYZ in while" << std::endl;
             }
         }
 
         PipelineMessage out_message;
         float dot_product = nearestDotProduct(shared_data, &message);
-        // float cross_product = nearestCrossProduct(shared_data, &message);
-        // if(cross_product < 0)
-        //     dot_product *= -1;
+        float cross_product = nearestCrossProduct(shared_data, &message);
+        if(cross_product < 0)
+            dot_product *= -1;
         out_message.setAttribute("velocity", message.getAttribute("velocity"));
         out_message.setAttribute("deviation", dot_product);
 
