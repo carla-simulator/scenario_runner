@@ -10,72 +10,45 @@ InMemoryMap::InMemoryMap(traffic_manager::TopologyList topology) {
 }
 InMemoryMap::~InMemoryMap(){}
 
-long InMemoryMap::make_node_key(carla::SharedPtr<carla::client::Waypoint> waypooint) {
-    auto current_location = waypooint->GetTransform().location;
-    int rounded_x = (int) std::round(abs(current_location.x) * 100);
-    int rounded_y = (int) std::round(abs(current_location.y) * 100);
-    return rounded_x*rounded_y;
-}
-
 void InMemoryMap::setUp(int sampling_resolution){
-    std::cout << "Size of rare topology : " << this->topology.size() << std::endl;
-    for(auto const &pair : this->topology) {
+    // Creating dense topology
+    for(auto &pair : this->topology) {
         // Looping through every topology segment
         auto begin_waypoint = pair.first;
         auto end_waypoint = pair.second;
+
+        // Adding entry waypoint
         auto current_waypoint = begin_waypoint;
-
-        auto begin_node_key = this->make_node_key(begin_waypoint);
-        auto end_node_key = this->make_node_key(end_waypoint);
-
-        // Checking previous entry for begin_waypoint
-        if(this->entry_node_map.find(begin_node_key) == this->entry_node_map.end()) {
-            this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(begin_waypoint));
-            this->entry_node_map.insert(NodeEntry(begin_node_key, this->dense_topology.back()));
-        }
-        auto entry_node_ptr = this->entry_node_map[begin_node_key];
-        // Cross segment linking for previous occurance of begin_waypoint in exit_node_map
-        if(this->exit_node_map.find(begin_node_key) == this->exit_node_map.end());
-        else {
-            auto exit_node_ptr = this->exit_node_map[begin_node_key];
-            exit_node_ptr->setNextWaypoint({entry_node_ptr});
-        }
+        this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(current_waypoint));
+        this->entry_node_list.push_back(this->dense_topology.back());
 
         // Populating waypoints from begin_waypoint to end_waypoint
-        this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(current_waypoint));
-        entry_node_ptr->setNextWaypoint({this->dense_topology.back()});
-        while (
-            current_waypoint->GetTransform().location.Distance(
+        while (current_waypoint->GetTransform().location.Distance(
                 end_waypoint->GetTransform().location) > sampling_resolution) {
+
             current_waypoint = current_waypoint->GetNext(sampling_resolution)[0];
             auto previous_wp = this->dense_topology.back();
             this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(current_waypoint));
             previous_wp->setNextWaypoint({this->dense_topology.back()});
         }
 
-        // Checking previous entry for end_waypoint
-        if(this->exit_node_map.find(end_node_key) == this->exit_node_map.end()){
-            auto previous_wp = this->dense_topology.back();
-            this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(end_waypoint));
-            previous_wp->setNextWaypoint({this->dense_topology.back()});
-            this->exit_node_map.insert(NodeEntry(end_node_key, this->dense_topology.back()));
-        }
-        // Cross segment linking for previous occurance of end_waypoint in entry_node_map
-        auto exit_node_ptr = this->exit_node_map[end_node_key];
-        if(this->entry_node_map.find(end_node_key) == this->entry_node_map.end());
-        else {
-            auto entry_node_ptr = this->entry_node_map[end_node_key];
-            exit_node_ptr->setNextWaypoint({entry_node_ptr});
-        }
+        // Adding exit waypoint
+        auto previous_wp = this->dense_topology.back();
+        this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(end_waypoint));
+        previous_wp->setNextWaypoint({this->dense_topology.back()});
+        this->exit_node_list.push_back(this->dense_topology.back());
+    }
 
-        // Linking beginining to end for short segments
-        if (current_waypoint->GetTransform().location.Distance(
-            end_waypoint->GetTransform().location) < sampling_resolution) {
-            entry_node_ptr->setNextWaypoint({exit_node_ptr});
+    // Linking segments
+    for (auto end_point : this->exit_node_list) {
+        for (auto begin_point : this->entry_node_list) {
+            if (end_point->distance(begin_point->getLocation()) < 0.01) {
+                end_point->setNextWaypoint({begin_point});
+            }
         }
     }
-    std::cout << "Entry map size : " << this->entry_node_map.size() << std::endl;
-    std::cout << "Exit map size : " << this->exit_node_map.size() << std::endl;
+
+
 }
 
 std::shared_ptr<SimpleWaypoint> InMemoryMap::getWaypoint(carla::geom::Location location) {
@@ -89,8 +62,6 @@ std::shared_ptr<SimpleWaypoint> InMemoryMap::getWaypoint(carla::geom::Location l
             closest_waypoint = simple_waypoint;
         }
     }
-    std::cout << "Closest waypoint distance : " << min_distance << std::endl;
-
     return closest_waypoint;
 }
 
