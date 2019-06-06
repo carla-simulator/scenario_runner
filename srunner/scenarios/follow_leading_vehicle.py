@@ -39,12 +39,14 @@ class FollowLeadingVehicle(BasicScenario):
     """
     This class holds everything required for a simple "Follow a leading vehicle"
     scenario involving two vehicles.  (Traffic Scenario 2)
+
+    This is a single ego vehicle scenario
     """
     category = "FollowLeadingVehicle"
 
     timeout = 120            # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
         Setup all relevant parameters and create scenario
@@ -55,7 +57,7 @@ class FollowLeadingVehicle(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 25
         self._first_vehicle_speed = 40
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._other_actor_max_brake = 1.0
         self._other_actor_stop_in_front_intersection = 20
         self._other_actor_transform = None
@@ -63,7 +65,7 @@ class FollowLeadingVehicle(BasicScenario):
         self.timeout = timeout
 
         super(FollowLeadingVehicle, self).__init__("FollowVehicle",
-                                                   ego_vehicle,
+                                                   ego_vehicles,
                                                    config,
                                                    world,
                                                    debug_mode,
@@ -74,7 +76,7 @@ class FollowLeadingVehicle(BasicScenario):
 
             # Example code how to randomize start location
             # distance = random.randint(20, 80)
-            # new_location, _ = get_location_in_distance(self.ego_vehicle, distance)
+            # new_location, _ = get_location_in_distance(self.ego_vehicles[0], distance)
             # waypoint = CarlaDataProvider.get_map().get_waypoint(new_location)
             # waypoint.transform.location.z += 39
             # self.other_actors[0].set_transform(waypoint.transform)
@@ -129,10 +131,10 @@ class FollowLeadingVehicle(BasicScenario):
         endcondition = py_trees.composites.Parallel("Waiting for end position",
                                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
         endcondition_part1 = InTriggerDistanceToVehicle(self.other_actors[0],
-                                                        self.ego_vehicle,
+                                                        self.ego_vehicles[0],
                                                         distance=20,
                                                         name="FinalDistance")
-        endcondition_part2 = StandStill(self.ego_vehicle, name="StandStill")
+        endcondition_part2 = StandStill(self.ego_vehicles[0], name="StandStill")
         endcondition.add_child(endcondition_part1)
         endcondition.add_child(endcondition_part2)
 
@@ -153,7 +155,7 @@ class FollowLeadingVehicle(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
 
         criteria.append(collision_criterion)
 
@@ -171,12 +173,14 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
     """
     This class holds a scenario similar to FollowLeadingVehicle
     but there is an obstacle in front of the leading vehicle
+
+    This is a single ego vehicle scenario
     """
     category = "FollowLeadingVehicle"
 
     timeout = 120            # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
@@ -185,13 +189,13 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         self._second_actor_location = self._first_actor_location + 41
         self._first_actor_speed = 40
         self._second_actor_speed = 5
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._other_actor_max_brake = 1.0
         self._first_actor_transform = None
         self._second_actor_transform = None
 
         super(FollowLeadingVehicleWithObstacle, self).__init__("FollowLeadingVehicleWithObstacle",
-                                                               ego_vehicle,
+                                                               ego_vehicles,
                                                                config,
                                                                world,
                                                                debug_mode,
@@ -272,10 +276,10 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         endcondition = py_trees.composites.Parallel("Waiting for end position",
                                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
         endcondition_part1 = InTriggerDistanceToVehicle(self.other_actors[0],
-                                                        self.ego_vehicle,
+                                                        self.ego_vehicles[0],
                                                         distance=20,
                                                         name="FinalDistance")
-        endcondition_part2 = StandStill(self.ego_vehicle, name="FinalSpeed")
+        endcondition_part2 = StandStill(self.ego_vehicles[0], name="FinalSpeed")
         endcondition.add_child(endcondition_part1)
         endcondition.add_child(endcondition_part2)
 
@@ -302,7 +306,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
 
         criteria.append(collision_criterion)
 

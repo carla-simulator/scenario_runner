@@ -30,11 +30,13 @@ class ControlLoss(BasicScenario):
 
     """
     Implementation of "Control Loss Vehicle" (Traffic Scenario 01)
+
+    This is a single ego vehicle scenario
     """
 
     category = "ControlLoss"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
         Setup all relevant parameters and create scenario
@@ -62,7 +64,7 @@ class ControlLoss(BasicScenario):
         self.loc_list = []
         self.obj = []
         super(ControlLoss, self).__init__("ControlLoss",
-                                          ego_vehicle,
+                                          ego_vehicles,
                                           config,
                                           world,
                                           debug_mode,
@@ -125,7 +127,7 @@ class ControlLoss(BasicScenario):
         # start condition
         start_end_parallel = py_trees.composites.Parallel("Jitter",
                                                           policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicles[0], self.first_loc_prev, self._trigger_dist)
         for _ in range(self._no_of_jitter):
 
             # change the current noise to be applied
@@ -139,9 +141,9 @@ class ControlLoss(BasicScenario):
         jitter_action = py_trees.composites.Parallel("Jitter",
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         # Abort jitter_sequence, if the vehicle is approaching an intersection
-        jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
+        jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicles[0], self._abort_distance_to_intersection)
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
-        end_condition = DriveDistance(self.ego_vehicle, self._end_distance)
+        end_condition = DriveDistance(self.ego_vehicles[0], self._end_distance)
         start_end_parallel.add_child(start_condition)
         start_end_parallel.add_child(end_condition)
 
@@ -152,9 +154,9 @@ class ControlLoss(BasicScenario):
         sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform, physics=False))
         jitter = py_trees.composites.Sequence("Jitter Behavior")
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.sec_loc_prev, self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], self.sec_loc_prev, self._trigger_dist))
         jitter.add_child(turn)
-        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.third_loc_prev, self._trigger_dist))
+        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], self.third_loc_prev, self._trigger_dist))
         jitter.add_child(turn)
         jitter_action.add_child(jitter)
         jitter_action.add_child(jitter_abort)
@@ -171,7 +173,7 @@ class ControlLoss(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
         criteria.append(collision_criterion)
 
         return criteria

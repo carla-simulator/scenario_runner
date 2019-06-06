@@ -29,11 +29,13 @@ class ManeuverOppositeDirection(BasicScenario):
 
     """
     "Vehicle Maneuvering In Opposite Direction" (Traffic Scenario 06)
+
+    This is a single ego vehicle scenario
     """
 
     category = "ManeuverOppositeDirection"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  obstacle_type='barrier', timeout=120):
         """
         Setup all relevant parameters and create scenario
@@ -61,7 +63,7 @@ class ManeuverOppositeDirection(BasicScenario):
 
         super(ManeuverOppositeDirection, self).__init__(
             "ManeuverOppositeDirection",
-            ego_vehicle,
+            ego_vehicles,
             config,
             world,
             debug_mode,
@@ -124,7 +126,7 @@ class ManeuverOppositeDirection(BasicScenario):
             self._world, ['vehicle.audi.tt', 'vehicle.tesla.model3', 'vehicle.nissan.micra'],
             self._source_transform, self._source_gap, self._blackboard_queue_name)
         actor_sink = ActorSink(self._world, self._sink_location, 10)
-        ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
+        ego_drive_distance = DriveDistance(self.ego_vehicles[0], self._ego_vehicle_drive_distance)
         waypoint_follower = WaypointFollower(
             self.other_actors[1], self._opposite_speed,
             blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
@@ -156,7 +158,7 @@ class ManeuverOppositeDirection(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
         criteria.append(collision_criterion)
 
         return criteria

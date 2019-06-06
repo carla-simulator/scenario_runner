@@ -37,6 +37,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     in which an other vehicle takes priority from the ego
     vehicle, by running a red traffic light (while the ego
     vehicle has green) (Traffic Scenario 7)
+
+    This is a single ego vehicle scenario
     """
 
     category = "RunningRedLight"
@@ -55,7 +57,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     _traffic_light = None
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
         """
         Setup all relevant parameters and create scenario
@@ -68,13 +70,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self.timeout = timeout
 
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
-                                                             ego_vehicle,
+                                                             ego_vehicles,
                                                              config,
                                                              world,
                                                              debug_mode,
                                                              criteria_enable=criteria_enable)
 
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicles[0], False)
 
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
@@ -117,11 +119,11 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         If this does not happen within 120 seconds, a timeout stops the scenario
         """
-        crossing_point_dynamic = get_crossing_point(self.ego_vehicle)
+        crossing_point_dynamic = get_crossing_point(self.ego_vehicles[0])
 
         # start condition
         startcondition = InTriggerDistanceToLocation(
-            self.ego_vehicle,
+            self.ego_vehicles[0],
             crossing_point_dynamic,
             self._ego_distance_to_traffic_light,
             name="Waiting for start position")
@@ -130,10 +132,10 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             "Synchronize arrival times",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
+        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicles[0], self.other_actors[0])
 
         sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
+            self.other_actors[0], self.ego_vehicles[0], location_of_collision_dynamic)
         sync_arrival_stop = InTriggerDistanceToNextIntersection(self.other_actors[0],
                                                                 5)
         sync_arrival_parallel.add_child(sync_arrival)
@@ -174,7 +176,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # finally wait that ego vehicle drove a specific distance
         wait = DriveDistance(
-            self.ego_vehicle,
+            self.ego_vehicles[0],
             self._ego_distance_to_drive,
             name="DriveDistance")
 
@@ -197,12 +199,12 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         criteria = []
 
         max_velocity_criterion = MaxVelocityTest(
-            self.ego_vehicle,
+            self.ego_vehicles[0],
             self._ego_max_velocity_allowed,
             optional=True)
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
         driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle,
+            self.ego_vehicles[0],
             self._ego_expected_driven_distance)
 
         criteria.append(max_velocity_criterion)

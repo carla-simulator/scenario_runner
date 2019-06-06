@@ -347,6 +347,8 @@ class CarlaDataProvider(object):
     def set_ego_vehicle_route(route):
         """
         Set the route of the ego vehicle
+
+        @todo extend ego_vehicle_route concept to support multi ego_vehicle scenarios
         """
         CarlaDataProvider._ego_vehicle_route = route
 
@@ -424,7 +426,7 @@ class CarlaActorPool(object):
         CarlaActorPool._spawn_index = 0
 
     @staticmethod
-    def setup_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
+    def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False):
         """
         Function to setup the most relevant actor parameters,
         incl. spawn point and vehicle model.
@@ -440,7 +442,7 @@ class CarlaActorPool(object):
             blueprint.set_attribute('is_invincible', 'false')
 
         if hero:
-            blueprint.set_attribute('role_name', 'hero')
+            blueprint.set_attribute('role_name', rolename)
         elif autopilot:
             blueprint.set_attribute('role_name', 'autopilot')
         else:

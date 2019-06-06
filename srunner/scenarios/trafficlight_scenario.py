@@ -20,11 +20,13 @@ class TrafficLightScenario(BasicScenario):
     This scenario controls traffic lights at intersection to create interesting situations, e.g.:
       - vehicles running red lights
       - yielding to traffic
+
+    This is a single ego vehicle scenario
     """
 
     category = "TrafficLightScenario"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, timeout=35 * 60):
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, timeout=35 * 60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -34,7 +36,7 @@ class TrafficLightScenario(BasicScenario):
         self.timeout = timeout  # Timeout of scenario in seconds
 
         super(TrafficLightScenario, self).__init__("TrafficLightScenario",
-                                                   ego_vehicle,
+                                                   ego_vehicles,
                                                    config,
                                                    world,
                                                    debug_mode,
@@ -48,7 +50,7 @@ class TrafficLightScenario(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        traffic_manipulator = TrafficLightManipulator(self.ego_vehicle, debug=self.debug)
+        traffic_manipulator = TrafficLightManipulator(self.ego_vehicles[0], debug=self.debug)
         sequence.add_child(traffic_manipulator)
 
         return sequence

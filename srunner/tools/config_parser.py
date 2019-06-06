@@ -67,8 +67,9 @@ class ActorConfigurationData(object):
     This is a configuration base class to hold model and transform attributes
     """
 
-    def __init__(self, model, transform, autopilot=False, random=False, amount=1):
+    def __init__(self, model, transform, rolename='other', autopilot=False, random=False, amount=1):
         self.model = model
+        self.rolename = rolename
         self.transform = transform
         self.autopilot = autopilot
         self.random_location = random
@@ -106,6 +107,7 @@ class ActorConfiguration(ActorConfigurationData):
         super(ActorConfiguration, self).__init__(set_attrib(node, 'model', 'vehicle.*'),
                                                  carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z),
                                                  carla.Rotation(yaw=yaw)),
+                                                 set_attrib(node, 'rolename', 'other'),
                                                  autopilot, random_location, amount)
 
 
@@ -119,8 +121,8 @@ class ScenarioConfiguration(object):
     - type is the class of scenario (e.g. ControlLoss)
     """
 
-    trigger_point = None
-    ego_vehicle = None
+    trigger_points = []
+    ego_vehicles = []
     other_actors = []
     town = None
     name = None
@@ -163,10 +165,12 @@ def parse_scenario_configuration(scenario_config_file, scenario_name):
         new_config.name = set_attrib(scenario, 'name', None)
         new_config.type = set_attrib(scenario, 'type', None)
         new_config.other_actors = []
+        new_config.ego_vehicles = []
+        new_config.trigger_points = []
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
-            new_config.ego_vehicle = ActorConfiguration(ego_vehicle)
-            new_config.trigger_point = new_config.ego_vehicle.transform
+            new_config.ego_vehicles.append(ActorConfiguration(ego_vehicle))
+            new_config.trigger_points.append(new_config.ego_vehicles[-1].transform)
 
         for target in scenario.iter("target"):
             new_config.target = TargetConfiguration(target)

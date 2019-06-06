@@ -183,15 +183,15 @@ class ChallengeEvaluator(object):
 
         if phase_codename == 'dev':
             split_name = 'dev_split'
-            self.routes = '{}/srunner/challenge/routes_devtest.xml'.format(scenario_runner_root)
+            self.routes =  '{}/srunner/challenge/routes_devtest.xml'.format(scenario_runner_root)
             repetitions = 1
         elif phase_codename == 'validation':
             split_name = 'val_split'
-            self.routes = '{}/srunner/challenge/routes_testprep.xml'.format(scenario_runner_root)
+            self.routes =  '{}/srunner/challenge/routes_testprep.xml'.format(scenario_runner_root)
             repetitions = 3
         elif phase_codename == 'test':
             split_name = 'test_split'
-            self.routes = '{}/srunner/challenge/routes_testchallenge.xml'.format(scenario_runner_root)
+            self.routes =  '{}/srunner/challenge/routes_testchallenge.xml'.format(scenario_runner_root)
             repetitions = 3
         else:
             # debug mode
@@ -252,6 +252,7 @@ class ChallengeEvaluator(object):
         # debugging parameters
         self.route_visible = self.debug > 0
 
+
     def within_available_time(self):
         current_time = datetime.datetime.now()
         elapsed_seconds = (current_time - self.start_wall_time).seconds
@@ -279,6 +280,7 @@ class ChallengeEvaluator(object):
 
         CarlaActorPool.cleanup()
         CarlaDataProvider.cleanup()
+
 
         if ego and self.ego_vehicle is not None:
             self.ego_vehicle.destroy()
@@ -340,7 +342,7 @@ class ChallengeEvaluator(object):
 
             for position in range(start, end):
                 self.world.debug.draw_point(waypoints[position][0].location + carla.Location(z=vertical_shift),
-                                            size=0.2, color=color, life_time=persistency)
+                                       size=0.2, color=color, life_time=persistency)
 
         self.world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=0.2,
                                     color=carla.Color(0, 0, 255), life_time=persistency)
@@ -485,16 +487,17 @@ class ChallengeEvaluator(object):
         master_scenario_configuration.town = town_name
         # TODO THIS NAME IS BIT WEIRD SINCE THE EGO VEHICLE  IS ALREADY THERE, IT IS MORE ABOUT THE TRANSFORM
         master_scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
-                                                                           self.ego_vehicle.get_transform())
-        master_scenario_configuration.trigger_point = self.ego_vehicle.get_transform()
+                                                                           self.ego_vehicle.get_transform(),
+                                                                           'hero')
+        master_scenario_configuration.trigger_points = [self.ego_vehicle.get_transform()]
         CarlaDataProvider.register_actor(self.ego_vehicle)
 
         # Provide an initial blackboard entry to ensure all scenarios are running correctly
         blackboard = py_trees.blackboard.Blackboard()
         blackboard.set('master_scenario_command', 'scenarios_running')
 
-        return MasterScenario(self.world, self.ego_vehicle, master_scenario_configuration,
-                              timeout=timeout, debug_mode=self.debug > 1)
+        return MasterScenario(self.world, [self.ego_vehicle], master_scenario_configuration,
+                              timeout=timeout, debug_mode=self.debug>1)
 
     def build_background_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
@@ -503,6 +506,7 @@ class ChallengeEvaluator(object):
 
         model = 'vehicle.*'
         transform = carla.Transform()
+        rolename = 'background'
         autopilot = True
         random = True
 
@@ -521,19 +525,19 @@ class ChallengeEvaluator(object):
         else:
             amount = 1
 
-        actor_configuration_instance = ActorConfigurationData(model, transform, autopilot, random, amount)
+        actor_configuration_instance = ActorConfigurationData(model, transform, rolename, autopilot, random, amount)
         scenario_configuration.other_actors = [actor_configuration_instance]
 
-        return BackgroundActivity(self.world, self.ego_vehicle, scenario_configuration,
-                                  timeout=timeout, debug_mode=self.debug > 1)
+        return BackgroundActivity(self.world, [self.ego_vehicle], scenario_configuration,
+                                  timeout=timeout, debug_mode=self.debug>1)
 
     def build_trafficlight_scenario(self, town_name, timeout=300):
         scenario_configuration = ScenarioConfiguration()
         scenario_configuration.route = None
         scenario_configuration.town = town_name
 
-        return TrafficLightScenario(self.world, self.ego_vehicle, scenario_configuration,
-                                    timeout=timeout, debug_mode=self.debug > 1)
+        return TrafficLightScenario(self.world, [self.ego_vehicle], scenario_configuration,
+                                    timeout=timeout, debug_mode=self.debug>1)
 
     def build_scenario_instances(self, scenario_definition_vec, town_name, timeout=300):
         """
@@ -561,11 +565,12 @@ class ChallengeEvaluator(object):
             scenario_configuration = ScenarioConfiguration()
             scenario_configuration.other_actors = list_of_actor_conf_instances
             scenario_configuration.town = town_name
-            scenario_configuration.trigger_point = egoactor_trigger_position
-            scenario_configuration.ego_vehicle = ActorConfigurationData('vehicle.lincoln.mkz2017',
-                                                                        self.ego_vehicle.get_transform())
+            scenario_configuration.trigger_points = [egoactor_trigger_position]
+            scenario_configuration.ego_vehicles = [ActorConfigurationData('vehicle.lincoln.mkz2017',
+                                                                          self.ego_vehicle.get_transform(),
+                                                                          'hero')]
             try:
-                scenario_instance = ScenarioClass(self.world, self.ego_vehicle, scenario_configuration,
+                scenario_instance = ScenarioClass(self.world, [self.ego_vehicle], scenario_configuration,
                                                   criteria_enable=False, timeout=timeout)
             except Exception as e:
                 if self.debug > 1:
@@ -642,6 +647,7 @@ class ChallengeEvaluator(object):
                                              draw_shadow=False, color=carla.Color(255, 255, 255),
                                              life_time=0.01)
 
+
             if self.route_visible:
                 turn_positions_and_labels = clean_route(trajectory)
                 self.draw_waypoints(trajectory, turn_positions_and_labels,
@@ -658,14 +664,15 @@ class ChallengeEvaluator(object):
                 except Exception:
                     attempts += 1
                     print('======[WARNING] The server is frozen [{}/{} attempts]!!'.format(attempts,
-                                                                                           self.MAX_CONNECTION_ATTEMPTS))
+                                                                                       self.MAX_CONNECTION_ATTEMPTS))
                     time.sleep(2.0)
                     continue
+
 
             # check for scenario termination
             for i, _ in enumerate(self.list_scenarios):
 
-                if self.debug == 1:
+                if self.debug==1:
                     behavior = self.list_scenarios[i].scenario.scenario_tree.children[0]
                     if behavior.tip():
                         print("{} {} {} {}".format(self.list_scenarios[i].scenario.scenario_tree.name,
@@ -676,8 +683,8 @@ class ChallengeEvaluator(object):
                         "InTriggerDistanceToLocationAlongRoute" and self.list_scenarios[
                         i].scenario.scenario_tree.name != "MasterScenario" and
                         self.list_scenarios[i].scenario.scenario_tree.name != "BackgroundActivity" and
-                            self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
-                        pass  # TODO: find a fix for this ascii bug
+                        self.list_scenarios[i].scenario.scenario_tree.name != "TrafficLightScenario"):
+                        pass # TODO: find a fix for this ascii bug
                         # py_trees.display.print_ascii_tree(self.list_scenarios[i].scenario.scenario_tree, 2, True)
 
                     # The scenario status can be: INVALID, RUNNING, SUCCESS, FAILURE. Only the last two
@@ -689,6 +696,7 @@ class ChallengeEvaluator(object):
                     self.list_scenarios[i].remove_all_actors()
                     self.list_scenarios[i] = None
             self.list_scenarios[:] = [scenario for scenario in self.list_scenarios if scenario]
+
 
         # Route finished set for the background scenario to also finish
         blackboard = py_trees.blackboard.Blackboard()
@@ -708,6 +716,7 @@ class ChallengeEvaluator(object):
 
         return_message = error_message
         return_message += "\n=================================="
+
 
         current_statistics = {'id': -1,
                               'score_composed': score_composed,
@@ -827,6 +836,7 @@ class ChallengeEvaluator(object):
 
         return score_composed, score_route, score_penalty
 
+
     def record_route_statistics_default(self, route_id):
         """
           This function is intended to be called from outside and provide
@@ -921,9 +931,9 @@ class ChallengeEvaluator(object):
 
         return_message += "\n=================================="
         return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(route_id, result,
-                                                                                                     score_composed,
-                                                                                                     score_route,
-                                                                                                     score_penalty)
+                                                                                                 score_composed,
+                                                                                                 score_route,
+                                                                                                 score_penalty)
         if list_collisions:
             return_message += "\n===== Collisions:"
             for item in list_collisions:
@@ -978,6 +988,7 @@ class ChallengeEvaluator(object):
             for stats in self.statistics_routes:
                 help_message += "{}\n\n".format(stats['help_text'])
 
+
         else:
             submission_status = 'FINISHED'
 
@@ -993,7 +1004,7 @@ class ChallengeEvaluator(object):
         # create json structure
         json_data = {
             'submission_status': submission_status,
-            'stderr': help_message if self.phase == 'dev' or self.phase == 'debug' else 'No metadata provided for '
+            'stderr': help_message if self.phase == 'dev' or  self.phase == 'debug' else 'No metadata provided for '
                                                                                          'this phase',
             'result': [
                 {
@@ -1149,9 +1160,9 @@ class ChallengeEvaluator(object):
 
         self.background_scenario = self.build_background_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
-
+        
         self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
-                                                                       timeout=route_timeout)
+                                                                  timeout=route_timeout)
 
         self.list_scenarios = [self.master_scenario, self.background_scenario, self.traffic_light_scenario]
         # build the instance based on the parsed definitions.
@@ -1323,6 +1334,7 @@ if __name__ == '__main__':
     if not ROOT_SCENARIO_RUNNER:
         print("Error. ROOT_SCENARIO_RUNNER not found. Please run setup_environment.sh first.")
         sys.exit(0)
+
 
     if ARGUMENTS.scenarios is None:
         print("Please specify a path to a scenario specification file  '--scenarios path-to-file'\n\n")
