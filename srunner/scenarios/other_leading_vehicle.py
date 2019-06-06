@@ -38,10 +38,12 @@ class OtherLeadingVehicle(BasicScenario):
     This class holds everything required for a simple "Other Leading Vehicle"
     scenario involving a user controlled vehicle and two other actors.
     Traffic Scenario 05
+
+    This is a single ego vehicle scenario
     """
     category = "OtherLeadingVehicle"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
         """
         Setup all relevant parameters and create scenario
@@ -61,7 +63,7 @@ class OtherLeadingVehicle(BasicScenario):
         self.timeout = timeout
 
         super(OtherLeadingVehicle, self).__init__("VehicleDeceleratingInMultiLaneSetUp",
-                                                  ego_vehicle,
+                                                  ego_vehicles,
                                                   config,
                                                   world,
                                                   debug_mode,
@@ -108,7 +110,7 @@ class OtherLeadingVehicle(BasicScenario):
         keep_velocity = py_trees.composites.Parallel("Trigger condition for deceleration",
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         keep_velocity.add_child(WaypointFollower(self.other_actors[0], self._first_vehicle_speed, avoid_collision=True))
-        keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 55))
+        keep_velocity.add_child(InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 55))
 
         # Decelerating actor sequence behavior
         decelerate = self._first_vehicle_speed / 3.2
@@ -116,7 +118,7 @@ class OtherLeadingVehicle(BasicScenario):
         leading_actor_sequence_behavior.add_child(WaypointFollower(self.other_actors[0], decelerate,
                                                                    avoid_collision=True))
         # end condition
-        ego_drive_distance = DriveDistance(self.ego_vehicle, self._ego_vehicle_drive_distance)
+        ego_drive_distance = DriveDistance(self.ego_vehicles[0], self._ego_vehicle_drive_distance)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Scenario behavior")
@@ -143,7 +145,7 @@ class OtherLeadingVehicle(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
         criteria.append(collision_criterion)
 
         return criteria

@@ -21,11 +21,13 @@ class BackgroundActivity(BasicScenario):
 
     """
     Implementation of a dummy scenario
+
+    This is a single ego vehicle scenario
     """
 
     category = "BackgroundActivity"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, timeout=35 * 60):
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, timeout=35 * 60):
         """
         Setup all relevant parameters and create scenario
         """
@@ -35,7 +37,7 @@ class BackgroundActivity(BasicScenario):
         self.timeout = timeout  # Timeout of scenario in seconds
 
         super(BackgroundActivity, self).__init__("BackgroundActivity",
-                                                 ego_vehicle,
+                                                 ego_vehicles,
                                                  config,
                                                  world,
                                                  debug_mode,
@@ -63,7 +65,7 @@ class BackgroundActivity(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        check_jam = TrafficJamChecker(self.ego_vehicle, debug=self.debug)
+        check_jam = TrafficJamChecker(self.ego_vehicles[0], debug=self.debug)
         sequence.add_child(check_jam)
 
         return sequence

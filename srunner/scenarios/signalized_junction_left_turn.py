@@ -33,12 +33,14 @@ class SignalizedJunctionLeftTurn(BasicScenario):
     Implementation class for Hero
     Vehicle turning left at signalized junction scenario,
     Traffic Scenario 08.
+
+    This is a single ego vehicle scenario
     """
     category = "SignalizedJunctionLeftTurn"
 
     timeout = 80  # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
         """
         Setup all relevant parameters and create scenario
@@ -55,13 +57,13 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._queue = Blackboard().set(self._blackboard_queue_name, Queue())
         self._initialized = True
         super(SignalizedJunctionLeftTurn, self).__init__("TurnLeftAtSignalizedJunction",
-                                                         ego_vehicle,
+                                                         ego_vehicles,
                                                          config,
                                                          world,
                                                          debug_mode,
                                                          criteria_enable=criteria_enable)
 
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicles[0], False)
         traffic_light_other = CarlaDataProvider.get_next_traffic_light(self.other_actors[0], False)
         if self._traffic_light is None or traffic_light_other is None:
             raise RuntimeError("No traffic light for the given location found")
@@ -119,7 +121,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         move_actor = WaypointFollower(self.other_actors[0], self._target_vel, plan=plan,
                                       blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
         # wait
-        wait = DriveDistance(self.ego_vehicle, self._ego_distance)
+        wait = DriveDistance(self.ego_vehicles[0], self._ego_distance)
 
         # Behavior tree
         root = py_trees.composites.Parallel(
@@ -142,7 +144,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         """
         criteria = []
 
-        collison_criteria = CollisionTest(self.ego_vehicle)
+        collison_criteria = CollisionTest(self.ego_vehicles[0])
         criteria.append(collison_criteria)
 
         return criteria

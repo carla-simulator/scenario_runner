@@ -112,7 +112,7 @@ class ScenarioManager(object):
         self.scenario = None
         self.scenario_tree = None
         self.scenario_class = None
-        self.ego_vehicle = None
+        self.ego_vehicles = None
         self.other_actors = None
 
         self._debug_mode = debug_mode
@@ -137,10 +137,10 @@ class ScenarioManager(object):
         self.scenario_class = scenario
         self.scenario = scenario.scenario
         self.scenario_tree = self.scenario.scenario_tree
-        self.ego_vehicle = scenario.ego_vehicle
+        self.ego_vehicles = scenario.ego_vehicles
         self.other_actors = scenario.other_actors
 
-        CarlaDataProvider.register_actor(self.ego_vehicle)
+        CarlaDataProvider.register_actors(self.ego_vehicles)
         CarlaDataProvider.register_actors(self.other_actors)
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
@@ -157,11 +157,10 @@ class ScenarioManager(object):
         self.end_system_time = None
         GameTime.restart()
 
-    def run_scenario(self, agent=None):
+    def run_scenario(self):
         """
         Trigger the start of the scenario and wait for it to finish/fail
         """
-        self.agent = agent
         print("ScenarioManager: Running scenario {}".format(self.scenario_tree.name))
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
@@ -205,12 +204,6 @@ class ScenarioManager(object):
 
                 # Tick scenario
                 self.scenario_tree.tick_once()
-
-                if self.agent:
-                    # Invoke agent
-                    action = self.agent()
-                    action = self.scenario_class.change_control(action)
-                    self.ego_vehicle.apply_control(action)
 
                 if self._debug_mode:
                     print("\n")

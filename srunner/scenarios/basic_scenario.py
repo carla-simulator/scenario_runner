@@ -25,7 +25,7 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
-    def __init__(self, name, ego_vehicle, config, world,
+    def __init__(self, name, ego_vehicles, config, world,
                  debug_mode=False, terminate_on_failure=False, criteria_enable=False):
         """
         Setup all relevant parameters and create scenario
@@ -42,7 +42,7 @@ class BasicScenario(object):
         self._town = config.town
         self._check_town(world)
 
-        self.ego_vehicle = ego_vehicle
+        self.ego_vehicles = ego_vehicles
         self.name = name
         self.terminate_on_failure = terminate_on_failure
 
@@ -64,24 +64,10 @@ class BasicScenario(object):
             criteria = self._create_test_criteria()
 
         # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
-
-        start_location = None
-        if config.trigger_point:
-            start_location = config.trigger_point.location     # start location of the scenario
-
-        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
-
         behavior_seq = py_trees.composites.Sequence()
-        if start_location:
-            if ego_vehicle_route:
-                behavior_seq.add_child(InTriggerDistanceToLocationAlongRoute(self.ego_vehicle,
-                                                                             ego_vehicle_route,
-                                                                             start_location,
-                                                                             5))
-            else:
-                behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle,
-                                                                 2.0,
-                                                                 start_location))
+        trigger_behavior = self._setup_scenario_trigger(config)
+        if trigger_behavior:
+            behavior_seq.add_child(trigger_behavior)
 
         behavior_seq.add_child(behavior)
 
@@ -102,6 +88,32 @@ class BasicScenario(object):
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
             self.other_actors.append(new_actor)
+
+    def _setup_scenario_trigger(self, config):
+        """
+        This function creates a trigger maneuver, that has to be finished before the real scenario starts.
+        This implementation focuses on the first available ego vehicle.
+
+        The function can be overloaded by a user implementation inside the user-defined scenario class.
+        """
+        start_location = None
+        if config.trigger_points and config.trigger_points[0]:
+            start_location = config.trigger_points[0].location     # start location of the scenario
+
+        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+
+        if start_location:
+            if ego_vehicle_route:
+                return InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+                                                             ego_vehicle_route,
+                                                             start_location,
+                                                             5)
+            else:
+                return InTimeToArrivalToLocation(self.ego_vehicles[0],
+                                                 2.0,
+                                                 start_location)
+
+        return None
 
     def _create_behavior(self):
         """

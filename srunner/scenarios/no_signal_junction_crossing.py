@@ -30,6 +30,8 @@ class NoSignalJunctionCrossing(BasicScenario):
     Implementation class for
     'Non-signalized junctions: crossing negotiation' scenario,
     (Traffic Scenario 10).
+
+    This is a single ego vehicle scenario
     """
 
     category = "NoSignalJunction"
@@ -42,7 +44,7 @@ class NoSignalJunctionCrossing(BasicScenario):
     _other_actor_max_brake = 1.0
     _other_actor_target_velocity = 15
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=0):
         """
         Setup all relevant parameters and create scenario
@@ -53,7 +55,7 @@ class NoSignalJunctionCrossing(BasicScenario):
         self.timeout = timeout
 
         super(NoSignalJunctionCrossing, self).__init__("NoSignalJunctionCrossing",
-                                                       ego_vehicle,
+                                                       ego_vehicles,
                                                        config,
                                                        world,
                                                        debug_mode,
@@ -86,16 +88,16 @@ class NoSignalJunctionCrossing(BasicScenario):
 
         # Creating leaf nodes
         start_other_trigger = InTriggerRegion(
-            self.ego_vehicle,
+            self.ego_vehicles[0],
             -80, -70,
             -75, -60)
 
         sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle,
+            self.other_actors[0], self.ego_vehicles[0],
             carla.Location(x=-74.63, y=-136.34))
 
         pass_through_trigger = InTriggerRegion(
-            self.ego_vehicle,
+            self.ego_vehicles[0],
             -90, -70,
             -124, -119)
 
@@ -113,7 +115,7 @@ class NoSignalJunctionCrossing(BasicScenario):
             self._other_actor_max_brake)
 
         end_condition = InTriggerRegion(
-            self.ego_vehicle,
+            self.ego_vehicles[0],
             -90, -70,
             -170, -156
         )
@@ -151,9 +153,9 @@ class NoSignalJunctionCrossing(BasicScenario):
         criteria = []
 
         # Adding checks for ego vehicle
-        collision_criterion_ego = CollisionTest(self.ego_vehicle)
+        collision_criterion_ego = CollisionTest(self.ego_vehicles[0])
         driven_distance_criterion = DrivenDistanceTest(
-            self.ego_vehicle, self._ego_vehicle_driven_distance)
+            self.ego_vehicles[0], self._ego_vehicle_driven_distance)
         criteria.append(collision_criterion_ego)
         criteria.append(driven_distance_criterion)
 

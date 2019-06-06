@@ -66,9 +66,11 @@ class VehicleTurningRight(BasicScenario):
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a right turn.
     (Traffic Scenario 4)
+
+    This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
         Setup all relevant parameters and create scenario
@@ -91,7 +93,7 @@ class VehicleTurningRight(BasicScenario):
         self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
 
         super(VehicleTurningRight, self).__init__("VehicleTurningRight",
-                                                  ego_vehicle,
+                                                  ego_vehicles,
                                                   config,
                                                   world,
                                                   debug_mode,
@@ -161,10 +163,10 @@ class VehicleTurningRight(BasicScenario):
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
         if self._ego_route is not None:
-            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
+            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
                                                                      self.other_actors[0].get_location(), 20)
         else:
-            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 20)
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 20)
 
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
@@ -203,7 +205,7 @@ class VehicleTurningRight(BasicScenario):
         in parallel behavior tree.
         """
         criteria = []
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
         criteria.append(collision_criterion)
         return criteria
 
@@ -221,9 +223,11 @@ class VehicleTurningLeft(BasicScenario):
     with prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a cyclist after taking a left turn. Scenario 4
+
+    This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
         Setup all relevant parameters and create scenario
@@ -245,7 +249,7 @@ class VehicleTurningLeft(BasicScenario):
         self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
 
         super(VehicleTurningLeft, self).__init__("VehicleTurningLeft",
-                                                 ego_vehicle,
+                                                 ego_vehicles,
                                                  config,
                                                  world,
                                                  debug_mode,
@@ -310,10 +314,10 @@ class VehicleTurningLeft(BasicScenario):
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
         if self._ego_route is not None:
-            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle, self._ego_route,
+            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
                                                                      self.other_actors[0].get_location(), 20)
         else:
-            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicle, 25)
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 25)
 
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
@@ -353,7 +357,7 @@ class VehicleTurningLeft(BasicScenario):
         in parallel behavior tree.
         """
         criteria = []
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
 
         criteria.append(collision_criterion)
         return criteria

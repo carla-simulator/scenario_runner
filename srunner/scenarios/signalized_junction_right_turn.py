@@ -34,10 +34,12 @@ class SignalizedJunctionRightTurn(BasicScenario):
     Implementation class for Hero
     Vehicle turning right at signalized junction scenario,
     Traffic Scenario 09.
+
+    This is a single ego vehicle scenario
     """
     category = "SignalizedJunctionLeftTurn"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
         """
         Setup all relevant parameters and create scenario
@@ -50,13 +52,13 @@ class SignalizedJunctionRightTurn(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
         super(SignalizedJunctionRightTurn, self).__init__("HeroActorTurningRightAtSignalizedJunction",
-                                                          ego_vehicle,
+                                                          ego_vehicles,
                                                           config,
                                                           world,
                                                           debug_mode,
                                                           criteria_enable=criteria_enable)
 
-        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, False)
+        self._traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicles[0], False)
         if self._traffic_light is None:
             print("No traffic light for the given location of the ego vehicle found")
             sys.exit(-1)
@@ -92,10 +94,10 @@ class SignalizedJunctionRightTurn(BasicScenario):
         After 80 seconds, a timeout stops the scenario.
         """
 
-        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicle, self.other_actors[0])
+        location_of_collision_dynamic = get_geometric_linear_intersection(self.ego_vehicles[0], self.other_actors[0])
         crossing_point_dynamic = get_crossing_point(self.other_actors[0])
         sync_arrival = SyncArrival(
-            self.other_actors[0], self.ego_vehicle, location_of_collision_dynamic)
+            self.other_actors[0], self.ego_vehicles[0], location_of_collision_dynamic)
         sync_arrival_stop = InTriggerDistanceToLocation(self.other_actors[0], crossing_point_dynamic, 5)
 
         sync_arrival_parallel = py_trees.composites.Parallel(
@@ -126,7 +128,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         # stop other actor
         stop = StopVehicle(self.other_actors[0], self._brake_value)
         # end condition
-        end_condition = DriveDistance(self.ego_vehicle, self._ego_distance)
+        end_condition = DriveDistance(self.ego_vehicles[0], self._ego_distance)
 
         # Behavior tree
         sequence = py_trees.composites.Sequence()
@@ -146,7 +148,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         """
         criteria = []
 
-        collison_criteria = CollisionTest(self.ego_vehicle)
+        collison_criteria = CollisionTest(self.ego_vehicles[0])
         criteria.append(collison_criteria)
 
         return criteria

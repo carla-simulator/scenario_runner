@@ -23,12 +23,14 @@ class MasterScenario(BasicScenario):
 
     """
     Implementation of a  Master scenario that controls the route.
+
+    This is a single ego vehicle scenario
     """
 
     category = "Master"
     radius = 10.0           # meters
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=300):
         """
         Setup all relevant parameters and create scenario
@@ -48,7 +50,7 @@ class MasterScenario(BasicScenario):
         else:
             raise ValueError("Master scenario must have a route")
 
-        super(MasterScenario, self).__init__("MasterScenario", ego_vehicle=ego_vehicle, config=config,
+        super(MasterScenario, self).__init__("MasterScenario", ego_vehicles=ego_vehicles, config=config,
                                              world=world, debug_mode=debug_mode,
                                              terminate_on_failure=True, criteria_enable=criteria_enable)
 
@@ -75,23 +77,23 @@ class MasterScenario(BasicScenario):
         else:
             route = self.route
 
-        collision_criterion = CollisionTest(self.ego_vehicle, terminate_on_failure=True)
+        collision_criterion = CollisionTest(self.ego_vehicles[0], terminate_on_failure=True)
 
-        route_criterion = InRouteTest(self.ego_vehicle,
+        route_criterion = InRouteTest(self.ego_vehicles[0],
                                       radius=30.0,
                                       route=route,
                                       offroad_max=20,
                                       terminate_on_failure=True)
 
-        completion_criterion = RouteCompletionTest(self.ego_vehicle, route=route)
+        completion_criterion = RouteCompletionTest(self.ego_vehicles[0], route=route)
 
-        wrong_way_criterion = WrongLaneTest(self.ego_vehicle)
+        wrong_way_criterion = WrongLaneTest(self.ego_vehicles[0])
 
-        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicle)
+        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicles[0])
 
-        red_light_criterion = RunningRedLightTest(self.ego_vehicle)
+        red_light_criterion = RunningRedLightTest(self.ego_vehicles[0])
 
-        stop_criterion = RunningStopTest(self.ego_vehicle)
+        stop_criterion = RunningStopTest(self.ego_vehicles[0])
 
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)

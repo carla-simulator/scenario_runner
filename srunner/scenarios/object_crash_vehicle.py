@@ -29,11 +29,13 @@ class StationaryObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
     a stationary cyclist.
+
+    This is a single ego vehicle scenario
     """
 
     category = "ObjectCrossing"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
         Setup all relevant parameters and create scenario
@@ -49,7 +51,7 @@ class StationaryObjectCrossing(BasicScenario):
         self.timeout = timeout
 
         super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
-                                                       ego_vehicle,
+                                                       ego_vehicles,
                                                        config,
                                                        world,
                                                        debug_mode,
@@ -80,13 +82,13 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Only behavior here is to wait
         """
-        lane_width = self.ego_vehicle.get_world().get_map().get_waypoint(self.ego_vehicle.get_location()).lane_width
+        lane_width = self.ego_vehicles[0].get_world().get_map().get_waypoint(self.ego_vehicles[0].get_location()).lane_width
         lane_width = lane_width + (1.25 * lane_width)
 
         # leaf nodes
         actor_stand = TimeOut(15)
         actor_removed = ActorDestroy(self.other_actors[0])
-        end_condition = DriveDistance(self.ego_vehicle, self._ego_vehicle_distance_driven)
+        end_condition = DriveDistance(self.ego_vehicles[0], self._ego_vehicle_distance_driven)
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
@@ -109,7 +111,7 @@ class StationaryObjectCrossing(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
         criteria.append(collision_criterion)
 
         return criteria
@@ -128,11 +130,13 @@ class DynamicObjectCrossing(BasicScenario):
     without prior vehicle action involving a vehicle and a cyclist/pedestrian,
     The ego vehicle is passing through a road,
     And encounters a cyclist/pedestrian crossing the road.
+
+    This is a single ego vehicle scenario
     """
 
     category = "ObjectCrossing"
 
-    def __init__(self, world, ego_vehicle, config, randomize=False,
+    def __init__(self, world, ego_vehicles, config, randomize=False,
                  debug_mode=False, criteria_enable=True, adversary_type=False, timeout=60):
         """
         Setup all relevant parameters and create scenario
@@ -160,7 +164,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
 
         super(DynamicObjectCrossing, self).__init__("Dynamicobjectcrossing",
-                                                    ego_vehicle,
+                                                    ego_vehicles,
                                                     config,
                                                     world,
                                                     debug_mode,
@@ -216,7 +220,7 @@ class DynamicObjectCrossing(BasicScenario):
         x_static = x_ego + shift * (x_cycle - x_ego)
         y_static = y_ego + shift * (y_cycle - y_ego)
 
-        spawn_point_wp = self.ego_vehicle.get_world().get_map().get_waypoint(transform.location)
+        spawn_point_wp = self.ego_vehicles[0].get_world().get_map().get_waypoint(transform.location)
 
         self.transform2 = carla.Transform(carla.Location(x_static, y_static,
                                                          spawn_point_wp.transform.location.z + 0.3))
@@ -294,13 +298,13 @@ class DynamicObjectCrossing(BasicScenario):
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
         # leaf nodes
         if self._ego_route is not None:
-            start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicle,
+            start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles,
                                                                     self._ego_route,
                                                                     self.other_actors[0].get_location(),
                                                                     15)
         else:
             start_condition = InTimeToArrivalToVehicle(self.other_actors[0],
-                                                       self.ego_vehicle,
+                                                       self.ego_vehicles[0],
                                                        self._time_to_reach)
 
         actor_velocity = KeepVelocity(self.other_actors[0],
@@ -321,14 +325,14 @@ class DynamicObjectCrossing(BasicScenario):
         actor_stop_crossed_lane = StopVehicle(self.other_actors[0],
                                               self._other_actor_max_brake,
                                               name="walker stop")
-        ego_pass_machine = DriveDistance(self.ego_vehicle,
+        ego_pass_machine = DriveDistance(self.ego_vehicles[0],
                                          5,
                                          name="ego vehicle passed prop")
         actor_remove = ActorDestroy(self.other_actors[0],
                                     name="Destroying walker")
         static_remove = ActorDestroy(self.other_actors[1],
                                      name="Destroying Prop")
-        end_condition = DriveDistance(self.ego_vehicle,
+        end_condition = DriveDistance(self.ego_vehicles[0],
                                       self._ego_vehicle_distance_driven,
                                       name="End condition ego drive distance")
 
@@ -372,7 +376,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         criteria = []
 
-        collision_criterion = CollisionTest(self.ego_vehicle)
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
         criteria.append(collision_criterion)
 
         return criteria

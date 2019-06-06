@@ -73,7 +73,7 @@ class ScenarioRunner(object):
     del scenario_runner
     """
 
-    ego_vehicle = None
+    ego_vehicles = []
 
     # Tunable parameters
     client_timeout = 10.0  # in seconds
@@ -134,24 +134,26 @@ class ScenarioRunner(object):
         CarlaDataProvider.cleanup()
         CarlaActorPool.cleanup()
 
-        if ego and self.ego_vehicle is not None:
-            self.ego_vehicle.destroy()
-            self.ego_vehicle = None
+        if ego:
+            for i,_ in enumerate(self.ego_vehicles):
+                if self.ego_vehicles[i]:
+                    self.ego_vehicles[i]
+                    self.ego_vehicles[i] = None
+            self.ego_vehicles = []
 
-    def prepare_ego_vehicle(self, config):
+    def prepare_ego_vehicles(self, config):
         """
         Spawn or update the ego vehicle according to
         its parameters provided in config
+
+        As the world is re-loaded for every scenario, no ego exists so far
         """
 
-        # If ego_vehicle already exists, just update location
-        # Otherwise spawn ego vehicle
-        if self.ego_vehicle is None:
-            self.ego_vehicle = CarlaActorPool.setup_actor(config.ego_vehicle.model,
-                                                          config.ego_vehicle.transform,
-                                                          True)
-        else:
-            self.ego_vehicle.set_transform(config.ego_vehicle.transform)
+        for vehicle in config.ego_vehicles:
+            self.ego_vehicles.append(CarlaActorPool.setup_actor(vehicle.model,
+                                                                vehicle.transform,
+                                                                vehicle.rolename,
+                                                                True))
 
         # sync state
         CarlaDataProvider.get_world().wait_for_tick()
@@ -208,9 +210,9 @@ class ScenarioRunner(object):
                 scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.type)
                 try:
                     CarlaActorPool.set_world(self.world)
-                    self.prepare_ego_vehicle(config)
+                    self.prepare_ego_vehicles(config)
                     scenario = scenario_class(self.world,
-                                              self.ego_vehicle,
+                                              self.ego_vehicles,
                                               config,
                                               args.randomize,
                                               args.debug)
@@ -233,7 +235,7 @@ class ScenarioRunner(object):
                 self.manager.stop_scenario()
                 scenario.remove_all_actors()
 
-                self.cleanup()
+                self.cleanup(ego=True)
 
             print("No more scenarios .... Exiting")
 
