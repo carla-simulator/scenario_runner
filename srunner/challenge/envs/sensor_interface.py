@@ -77,6 +77,7 @@ class CANBusSensor(object):
     This sensor is not placed at the CARLA environment. It is
     only an asynchronous interface to the forward speed.
     """
+    MAX_CONNECTION_ATTEMPTS = 5
 
     def __init__(self, vehicle, reading_frequency):
         # The vehicle where the class reads the speed
@@ -89,11 +90,13 @@ class CANBusSensor(object):
         self._run_ps = True
         self.read_CAN_Bus()
 
-    def _get_forward_speed(self):
+    def _get_forward_speed(self, transform=None, velocity=None):
         """ Convert the vehicle transform directly to forward speed """
+        if not velocity:
+            velocity = self._vehicle.get_velocity()
+        if not transform:
+            transform = self._vehicle.get_transform()
 
-        velocity = self._vehicle.get_velocity()
-        transform = self._vehicle.get_transform()
         vel_np = np.array([velocity.x, velocity.y, velocity.z])
         pitch = np.deg2rad(transform.rotation.pitch)
         yaw = np.deg2rad(transform.rotation.yaw)
@@ -101,11 +104,45 @@ class CANBusSensor(object):
         speed = np.dot(vel_np, orientation)
         return speed
 
+    def _get_lateral_speed(self, transform=None, velocity=None):
+        """ Convert the vehicle transform directly to forward and lateral speed
+            Reference: https://i0.wp.com/slideplayer.com/4241728/14/images/34/Roll+Pitch+Yaw+The+rotation+matrix+for+the+following+operations%3A+X+Y+Z.jpg
+        """
+        if not velocity:
+            velocity = self._vehicle.get_velocity()
+        if not transform:
+            transform = self._vehicle.get_transform()
+
+        vel_np = np.array([velocity.x, velocity.y, velocity.z])
+        roll = np.deg2rad(transform.rotation.roll)
+        pitch = np.deg2rad(transform.rotation.pitch)
+        yaw = np.deg2rad(transform.rotation.yaw)
+        orientationY = np.array([-np.sin(yaw) * np.sin(roll) + np.cos(yaw) * np.sin(pitch) * np.sin(roll),
+                                 np.cos(yaw) * np.sin(pitch) * np.sin(roll) + np.cos(yaw) * np.sin(roll),
+                                 np.cos(pitch) * np.sin(roll)])
+        lateral_speed = np.dot(vel_np, orientationY)
+        return lateral_speed
+
     def __call__(self):
 
         """ We convert the vehicle physics information into a convenient dictionary """
 
-        vehicle_physics = self._vehicle.get_physics_control()
+        # protect this access against timeout
+        attempts = 0
+        while attempts < self.MAX_CONNECTION_ATTEMPTS:
+            try:
+                vehicle_physics = self._vehicle.get_physics_control()
+                velocity = self._vehicle.get_velocity()
+                transform = self._vehicle.get_transform()
+                break
+            except Exception:
+                attempts += 1
+                print('======[WARNING] The server is frozen [{}/{} attempts]!!'.format(attempts,
+                                                                                       self.MAX_CONNECTION_ATTEMPTS))
+                time.sleep(0.2)
+                continue
+
+
         wheels_list_dict = []
         for wheel in vehicle_physics.wheels:
             wheels_list_dict.append(
@@ -120,16 +157,21 @@ class CANBusSensor(object):
         torque_curve = []
         for point in vehicle_physics.torque_curve:
             torque_curve.append({'x': point.x,
-                                'y': point.y
-                                })
+                                 'y': point.y
+                                 })
         steering_curve = []
         for point in vehicle_physics.steering_curve:
             steering_curve.append({'x': point.x,
-                                'y': point.y
-                                })
+                                   'y': point.y
+                                   })
 
         return {
-            'speed': self._get_forward_speed(),
+            'transform': transform,
+            'dimensions': {'length': self._vehicle.bounding_box.extent.x,
+                           'width': self._vehicle.bounding_box.extent.y,
+                           'height': self._vehicle.bounding_box.extent.z},
+            'speed': self._get_forward_speed(transform=transform, velocity=velocity),
+            'lateral_speed': self._get_lateral_speed(transform=transform, velocity=velocity),
             'torque_curve': torque_curve,
             'max_rpm': vehicle_physics.max_rpm,
             'moi': vehicle_physics.moi,
@@ -141,12 +183,13 @@ class CANBusSensor(object):
             'mass': vehicle_physics.mass,
             'drag_coefficient': vehicle_physics.drag_coefficient,
             'center_of_mass': {'x': vehicle_physics.center_of_mass.x,
-                               'y': vehicle_physics.center_of_mass.x,
-                               'z': vehicle_physics.center_of_mass.x
+                               'y': vehicle_physics.center_of_mass.y,
+                               'z': vehicle_physics.center_of_mass.z
                                },
             'steering_curve': steering_curve,
             'wheels': wheels_list_dict
         }
+
 
     @threaded
     def read_CAN_Bus(self):
