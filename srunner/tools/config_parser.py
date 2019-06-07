@@ -85,7 +85,7 @@ class ActorConfiguration(ActorConfigurationData):
     - Model (e.g. Lincoln MKZ2017)
     """
 
-    def __init__(self, node):
+    def __init__(self, node, rolename):
 
         pos_x = float(set_attrib(node, 'x', 0))
         pos_y = float(set_attrib(node, 'y', 0))
@@ -107,7 +107,7 @@ class ActorConfiguration(ActorConfigurationData):
         super(ActorConfiguration, self).__init__(set_attrib(node, 'model', 'vehicle.*'),
                                                  carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z),
                                                  carla.Rotation(yaw=yaw)),
-                                                 set_attrib(node, 'rolename', 'other'),
+                                                 set_attrib(node, 'rolename', rolename),
                                                  autopilot, random_location, amount)
 
 
@@ -169,7 +169,7 @@ def parse_scenario_configuration(scenario_config_file, scenario_name):
         new_config.trigger_points = []
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
-            new_config.ego_vehicles.append(ActorConfiguration(ego_vehicle))
+            new_config.ego_vehicles.append(ActorConfiguration(ego_vehicle, 'hero'))
             new_config.trigger_points.append(new_config.ego_vehicles[-1].transform)
 
         for target in scenario.iter("target"):
@@ -181,7 +181,7 @@ def parse_scenario_configuration(scenario_config_file, scenario_name):
             new_config.route = route_conf
 
         for other_actor in scenario.iter("other_actor"):
-            new_config.other_actors.append(ActorConfiguration(other_actor))
+            new_config.other_actors.append(ActorConfiguration(other_actor, 'scenario'))
 
         if single_scenario_only:
             if new_config.name == scenario_name:

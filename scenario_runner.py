@@ -19,6 +19,8 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
+import importlib
+import inspect
 
 import carla
 
@@ -83,6 +85,9 @@ class ScenarioRunner(object):
     world = None
     manager = None
 
+
+    additional_scenario_module = None
+
     def __init__(self, args):
         """
         Setup CARLA client and world
@@ -100,6 +105,12 @@ class ScenarioRunner(object):
         self.world = self.client.get_world()
         CarlaDataProvider.set_world(self.world)
 
+        # Load additional scenario definitions, if there are any
+        if args.additionalScenario != '':
+            module_name = os.path.basename(args.additionalScenario).split('.')[0]
+            sys.path.insert(0, os.path.dirname(args.additionalScenario))
+            self.additional_scenario_module = importlib.import_module(module_name)
+
     def __del__(self):
         """
         Cleanup and delete actors, ScenarioManager and CARLA world
@@ -111,8 +122,7 @@ class ScenarioRunner(object):
         if self.world is not None:
             del self.world
 
-    @staticmethod
-    def get_scenario_class_or_fail(scenario):
+    def get_scenario_class_or_fail(self, scenario):
         """
         Get scenario class by scenario name
         If scenario is not supported or not found, exit script
@@ -122,6 +132,10 @@ class ScenarioRunner(object):
             if scenario in scenarios:
                 if scenario in globals():
                     return globals()[scenario]
+
+        for member in inspect.getmembers(self.additional_scenario_module):
+            if scenario in member and inspect.isclass(member[1]):
+                return member[1]
 
         print("Scenario '{}' not supported ... Exiting".format(scenario))
         sys.exit(-1)
@@ -141,7 +155,7 @@ class ScenarioRunner(object):
                     self.ego_vehicles[i] = None
             self.ego_vehicles = []
 
-    def prepare_ego_vehicles(self, config):
+    def prepare_ego_vehicles(self, config, wait_for_ego_vehicles=False):
         """
         Spawn or update the ego vehicle according to
         its parameters provided in config
@@ -149,14 +163,31 @@ class ScenarioRunner(object):
         As the world is re-loaded for every scenario, no ego exists so far
         """
 
-        for vehicle in config.ego_vehicles:
-            self.ego_vehicles.append(CarlaActorPool.setup_actor(vehicle.model,
-                                                                vehicle.transform,
-                                                                vehicle.rolename,
-                                                                True))
-
-        # sync state
-        CarlaDataProvider.get_world().wait_for_tick()
+        if not wait_for_ego_vehicles:
+            for vehicle in config.ego_vehicles:
+                self.ego_vehicles.append(CarlaActorPool.setup_actor(vehicle.model,
+                                                                    vehicle.transform,
+                                                                    vehicle.rolename,
+                                                                    True))
+            # sync state
+            CarlaDataProvider.get_world().wait_for_tick()
+        else:
+            ego_vehicle_missing = True
+            while ego_vehicle_missing:
+                self.ego_vehicles = []
+                ego_vehicle_missing = False
+                for ego_vehicle in config.ego_vehicles:
+                    ego_vehicle_found = False
+                    carla_vehicles = CarlaDataProvider.get_world().get_actors().filter('vehicle.*')
+                    for carla_vehicle in carla_vehicles:
+                        if carla_vehicle.attributes['role_name'] == ego_vehicle.rolename:
+                            ego_vehicle_found = True
+                            self.ego_vehicles.append(carla_vehicle)
+                            self.ego_vehicles[-1].set_transform(ego_vehicle.transform)
+                            break
+                    if not ego_vehicle_found:
+                        ego_vehicle_missing = True
+                        break
 
     def analyze_scenario(self, args, config):
         """
@@ -207,10 +238,10 @@ class ScenarioRunner(object):
 
                 # Prepare scenario
                 print("Preparing scenario: " + config.name)
-                scenario_class = ScenarioRunner.get_scenario_class_or_fail(config.type)
+                scenario_class = self.get_scenario_class_or_fail(config.type)
                 try:
                     CarlaActorPool.set_world(self.world)
-                    self.prepare_ego_vehicles(config)
+                    self.prepare_ego_vehicles(config, args.waitForEgo)
                     scenario = scenario_class(self.world,
                                               self.ego_vehicles,
                                               config,
@@ -255,7 +286,9 @@ if __name__ == '__main__':
     PARSER.add_argument('--output', action="store_true", help='Provide results on stdout')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
     PARSER.add_argument('--junit', action="store_true", help='Write results into a junit file')
-    PARSER.add_argument('--configFile', default='', help='Provide an additional scenario configuration file')
+    PARSER.add_argument('--waitForEgo', action="store_true", help='Connect the scenario to an existing ego vehicle')
+    PARSER.add_argument('--configFile', default='', help='Provide an additional scenario configuration file (*.xml)')
+    PARSER.add_argument('--additionalScenario', default='', help='Provide additional scenario implementations (*.py)')
     # pylint: disable=line-too-long
     PARSER.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
@@ -263,7 +296,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
-    PARSER.add_argument('--list_class', action="store_true", help='List all supported scenario classes and exit')
+    PARSER.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
 
@@ -272,7 +305,7 @@ if __name__ == '__main__':
         print(*get_list_of_scenarios(ARGUMENTS.configFile), sep='\n')
         sys.exit(0)
 
-    if ARGUMENTS.list_class:
+    if ARGUMENTS.listClass:
         print("Currently the following scenario classes are supported:")
         print(*SCENARIOS.keys(), sep='\n')
         sys.exit(0)
