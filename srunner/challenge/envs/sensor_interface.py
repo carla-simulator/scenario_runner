@@ -77,7 +77,7 @@ class CANBusSensor(object):
     This sensor is not placed at the CARLA environment. It is
     only an asynchronous interface to the forward speed.
     """
-    MAX_CONNECTION_ATTEMPTS = 5
+    MAX_CONNECTION_ATTEMPTS = 10
 
     def __init__(self, vehicle, reading_frequency):
         # The vehicle where the class reads the speed
@@ -139,7 +139,7 @@ class CANBusSensor(object):
                 attempts += 1
                 print('======[WARNING] The server is frozen [{}/{} attempts]!!'.format(attempts,
                                                                                        self.MAX_CONNECTION_ATTEMPTS))
-                time.sleep(0.2)
+                time.sleep(1.0)
                 continue
 
 
