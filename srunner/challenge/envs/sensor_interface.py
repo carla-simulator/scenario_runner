@@ -104,24 +104,63 @@ class CANBusSensor(object):
         speed = np.dot(vel_np, orientation)
         return speed
 
-    def _get_lateral_speed(self, transform=None, velocity=None):
-        """ Convert the vehicle transform directly to forward and lateral speed
-            Reference: https://i0.wp.com/slideplayer.com/4241728/14/images/34/Roll+Pitch+Yaw+The+rotation+matrix+for+the+following+operations%3A+X+Y+Z.jpg
+
+    def _get_rotation_matrix(self, transform=None):
         """
-        if not velocity:
-            velocity = self._vehicle.get_velocity()
+        from: https://github.com/xmyqsh/scenario_runner/tree/development
+        Generate the rotation matrix from Euler angles (actually, Tait-Bryan angles)
+        with intrinsic sequence ZYX
+        """
         if not transform:
             transform = self._vehicle.get_transform()
 
-        vel_np = np.array([velocity.x, velocity.y, velocity.z])
-        roll = np.deg2rad(transform.rotation.roll)
-        pitch = np.deg2rad(transform.rotation.pitch)
+        roll  = np.deg2rad(-transform.rotation.roll)
+        pitch = np.deg2rad(-transform.rotation.pitch)
         yaw = np.deg2rad(transform.rotation.yaw)
-        orientationY = np.array([-np.sin(yaw) * np.sin(roll) + np.cos(yaw) * np.sin(pitch) * np.sin(roll),
-                                 np.cos(yaw) * np.sin(pitch) * np.sin(roll) + np.cos(yaw) * np.sin(roll),
-                                 np.cos(pitch) * np.sin(roll)])
-        lateral_speed = np.dot(vel_np, orientationY)
-        return lateral_speed
+        sr, cr = np.sin(roll),  np.cos(roll)
+        sp, cp = np.sin(pitch), np.cos(pitch)
+        sy, cy = np.sin(yaw),   np.cos(yaw)
+        rotation_matrix= np.array([[cy * cp,      -sy * sr + cy * sp * sr,  cy * sp * cr +      sy * sr],
+                                   [sy * cp,  cy * sp * sr +      cy * sr,      -cy * sr + sy * sp * cr],
+                                   [    -sp,                      cp * sr,                      cp * cr]])
+        return rotation_matrix
+
+    def _get_linear_velocity(self, velocity=None):
+        """
+        from: https://github.com/xmyqsh/scenario_runner/tree/development
+        Convert linear velocity from world frame to vehicle reference frame
+        """
+
+        if not velocity:
+            velocity = self._vehicle.get_velocity()
+
+        rotation_matrix = self._get_rotation_matrix()
+        linear_velocity_vrf = rotation_matrix.transpose().dot(velocity)
+        return linear_velocity_vrf
+
+    def _get_linear_acceleration(self, acceleration=None):
+        """
+        from: https://github.com/xmyqsh/scenario_runner/tree/development
+        Convert linear acceleration from world frame to vehicle reference frame
+        """
+
+        if not acceleration:
+            acceleration = self._vehicle.get_acceleration()
+
+        rotation_matrix = self._get_rotation_matrix()
+        linear_acceleration_vrf = rotation_matrix.transpose().dot(acceleration)
+        return linear_acceleration_vrf
+
+    def _get_angular_velocity(self, angular_velocity=None):
+        """ Convert angular velocity from world frame to vehicle reference frame """
+
+        if not angular_velocity:
+            angular_velocity = self._vehicle.get_angular_velocity()
+
+        rotation_matrix = self._get_rotation_matrix()
+        angular_velocity_vrf = rotation_matrix.transpose().dot(angular_velocity)
+        return angular_velocity_vrf
+
 
     def __call__(self):
 
@@ -133,7 +172,9 @@ class CANBusSensor(object):
             try:
                 vehicle_physics = self._vehicle.get_physics_control()
                 velocity = self._vehicle.get_velocity()
+                angular_velocity = self._vehicle.get_angular_velocity()
                 transform = self._vehicle.get_transform()
+                acceleration = self._vehicle.get_acceleration()
                 break
             except Exception:
                 attempts += 1
@@ -171,7 +212,9 @@ class CANBusSensor(object):
                            'width': self._vehicle.bounding_box.extent.y,
                            'height': self._vehicle.bounding_box.extent.z},
             'speed': self._get_forward_speed(transform=transform, velocity=velocity),
-            'lateral_speed': self._get_lateral_speed(transform=transform, velocity=velocity),
+            'lateral_speed': self._get_angular_velocity(angular_velocity=angular_velocity),
+            'linear_velocity': self._get_linear_velocity(velocity=velocity),
+            'linear_acceleration': self._get_linear_acceleration(acceleration=acceleration),
             'torque_curve': torque_curve,
             'max_rpm': vehicle_physics.max_rpm,
             'moi': vehicle_physics.moi,
