@@ -13,7 +13,6 @@ Provisional code to evaluate Autonomous Agents for the CARLA Autonomous Driving 
 from __future__ import print_function
 import argparse
 from argparse import RawTextHelpFormatter
-import atexit
 import copy
 import datetime
 import importlib

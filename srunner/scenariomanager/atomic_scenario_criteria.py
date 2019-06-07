@@ -852,7 +852,7 @@ class RunningRedLightTest(Criterion):
                         location = traffic_light.get_transform().location
                         red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
                         red_light_event.set_message("Agent ran a red light {} at (x={}, y={}, x={})".format(
-                            traffic_light,
+                            traffic_light.id,
                             location.x,
                             location.y,
                             location.z))
