@@ -1,5 +1,3 @@
-//definition of Ac class members
-
 #include "ActorLocalizationCallable.hpp"
 
 namespace traffic_manager
@@ -44,6 +42,7 @@ namespace traffic_manager
         PipelineMessage out_message;
         float dot_product = nearestDotProduct(shared_data, &message);
         float cross_product = nearestCrossProduct(shared_data, &message);
+        dot_product = 1 - dot_product;
         if(cross_product < 0)
             dot_product *= -1;
         out_message.setAttribute("velocity", message.getAttribute("velocity"));

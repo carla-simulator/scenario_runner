@@ -81,8 +81,8 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
     {
         auto out = localization_queue.pop();
         std::cout << "Velocity : " << out.getAttribute("velocity")
-            << "\t Deviation" << out.getAttribute("deviation") 
-            << "\t Queue size " << localization_queue.size() << std::endl;
+            << "\t Deviation : " << out.getAttribute("deviation") 
+            << "\t Queue size : " << localization_queue.size() << std::endl;
     }
 }
 
