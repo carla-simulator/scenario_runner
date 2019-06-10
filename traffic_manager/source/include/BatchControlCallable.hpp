@@ -14,8 +14,7 @@ namespace traffic_manager{
         SyncQueue<PipelineMessage>* input_queue;
     public:
         BatchControlCallable(int batch_size, SyncQueue<PipelineMessage>* input_queue,
-            SyncQueue<PipelineMessage>* output_queue,
-            SharedData* shared_data);
+            SyncQueue<PipelineMessage>* output_queue);
         ~BatchControlCallable();
         PipelineMessage action(PipelineMessage message);       
     };

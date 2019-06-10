@@ -6,9 +6,9 @@ namespace traffic_manager{
     BatchControlCallable::BatchControlCallable(
         int batch_size,
         SyncQueue<PipelineMessage>* input_queue,
-        SyncQueue<PipelineMessage>* output_queue,
-        SharedData* shared_data): batch_size(batch_size), input_queue(input_queue),
-        PipelineCallable(input_queue, output_queue, shared_data){}
+        SyncQueue<PipelineMessage>* output_queue): 
+        batch_size(batch_size), input_queue(input_queue),
+        PipelineCallable(input_queue, output_queue, NULL){}
 
     BatchControlCallable::~BatchControlCallable(){}
 
@@ -26,8 +26,9 @@ namespace traffic_manager{
                 vehicle_control.brake = element.getAttribute("brake");
                 vehicle_control.steer = element.getAttribute("steer");
                 carla::rpc::Command::ApplyVehicleControl control_command(actor_id, vehicle_control);
-                commands.push_back(control_command);                
+                commands.push_back(control_command);
             }
+
             if(commands.size() >= batch_size){
                 carla::client::Client* client_obj;
                 client_obj->ApplyBatch(commands);
