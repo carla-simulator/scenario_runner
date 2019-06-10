@@ -1,6 +1,7 @@
 //Declaration of ActorLocalizationCallable class members
 #pragma once
 
+#include <memory>
 #include <map>
 #include "carla/geom/Vector3D.h"
 #include "carla/geom/Location.h"

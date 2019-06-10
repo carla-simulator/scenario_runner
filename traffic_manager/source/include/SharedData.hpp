@@ -15,7 +15,7 @@ namespace traffic_manager{
     public:
         std::vector<carla::SharedPtr<carla::client::Actor>> registered_actors;
         std::shared_ptr<InMemoryMap> local_map;
-        std::map<int , SyncQueue<std::shared_ptr<SimpleWaypoint>>> buffer_map;
+        std::map<int , std::shared_ptr<SyncQueue<std::shared_ptr<SimpleWaypoint>>>> buffer_map;
         SharedData();
         ~SharedData();
         void registerActor();

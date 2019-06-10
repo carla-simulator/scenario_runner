@@ -38,8 +38,8 @@ int main()
     // test_feeder_stage(vehicle_list);
     // test_actor_state_stage(vehicle_list);
     // test_actor_state_stress(vehicle_list);
-    test_in_memory_map(world_map);
-    // test_actor_localization_stage(vehicle_list, world_map);
+    // test_in_memory_map(world_map);
+    test_actor_localization_stage(vehicle_list, world_map);
     return 0;
 }
 
@@ -76,17 +76,14 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
     actor_localization_stage.start();
 
     std::cout << "All stage pipeline started !" <<std::endl;
-
-    sleep(1);
-    std::cout << "Localization queue size : " << localization_queue.size() << std::endl;
     
-    // while(true)
-    // {
-    //     auto out = localization_queue.pop();
-    //     std::cout << "Velocity : "
-    //         << out.getAttribute("velocity")
-    //         << "\t Deviation" << out.getAttribute("deviation") << std::endl;
-    // }
+    while(true)
+    {
+        auto out = localization_queue.pop();
+        std::cout << "Velocity : " << out.getAttribute("velocity")
+            << "\t Deviation : " << out.getAttribute("deviation") 
+            << "\t Queue size : " << localization_queue.size() << std::endl;
+    }
 }
 
 void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
@@ -101,6 +98,7 @@ void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
     auto dense_topology = local_map.get_dense_topology();
     for (auto& swp : dense_topology) {
         if (swp->getNextWaypoint().size() < 1) {
+            swp->getXYZ();
             loose_ends_count += 1;
         }
     }
