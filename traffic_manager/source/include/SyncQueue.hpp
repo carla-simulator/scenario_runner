@@ -36,13 +36,11 @@ public:
     }
 
     T front(){
-        T rc(std::move(this->queue.front()));
-        return rc;
+        return this->queue.front();
     }
 
     T back(){
-        T rc(std::move(this->queue.back()));
-        return rc;
+        return this->queue.back();
     }
 
     int size() {
