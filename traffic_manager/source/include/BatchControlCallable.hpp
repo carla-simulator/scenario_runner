@@ -5,6 +5,8 @@
 #include "carla/client/Client.h"
 #include "carla/rpc/VehicleControl.h"
 #include "PipelineCallable.hpp"
+#include "carla/client/Vehicle.h"
+#include "carla/client/detail/Client.h"
 
 namespace traffic_manager{
     class BatchControlCallable: public PipelineCallable

@@ -29,7 +29,7 @@ namespace traffic_manager{
             actor_control.brake = std::max(std::abs(expr_v), max_throttle);
         }
         actor_control.steer = k_s*deviation;
-
+        out_message.setActor(message.getActor());
         out_message.setAttribute("throttle", actor_control.throttle);
         out_message.setAttribute("brake", actor_control.brake);
         out_message.setAttribute("steer", actor_control.steer);

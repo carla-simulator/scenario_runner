@@ -15,6 +15,7 @@ namespace traffic_manager{
         private:
             float nearestDotProduct(SharedData*, PipelineMessage*);
             float nearestCrossProduct(SharedData*, PipelineMessage*);
+            float nearestDistance(SharedData*, PipelineMessage*);
         public:
         ActorLocalizationCallable(
             SyncQueue<PipelineMessage>* input_queue,

@@ -13,10 +13,12 @@ namespace traffic_manager
     {   
         int actor_id = message.getActorID();
         if(shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()){
+            float nearest_distance = nearestDistance(shared_data, &message);
             float dot_product = nearestDotProduct(shared_data, &message);
-            while(dot_product <= 0){
+            while(dot_product <= 0 || nearest_distance <= 2.0){
                 shared_data->buffer_map[actor_id]->pop();
                 dot_product = nearestDotProduct(shared_data, &message);
+                nearest_distance = nearestDistance(shared_data, &message);
             }
             while(!shared_data->buffer_map[actor_id]->full()) {
                 auto feed_waypoint = shared_data->buffer_map[actor_id]->back()->getNextWaypoint()[0];
@@ -45,6 +47,7 @@ namespace traffic_manager
         dot_product = 1 - dot_product;
         if(cross_product < 0)
             dot_product *= -1;
+        out_message.setActor(message.getActor());
         out_message.setAttribute("velocity", message.getAttribute("velocity"));
         out_message.setAttribute("deviation", dot_product);
 
@@ -95,6 +98,17 @@ namespace traffic_manager
         std::vector<float> target_vector = {next_vector.x, next_vector.y, next_vector.z};
         float cross_z = heading_vector[0]*target_vector[1] - heading_vector[1]*target_vector[0];
         return cross_z;
+    }
+
+    float ActorLocalizationCallable::nearestDistance(SharedData* data, PipelineMessage* message){
+        auto wp = shared_data->buffer_map[message->getActorID()]->front();
+        auto next_coordinate = wp->getXYZ();
+        std::vector<float> xyz = {
+            message->getAttribute("x"),
+            message->getAttribute("y"),
+            message->getAttribute("z")};
+        auto distance = wp->distance(carla::geom::Location(xyz[0],xyz[1], xyz[2]));
+        return distance;
     }
 
 }

@@ -21,11 +21,11 @@ namespace traffic_manager{
 
             while(!input_queue->empty()){
                 auto element = input_queue->pop();
-                int actor_id = element.getActorID();       
+                auto actor = element.getActor();       
                 vehicle_control.throttle = element.getAttribute("throttle");
                 vehicle_control.brake = element.getAttribute("brake");
                 vehicle_control.steer = element.getAttribute("steer");
-                carla::rpc::Command::ApplyVehicleControl control_command(actor_id, vehicle_control);
+                carla::rpc::Command::ApplyVehicleControl control_command(actor->GetId(), vehicle_control);
                 commands.push_back(control_command);
             }
 
