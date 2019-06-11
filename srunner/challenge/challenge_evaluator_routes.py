@@ -1340,6 +1340,15 @@ if __name__ == '__main__':
 
     ARGUMENTS.carla_root = CARLA_ROOT
     challenge_evaluator = None
+
+    phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
+    if not phase_codename:
+        raise ValueError('environment variable CHALLENGE_PHASE_CODENAME not defined')
+    track = int(phase_codename.split("_")[2])
+    phase_codename = phase_codename.split("_")[0]
+    if phase_codename == 'test':
+        ARGUMENTS.show_to_participant = False
+
     try:
         challenge_evaluator = ChallengeEvaluator(ARGUMENTS)
         challenge_evaluator.run(ARGUMENTS)
