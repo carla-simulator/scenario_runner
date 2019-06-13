@@ -196,11 +196,14 @@ class ScenarioRunner(object):
 
         current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
         junit_filename = None
+        config_name = config.name
+        if args.outputDir != '':
+            config_name = os.path.join(args.outputDir, config_name)
         if args.junit:
-            junit_filename = config.name + current_time + ".xml"
+            junit_filename = config_name + current_time + ".xml"
         filename = None
         if args.file:
-            filename = config.name + current_time + ".txt"
+            filename = config_name + current_time + ".txt"
 
         if not self.manager.analyze_scenario(args.output, filename, junit_filename):
             print("Success!")
@@ -286,6 +289,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--output', action="store_true", help='Provide results on stdout')
     PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
     PARSER.add_argument('--junit', action="store_true", help='Write results into a junit file')
+    PARSER.add_argument('--outputDir', default='', help='Directory for output files (default: this directory)')
     PARSER.add_argument('--waitForEgo', action="store_true", help='Connect the scenario to an existing ego vehicle')
     PARSER.add_argument('--configFile', default='', help='Provide an additional scenario configuration file (*.xml)')
     PARSER.add_argument('--additionalScenario', default='', help='Provide additional scenario implementations (*.py)')
