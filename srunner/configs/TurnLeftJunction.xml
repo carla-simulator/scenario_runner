@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="VehicleTurnLeftAtJunction_1" type="VehicleTurnLeftAtJunction" town="Town03">
+        <ego_vehicle x="-131.6" y="138.0" z="0.2" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-44.2" y="129.5" z="0.0" yaw="180" model="vehicle.tesla.model3" />
+     </scenario>
+    <scenario name="VehicleTurnLeftAtJunction_2" type="VehicleTurnLeftAtJunction" town="Town04">
+        <ego_vehicle x="273.4" y="-168.9" z="0.3" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="323.6" y="-172.4" z="0.3" yaw="-180" model="vehicle.tesla.model3" />   
+    </scenario> 
+    <scenario name="VehicleTurnLeftAtJunction_3" type="VehicleTurnLeftAtJunction" town="Town04">
+        <ego_vehicle x="274.1" y="-246.2" z="0.3" yaw="0" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="343.5" y="-250.3" z="0.3" yaw="-177" model="vehicle.tesla.model3" />   
+    </scenario>  
+    <scenario name="VehicleTurnLeftAtJunction_4" type="VehicleTurnLeftAtJunction" town="Town05">
+        <ego_vehicle x="-145.5" y="-1" z="0.3" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-220.7" y="3.4" z="0.3" yaw="0" model="vehicle.tesla.model3" />   
+    </scenario> 
+    <scenario name="VehicleTurnLeftAtJunction_5" type="VehicleTurnLeftAtJunction" town="Town05">
+        <ego_vehicle x="-76.5" y="-0.8" z="0.3" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-166.7" y="3.4" z="0.3" yaw="0" model="vehicle.tesla.model3" />   
+    </scenario>
+    <scenario name="VehicleTurnLeftAtJunction_6" type="VehicleTurnLeftAtJunction" town="Town05">
+        <ego_vehicle x="76.4" y="83" z="0.3" yaw="157" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-10" y="91.8" z="0.3" yaw="0" model="vehicle.tesla.model3" />   
+    </scenario>
+</scenarios>

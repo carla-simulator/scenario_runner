@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018 Intel Labs.
-# authors: Fabian Oboril (fabian.oboril@intel.com)
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -18,11 +17,10 @@ import threading
 
 import py_trees
 
-import srunner
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
-from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
+from srunner.scenariomanager.traffic_events import TrafficEventType
 
 
 class Scenario(object):
@@ -45,8 +43,8 @@ class Scenario(object):
         self.test_criteria = criteria
         self.timeout = timeout
 
-        if not isinstance(self.test_criteria, py_trees.composites.Parallel):
-        # list of nodes
+        if self.test_criteria is not None and not isinstance(self.test_criteria, py_trees.composites.Parallel):
+            # list of nodes
             for criterion in self.test_criteria:
                 criterion.terminate_on_failure = terminate_on_failure
 
@@ -64,7 +62,8 @@ class Scenario(object):
         self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         self.scenario_tree.add_child(self.behavior)
         self.scenario_tree.add_child(self.timeout_node)
-        self.scenario_tree.add_child(self.criteria_tree)
+        if criteria is not None:
+            self.scenario_tree.add_child(self.criteria_tree)
         self.scenario_tree.setup(timeout=1)
 
     def terminate(self):
@@ -106,15 +105,16 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    scenario = None
-    scenario_tree = None
-    ego_vehicle = None
-    other_actors = None
-
     def __init__(self, world, debug_mode=False):
         """
         Init requires scenario as input
         """
+        self.scenario = None
+        self.scenario_tree = None
+        self.scenario_class = None
+        self.ego_vehicle = None
+        self.other_actors = None
+
         self._debug_mode = debug_mode
         self.agent = None
         self._autonomous_agent_plugged = False
@@ -134,6 +134,7 @@ class ScenarioManager(object):
         Load a new scenario
         """
         self.restart()
+        self.scenario_class = scenario
         self.scenario = scenario.scenario
         self.scenario_tree = self.scenario.scenario_tree
         self.ego_vehicle = scenario.ego_vehicle
@@ -141,7 +142,6 @@ class ScenarioManager(object):
 
         CarlaDataProvider.register_actor(self.ego_vehicle)
         CarlaDataProvider.register_actors(self.other_actors)
-
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
 
@@ -209,6 +209,7 @@ class ScenarioManager(object):
                 if self.agent:
                     # Invoke agent
                     action = self.agent()
+                    action = self.scenario_class.change_control(action)
                     self.ego_vehicle.apply_control(action)
 
                 if self._debug_mode:
@@ -240,6 +241,9 @@ class ScenarioManager(object):
         timeout = False
         result = "SUCCESS"
 
+        if self.scenario.test_criteria is None:
+            return True
+
         if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
             if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
                 failure = True
@@ -253,7 +257,6 @@ class ScenarioManager(object):
                     result = "FAILURE"
                 elif criterion.test_status == "ACCEPTABLE":
                     result = "ACCEPTABLE"
-
 
         if self.scenario.timeout_node.timeout and not failure:
             timeout = True
@@ -269,11 +272,13 @@ class ScenarioManager(object):
         This function is intended to be called from outside and provide
         statistics about the scenario (human-readable, for the CARLA challenge.)
         """
-        PENALTY_COLLISION_STATIC = 10
-        PENALTY_COLLISION_VEHICLE = 10
-        PENALTY_COLLISION_PEDESTRIAN = 30
-        PENALTY_TRAFFIC_LIGHT = 10
-        PENALTY_WRONG_WAY = 5
+        PENALTY_COLLISION_STATIC = 10       # pylint: disable=invalid-name
+        PENALTY_COLLISION_VEHICLE = 10      # pylint: disable=invalid-name
+        PENALTY_COLLISION_PEDESTRIAN = 30   # pylint: disable=invalid-name
+        PENALTY_TRAFFIC_LIGHT = 10          # pylint: disable=invalid-name
+        PENALTY_WRONG_WAY = 5               # pylint: disable=invalid-name
+        PENALTY_SIDEWALK_INVASION = 5       # pylint: disable=invalid-name
+        PENALTY_STOP = 7                    # pylint: disable=invalid-name
 
         target_reached = False
         failure = False
@@ -292,13 +297,15 @@ class ScenarioManager(object):
 
             list_traffic_events = []
             for node in self.scenario.test_criteria.children:
-                if  node.list_traffic_events:
+                if node.list_traffic_events:
                     list_traffic_events.extend(node.list_traffic_events)
 
             list_collisions = []
             list_red_lights = []
             list_wrong_way = []
             list_route_dev = []
+            list_sidewalk_inv = []
+            list_stop_inf = []
             # analyze all traffic events
             for event in list_traffic_events:
                 if event.get_type() == TrafficEventType.COLLISION_STATIC:
@@ -336,6 +343,18 @@ class ScenarioManager(object):
                     if msg:
                         list_route_dev.append(event.get_message())
 
+                elif event.get_type() == TrafficEventType.ON_SIDEWALK_INFRACTION:
+                    score_penalty += PENALTY_SIDEWALK_INVASION
+                    msg = event.get_message()
+                    if msg:
+                        list_sidewalk_inv.append(event.get_message())
+
+                elif event.get_type() == TrafficEventType.STOP_INFRACTION:
+                    score_penalty += PENALTY_STOP
+                    msg = event.get_message()
+                    if msg:
+                        list_stop_inf.append(event.get_message())
+
                 elif event.get_type() == TrafficEventType.ROUTE_COMPLETED:
                     score_route = 100.0
                     target_reached = True
@@ -347,9 +366,9 @@ class ScenarioManager(object):
 
             return_message += "\n=================================="
             return_message += "\n==[{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(result,
-                                                                                                   final_score,
-                                                                                                   score_route,
-                                                                                                   score_penalty)
+                                                                                                     final_score,
+                                                                                                     score_route,
+                                                                                                     score_penalty)
             if list_collisions:
                 return_message += "\n===== Collisions:"
                 for item in list_collisions:
@@ -360,9 +379,19 @@ class ScenarioManager(object):
                 for item in list_red_lights:
                     return_message += "\n========== {}".format(item)
 
+            if list_stop_inf:
+                return_message += "\n===== STOP infractions:"
+                for item in list_stop_inf:
+                    return_message += "\n========== {}".format(item)
+
             if list_wrong_way:
                 return_message += "\n===== Wrong way:"
                 for item in list_wrong_way:
+                    return_message += "\n========== {}".format(item)
+
+            if list_sidewalk_inv:
+                return_message += "\n===== Sidewalk invasions:"
+                for item in list_sidewalk_inv:
                     return_message += "\n========== {}".format(item)
 
             if list_route_dev:
@@ -371,6 +400,5 @@ class ScenarioManager(object):
                     return_message += "\n========== {}".format(item)
 
             return_message += "\n=================================="
-
 
         return result, final_score, return_message

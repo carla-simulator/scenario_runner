@@ -18,8 +18,8 @@ import py_trees
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import *
+from srunner.tools.scenario_helper import *
 
 CONTROL_LOSS_SCENARIOS = [
     "ControlLoss"
@@ -34,27 +34,85 @@ class ControlLoss(BasicScenario):
 
     category = "ControlLoss"
 
-    timeout = 60            # Timeout of scenario in seconds
-
-    # ego vehicle parameters
-    _no_of_jitter_actions = 20
-    _noise_mean = 0      # Mean value of steering noise
-    _noise_std = 0.02    # Std. deviation of steerning noise
-    _dynamic_mean = 0.05
-    _abort_distance_to_intersection = 20
-    _start_distance = 20
-    _end_distance = 80
-
-    def __init__(self, world, ego_vehicle, other_actors, town, randomize=False, debug_mode=False, config=None):
+    def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
+        # ego vehicle parameters
+        self._no_of_jitter = 10
+        self._noise_mean = 0      # Mean value of steering noise
+        self._noise_std = 0.01   # Std. deviation of steering noise
+        self._dynamic_mean_for_steer = 0.001
+        self._dynamic_mean_for_throttle = 0.045
+        self._abort_distance_to_intersection = 10
+        self._current_steer_noise = [0]  # This is a list, since lists are mutable
+        self._current_throttle_noise = [0]
+        self._start_distance = 20
+        self._trigger_dist = 2
+        self._end_distance = 30
+        self._ego_vehicle_max_steer = 0.0
+        self._ego_vehicle_max_throttle = 1.0
+        self._ego_vehicle_target_velocity = 15
+        self._map = CarlaDataProvider.get_map()
+        # Timeout of scenario in seconds
+        self.timeout = timeout
+        # The reference trigger for the control loss
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
+        self.loc_list = []
+        self.obj = []
         super(ControlLoss, self).__init__("ControlLoss",
                                           ego_vehicle,
-                                          other_actors,
-                                          town,
+                                          config,
                                           world,
-                                          debug_mode)
+                                          debug_mode,
+                                          criteria_enable=criteria_enable)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        self._distance = random.sample(range(10, 80), 3)
+        self._distance = sorted(self._distance)
+        first_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[0])
+        second_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[1])
+        third_loc, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._distance[2])
+
+        self.loc_list.extend([first_loc, second_loc, third_loc])
+        self._dist_prop = [x - 2 for x in self._distance]
+
+        self.first_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[0])
+        self.sec_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[1])
+        self.third_loc_prev, _ = get_location_in_distance_from_wp(self._reference_waypoint, self._dist_prop[2])
+
+        self.first_transform = carla.Transform(self.first_loc_prev)
+        self.sec_transform = carla.Transform(self.sec_loc_prev)
+        self.third_transform = carla.Transform(self.third_loc_prev)
+        self.first_transform = carla.Transform(carla.Location(self.first_loc_prev.x,
+                                                              self.first_loc_prev.y,
+                                                              self.first_loc_prev.z))
+        self.sec_transform = carla.Transform(carla.Location(self.sec_loc_prev.x,
+                                                            self.sec_loc_prev.y,
+                                                            self.sec_loc_prev.z))
+        self.third_transform = carla.Transform(carla.Location(self.third_loc_prev.x,
+                                                              self.third_loc_prev.y,
+                                                              self.third_loc_prev.z))
+        if self._map.name == 'Town02':
+            self.first_transform.location.z += 0.2
+            self.sec_transform.location.z += 0.2
+            self.third_transform.location.z += 0.2
+
+        first_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.first_transform)
+        second_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.sec_transform)
+        third_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.third_transform)
+
+        self.obj.extend([first_debris, second_debris, third_debris])
+        for debris in self.obj:
+            debris.set_simulate_physics(False)
+
+        self.other_actors.append(first_debris)
+        self.other_actors.append(second_debris)
+        self.other_actors.append(third_debris)
 
     def _create_behavior(self):
         """
@@ -64,48 +122,46 @@ class ControlLoss(BasicScenario):
         has to reach a target point (_end_distance). If this does not happen within
         60 seconds, a timeout stops the scenario
         """
-
         # start condition
-        location, _ = get_location_in_distance(self.ego_vehicle, self._start_distance)
-        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
+        start_end_parallel = py_trees.composites.Parallel("Jitter",
+                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        start_condition = InTriggerDistanceToLocation(self.ego_vehicle, self.first_loc_prev, self._trigger_dist)
+        for _ in range(self._no_of_jitter):
 
-        # jitter sequence
-        jitter_sequence = py_trees.composites.Sequence("Jitter Sequence Behavior")
-        jitter_timeout = TimeOut(timeout=0.2, name="Timeout for next jitter")
+            # change the current noise to be applied
+            turn = ChangeNoiseParameters(self._current_steer_noise, self._current_throttle_noise,
+                                         self._noise_mean, self._noise_std, self._dynamic_mean_for_steer,
+                                         self._dynamic_mean_for_throttle)  # Mean value of steering noise
+        # Noise end! put again the added noise to zero.
+        noise_end = ChangeNoiseParameters(self._current_steer_noise, self._current_throttle_noise,
+                                          0, 0, 0, 0)
 
-        for i in range(self._no_of_jitter_actions):
-            ego_vehicle_max_steer = random.gauss(self._noise_mean, self._noise_std)
-            if ego_vehicle_max_steer > 0:
-                ego_vehicle_max_steer += self._dynamic_mean
-            elif ego_vehicle_max_steer < 0:
-                ego_vehicle_max_steer -= self._dynamic_mean
-
-            # turn vehicle
-            turn = SteerVehicle(self.ego_vehicle, ego_vehicle_max_steer, name='Steering ' + str(i))
-
-            jitter_action = py_trees.composites.Parallel("Jitter Actions with Timeouts",
-                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-            jitter_action.add_child(turn)
-            jitter_action.add_child(jitter_timeout)
-            jitter_sequence.add_child(jitter_action)
-
+        jitter_action = py_trees.composites.Parallel("Jitter",
+                                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         # Abort jitter_sequence, if the vehicle is approaching an intersection
         jitter_abort = InTriggerDistanceToNextIntersection(self.ego_vehicle, self._abort_distance_to_intersection)
-
-        jitter = py_trees.composites.Parallel("Jitter",
-                                              policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        jitter.add_child(jitter_sequence)
-        jitter.add_child(jitter_abort)
-
         # endcondition: Check if vehicle reached waypoint _end_distance from here:
-        location, _ = get_location_in_distance(self.ego_vehicle, self._end_distance)
-        end_condition = InTriggerDistanceToLocation(self.ego_vehicle, location, 2.0)
+        end_condition = DriveDistance(self.ego_vehicle, self._end_distance)
+        start_end_parallel.add_child(start_condition)
+        start_end_parallel.add_child(end_condition)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
-        sequence.add_child(start_condition)
-        sequence.add_child(jitter)
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self.first_transform, physics=False))
+        sequence.add_child(ActorTransformSetter(self.other_actors[1], self.sec_transform, physics=False))
+        sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform, physics=False))
+        jitter = py_trees.composites.Sequence("Jitter Behavior")
+        jitter.add_child(turn)
+        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.sec_loc_prev, self._trigger_dist))
+        jitter.add_child(turn)
+        jitter.add_child(InTriggerDistanceToLocation(self.ego_vehicle, self.third_loc_prev, self._trigger_dist))
+        jitter.add_child(turn)
+        jitter_action.add_child(jitter)
+        jitter_action.add_child(jitter_abort)
+        sequence.add_child(start_end_parallel)
+        sequence.add_child(jitter_action)
         sequence.add_child(end_condition)
+        sequence.add_child(noise_end)
         return sequence
 
     def _create_test_criteria(self):
@@ -119,3 +175,20 @@ class ControlLoss(BasicScenario):
         criteria.append(collision_criterion)
 
         return criteria
+
+    def change_control(self, control):
+        """
+        This is a function that changes the control based on the scenario determination
+        :param control: a carla vehicle control
+        :return: a control to be changed by the scenario.
+        """
+        control.steer += self._current_steer_noise[0]
+        control.throttle += self._current_throttle_noise[0]
+
+        return control
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()

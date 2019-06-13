@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Labs.
-# authors: Fabian Oboril (fabian.oboril@intel.com)
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -14,24 +13,10 @@ from __future__ import print_function
 
 import py_trees
 
+from srunner.scenariomanager.atomic_scenario_behavior import InTriggerDistanceToLocationAlongRoute
+from srunner.scenariomanager.atomic_scenario_behavior import InTimeToArrivalToLocation
+from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import Scenario
-
-
-def get_location_in_distance(actor, distance):
-    """
-    Obtain a location in a given distance from the current actor's location.
-    Note: Search is stopped on first intersection.
-
-    @return obtained location and the traveled distance
-    """
-    waypoint = actor.get_world().get_map().get_waypoint(actor.get_location())
-    traveled_distance = 0
-    while not waypoint.is_intersection and traveled_distance < distance:
-        waypoint_new = waypoint.next(1.0)[-1]
-        traveled_distance += waypoint_new.transform.location.distance(waypoint.transform.location)
-        waypoint = waypoint_new
-
-    return waypoint.transform.location, traveled_distance
 
 
 class BasicScenario(object):
@@ -40,38 +25,83 @@ class BasicScenario(object):
     Base class for user-defined scenario
     """
 
-    _town = None            # Name of the map that is used
-    category = None         # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
-    name = None             # Name of the scenario
-    criteria_list = []      # List of evaluation criteria
-    timeout = 60            # Timeout of scenario in seconds
-    scenario = None
-
-    ego_vehicle = None
-    other_actors = []
-
-    def __init__(self, name, ego_vehicle, other_actors, town, world, debug_mode=False, terminate_on_failure=False):
+    def __init__(self, name, ego_vehicle, config, world,
+                 debug_mode=False, terminate_on_failure=False, criteria_enable=False):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
+        self.other_actors = []
+        if not self.timeout:     # pylint: disable=access-member-before-definition
+            self.timeout = 60    # If no timeout was provided, set it to 60 seconds
 
+        self.category = None     # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
+        self.criteria_list = []  # List of evaluation criteria
+        self.scenario = None
         # Check if the CARLA server uses the correct map
-        self._town = town
+        self._town = config.town
         self._check_town(world)
 
         self.ego_vehicle = ego_vehicle
-        self.other_actors = other_actors
         self.name = name
         self.terminate_on_failure = terminate_on_failure
+
+        # Initializing adversarial actors
+        self._initialize_actors(config)
+        if not CarlaDataProvider.is_sync_mode():
+            world.wait_for_tick()
+        else:
+            world.tick()
 
         # Setup scenario
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
         behavior = self._create_behavior()
-        criteria = self._create_test_criteria()
-        self.scenario = Scenario(behavior, criteria, self.name, self.timeout, self.terminate_on_failure)
+
+        criteria = None
+        if criteria_enable:
+            criteria = self._create_test_criteria()
+
+        # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
+
+        start_location = None
+        if config.trigger_point:
+            start_location = config.trigger_point.location     # start location of the scenario
+
+        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+
+        behavior_seq = py_trees.composites.Sequence()
+        if start_location:
+            if ego_vehicle_route:
+                behavior_seq.add_child(InTriggerDistanceToLocationAlongRoute(self.ego_vehicle,
+                                                                             ego_vehicle_route,
+                                                                             start_location,
+                                                                             5))
+            else:
+                behavior_seq.add_child(InTimeToArrivalToLocation(self.ego_vehicle,
+                                                                 2.0,
+                                                                 start_location))
+
+        behavior_seq.add_child(behavior)
+
+        self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
+
+    def _initialize_actors(self, config):
+        """
+        Default initialization of other actors.
+        Override this method in child class to provide custom initialization.
+        """
+        for actor in config.other_actors:
+            new_actor = CarlaActorPool.request_new_actor(actor.model,
+                                                         actor.transform,
+                                                         hero=False,
+                                                         autopilot=actor.autopilot,
+                                                         random_location=actor.random_location)
+            if new_actor is None:
+                raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
+
+            self.other_actors.append(new_actor)
 
     def _create_behavior(self):
         """
@@ -91,7 +121,28 @@ class BasicScenario(object):
             "If this error becomes visible the class hierarchy is somehow broken")
 
     def _check_town(self, world):
-        if world.get_map().name != self._town:
+        if CarlaDataProvider.get_map().name != self._town:
             print("The CARLA server uses the wrong map!")
             print("This scenario requires to use map {}".format(self._town))
             raise Exception("The CARLA server uses the wrong map!")
+
+    def change_control(self, control):  # pylint: disable=no-self-use
+        """
+        This is a function that changes the control based on the scenario determination
+        :param control: a carla vehicle control
+        :return: a control to be changed by the scenario.
+
+        Note: This method should be overriden by the user-defined scenario behavior
+        """
+        return control
+
+    def remove_all_actors(self):
+        """
+        Remove all actors
+        """
+        for i, _ in enumerate(self.other_actors):
+            if self.other_actors[i] is not None:
+                if CarlaActorPool.actor_id_exists(self.other_actors[i].id):
+                    CarlaActorPool.remove_actor_by_id(self.other_actors[i].id)
+                self.other_actors[i] = None
+        self.other_actors = []

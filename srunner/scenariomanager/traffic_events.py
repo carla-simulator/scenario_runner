@@ -1,9 +1,21 @@
+#!/usr/bin/env python
+
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+
+"""
+Collection of TrafficEvents
+"""
+
 from enum import Enum
 
+
 class TrafficEventType(Enum):
+
     """
     This enum represents different traffic events that occur during driving.
     """
+
     NORMAL_DRIVING = 0
     COLLISION_STATIC = 1
     COLLISION_VEHICLE = 2
@@ -13,35 +25,57 @@ class TrafficEventType(Enum):
     ROUTE_COMPLETED = 6
     TRAFFIC_LIGHT_INFRACTION = 7
     WRONG_WAY_INFRACTION = 8
+    ON_SIDEWALK_INFRACTION = 9
+    STOP_INFRACTION = 10
 
 
 class TrafficEvent(object):
-    def __init__(self, type, message=None, dict=None):
+
+    """
+    TrafficEvent definition
+    """
+
+    def __init__(self, event_type, message=None, dictionary=None):
         """
         Initialize object
 
-        :param type: TrafficEventType defining the type of traffic event
+        :param event_type: TrafficEventType defining the type of traffic event
         :param message: optional message to inform users of the event
-        :param dict: optional dictionary with arbitrary keys and values
+        :param dictionary: optional dictionary with arbitrary keys and values
         """
-        self._type = type
+        self._type = event_type
         self._message = message
-        self._dict = dict
+        self._dict = dictionary
 
     def get_type(self):
+        """
+        @return type
+        """
         return self._type
 
     def get_message(self):
+        """
+        @return message
+        """
         if self._message:
             return self._message
-        else:
-            return ""
+
+        return ""
 
     def set_message(self, message):
+        """
+        Set message
+        """
         self._message = message
 
     def get_dict(self):
+        """
+        @return dictionary
+        """
         return self._dict
 
-    def set_dict(self, dict):
-        self._dict = dict
+    def set_dict(self, dictionary):
+        """
+        Set dictionary
+        """
+        self._dict = dictionary

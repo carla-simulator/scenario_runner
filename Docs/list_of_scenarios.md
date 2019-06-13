@@ -3,13 +3,6 @@
 Welcome to the ScenarioRunner for CARLA! This document provides a list of all
 currently supported scenarios, and a short description for each one.
 
-## Scenarios in Town01
-The following scenarios take place in Town01. Hence, the CARLA server has to be
-started with Town01, e.g. when not using manual-mode:
-```
-CarlaUE4.sh /Game/Carla/Maps/Town01 -benchmark -fps=20 -windowed
-```
-
 ### FollowLeadingVehicle
 The scenario realizes a common driving behavior, in which the user-controlled
 ego vehicle follows a leading car driving down a given road in Town01. At some
@@ -28,16 +21,8 @@ accordingly. After some time, the cyclist clears the road, such that ego vehicle
 can continue driving.
 
 ### VehicleTurningLeft
-This scenario is similar to 'VehicleTurningRight'. The differnce is that the ego
+This scenario is similar to 'VehicleTurningRight'. The difference is that the ego
 vehicle takes a left turn from an intersection.
-
-
-## Scenarios in Town03
-The following scenarios take place in Town01. Hence, the CARLA server has to be
-started with Town03, e.g. when not using manual-mode:
-```
-CarlaUE4.sh /Game/Carla/Maps/Town03 -benchmark -fps=20 -windowed
-```
 
 ### OppositeVehicleRunningRedLight
 In this scenario an illegal behavior at an intersection is tested. An other
@@ -62,9 +47,32 @@ This scenario tests negotiation between two vehicles crossing cross each other
 through a junction without signal.
 The ego vehicle is passing through a junction without traffic lights
 And encounters another vehicle passing across the junction. The ego vehicle has
-to avoid collision and navigate accross the junction to succeed.
+to avoid collision and navigate across the junction to succeed.
 
 ### ControlLoss
 In this scenario control loss of a vehicle is tested due to bad road conditions, etc
 and it checks whether the vehicle is regained its control and corrected its course.
 
+### ManeuverOppositeDirection
+In this scenario vehicle is passing another vehicle in a rural area, in daylight, under clear
+weather conditions, at a non-junction and encroaches into another
+vehicle traveling in the opposite direction.
+
+### OtherLeadingVehicle
+The scenario realizes a common driving behavior, in which the user-controlled ego
+vehicle follows a leading car driving down a given road.
+At some point the leading car has to decelerate. The ego vehicle has to react
+accordingly by changing lane to avoid a collision and follow the leading car in
+other lane. The scenario ends via timeout, or if the ego vehicle drives certain
+distance.
+
+### SignalizedJunctionRightTurn
+In this scenario right turn of hero actor without collision at signalized intersection
+is tested. Hero Vehicle is turning right in an urban area, at a signalized intersection and
+turns into the same direction of another vehicle crossing straight initially from
+a lateral direction.
+
+### SignalizedJunctionLeftTurn
+In this scenario hero vehicle is turning left in an urban area,
+at a signalized intersection and cuts across the path of another vehicle
+coming straight crossing from an opposite direction.

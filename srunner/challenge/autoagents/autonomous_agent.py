@@ -1,5 +1,8 @@
+import datetime
 from enum import Enum
 from srunner.challenge.envs.sensor_interface import SensorInterface
+from srunner.scenariomanager.timer import GameTime
+from srunner.challenge.utils.route_manipulation import downsample_route
 
 class Track(Enum):
     """
@@ -54,7 +57,7 @@ class AutonomousAgent():
 
         return sensors
 
-    def run_step(self):
+    def run_step(self, timestamp):
         """
         Execute one step of navigation.
         :return: control
@@ -71,7 +74,11 @@ class AutonomousAgent():
     def __call__(self):
         input_data = self.sensor_interface.get_data()
 
-        control = self.run_step(input_data)
+        timestamp = GameTime.get_time()
+        wallclock = GameTime.get_wallclocktime()
+        print('======[Agent] Wallclock_time = {} / Sim_time = {}'.format(wallclock, timestamp))
+
+        control = self.run_step(input_data, timestamp)
         control.manual_gear_shift = False
 
         return control
@@ -79,5 +86,16 @@ class AutonomousAgent():
     def all_sensors_ready(self):
         return self.sensor_interface.all_sensors_ready()
 
-    def set_global_plan(self, global_plan):
-        self._global_plan = global_plan
+    def set_global_plan(self, global_plan_gps, global_plan_world_coord):
+
+        if self.track == Track.CAMERAS or self.track == Track.ALL_SENSORS:
+            ds_ids = downsample_route(global_plan_world_coord, 32)
+
+            self._global_plan_world_coord = [(global_plan_world_coord[x][0], global_plan_world_coord[x][1])
+                                             for x in ds_ids]
+            self._global_plan = [global_plan_gps[x] for x in ds_ids]
+
+        else:   # No downsampling is performed
+
+            self._global_plan = global_plan_gps
+            self._global_plan_world_coord = global_plan_world_coord
