@@ -293,7 +293,7 @@ class CollisionTest(Criterion):
         elif 'vehicle' in event.other_actor.type_id:
             for traffic_event in self.list_traffic_events:
                 if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
-                    and traffic_event.get_dict()['id'] == event.other_actor.id:
+                        and traffic_event.get_dict()['id'] == event.other_actor.id:
                         registered = True
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
@@ -413,6 +413,7 @@ class ReachedRegionTest(Criterion):
 
         return new_status
 
+
 class OnSidewalkTest(Criterion):
 
     """
@@ -433,7 +434,6 @@ class OnSidewalkTest(Criterion):
         self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 1.2)])
         self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -1.2)])
 
-
     def update(self):
         """
         Check lane invasion count
@@ -446,7 +446,6 @@ class OnSidewalkTest(Criterion):
         current_transform = self._actor.get_transform()
         current_location = current_transform.location
         current_yaw = current_transform.rotation.yaw
-
 
         rot_x = shapely.affinity.rotate(self.positive_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
         rot_nx = shapely.affinity.rotate(self.negative_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
@@ -615,6 +614,7 @@ class InRadiusRegionTest(Criterion):
 
         return new_status
 
+
 class InRouteTest(Criterion):
 
     """
@@ -685,7 +685,7 @@ class RouteCompletionTest(Criterion):
     """
     Check at which stage of the route is the actor at each tick
     """
-    DISTANCE_THRESHOLD = 15.0 # meters
+    DISTANCE_THRESHOLD = 15.0  # meters
     WINDOWS_SIZE = 2
 
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
@@ -707,7 +707,7 @@ class RouteCompletionTest(Criterion):
         for i, wp in enumerate(self._waypoints):
             d = wp.distance(prev_wp)
             if i > 0:
-                accum = self._accum_meters[i-1]
+                accum = self._accum_meters[i - 1]
             else:
                 accum = 0
 
@@ -741,7 +741,7 @@ class RouteCompletionTest(Criterion):
                     # good! segment completed!
                     self._current_index = index
                     self._percentage_route_completed = 100.0 * float(self._accum_meters[self._current_index]) \
-                                                       / float(self._accum_meters[-1])
+                        / float(self._accum_meters[-1])
                     self._traffic_event.set_dict({'route_completed': self._percentage_route_completed})
                     self._traffic_event.set_message(
                         "Agent has completed > {:.2f}% of the route".format(self._percentage_route_completed))
@@ -765,7 +765,7 @@ class RunningRedLightTest(Criterion):
     """
     Check if an actor is running a red light
     """
-    DISTANCE_LIGHT = 10 # m
+    DISTANCE_LIGHT = 10  # m
 
     def __init__(self, actor, name="RunningRedLightTest", terminate_on_failure=False):
         """
@@ -789,14 +789,12 @@ class RunningRedLightTest(Criterion):
                     waypoints.append(self._map.get_waypoint(pt))
                 self._list_traffic_lights.append((_actor, center, area, waypoints))
 
-
     def is_vehicle_crossing_line(self, seg1, seg2):
-        line1 = shapely.geometry.LineString([ (seg1[0].x, seg1[0].y), (seg1[1].x, seg1[1].y) ])
-        line2 = shapely.geometry.LineString([ (seg2[0].x, seg2[0].y), (seg2[1].x, seg2[1].y) ])
+        line1 = shapely.geometry.LineString([(seg1[0].x, seg1[0].y), (seg1[1].x, seg1[1].y)])
+        line2 = shapely.geometry.LineString([(seg2[0].x, seg2[0].y), (seg2[1].x, seg2[1].y)])
         inter = line1.intersection(line2)
 
         return not inter.is_empty
-
 
     def update(self):
         """
@@ -831,7 +829,8 @@ class RunningRedLightTest(Criterion):
                     self._world.debug.draw_point(pt + carla.Location(z=Z), size=0.1, color=color, life_time=0.01)
                 for wp in waypoints:
                     text = "{}.{}".format(wp.road_id, wp.lane_id)
-                    self._world.debug.draw_string(wp.transform.location, text, draw_shadow=False, color=color,life_time=0.01)
+                    self._world.debug.draw_string(
+                        wp.transform.location, text, draw_shadow=False, color=color, life_time=0.01)
 
             # logic
             center_loc = carla.Location(center)
@@ -870,8 +869,8 @@ class RunningRedLightTest(Criterion):
         return new_status
 
     def rotate_point(self, pt, angle):
-        x_ = math.cos(math.radians(angle))*pt.x - math.sin(math.radians(angle))*pt.y
-        y_ = math.sin(math.radians(angle))*pt.x - math.cos(math.radians(angle))*pt.y
+        x_ = math.cos(math.radians(angle)) * pt.x - math.sin(math.radians(angle)) * pt.y
+        y_ = math.sin(math.radians(angle)) * pt.x - math.cos(math.radians(angle)) * pt.y
         return carla.Vector3D(x_, y_, pt.z)
 
     def get_traffic_light_area(self, tl):
@@ -893,7 +892,7 @@ class RunningRedLightTest(Criterion):
         area = []
         # why the 0.9 you may ask?... because the triggerboxes are set manually and sometimes they
         # cross to adjacent lanes by accident
-        x_values = np.arange(-area_ext.x*0.9, area_ext.x*0.9, 1.0)
+        x_values = np.arange(-area_ext.x * 0.9, area_ext.x * 0.9, 1.0)
         for x in x_values:
             pt = self.rotate_point(carla.Vector3D(x, 0, area_ext.z), base_rot)
             area.append(wpx_location + carla.Location(x=pt.x, y=pt.y))

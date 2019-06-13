@@ -1323,8 +1323,8 @@ class TrafficLightManipulator(AtomicBehavior):
 
             else:
                 # the traffic light has been manipulated...
-                base_transform =  self.target_traffic_light.get_transform()
-                area_loc = carla.Location(base_transform.transform( self.target_traffic_light.trigger_volume.location))
+                base_transform = self.target_traffic_light.get_transform()
+                area_loc = carla.Location(base_transform.transform(self.target_traffic_light.trigger_volume.location))
                 distance_to_traffic_light = area_loc.distance(self.ego_vehicle.get_location())
 
                 if self.debug:

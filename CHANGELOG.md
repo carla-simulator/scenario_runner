@@ -1,28 +1,28 @@
 ## Latest changes
-* Added logging functionalities to challenge_evaluator_routes.py
-* Added wall clock timeout for the CARLA challenge
-* Added background scenario to generate dynamic traffic using autopilot
-* Updated compatibility with Python 2.7 for the challenge evaluator
-* Updated WaypointFollower behavior
-* Added detect_lane_obstacle() helper function which identifies if an obstacle is present in front of the reference actor
-* Added test to detect vehicles running a stop
-* Updated the reference position for a scenario is now called trigger_point
-* Added universal access to the map without re-calling get_map()
-* Added criteria_enable flag to enable/disable criteria tree
-* Added multiple helper methods for generic scenario execution.
-* Added pseudo-sensors for SceneLayoutMeasurements and ObjectMeasurements for Track4 of the CARLA AD challenge
-* Extended CarlaDataProvider with method to get next relevant traffic light
-* Added track identification for autonomous_agent.py
-* Added HDMap pseudo-sensor
-* Added wrong way test
-* Added new traffic event logger
-* Added running red light test
-* Added running stop test
-* Added various helper methods to allow generic scenario execution
-* Added method to calculate distance along a route
-* Updated folder structure and naming convention in lowercase
-* In challenge mode spawn exception are caught and the corresponding scenario is removed
+
+## CARLA Scenario_Runner 0.9.5
+* Added support for CARLA challenge
+    - Added logging functionalities to challenge_evaluator_routes.py
+    - Added wall clock timeout for the CARLA challenge
+    - Added background scenario to generate dynamic traffic using autopilot
+    - Updated compatibility with Python 2.7 for the challenge evaluator
+    - Updated WaypointFollower behavior
+    - Added detect_lane_obstacle() helper function which identifies if an obstacle is present in front of the reference actor
+    - Added test to detect vehicles running a stop
+    - Updated the reference position for a scenario is now called trigger_point
+    - Added universal access to the map without re-calling get_map()
+    - Added criteria_enable flag to enable/disable criteria tree
+    - Added multiple helper methods for generic scenario execution.
+    - Added pseudo-sensors for SceneLayoutMeasurements and ObjectMeasurements for Track4 of the CARLA AD challenge
+    - Added track identification for autonomous_agent.py
+    - Added HDMap pseudo-sensor
+    - Added new traffic event logger
+    - Added various helper methods to allow generic scenario execution
+    - Added method to calculate distance along a route
+    - In challenge mode spawn exception are caught and the corresponding scenario is removed
 * Reworked scenario execution
+    - Updated folder structure and naming convention in lowercase
+    - Extended CarlaDataProvider with method to get next relevant traffic light
     - Every scenario has to have a configuration provided as XML file.
       Currently there is one XML file for each scenario class
     - The scenario runner is now responsible for spawning/destroying the ego vehicle
@@ -44,6 +44,10 @@
     - ActorSource: creates actors indefinitely around a location if no other vehicles are present within a threshold
     - ActorSink: indefinitely destroys vehicles that wander close to a location within a threshold
     - InTriggerDistanceToLocationAlongRoute: check if an actor is within a certain distance to a given location along a given route
+* Added new atomic evaluation criteria
+    - Added running red light test
+    - Added running stop test
+    - Added wrong way test
 * Fixes
     - Fixed SteerVehicle atomic behavior to keep vehicle velocity
 * Updated NHTSA Traffic Scenarios
@@ -57,8 +61,6 @@
                                    straight initially from a lateral direction and avoid collision at a signalized intersection.
     - SignalizedJunctionLeftTurn : hero vehicle is turning left at signalized intersection, cuts across the path of another vehicle
                                    coming straight crossing from an opposite direction.
-* Traffic flow scenario rework
-    - Traffic scenario 06 modified to simulate a flow of vehicles
 
 ## CARLA Scenario_Runner 0.9.2
 
