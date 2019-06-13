@@ -17,6 +17,10 @@
 #include "ActorLocalizationCallable.hpp"
 #include "ActorPIDCallable.hpp"
 #include "BatchControlCallable.hpp"
+#include "carla/rpc/Command.h"
+#include "carla/rpc/VehicleControl.h"
+#include "carla/client/Vehicle.h"
+#include "carla/client/detail/Client.h"
 
 void test_get_topology(carla::SharedPtr<carla::client::Map> world_map);
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
@@ -43,8 +47,8 @@ int main()
     // test_actor_state_stress(vehicle_list);
     // test_in_memory_map(world_map);
     // test_actor_localization_stage(vehicle_list, world_map);
-    // test_actor_PID_stage(vehicle_list, world_map);
-    test_batch_control_stage(vehicle_list, world_map);
+    test_actor_PID_stage(vehicle_list, world_map);
+    // test_batch_control_stage(vehicle_list, world_map);
     return 0;
 }
 
@@ -82,8 +86,8 @@ void test_batch_control_stage(carla::SharedPtr<carla::client::ActorList> actor_l
     actor_localization_stage.start();
 
     float k_v = 1.0;
-    float k_s = 1.0;
-    float target_velocity = 60.0;
+    float k_s = 3.0;
+    float target_velocity = 10.0;
     traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
     traffic_manager::PipelineStage actor_pid_stage(1, actor_pid_callable);
     actor_pid_stage.start();
@@ -105,7 +109,6 @@ void test_batch_control_stage(carla::SharedPtr<carla::client::ActorList> actor_l
         //     << "\t Queue size : " << batch_control_stage.size() << std::endl;
     }
 }
-
 
 void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map)
 {
@@ -140,24 +143,49 @@ void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list,
     actor_localization_stage.start();
 
     float k_v = 1.0;
-    float k_s = 1.0;
-    float target_velocity = 60.0;
+    float k_s = 3.0;
+    float target_velocity = 10.0;
     traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
     traffic_manager::PipelineStage actor_pid_stage(1, actor_pid_callable);
     actor_pid_stage.start();
 
     std::cout << "All stage pipeline started !" <<std::endl;
     
+    carla::rpc::VehicleControl vehicle_control;            
+    std::vector<carla::rpc::Command> commands;
+
+    int batch_size = 1000;
+    long count = 0;
+    auto last_time = std::chrono::system_clock::now();
     while(true)
     {
+        
         auto out = pid_queue.pop();
-        std::cout << "Throttle : " << out.getAttribute("throttle")
-            << "\t Brake : " << out.getAttribute("brake")
-            <<"\t steer : " << out.getAttribute("steer") 
-            << "\t Queue size : " << pid_queue.size() << std::endl;
+        // std::cout << "Throttle : " << out.getAttribute("throttle")
+        //     << "\t Brake : " << out.getAttribute("brake")
+        //     <<"\t steer : " << out.getAttribute("steer") 
+        //     << "\t Queue size : " << pid_queue.size() << std::endl;
+        auto actor = out.getActor();
+        vehicle_control.throttle = out.getAttribute("throttle");
+        vehicle_control.brake = out.getAttribute("brake");
+        vehicle_control.steer = out.getAttribute("steer");
+
+        if(count % batch_size == 0){
+            auto vehicle = (carla::client::Vehicle*) &(*actor); 
+            vehicle->ApplyControl(vehicle_control);
+        }
+        count++;
+        auto current_time = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = current_time - last_time;
+
+        if(diff.count() > 1.0)
+        {
+            last_time = current_time;
+            std::cout << "Updates processed per second " << count << std::endl;
+            count = 0;
+        }
     }
 }
-
 
 void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map)
 {

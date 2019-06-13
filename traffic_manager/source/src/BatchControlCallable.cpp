@@ -21,19 +21,22 @@ namespace traffic_manager{
 
             while(!input_queue->empty()){
                 auto element = input_queue->pop();
-                int actor_id = element.getActorID();       
+                auto actor = element.getActor();       
                 vehicle_control.throttle = element.getAttribute("throttle");
                 vehicle_control.brake = element.getAttribute("brake");
                 vehicle_control.steer = element.getAttribute("steer");
-                carla::rpc::Command::ApplyVehicleControl control_command(actor_id, vehicle_control);
+                carla::rpc::Command::ApplyVehicleControl control_command(actor->GetId(), vehicle_control);
                 commands.push_back(control_command);
+                auto vehicle = (carla::client::Vehicle*) &(*actor); 
+                vehicle->ApplyControl(vehicle_control);
             }
 
-            if(commands.size() >= batch_size){
-                carla::client::Client* client_obj;
-                client_obj->ApplyBatch(commands);
-                commands.empty();
-            }
+            // if(commands.size() >= batch_size){
+                
+            //     carla::client::Client* client_obj;
+            //     client_obj->ApplyBatch(commands);
+            //     commands.empty();
+            // }
         }
         PipelineMessage empty_message;
         return empty_message;
