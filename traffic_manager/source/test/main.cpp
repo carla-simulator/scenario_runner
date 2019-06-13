@@ -86,16 +86,16 @@ void test_batch_control_stage(carla::SharedPtr<carla::client::ActorList> actor_l
     actor_localization_stage.start();
 
     float k_v = 1.0;
-    float k_s = 1.0;
-    float target_velocity = 60.0;
+    float k_s = 3.0;
+    float target_velocity = 10.0;
     traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
     traffic_manager::PipelineStage actor_pid_stage(1, actor_pid_callable);
     actor_pid_stage.start();
 
-    // int batch_size = 20;
-    // traffic_manager::BatchControlCallable batch_control_callable(batch_size, &pid_queue, &batch_control_queue);
-    // traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
-    // batch_control_stage.start();
+    int batch_size = 20;
+    traffic_manager::BatchControlCallable batch_control_callable(batch_size, &pid_queue, &batch_control_queue);
+    traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
+    batch_control_stage.start();
 
     std::cout << "All stage pipeline started !" <<std::endl;
     

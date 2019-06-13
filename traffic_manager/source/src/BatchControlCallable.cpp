@@ -27,13 +27,16 @@ namespace traffic_manager{
                 vehicle_control.steer = element.getAttribute("steer");
                 carla::rpc::Command::ApplyVehicleControl control_command(actor->GetId(), vehicle_control);
                 commands.push_back(control_command);
+                auto vehicle = (carla::client::Vehicle*) &(*actor); 
+                vehicle->ApplyControl(vehicle_control);
             }
 
-            if(commands.size() >= batch_size){
-                carla::client::Client* client_obj;
-                client_obj->ApplyBatch(commands);
-                commands.empty();
-            }
+            // if(commands.size() >= batch_size){
+                
+            //     carla::client::Client* client_obj;
+            //     client_obj->ApplyBatch(commands);
+            //     commands.empty();
+            // }
         }
         PipelineMessage empty_message;
         return empty_message;
