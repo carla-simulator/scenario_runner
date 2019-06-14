@@ -10,7 +10,7 @@ Basic CARLA Autonomous Driving training scenario
 
 import py_trees
 
-from srunner.tools.config_parser import TargetConfiguration, RouteConfiguration
+from srunner.tools.config_parser import RouteConfiguration
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenarios.basic_scenario import *
@@ -69,11 +69,6 @@ class MasterScenario(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-
-        if isinstance(self.target, TargetConfiguration):
-            location = self.target.transform.location
-        else:
-            location = self.target.location
 
         if isinstance(self.route, RouteConfiguration):
             route = self.route.data

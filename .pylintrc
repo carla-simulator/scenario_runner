@@ -1,6 +1,6 @@
 [MESSAGES CONTROL]
 max-line-length=120
 disable=anomalous-backslash-in-string,too-many-arguments,too-few-public-methods,too-many-instance-attributes,redefined-variable-type,unused-argument,wildcard-import,unused-wildcard-import,bare-except,broad-except,bad-continuation,too-many-lines,too-many-branches,locally-disabled,too-many-locals,too-many-statements,duplicate-code,too-many-nested-blocks,fixme
-ignored-modules=carla,carla.command
+ignored-modules=carla,carla.command,agents.navigation.basic_agent,agents.navigation.roaming_agent,agents.tools.misc,agents.navigation.local_planner
 variable-rgx=[a-z0-9_]{1,40}$
 function-rgx=[a-z0-9_]{1,40}$

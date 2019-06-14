@@ -10,7 +10,7 @@ is making a left turn
 """
 
 from __future__ import print_function
-from six.moves.queue import Queue
+from six.moves.queue import Queue # pylint: disable=relative-import
 
 import py_trees
 import carla

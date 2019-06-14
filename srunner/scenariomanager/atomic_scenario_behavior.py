@@ -847,7 +847,7 @@ class BasicAgentBehavior(AtomicBehavior):
         """
         super(BasicAgentBehavior, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._agent = BasicAgent(actor)
+        self._agent = BasicAgent(actor)  # pylint: disable=undefined-variable
         self._agent.set_destination((target_location.x, target_location.y, target_location.z))
         self._control = carla.VehicleControl()
         self._actor = actor
@@ -1034,7 +1034,7 @@ class WaypointFollower(AtomicBehavior):
         return True
 
     def _apply_local_planner(self, actor):
-        local_planner = LocalPlanner(
+        local_planner = LocalPlanner(  # pylint: disable=undefined-variable
             actor, opt_dict={
                 'target_speed': self._target_speed,
                 'lateral_control_dict': self._args_lateral_dict})

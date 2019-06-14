@@ -293,8 +293,8 @@ class CollisionTest(Criterion):
         elif 'vehicle' in event.other_actor.type_id:
             for traffic_event in self.list_traffic_events:
                 if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
-                        and traffic_event.get_dict()['id'] == event.other_actor.id:
-                        registered = True
+                        and traffic_event.get_dict()['id'] == event.other_actor.id:   # pylint: disable=bad-indentation
+                        registered = True                                             # pylint: disable=bad-indentation
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
             for traffic_event in self.list_traffic_events:
@@ -789,7 +789,11 @@ class RunningRedLightTest(Criterion):
                     waypoints.append(self._map.get_waypoint(pt))
                 self._list_traffic_lights.append((_actor, center, area, waypoints))
 
+    # pylint: disable=no-self-use
     def is_vehicle_crossing_line(self, seg1, seg2):
+        """
+        check if vehicle crosses a line segment
+        """
         line1 = shapely.geometry.LineString([(seg1[0].x, seg1[0].y), (seg1[1].x, seg1[1].y)])
         line2 = shapely.geometry.LineString([(seg2[0].x, seg2[0].y), (seg2[1].x, seg2[1].y)])
         inter = line1.intersection(line2)
@@ -817,16 +821,16 @@ class RunningRedLightTest(Criterion):
         for traffic_light, center, area, waypoints in self._list_traffic_lights:
 
             if self.debug:
-                Z = 2.1
+                z = 2.1
                 if traffic_light.state == carla.TrafficLightState.Red:
                     color = carla.Color(255, 0, 0)
                 elif traffic_light.state == carla.TrafficLightState.Green:
                     color = carla.Color(0, 255, 0)
                 else:
                     color = carla.Color(255, 255, 255)
-                self._world.debug.draw_point(center + carla.Location(z=Z), size=0.2, color=color, life_time=0.01)
+                self._world.debug.draw_point(center + carla.Location(z=z), size=0.2, color=color, life_time=0.01)
                 for pt in area:
-                    self._world.debug.draw_point(pt + carla.Location(z=Z), size=0.1, color=color, life_time=0.01)
+                    self._world.debug.draw_point(pt + carla.Location(z=z), size=0.1, color=color, life_time=0.01)
                 for wp in waypoints:
                     text = "{}.{}".format(wp.road_id, wp.lane_id)
                     self._world.debug.draw_string(
@@ -868,34 +872,40 @@ class RunningRedLightTest(Criterion):
 
         return new_status
 
-    def rotate_point(self, pt, angle):
-        x_ = math.cos(math.radians(angle)) * pt.x - math.sin(math.radians(angle)) * pt.y
-        y_ = math.sin(math.radians(angle)) * pt.x - math.cos(math.radians(angle)) * pt.y
-        return carla.Vector3D(x_, y_, pt.z)
+    def rotate_point(self, point, angle):
+        """
+        rotate a given point by a given angle
+        """
+        x_ = math.cos(math.radians(angle)) * point.x - math.sin(math.radians(angle)) * point.y
+        y_ = math.sin(math.radians(angle)) * point.x - math.cos(math.radians(angle)) * point.y
+        return carla.Vector3D(x_, y_, point.z)
 
-    def get_traffic_light_area(self, tl):
-        base_transform = tl.get_transform()
+    def get_traffic_light_area(self, traffic_light):
+        """
+        get area of a given traffic light
+        """
+        base_transform = traffic_light.get_transform()
         base_rot = base_transform.rotation.yaw
 
-        area_loc = base_transform.transform(tl.trigger_volume.location)
+        area_loc = base_transform.transform(traffic_light.trigger_volume.location)
 
         wpx = self._map.get_waypoint(area_loc)
         while not wpx.is_intersection:
-            next = wpx.next(1.0)[0]
-            if next:
-                wpx = next
+            next_wp = wpx.next(1.0)[0]
+            if next_wp:
+                wpx = next_wp
             else:
                 break
         wpx_location = wpx.transform.location
-        area_ext = tl.trigger_volume.extent
+        area_ext = traffic_light.trigger_volume.extent
 
         area = []
         # why the 0.9 you may ask?... because the triggerboxes are set manually and sometimes they
         # cross to adjacent lanes by accident
         x_values = np.arange(-area_ext.x * 0.9, area_ext.x * 0.9, 1.0)
         for x in x_values:
-            pt = self.rotate_point(carla.Vector3D(x, 0, area_ext.z), base_rot)
-            area.append(wpx_location + carla.Location(x=pt.x, y=pt.y))
+            point = self.rotate_point(carla.Vector3D(x, 0, area_ext.z), base_rot)
+            area.append(wpx_location + carla.Location(x=point.x, y=point.y))
 
         return area_loc, area
 
