@@ -108,10 +108,9 @@ class BasicScenario(object):
                                                              ego_vehicle_route,
                                                              start_location,
                                                              5)
-            else:
-                return InTimeToArrivalToLocation(self.ego_vehicles[0],
-                                                 2.0,
-                                                 start_location)
+            return InTimeToArrivalToLocation(self.ego_vehicles[0],
+                                             2.0,
+                                             start_location)
 
         return None
 

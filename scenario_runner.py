@@ -78,13 +78,12 @@ class ScenarioRunner(object):
     ego_vehicles = []
 
     # Tunable parameters
-    client_timeout = 10.0  # in seconds
-    wait_for_world = 10.0  # in seconds
+    client_timeout = 30.0  # in seconds
+    wait_for_world = 20.0  # in seconds
 
     # CARLA world and scenario handlers
     world = None
     manager = None
-
 
     additional_scenario_module = None
 
@@ -149,9 +148,8 @@ class ScenarioRunner(object):
         CarlaActorPool.cleanup()
 
         if ego:
-            for i,_ in enumerate(self.ego_vehicles):
+            for i, _ in enumerate(self.ego_vehicles):
                 if self.ego_vehicles[i]:
-                    self.ego_vehicles[i]
                     self.ego_vehicles[i] = None
             self.ego_vehicles = []
 
@@ -183,7 +181,6 @@ class ScenarioRunner(object):
                         if carla_vehicle.attributes['role_name'] == ego_vehicle.rolename:
                             ego_vehicle_found = True
                             self.ego_vehicles.append(carla_vehicle)
-                            self.ego_vehicles[-1].set_transform(ego_vehicle.transform)
                             break
                     if not ego_vehicle_found:
                         ego_vehicle_missing = True
@@ -229,7 +226,8 @@ class ScenarioRunner(object):
 
             # Execute each configuration
             for config in scenario_configurations:
-                self.world = self.client.load_world(config.town)
+                if args.reloadWorld:
+                    self.world = self.client.load_world(config.town)
                 CarlaActorPool.set_client(self.client)
                 CarlaDataProvider.set_world(self.world)
 
@@ -293,6 +291,8 @@ if __name__ == '__main__':
     PARSER.add_argument('--waitForEgo', action="store_true", help='Connect the scenario to an existing ego vehicle')
     PARSER.add_argument('--configFile', default='', help='Provide an additional scenario configuration file (*.xml)')
     PARSER.add_argument('--additionalScenario', default='', help='Provide additional scenario implementations (*.py)')
+    PARSER.add_argument('--reloadWorld', action="store_true",
+                        help='Reload the CARLA world before starting a scenario (default=True)')
     # pylint: disable=line-too-long
     PARSER.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')

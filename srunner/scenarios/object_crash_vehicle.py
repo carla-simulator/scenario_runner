@@ -82,7 +82,8 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Only behavior here is to wait
         """
-        lane_width = self.ego_vehicles[0].get_world().get_map().get_waypoint(self.ego_vehicles[0].get_location()).lane_width
+        lane_width = self.ego_vehicles[0].get_world().get_map().get_waypoint(
+            self.ego_vehicles[0].get_location()).lane_width
         lane_width = lane_width + (1.25 * lane_width)
 
         # leaf nodes
