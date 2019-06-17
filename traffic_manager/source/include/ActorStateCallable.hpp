@@ -1,8 +1,5 @@
 //Declaration of ActorStateCallable class members
 #pragma once
-
-#include "carla/client/Actor.h"
-#include "carla/client/ActorList.h"
 #include "PipelineCallable.hpp"
 
 namespace traffic_manager{

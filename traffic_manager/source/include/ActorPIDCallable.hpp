@@ -2,7 +2,6 @@
 
 #pragma once
 #include <cmath>
-#include "carla/rpc/VehicleControl.h"
 #include "PipelineCallable.hpp"
 
 namespace traffic_manager{

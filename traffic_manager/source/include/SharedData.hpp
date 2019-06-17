@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <memory.h>
+#include <memory>
+#include "carla/client/Client.h"
 #include "carla/client/Actor.h"
 #include "InMemoryMap.hpp"
 #include "SyncQueue.hpp"
@@ -16,6 +17,7 @@ namespace traffic_manager{
         std::vector<carla::SharedPtr<carla::client::Actor>> registered_actors;
         std::shared_ptr<InMemoryMap> local_map;
         std::map<int , std::shared_ptr<SyncQueue<std::shared_ptr<SimpleWaypoint>>>> buffer_map;
+        carla::client::Client* client;
         SharedData();
         ~SharedData();
         void registerActor();

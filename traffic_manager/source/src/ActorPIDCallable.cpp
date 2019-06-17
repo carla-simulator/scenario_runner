@@ -19,20 +19,25 @@ namespace traffic_manager{
 
         float max_throttle = 1.0;
         float expr_v = k_v*((target_velocity - current_velocity) / target_velocity);
-        carla::rpc::VehicleControl actor_control;        
+        
+        float throttle;
+        float brake;
+        float steer;
+
         if(expr_v > 0.0){
-            actor_control.throttle = std::max(expr_v, max_throttle);
-            actor_control.brake = 0.0;
+            throttle = std::max(expr_v, max_throttle);
+            brake = 0.0;
         }
         else{
-            actor_control.throttle = 0.0;
-            actor_control.brake = std::max(std::abs(expr_v), max_throttle);
+            throttle = 0.0;
+            brake = std::max(std::abs(expr_v), max_throttle);
         }
-        actor_control.steer = k_s*deviation;
+        steer = k_s*deviation;
+        
         out_message.setActor(message.getActor());
-        out_message.setAttribute("throttle", actor_control.throttle);
-        out_message.setAttribute("brake", actor_control.brake);
-        out_message.setAttribute("steer", actor_control.steer);
+        out_message.setAttribute("throttle", throttle);
+        out_message.setAttribute("brake", brake);
+        out_message.setAttribute("steer", steer);
         
         return out_message;
     }

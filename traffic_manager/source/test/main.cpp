@@ -31,7 +31,10 @@ void test_actor_localization_stage(
     carla::SharedPtr<carla::client::Map> world_map);
 void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map);
 void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map);
-void test_batch_control_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map);
+void test_batch_control_stage(
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn);
+
 int main()
 {   
     auto client_conn = carla::client::Client("localhost", 2000);
@@ -47,68 +50,72 @@ int main()
     // test_actor_state_stress(vehicle_list);
     // test_in_memory_map(world_map);
     // test_actor_localization_stage(vehicle_list, world_map);
-    test_actor_PID_stage(vehicle_list, world_map);
-    // test_batch_control_stage(vehicle_list, world_map);
+    // test_actor_PID_stage(vehicle_list, world_map);
+    test_batch_control_stage(vehicle_list, world_map, client_conn);
+
     return 0;
 }
 
-// void test_batch_control_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map)
-// {
+void test_batch_control_stage (
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map,
+    carla::client::Client& client_conn)
+{
 
-//     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
-//     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
-//     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> localization_queue(20);
-//     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> pid_queue(20);
-//     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> batch_control_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> localization_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> pid_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> batch_control_queue(20);
 
-//     traffic_manager::SharedData shared_data;
-//     for(auto it = actor_list->begin(); it != actor_list->end(); it++)
-//     {
-//         shared_data.registered_actors.push_back(*it);
-//     }
+    traffic_manager::SharedData shared_data;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+    {
+        shared_data.registered_actors.push_back(*it);
+    }
 
-//     auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
-//     auto topology = dao.getTopology();
-//     auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
-//     local_map->setUp(1.0);
-//     shared_data.local_map = local_map;
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+    auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
+    local_map->setUp(1.0);
+    shared_data.local_map = local_map;
 
-//     traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
-//     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
-//     feeder_stage.start();
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
+    traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
+    feeder_stage.start();
     
-//     traffic_manager::ActorStateCallable actor_state_callable(&feeder_queue, &actor_state_queue);
-//     traffic_manager::PipelineStage actor_state_stage(8, actor_state_callable);
-//     actor_state_stage.start();
+    traffic_manager::ActorStateCallable actor_state_callable(&feeder_queue, &actor_state_queue);
+    traffic_manager::PipelineStage actor_state_stage(8, actor_state_callable);
+    actor_state_stage.start();
 
-//     traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
-//     traffic_manager::PipelineStage actor_localization_stage(1, actor_localization_callable);
-//     actor_localization_stage.start();
+    traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
+    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
+    actor_localization_stage.start();
 
-//     float k_v = 1.0;
-//     float k_s = 3.0;
-//     float target_velocity = 10.0;
-//     traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
-//     traffic_manager::PipelineStage actor_pid_stage(1, actor_pid_callable);
-//     actor_pid_stage.start();
+    float k_v = 1.0;
+    float k_s = 3.0;
+    float target_velocity = 10.0;
+    traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
+    traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
+    actor_pid_stage.start();
 
-//     int batch_size = 20;
-//     traffic_manager::BatchControlCallable batch_control_callable(batch_size, &pid_queue, &batch_control_queue);
-//     traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
-//     batch_control_stage.start();
+    traffic_manager::BatchControlCallable batch_control_callable(&pid_queue, &batch_control_queue, &shared_data);
+    traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
+    batch_control_stage.start();
 
-//     std::cout << "All stage pipeline started !" <<std::endl;
+    std::cout << "All stage pipeline started !" <<std::endl;
     
-//     while(true)
-//     {
-//         //std::cout << "Applied batch control" << std::endl;
-//         // auto out = batch_control_stage.pop();
-//         // std::cout << "Throttle : " << out.getAttribute("throttle")
-//         //     << "\t Brake : " << out.getAttribute("brake")
-//         //     <<"\t steer : " << out.getAttribute("steer") 
-//         //     << "\t Queue size : " << batch_control_stage.size() << std::endl;
-//     }
-// }
+    while(true)
+    {
+        sleep(1);
+        //std::cout << "Applied batch control" << std::endl;
+        // auto out = batch_control_stage.pop();
+        // std::cout << "Throttle : " << out.getAttribute("throttle")
+        //     << "\t Brake : " << out.getAttribute("brake")
+        //     <<"\t steer : " << out.getAttribute("steer") 
+        //     << "\t Queue size : " << batch_control_stage.size() << std::endl;
+    }
+}
 
 void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map)
 {
@@ -139,14 +146,14 @@ void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list,
     actor_state_stage.start();
 
     traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
-    traffic_manager::PipelineStage actor_localization_stage(1, actor_localization_callable);
+    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
     actor_localization_stage.start();
 
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
     traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
-    traffic_manager::PipelineStage actor_pid_stage(1, actor_pid_callable);
+    traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
     actor_pid_stage.start();
 
     std::cout << "All stage pipeline started !" <<std::endl;
@@ -160,10 +167,6 @@ void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list,
     {
         
         auto out = pid_queue.pop();
-        // std::cout << "Throttle : " << out.getAttribute("throttle")
-        //     << "\t Brake : " << out.getAttribute("brake")
-        //     <<"\t steer : " << out.getAttribute("steer") 
-        //     << "\t Queue size : " << pid_queue.size() << std::endl;
         auto actor = out.getActor();
         vehicle_control.throttle = out.getAttribute("throttle");
         vehicle_control.brake = out.getAttribute("brake");
