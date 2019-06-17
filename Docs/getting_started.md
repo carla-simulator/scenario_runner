@@ -1,7 +1,7 @@
 # Getting Started Tutorial
 
 !!! important
-    This tutorial refers to the latest versions of CARLA (at least 0.9.2)
+    This tutorial refers to the latest versions of CARLA (at least 0.9.5)
 
 Welcome to the ScenarioRunner for CARLA! This tutorial provides the basic steps
 for getting started using the ScenarioRunner for CARLA.
@@ -37,7 +37,7 @@ Note: py-trees newer than v0.8 is *NOT* supported.
 First of all, you need to get latest master branch from CARLA. Then you have to
 include CARLA Python API to the Python path:
 ```
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI
 ```
 NOTE: ${CARLA_ROOT} needs to be replaced with your CARLA installation directory,
       and <VERSION> needs to be replaced with the correct string.
@@ -53,7 +53,7 @@ important to achieve a deterministic behavior.
 
 Start the example scenario (follow a leading vehicle) in an extra terminal:
 ```
-python scenario_runner.py --scenario FollowLeadingVehicle
+python scenario_runner.py --scenario FollowLeadingVehicle_1
 ```
 
 If you require help or want to explore other command line parameters, start the scenario
@@ -75,6 +75,8 @@ The only difference is, that you start the scenario_runner as follows:
 ```
 python scenario_runner.py --scenario group:FollowLeadingVehicle
 ```
+
+Note: This is currently not possible. We will re-enable this feature with one of the next commits.
 
 ## Running other scenarios
 A list of supported scenarios is provided in
