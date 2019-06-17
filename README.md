@@ -4,6 +4,9 @@ This repository contains traffic scenario definition and an execution engine
 for CARLA. It also allows  the execution of a simulation of the CARLA Challenge.
 You can use this system to prepare your agent for the CARLA Challenge.
 
+[![Scenario_Runner for CARLA](./Docs/images/scenario_runner_video.png)](https://youtu.be/ChmF8IFagpo?t=68)
+
+
 Disclaimer
 ----------
 

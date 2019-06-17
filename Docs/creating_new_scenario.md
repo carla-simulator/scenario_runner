@@ -18,11 +18,11 @@ follows:
        Some documentation on NewScenario
        """
 
-       timeout = 60            # Timeout of scenario in seconds
        # some ego vehicle parameters
        # some parameters for the other vehicles
 
-       def __init__(self, world, ego_vehice, other_actors, town, debug_mode=False):
+       def __init__(self, world, ego_vehicle, config, randomize=False, debug_mode=False, criteria_enable=True,
+                    timeout=60):
            """
            Initialize all parameters required for NewScenario
            """
@@ -30,11 +30,11 @@ follows:
            # Call constructor of BasicScenario
            super(NewScenario, self).__init__(
              name="NewScenario",
-             ego_vehicle=ego_vehicle,
-             other_actors=other_actors,
-             town=town,
-             world=world,
-             debug_mode=debug_mode)
+             ego_vehicle,
+             config,
+             world,
+             debug_mode,
+             criteria_enable=criteria_enable))
 
 
        def create_behavior(self):
