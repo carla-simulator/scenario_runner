@@ -1,6 +1,8 @@
 //Declaration of FeederCallable class members
 #pragma once
 
+#include <chrono>
+#include <thread>
 #include "carla/client/Actor.h"
 #include "PipelineCallable.hpp"
 

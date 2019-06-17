@@ -1,6 +1,7 @@
 // Declaration of class memebers
 
 #pragma once
+#include <chrono>
 #include "carla/rpc/Command.h"
 #include "carla/rpc/VehicleControl.h"
 #include "PipelineCallable.hpp"
