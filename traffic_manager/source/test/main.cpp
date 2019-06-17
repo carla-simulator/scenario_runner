@@ -79,6 +79,7 @@ void test_batch_control_stage (
     auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
     local_map->setUp(1.0);
     shared_data.local_map = local_map;
+    shared_data.client = &client_conn;
 
     traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
