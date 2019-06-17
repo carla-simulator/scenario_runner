@@ -15,7 +15,7 @@ namespace traffic_manager
         if(shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()){
             float nearest_distance = nearestDistance(shared_data, &message);
             float dot_product = nearestDotProduct(shared_data, &message);
-            while(dot_product <= 0 || nearest_distance <= 2.0){
+            while(dot_product <= 0 || nearest_distance <= 5.0){
                 shared_data->buffer_map[actor_id]->pop();
                 dot_product = nearestDotProduct(shared_data, &message);
                 nearest_distance = nearestDistance(shared_data, &message);
