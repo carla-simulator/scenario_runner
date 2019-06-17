@@ -49,7 +49,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._start_distance = self._first_vehicle_location * 0.9
         self._opposite_speed = 20   # km/h
         self._source_gap = 40   # m
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._source_transform = None
         self._sink_location = None
         self._blackboard_queue_name = 'ManeuverOppositeDirection/actor_flow_queue'

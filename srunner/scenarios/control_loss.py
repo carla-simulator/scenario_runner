@@ -60,7 +60,7 @@ class ControlLoss(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
         # The reference trigger for the control loss
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_point.location)
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self.loc_list = []
         self.obj = []
         super(ControlLoss, self).__init__("ControlLoss",

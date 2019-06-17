@@ -79,8 +79,8 @@ class VehicleTurningRight(BasicScenario):
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
-        self._trigger_location = config.trigger_point.location
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self._trigger_location = config.trigger_points[0].location
         self._other_actor_transform = None
         self._num_lane_changes = 0
         # Timeout of scenario in seconds
@@ -235,8 +235,8 @@ class VehicleTurningLeft(BasicScenario):
         self._other_actor_target_velocity = 10
         self.category = "VehicleTurning"
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
-        self._trigger_location = config.trigger_point.location
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self._trigger_location = config.trigger_points[0].location
         self._other_actor_transform = None
         self._num_lane_changes = 0
         # Timeout of scenario in seconds

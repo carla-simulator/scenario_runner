@@ -41,7 +41,7 @@ class StationaryObjectCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
         # ego vehicle parameters
         self._ego_vehicle_distance_driven = 40
 
@@ -144,7 +144,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         self._wmap = CarlaDataProvider.get_map()
 
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_point.location)
+        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
         # ego vehicle parameters
         self._ego_vehicle_distance_driven = 40
         # other vehicle parameters
@@ -156,7 +156,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._num_lane_changes = 1
         self.transform2 = None
         self.timeout = timeout
-        self._trigger_location = config.trigger_point.location
+        self._trigger_location = config.trigger_points[0].location
         # Total Number of attempts to relocate a vehicle before spawning
         self._number_of_attempts = 20
         # Number of attempts made so far
@@ -299,7 +299,7 @@ class DynamicObjectCrossing(BasicScenario):
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
         # leaf nodes
         if self._ego_route is not None:
-            start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles,
+            start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
                                                                     self._ego_route,
                                                                     self.other_actors[0].get_location(),
                                                                     15)
