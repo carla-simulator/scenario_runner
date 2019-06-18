@@ -13,30 +13,35 @@ InMemoryMap::~InMemoryMap(){}
 void InMemoryMap::setUp(int sampling_resolution){
     // Creating dense topology
     for(auto &pair : this->topology) {
+
         // Looping through every topology segment
         auto begin_waypoint = pair.first;
         auto end_waypoint = pair.second;
 
-        // Adding entry waypoint
-        auto current_waypoint = begin_waypoint;
-        this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(current_waypoint));
-        this->entry_node_list.push_back(this->dense_topology.back());
+        if (begin_waypoint->GetTransform().location.Distance(
+                end_waypoint->GetTransform().location) > 0.01 ) {
 
-        // Populating waypoints from begin_waypoint to end_waypoint
-        while (current_waypoint->GetTransform().location.Distance(
-                end_waypoint->GetTransform().location) > sampling_resolution) {
-
-            current_waypoint = current_waypoint->GetNext(sampling_resolution)[0];
-            auto previous_wp = this->dense_topology.back();
+            // Adding entry waypoint
+            auto current_waypoint = begin_waypoint;
             this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(current_waypoint));
-            previous_wp->setNextWaypoint({this->dense_topology.back()});
-        }
+            this->entry_node_list.push_back(this->dense_topology.back());
 
-        // Adding exit waypoint
-        auto previous_wp = this->dense_topology.back();
-        this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(end_waypoint));
-        previous_wp->setNextWaypoint({this->dense_topology.back()});
-        this->exit_node_list.push_back(this->dense_topology.back());
+            // Populating waypoints from begin_waypoint to end_waypoint
+            while (current_waypoint->GetTransform().location.Distance(
+                    end_waypoint->GetTransform().location) > sampling_resolution) {
+
+                current_waypoint = current_waypoint->GetNext(sampling_resolution)[0];
+                auto previous_wp = this->dense_topology.back();
+                this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(current_waypoint));
+                previous_wp->setNextWaypoint({this->dense_topology.back()});
+            }
+
+            // Adding exit waypoint
+            auto previous_wp = this->dense_topology.back();
+            this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(end_waypoint));
+            previous_wp->setNextWaypoint({this->dense_topology.back()});
+            this->exit_node_list.push_back(this->dense_topology.back());
+        }
     }
 
     // Linking segments
