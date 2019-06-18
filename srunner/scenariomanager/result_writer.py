@@ -74,7 +74,8 @@ class ResultOutputProvider(object):
         self.logger.info("Duration: System Time %5.2fs --- Game Time %5.2fs",
                          self._data.scenario_duration_system,
                          self._data.scenario_duration_game)
-        self.logger.info("Ego vehicle:  %s", self._data.ego_vehicle)
+        for ego_vehicle in self._data.ego_vehicles:
+            self.logger.info("Ego vehicle:  %s", ego_vehicle)
 
         actor_string = ""
         for actor in self._data.other_actors:

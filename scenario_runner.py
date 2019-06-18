@@ -147,11 +147,12 @@ class ScenarioRunner(object):
         CarlaDataProvider.cleanup()
         CarlaActorPool.cleanup()
 
-        if ego:
-            for i, _ in enumerate(self.ego_vehicles):
-                if self.ego_vehicles[i]:
-                    self.ego_vehicles[i] = None
-            self.ego_vehicles = []
+        for i, _ in enumerate(self.ego_vehicles):
+            if self.ego_vehicles[i]:
+                if ego:
+                    self.ego_vehicles[i].destroy()
+                self.ego_vehicles[i] = None
+        self.ego_vehicles = []
 
     def prepare_ego_vehicles(self, config, wait_for_ego_vehicles=False):
         """
@@ -167,8 +168,6 @@ class ScenarioRunner(object):
                                                                     vehicle.transform,
                                                                     vehicle.rolename,
                                                                     True))
-            # sync state
-            CarlaDataProvider.get_world().wait_for_tick()
         else:
             ego_vehicle_missing = True
             while ego_vehicle_missing:
@@ -185,6 +184,12 @@ class ScenarioRunner(object):
                     if not ego_vehicle_found:
                         ego_vehicle_missing = True
                         break
+
+            for i, _ in enumerate(self.ego_vehicles):
+                self.ego_vehicles[i].set_transform(config.ego_vehicles[i].transform)
+
+        # sync state
+        CarlaDataProvider.get_world().wait_for_tick()
 
     def analyze_scenario(self, args, config):
         """
@@ -267,7 +272,7 @@ class ScenarioRunner(object):
                 self.manager.stop_scenario()
                 scenario.remove_all_actors()
 
-                self.cleanup(ego=True)
+                self.cleanup(ego=(not args.waitForEgo))
 
             print("No more scenarios .... Exiting")
 
