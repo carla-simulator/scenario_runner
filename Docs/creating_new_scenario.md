@@ -76,3 +76,12 @@ Finally the scenario configuration should be added to the Configs/ folder. If yo
 extend an already existing scenario module, you can simply extend the corresponding
 XML, otherwise add a new XML file. In this case you can use any of the existing
 XML files as blueprint.
+
+If you want to add multiple ego vehicles for a scenario, make sure that they use different
+role names, e.g.
+```
+    <scenario name="MultiEgoTown03" type="FreeRide" town="Town03">
+        <ego_vehicle x="207" y="59" z="0" yaw="180" model="vehicle.lincoln.mkz2017" rolename="hero"/>
+        <ego_vehicle x="237" y="-95.0754252474" z="0" yaw="90" model="vehicle.tesla.model3" rolename="hero2"/>
+    </scenario>
+```

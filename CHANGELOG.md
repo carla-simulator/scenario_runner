@@ -1,4 +1,8 @@
 ## Latest changes
+* Added support for multiple ego vehicles plus an example
+* Added commandline option for output directory
+* Added option to load external scenario implementations (in python)
+* Added option to scenario_runner to load external scenario XMLs
 
 ## CARLA Scenario_Runner 0.9.5
 * Added support for CARLA challenge
