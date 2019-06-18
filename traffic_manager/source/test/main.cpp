@@ -29,8 +29,10 @@ void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_li
 void test_actor_localization_stage(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map);
-void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map);
-void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map);
+void test_in_memory_map(carla::SharedPtr<carla::client::Map>);
+void test_actor_PID_stage(
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn);
 void test_batch_control_stage(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn);
@@ -44,17 +46,19 @@ int main()
     auto actorList = world.GetActors();
     auto vehicle_list = actorList->Filter("vehicle.*");
 
+    // GenerateWaypoints();
     // test_get_topology(world_map);
     // test_feeder_stage(vehicle_list);
     // test_actor_state_stage(vehicle_list);
     // test_actor_state_stress(vehicle_list);
     // test_in_memory_map(world_map);
     // test_actor_localization_stage(vehicle_list, world_map);
-    // test_actor_PID_stage(vehicle_list, world_map);
+    // test_actor_PID_stage(vehicle_list, world_map, client_conn);
     test_batch_control_stage(vehicle_list, world_map, client_conn);
 
     return 0;
 }
+
 
 void test_batch_control_stage (
     carla::SharedPtr<carla::client::ActorList> actor_list,
@@ -118,7 +122,30 @@ void test_batch_control_stage (
     }
 }
 
-void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list, carla::SharedPtr<carla::client::Map> world_map)
+
+void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+    traffic_manager::InMemoryMap local_map(topology);
+
+    std::cout << "setup starting" << std::endl;
+    local_map.setUp(1.0);
+    std::cout << "setup complete" << std::endl;
+    int loose_ends_count = 0;
+    auto dense_topology = local_map.get_dense_topology();
+    for (auto& swp : dense_topology) {
+        if (swp->getNextWaypoint().size() < 1 || swp->getNextWaypoint()[0] == 0) {
+            loose_ends_count += 1;
+        }
+    }
+    std::cout << "Number of loose ends : " << loose_ends_count << std::endl;
+}
+
+
+void test_actor_PID_stage(
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map,
+    carla::client::Client& client_conn)
 {
 
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
@@ -137,6 +164,9 @@ void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list,
     auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
     local_map->setUp(1.0);
     shared_data.local_map = local_map;
+    shared_data.client = &client_conn;
+    auto debug_helper = client_conn.GetWorld().MakeDebugHelper();
+    shared_data.debug = &debug_helper;
 
     traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
@@ -147,14 +177,14 @@ void test_actor_PID_stage(carla::SharedPtr<carla::client::ActorList> actor_list,
     actor_state_stage.start();
 
     traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
-    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
+    traffic_manager::PipelineStage actor_localization_stage(1, actor_localization_callable);
     actor_localization_stage.start();
 
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
     traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
-    traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
+    traffic_manager::PipelineStage actor_pid_stage(4, actor_pid_callable);
     actor_pid_stage.start();
 
     std::cout << "All stage pipeline started !" <<std::endl;
@@ -230,25 +260,6 @@ void test_actor_localization_stage(carla::SharedPtr<carla::client::ActorList> ac
             << "\t Deviation : " << out.getAttribute("deviation") 
             << "\t Queue size : " << localization_queue.size() << std::endl;
     }
-}
-
-void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
-    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
-    auto topology = dao.getTopology();
-    traffic_manager::InMemoryMap local_map(topology);
-
-    std::cout << "setup starting" << std::endl;
-    local_map.setUp(1.0);
-    std::cout << "setup complete" << std::endl;
-    int loose_ends_count = 0;
-    auto dense_topology = local_map.get_dense_topology();
-    for (auto& swp : dense_topology) {
-        if (swp->getNextWaypoint().size() < 1) {
-            swp->getXYZ();
-            loose_ends_count += 1;
-        }
-    }
-    std::cout << "Number of loose ends : " << loose_ends_count << std::endl;
 }
 
 void test_actor_state_stress(carla::SharedPtr<carla::client::ActorList> actor_list)

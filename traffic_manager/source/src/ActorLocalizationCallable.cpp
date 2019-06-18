@@ -13,31 +13,48 @@ namespace traffic_manager
     {   
         int actor_id = message.getActorID();
         if(shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()){
-            float nearest_distance = nearestDistance(shared_data, &message);
-            float dot_product = nearestDotProduct(shared_data, &message);
-            while(dot_product <= 0 || nearest_distance <= 5.0){
+            
+            float nearest_distance = 10;
+            float dot_product = 1;
+            if (!shared_data->buffer_map[actor_id]->empty()) {
+                nearest_distance = nearestDistance(shared_data, &message);
+                dot_product = nearestDotProduct(shared_data, &message);
+            }
+
+            while ((dot_product <= 0 || nearest_distance <= 2.0)) {
                 shared_data->buffer_map[actor_id]->pop();
                 dot_product = nearestDotProduct(shared_data, &message);
                 nearest_distance = nearestDistance(shared_data, &message);
             }
-            while(!shared_data->buffer_map[actor_id]->full()) {
+            
+            while (
+                shared_data->buffer_map[actor_id]->back()->distance(
+                    shared_data->buffer_map[actor_id]->front()->getLocation()
+                ) <= 20.0 // Make this a constant
+            ) {
                 auto feed_waypoint = shared_data->buffer_map[actor_id]->back()->getNextWaypoint()[0];
                 shared_data->buffer_map[actor_id]->push(feed_waypoint);
+                if(shared_data->buffer_map[actor_id]->size() > 23){
+                    auto feed_location = feed_waypoint->getLocation();
+                }
             }
         }
         else
         {
-            shared_data->buffer_map[actor_id] = std::make_shared<SyncQueue<std::shared_ptr<SimpleWaypoint>>>();
+            shared_data->buffer_map[actor_id] = std::make_shared<SyncQueue<std::shared_ptr<SimpleWaypoint>>>(200);
             auto actor_location = carla::geom::Location(
                 message.getAttribute("x"), 
                 message.getAttribute("y"), 
                 message.getAttribute("z"));
             auto closest_waypoint = shared_data->local_map->getWaypoint(actor_location);
-            while(!shared_data->buffer_map[actor_id]->full())
-            {
-                shared_data->buffer_map[actor_id]->push(closest_waypoint);
+            shared_data->buffer_map[actor_id]->push(closest_waypoint);
+            while (
+                shared_data->buffer_map[actor_id]->back()->distance(
+                    shared_data->buffer_map[actor_id]->front()->getLocation()
+                ) <= 20.0 // Make this a constant
+            ) {
                 closest_waypoint = closest_waypoint->getNextWaypoint()[0];
-                auto temp = shared_data->buffer_map[actor_id]->front()->getXYZ();
+                shared_data->buffer_map[actor_id]->push(closest_waypoint);
             }
         }
 
