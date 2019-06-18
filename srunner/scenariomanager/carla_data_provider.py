@@ -441,12 +441,10 @@ class CarlaActorPool(object):
         if blueprint.has_attribute('is_invincible'):
             blueprint.set_attribute('is_invincible', 'false')
 
-        if hero:
-            blueprint.set_attribute('role_name', rolename)
-        elif autopilot:
+        if autopilot:
             blueprint.set_attribute('role_name', 'autopilot')
         else:
-            blueprint.set_attribute('role_name', 'scenario')
+            blueprint.set_attribute('role_name', rolename)
 
         if random_location:
             actor = None
@@ -557,12 +555,12 @@ class CarlaActorPool(object):
         return actors
 
     @staticmethod
-    def request_new_actor(model, spawn_point, hero=False, autopilot=False, random_location=False):
+    def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
         """
-        actor = CarlaActorPool.setup_actor(model, spawn_point, hero, autopilot, random_location)
+        actor = CarlaActorPool.setup_actor(model, spawn_point, rolename, hero, autopilot, random_location)
 
         if actor is None:
             return None

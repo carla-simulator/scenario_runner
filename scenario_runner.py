@@ -38,10 +38,13 @@ from srunner.scenarios.opposite_vehicle_taking_priority import *
 from srunner.scenarios.other_leading_vehicle import *
 from srunner.scenarios.signalized_junction_left_turn import *
 from srunner.scenarios.signalized_junction_right_turn import *
+from srunner.scenarios.basic_scenario import BasicScenario
+from srunner.scenarios.open_scenario import OpenScenario
 from srunner.tools.config_parser import *
+from srunner.tools.openscenario_parser import OpenScenarioConfiguration
 
 # Version of scenario_runner
-VERSION = 0.3
+VERSION = 0.5
 
 
 # Dictionary of all supported scenarios.
@@ -217,6 +220,10 @@ class ScenarioRunner(object):
         Run all scenarios according to provided commandline args
         """
 
+        if args.openscenario:
+            self.run_openscenario(args)
+            return
+
         # Setup and run the scenarios for repetition times
         for _ in range(int(args.repetitions)):
 
@@ -281,6 +288,64 @@ class ScenarioRunner(object):
 
             print("No more scenarios .... Exiting")
 
+    def run_openscenario(self, args):
+        """
+        Run openscenario
+        """
+
+        # Load the scenario configurations provided in the config file
+        if not os.path.isfile(args.openscenario):
+            print("File does not exist")
+            self.cleanup()
+            return
+
+        CarlaActorPool.set_client(self.client)
+        CarlaDataProvider.set_world(self.world)
+
+        config = OpenScenarioConfiguration(args.openscenario)
+
+        if args.reloadWorld:
+            self.world = self.client.load_world(config.town)
+
+        # Wait for the world to be ready
+        self.world.wait_for_tick(self.wait_for_world)
+
+        # Create scenario manager
+        self.manager = ScenarioManager(self.world, args.debug)
+
+        # Prepare scenario
+        print("Preparing scenario: " + config.name)
+        try:
+            CarlaActorPool.set_world(self.world)
+            self.prepare_ego_vehicles(config, args.waitForEgo)
+            scenario = OpenScenario(world=self.world,
+                                    ego_vehicles=self.ego_vehicles,
+                                    config=config,
+                                    config_file=args.openscenario,
+                                    timeout=100000)
+        except Exception as exception:
+            print("The scenario cannot be loaded")
+            if args.debug:
+                traceback.print_exc()
+            print(exception)
+            self.cleanup()
+            return
+
+        # Load scenario and run it
+        self.manager.load_scenario(scenario)
+        self.manager.run_scenario()
+
+        # Provide outputs if required
+        self.analyze_scenario(args, config)
+
+        # Stop scenario and cleanup
+        self.manager.stop_scenario()
+        scenario.remove_all_actors()
+
+        self.cleanup(ego=(not args.waitForEgo))
+
+        print("No more scenarios .... Exiting")
+
 
 if __name__ == '__main__':
 
@@ -311,6 +376,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     PARSER.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
+    PARSER.add_argument('--openscenario', help='Provide an OpenScenario definition')
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
 
@@ -324,7 +390,7 @@ if __name__ == '__main__':
         print(*SCENARIOS.keys(), sep='\n')
         sys.exit(0)
 
-    if ARGUMENTS.scenario is None:
+    if not ARGUMENTS.scenario and not ARGUMENTS.openscenario:
         print("Please specify a scenario using '--scenario SCENARIONAME'\n\n")
         PARSER.print_help(sys.stdout)
         sys.exit(0)

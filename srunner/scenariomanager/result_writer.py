@@ -13,6 +13,8 @@ It shall be used from the ScenarioManager only.
 import logging
 import time
 
+import py_trees
+
 
 class ResultOutputProvider(object):
 
@@ -89,7 +91,11 @@ class ResultOutputProvider(object):
             "-----------------------------------------------------------------------------------------------------------------")
         # pylint: enable=line-too-long
 
-        for criterion in self._data.scenario.test_criteria:
+        criteria = self._data.scenario.test_criteria
+        if isinstance(criteria, py_trees.composites.Parallel):
+            criteria = criteria.children
+
+        for criterion in criteria:
             name_string = criterion.name
             if criterion.optional:
                 name_string += " (Opt.)"

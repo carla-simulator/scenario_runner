@@ -420,7 +420,7 @@ class OnSidewalkTest(Criterion):
     This class contains an atomic test to detect sidewalk invasions.
     """
 
-    def __init__(self, actor, optional=False, name="WrongLaneTest"):
+    def __init__(self, actor, optional=False, name="OnSidewalkTest"):
         """
         Construction with sensor setup
         """
