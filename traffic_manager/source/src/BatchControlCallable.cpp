@@ -47,5 +47,4 @@ namespace traffic_manager{
         PipelineMessage empty_message;
         return empty_message;
     }
-
 }

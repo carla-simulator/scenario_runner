@@ -6,9 +6,10 @@ namespace traffic_manager{
 
     ActorPIDCallable::ActorPIDCallable(float k_v, float k_s, float target_velocity,
             SyncQueue<PipelineMessage>* input_queue,
-            SyncQueue<PipelineMessage>* output_queue): k_v(k_v), k_s(k_s),
+            SyncQueue<PipelineMessage>* output_queue,
+            SharedData* shared_data): k_v(k_v), k_s(k_s),
             target_velocity(target_velocity),
-            PipelineCallable(input_queue, output_queue,NULL){}
+            PipelineCallable(input_queue, output_queue, shared_data){}
 
     ActorPIDCallable::~ActorPIDCallable(){}
 
