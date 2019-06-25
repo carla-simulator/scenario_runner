@@ -230,6 +230,7 @@ class ScenarioRunner(object):
             scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
 
             # Execute each configuration
+            config_counter = 0
             for config in scenario_configurations:
                 if args.reloadWorld:
                     self.world = self.client.load_world(config.town)
@@ -247,7 +248,7 @@ class ScenarioRunner(object):
                 scenario_class = self.get_scenario_class_or_fail(config.type)
                 try:
                     CarlaActorPool.set_world(self.world)
-                    self.prepare_ego_vehicles(config, args.waitForEgo)
+                    self.prepare_ego_vehicles(config, args.waitForEgo or (config_counter > 0))
                     scenario = scenario_class(self.world,
                                               self.ego_vehicles,
                                               config,
@@ -259,6 +260,7 @@ class ScenarioRunner(object):
                         traceback.print_exc()
                     print(exception)
                     self.cleanup()
+                    config_counter += 1
                     continue
 
                 # Load scenario and run it
@@ -272,7 +274,10 @@ class ScenarioRunner(object):
                 self.manager.stop_scenario()
                 scenario.remove_all_actors()
 
-                self.cleanup(ego=(not args.waitForEgo))
+                self.cleanup()
+                config_counter += 1
+
+            self.cleanup(ego=(not args.waitForEgo))
 
             print("No more scenarios .... Exiting")
 
