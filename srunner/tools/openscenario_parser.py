@@ -144,7 +144,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 class OpenScenarioParser(object):
 
     """
-    tbd
+    Pure static class providing conversions from OpenScenario elements to ScenarioRunner elements
     """
 
     @staticmethod
