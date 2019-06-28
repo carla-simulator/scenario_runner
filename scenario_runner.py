@@ -241,6 +241,12 @@ class ScenarioRunner(object):
             for config in scenario_configurations:
                 if args.reloadWorld:
                     self.world = self.client.load_world(config.town)
+                else:
+                     if CarlaDataProvider.get_map().name != config.town:
+                        print("The CARLA server uses the wrong map!")
+                        print("This scenario requires to use map {}".format(config.town))
+                        self.cleanup()
+                        continue
                 CarlaActorPool.set_client(self.client)
                 CarlaDataProvider.set_world(self.world)
 
@@ -306,6 +312,12 @@ class ScenarioRunner(object):
 
         if args.reloadWorld:
             self.world = self.client.load_world(config.town)
+        else:
+            if CarlaDataProvider.get_map().name != config.town:
+                print("The CARLA server uses the wrong map!")
+                print("This scenario requires to use map {}".format(config.town))
+                self.cleanup()
+                return
 
         # Wait for the world to be ready
         self.world.wait_for_tick(self.wait_for_world)
