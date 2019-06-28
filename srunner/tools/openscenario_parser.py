@@ -19,6 +19,7 @@ from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.timer import TimeOut
 from srunner.tools.config_parser import ActorConfigurationData, ScenarioConfiguration
 
 
@@ -248,7 +249,8 @@ class OpenScenarioParser(object):
                 if entity_condition.find('EndOfRoad') is not None:
                     raise NotImplementedError("EndOfRoad conditions are not yet supported")
                 elif entity_condition.find('Collision') is not None:
-                    raise NotImplementedError("Collision conditions are not yet supported")
+                    atomic = py_trees.meta.inverter(
+                        CollisionTest(trigger_actor, terminate_on_failure=True, name=condition_name))
                 elif entity_condition.find('Offroad') is not None:
                     raise NotImplementedError("Offroad conditions are not yet supported")
                 elif entity_condition.find('TimeHeadway') is not None:
@@ -338,29 +340,39 @@ class OpenScenarioParser(object):
             raise NotImplementedError("ByState conditions are not yet supported")
         elif condition.find('ByValue') is not None:
             value_condition = condition.find('ByValue')
-
-            if value_condition.find('Parameter') is None:
-                raise NotImplementedError("ByValue conditions except Parameter checks are not yet supported")
-
-            parameter_condition = value_condition.find('Parameter')
-            arg_name = parameter_condition.attrib.get('name')
-            value = parameter_condition.attrib.get('value')
-            if value != '':
-                arg_value = float(value)
-            else:
-                arg_value = 0
-            parameter_condition.attrib.get('rule')
-
-            if condition_name in globals():
-                criterion_instance = globals()[condition_name]
-            else:
-                raise AttributeError("The condition {} cannot be mapped to a criterion atomic".format(condition_name))
-
-            for triggered_actor in actor_list:
-                if arg_name != '':
-                    atomic = criterion_instance(triggered_actor, arg_value)
+            if value_condition.find('Parameter') is not None:
+                parameter_condition = value_condition.find('Parameter')
+                arg_name = parameter_condition.attrib.get('name')
+                value = parameter_condition.attrib.get('value')
+                if value != '':
+                    arg_value = float(value)
                 else:
-                    atomic = criterion_instance(triggered_actor)
+                    arg_value = 0
+                parameter_condition.attrib.get('rule')
+
+                if condition_name in globals():
+                    criterion_instance = globals()[condition_name]
+                else:
+                    raise AttributeError(
+                        "The condition {} cannot be mapped to a criterion atomic".format(condition_name))
+
+                for triggered_actor in actor_list:
+                    if arg_name != '':
+                        atomic = criterion_instance(triggered_actor, arg_value)
+                    else:
+                        atomic = criterion_instance(triggered_actor)
+            elif value_condition.find('SimulationTime') is not None:
+                simtime_condition = value_condition.find('SimulationTime')
+                value = simtime_condition.attrib.get('value')
+                rule = simtime_condition.attrib.get('value')
+                if rule != "greater_than":
+                    raise NotImplementedError(
+                        "ByValue SimulationTime conditions with the given specification is not yet supported")
+                atomic = TimeOut(value)
+            elif value_condition.find('TimeOfDay') is not None:
+                raise NotImplementedError("ByValue TimeOfDay conditions are not yet supported")
+            else:
+                raise AttributeError("Unknown ByValue condition")
 
         else:
             raise AttributeError("Unknown condition")

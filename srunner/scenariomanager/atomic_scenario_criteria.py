@@ -70,7 +70,7 @@ class Criterion(py_trees.behaviour.Behaviour):
 
     def terminate(self, new_status):
         if (self.test_status == "RUNNING") or (self.test_status == "INIT"):
-            self.test_status = "FAILURE"
+            self.test_status = "SUCCESS"
 
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -171,6 +171,14 @@ class DrivenDistanceTest(Criterion):
 
         return new_status
 
+    def terminate(self, new_status):
+        """
+        Set final status
+        """
+        if self.test_status == "RUNNING":
+            self.test_status = "FAILURE"
+        super(DrivenDistanceTest, self).terminate(new_status)
+
 
 class AverageVelocityTest(Criterion):
 
@@ -237,6 +245,14 @@ class AverageVelocityTest(Criterion):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+    def terminate(self, new_status):
+        """
+        Set final status
+        """
+        if self.test_status == "RUNNING":
+            self.test_status = "FAILURE"
+        super(AverageVelocityTest, self).terminate(new_status)
 
 
 class CollisionTest(Criterion):
