@@ -16,8 +16,7 @@ namespace traffic_manager{
     public:
         ActorPIDCallable(float k_v, float k_s, float target_velocity,
             SyncQueue<PipelineMessage>* input_queue,
-            SyncQueue<PipelineMessage>* output_queue,
-            SharedData* shared_data);
+            SyncQueue<PipelineMessage>* output_queue);
         ~ActorPIDCallable();
         PipelineMessage action(PipelineMessage message);
     };
