@@ -8,7 +8,7 @@ namespace traffic_manager
         SyncQueue<PipelineMessage>* input_queue,
         SyncQueue<PipelineMessage>* output_queue,
         SharedData* shared_data):
-        PipelineCallable(input_queue,output_queue, shared_data){}
+        PipelineCallable(input_queue, output_queue, shared_data){}
     Feedercallable::~Feedercallable(){}
 
     PipelineMessage Feedercallable::action (PipelineMessage message)

@@ -20,7 +20,8 @@ namespace traffic_manager{
         {
             std::vector<carla::rpc::Command> commands;
 
-            for (int i=0; i < shared_data->registered_actors.size(); i++) {
+            for (auto _ : shared_data->registered_actors) {
+
                 carla::rpc::VehicleControl vehicle_control;
 
                 auto element = input_queue->pop();
@@ -47,5 +48,4 @@ namespace traffic_manager{
         PipelineMessage empty_message;
         return empty_message;
     }
-
 }
