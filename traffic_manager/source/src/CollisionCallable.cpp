@@ -120,7 +120,7 @@ namespace traffic_manager
        
         BOOST_FOREACH(polygon const& p, output)
         {
-            if(boost::geometry::area(p) > 0.0001 && dot_prod > 0.9800){
+            if(boost::geometry::area(p) > 0.0001 && dot_prod > 0.200){
                 return true;
             }
         }

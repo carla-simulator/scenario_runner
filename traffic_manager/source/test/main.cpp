@@ -115,7 +115,7 @@ void test_collision_stage (
     actor_pid_stage.start();
 
     traffic_manager::CollisionCallable collision_callable(&pid_queue, &collision_queue, &shared_data);
-    traffic_manager::PipelineStage collision_stage(1, collision_callable);
+    traffic_manager::PipelineStage collision_stage(8, collision_callable);
     collision_stage.start();
 
     traffic_manager::BatchControlCallable batch_control_callable(&collision_queue, &batch_control_queue, &shared_data);
