@@ -22,7 +22,6 @@
 #include "carla/rpc/VehicleControl.h"
 #include "carla/client/Vehicle.h"
 #include "carla/client/detail/Client.h"
-#include "Rectangle.hpp"
 
 void test_get_topology(carla::SharedPtr<carla::client::Map> world_map);
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list);
@@ -39,6 +38,10 @@ void test_batch_control_stage(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn);
 void test_rectangle_class();
+void test_collision_stage (
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map,
+    carla::client::Client& client_conn);
 
 int main()
 {   
@@ -57,29 +60,14 @@ int main()
     // test_in_memory_map(world_map);
     // test_actor_localization_stage(vehicle_list, world_map);
     // test_actor_PID_stage(vehicle_list, world_map, client_conn);
-    //test_batch_control_stage(vehicle_list, world_map, client_conn);
-    test_rectangle_class();
-
+    // test_batch_control_stage(vehicle_list, world_map, client_conn);
+    test_collision_stage(vehicle_list, world_map, client_conn);
+    // test_rectangle_class();
 
     return 0;
 }
 
-void test_rectangle_class()
-{
-    std::vector <float> heading_vector = {0.0 ,1.0};
-    std::vector <float> vehicle_coordinate = {1.5,2.0};
-    float length = 1.0;
-    float width = 0.5;
-    Rectangle box;
-    
-    std::vector<std::vector<float>> output = box.find_rectangle_coordinates(heading_vector, vehicle_coordinate, length, width);
-    for (auto iter : output)
-    {
-        std::cout << iter[0]<<"\t" << iter[1] << std::endl;
-    }
-}
-
-void test_batch_control_stage (
+void test_collision_stage (
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map,
     carla::client::Client& client_conn)
@@ -127,10 +115,70 @@ void test_batch_control_stage (
     actor_pid_stage.start();
 
     traffic_manager::CollisionCallable collision_callable(&pid_queue, &collision_queue, &shared_data);
-    traffic_manager::PipelineStage collision_stage(8, collision_callable);
+    traffic_manager::PipelineStage collision_stage(1, collision_callable);
     collision_stage.start();
 
     traffic_manager::BatchControlCallable batch_control_callable(&collision_queue, &batch_control_queue, &shared_data);
+    traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
+    batch_control_stage.start();
+
+    std::cout << "All stage pipeline started !" <<std::endl;
+    
+    while(true)
+    {
+        sleep(1);
+    }
+}
+
+
+void test_batch_control_stage (
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map,
+    carla::client::Client& client_conn)
+{
+
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> localization_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> pid_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> batch_control_queue(20);
+
+    traffic_manager::SharedData shared_data;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+    {
+        shared_data.registered_actors.push_back(*it);
+    }
+
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+    auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
+    local_map->setUp(1.0);
+    shared_data.local_map = local_map;
+    shared_data.client = &client_conn;
+    auto debug_helper = client_conn.GetWorld().MakeDebugHelper();
+    shared_data.debug = &debug_helper;
+
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
+    traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
+    feeder_stage.start();
+    
+    traffic_manager::ActorStateCallable actor_state_callable(&feeder_queue, &actor_state_queue);
+    traffic_manager::PipelineStage actor_state_stage(8, actor_state_callable);
+    actor_state_stage.start();
+
+    traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
+    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
+    actor_localization_stage.start();
+
+    float k_v = 1.0;
+    float k_s = 3.0;
+    float target_velocity = 10.0;
+    traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue, &shared_data);
+    traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
+    actor_pid_stage.start();
+
+
+    traffic_manager::BatchControlCallable batch_control_callable(&pid_queue, &batch_control_queue, &shared_data);
     traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
     batch_control_stage.start();
 

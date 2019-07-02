@@ -1,15 +1,27 @@
-//Declaration of CollisionCallable class member
+ //Declaration of CollisionCallable class member
 
 #pragma once
+
+#include <cmath>
+#include <deque>
+#include <string>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/foreach.hpp>
+#include "system/boost/pointer_cast.hpp"
+#include "carla/client/Vehicle.h"
+#include "Rectangle.hpp"
 #include "PipelineCallable.hpp"
+
 namespace traffic_manager
 {
 
     class CollisionCallable : public PipelineCallable
     {
         private:
-            //SyncQueue<PipelineMessage>* input_queue;
-            
+            bool checkCollisionByDistance (carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle);
+            bool check_rect_intersection(carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle);
         public:
             CollisionCallable(
                 SyncQueue<PipelineMessage>* input_queue,
@@ -18,10 +30,6 @@ namespace traffic_manager
             ~CollisionCallable();
 
             PipelineMessage action (PipelineMessage message);
-            bool check_rect_inter(carla::geom::Location point, carla::geom::Location coor1, carla::geom::Location coor2,
-            carla::geom::Location coor3, carla::geom::Location coor4);
-            float calculate_area (carla::geom::Location coor1, carla::geom::Location coor2,
-            carla::geom::Location coor3);
     };
 
 }

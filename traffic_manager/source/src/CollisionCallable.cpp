@@ -1,10 +1,10 @@
 // Defination of CollisionCallable calss members
 
 #include "CollisionCallable.hpp"
-#include <cmath>
 
 namespace traffic_manager
 {
+
     CollisionCallable::CollisionCallable(
         SyncQueue<PipelineMessage>* input_queue,
         SyncQueue<PipelineMessage>* output_queue,
@@ -17,46 +17,25 @@ namespace traffic_manager
         auto throttle = message.getAttribute("throttle");
         auto brake = message.getAttribute("brake");
         auto actor_list = shared_data->registered_actors;
-        std::vector<float> ego_actor_location = {message.getActor()->GetLocation().x,
-            message.getActor()->GetLocation().y,
-            message.getActor()->GetLocation().z};
-        
-        auto ego_first_coor = carla::geom::Location(ego_actor_location[0]+1.2, ego_actor_location[1]+2.5, ego_actor_location[2]);
-        auto ego_second_coor = carla::geom::Location(ego_actor_location[0]-1.2, ego_actor_location[1]+2.5, ego_actor_location[2]);
-        auto ego_third_coor = carla::geom::Location(ego_actor_location[0]-1.2, ego_actor_location[1]-2.5, ego_actor_location[2]);
-        auto ego_fourth_coor = carla::geom::Location(ego_actor_location[0]+1.2, ego_actor_location[1]-2.5, ego_actor_location[2]);
 
         for(auto vehicle : actor_list){
-            // auto vehicle = (carla::client::Vehicle*) &(*actor);
-            // auto vehicle_bounding = vehicle-> 
-
-            if(vehicle->GetId()!= message.getActorID() )
+            
+            if(vehicle->GetId()!= message.getActorID())
             {   
-                std::vector<float> vehicle_location = {vehicle->GetLocation().x,
-                vehicle->GetLocation().y, vehicle->GetLocation().z};
-                auto rect_first_coor = carla::geom::Location(vehicle_location[0]+1.2, vehicle_location[1]+2.5, vehicle_location[2]);
-                auto rect_second_coor = carla::geom::Location(vehicle_location[0]-1.2, vehicle_location[1]+2.5, vehicle_location[2]);
-                auto rect_third_coor = carla::geom::Location(vehicle_location[0]-1.2, vehicle_location[1]-2.5, vehicle_location[2]);
-                auto rect_fourth_coor = carla::geom::Location(vehicle_location[0]+1.2, vehicle_location[1]-2.5, vehicle_location[2]);
-
-                if(check_rect_inter(ego_first_coor,rect_first_coor,rect_second_coor,rect_third_coor,rect_fourth_coor)||
-                    check_rect_inter(ego_second_coor,rect_first_coor,rect_second_coor,rect_third_coor,rect_fourth_coor)||
-                    check_rect_inter(ego_third_coor,rect_first_coor,rect_second_coor,rect_third_coor,rect_fourth_coor)||
-                    check_rect_inter(ego_fourth_coor,rect_first_coor,rect_second_coor,rect_third_coor,rect_fourth_coor))
-                {
-                    throttle = 0.5 * throttle;
-                    std::cout << "changing throttle"<< std::endl;
+                auto ego_actor = message.getActor();
+                auto ego_actor_location = ego_actor.get()->GetLocation();
+                float actor_distance = vehicle->GetLocation().Distance(ego_actor_location);
+                if(actor_distance <= 20.0)
+                {       
+                    if(check_rect_intersection(vehicle , ego_actor) == true)
+                    {
+                        brake = 1.0;
+                        throttle = 0.0;
+                        break;
+                    }
                 }
 
             }
-
-
-            
-
-            // shared_data->debug->DrawLine(rect_first_coo, rect_sec_coo, 0.2, carla::client::DebugHelper::Color{255U, 0U, 0U}, 10.0);
-            // shared_data->debug->DrawLine(rect_sec_coo, rect_thi_coo, 0.2, carla::client::DebugHelper::Color{0U, 255U, 0U}, 10.0);
-            // shared_data->debug->DrawLine(rect_thi_coo, rect_fou_coo, 0.2, carla::client::DebugHelper::Color{0U, 0U, 255U}, 10.0);
-            // shared_data->debug->DrawLine(rect_first_coo, rect_fou_coo, 0.2, carla::client::DebugHelper::Color{255U, 0U, 255U}, 10.0);
         }
         PipelineMessage out_message;
         out_message.setActor(message.getActor());
@@ -65,28 +44,86 @@ namespace traffic_manager
         out_message.setAttribute("steer", message.getAttribute("steer"));
         return out_message;
     }
-    bool CollisionCallable::check_rect_inter(carla::geom::Location point, carla::geom::Location coor1, carla::geom::Location coor2,
-        carla::geom::Location coor3, carla::geom::Location coor4)
+
+    bool CollisionCallable::checkCollisionByDistance(carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle)
     {
-        float total_area = calculate_area(coor1, coor2, coor3) + calculate_area( coor3, coor4, coor1);
-        float A1 = calculate_area(coor1, coor2, point);
-        float A2 = calculate_area(coor2, coor3, point);
-        float A3 = calculate_area(coor3, coor4, point);
-        float A4 = calculate_area(coor4, coor1, point);
-        if( A1 + A2 + A3 + A4 <= total_area)
-        {
-            return true;
+        auto ego_actor_location = ego_vehicle->GetLocation();
+        float actor_distance = vehicle->GetLocation().Distance(ego_actor_location);
+        if ( actor_distance < 10.0 )
+        {   
+            auto ego_forward_vector = ego_vehicle->GetTransform().GetForwardVector();
+            auto magnitude_ego_forward_vector = sqrt(std::pow(ego_forward_vector.x, 2) + std::pow(ego_forward_vector.y , 2));
+            auto actor_forward_vector = vehicle->GetTransform().location - ego_actor_location;
+            auto magnitude_actor_forward_vector = sqrt(std::pow(actor_forward_vector.x, 2) + std::pow(actor_forward_vector.y , 2));
+            auto dot_prod = ((ego_forward_vector.x * actor_forward_vector.x) + (ego_forward_vector.y * actor_forward_vector.y));
+            dot_prod = ((dot_prod/magnitude_ego_forward_vector)/magnitude_actor_forward_vector);
+            if(dot_prod > 0.9800)
+            {   
+                return true;
+            }
+            
         }
-        else
-        {
-            return false;
-        }
+        return false;
+
     }
 
-    float CollisionCallable::calculate_area (carla::geom::Location coor1, carla::geom::Location coor2,
-        carla::geom::Location coor3)
-    {   
-        float area = ((coor1.x*(coor2.y -coor3.y)) + (coor2.x*(coor3.y -coor1.y)) + (coor3.x*(coor1.y-coor2.y)))/2.0;
-        return area;
+    bool CollisionCallable::check_rect_intersection(carla::SharedPtr<carla::client::Actor> vehicle ,
+            carla::SharedPtr<carla::client::Actor> ego_vehicle){
+            
+        Rectangle boundry_box;
+        auto ego_actor_location = ego_vehicle->GetLocation();
+        auto ego_heading_vector = ego_vehicle->GetTransform().GetForwardVector();
+        std::vector <std::vector <float> > ego_b_coor;
+       
+        auto ego_vehicle_bbox = boost::static_pointer_cast<carla::client::Vehicle> (ego_vehicle);
+        auto ego_bounding_box = ego_vehicle_bbox->GetBoundingBox();
+        auto ego_extent = ego_bounding_box.extent;
+        float length = ego_extent.x;
+        float width = ego_extent.y;
+        
+        ego_b_coor  = boundry_box.find_rectangle_coordinates(ego_heading_vector, ego_actor_location, length ,width);
+
+        std::vector <std::vector <float> > actor_b_coor;
+        auto actor_location = vehicle.get()->GetLocation();
+        auto actor_heading_vector = vehicle.get()->GetTransform().GetForwardVector();
+        
+        auto actor_vehicle = boost::static_pointer_cast<carla::client::Vehicle> (vehicle);
+        auto actor_bounding_box = actor_vehicle->GetBoundingBox();
+        auto actor_extent = actor_bounding_box.extent;
+        float actor_length = actor_extent.x;
+        float actor_width = actor_extent.y;
+
+
+        actor_b_coor =  boundry_box.find_rectangle_coordinates(actor_heading_vector, actor_location, actor_length, actor_width);
+        std::string ego_coor;
+        std::string vehicle_coor;
+        for(int iter = 0; iter < ego_b_coor.size(); iter++){
+            ego_coor = ego_coor + std::to_string(ego_b_coor[iter][0]) + " " + std::to_string(ego_b_coor[iter][1]) + ",";
+            vehicle_coor = vehicle_coor + std::to_string(actor_b_coor[iter][0]) + " " + std::to_string(actor_b_coor[iter][1]) + ",";
+        }
+        ego_coor += std::to_string(ego_b_coor[0][0]) + " " + std::to_string(ego_b_coor[0][1]);
+        vehicle_coor += std::to_string(actor_b_coor[0][0]) + " " + std::to_string(actor_b_coor[0][1]); 
+        typedef boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double> > polygon;
+        polygon green, blue;
+        boost::geometry::read_wkt("POLYGON(("+ego_coor+"))", green);
+        boost::geometry::read_wkt("POLYGON(("+vehicle_coor+"))", blue);
+
+        std::deque<polygon> output;
+        boost::geometry::intersection(green, blue, output);
+
+        auto ego_forward_vector = ego_vehicle->GetTransform().GetForwardVector();
+        auto magnitude_ego_forward_vector = sqrt(std::pow(ego_forward_vector.x, 2) + std::pow(ego_forward_vector.y , 2));
+        auto actor_forward_vector = vehicle->GetTransform().location - ego_actor_location;
+        auto magnitude_actor_forward_vector = sqrt(std::pow(actor_forward_vector.x, 2) + std::pow(actor_forward_vector.y , 2));
+        auto dot_prod = ((ego_forward_vector.x * actor_forward_vector.x) + (ego_forward_vector.y * actor_forward_vector.y));
+        dot_prod = ((dot_prod/magnitude_ego_forward_vector)/magnitude_actor_forward_vector);
+       
+        BOOST_FOREACH(polygon const& p, output)
+        {
+            if(boost::geometry::area(p) > 0.0001 && dot_prod > 0.9800){
+                return true;
+            }
+        }
+        return false;
     }
 }
