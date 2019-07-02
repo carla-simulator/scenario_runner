@@ -455,6 +455,8 @@ class CarlaActorPool(object):
                 actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
 
         else:
+            # slightly lift the actor to avoid collisions with ground when spawning the actor
+            spawn_point.location.z = spawn_point.location.z + 0.2
             actor = CarlaActorPool._world.try_spawn_actor(blueprint, spawn_point)
 
         if actor is None:
