@@ -16,6 +16,7 @@
 #include "SyncQueue.hpp"
 #include "ActorLocalizationCallable.hpp"
 #include "ActorPIDCallable.hpp"
+#include "TrafficLightStateCallable.hpp"
 #include "BatchControlCallable.hpp"
 #include "carla/rpc/Command.h"
 #include "carla/rpc/VehicleControl.h"
@@ -36,6 +37,9 @@ void test_actor_PID_stage(
 void test_batch_control_stage(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn);
+void test_traffic_light_stage(
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn);
 
 int main()
 {   
@@ -54,11 +58,72 @@ int main()
     // test_in_memory_map(world_map);
     // test_actor_localization_stage(vehicle_list, world_map);
     // test_actor_PID_stage(vehicle_list, world_map, client_conn);
-    test_batch_control_stage(vehicle_list, world_map, client_conn);
+    // test_batch_control_stage(vehicle_list, world_map, client_conn);
+    test_traffic_light_stage(vehicle_list, world_map, client_conn);
 
     return 0;
 }
 
+void test_traffic_light_stage (
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map,
+    carla::client::Client& client_conn)
+{
+
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> actor_state_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> localization_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> pid_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> tl_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> batch_control_queue(20);
+
+    traffic_manager::SharedData shared_data;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+    {
+        shared_data.registered_actors.push_back(*it);
+    }
+
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+    auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
+    local_map->setUp(1.0);
+    shared_data.local_map = local_map;
+    shared_data.client = &client_conn;
+
+    traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
+    traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
+    feeder_stage.start();
+
+    traffic_manager::ActorStateCallable actor_state_callable(&feeder_queue, &actor_state_queue);
+    traffic_manager::PipelineStage actor_state_stage(8, actor_state_callable);
+    actor_state_stage.start();
+
+    traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
+    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
+    actor_localization_stage.start();
+
+    float k_v = 1.0;
+    float k_s = 3.0;
+    float target_velocity = 10.0;
+    traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
+    traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
+    actor_pid_stage.start();
+
+    traffic_manager::TrafficLightStateCallable tl_state_callable(&pid_queue, &tl_queue);
+    traffic_manager::PipelineStage tl_state_stage(8, tl_state_callable);
+    tl_state_stage.start();
+
+    traffic_manager::BatchControlCallable batch_control_callable(&tl_queue, &batch_control_queue, &shared_data);
+    traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
+    batch_control_stage.start();
+
+    std::cout << "All stage pipeline started !" <<std::endl;
+
+    while(true)
+    {
+        sleep(1);
+    }
+}
 
 void test_batch_control_stage (
     carla::SharedPtr<carla::client::ActorList> actor_list,
