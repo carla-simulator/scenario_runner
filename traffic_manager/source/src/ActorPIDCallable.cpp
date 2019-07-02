@@ -8,7 +8,7 @@ namespace traffic_manager{
             SyncQueue<PipelineMessage>* input_queue,
             SyncQueue<PipelineMessage>* output_queue): k_v(k_v), k_s(k_s),
             target_velocity(target_velocity),
-            PipelineCallable(input_queue, output_queue,NULL){}
+            PipelineCallable(input_queue, output_queue, NULL){}
 
     ActorPIDCallable::~ActorPIDCallable(){}
 
