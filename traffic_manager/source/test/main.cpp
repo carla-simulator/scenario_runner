@@ -83,6 +83,7 @@ void test_traffic_light_stage (
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> localization_queue(20);
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> pid_queue(20);
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> tl_queue(20);
+    traffic_manager::SyncQueue<traffic_manager::PipelineMessage> collision_queue(20);
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> batch_control_queue(20);
 
     traffic_manager::SharedData shared_data;
@@ -112,12 +113,16 @@ void test_traffic_light_stage (
 
     float k_v = 1.0;
     float k_s = 3.0;
-    float target_velocity = 10.0;
+    float target_velocity = 6.0;
     traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
     traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
     actor_pid_stage.start();
 
-    traffic_manager::TrafficLightStateCallable tl_state_callable(&pid_queue, &tl_queue);
+    traffic_manager::CollisionCallable collision_callable(&pid_queue, &collision_queue, &shared_data);
+    traffic_manager::PipelineStage collision_stage(8, collision_callable);
+    collision_stage.start();
+
+    traffic_manager::TrafficLightStateCallable tl_state_callable(&collision_queue, &tl_queue);
     traffic_manager::PipelineStage tl_state_stage(8, tl_state_callable);
     tl_state_stage.start();
 
