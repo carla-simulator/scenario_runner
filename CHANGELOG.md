@@ -1,8 +1,16 @@
 ## Latest changes
+* Added initial support for OpenScenario v0.9.1
 * Added support for multiple ego vehicles plus an example
 * Added commandline option for output directory
 * Added option to load external scenario implementations (in python)
 * Added option to scenario_runner to load external scenario XMLs
+* Atomic behaviors:
+    - Extended KeepVelocity atomic behavior to support duration/distance
+      based termination
+    - Extended StandStill atomic behavior to support duration based
+      termination
+    - Added behavior to activate/deactivate autopilot
+
 
 ## CARLA Scenario_Runner 0.9.5
 * Added support for CARLA challenge

@@ -81,6 +81,7 @@ class BasicScenario(object):
         for actor in config.other_actors:
             new_actor = CarlaActorPool.request_new_actor(actor.model,
                                                          actor.transform,
+                                                         rolename=actor.rolename,
                                                          hero=False,
                                                          autopilot=actor.autopilot,
                                                          random_location=actor.random_location)

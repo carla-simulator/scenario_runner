@@ -90,13 +90,20 @@ class StandStill(AtomicBehavior):
     This class contains a standstill behavior of a scenario
     """
 
-    def __init__(self, actor, name):
+    def __init__(self, actor, name, duration=float("inf")):
         """
         Setup actor
         """
         super(StandStill, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
+
+        self._duration = duration
+        self._start_time = 0
+
+    def initialise(self):
+        self._start_time = GameTime.get_time()
+        super(StandStill, self).initialise()
 
     def update(self):
         """
@@ -107,6 +114,9 @@ class StandStill(AtomicBehavior):
         velocity = CarlaDataProvider.get_velocity(self._actor)
 
         if velocity < EPSILON:
+            new_status = py_trees.common.Status.SUCCESS
+
+        if GameTime.get_time() - self._start_time > self._duration:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -485,12 +495,12 @@ class KeepVelocity(AtomicBehavior):
     until reaching a given _target_velocity_, which is then maintained for
     as long as this behavior is active.
 
-    Note: In parallel to this behavior a termination behavior has to be used
-          to keep the velocity either for a certain duration, or for a certain
-          distance, etc.
+    A termination can be enforced by providing distance or duration values.
+    Alternatively, a parallel termination behavior can be used.
     """
 
-    def __init__(self, actor, target_velocity, walker_direction=0, name="KeepVelocity"):
+    def __init__(self, actor, target_velocity,
+                 walker_direction=0, duration=float("inf"), distance=float("inf"), name="KeepVelocity"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
@@ -507,6 +517,17 @@ class KeepVelocity(AtomicBehavior):
             self._control.speed = target_velocity
             self._control.direction = carla.Rotation(0, walker_direction, 0).get_forward_vector()
 
+        self._duration = duration
+        self._target_distance = distance
+        self._distance = 0
+        self._start_time = 0
+        self._location = None
+
+    def initialise(self):
+        self._location = CarlaDataProvider.get_location(self._actor)
+        self._start_time = GameTime.get_time()
+        super(KeepVelocity, self).initialise()
+
     def update(self):
         """
         Set throttle to throttle_value, as long as velocity is < target_velocity
@@ -519,6 +540,16 @@ class KeepVelocity(AtomicBehavior):
             else:
                 self._control.throttle = 0.0
         self._actor.apply_control(self._control)
+
+        new_location = CarlaDataProvider.get_location(self._actor)
+        self._distance += calculate_distance(self._location, new_location)
+        self._location = new_location
+
+        if self._distance > self._target_distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        if GameTime.get_time() - self._start_time > self._duration:
+            new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -608,6 +639,37 @@ class UseAutoPilot(AtomicBehavior):
         """
         self._actor.set_autopilot(False)
         super(UseAutoPilot, self).terminate(new_status)
+
+
+class ChangeAutoPilot(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to disable/enable the use of the auto pilot.
+
+    Note: In parallel to this behavior a termination behavior has to be used
+          to terminate this behavior after a certain duration, or after a
+          certain distance, etc.
+    """
+
+    def __init__(self, actor, activate, name="ChangeAutoPilot"):
+        """
+        Setup parameters
+        """
+        super(ChangeAutoPilot, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._activate = activate
+
+    def update(self):
+        """
+        De/activate autopilot
+        """
+        self._actor.set_autopilot(self._activate)
+
+        new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
 
 
 class StopVehicle(AtomicBehavior):

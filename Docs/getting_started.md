@@ -22,12 +22,10 @@ Python 3.5. Depending on your Python version, execute:
 
 #Python 2.x
 sudo apt remove python-networkx #if installed, remove old version of networkx
-pip2 install --user py_trees==0.8.3 networkx==2.2 psutil
-pip2 install shapely
+pip2 install --user py_trees==0.8.3 networkx==2.2 psutil shapely xmlschema
 #Python 3.x
 sudo apt remove python3-networkx #if installed, remove old version of networkx
-pip3 install --user py_trees==0.8.3 networkx==2.2 psutil
-pip3 install shapely
+pip3 install --user py_trees==0.8.3 networkx==2.2 psutil shapely xmlschema
 ```
 Note: py-trees newer than v0.8 is *NOT* supported.
 
@@ -76,10 +74,16 @@ The only difference is, that you start the scenario_runner as follows:
 python scenario_runner.py --scenario group:FollowLeadingVehicle
 ```
 
-Note: This is currently not possible. We will re-enable this feature with one of the next commits.
-
 ## Running other scenarios
 A list of supported scenarios is provided in
 [List of Supported Scenarios](list_of_scenarios.md). Please note that
 different scenarios may take place in different CARLA towns. This has to be
 respected when launching the CARLA server.
+
+## Running scenarios using the OpenScenario format
+To run a scenario, which is based on the OpenScenario format, please run the scenario runner as follows:
+```
+python scenario_runner.py --openscenario <path/to/xosc-file>
+```
+Please note that the OpenScenario support and the OpenScenario format itself are still work in progress.
+More information you can find in [OpenScenario support](openscenario_support.md)

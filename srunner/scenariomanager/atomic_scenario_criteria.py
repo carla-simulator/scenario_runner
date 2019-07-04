@@ -69,6 +69,9 @@ class Criterion(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
+        if (self.test_status == "RUNNING") or (self.test_status == "INIT"):
+            self.test_status = "SUCCESS"
+
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
 
@@ -168,6 +171,14 @@ class DrivenDistanceTest(Criterion):
 
         return new_status
 
+    def terminate(self, new_status):
+        """
+        Set final status
+        """
+        if self.test_status == "RUNNING":
+            self.test_status = "FAILURE"
+        super(DrivenDistanceTest, self).terminate(new_status)
+
 
 class AverageVelocityTest(Criterion):
 
@@ -235,6 +246,14 @@ class AverageVelocityTest(Criterion):
 
         return new_status
 
+    def terminate(self, new_status):
+        """
+        Set final status
+        """
+        if self.test_status == "RUNNING":
+            self.test_status = "FAILURE"
+        super(AverageVelocityTest, self).terminate(new_status)
+
 
 class CollisionTest(Criterion):
 
@@ -287,9 +306,11 @@ class CollisionTest(Criterion):
 
         registered = False
         actor_type = None
+
+        self.test_status = "FAILURE"
+
         if 'static' in event.other_actor.type_id and 'sidewalk' not in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
-            self.test_status = "FAILURE"
         elif 'vehicle' in event.other_actor.type_id:
             for traffic_event in self.list_traffic_events:
                 if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
@@ -420,7 +441,7 @@ class OnSidewalkTest(Criterion):
     This class contains an atomic test to detect sidewalk invasions.
     """
 
-    def __init__(self, actor, optional=False, name="WrongLaneTest"):
+    def __init__(self, actor, optional=False, name="OnSidewalkTest"):
         """
         Construction with sensor setup
         """
