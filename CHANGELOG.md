@@ -10,6 +10,7 @@
     - Extended StandStill atomic behavior to support duration based
       termination
     - Added behavior to activate/deactivate autopilot
+    - Fixed WaypointFollower initialization
 
 
 ## CARLA Scenario_Runner 0.9.5

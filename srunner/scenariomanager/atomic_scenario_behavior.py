@@ -1086,7 +1086,7 @@ class WaypointFollower(AtomicBehavior):
         self._args_lateral_dict = {'K_P': 1.0, 'K_D': 0.01, 'K_I': 0.0, 'dt': 0.05}
         self._avoid_collision = avoid_collision
 
-    def setup(self, timeout=5):
+    def initialise(self):
         """
         Delayed one-time initialization
         """
