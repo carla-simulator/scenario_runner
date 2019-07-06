@@ -11,6 +11,8 @@
       termination
     - Added behavior to activate/deactivate autopilot
     - Fixed WaypointFollower initialization
+* Fixes
+    - Fixed Criterion CollisionTest to update status to SUCCESS/FAILURE
 
 
 ## CARLA Scenario_Runner 0.9.5

@@ -279,6 +279,11 @@ class CollisionTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
+        if self.actual_value > 0:
+            self.test_status = "FAILURE"
+        else:
+            self.test_status = "SUCCESS"
+
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
@@ -307,15 +312,13 @@ class CollisionTest(Criterion):
         registered = False
         actor_type = None
 
-        self.test_status = "FAILURE"
-
         if 'static' in event.other_actor.type_id and 'sidewalk' not in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
         elif 'vehicle' in event.other_actor.type_id:
             for traffic_event in self.list_traffic_events:
                 if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
                         and traffic_event.get_dict()['id'] == event.other_actor.id:   # pylint: disable=bad-indentation
-                        registered = True                                             # pylint: disable=bad-indentation
+                    registered = True                                             # pylint: disable=bad-indentation
             actor_type = TrafficEventType.COLLISION_VEHICLE
         elif 'walker' in event.other_actor.type_id:
             for traffic_event in self.list_traffic_events:
@@ -330,6 +333,7 @@ class CollisionTest(Criterion):
             collision_event.set_message("Agent collided against object with type={} and id={}".format(
                 event.other_actor.type_id, event.other_actor.id))
             self.list_traffic_events.append(collision_event)
+            self.actual_value += 1
 
 
 class KeepLaneTest(Criterion):
