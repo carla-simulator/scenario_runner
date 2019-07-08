@@ -82,6 +82,8 @@ class OpenScenario(BasicScenario):
 
         story_behavior = py_trees.composites.Sequence("Story")
 
+        joint_actor_list = self.other_actors + self.ego_vehicles
+
         for act in self.config.story.iter("Act"):
 
             if act.attrib.get('name') != 'Behavior':
@@ -96,8 +98,8 @@ class OpenScenario(BasicScenario):
                 actor_ids = []
                 for actor in sequence.iter("Actors"):
                     for entity in actor.iter("Entity"):
-                        for k, _ in enumerate(self.other_actors):
-                            if entity.attrib.get('name', None) == self.config.other_actors[k].rolename:
+                        for k, _ in enumerate(joint_actor_list):
+                            if entity.attrib.get('name', None) == joint_actor_list[k].attributes['role_name']:
                                 actor_ids.append(k)
                                 break
 
@@ -112,7 +114,7 @@ class OpenScenario(BasicScenario):
                             if child.tag == "Action":
                                 for actor_id in actor_ids:
                                     maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
-                                        child, self.other_actors[actor_id])
+                                        child, joint_actor_list[actor_id])
                                     parallel_actions.add_child(maneuver_behavior)
 
                             if child.tag == "StartConditions":

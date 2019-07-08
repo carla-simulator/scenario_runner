@@ -392,7 +392,15 @@ class OpenScenarioParser(object):
         if action.find('Global') is not None:
             raise NotImplementedError("Global actions are not yet supported")
         elif action.find('UserDefined') is not None:
-            raise NotImplementedError("UserDefined actions are not yet supported")
+            user_defined_action = action.find('UserDefined')
+            if user_defined_action.find('Command') is not None:
+                command = user_defined_action.find('Command').text.replace(" ", "")
+                if command == 'Idle':
+                    atomic = Idle()
+                else:
+                    raise AttributeError("Unknown user command action: {}".format(command))
+            else:
+                raise NotImplementedError("UserDefined script actions are not yet supported")
         elif action.find('Private') is not None:
             private_action = action.find('Private')
             if private_action.find('Longitudinal') is not None:
