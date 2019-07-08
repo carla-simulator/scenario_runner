@@ -34,7 +34,7 @@ An example for a supported scenario based on OpenScenario is available [here](..
        * [x] FollowRoute
        * [ ] FollowTrajectory
        * [ ] AquirePosition
-    * [ ] Command
+    * [x] Command (Support for command 'Idle')
     * [ ] Script
     * [ ] SetEnvironment
     * [ ] Entity
