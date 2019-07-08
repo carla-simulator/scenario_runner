@@ -46,6 +46,7 @@ void test_collision_stage (
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map,
     carla::client::Client& client_conn);
+void test_dense_topology(const carla::client::World&);
 
 int main()
 {   
@@ -68,8 +69,21 @@ int main()
     test_traffic_light_stage(vehicle_list, world_map, client_conn);
     // test_collision_stage(vehicle_list, world_map, client_conn);
     // test_rectangle_class();
+    // test_dense_topology(world);
 
     return 0;
+}
+
+void test_dense_topology(const carla::client::World& world) {
+    auto debug = world.MakeDebugHelper();
+    auto dao = traffic_manager::CarlaDataAccessLayer(world.GetMap());
+    auto topology = dao.getTopology();
+    traffic_manager::InMemoryMap local_map(topology);
+    local_map.setUp(1.0);
+    for (auto point : local_map.get_dense_topology()) {
+        auto location = point->getLocation();
+        debug.DrawPoint(location+carla::geom::Location(0, 0, 1), 0.2, carla::client::DebugHelper::Color{225U, 0U, 0U}, 30.0F);
+    }
 }
 
 void test_traffic_light_stage (

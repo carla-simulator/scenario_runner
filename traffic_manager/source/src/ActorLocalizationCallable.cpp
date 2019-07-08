@@ -12,21 +12,35 @@ namespace traffic_manager
     PipelineMessage ActorLocalizationCallable::action(PipelineMessage message)
     {   
         int actor_id = message.getActorID();
-        if(shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()){
-            
+        if(shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()
+            and !shared_data->buffer_map[actor_id]->empty()){
+            // Existing actor in buffer map
+ 
             float nearest_distance = 10;
             float dot_product = 1;
-            if (!shared_data->buffer_map[actor_id]->empty()) {
-                nearest_distance = nearestDistance(shared_data, &message);
-                dot_product = nearestDotProduct(shared_data, &message);
-            }
+            nearest_distance = nearestDistance(shared_data, &message);
+            dot_product = nearestDotProduct(shared_data, &message);
 
+            // Purge past waypoints
             while ((dot_product <= 0 || nearest_distance <= 2.0)) {
                 shared_data->buffer_map[actor_id]->pop();
-                dot_product = nearestDotProduct(shared_data, &message);
-                nearest_distance = nearestDistance(shared_data, &message);
+                if (!shared_data->buffer_map[actor_id]->empty()) {
+                    dot_product = nearestDotProduct(shared_data, &message);
+                    nearest_distance = nearestDistance(shared_data, &message);
+                } else {break;}
             }
-            
+
+            // Re-initialize buffer if empty
+            if (shared_data->buffer_map[actor_id]->empty()) {
+                auto actor_location = carla::geom::Location(
+                    message.getAttribute("x"),
+                    message.getAttribute("y"),
+                    message.getAttribute("z"));
+                auto closest_waypoint = shared_data->local_map->getWaypoint(actor_location);
+                shared_data->buffer_map[actor_id]->push(closest_waypoint);
+            }
+
+            // Re-populate buffer
             while (
                 shared_data->buffer_map[actor_id]->back()->distance(
                     shared_data->buffer_map[actor_id]->front()->getLocation()
@@ -34,20 +48,20 @@ namespace traffic_manager
             ) {
                 auto feed_waypoint = shared_data->buffer_map[actor_id]->back()->getNextWaypoint()[0];
                 shared_data->buffer_map[actor_id]->push(feed_waypoint);
-                if(shared_data->buffer_map[actor_id]->size() > 23){
-                    auto feed_location = feed_waypoint->getLocation();
-                }
             }
         }
         else
         {
+            // New actor to buffer map
             shared_data->buffer_map[actor_id] = std::make_shared<SyncQueue<std::shared_ptr<SimpleWaypoint>>>(200);
             auto actor_location = carla::geom::Location(
-                message.getAttribute("x"), 
-                message.getAttribute("y"), 
+                message.getAttribute("x"),
+                message.getAttribute("y"),
                 message.getAttribute("z"));
             auto closest_waypoint = shared_data->local_map->getWaypoint(actor_location);
+            // Initialize buffer for actor
             shared_data->buffer_map[actor_id]->push(closest_waypoint);
+            // Populate buffer
             while (
                 shared_data->buffer_map[actor_id]->back()->distance(
                     shared_data->buffer_map[actor_id]->front()->getLocation()
@@ -58,6 +72,7 @@ namespace traffic_manager
             }
         }
 
+        // Generate output message
         PipelineMessage out_message;
         float dot_product = nearestDotProduct(shared_data, &message);
         float cross_product = nearestCrossProduct(shared_data, &message);
