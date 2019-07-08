@@ -122,7 +122,7 @@ void test_traffic_light_stage (
     actor_state_stage.start();
 
     traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
-    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
+    traffic_manager::PipelineStage actor_localization_stage(1, actor_localization_callable);
     actor_localization_stage.start();
 
     float k_v = 1.0;
@@ -288,6 +288,8 @@ void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
     for (auto& swp : dense_topology) {
         if (swp->getNextWaypoint().size() < 1 || swp->getNextWaypoint()[0] == 0) {
             loose_ends_count += 1;
+            auto loc = swp->getLocation();
+            std::cout << "Loose end at : " << loc.x << " " << loc.y << std::endl;
         }
     }
     std::cout << "Number of loose ends : " << loose_ends_count << std::endl;

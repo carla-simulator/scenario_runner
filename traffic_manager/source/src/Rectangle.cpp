@@ -6,12 +6,12 @@ Rectangle::~Rectangle(){}
 
 std::vector<std::vector<float>> Rectangle::find_rectangle_coordinates(carla::geom::Vector3D heading_vector, carla::geom::Location vehicle_coordinate, float length, float width)
     {   
-        int k = 3;
+        int forward_margin = 5;
         float rear_angle = atan(width/length);
-        float forward_angle = atan(width/(k*length));
+        float forward_angle = atan(width/(length + forward_margin));
         std::vector <std::vector<float>> rectangle_coordinates;
-        rectangle_coordinates.push_back(find_coordinate(heading_vector, vehicle_coordinate, k*length, width, forward_angle));
-        rectangle_coordinates.push_back(find_coordinate(heading_vector, vehicle_coordinate, k*length, width, 2*(3.141592) - forward_angle));
+        rectangle_coordinates.push_back(find_coordinate(heading_vector, vehicle_coordinate, forward_margin+length, width, forward_angle));
+        rectangle_coordinates.push_back(find_coordinate(heading_vector, vehicle_coordinate, forward_margin+length, width, 2*(3.141592) - forward_angle));
         rectangle_coordinates.push_back(find_coordinate(heading_vector, vehicle_coordinate, length, width, 3.141592 + rear_angle));
         rectangle_coordinates.push_back(find_coordinate(heading_vector, vehicle_coordinate, length, width, 3.141592 - rear_angle));
 

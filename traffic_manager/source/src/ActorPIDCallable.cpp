@@ -17,7 +17,8 @@ namespace traffic_manager{
         float current_velocity = message.getAttribute("velocity");
         float deviation = message.getAttribute("deviation");
 
-        float max_throttle = 1.0;
+        float max_throttle = 0.6;
+        float max_brake = 1.0;
         float expr_v = k_v*((target_velocity - current_velocity) / target_velocity);
         
         float throttle;
@@ -30,7 +31,7 @@ namespace traffic_manager{
         }
         else{
             throttle = 0.0;
-            brake = std::max(std::abs(expr_v), max_throttle);
+            brake = std::max(std::abs(expr_v), max_brake);
         }
         steer = k_s*deviation;
         

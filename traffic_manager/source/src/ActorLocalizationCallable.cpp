@@ -15,7 +15,7 @@ namespace traffic_manager
         if(shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()
             and !shared_data->buffer_map[actor_id]->empty()){
             // Existing actor in buffer map
- 
+
             float nearest_distance = 10;
             float dot_product = 1;
             nearest_distance = nearestDistance(shared_data, &message);

@@ -19,7 +19,7 @@ void InMemoryMap::setUp(int sampling_resolution){
         auto end_waypoint = pair.second;
 
         if (begin_waypoint->GetTransform().location.Distance(
-                end_waypoint->GetTransform().location) > 0.01 ) {
+                end_waypoint->GetTransform().location) > sampling_resolution ) { // Make this a constant
 
             // Adding entry waypoint
             auto current_waypoint = begin_waypoint;
@@ -45,14 +45,16 @@ void InMemoryMap::setUp(int sampling_resolution){
     }
 
     // Linking segments
+    int i = 0, j = 0;
     for (auto end_point : this->exit_node_list) {
+        i++;
         for (auto begin_point : this->entry_node_list) {
-            if (end_point->distance(begin_point->getLocation()) < 0.01) {
+            j++;
+            if (end_point->distance(begin_point->getLocation()) < sampling_resolution and i != j) { // Make this a constant
                 end_point->setNextWaypoint({begin_point});
             }
         }
     }
-
 
 }
 
