@@ -1,4 +1,6 @@
 ## Latest changes
+
+## CARLA Scenario_Runner 0.9.5.1
 * Added initial support for OpenScenario v0.9.1
 * Added support for multiple ego vehicles plus an example
 * Added commandline option for output directory
