@@ -28,7 +28,7 @@ namespace traffic_manager
 
             if(diff.count() > 1.0) {
                 last_time = current_time;
-                delay = 1000000 / (shared_data->registered_actors.size() * 20);
+                delay = 1000000 / (shared_data->registered_actors.size() * 50);
             }
         }
         PipelineMessage empty_message;

@@ -112,6 +112,8 @@ void test_traffic_light_stage (
     local_map->setUp(1.0);
     shared_data.local_map = local_map;
     shared_data.client = &client_conn;
+    auto debug_helper = client_conn.GetWorld().MakeDebugHelper();
+    shared_data.debug = &debug_helper;
 
     traffic_manager::Feedercallable feeder_callable(NULL, &feeder_queue, &shared_data);
     traffic_manager::PipelineStage feeder_stage(1, feeder_callable);
@@ -122,7 +124,7 @@ void test_traffic_light_stage (
     actor_state_stage.start();
 
     traffic_manager::ActorLocalizationCallable actor_localization_callable(&actor_state_queue, &localization_queue, &shared_data);
-    traffic_manager::PipelineStage actor_localization_stage(1, actor_localization_callable);
+    traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
     actor_localization_stage.start();
 
     float k_v = 1.0;

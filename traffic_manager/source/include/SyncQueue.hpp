@@ -1,7 +1,9 @@
 #pragma once
 #include <mutex>
 #include <condition_variable>
-#include <queue>
+#include <deque>
+#include <algorithm>
+#include <vector>
 
 namespace traffic_manager {
 
@@ -13,7 +15,8 @@ private:
     std::mutex              q_mutex;
     std::condition_variable empty_condition;
     std::condition_variable full_condition;
-    std::queue<T>           queue;
+    std::condition_variable half_condition;
+    std::deque<T>           queue;
     int                     buffer_size;
 
 public:
@@ -22,7 +25,7 @@ public:
     void push(T value){
         std::unique_lock<std::mutex> lock(this->q_mutex);
         this->full_condition.wait(lock, [=]{ return !(this->queue.size()>=buffer_size); });
-        queue.push(value);
+        queue.push_back(value);
         this->empty_condition.notify_one();
     }
     
@@ -30,7 +33,7 @@ public:
         std::unique_lock<std::mutex> lock(this->q_mutex);
         this->empty_condition.wait(lock, [=]{ return !this->queue.empty(); });
         T rc(std::move(this->queue.front()));
-        this->queue.pop();
+        this->queue.pop_front();
         this->full_condition.notify_one();
         return rc;
     }
@@ -53,6 +56,14 @@ public:
 
     bool full() {
         return queue.size() >= buffer_size;
+    }
+
+    std::vector<T> getContent(int number_of_elements) {
+        std::unique_lock<std::mutex> lock(q_mutex);
+        if (queue.size() >= number_of_elements)
+            return std::vector<T>(queue.begin(), queue.begin()+number_of_elements);
+        else
+            return std::vector<T>(queue.begin(), queue.end());
     }
 };
 

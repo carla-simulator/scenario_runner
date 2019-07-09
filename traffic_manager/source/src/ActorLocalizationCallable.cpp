@@ -53,6 +53,8 @@ namespace traffic_manager
         else
         {
             // New actor to buffer map
+
+            // Make size of queue a derived or constant
             shared_data->buffer_map[actor_id] = std::make_shared<SyncQueue<std::shared_ptr<SimpleWaypoint>>>(200);
             auto actor_location = carla::geom::Location(
                 message.getAttribute("x"),
