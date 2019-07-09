@@ -35,6 +35,7 @@ Note: py-trees newer than v0.8 is *NOT* supported.
 First of all, you need to get latest master branch from CARLA. Then you have to
 include CARLA Python API to the Python path:
 ```
+export CARLA_ROOT=/path/to/your/carla/installation
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla
 ```
 NOTE: ${CARLA_ROOT} needs to be replaced with your CARLA installation directory,
