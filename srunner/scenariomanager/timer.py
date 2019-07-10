@@ -26,6 +26,7 @@ class GameTime(object):
     _current_game_time = 0.0  # Elapsed game time after starting this Timer
     _last_frame = 0
     _platform_timestamp = 0
+    _init = False
 
     @staticmethod
     def on_carla_tick(timestamp):
@@ -34,9 +35,11 @@ class GameTime(object):
         Update time only when frame is more recent that last frame
         """
         if GameTime._last_frame < timestamp.frame:
-            GameTime._current_game_time += timestamp.delta_seconds
+            frames = timestamp.frame - GameTime._last_frame if GameTime._init else 1
+            GameTime._current_game_time += timestamp.delta_seconds * frames
             GameTime._last_frame = timestamp.frame
             GameTime._platform_timestamp = datetime.datetime.now()
+            GameTime._init = True
 
     @staticmethod
     def restart():
@@ -44,6 +47,7 @@ class GameTime(object):
         Reset game timer to 0
         """
         GameTime._current_game_time = 0.0
+        GameTime._init = False
 
     @staticmethod
     def get_time():

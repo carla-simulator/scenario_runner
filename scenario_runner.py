@@ -111,6 +111,7 @@ class ScenarioRunner(object):
         settings.fixed_delta_seconds = 1.0 / self.frame_rate
         self.world.apply_settings(settings)
 
+        CarlaActorPool.set_world(self.world)
         CarlaDataProvider.set_world(self.world)
 
         # Load additional scenario definitions, if there are any
@@ -235,6 +236,7 @@ class ScenarioRunner(object):
                 return False
 
         CarlaActorPool.set_client(self.client)
+        CarlaActorPool.set_world(self.world)
         CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
