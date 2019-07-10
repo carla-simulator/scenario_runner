@@ -1,5 +1,12 @@
 ## Latest changes
 
+## CARLA Scenario_Runner 0.9.6
+* Adapted to CARLA API changes
+    - Frame rate is set now via Python
+    - Renamed frame_count and frame_number to frame
+    - Removed wait_for_tick() calls
+
+
 ## CARLA Scenario_Runner 0.9.5.1
 * Added initial support for OpenScenario v0.9.1
 * Added support for multiple ego vehicles plus an example

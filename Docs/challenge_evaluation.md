@@ -24,7 +24,7 @@ Please, to install the system, follow the general [installation steps for
 the scenario runner repository](getting_started.md/#install_prerequisites)
 
 To run the challenge, several environment variables need to be provided:
-```
+```Bash
 export CARLA_ROOT=/path/to/your/carla/installation
 export ROOT_SCENARIO_RUNNER=`pwd`
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/:${ROOT_SCENARIO_RUNNER}:`pwd`:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.5-py2.7-linux-x86_64.egg:${CARLA_ROOT}/PythonAPI/carla/agents

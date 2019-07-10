@@ -34,7 +34,7 @@ Note: py-trees newer than v0.8 is *NOT* supported.
 ## Running the follow vehicle example
 First of all, you need to get latest master branch from CARLA. Then you have to
 include CARLA Python API to the Python path:
-```
+```Bash
 export CARLA_ROOT=/path/to/your/carla/installation
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla
 ```
@@ -43,16 +43,14 @@ NOTE: ${CARLA_ROOT} needs to be replaced with your CARLA installation directory,
       If you build CARLA from source, the egg files maybe located in:
       ${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI.
 
-Now, you can start the CARLA server with Town01 from ${CARLA_ROOT}
+Now, you can start the CARLA server from ${CARLA_ROOT}
 ```
-./CarlaUE4.sh /Game/Carla/Maps/Town01 -benchmark -fps=20 -windowed
+./CarlaUE4.sh
 ```
-Please note that using the benchmark mode with a defined frame rate is very
-important to achieve a deterministic behavior.
 
 Start the example scenario (follow a leading vehicle) in an extra terminal:
 ```
-python scenario_runner.py --scenario FollowLeadingVehicle_1
+python scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld
 ```
 
 If you require help or want to explore other command line parameters, start the scenario
@@ -65,6 +63,9 @@ To control the ego vehicle within the scenario, open another terminal and run:
 ```
 python manual_control.py
 ```
+
+Note: If you do not wish to automatically (re-)load the CARLA world, you can
+skip the command line option _--reloadWorld_
 
 ## Running all scenarios of one scenario class
 Similar to the previous example, it is also possible to execute a sequence of scenarios,
