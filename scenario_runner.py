@@ -108,7 +108,7 @@ class ScenarioRunner(object):
         self.world = self.client.get_world()
 
         settings = self.world.get_settings()
-        settings.fixed_delta_seconds = 1.0 / frame_rate
+        settings.fixed_delta_seconds = 1.0 / self.frame_rate
         self.world.apply_settings(settings)
 
         CarlaDataProvider.set_world(self.world)
@@ -221,6 +221,48 @@ class ScenarioRunner(object):
         else:
             print("Failure!")
 
+    def load_world(self, args, town):
+        """
+        Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
+        """
+
+        if args.reloadWorld:
+            self.world = self.client.load_world(town)
+        else:
+            if CarlaDataProvider.get_map().name != town:
+                print("The CARLA server uses the wrong map!")
+                print("This scenario requires to use map {}".format(town))
+                return False
+
+        CarlaActorPool.set_client(self.client)
+        CarlaDataProvider.set_world(self.world)
+
+        # Wait for the world to be ready
+        self.world.tick()
+        settings = self.world.get_settings()
+        settings.fixed_delta_seconds = 1.0 / self.frame_rate
+        self.world.apply_settings(settings)
+
+        return True
+
+    def load_and_run_scenario(self, args, config, scenario):
+        """
+        Load and run the given scenario
+        """
+
+        # Load scenario and run it
+        self.manager.load_scenario(scenario)
+        self.manager.run_scenario()
+
+        # Provide outputs if required
+        self.analyze_scenario(args, config)
+
+        # Stop scenario and cleanup
+        self.manager.stop_scenario()
+        scenario.remove_all_actors()
+
+        self.cleanup()
+
     def run(self, args):
         """
         Run all scenarios according to provided commandline args
@@ -245,19 +287,10 @@ class ScenarioRunner(object):
             # Execute each configuration
             config_counter = 0
             for config in scenario_configurations:
-                if args.reloadWorld:
-                    self.world = self.client.load_world(config.town)
-                else:
-                    if CarlaDataProvider.get_map().name != config.town:
-                        print("The CARLA server uses the wrong map!")
-                        print("This scenario requires to use map {}".format(config.town))
-                        self.cleanup()
-                        continue
-                CarlaActorPool.set_client(self.client)
-                CarlaDataProvider.set_world(self.world)
 
-                # Wait for the world to be ready
-                self.world.tick()
+                if not self.load_world(args, config.town):
+                    self.cleanup()
+                    continue
 
                 # Create scenario manager
                 self.manager = ScenarioManager(self.world, args.debug)
@@ -267,7 +300,7 @@ class ScenarioRunner(object):
                 scenario_class = self.get_scenario_class_or_fail(config.type)
                 try:
                     CarlaActorPool.set_world(self.world)
-                    self.prepare_ego_vehicles(config, args.waitForEgo or (config_counter > 0))
+                    self.prepare_ego_vehicles(config)
                     scenario = scenario_class(self.world,
                                               self.ego_vehicles,
                                               config,
@@ -282,18 +315,8 @@ class ScenarioRunner(object):
                     config_counter += 1
                     continue
 
-                # Load scenario and run it
-                self.manager.load_scenario(scenario)
-                self.manager.run_scenario()
+                self.load_and_run_scenario(args, config, scenario)
 
-                # Provide outputs if required
-                self.analyze_scenario(args, config)
-
-                # Stop scenario and cleanup
-                self.manager.stop_scenario()
-                scenario.remove_all_actors()
-
-                self.cleanup()
                 config_counter += 1
 
             self.cleanup(ego=(not args.waitForEgo))
@@ -311,22 +334,11 @@ class ScenarioRunner(object):
             self.cleanup()
             return
 
-        CarlaActorPool.set_client(self.client)
-        CarlaDataProvider.set_world(self.world)
-
         config = OpenScenarioConfiguration(args.openscenario)
 
-        if args.reloadWorld:
-            self.world = self.client.load_world(config.town)
-        else:
-            if CarlaDataProvider.get_map().name != config.town:
-                print("The CARLA server uses the wrong map!")
-                print("This scenario requires to use map {}".format(config.town))
-                self.cleanup()
-                return
-
-        # Wait for the world to be ready
-        self.world.tick()
+        if not self.load_world(args, config.town):
+            self.cleanup()
+            return
 
         # Create scenario manager
         self.manager = ScenarioManager(self.world, args.debug)
@@ -349,16 +361,7 @@ class ScenarioRunner(object):
             self.cleanup()
             return
 
-        # Load scenario and run it
-        self.manager.load_scenario(scenario)
-        self.manager.run_scenario()
-
-        # Provide outputs if required
-        self.analyze_scenario(args, config)
-
-        # Stop scenario and cleanup
-        self.manager.stop_scenario()
-        scenario.remove_all_actors()
+        self.load_and_run_scenario(args, config, scenario)
 
         self.cleanup(ego=(not args.waitForEgo))
 
