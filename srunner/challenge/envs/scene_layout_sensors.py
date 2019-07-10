@@ -17,9 +17,9 @@ def threaded(fn):
 
 
 class SceneLayoutMeasurement(object):
-    def __init__(self, data, frame_number):
+    def __init__(self, data, frame):
         self.data = data
-        self.frame_number = frame_number
+        self.frame = frame
 
 
 class SceneLayoutReader(object):
@@ -66,9 +66,9 @@ class SceneLayoutReader(object):
 
 
 class ObjectMeasurements(object):
-    def __init__(self, data, frame_number):
+    def __init__(self, data, frame):
         self.data = data
-        self.frame_number = frame_number
+        self.frame = frame
 
 
 class ObjectFinder(object):
@@ -90,7 +90,7 @@ class ObjectFinder(object):
         self._reading_frequency = reading_frequency
         self._callback = None
         #  Counts the frames
-        self._frame_number = 0
+        self._frame = 0
         self._run_ps = True
         self.find_objects()
 
@@ -105,8 +105,8 @@ class ObjectFinder(object):
             if self._callback is not None:
                 capture = time.time()
                 if capture - latest_speed_read > (1 / self._reading_frequency):
-                    self._callback(ObjectMeasurements(self.__call__(), self._frame_number))
-                    self._frame_number += 1
+                    self._callback(ObjectMeasurements(self.__call__(), self._frame))
+                    self._frame += 1
                     latest_speed_read = time.time()
                 else:
                     time.sleep(0.001)

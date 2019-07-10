@@ -12,9 +12,9 @@ from srunner.challenge.envs.scene_layout_sensors import SceneLayoutMeasurement, 
 
 
 class HDMapMeasurement(object):
-    def __init__(self, data, frame_number):
+    def __init__(self, data, frame):
         self.data = data
-        self.frame_number = frame_number
+        self.frame = frame
 
 
 class HDMapReader(object):
@@ -23,7 +23,7 @@ class HDMapReader(object):
         self._reading_frequency = reading_frequency
         self._CARLA_ROOT = os.getenv('CARLA_ROOT', "./")
         self._callback = None
-        self._frame_number = 0
+        self._frame = 0
         self._run_ps = True
         self.run()
 
@@ -48,8 +48,8 @@ class HDMapReader(object):
             if self._callback is not None:
                 capture = time.time()
                 if capture - latest_read > (1 / self._reading_frequency):
-                    self._callback(HDMapMeasurement(self.__call__(), self._frame_number))
-                    self._frame_number += 1
+                    self._callback(HDMapMeasurement(self.__call__(), self._frame))
+                    self._frame += 1
                     latest_read = time.time()
                 else:
                     time.sleep(0.001)
@@ -66,9 +66,9 @@ class HDMapReader(object):
 
 
 class CANBusMeasurement(object):
-    def __init__(self, data, frame_number):
+    def __init__(self, data, frame):
         self.data = data
-        self.frame_number = frame_number
+        self.frame = frame
 
 
 class CANBusSensor(object):
@@ -86,7 +86,7 @@ class CANBusSensor(object):
         self._reading_frequency = reading_frequency
         self._callback = None
         #  Counts the frames
-        self._frame_number = 0
+        self._frame = 0
         self._run_ps = True
         self.read_CAN_Bus()
 
@@ -241,8 +241,8 @@ class CANBusSensor(object):
             if self._callback is not None:
                 capture = time.time()
                 if capture - latest_speed_read > (1 / self._reading_frequency):
-                    self._callback(CANBusMeasurement(self.__call__(), self._frame_number))
-                    self._frame_number += 1
+                    self._callback(CANBusMeasurement(self.__call__(), self._frame))
+                    self._frame += 1
                     latest_speed_read = time.time()
                 else:
                     time.sleep(0.001)
@@ -283,23 +283,23 @@ class CallBack(object):
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = copy.deepcopy(array)
         array = np.reshape(array, (image.height, image.width, 4))
-        self._data_provider.update_sensor(tag, array, image.frame_number)
+        self._data_provider.update_sensor(tag, array, image.frame)
 
     def _parse_lidar_cb(self, lidar_data, tag):
         points = np.frombuffer(lidar_data.raw_data, dtype=np.dtype('f4'))
         points = copy.deepcopy(points)
         points = np.reshape(points, (int(points.shape[0] / 3), 3))
-        self._data_provider.update_sensor(tag, points, lidar_data.frame_number)
+        self._data_provider.update_sensor(tag, points, lidar_data.frame)
 
     def _parse_gnss_cb(self, gnss_data, tag):
         array = np.array([gnss_data.latitude,
                           gnss_data.longitude,
                           gnss_data.altitude], dtype=np.float64)
-        self._data_provider.update_sensor(tag, array, gnss_data.frame_number)
+        self._data_provider.update_sensor(tag, array, gnss_data.frame)
 
     # The pseudo sensors already come properly parsed, so we can basically use a single function
     def _parse_pseudosensor(self, package, tag):
-        self._data_provider.update_sensor(tag, package.data, package.frame_number)
+        self._data_provider.update_sensor(tag, package.data, package.frame)
 
 
 class SensorInterface(object):
