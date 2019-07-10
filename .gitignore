@@ -11,7 +11,7 @@ srunner/scenarios/*.pyc
 srunner/scenarios/__pycache__/
 srunner/utilities/*.pyc
 srunner/utilities/__pycache__/
-*.txt
+results*.txt
 *.log
 .project
 .pydevproject

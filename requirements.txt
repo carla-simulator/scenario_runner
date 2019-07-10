@@ -1,0 +1,6 @@
+py-trees
+networkx
+Shapely
+psutil
+xmlschema
+carla
