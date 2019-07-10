@@ -192,7 +192,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(config.ego_vehicles[i].transform)
 
         # sync state
-        CarlaDataProvider.get_world().wait_for_tick()
+        CarlaDataProvider.get_world().tick()
 
     def analyze_scenario(self, args, config):
         """
