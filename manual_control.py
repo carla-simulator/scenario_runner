@@ -270,7 +270,7 @@ class HUD(object):
     def on_world_tick(self, timestamp):
         self._server_clock.tick()
         self.server_fps = self._server_clock.get_fps()
-        self.frame_number = timestamp.frame_count
+        self.frame_number = timestamp.frame
         self.simulation_time = timestamp.elapsed_seconds
 
     def tick(self, world, mapname, clock):
