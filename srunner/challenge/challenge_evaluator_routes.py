@@ -92,7 +92,7 @@ def convert_json_to_actor(actor_dict):
     node.set('z', actor_dict['z'])
     node.set('yaw', actor_dict['yaw'])
 
-    return ActorConfiguration(node)
+    return ActorConfiguration(node, rolename='simulation')
 
 
 def convert_json_to_transform(actor_dict):
@@ -447,7 +447,6 @@ class ChallengeEvaluator(object):
             if self.debug > 0:
                 print(" waiting for one data reading from sensors...")
             self.world.tick()
-            self.world.wait_for_tick(self.wait_for_world)
 
     def get_actors_instances(self, list_of_antagonist_actors):
         """
@@ -657,7 +656,6 @@ class ChallengeEvaluator(object):
             while attempts < self.MAX_CONNECTION_ATTEMPTS:
                 try:
                     self.world.tick()
-                    self.timestamp = self.world.wait_for_tick(self.wait_for_world)
                     break
                 except Exception:
                     attempts += 1
@@ -1046,12 +1044,14 @@ class ChallengeEvaluator(object):
             world = None
 
         self.world = client.load_world(town_name)
-        self.timestamp = self.world.wait_for_tick(self.wait_for_world)
         settings = self.world.get_settings()
         settings.synchronous_mode = True
+        settings.fixed_delta_seconds = 1.0 / self.frame_rate
         if self.track == 4:
             settings.no_rendering_mode = True
         self.world.apply_settings(settings)
+
+        self.world.on_tick(self._update_timestamp)
 
         # update traffic lights to make traffic more dynamic
         traffic_lights = self.world.get_actors().filter('*traffic_light*')
@@ -1059,6 +1059,9 @@ class ChallengeEvaluator(object):
             tl.set_green_time(9.0)
             tl.set_yellow_time(0.05)
             tl.set_red_time(0.08)
+
+    def _update_timestamp(self, snapshot):
+        self.timestamp = snapshot.timestamp
 
     def filter_scenarios(self, potential_scenarios_all, scenarios_to_remove):
         """
@@ -1288,7 +1291,6 @@ class ChallengeEvaluator(object):
                 self.background_scenario = None
 
                 self.world.tick()
-                self.world.wait_for_tick(self.wait_for_world)
 
                 if self.debug > 0:
                     break
