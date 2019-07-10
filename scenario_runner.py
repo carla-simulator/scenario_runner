@@ -83,6 +83,7 @@ class ScenarioRunner(object):
     # Tunable parameters
     client_timeout = 30.0  # in seconds
     wait_for_world = 20.0  # in seconds
+    frame_rate = 20.0      # in Hz
 
     # CARLA world and scenario handlers
     world = None
@@ -105,6 +106,11 @@ class ScenarioRunner(object):
         # Once we have a client we can retrieve the world that is currently
         # running.
         self.world = self.client.get_world()
+
+        settings = self.world.get_settings()
+        settings.fixed_delta_seconds = 1.0 / frame_rate
+        self.world.apply_settings(settings)
+
         CarlaDataProvider.set_world(self.world)
 
         # Load additional scenario definitions, if there are any
@@ -251,7 +257,7 @@ class ScenarioRunner(object):
                 CarlaDataProvider.set_world(self.world)
 
                 # Wait for the world to be ready
-                self.world.wait_for_tick(self.wait_for_world)
+                self.world.tick()
 
                 # Create scenario manager
                 self.manager = ScenarioManager(self.world, args.debug)
@@ -320,7 +326,7 @@ class ScenarioRunner(object):
                 return
 
         # Wait for the world to be ready
-        self.world.wait_for_tick(self.wait_for_world)
+        self.world.tick()
 
         # Create scenario manager
         self.manager = ScenarioManager(self.world, args.debug)

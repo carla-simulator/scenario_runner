@@ -228,6 +228,7 @@ class ChallengeEvaluator(object):
         # Tunable parameters
         self.client_timeout = 30.0  # in seconds
         self.wait_for_world = 20.0  # in seconds
+        self.frame_rate = 20.0      # in Hz
 
         # CARLA world and scenario handlers
         self.world = None
@@ -1033,12 +1034,14 @@ class ChallengeEvaluator(object):
             settings = self.world.get_settings()
             settings.synchronous_mode = False
             settings.no_rendering_mode = False
+            settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
         else:
             world = client.get_world()
             settings = world.get_settings()
             settings.synchronous_mode = False
             settings.no_rendering_mode = False
+            settings.fixed_delta_seconds = 1.0 / self.frame_rate
             world.apply_settings(settings)
             world = None
 
