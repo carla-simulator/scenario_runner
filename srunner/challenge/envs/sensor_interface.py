@@ -189,9 +189,7 @@ class CANBusSensor(object):
             wheels_list_dict.append(
                 {'tire_friction': wheel.tire_friction,
                  'damping_rate': wheel.damping_rate,
-                 'steer_angle': wheel.steer_angle,
-                 'disable_steering': wheel.disable_steering
-
+                 'steer_angle': wheel.max_steer_angle
                  }
             )
 
