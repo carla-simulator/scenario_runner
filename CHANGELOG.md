@@ -1,6 +1,7 @@
 ## Latest changes
 
 ## CARLA Scenario_Runner 0.9.6
+**This is the _first_ release to work with CARLA 0.9.6**
 * Adapted to CARLA API changes
     - Frame rate is set now via Python
     - Renamed frame_count and frame_number to frame
@@ -8,6 +9,7 @@
 
 
 ## CARLA Scenario_Runner 0.9.5.1
+**This is the _last_ release that works with CARLA 0.9.5**
 * Added initial support for OpenScenario v0.9.1
 * Added support for multiple ego vehicles plus an example
 * Added commandline option for output directory
@@ -23,6 +25,7 @@
 
 
 ## CARLA Scenario_Runner 0.9.5
+**This is the _first_ release to work with CARLA 0.9.5**
 * Added support for CARLA challenge
     - Added logging functionalities to challenge_evaluator_routes.py
     - Added wall clock timeout for the CARLA challenge
@@ -77,15 +80,12 @@
 * Added NHTSA Traffic Scenarios
     - Updated all traffic scenarios to let the other actors appear upon scenario triggering and removal on scenario end
     - ManeuverOppositeDirection: hero vehicle must maneuver in the opposite lane to pass a leading vehicle.
-    - OtherLeadingVehicle: hero vehicle must react to the deceleration of leading vehicle and change lane to avoid collision and follow
-                           the vehicle in changed lane
-    - SignalizedJunctionRightTurn: hero vehicle must turn right into the same direction of another vehicle crossing
-                                   straight initially from a lateral direction and avoid collision at a signalized intersection.
-    - SignalizedJunctionLeftTurn : hero vehicle is turning left at signalized intersection, cuts across the path of another vehicle
-                                   coming straight crossing from an opposite direction.
+    - OtherLeadingVehicle: hero vehicle must react to the deceleration of leading vehicle and change lane to avoid collision and follow the vehicle in changed lane
+    - SignalizedJunctionRightTurn: hero vehicle must turn right into the same direction of another vehicle crossing straight initially from a lateral direction and avoid collision at a signalized intersection.
+    - SignalizedJunctionLeftTurn : hero vehicle is turning left at signalized intersection, cuts across the path of another vehicle coming straight crossing from an opposite direction.
 
 ## CARLA Scenario_Runner 0.9.2
-
+**This release is designed to work with CARLA 0.9.2**
 * Added Traffic Scenarios engine to reproduce complex traffic situations for training and evaluating driving agents
 * Added NHTSA Traffic Scenarios
     - FollowLeadingVehicle: hero vehicle must react to the deceleration of a leading vehicle

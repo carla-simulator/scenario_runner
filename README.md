@@ -15,11 +15,19 @@ the scenario_runner also the upcoming [OpenScenario](http://www.openscenario.org
 [![Scenario_Runner for CARLA](./Docs/images/scenario_runner_video.png)](https://youtu.be/ChmF8IFagpo?t=68)
 
 
-Building the ScenarioRunner
+Getting the ScenarioRunner
 ---------------------------
 
 Use `git clone` or download the project from this page. Note that the master
 branch contains the latest fixes and features, and may be required to use the latest features from CARLA.
+
+It is important to also consider the release version that has to match the CARLA version.
+
+* Version 0.9.6: Compatible with [CARLA 0.9.6](https://github.com/carla-simulator/carla/releases/tag/0.9.6)
+* [Version 0.9.5](https://github.com/carla-simulator/scenario_runner/releases/tag/0.9.5) and [Version 0.9.5.1](https://github.com/carla-simulator/scenario_runner/releases/tag/0.9.5.1): Compatible with [CARLA 0.9.5](https://github.com/carla-simulator/carla/releases/tag/0.9.5)
+* [Version 0.9.2](https://github.com/carla-simulator/scenario_runner/releases/tag/0.9.2): Compatible with [CARLA 0.9.2](https://github.com/carla-simulator/carla/releases/tag/0.9.2)
+
+To use a particular version you can either download the corresponding tarball or simply checkout the version tag associated to the release (e.g. git checkout v0.9.5)
 
 Currently no build is required, as all code is in Python.
 
@@ -29,7 +37,6 @@ Using the ScenarioRunner
 
 Please take a look at our [Getting started](Docs/getting_started.md)
 documentation.
-
 
 Challenge Evaluation
 ---------------------
