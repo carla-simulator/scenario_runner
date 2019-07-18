@@ -441,7 +441,9 @@ class CarlaActorPool(object):
         if blueprint.has_attribute('is_invincible'):
             blueprint.set_attribute('is_invincible', 'false')
 
-        if autopilot:
+        if hero:
+            blueprint.set_attribute('role_name', 'hero')
+        elif autopilot:
             blueprint.set_attribute('role_name', 'autopilot')
         else:
             blueprint.set_attribute('role_name', rolename)
