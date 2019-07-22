@@ -27,6 +27,7 @@ public:
     int setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints);
 
     float distance(carla::geom::Location location);
+    bool checkJunction();
 };
 
 } // namespace traffic_manager
