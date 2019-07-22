@@ -41,4 +41,8 @@ float SimpleWaypoint::distance(carla::geom::Location location) {
     return this->waypoint->GetTransform().location.Distance(location);
 }
 
+bool SimpleWaypoint::checkJunction(){
+    return this->waypoint->IsJunction();
+}
+
 } // namespace traffic_manager

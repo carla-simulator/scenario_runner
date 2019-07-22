@@ -26,11 +26,16 @@ namespace traffic_manager {
         //Implement a faster way to find closest waypoint
         auto closest_waypoint = shared_data->local_map->getWaypoint(vehicle->GetLocation());
 
+        auto next_waypoint = shared_data->buffer_map[vehicle->GetId()]->getContent(5);
+
         float traffic_hazard = -1;
-        if(traffic_light_state == carla::rpc::TrafficLightState::Red
+        
+        if(closest_waypoint->checkJunction() == true){}
+
+        else if(traffic_light_state == carla::rpc::TrafficLightState::Red
             or traffic_light_state == carla::rpc::TrafficLightState::Yellow)
         {
-            if(closest_waypoint->checkJunction() == true){}
+            if(next_waypoint[4]->checkJunction() == false){}
             else{
                 traffic_hazard = 1;
             }

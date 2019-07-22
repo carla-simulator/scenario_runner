@@ -131,7 +131,7 @@ void test_traffic_light_stage (
     traffic_manager::PipelineStage collision_stage(8, collision_callable);
     collision_stage.start();
 
-    traffic_manager::TrafficLightStateCallable tl_state_callable(&collision_queue, &tl_queue);
+    traffic_manager::TrafficLightStateCallable tl_state_callable(&collision_queue, &tl_queue, &shared_data);
     traffic_manager::PipelineStage tl_state_stage(8, tl_state_callable);
     tl_state_stage.start();
 
