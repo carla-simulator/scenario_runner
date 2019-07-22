@@ -13,7 +13,8 @@ class TrafficLightStateCallable: public PipelineCallable
 public:
     TrafficLightStateCallable(
         SyncQueue<PipelineMessage>* input_queue,
-        SyncQueue<PipelineMessage>* output_queue);
+        SyncQueue<PipelineMessage>* output_queue,
+        SharedData* shared_data);
     ~TrafficLightStateCallable();
 
     PipelineMessage action(PipelineMessage message);

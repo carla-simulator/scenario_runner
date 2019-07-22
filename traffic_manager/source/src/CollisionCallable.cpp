@@ -75,7 +75,7 @@ namespace traffic_manager
 
             BOOST_FOREACH(polygon const& p, output)
             {
-                if(boost::geometry::area(p) > 0.0001 && dot_product > 0.200){ // Make thresholds constants
+                if(boost::geometry::area(p) > 0.0001 && dot_product > 0.8660){ // Make thresholds constants
                     return true;
                 }
             }
@@ -102,7 +102,8 @@ namespace traffic_manager
         std::vector<carla::geom::Location> bbox
     ) {
         float velocity = actor->GetVelocity().Length();
-        int bbox_extension = velocity > 0.01 ? 5 : 1; // Make these constants
+        int bbox_extension = (int) velocity; // Make these constants
+        bbox_extension = std::max(bbox_extension, 5);
         auto simple_waypoints = this->shared_data->buffer_map[actor->GetId()]->getContent(bbox_extension);
         std::vector<carla::geom::Location> left_boundary;
         std::vector<carla::geom::Location> right_boundary;
