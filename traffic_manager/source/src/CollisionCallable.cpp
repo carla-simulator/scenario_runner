@@ -14,10 +14,9 @@ namespace traffic_manager
 
     PipelineMessage CollisionCallable::action(PipelineMessage message)
     {
-        auto throttle = message.getAttribute("throttle");
-        auto brake = message.getAttribute("brake");
         auto actor_list = shared_data->registered_actors;
 
+        float collision_hazard = -1;
         for(auto actor : actor_list){
             
             if (
@@ -31,8 +30,7 @@ namespace traffic_manager
                 {       
                     if(checkGeodesicCollision(ego_actor, actor) == true)
                     {
-                        brake = 1.0;
-                        throttle = 0.0;
+                        collision_hazard = 1;
                         break;
                     }
                 }
@@ -40,9 +38,10 @@ namespace traffic_manager
         }
         PipelineMessage out_message;
         out_message.setActor(message.getActor());
-        out_message.setAttribute("throttle", throttle);
-        out_message.setAttribute("brake", brake);
-        out_message.setAttribute("steer", message.getAttribute("steer"));
+        out_message.setAttribute("collision", collision_hazard);
+        out_message.setAttribute("velocity", message.getAttribute("velocity"));
+        out_message.setAttribute("deviation", message.getAttribute("deviation"));
+
         return out_message;
     }
 
@@ -62,15 +61,6 @@ namespace traffic_manager
             auto reference_polygon = getPolygon(reference_geodesic_boundary);
             auto other_polygon = getPolygon(other_geodesic_boundary);
 
-            // auto draw_boundary = reference_geodesic_boundary;
-            // for (int i=0; i < draw_boundary.size(); i++){
-            //     int j = (i+1)==draw_boundary.size() ? 0 : i+1;
-            //     shared_data->debug->DrawLine(
-            //         draw_boundary[i] + carla::geom::Location(0, 0, 1),
-            //         draw_boundary[j] + carla::geom::Location(0, 0, 1)
-            //     );
-            // }
-
             auto reference_heading_vector = reference_vehicle->GetTransform().GetForwardVector();
             reference_heading_vector.z = 0;
             reference_heading_vector = reference_heading_vector.MakeUnitVector();
@@ -83,11 +73,9 @@ namespace traffic_manager
             std::deque<polygon> output;
             boost::geometry::intersection(reference_polygon, other_polygon, output);
 
-            // std::cout<<" Polygon Area of actor "<<reference_vehicle->GetId()<<" : "<<boost::geometry::area(reference_polygon)<<std::endl;
             BOOST_FOREACH(polygon const& p, output)
             {
                 if(boost::geometry::area(p) > 0.0001 && dot_product > 0.200){ // Make thresholds constants
-                    // std::cout<<" Found intersection "<<std::endl;
                     return true;
                 }
             }

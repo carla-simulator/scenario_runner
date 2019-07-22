@@ -127,14 +127,7 @@ void test_traffic_light_stage (
     traffic_manager::PipelineStage actor_localization_stage(8, actor_localization_callable);
     actor_localization_stage.start();
 
-    float k_v = 1.0;
-    float k_s = 3.0;
-    float target_velocity = 6.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
-    traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
-    actor_pid_stage.start();
-
-    traffic_manager::CollisionCallable collision_callable(&pid_queue, &collision_queue, &shared_data);
+    traffic_manager::CollisionCallable collision_callable(&localization_queue, &collision_queue, &shared_data);
     traffic_manager::PipelineStage collision_stage(8, collision_callable);
     collision_stage.start();
 
@@ -142,7 +135,14 @@ void test_traffic_light_stage (
     traffic_manager::PipelineStage tl_state_stage(8, tl_state_callable);
     tl_state_stage.start();
 
-    traffic_manager::BatchControlCallable batch_control_callable(&tl_queue, &batch_control_queue, &shared_data);
+    float target_velocity = 7.0;
+    traffic_manager::ActorPIDCallable actor_pid_callable(
+        target_velocity, &tl_queue, &pid_queue, &shared_data,
+        {0.1f, 0.15f, 0.01f}, {5.0f, 0.1f, 1.0f});
+    traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
+    actor_pid_stage.start();
+
+    traffic_manager::BatchControlCallable batch_control_callable(&pid_queue, &batch_control_queue, &shared_data);
     traffic_manager::PipelineStage batch_control_stage(1, batch_control_callable);
     batch_control_stage.start();
 
@@ -197,7 +197,8 @@ void test_collision_stage (
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
+    traffic_manager::ActorPIDCallable actor_pid_callable(
+            target_velocity, &localization_queue, &pid_queue, &shared_data, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
     traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
     actor_pid_stage.start();
 
@@ -259,7 +260,8 @@ void test_batch_control_stage (
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
+    traffic_manager::ActorPIDCallable actor_pid_callable(
+        target_velocity, &localization_queue, &pid_queue, &shared_data, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
     traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
     actor_pid_stage.start();
 
@@ -339,7 +341,8 @@ void test_actor_PID_stage(
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(k_v, k_s, target_velocity, &localization_queue, &pid_queue);
+    traffic_manager::ActorPIDCallable actor_pid_callable(
+        target_velocity, &localization_queue, &pid_queue, &shared_data, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
     traffic_manager::PipelineStage actor_pid_stage(4, actor_pid_callable);
     actor_pid_stage.start();
 

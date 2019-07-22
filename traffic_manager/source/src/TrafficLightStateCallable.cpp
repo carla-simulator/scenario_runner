@@ -22,20 +22,18 @@ namespace traffic_manager {
         auto vehicle = boost::static_pointer_cast<carla::client::Vehicle>(in_message.getActor());
         auto traffic_light_state = vehicle->GetTrafficLightState();
 
-        if(traffic_light_state == carla::rpc::TrafficLightState::Red)
+        float traffic_hazard = -1;
+        if(traffic_light_state == carla::rpc::TrafficLightState::Red
+            or traffic_light_state == carla::rpc::TrafficLightState::Yellow)
         {
-            throttle = 0.0;
-            brake = 1.0;          
-        }
-        else if(traffic_light_state == carla::rpc::TrafficLightState::Yellow)
-        {
-            throttle = throttle / 2;
+            traffic_hazard = 1;
         }
 
         out_message.setActor(in_message.getActor());
-        out_message.setAttribute("throttle", throttle);
-        out_message.setAttribute("brake", brake);
-        out_message.setAttribute("steer", steer);
+        out_message.setAttribute("traffic_light", traffic_hazard);
+        out_message.setAttribute("collision", in_message.getAttribute("collision"));
+        out_message.setAttribute("velocity", in_message.getAttribute("velocity"));
+        out_message.setAttribute("deviation", in_message.getAttribute("deviation"));
 
         return out_message;
     }

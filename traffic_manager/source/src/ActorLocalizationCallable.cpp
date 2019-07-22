@@ -22,7 +22,8 @@ namespace traffic_manager
             dot_product = nearestDotProduct(shared_data, &message);
 
             // Purge past waypoints
-            while ((dot_product <= 0 || nearest_distance <= 2.0)) {
+            auto distance_threshold = std::min(message.getAttribute("velocity") * 0.5, 2.0);
+            while ((dot_product <= 0 || nearest_distance <= distance_threshold)) {
                 shared_data->buffer_map[actor_id]->pop();
                 if (!shared_data->buffer_map[actor_id]->empty()) {
                     dot_product = nearestDotProduct(shared_data, &message);
