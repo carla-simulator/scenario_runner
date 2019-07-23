@@ -22,7 +22,7 @@ namespace traffic_manager
             dot_product = nearestDotProduct(shared_data, &message);
 
             // Purge past waypoints
-            auto distance_threshold = std::min(message.getAttribute("velocity") * 0.5, 2.0);
+            auto distance_threshold = std::max(message.getAttribute("velocity") * 0.5, 2.0);
             while ((dot_product <= 0 || nearest_distance <= distance_threshold)) {
                 shared_data->buffer_map[actor_id]->pop();
                 if (!shared_data->buffer_map[actor_id]->empty()) {
@@ -47,7 +47,9 @@ namespace traffic_manager
                     shared_data->buffer_map[actor_id]->front()->getLocation()
                 ) <= 20.0 // Make this a constant
             ) {
-                auto feed_waypoint = shared_data->buffer_map[actor_id]->back()->getNextWaypoint()[0];
+                auto next_waypoints = shared_data->buffer_map[actor_id]->back()->getNextWaypoint();
+                auto selection_index = next_waypoints.size() > 1 ? rand()%next_waypoints.size() : 0;
+                auto feed_waypoint = next_waypoints[selection_index];
                 shared_data->buffer_map[actor_id]->push(feed_waypoint);
             }
         }
@@ -70,7 +72,9 @@ namespace traffic_manager
                     shared_data->buffer_map[actor_id]->front()->getLocation()
                 ) <= 20.0 // Make this a constant
             ) {
-                closest_waypoint = closest_waypoint->getNextWaypoint()[0];
+                auto next_waypoints = closest_waypoint->getNextWaypoint();
+                auto selection_index = next_waypoints.size() > 1 ? rand()%next_waypoints.size() : 0;
+                closest_waypoint = next_waypoints[selection_index];
                 shared_data->buffer_map[actor_id]->push(closest_waypoint);
             }
         }

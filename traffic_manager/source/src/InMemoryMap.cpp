@@ -12,6 +12,7 @@ InMemoryMap::~InMemoryMap(){}
 
 void InMemoryMap::setUp(int sampling_resolution){
     // Creating dense topology
+    auto ZERO = 0.0001; // Very important that this is less than 10^-4
     for(auto &pair : this->topology) {
 
         // Looping through every topology segment
@@ -19,7 +20,7 @@ void InMemoryMap::setUp(int sampling_resolution){
         auto end_waypoint = pair.second;
 
         if (begin_waypoint->GetTransform().location.Distance(
-                end_waypoint->GetTransform().location) > sampling_resolution ) { // Make this a constant
+                end_waypoint->GetTransform().location) > ZERO) {
 
             // Adding entry waypoint
             auto current_waypoint = begin_waypoint;
@@ -47,13 +48,13 @@ void InMemoryMap::setUp(int sampling_resolution){
     // Linking segments
     int i = 0, j = 0;
     for (auto end_point : this->exit_node_list) {
-        i++;
         for (auto begin_point : this->entry_node_list) {
-            j++;
-            if (end_point->distance(begin_point->getLocation()) < sampling_resolution and i != j) { // Make this a constant
+            if (end_point->distance(begin_point->getLocation()) < ZERO and i != j) { // Make this a constant
                 end_point->setNextWaypoint({begin_point});
             }
+            j++;
         }
+        i++;
     }
 
 }

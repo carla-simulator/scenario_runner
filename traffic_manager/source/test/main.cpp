@@ -74,6 +74,26 @@ int main()
     return 0;
 }
 
+void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
+    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
+    auto topology = dao.getTopology();
+    traffic_manager::InMemoryMap local_map(topology);
+
+    std::cout << "setup starting" << std::endl;
+    local_map.setUp(1.0);
+    std::cout << "setup complete" << std::endl;
+    int loose_ends_count = 0;
+    auto dense_topology = local_map.get_dense_topology();
+    for (auto& swp : dense_topology) {
+        if (swp->getNextWaypoint().size() < 1 || swp->getNextWaypoint()[0] == 0) {
+            loose_ends_count += 1;
+            auto loc = swp->getLocation();
+            std::cout << "Loose end at : " << loc.x << " " << loc.y << std::endl;
+        }
+    }
+    std::cout << "Number of loose ends : " << loose_ends_count << std::endl;
+}
+
 void test_dense_topology(const carla::client::World& world) {
     auto debug = world.MakeDebugHelper();
     auto dao = traffic_manager::CarlaDataAccessLayer(world.GetMap());
@@ -278,28 +298,6 @@ void test_batch_control_stage (
     }
 }
 
-
-void test_in_memory_map(carla::SharedPtr<carla::client::Map> world_map) {
-    auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
-    auto topology = dao.getTopology();
-    traffic_manager::InMemoryMap local_map(topology);
-
-    std::cout << "setup starting" << std::endl;
-    local_map.setUp(1.0);
-    std::cout << "setup complete" << std::endl;
-    int loose_ends_count = 0;
-    auto dense_topology = local_map.get_dense_topology();
-    for (auto& swp : dense_topology) {
-        if (swp->getNextWaypoint().size() < 1 || swp->getNextWaypoint()[0] == 0) {
-            loose_ends_count += 1;
-            auto loc = swp->getLocation();
-            std::cout << "Loose end at : " << loc.x << " " << loc.y << std::endl;
-        }
-    }
-    std::cout << "Number of loose ends : " << loose_ends_count << std::endl;
-}
-
-
 void test_actor_PID_stage(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map,
@@ -497,6 +495,7 @@ void test_actor_state_stage(carla::SharedPtr<carla::client::ActorList> actor_lis
     while(true)
         sleep(1);
 }
+
 void test_feeder_stage(carla::SharedPtr<carla::client::ActorList> actor_list)
 {
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> out_queue(20);
