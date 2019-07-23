@@ -45,6 +45,15 @@ namespace traffic_manager
         return out_message;
     }
 
+    void CollisionCallable::drawBoundary(std::vector<carla::geom::Location> boundary) {
+        for (int i=0; i<boundary.size(); i++) {
+            shared_data->debug->DrawLine(
+                boundary[i] + carla::geom::Location(0, 0, 1),
+                boundary[(i+1)%boundary.size()] + carla::geom::Location(0, 0, 1),
+                0.1f, {255U, 0U, 0U} , 0.1f);
+        }
+    }
+
     bool CollisionCallable::checkGeodesicCollision(
         carla::SharedPtr<carla::client::Actor> reference_vehicle,
         carla::SharedPtr<carla::client::Actor> other_vehicle
@@ -76,6 +85,7 @@ namespace traffic_manager
             BOOST_FOREACH(polygon const& p, output)
             {
                 if(boost::geometry::area(p) > 0.0001 && dot_product > 0.8660){ // Make thresholds constants
+                    drawBoundary(reference_geodesic_boundary);
                     return true;
                 }
             }
@@ -101,9 +111,8 @@ namespace traffic_manager
         carla::SharedPtr<carla::client::Actor> actor,
         std::vector<carla::geom::Location> bbox
     ) {
-        float velocity = actor->GetVelocity().Length();
-        int bbox_extension = (int) velocity; // Make these constants
-        bbox_extension = std::max(bbox_extension, 5);
+        auto velocity = actor->GetVelocity().Length();
+        int bbox_extension = std::max(std::sqrt(7*velocity), 2.0f); // Account for these constants
         auto simple_waypoints = this->shared_data->buffer_map[actor->GetId()]->getContent(bbox_extension);
         std::vector<carla::geom::Location> left_boundary;
         std::vector<carla::geom::Location> right_boundary;

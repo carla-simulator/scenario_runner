@@ -27,7 +27,7 @@ namespace traffic_manager
     class CollisionCallable : public PipelineCallable
     {
         private:
-
+            void drawBoundary(std::vector<carla::geom::Location>);
             bool checkCollisionByDistance (carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle);
             bool checkGeodesicCollision(carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle);
             std::vector<carla::geom::Location> getBoundary (carla::SharedPtr<carla::client::Actor> actor);
