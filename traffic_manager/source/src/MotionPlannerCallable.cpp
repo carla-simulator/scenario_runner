@@ -34,11 +34,23 @@ namespace traffic_manager{
             previous_state.time_instance = current_time;
         }
 
+        // Slow down upon approaching a junction
+        bool approaching_junction = false;
+        auto dynamic_target_velocity = target_velocity;
+        int junction_index = std::max(std::floor(std::sqrt(target_velocity*current_velocity)), 5.0f);
+        if (
+            shared_data->buffer_map[actor_id]->get(junction_index)->checkJunction()
+            and !(shared_data->buffer_map[actor_id]->get(1)->checkJunction())
+        ) {
+            dynamic_target_velocity = 3.0f; // 10.8 kmph, Account for constant
+            approaching_junction = true;
+        }
+
         // State update for vehicle
         auto current_state = controller.stateUpdate(
             previous_state,
             current_velocity,
-            target_velocity,
+            dynamic_target_velocity,
             current_deviation,
             current_time
         );
@@ -51,10 +63,11 @@ namespace traffic_manager{
             lateral_parameters
         );
 
-        // In case of collision or traffic light
+        // In case of collision or traffic light or approaching a junction
         if (
             message.getAttribute("collision") > 0
             or message.getAttribute("traffic_light") > 0
+            or (approaching_junction and current_velocity > 3.0) // Account for constant
         ) {
             current_state.deviation_integral = 0;
             current_state.velocity_integral = 0;

@@ -67,6 +67,7 @@ public:
     }
 
     T get(int index) {
+        std::unique_lock<std::mutex> lock(q_mutex);
         auto queue_size = this->size();
         index = index >= queue_size ? queue_size: index;
         return queue[index];
