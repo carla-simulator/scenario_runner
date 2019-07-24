@@ -65,6 +65,12 @@ public:
         else
             return std::vector<T>(queue.begin(), queue.end());
     }
+
+    T get(int index) {
+        auto queue_size = this->size();
+        index = index >= queue_size ? queue_size: index;
+        return queue[index];
+    }
 };
 
 }

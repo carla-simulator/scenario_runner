@@ -30,15 +30,18 @@ namespace traffic_manager {
 
         float traffic_hazard = -1;
         
-        if(closest_waypoint->checkJunction() == true){}
-
-        else if(traffic_light_state == carla::rpc::TrafficLightState::Red
-            or traffic_light_state == carla::rpc::TrafficLightState::Yellow)
-        {
-            if(next_waypoint[4]->checkJunction() == false){}
-            else{
-                traffic_hazard = 1;
-            }
+        if (
+            !(closest_waypoint->checkJunction())
+            and
+            (
+                traffic_light_state == carla::rpc::TrafficLightState::Red
+                or
+                traffic_light_state == carla::rpc::TrafficLightState::Yellow
+            )
+            and
+            next_waypoint[4]->checkJunction()
+        ) {
+            traffic_hazard = 1;
         }
 
 

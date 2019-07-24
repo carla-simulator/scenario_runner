@@ -15,7 +15,7 @@
 #include "ActorStateCallable.hpp"
 #include "SyncQueue.hpp"
 #include "ActorLocalizationCallable.hpp"
-#include "ActorPIDCallable.hpp"
+#include "MotionPlannerCallable.hpp"
 #include "TrafficLightStateCallable.hpp"
 #include "BatchControlCallable.hpp"
 #include "CollisionCallable.hpp"
@@ -156,7 +156,7 @@ void test_traffic_light_stage (
     tl_state_stage.start();
 
     float target_velocity = 7.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(
+    traffic_manager::MotionPlannerCallable actor_pid_callable(
         target_velocity, &tl_queue, &pid_queue, &shared_data,
         {0.1f, 0.15f, 0.01f}, {5.0f, 0.1f, 1.0f});
     traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
@@ -217,7 +217,7 @@ void test_collision_stage (
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(
+    traffic_manager::MotionPlannerCallable actor_pid_callable(
             target_velocity, &localization_queue, &pid_queue, &shared_data, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
     traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
     actor_pid_stage.start();
@@ -280,7 +280,7 @@ void test_batch_control_stage (
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(
+    traffic_manager::MotionPlannerCallable actor_pid_callable(
         target_velocity, &localization_queue, &pid_queue, &shared_data, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
     traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
     actor_pid_stage.start();
@@ -339,7 +339,7 @@ void test_actor_PID_stage(
     float k_v = 1.0;
     float k_s = 3.0;
     float target_velocity = 10.0;
-    traffic_manager::ActorPIDCallable actor_pid_callable(
+    traffic_manager::MotionPlannerCallable actor_pid_callable(
         target_velocity, &localization_queue, &pid_queue, &shared_data, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
     traffic_manager::PipelineStage actor_pid_stage(4, actor_pid_callable);
     actor_pid_stage.start();
