@@ -1,27 +1,28 @@
-//Declaration of ActorLocalizationCallable class members
+//Declaration of class members
 #pragma once
 
 #include <memory>
 #include <map>
 #include "carla/geom/Vector3D.h"
 #include "carla/geom/Location.h"
+#include "carla/geom/Transform.h"
 #include "PipelineCallable.hpp"
 #include "SimpleWaypoint.hpp"
 
 namespace traffic_manager{
 
-    class ActorLocalizationCallable: public PipelineCallable
+    class LocalizationCallable: public PipelineCallable
     {
         private:
-            float nearestDotProduct(SharedData*, PipelineMessage*);
-            float nearestCrossProduct(SharedData*, PipelineMessage*);
-            float nearestDistance(SharedData*, PipelineMessage*);
+            float nearestDotProduct(carla::SharedPtr<carla::client::Actor>);
+            float nearestCrossProduct(carla::SharedPtr<carla::client::Actor>);
+            float nearestDistance(carla::SharedPtr<carla::client::Actor>);
         public:
-        ActorLocalizationCallable(
+        LocalizationCallable(
             SyncQueue<PipelineMessage>* input_queue,
             SyncQueue<PipelineMessage>* output_queue,
             SharedData* shared_data);
-        ~ActorLocalizationCallable();
+        ~LocalizationCallable();
 
         PipelineMessage action (PipelineMessage message);
     };
