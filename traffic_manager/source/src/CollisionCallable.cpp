@@ -36,6 +36,7 @@ namespace traffic_manager
                 }
             }
         }
+
         PipelineMessage out_message;
         out_message.setActor(message.getActor());
         out_message.setAttribute("collision", collision_hazard);
@@ -112,7 +113,10 @@ namespace traffic_manager
         std::vector<carla::geom::Location> bbox
     ) {
         auto velocity = actor->GetVelocity().Length();
-        int bbox_extension = std::max(std::sqrt(7*velocity), 2.0f); // Account for these constants
+        int bbox_extension = static_cast<int>(
+            std::max(std::sqrt(7*velocity), 2.0f)
+            + std::max(velocity * 0.5, 2.0)
+        ); // Account for these constants
         auto simple_waypoints = this->shared_data->buffer_map[actor->GetId()]->getContent(bbox_extension);
         std::vector<carla::geom::Location> left_boundary;
         std::vector<carla::geom::Location> right_boundary;

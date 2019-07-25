@@ -20,16 +20,14 @@ namespace traffic_manager {
         float brake = in_message.getAttribute("brake");
         float steer = in_message.getAttribute("steer");
 
+        auto actor_id = in_message.getActorID();
         auto vehicle = boost::static_pointer_cast<carla::client::Vehicle>(in_message.getActor());
         auto traffic_light_state = vehicle->GetTrafficLightState();
-        
-        //Implement a faster way to find closest waypoint
-        auto closest_waypoint = shared_data->local_map->getWaypoint(vehicle->GetLocation());
 
-        auto next_waypoint = shared_data->buffer_map[vehicle->GetId()]->getContent(5);
+        auto closest_waypoint = shared_data->buffer_map[actor_id]->get(0);
+        auto next_waypoint = shared_data->buffer_map[actor_id]->get(5);
 
         float traffic_hazard = -1;
-        
         if (
             !(closest_waypoint->checkJunction())
             and
@@ -39,11 +37,10 @@ namespace traffic_manager {
                 traffic_light_state == carla::rpc::TrafficLightState::Yellow
             )
             and
-            next_waypoint[4]->checkJunction()
+            next_waypoint->checkJunction()
         ) {
             traffic_hazard = 1;
         }
-
 
         out_message.setActor(in_message.getActor());
         out_message.setAttribute("traffic_light", traffic_hazard);

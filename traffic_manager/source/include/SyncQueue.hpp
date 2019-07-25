@@ -70,7 +70,7 @@ public:
         std::unique_lock<std::mutex> lock(q_mutex);
         auto queue_size = this->size();
         index = index >= queue_size ? queue_size: index;
-        return queue[index];
+        return queue.at(index);
     }
 };
 

@@ -5,35 +5,35 @@ namespace traffic_manager
     LocalizationCallable::LocalizationCallable(
         SyncQueue<PipelineMessage>* input_queue,
         SyncQueue<PipelineMessage>* output_queue,
-        SharedData* shared_data):PipelineCallable(input_queue, output_queue, shared_data){}
+        SharedData* shared_data
+    ):  PipelineCallable(input_queue, output_queue, shared_data) {}
 
-    LocalizationCallable::~LocalizationCallable(){}
+    LocalizationCallable::~LocalizationCallable() {}
 
-    PipelineMessage LocalizationCallable::action(PipelineMessage message)
-    {   
+    PipelineMessage LocalizationCallable::action(PipelineMessage message) {
+
         auto vehicle = message.getActor();
         auto actor_id = message.getActorID();
         auto vehicle_location = vehicle->GetLocation();
         auto vehicle_velocity = vehicle->GetVelocity().Length();
         
-        if(
+        if (
             shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()
             and !shared_data->buffer_map[actor_id]->empty()
-        ) {
-            // Existing actor in buffer map
-
-            float nearest_distance = 10;
-            float dot_product = 1;
-            nearest_distance = nearestDistance(vehicle);
-            dot_product = nearestDotProduct(vehicle);
+        ) { // Existing actor in buffer map
 
             // Purge past waypoints
-            auto distance_threshold = std::max(vehicle_velocity * 0.5, 2.0);
-            while ((dot_product <= 0 || nearest_distance <= distance_threshold)) {
+            auto dot_product = deviationDotProduct(
+                vehicle, 
+                shared_data->buffer_map[actor_id]->front()->getLocation()
+            );
+            while (dot_product <= 0) {
                 shared_data->buffer_map[actor_id]->pop();
                 if (!shared_data->buffer_map[actor_id]->empty()) {
-                    dot_product = nearestDotProduct(vehicle);
-                    nearest_distance = nearestDistance(vehicle);
+                    dot_product = deviationDotProduct(
+                        vehicle, 
+                        shared_data->buffer_map[actor_id]->front()->getLocation()
+                    );
                 } else {break;}
             }
 
@@ -54,10 +54,8 @@ namespace traffic_manager
                 auto feed_waypoint = next_waypoints[selection_index];
                 shared_data->buffer_map[actor_id]->push(feed_waypoint);
             }
-        }
-        else
-        {
-            // New actor to buffer map
+
+        } else {   // New actor to buffer map
 
             // Make size of queue a derived or constant
             shared_data->buffer_map[actor_id] = std::make_shared<SyncQueue<std::shared_ptr<SimpleWaypoint>>>(200);
@@ -79,8 +77,10 @@ namespace traffic_manager
 
         // Generate output message
         PipelineMessage out_message;
-        float dot_product = nearestDotProduct(vehicle);
-        float cross_product = nearestCrossProduct(vehicle);
+        auto horizon_index = static_cast<int>(std::max(std::ceil(vehicle_velocity * 0.5), 2.0));
+        auto target_waypoint = shared_data->buffer_map[actor_id]->get(horizon_index);
+        float dot_product = deviationDotProduct(vehicle, target_waypoint->getLocation());
+        float cross_product = deviationCrossProduct(vehicle, target_waypoint->getLocation());
         dot_product = 1 - dot_product;
         if(cross_product < 0)
             dot_product *= -1;
@@ -91,30 +91,26 @@ namespace traffic_manager
         return out_message;
     }
     
-    float LocalizationCallable::nearestDotProduct(carla::SharedPtr<carla::client::Actor> actor) {
-        auto wp = shared_data->buffer_map[actor->GetId()]->front();
-        auto next_location = wp->getLocation();
+    float LocalizationCallable::deviationDotProduct (
+        carla::SharedPtr<carla::client::Actor> actor,
+        carla::geom::Location target_location
+    ) {
         auto heading_vector = actor->GetTransform().GetForwardVector();
-        auto next_vector = next_location - actor->GetLocation(); 
+        auto next_vector = target_location - actor->GetLocation();
         next_vector = next_vector.MakeUnitVector();
         auto dot_product = next_vector.x*heading_vector.x +
             next_vector.y*heading_vector.y + next_vector.z*heading_vector.z;
         return dot_product;
     }
 
-    float LocalizationCallable::nearestCrossProduct(carla::SharedPtr<carla::client::Actor> actor){
-        auto wp = shared_data->buffer_map[actor->GetId()]->front();
-        auto next_location = wp->getLocation();
+    float LocalizationCallable::deviationCrossProduct (
+        carla::SharedPtr<carla::client::Actor> actor,
+        carla::geom::Location target_location
+    ) {
         auto heading_vector = actor->GetTransform().GetForwardVector();
-        auto next_vector = next_location - actor->GetLocation(); 
+        auto next_vector = target_location - actor->GetLocation(); 
         next_vector = next_vector.MakeUnitVector();
         float cross_z = heading_vector.x*next_vector.y - heading_vector.y*next_vector.x;
         return cross_z;
     }
-
-    float LocalizationCallable::nearestDistance(carla::SharedPtr<carla::client::Actor> actor){
-        auto wp = shared_data->buffer_map[actor->GetId()]->front();
-        return wp->distance(actor->GetLocation());
-    }
-
 }

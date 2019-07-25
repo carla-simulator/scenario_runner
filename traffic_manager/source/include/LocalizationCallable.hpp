@@ -14,14 +14,21 @@ namespace traffic_manager{
     class LocalizationCallable: public PipelineCallable
     {
         private:
-            float nearestDotProduct(carla::SharedPtr<carla::client::Actor>);
-            float nearestCrossProduct(carla::SharedPtr<carla::client::Actor>);
+            float deviationDotProduct (
+                carla::SharedPtr<carla::client::Actor>,
+                carla::geom::Location
+            );
+            float deviationCrossProduct (
+                carla::SharedPtr<carla::client::Actor>,
+                carla::geom::Location
+            );
             float nearestDistance(carla::SharedPtr<carla::client::Actor>);
         public:
-        LocalizationCallable(
+        LocalizationCallable (
             SyncQueue<PipelineMessage>* input_queue,
             SyncQueue<PipelineMessage>* output_queue,
-            SharedData* shared_data);
+            SharedData* shared_data
+        );
         ~LocalizationCallable();
 
         PipelineMessage action (PipelineMessage message);
