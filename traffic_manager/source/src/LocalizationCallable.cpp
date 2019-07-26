@@ -17,6 +17,8 @@ namespace traffic_manager
         auto vehicle_location = vehicle->GetLocation();
         auto vehicle_velocity = vehicle->GetVelocity().Length();
         
+        float horizon_size = std::max(3*vehicle_velocity, 25.0f); // Account for these constant
+
         if (
             shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()
             and !shared_data->buffer_map[actor_id]->empty()
@@ -47,7 +49,7 @@ namespace traffic_manager
             while (
                 shared_data->buffer_map[actor_id]->back()->distance(
                     shared_data->buffer_map[actor_id]->front()->getLocation()
-                ) <= 20.0 // Make this a constant
+                ) <= horizon_size // Make this a constant
             ) {
                 auto next_waypoints = shared_data->buffer_map[actor_id]->back()->getNextWaypoint();
                 auto selection_index = next_waypoints.size() > 1 ? rand()%next_waypoints.size() : 0;
@@ -66,7 +68,7 @@ namespace traffic_manager
             while (
                 shared_data->buffer_map[actor_id]->back()->distance(
                     shared_data->buffer_map[actor_id]->front()->getLocation()
-                ) <= 20.0 // Make this a constant
+                ) <= horizon_size // Make this a constant
             ) {
                 auto next_waypoints = closest_waypoint->getNextWaypoint();
                 auto selection_index = next_waypoints.size() > 1 ? rand()%next_waypoints.size() : 0;

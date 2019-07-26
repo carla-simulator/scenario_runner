@@ -21,6 +21,7 @@ namespace traffic_manager{
 
     PipelineMessage MotionPlannerCallable::action(PipelineMessage message){
         PipelineMessage out_message;
+        auto vehicle = boost::static_pointer_cast<carla::client::Vehicle>(message.getActor());
         float current_velocity = message.getAttribute("velocity");
         float current_deviation = message.getAttribute("deviation");
         auto current_time = std::chrono::system_clock::now();
@@ -34,10 +35,17 @@ namespace traffic_manager{
             previous_state.time_instance = current_time;
         }
 
+        auto dynamic_target_velocity = target_velocity;
+
+        // Increase speed if on highway
+        if (vehicle->GetSpeedLimit() > 50) {
+            dynamic_target_velocity = 50 / 3.6;
+            longitudinal_parameters = {5.0, 0.1, 0.01};
+        }
+
         // Slow down upon approaching a junction
         bool approaching_junction = false;
-        auto dynamic_target_velocity = target_velocity;
-        int junction_index = std::max(std::floor(std::sqrt(target_velocity*current_velocity)), 5.0f);
+        int junction_index = std::max(std::floor(std::sqrt(target_velocity*dynamic_target_velocity)), 5.0f);
         if (
             shared_data->buffer_map[actor_id]->get(junction_index)->checkJunction()
             and !(shared_data->buffer_map[actor_id]->get(1)->checkJunction())
