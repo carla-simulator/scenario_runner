@@ -35,8 +35,8 @@ int main()
 
     // test_dense_topology(world);
     // test_in_memory_map(world_map);
-    test_pipeline_stages(vehicle_list, world_map, client_conn);
-    // test_pipeline(vehicle_list, world_map, client_conn);
+    // test_pipeline_stages(vehicle_list, world_map, client_conn);
+    test_pipeline(vehicle_list, world_map, client_conn);
 
     return 0;
 }
@@ -55,7 +55,7 @@ void test_pipeline(
         world_map,
         7.0f,
         {0.1f, 0.15f, 0.01f},
-        {10.0f, 0.05f, 0.1f},
+        {10.0f, 0.0f, 0.1f},
         8,
         client_conn,
         debug_helper
@@ -114,7 +114,7 @@ void test_pipeline_stages(
     float target_velocity = 7.0;
     traffic_manager::MotionPlannerCallable actor_pid_callable(
         target_velocity, &tl_queue, &pid_queue, &shared_data,
-        {0.1f, 0.15f, 0.01f}, {10.0f, 0.05f, 0.1f});
+        {0.1f, 0.15f, 0.01f}, {10.0f, 0.0f, 0.1f});
     traffic_manager::PipelineStage actor_pid_stage(8, actor_pid_callable);
     actor_pid_stage.start();
 

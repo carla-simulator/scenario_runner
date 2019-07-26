@@ -10,7 +10,7 @@ namespace traffic_manager{
         SyncQueue<PipelineMessage>* output_queue,
         SharedData* shared_data,
         std::vector<float> longitudinal_parameters = {0.1f, 0.15f, 0.01f}, // This is a good tune for most cars
-        std::vector<float> lateral_parameters = {10.0f, 0.05f, 0.1f} // Pretty stable, still needs improvement
+        std::vector<float> lateral_parameters = {10.0f, 0.0f, 0.1f} // Pretty stable, still needs improvement
     ): longitudinal_parameters(longitudinal_parameters),
     lateral_parameters(lateral_parameters),
     shared_data(shared_data),
