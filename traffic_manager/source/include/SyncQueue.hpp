@@ -75,6 +75,7 @@ namespace traffic_manager {
         /* Returns a vector of elements from the front of the queue till a given a number of elements. */
         std::vector<T> getContent(int number_of_elements) {
             std::shared_lock<std::shared_mutex> lock(q_mutex);
+            this->empty_condition.wait(lock, [=]{ return !this->queue.empty(); });
             if (queue.size() >= number_of_elements)
                 return std::vector<T>(queue.begin(), queue.begin()+number_of_elements);
             else
@@ -84,6 +85,7 @@ namespace traffic_manager {
         /* Returns the reference to the element at a given index on the queue. */
         T get(int index) {
             std::shared_lock<std::shared_mutex> lock(q_mutex);
+            this->empty_condition.wait(lock, [=]{ return !this->queue.empty(); });
             auto queue_size = this->size();
             index = index >= queue_size ? queue_size: index;
             return queue.at(index);

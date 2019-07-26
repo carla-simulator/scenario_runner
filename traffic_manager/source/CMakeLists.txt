@@ -1,3 +1,4 @@
+
 project(traffic_manager CXX)
 cmake_minimum_required(VERSION 3.2.2)
 
@@ -5,7 +6,7 @@ set(CMAKE_C_COMPILER /usr/bin/clang-7)
 set(CMAKE_CXX_COMPILER /usr/bin/clang++-7)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fPIC -O3 -DNDEBUG -g -fsanitize=address" CACHE STRING "" FORCE)
 
-set(LIBCARLA_LOCATION /home/praveen/workspace/libcarla/)
+set(LIBCARLA_LOCATION $ENV{LIBCARLA_LOCATION})
 
 include_directories(include/)
 include_directories(${LIBCARLA_LOCATION}/include)

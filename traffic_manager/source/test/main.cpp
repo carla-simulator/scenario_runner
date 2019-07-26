@@ -11,9 +11,14 @@
 #include "TrafficLightStateCallable.hpp"
 #include "BatchControlCallable.hpp"
 #include "CollisionCallable.hpp"
+#include "Pipeline.hpp"
 
 void test_dense_topology(const carla::client::World&);
 void test_in_memory_map(carla::SharedPtr<carla::client::Map>);
+void test_pipeline_stages(
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn
+);
 void test_pipeline(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn
@@ -30,16 +35,43 @@ int main()
 
     // test_dense_topology(world);
     // test_in_memory_map(world_map);
-    test_pipeline(vehicle_list, world_map, client_conn);
+    test_pipeline_stages(vehicle_list, world_map, client_conn);
+    // test_pipeline(vehicle_list, world_map, client_conn);
 
     return 0;
 }
 
-void test_pipeline (
+void test_pipeline(
+    carla::SharedPtr<carla::client::ActorList> actor_list,
+    carla::SharedPtr<carla::client::Map> world_map, carla::client::Client& client_conn
+) {
+    std::vector<carla::SharedPtr<carla::client::Actor>> vector_of_actors;
+    for(auto it = actor_list->begin(); it != actor_list->end(); it++)
+        vector_of_actors.push_back(*it);
+    auto debug_helper = client_conn.GetWorld().MakeDebugHelper();
+
+    traffic_manager::Pipeline pipeline(
+        vector_of_actors,
+        world_map,
+        7.0f,
+        {0.1f, 0.15f, 0.01f},
+        {10.0f, 0.05f, 0.1f},
+        8,
+        client_conn,
+        debug_helper
+    );
+    pipeline.setup();
+    pipeline.start();
+
+    while (true)
+        sleep(1);
+}
+
+void test_pipeline_stages(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map,
-    carla::client::Client& client_conn)
-{
+    carla::client::Client& client_conn
+) {
 
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> feeder_queue(20);
     traffic_manager::SyncQueue<traffic_manager::PipelineMessage> localization_queue(20);
