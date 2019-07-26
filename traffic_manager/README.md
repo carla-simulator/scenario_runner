@@ -1,20 +1,14 @@
 # Traffic Manager
 
-
-##Getting Traffic Manager
-
-Use git clone or download the project from [Carla-simulator/scenario_runner](https://github.com/carla-simulator/scenario_runner) and switch to branch traffic_manager.
-
-
 ## Using Traffic Manager
 
-Go to ${scenario_runner_ROOT}/traffic_manager/source
+Start the CARLA server from ${CARLA_ROOT} in a new terminal and then spwan some vehicles (Note: You can use the spawn_npc.py file in ${CARLA_ROOT}/PythonAPI/examples but you will need to edit the code and set autopilot to false).
 
 Set an environment variable, LIBCARLA_LOCATION to where your build of libcarla resides.
 
-Now you can start the CARLA server from ${CARLA_ROOT} in a new terminal and then spwan some vehicles (You can use the spawn_npc.py file in PythonAPI/examples but you will need to edit the code and set autopilot to false).
+Go to ${TRAFFIC_MANAGER_ROOT}/source.
 
-Then create a new directory "build" in ${scenario_runner_ROOT}/traffic_manager/source
+Create a new directory "build" in ${scenario_runner_ROOT}/traffic_manager/source, build and run.
 
 ```
 
