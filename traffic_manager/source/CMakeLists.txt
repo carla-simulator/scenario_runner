@@ -3,8 +3,7 @@ cmake_minimum_required(VERSION 3.2.2)
 
 set(CMAKE_C_COMPILER /usr/bin/clang-7)
 set(CMAKE_CXX_COMPILER /usr/bin/clang++-7)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC -O3 -DNDEBUG -g -fsanitize=address" CACHE STRING "" FORCE)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -fPIC -O3 -DNDEBUG -Werror -Wall -Wextra" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fPIC -O3 -DNDEBUG -g -fsanitize=address" CACHE STRING "" FORCE)
 
 set(LIBCARLA_LOCATION /home/praveen/workspace/libcarla/)
 
