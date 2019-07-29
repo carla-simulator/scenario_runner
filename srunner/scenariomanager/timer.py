@@ -104,11 +104,63 @@ class TimeOut(py_trees.behaviour.Behaviour):
             new_status = py_trees.common.Status.SUCCESS
             self.timeout = True
 
-        self.logger.debug("%s.update()[%s->%s]" %
-                          (self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
     def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (
-            self.__class__.__name__, self.status, new_status))
+        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+
+class SimulationTimeCondition(py_trees.behaviour.Behaviour):
+
+    """
+    This class contains an atomic simulation time condition behavior.
+    It uses the CARLA game time, not the system time which is used by
+    the py_trees timer.
+
+    Returns, if the provided success_rule (greater_than, less_than, equal_to)
+    was successfully evaluated
+    """
+
+    def __init__(self, timeout, success_rule="greater_than", name="SimulationTimeCondition"):
+        """
+        Setup timeout
+        """
+        super(SimulationTimeCondition, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._timeout_value = timeout
+        self._start_time = 0.0
+        self._success_rule = success_rule
+        self._ops = {"greater_than": (lambda x, y: x > y),
+                     "equal_to": (lambda x, y: x == y),
+                     "less_than": (lambda x, y: x < y)}
+
+    def setup(self, unused_timeout=15):
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        self._start_time = GameTime.get_time()
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Get current game time, and compare it to the timeout value
+        Upon successfully comparison using the provided success_rule operator,
+        the status changes to SUCCESS
+        """
+
+        elapsed_time = GameTime.get_time() - self._start_time
+
+        if not self._ops[self._success_rule](elapsed_time, self._timeout_value):
+            new_status = py_trees.common.Status.RUNNING
+        else:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))

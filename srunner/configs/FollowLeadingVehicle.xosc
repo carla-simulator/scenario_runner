@@ -195,6 +195,11 @@
                                     </EntityCondition>
                                 </ByEntity>
                             </Condition>
+                            <Condition name="StartTime" delay="0" edge="rising">
+                                <ByValue>
+                                    <SimulationTime value="0" rule="equal_to" />
+                                </ByValue>
+                            </Condition>
                         </ConditionGroup>
                     </Start>
                     <End>
