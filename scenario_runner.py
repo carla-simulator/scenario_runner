@@ -19,8 +19,10 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
+from distutils.version import LooseVersion
 import importlib
 import inspect
+import pkg_resources
 
 import carla
 
@@ -102,6 +104,10 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
+
+        dist = pkg_resources.get_distribution("carla")
+        if LooseVersion(dist.version) < LooseVersion('0.9.6'):
+            raise ImportError("CARLA version 0.9.6 or newer required. CARLA version found: {}".format(dist))
 
         # Once we have a client we can retrieve the world that is currently
         # running.
