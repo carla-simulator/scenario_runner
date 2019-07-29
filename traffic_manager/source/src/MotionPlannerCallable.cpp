@@ -40,7 +40,7 @@ namespace traffic_manager{
         // Increase speed if on highway
         auto speed_limit = vehicle->GetSpeedLimit();
         if (speed_limit > 50) {
-            dynamic_target_velocity = speed_limit / 3.6;
+            dynamic_target_velocity = 50 / 3.6;
             longitudinal_parameters = {5.0, 0.1, 0.01};
         }
 
@@ -51,13 +51,17 @@ namespace traffic_manager{
             shared_data->buffer_map[actor_id]->get(junction_index)->checkJunction()
             and !(shared_data->buffer_map[actor_id]->get(1)->checkJunction())
         ) {
-            auto horizon_to_junction = shared_data->buffer_map[actor_id]->getContent(junction_index);
             bool found_true_horizon = false;
-            for (auto swp: horizon_to_junction) {
-                if (swp->getNextWaypoint().size() > 1) {
-                    found_true_horizon = true;
-                    break;
+            if (speed_limit > 50) {
+                auto horizon_to_junction = shared_data->buffer_map[actor_id]->getContent(junction_index);
+                for (auto swp: horizon_to_junction) {
+                    if (swp->getNextWaypoint().size() > 1) {
+                        found_true_horizon = true;
+                        break;
+                    }
                 }
+            } else {
+                found_true_horizon = true;
             }
             if (found_true_horizon) {
                 dynamic_target_velocity = 3.0f; // 10.8 kmph, Account for constant
