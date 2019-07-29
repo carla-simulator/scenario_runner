@@ -1,5 +1,8 @@
 ## Latest changes
 
+* Extended OpenScenario support
+    - Full support for SimulationTime condition
+
 ## CARLA Scenario_Runner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
 * Adapted to CARLA API changes

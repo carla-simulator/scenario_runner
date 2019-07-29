@@ -19,7 +19,7 @@ from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenariomanager.timer import TimeOut
+from srunner.scenariomanager.timer import SimulationTimeCondition
 from srunner.tools.config_parser import ActorConfigurationData, ScenarioConfiguration
 
 
@@ -363,12 +363,9 @@ class OpenScenarioParser(object):
                         atomic = criterion_instance(triggered_actor)
             elif value_condition.find('SimulationTime') is not None:
                 simtime_condition = value_condition.find('SimulationTime')
-                value = simtime_condition.attrib.get('value')
-                rule = simtime_condition.attrib.get('value')
-                if rule != "greater_than":
-                    raise NotImplementedError(
-                        "ByValue SimulationTime conditions with the given specification is not yet supported")
-                atomic = TimeOut(value)
+                value = float(simtime_condition.attrib.get('value'))
+                rule = simtime_condition.attrib.get('rule')
+                atomic = SimulationTimeCondition(value, success_rule=rule)
             elif value_condition.find('TimeOfDay') is not None:
                 raise NotImplementedError("ByValue TimeOfDay conditions are not yet supported")
             else:
