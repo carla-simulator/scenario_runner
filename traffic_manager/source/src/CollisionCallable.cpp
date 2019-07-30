@@ -77,7 +77,7 @@ namespace traffic_manager
             auto relative_other_vector = other_vehicle->GetLocation() - reference_vehicle->GetLocation();
             relative_other_vector.z = 0;
             relative_other_vector = relative_other_vector.MakeUnitVector();
-            float dot_product = reference_heading_vector.x*relative_other_vector.x +
+            float reference_relative_dot = reference_heading_vector.x*relative_other_vector.x +
                 reference_heading_vector.y*relative_other_vector.y;
 
             std::deque<polygon> output;
@@ -85,9 +85,24 @@ namespace traffic_manager
 
             BOOST_FOREACH(polygon const& p, output)
             {
-                if(boost::geometry::area(p) > 0.0001 && dot_product > 0.8660){ // Make thresholds constants
+                if(
+                    boost::geometry::area(p) > 0.0001
+                    and
+                    reference_relative_dot > -0.6427
+                ){ // Make thresholds constants
                     drawBoundary(reference_geodesic_boundary);
-                    return true;
+                    auto relative_vector_other_reference = reference_vehicle->GetLocation() - other_vehicle->GetLocation();
+                    relative_vector_other_reference.z = 0;
+                    relative_vector_other_reference = relative_vector_other_reference.MakeUnitVector();
+                    auto other_heading_vector = other_vehicle->GetTransform().GetForwardVector();
+                    other_heading_vector.z = 0;
+                    other_heading_vector = other_heading_vector.MakeUnitVector();
+                    float other_relative_dot = other_heading_vector.x*relative_vector_other_reference.x + 
+                            other_heading_vector.y*relative_vector_other_reference.y;
+                    if(abs(reference_relative_dot) > abs(other_relative_dot))
+                    {
+                        return true;
+                    }
                 }
             }
         }
