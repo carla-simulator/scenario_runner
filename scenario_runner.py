@@ -258,6 +258,18 @@ class ScenarioRunner(object):
         Load and run the given scenario
         """
 
+        # Set the appropriate weather conditions
+        weather = carla.WeatherParameters(
+            cloudyness=config.weather.cloudyness,
+            precipitation=config.weather.precipitation,
+            precipitation_deposits=config.weather.precipitation_deposits,
+            wind_intensity=config.weather.wind_intensity,
+            sun_azimuth_angle=config.weather.sun_azimuth,
+            sun_altitude_angle=config.weather.sun_altitude
+        )
+
+        self.world.set_weather(weather)
+
         # Load scenario and run it
         self.manager.load_scenario(scenario)
         self.manager.run_scenario()

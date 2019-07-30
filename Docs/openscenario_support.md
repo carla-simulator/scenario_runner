@@ -36,7 +36,7 @@ An example for a supported scenario based on OpenScenario is available [here](..
        * [ ] AquirePosition
     * [x] Command (Support for command 'Idle')
     * [ ] Script
-    * [ ] SetEnvironment
+    * [ ] SetEnvironment (Weather is supported)
     * [ ] Entity
     * [ ] Parameter
     * [ ] Traffic

@@ -83,7 +83,7 @@
                                 <Date day="25" month="6" year="2019" />
                             </TimeOfDay>
                             <Weather cloudState="free">
-                                <Sun intensity="1.0" azimuth="0.0" elevation="1.571" />
+                                <Sun intensity="1.0" azimuth="0.0" elevation="1.31" />
                                 <Fog visualRange="100000.0" />
                                 <Precipitation type="dry" intensity="0.0" />
                             </Weather>
