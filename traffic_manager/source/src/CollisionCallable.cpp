@@ -143,7 +143,7 @@ namespace traffic_manager
         auto velocity = actor->GetVelocity().Length();
         int bbox_extension = static_cast<int>(
             std::max(std::sqrt(7*velocity), 2.0f)
-            + std::max(velocity*0.5, 2.0) + 1.0
+            + std::max(velocity*0.5, 2.0) + 2.0f
         ); // Account for these constants
         bbox_extension = velocity > 50/3.6 ? 5*velocity : bbox_extension;
         auto simple_waypoints = this->shared_data->buffer_map[actor->GetId()]->getContent(bbox_extension);
