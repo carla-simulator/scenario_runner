@@ -1,7 +1,12 @@
 #include "LocalizationCallable.hpp"
 
-namespace traffic_manager
-{
+namespace traffic_manager {
+
+    const float WAYPOINT_TIME_HORIZON = 3.0;
+    const float MINIMUM_HORIZON_LENGTH = 25.0;
+    const float TARGET_WAYPOINT_TIME_HORIZON = 0.5;
+    const float TARGET_WAYPOINT_HORIZON_LENGTH = 2.0;
+
     LocalizationCallable::LocalizationCallable(
         SyncQueue<PipelineMessage>* input_queue,
         SyncQueue<PipelineMessage>* output_queue,
@@ -17,7 +22,10 @@ namespace traffic_manager
         auto vehicle_location = vehicle->GetLocation();
         auto vehicle_velocity = vehicle->GetVelocity().Length();
         
-        float horizon_size = std::max(3*vehicle_velocity, 25.0f); // Account for these constant
+        float horizon_size = std::max(
+            WAYPOINT_TIME_HORIZON*vehicle_velocity,
+            MINIMUM_HORIZON_LENGTH
+        );
 
         if (
             shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()
@@ -79,7 +87,12 @@ namespace traffic_manager
 
         // Generate output message
         PipelineMessage out_message;
-        auto horizon_index = static_cast<int>(std::max(std::ceil(vehicle_velocity * 0.5), 2.0));
+        auto horizon_index = static_cast<int>(
+            std::max(
+                std::ceil(vehicle_velocity * TARGET_WAYPOINT_TIME_HORIZON),
+                TARGET_WAYPOINT_HORIZON_LENGTH
+            )
+        );
         auto target_waypoint = shared_data->buffer_map[actor_id]->get(horizon_index);
         float dot_product = deviationDotProduct(vehicle, target_waypoint->getLocation());
         float cross_product = deviationCrossProduct(vehicle, target_waypoint->getLocation());

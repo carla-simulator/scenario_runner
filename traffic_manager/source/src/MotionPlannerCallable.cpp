@@ -4,6 +4,11 @@
 
 namespace traffic_manager{
 
+    const float HIGHWAY_SPEED = 50/3.6;
+    const float INTERSECTION_APPROACH_SPEED = 15/3.6;
+    const std::vector<float> HIGHWAY_PID_PARAMETERS = {5.0, 0.1, 0.01};
+    const float MINIMUM_JUNCTION_LOOK_AHEAD = 5.0;
+
     MotionPlannerCallable::MotionPlannerCallable (
         float target_velocity,
         SyncQueue<PipelineMessage>* input_queue,
@@ -38,21 +43,26 @@ namespace traffic_manager{
         auto dynamic_target_velocity = target_velocity;
 
         // Increase speed if on highway
-        auto speed_limit = vehicle->GetSpeedLimit();
-        if (speed_limit > 50) {
-            dynamic_target_velocity = 50 / 3.6;
-            longitudinal_parameters = {5.0, 0.1, 0.01};
+        auto speed_limit = vehicle->GetSpeedLimit()/3.6;
+        if (speed_limit > HIGHWAY_SPEED) {
+            dynamic_target_velocity = HIGHWAY_SPEED;
+            longitudinal_parameters = HIGHWAY_PID_PARAMETERS;
         }
 
         // Slow down upon approaching a junction
         bool approaching_junction = false;
-        int junction_index = std::max(std::floor(std::sqrt(target_velocity*dynamic_target_velocity)), 5.0f);
+        int junction_index = std::max(
+            std::floor(
+                std::sqrt(target_velocity*dynamic_target_velocity)
+            ),
+            MINIMUM_JUNCTION_LOOK_AHEAD
+        );
         if (
             shared_data->buffer_map[actor_id]->get(junction_index)->checkJunction()
             and !(shared_data->buffer_map[actor_id]->get(1)->checkJunction())
         ) {
             bool found_true_horizon = false;
-            if (speed_limit > 50) {
+            if (speed_limit > HIGHWAY_SPEED) {
                 auto horizon_to_junction = shared_data->buffer_map[actor_id]->getContent(junction_index);
                 for (auto swp: horizon_to_junction) {
                     if (swp->getNextWaypoint().size() > 1) {
@@ -64,7 +74,7 @@ namespace traffic_manager{
                 found_true_horizon = true;
             }
             if (found_true_horizon) {
-                dynamic_target_velocity = 3.0f; // 10.8 kmph, Account for constant
+                dynamic_target_velocity = INTERSECTION_APPROACH_SPEED;
                 approaching_junction = true;
             }
         }
@@ -90,7 +100,7 @@ namespace traffic_manager{
         if (
             message.getAttribute("collision") > 0
             or message.getAttribute("traffic_light") > 0
-            or (approaching_junction and current_velocity > 3.0) // Account for constant
+            or (approaching_junction and current_velocity > INTERSECTION_APPROACH_SPEED)
         ) {
             current_state.deviation_integral = 0;
             current_state.velocity_integral = 0;

@@ -2,8 +2,16 @@
 
 #include "CollisionCallable.hpp"
 
-namespace traffic_manager
-{
+namespace traffic_manager {
+
+    const float SEARCH_RADIUS = 20.0;
+    const float VERTICAL_OVERLAP_THRESHOLD = 2.0;
+    const float ZERO_AREA = 0.0001;
+    const float BOUNDARY_EXTENSION_MINIMUM = 2.0;
+    const float EXTENSION_SQUARE_POINT = 7.0;
+    const float TIME_HORIZON = 0.5;
+    const float HIGHWAY_SPEED = 50/3.6;
+    const float HIGHWAY_TIME_HORIZON = 5.0;
 
     CollisionCallable::CollisionCallable(
         SyncQueue<PipelineMessage>* input_queue,
@@ -12,8 +20,7 @@ namespace traffic_manager
         PipelineCallable(input_queue, output_queue, shared_data){}
     CollisionCallable::~CollisionCallable(){}
 
-    PipelineMessage CollisionCallable::action(PipelineMessage message)
-    {
+    PipelineMessage CollisionCallable::action(PipelineMessage message) {
         auto actor_list = shared_data->registered_actors;
 
         float collision_hazard = -1;
@@ -26,8 +33,7 @@ namespace traffic_manager
                 auto ego_actor = message.getActor();
                 auto ego_actor_location = ego_actor->GetLocation();
                 float actor_distance = actor->GetLocation().Distance(ego_actor_location);
-                if(actor_distance <= 20.0) // Account for this constant
-                {       
+                if(actor_distance <= SEARCH_RADIUS) {
                     if(negotiateCollision(ego_actor, actor))
                     {
                         collision_hazard = 1;
@@ -96,7 +102,7 @@ namespace traffic_manager
     ) {
         auto reference_height = reference_vehicle->GetLocation().z;
         auto other_height = other_vehicle->GetLocation().z;
-        if (abs(reference_height-other_height) < 2.0) { // Constant again
+        if (abs(reference_height-other_height) < VERTICAL_OVERLAP_THRESHOLD) {
             auto reference_bbox = getBoundary(reference_vehicle);
             auto other_bbox = getBoundary(other_vehicle);
             auto reference_geodesic_boundary = getGeodesicBoundary(
@@ -111,10 +117,7 @@ namespace traffic_manager
 
             BOOST_FOREACH(polygon const& p, output)
             {
-                if(
-                    boost::geometry::area(p) > 0.0001
-                ){ // Make thresholds constants
-                    // drawBoundary(reference_geodesic_boundary);
+                if(boost::geometry::area(p) > ZERO_AREA){
                     return true;
                 }
             }
@@ -142,10 +145,11 @@ namespace traffic_manager
     ) {
         auto velocity = actor->GetVelocity().Length();
         int bbox_extension = static_cast<int>(
-            std::max(std::sqrt(7*velocity), 2.0f)
-            + std::max(velocity*0.5, 2.0) + 2.0f
+            std::max(std::sqrt(EXTENSION_SQUARE_POINT*velocity), BOUNDARY_EXTENSION_MINIMUM)
+            + std::max(velocity*TIME_HORIZON, BOUNDARY_EXTENSION_MINIMUM)
+            + BOUNDARY_EXTENSION_MINIMUM
         ); // Account for these constants
-        bbox_extension = velocity > 50/3.6 ? 5*velocity : bbox_extension;
+        bbox_extension = velocity > HIGHWAY_SPEED? HIGHWAY_TIME_HORIZON*velocity: bbox_extension;
         auto simple_waypoints = this->shared_data->buffer_map[actor->GetId()]->getContent(bbox_extension);
         std::vector<carla::geom::Location> left_boundary;
         std::vector<carla::geom::Location> right_boundary;
@@ -188,27 +192,4 @@ namespace traffic_manager
             location + carla::geom::Location(heading_vector*extent.x - perpendicular_vector*extent.y)
             };
     }
-
-    bool CollisionCallable::checkCollisionByDistance(carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle)
-    {
-        auto ego_actor_location = ego_vehicle->GetLocation();
-        float actor_distance = vehicle->GetLocation().Distance(ego_actor_location);
-        if ( actor_distance < 10.0 )
-        {   
-            auto ego_forward_vector = ego_vehicle->GetTransform().GetForwardVector();
-            auto magnitude_ego_forward_vector = sqrt(std::pow(ego_forward_vector.x, 2) + std::pow(ego_forward_vector.y , 2));
-            auto actor_forward_vector = vehicle->GetTransform().location - ego_actor_location;
-            auto magnitude_actor_forward_vector = sqrt(std::pow(actor_forward_vector.x, 2) + std::pow(actor_forward_vector.y , 2));
-            auto dot_prod = ((ego_forward_vector.x * actor_forward_vector.x) + (ego_forward_vector.y * actor_forward_vector.y));
-            dot_prod = ((dot_prod/magnitude_ego_forward_vector)/magnitude_actor_forward_vector);
-            if(dot_prod > 0.9800)
-            {   
-                return true;
-            }
-            
-        }
-        return false;
-
-    }
-
 }

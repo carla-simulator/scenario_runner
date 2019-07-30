@@ -37,12 +37,6 @@ namespace traffic_manager {
 
         /*
         Returns true if there is a possible collision detected between the vehicles passed to the method.
-        Collision is predicted solely based on an distance criteria.
-        */
-        bool checkCollisionByDistance (carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle);
-
-        /*
-        Returns true if there is a possible collision detected between the vehicles passed to the method.
         Collision is predicted by extrapolating a boundary around the vehicle along it's trajectory
         and checking if it overlaps with the extrapolated boundary of the other vehicle.
         */
@@ -51,13 +45,14 @@ namespace traffic_manager {
         /* Returns the bounding box corners of the vehicle passed to the method. */
         std::vector<carla::geom::Location> getBoundary (carla::SharedPtr<carla::client::Actor> actor);
 
-        /* Returns the extrapolated bounding box of the vehicle along it's trajectory */
+        /* Returns the extrapolated bounding box of the vehicle along it's trajectory. */
         std::vector<carla::geom::Location> getGeodesicBoundary (
             carla::SharedPtr<carla::client::Actor> actor, std::vector<carla::geom::Location> bbox);
 
         /* Method to construct a boost polygon object */
         polygon getPolygon(std::vector<carla::geom::Location> boundary);
 
+        /* Method returns true if ego_vehicle should stop and wait for other_vehicle to pass. */
         bool negotiateCollision(
             carla::SharedPtr<carla::client::Actor> ego_vehicle,
             carla::SharedPtr<carla::client::Actor> other_vehicle

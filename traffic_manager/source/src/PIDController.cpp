@@ -4,6 +4,9 @@
 
 namespace traffic_manager {
 
+    const float MAX_THROTTLE = 0.8;
+    const float MAX_BRAKE = 1.0;
+
     PIDController::PIDController() {}
 
     StateEntry PIDController::stateUpdate(
@@ -48,8 +51,6 @@ namespace traffic_manager {
         auto dt = duration.count();
 
         // Longitudinal PID calculation
-        float max_throttle = 0.8;
-        float max_brake = 1.0;
         float expr_v =
             longitudinal_parameters[0] * present_state.velocity
             + longitudinal_parameters[1] * present_state.velocity_integral
@@ -59,12 +60,12 @@ namespace traffic_manager {
         float brake;
 
         if(expr_v < 0.0){
-            throttle = std::min(std::abs(expr_v), max_throttle);
+            throttle = std::min(std::abs(expr_v), MAX_THROTTLE);
             brake = 0.0;
         }
         else{
             throttle = 0.0;
-            brake = max_brake;
+            brake = MAX_BRAKE;
         }
 
         // Lateral PID calculation
@@ -81,5 +82,4 @@ namespace traffic_manager {
             steer
         };
     }
-
 }

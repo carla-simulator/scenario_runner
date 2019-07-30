@@ -4,6 +4,8 @@
 
 namespace traffic_manager {
 
+    const int JUNCTION_LOOK_AHEAD_INDEX = 5;
+
     TrafficLightStateCallable::TrafficLightStateCallable(
         SyncQueue<PipelineMessage>* input_queue,
         SyncQueue<PipelineMessage>* output_queue,
@@ -12,8 +14,7 @@ namespace traffic_manager {
 
     TrafficLightStateCallable::~TrafficLightStateCallable(){}
 
-    PipelineMessage TrafficLightStateCallable::action(PipelineMessage in_message)
-    {
+    PipelineMessage TrafficLightStateCallable::action(PipelineMessage in_message) {
         PipelineMessage out_message;
 
         float throttle = in_message.getAttribute("throttle");
@@ -24,8 +25,8 @@ namespace traffic_manager {
         auto vehicle = boost::static_pointer_cast<carla::client::Vehicle>(in_message.getActor());
         auto traffic_light_state = vehicle->GetTrafficLightState();
 
-        auto closest_waypoint = shared_data->buffer_map[actor_id]->get(0);
-        auto next_waypoint = shared_data->buffer_map[actor_id]->get(5);
+        auto closest_waypoint = shared_data->buffer_map[actor_id]->front();
+        auto next_waypoint = shared_data->buffer_map[actor_id]->get(JUNCTION_LOOK_AHEAD_INDEX);
 
         float traffic_hazard = -1;
         if (

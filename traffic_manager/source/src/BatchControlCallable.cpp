@@ -3,6 +3,7 @@
 #include "BatchControlCallable.hpp"
 
 namespace traffic_manager{
+
     BatchControlCallable::BatchControlCallable(
         SyncQueue<PipelineMessage>* input_queue,
         SyncQueue<PipelineMessage>* output_queue,
@@ -12,10 +13,11 @@ namespace traffic_manager{
 
     BatchControlCallable::~BatchControlCallable(){}
 
-    PipelineMessage BatchControlCallable::action(PipelineMessage message)
-    {
+    PipelineMessage BatchControlCallable::action(PipelineMessage message) {
+
         long count = 0;
         auto last_time = std::chrono::system_clock::now();
+
         while(true)
         {
             std::vector<carla::rpc::Command> commands;
@@ -39,7 +41,7 @@ namespace traffic_manager{
             auto current_time = std::chrono::system_clock::now();
             std::chrono::duration<double> diff = current_time - last_time;
 
-            if(diff.count() > 1.0) {
+            if(diff.count() > 1.0) {    // Log once every second
                     last_time = current_time;
                     std::cout << "Updates processed per second " << count << std::endl;
                     count = 0;

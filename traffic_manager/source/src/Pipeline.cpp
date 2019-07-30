@@ -3,6 +3,8 @@
 
 namespace traffic_manager {
 
+    const float SAMPLING_RESOLUTION = 1.0;
+
     Pipeline::Pipeline(
         std::vector<carla::SharedPtr<carla::client::Actor>> actor_list,
         carla::SharedPtr<carla::client::Map> world_map,
@@ -34,7 +36,7 @@ namespace traffic_manager {
         auto dao = traffic_manager::CarlaDataAccessLayer(world_map);
         auto topology = dao.getTopology();
         auto local_map = std::make_shared<traffic_manager::InMemoryMap>(topology);
-        local_map->setUp(1.0);
+        local_map->setUp(SAMPLING_RESOLUTION);
         shared_data.local_map = local_map;
         shared_data.client = &client;
         shared_data.debug = &debug_helper;
