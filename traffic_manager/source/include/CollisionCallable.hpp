@@ -57,7 +57,12 @@ namespace traffic_manager {
 
         /* Method to construct a boost polygon object */
         polygon getPolygon(std::vector<carla::geom::Location> boundary);
-        
+
+        bool negotiateCollision(
+            carla::SharedPtr<carla::client::Actor> ego_vehicle,
+            carla::SharedPtr<carla::client::Actor> other_vehicle
+        );
+
         public:
 
         CollisionCallable(

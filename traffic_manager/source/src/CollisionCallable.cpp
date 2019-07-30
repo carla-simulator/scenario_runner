@@ -28,7 +28,7 @@ namespace traffic_manager
                 float actor_distance = actor->GetLocation().Distance(ego_actor_location);
                 if(actor_distance <= 20.0) // Account for this constant
                 {       
-                    if(checkGeodesicCollision(ego_actor, actor) == true)
+                    if(negotiateCollision(ego_actor, actor))
                     {
                         collision_hazard = 1;
                         break;
@@ -55,6 +55,41 @@ namespace traffic_manager
         }
     }
 
+    bool CollisionCallable::negotiateCollision(
+        carla::SharedPtr<carla::client::Actor> ego_vehicle,
+        carla::SharedPtr<carla::client::Actor> other_vehicle
+    ) {
+        auto overlap = checkGeodesicCollision(ego_vehicle, other_vehicle);
+
+        auto reference_heading_vector = ego_vehicle->GetTransform().GetForwardVector();
+        reference_heading_vector.z = 0;
+        reference_heading_vector = reference_heading_vector.MakeUnitVector();
+        auto relative_other_vector = other_vehicle->GetLocation() - ego_vehicle->GetLocation();
+        relative_other_vector.z = 0;
+        relative_other_vector = relative_other_vector.MakeUnitVector();
+        float reference_relative_dot = reference_heading_vector.x*relative_other_vector.x +
+        reference_heading_vector.y*relative_other_vector.y;
+
+        auto relative_reference_vector = ego_vehicle->GetLocation() - other_vehicle->GetLocation();
+        relative_reference_vector.z = 0;
+        relative_reference_vector = relative_reference_vector.MakeUnitVector();
+        auto other_heading_vector = other_vehicle->GetTransform().GetForwardVector();
+        other_heading_vector.z = 0;
+        other_heading_vector = other_heading_vector.MakeUnitVector();
+        float other_relative_dot = other_heading_vector.x*relative_reference_vector.x + 
+            other_heading_vector.y*relative_reference_vector.y;
+
+        if (
+            overlap > 0
+            and
+            reference_relative_dot > other_relative_dot
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
     bool CollisionCallable::checkGeodesicCollision(
         carla::SharedPtr<carla::client::Actor> reference_vehicle,
         carla::SharedPtr<carla::client::Actor> other_vehicle
@@ -71,15 +106,6 @@ namespace traffic_manager
             auto reference_polygon = getPolygon(reference_geodesic_boundary);
             auto other_polygon = getPolygon(other_geodesic_boundary);
 
-            auto reference_heading_vector = reference_vehicle->GetTransform().GetForwardVector();
-            reference_heading_vector.z = 0;
-            reference_heading_vector = reference_heading_vector.MakeUnitVector();
-            auto relative_other_vector = other_vehicle->GetLocation() - reference_vehicle->GetLocation();
-            relative_other_vector.z = 0;
-            relative_other_vector = relative_other_vector.MakeUnitVector();
-            float reference_relative_dot = reference_heading_vector.x*relative_other_vector.x +
-                reference_heading_vector.y*relative_other_vector.y;
-
             std::deque<polygon> output;
             boost::geometry::intersection(reference_polygon, other_polygon, output);
 
@@ -87,22 +113,9 @@ namespace traffic_manager
             {
                 if(
                     boost::geometry::area(p) > 0.0001
-                    and
-                    reference_relative_dot > -0.6427
                 ){ // Make thresholds constants
-                    drawBoundary(reference_geodesic_boundary);
-                    auto relative_vector_other_reference = reference_vehicle->GetLocation() - other_vehicle->GetLocation();
-                    relative_vector_other_reference.z = 0;
-                    relative_vector_other_reference = relative_vector_other_reference.MakeUnitVector();
-                    auto other_heading_vector = other_vehicle->GetTransform().GetForwardVector();
-                    other_heading_vector.z = 0;
-                    other_heading_vector = other_heading_vector.MakeUnitVector();
-                    float other_relative_dot = other_heading_vector.x*relative_vector_other_reference.x + 
-                            other_heading_vector.y*relative_vector_other_reference.y;
-                    if(abs(reference_relative_dot) > abs(other_relative_dot))
-                    {
-                        return true;
-                    }
+                    // drawBoundary(reference_geodesic_boundary);
+                    return true;
                 }
             }
         }
