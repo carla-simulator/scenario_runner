@@ -1,5 +1,6 @@
 ## Latest changes
 
+* Added support for weather conditions
 * Added basic version check to ensure usage of correct CARLA version
 * Extended OpenScenario support
     - Full support for SimulationTime condition

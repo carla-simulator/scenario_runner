@@ -6,9 +6,10 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-This module provides a parser for scenario configuration files
+This module provides a parser for scenario configuration files based on OpenSCENARIO
 """
 
+import math
 import os
 import xml.etree.ElementTree as ET
 
@@ -20,7 +21,7 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenariomanager.atomic_scenario_behavior import *
 from srunner.scenariomanager.atomic_scenario_criteria import *
 from srunner.scenariomanager.timer import SimulationTimeCondition
-from srunner.tools.config_parser import ActorConfigurationData, ScenarioConfiguration
+from srunner.tools.config_parser import ActorConfigurationData, ScenarioConfiguration, WeatherConfiguration
 
 
 class OpenScenarioConfiguration(ScenarioConfiguration):
@@ -39,6 +40,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.other_actors = []
         self.ego_vehicles = []
         self.trigger_points = []
+        self.weather = WeatherConfiguration()
 
         self.storyboard = self.xml_tree.find("Storyboard")
         self.story = self.storyboard.find("Story")
@@ -64,6 +66,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._set_scenario_name(self.xml_tree)
         self._set_carla_town(self.xml_tree)
         self._set_actor_information(self.xml_tree)
+        self._set_carla_weather(self.xml_tree)
 
         self._validate_result()
 
@@ -76,13 +79,31 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def _set_carla_town(self, xml_tree):
         """
-        Extract the CARLA town (level) from the RoadNetwork information from OpenScenario
+        Extract the CARLA town (level) from the RoadNetwork information from OpenSCENARIO
 
         Note: The specification allows multiple Logics elements within the RoadNetwork element.
               Hence, there can be multiple towns specified. We just use the _last_ one.
         """
         for logic in xml_tree.find("RoadNetwork").findall("Logics"):
             self.town = logic.attrib.get('filepath', None)
+
+    def _set_carla_weather(self, xml_tree):
+        """
+        Extract weather information from OpenSCENARIO config
+        """
+
+        for weather in self.init.iter("Weather"):
+            sun = weather.find("Sun")
+            self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
+            self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
+            self.weather.cloudyness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+            precepitation = weather.find("Precipitation")
+            self.weather.precipitation = 0
+            if precepitation.attrib.get('type') == "rain":
+                self.weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
+                self.weather.precipitation_deposits = 100  # if it rains, make the road wet
+            elif precepitation.attrib.get('type') == "snow":
+                raise AttributeError("CARLA does not support snow precipitation")
 
     def _set_actor_information(self, xml_tree):
         """
@@ -145,7 +166,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 class OpenScenarioParser(object):
 
     """
-    Pure static class providing conversions from OpenScenario elements to ScenarioRunner elements
+    Pure static class providing conversions from OpenSCENARIO elements to ScenarioRunner elements
     """
 
     @staticmethod
@@ -225,7 +246,7 @@ class OpenScenarioParser(object):
     @staticmethod
     def convert_condition_to_atomic(condition, actor_list):
         """
-        Convert an OpenScenario condition into a Behavior/Criterion atomic
+        Convert an OpenSCENARIO condition into a Behavior/Criterion atomic
 
         Note: Not all conditions are currently supported.
         """
@@ -379,9 +400,9 @@ class OpenScenarioParser(object):
     @staticmethod
     def convert_maneuver_to_atomic(action, actor):
         """
-        Convert an OpenScenario maneuver action into a Behavior atomic
+        Convert an OpenSCENARIO maneuver action into a Behavior atomic
 
-        Note not all OpenScenario actions are currently supported
+        Note not all OpenSCENARIO actions are currently supported
         """
 
         maneuver_name = action.attrib.get('name', 'unknown')

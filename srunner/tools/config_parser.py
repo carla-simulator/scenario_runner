@@ -111,6 +111,20 @@ class ActorConfiguration(ActorConfigurationData):
                                                  autopilot, random_location, amount)
 
 
+class WeatherConfiguration(object):
+
+    """
+    This class provides basic weather configuration values
+    """
+
+    cloudyness = 0
+    precipitation = 0
+    precipitation_deposits = 0
+    wind_intensity = 0
+    sun_azimuth = 360
+    sun_altitude = 0
+
+
 class ScenarioConfiguration(object):
 
     """
@@ -129,6 +143,7 @@ class ScenarioConfiguration(object):
     type = None
     target = None
     route = None
+    weather = WeatherConfiguration()
 
 
 def parse_scenario_configuration(scenario_config_file, scenario_name):
@@ -159,6 +174,14 @@ def parse_scenario_configuration(scenario_config_file, scenario_name):
         new_config.other_actors = []
         new_config.ego_vehicles = []
         new_config.trigger_points = []
+
+        for weather in scenario.iter("weather"):
+            new_config.weather.cloudyness = float(weather.attrib.get("cloudyness", 0))
+            new_config.weather.precipitation = float(weather.attrib.get("precipitation", 0))
+            new_config.weather.precipitation_deposits = float(weather.attrib.get("precipitation_deposits", 0))
+            new_config.weather.wind_intensity = float(weather.attrib.get("wind_intensity", 0))
+            new_config.weather.sun_azimuth = float(weather.attrib.get("sun_azimuth", 360))
+            new_config.weather.sun_altitude = float(weather.attrib.get("sun_altitude", 0))
 
         for ego_vehicle in scenario.iter("ego_vehicle"):
             new_config.ego_vehicles.append(ActorConfiguration(ego_vehicle, 'hero'))

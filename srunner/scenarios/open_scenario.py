@@ -5,7 +5,7 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-Basic scenario class using the OpenScenario definition
+Basic scenario class using the OpenSCENARIO definition
 """
 
 import py_trees
@@ -24,7 +24,7 @@ def oneshot_behavior(name, variable_name, behaviour):
     """
     This is taken from py_trees.idiom.oneshot. However, we use a different
     clearing policy to work around some issues for setting up StartConditions
-    of OpenScenario
+    of OpenSCENARIO
     """
     subtree_root = py_trees.composites.Selector(name=name)
     check_flag = py_trees.blackboard.CheckBlackboardVariable(
@@ -53,7 +53,7 @@ def oneshot_behavior(name, variable_name, behaviour):
 class OpenScenario(BasicScenario):
 
     """
-    Implementation of a  Master scenario that controls the route.
+    Implementation of the OpenSCENARIO scenario
 
     This is a single ego vehicle scenario
     """
