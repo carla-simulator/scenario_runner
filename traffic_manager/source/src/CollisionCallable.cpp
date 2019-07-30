@@ -96,7 +96,7 @@ namespace traffic_manager
     ) {
         auto reference_height = reference_vehicle->GetLocation().z;
         auto other_height = other_vehicle->GetLocation().z;
-        if (abs(reference_height-other_height) < 1.0) { // Constant again
+        if (abs(reference_height-other_height) < 2.0) { // Constant again
             auto reference_bbox = getBoundary(reference_vehicle);
             auto other_bbox = getBoundary(other_vehicle);
             auto reference_geodesic_boundary = getGeodesicBoundary(
