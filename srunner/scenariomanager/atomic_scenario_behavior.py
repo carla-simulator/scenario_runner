@@ -499,8 +499,7 @@ class KeepVelocity(AtomicBehavior):
     Alternatively, a parallel termination behavior can be used.
     """
 
-    def __init__(self, actor, target_velocity,
-                 walker_direction=0, duration=float("inf"), distance=float("inf"), name="KeepVelocity"):
+    def __init__(self, actor, target_velocity, duration=float("inf"), distance=float("inf"), name="KeepVelocity"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
@@ -513,9 +512,6 @@ class KeepVelocity(AtomicBehavior):
         self._control, self._type = get_actor_control(actor)
         self._map = self._actor.get_world().get_map()
         self._waypoint = self._map.get_waypoint(self._actor.get_location())
-        if self._type == 'walker':
-            self._control.speed = target_velocity
-            self._control.direction = carla.Rotation(0, walker_direction, 0).get_forward_vector()
 
         self._duration = duration
         self._target_distance = distance
@@ -526,11 +522,20 @@ class KeepVelocity(AtomicBehavior):
     def initialise(self):
         self._location = CarlaDataProvider.get_location(self._actor)
         self._start_time = GameTime.get_time()
+
+        # In case of walkers, we have to extract the current heading
+        if self._type == 'walker':
+            self._control.speed = self._target_velocity
+            self._control.direction = self._actor.get_transform().get_forward_vector()
+
         super(KeepVelocity, self).initialise()
 
     def update(self):
         """
-        Set throttle to throttle_value, as long as velocity is < target_velocity
+        As long as the stop condition (duration or distance) is not violated, set a new vehicle control
+
+        For vehicles: set throttle to throttle_value, as long as velocity is < target_velocity
+        For walkers: simply apply the given self._control
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -560,7 +565,11 @@ class KeepVelocity(AtomicBehavior):
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-        self._control.throttle = 0.0
+
+        if self._type == 'vehicle':
+            self._control.throttle = 0.0
+        elif self._type == 'walker':
+            self._control.speed = 0.0
         if self._actor is not None and self._actor.is_alive:
             self._actor.apply_control(self._control)
         super(KeepVelocity, self).terminate(new_status)

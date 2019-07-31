@@ -3,6 +3,7 @@
 * Added support for weather conditions
 * Added basic version check to ensure usage of correct CARLA version
 * Extended OpenScenario support
+    - Added support for pedestrians
     - Full support for SimulationTime condition
 
 ## CARLA Scenario_Runner 0.9.6
