@@ -1,5 +1,6 @@
 ## Latest changes
 
+* Added get_transform() method for CarlaDataProvider
 * Added support for weather conditions
 * Added basic version check to ensure usage of correct CARLA version
 * Extended OpenScenario support

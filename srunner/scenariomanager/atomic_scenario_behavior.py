@@ -526,7 +526,7 @@ class KeepVelocity(AtomicBehavior):
         # In case of walkers, we have to extract the current heading
         if self._type == 'walker':
             self._control.speed = self._target_velocity
-            self._control.direction = self._actor.get_transform().get_forward_vector()
+            self._control.direction = CarlaDataProvider.get_transform(self._actor).get_forward_vector()
 
         super(KeepVelocity, self).initialise()
 

@@ -37,16 +37,18 @@ class CarlaDataProvider(object):
     Currently available data:
     - Absolute velocity
     - Location
+    - Transform
 
     Potential additions:
     - Acceleration
-    - Transform
+
 
     In addition it provides access to the map and the transform of all traffic lights
     """
 
     _actor_velocity_map = dict()
     _actor_location_map = dict()
+    _actor_transform_map = dict()
     _traffic_light_map = dict()
     _map = None
     _world = None
@@ -71,6 +73,12 @@ class CarlaDataProvider(object):
         else:
             CarlaDataProvider._actor_location_map[actor] = None
 
+        if actor in CarlaDataProvider._actor_transform_map:
+            raise KeyError(
+                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+        else:
+            CarlaDataProvider._actor_transform_map[actor] = None
+
     @staticmethod
     def register_actors(actors):
         """
@@ -92,13 +100,17 @@ class CarlaDataProvider(object):
             if actor is not None and actor.is_alive:
                 CarlaDataProvider._actor_location_map[actor] = actor.get_location()
 
+        for actor in CarlaDataProvider._actor_transform_map:
+            if actor is not None and actor.is_alive:
+                CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
+
     @staticmethod
     def get_velocity(actor):
         """
         returns the absolute velocity for the given actor
         """
         if actor not in CarlaDataProvider._actor_velocity_map.keys():
-            # We are initentionally not throwing here
+            # We are intentionally not throwing here
             # This may cause exception loops in py_trees
             return 0.0
 
@@ -110,11 +122,23 @@ class CarlaDataProvider(object):
         returns the location for the given actor
         """
         if actor not in CarlaDataProvider._actor_location_map.keys():
-            # We are initentionally not throwing here
+            # We are intentionally not throwing here
             # This may cause exception loops in py_trees
             return None
 
         return CarlaDataProvider._actor_location_map[actor]
+
+    @staticmethod
+    def get_transform(actor):
+        """
+        returns the transform for the given actor
+        """
+        if actor not in CarlaDataProvider._actor_transform_map.keys():
+            # We are intentionally not throwing here
+            # This may cause exception loops in py_trees
+            return None
+
+        return CarlaDataProvider._actor_transform_map[actor]
 
     @staticmethod
     def prepare_map():
