@@ -5,6 +5,7 @@
 namespace traffic_manager {
 
     const float ZERO_LENGTH = 0.0001; // Very important that this is less than 10^-4
+    const float INFINITE_DISTANCE = 1000000;
 
     InMemoryMap::InMemoryMap(traffic_manager::TopologyList topology) {
         this->topology = topology;
@@ -49,7 +50,7 @@ namespace traffic_manager {
         int i = 0, j = 0;
         for (auto end_point : this->exit_node_list) {
             for (auto begin_point : this->entry_node_list) {
-                if (end_point->distance(begin_point->getLocation()) < ZERO_LENGTH and i != j) { // Make this a constant
+                if (end_point->distance(begin_point->getLocation()) < ZERO_LENGTH and i != j) {
                     end_point->setNextWaypoint({begin_point});
                 }
                 j++;
@@ -57,6 +58,25 @@ namespace traffic_manager {
             i++;
         }
 
+        // Tying up loose ends
+        i = 0;
+        for (auto end_point : this->exit_node_list) {
+            if (end_point->getNextWaypoint().size() == 0) {
+                j=0;
+                float min_distance = INFINITE_DISTANCE;
+                std::shared_ptr<traffic_manager::SimpleWaypoint> closest_connection;
+                for (auto begin_point : this->entry_node_list) {
+                    auto new_distance = end_point->distance(begin_point->getLocation());
+                    if (new_distance < min_distance and i != j) {
+                        min_distance = new_distance;
+                        closest_connection = begin_point;
+                    }
+                    j++;
+                }
+                end_point->setNextWaypoint({closest_connection});
+            }
+            i++;
+        }
     }
 
     std::shared_ptr<SimpleWaypoint> InMemoryMap::getWaypoint(carla::geom::Location location) {
