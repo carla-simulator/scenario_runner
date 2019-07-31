@@ -310,7 +310,6 @@ class DynamicObjectCrossing(BasicScenario):
 
         actor_velocity = KeepVelocity(self.other_actors[0],
                                       self._other_actor_target_velocity,
-                                      self._walker_yaw,
                                       name="walker velocity")
         actor_drive = DriveDistance(self.other_actors[0],
                                     0.5 * lane_width,

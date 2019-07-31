@@ -51,7 +51,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def _validate_openscenario_configuration(self):
         """
-        Validate the given OpenScenario config against the 0.9.1 XSD
+        Validate the given OpenSCENARIO config against the 0.9.1 XSD
 
         Note: This will throw if the config is not valid. But this is fine here.
         """
@@ -61,7 +61,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def _parse_openscenario_configuration(self):
         """
-        Parse the given OpenScenario config file, set and validate parameters
+        Parse the given OpenSCENARIO config file, set and validate parameters
         """
         self._set_scenario_name(self.xml_tree)
         self._set_carla_town(self.xml_tree)
@@ -72,7 +72,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def _set_scenario_name(self, xml_tree):
         """
-        Extract the scenario name from the OpenScenario header information
+        Extract the scenario name from the OpenSCENARIO header information
         """
         header = xml_tree.find("FileHeader")
         self.name = header.attrib.get('description', 'Unknown')
@@ -108,6 +108,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
     def _set_actor_information(self, xml_tree):
         """
         Extract all actors and their corresponding specification
+
+        NOTE: The rolename property has to be unique!
         """
         for entity in xml_tree.iter("Entities"):
             for obj in entity.iter("Object"):
@@ -128,6 +130,19 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         self.ego_vehicles.append(new_actor)
                     else:
                         self.other_actors.append(new_actor)
+
+                for pedestrian in obj.iter("Pedestrian"):
+                    rolename = 'simulation'
+                    model = pedestrian.attrib.get('model', "walker.*")
+
+                    for prop in obj.iter("Property"):
+                        if prop.get('name', '') == 'rolename':
+                            rolename = prop.get('value', 'simulation')
+
+                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
+                    new_actor.transform = self._get_actor_transform(rolename)
+
+                    self.other_actors.append(new_actor)
 
     def _get_actor_transform(self, actor_name):
         """
