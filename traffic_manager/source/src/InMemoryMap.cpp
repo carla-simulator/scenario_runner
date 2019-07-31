@@ -6,6 +6,8 @@ namespace traffic_manager {
 
     const float ZERO_LENGTH = 0.0001; // Very important that this is less than 10^-4
     const float INFINITE_DISTANCE = 1000000;
+    const int LANE_CHANGE_LOOK_AHEAD = 5;
+    const float LANE_CHANGE_ANGULAR_THRESHOLD = 0.5; // cos of the angle
 
     InMemoryMap::InMemoryMap(traffic_manager::TopologyList topology) {
         this->topology = topology;
@@ -72,6 +74,19 @@ namespace traffic_manager {
                         closest_connection = begin_point;
                     }
                     j++;
+                }
+                auto end_point_vector = end_point->getVector();
+                auto relative_vector = closest_connection->getLocation() - end_point->getLocation();
+                relative_vector = relative_vector.MakeUnitVector();
+                auto relative_dot = end_point_vector.x*relative_vector.x
+                    + end_point_vector.y*relative_vector.y
+                    + end_point_vector.z*relative_vector.z;
+                if (relative_dot < LANE_CHANGE_ANGULAR_THRESHOLD) {   
+                    int count = LANE_CHANGE_LOOK_AHEAD;
+                    while (count > 0) {
+                        closest_connection = closest_connection->getNextWaypoint()[0];
+                        count--;
+                    }
                 }
                 end_point->setNextWaypoint({closest_connection});
             }
