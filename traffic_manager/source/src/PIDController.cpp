@@ -43,8 +43,8 @@ namespace traffic_manager {
     ActuationSignal PIDController::runStep(
         StateEntry present_state,
         StateEntry previous_state,
-        std::vector<float> longitudinal_parameters,
-        std::vector<float> lateral_parameters
+        const std::vector<float>& longitudinal_parameters,
+        const std::vector<float>& lateral_parameters
     ) {
         // Calculating dt for updating integral component
         std::chrono::duration<double> duration = present_state.time_instance - previous_state.time_instance;

@@ -45,8 +45,8 @@ namespace traffic_manager {
         public:
 
         Pipeline(
-            std::vector<carla::SharedPtr<carla::client::Actor>> actor_list,
-            carla::SharedPtr<carla::client::Map> world_map,
+            const std::vector<carla::SharedPtr<carla::client::Actor>>& actor_list,
+            const carla::SharedPtr<carla::client::Map>& world_map,
             float target_velocity,
             std::vector<float> longitudinal_PID_parameters,
             std::vector<float> lateral_PID_parameters,

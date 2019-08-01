@@ -52,7 +52,7 @@ namespace traffic_manager {
         return out_message;
     }
 
-    void CollisionCallable::drawBoundary(std::vector<carla::geom::Location> boundary) {
+    void CollisionCallable::drawBoundary(const std::vector<carla::geom::Location>& boundary) {
         for (int i=0; i<boundary.size(); i++) {
             shared_data->debug->DrawLine(
                 boundary[i] + carla::geom::Location(0, 0, 1),
@@ -126,7 +126,7 @@ namespace traffic_manager {
         return false;
     }
 
-    traffic_manager::polygon CollisionCallable::getPolygon(std::vector<carla::geom::Location> boundary) {
+    traffic_manager::polygon CollisionCallable::getPolygon(const std::vector<carla::geom::Location>& boundary) {
         std::string wkt_string;
         for(auto location: boundary){
             wkt_string += std::to_string(location.x) + " " + std::to_string(location.y) + ",";
@@ -141,7 +141,7 @@ namespace traffic_manager {
 
     std::vector<carla::geom::Location> CollisionCallable::getGeodesicBoundary (
         carla::SharedPtr<carla::client::Actor> actor,
-        std::vector<carla::geom::Location> bbox
+        const std::vector<carla::geom::Location>& bbox
     ) {
         auto velocity = actor->GetVelocity().Length();
         int bbox_extension = static_cast<int>(

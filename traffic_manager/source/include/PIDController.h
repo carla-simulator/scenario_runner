@@ -39,8 +39,8 @@ namespace traffic_manager {
         ActuationSignal runStep(
             StateEntry present_state,
             StateEntry previous_state,
-            std::vector<float> longitudinal_parameters,
-            std::vector<float> lateral_parameters
+            const std::vector<float>& longitudinal_parameters,
+            const std::vector<float>& lateral_parameters
         );
     };
 }

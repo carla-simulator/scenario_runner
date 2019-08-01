@@ -31,7 +31,7 @@ namespace traffic_manager {
         private:
 
         /// Draws a polygon connecting the vector of locations passed to it.
-        void drawBoundary(std::vector<carla::geom::Location>);
+        void drawBoundary(const std::vector<carla::geom::Location>&);
 
         /// Returns true if there is a possible collision detected between the vehicles passed to the method.
         /// Collision is predicted by extrapolating a boundary around the vehicle along it's trajectory
@@ -44,10 +44,10 @@ namespace traffic_manager {
 
         /// Returns the extrapolated bounding box of the vehicle along it's trajectory.
         std::vector<carla::geom::Location> getGeodesicBoundary (
-            carla::SharedPtr<carla::client::Actor> actor, std::vector<carla::geom::Location> bbox);
+            carla::SharedPtr<carla::client::Actor> actor, const std::vector<carla::geom::Location>& bbox);
 
         /// Method to construct a boost polygon object
-        polygon getPolygon(std::vector<carla::geom::Location> boundary);
+        polygon getPolygon(const std::vector<carla::geom::Location>& boundary);
 
         /// Method returns true if ego_vehicle should stop and wait for other_vehicle to pass.
         bool negotiateCollision(
