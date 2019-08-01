@@ -1,17 +1,17 @@
 #include <iostream>
 #include "carla/client/Client.h"
-#include "CarlaDataAccessLayer.hpp"
+#include "CarlaDataAccessLayer.h"
 #include "carla/client/ActorList.h"
-#include "InMemoryMap.hpp"
-#include "SyncQueue.hpp"
-#include "PipelineStage.hpp"
-#include "FeederCallable.hpp"
-#include "LocalizationCallable.hpp"
-#include "MotionPlannerCallable.hpp"
-#include "TrafficLightStateCallable.hpp"
-#include "BatchControlCallable.hpp"
-#include "CollisionCallable.hpp"
-#include "Pipeline.hpp"
+#include "InMemoryMap.h"
+#include "SyncQueue.h"
+#include "PipelineStage.h"
+#include "FeederCallable.h"
+#include "LocalizationCallable.h"
+#include "MotionPlannerCallable.h"
+#include "TrafficLightStateCallable.h"
+#include "BatchControlCallable.h"
+#include "CollisionCallable.h"
+#include "Pipeline.h"
 
 void test_dense_topology(const carla::client::World&);
 void test_in_memory_map(carla::SharedPtr<carla::client::Map>);

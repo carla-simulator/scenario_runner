@@ -1,6 +1,6 @@
 //Definition of class members
 
-#include "SharedData.hpp"
+#include "SharedData.h"
 
 namespace traffic_manager{
 

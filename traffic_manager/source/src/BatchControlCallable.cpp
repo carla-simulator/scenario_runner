@@ -1,6 +1,6 @@
 // Definition of class memebers
 
-#include "BatchControlCallable.hpp"
+#include "BatchControlCallable.h"
 
 namespace traffic_manager{
 
@@ -41,7 +41,7 @@ namespace traffic_manager{
             auto current_time = std::chrono::system_clock::now();
             std::chrono::duration<double> diff = current_time - last_time;
 
-            if(diff.count() > 1.0) {    // Log once every second
+            if(diff.count() > 1.0) {    /// Log once every second
                     last_time = current_time;
                     std::cout << "Updates processed per second " << count << std::endl;
                     count = 0;

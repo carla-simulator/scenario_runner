@@ -1,6 +1,6 @@
 // Member definitions for class PipelineCallable
 
-#include "PipelineCallable.hpp"
+#include "PipelineCallable.h"
 
 namespace traffic_manager {
     

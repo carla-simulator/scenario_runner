@@ -1,6 +1,6 @@
 //definition of FeederCallable class members
 
-#include "FeederCallable.hpp"
+#include "FeederCallable.h"
 
 namespace traffic_manager {
 
@@ -14,7 +14,7 @@ namespace traffic_manager {
     Feedercallable::~Feedercallable(){}
 
     PipelineMessage Feedercallable::action (PipelineMessage message) {
-        int delay = 500; // (micro seconds) default, good enough for 100 vehicles
+        int delay = 500; //(micro seconds) default, good enough for 100 vehicles
         auto last_time = std::chrono::system_clock::now();
         while(true) {
             for (auto actor: shared_data->registered_actors) {

@@ -1,6 +1,6 @@
 // Member definitions for class PipelineMessage
 
-#include "PipelineMessage.hpp"
+#include "PipelineMessage.h"
 
 namespace traffic_manager {
 

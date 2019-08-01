@@ -1,6 +1,6 @@
 // Implementation for SimpleWaypoint
 
-#include "SimpleWaypoint.hpp"
+#include "SimpleWaypoint.h"
 
 namespace traffic_manager{
 

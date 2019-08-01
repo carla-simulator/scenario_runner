@@ -1,6 +1,6 @@
 // Implementation for an in memory descrete map representation
 
-#include "InMemoryMap.hpp"
+#include "InMemoryMap.h"
 
 namespace traffic_manager {
 
