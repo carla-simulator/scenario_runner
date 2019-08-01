@@ -22,6 +22,7 @@ from datetime import datetime
 from distutils.version import LooseVersion
 import importlib
 import inspect
+import time
 import pkg_resources
 
 import carla
@@ -108,17 +109,6 @@ class ScenarioRunner(object):
         dist = pkg_resources.get_distribution("carla")
         if LooseVersion(dist.version) < LooseVersion('0.9.6'):
             raise ImportError("CARLA version 0.9.6 or newer required. CARLA version found: {}".format(dist))
-
-        # Once we have a client we can retrieve the world that is currently
-        # running.
-        self.world = self.client.get_world()
-
-        settings = self.world.get_settings()
-        settings.fixed_delta_seconds = 1.0 / self.frame_rate
-        self.world.apply_settings(settings)
-
-        CarlaActorPool.set_world(self.world)
-        CarlaDataProvider.set_world(self.world)
 
         # Load additional scenario definitions, if there are any
         if args.additionalScenario != '':
@@ -228,28 +218,45 @@ class ScenarioRunner(object):
         else:
             print("Failure!")
 
-    def load_world(self, args, town):
+    def load_and_wait_for_world(self, args, config):
         """
         Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
         """
 
         if args.reloadWorld:
-            self.world = self.client.load_world(town)
+            self.world = self.client.load_world(config.town)
+            settings = self.world.get_settings()
+            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            self.world.apply_settings(settings)
         else:
-            if CarlaDataProvider.get_map().name != town:
-                print("The CARLA server uses the wrong map!")
-                print("This scenario requires to use map {}".format(town))
-                return False
+            # if the world should not be reloaded, wait at least until all ego vehicles are ready
+            ego_vehicle_found = False
+            if args.waitForEgo:
+                while not ego_vehicle_found:
+                    vehicles = self.client.get_world().get_actors().filter('vehicle.*')
+                    for ego_vehicle in config.ego_vehicles:
+                        ego_vehicle_found = False
+                        for vehicle in vehicles:
+                            if vehicle.attributes['role_name'] == ego_vehicle.rolename:
+                                ego_vehicle_found = True
+                                break
+                        if not ego_vehicle_found:
+                            print("Not all ego vehicles ready. Waiting ... ")
+                            time.sleep(1)
+                            break
 
+        self.world = self.client.get_world()
         CarlaActorPool.set_client(self.client)
         CarlaActorPool.set_world(self.world)
         CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
         self.world.tick()
-        settings = self.world.get_settings()
-        settings.fixed_delta_seconds = 1.0 / self.frame_rate
-        self.world.apply_settings(settings)
+
+        if CarlaDataProvider.get_map().name != config.town:
+            print("The CARLA server uses the wrong map!")
+            print("This scenario requires to use map {}".format(config.town))
+            return False
 
         return True
 
@@ -308,7 +315,7 @@ class ScenarioRunner(object):
             config_counter = 0
             for config in scenario_configurations:
 
-                if not self.load_world(args, config.town):
+                if not self.load_and_wait_for_world(args, config):
                     self.cleanup()
                     continue
 
@@ -356,7 +363,7 @@ class ScenarioRunner(object):
 
         config = OpenScenarioConfiguration(args.openscenario)
 
-        if not self.load_world(args, config.town):
+        if not self.load_and_wait_for_world(args, config):
             self.cleanup()
             return
 
