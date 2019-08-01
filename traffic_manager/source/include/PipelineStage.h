@@ -1,41 +1,41 @@
-
 #pragma once
 
 #include <thread>
 
 #include "PipelineCallable.h"
 
-
 namespace traffic_manager {
 
-    class PipelineStage {
-        
-        /// This is the class for stage objects in the pipeline.
-        /// Construct objects of this type by passing the appropriate callable object
-        /// and threading information to create the pipeline stage.
+  class PipelineStage {
 
-        private:
+    /// This is the class for stage objects in the pipeline.
+    /// Construct objects of this type by passing the appropriate callable
+    /// object
+    /// and threading information to create the pipeline stage.
 
-        std::vector<std::thread> threads;
+  private:
 
-        /// This method runs the threads of the stage's callable.
-        void runThreads();
+    std::vector<std::thread> threads;
 
-        protected:
+    /// This method runs the threads of the stage's callable.
+    void runThreads();
 
-        const int pool_size;
-        PipelineCallable& thread_callable;
+  protected:
 
-        public:
+    const int pool_size;
+    PipelineCallable &thread_callable;
 
-        /// pass the number of threads and the callable object to execute.
-        PipelineStage(
-            int pool_size,
-            PipelineCallable& thread_callable);
-        virtual ~PipelineStage();
+  public:
 
-        /// This method starts the threads for the stage.
-        void start();
-    };
+    /// pass the number of threads and the callable object to execute.
+    PipelineStage(
+        int pool_size,
+        PipelineCallable &thread_callable);
+    virtual ~PipelineStage();
+
+    /// This method starts the threads for the stage.
+    void start();
+
+  };
 
 }

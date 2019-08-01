@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <mutex>
@@ -10,84 +9,86 @@
 
 namespace traffic_manager {
 
-    template <typename T>
-    class SyncQueue {
-        
-        /// This is a thread safe generic wrapper around std::deque.
-        
+  template <typename T>
+  class SyncQueue {
 
-        private:
+    /// This is a thread safe generic wrapper around std::deque.
 
-        std::mutex                      q_mutex;
-        std::condition_variable         empty_condition;
-        std::condition_variable         full_condition;
-        std::deque<T>                   queue;
-        int                             buffer_size;
+  private:
 
-        public:
+    std::mutex q_mutex;
+    std::condition_variable empty_condition;
+    std::condition_variable full_condition;
+    std::deque<T> queue;
+    int buffer_size;
 
-        SyncQueue(int buffer_size = 20):buffer_size(buffer_size){}
+  public:
 
-        /// Adds an element to the end of the queue.
-        void push(T value){
-            std::unique_lock<std::mutex> lock(this->q_mutex);
-            this->full_condition.wait(lock, [=]{ return !(this->queue.size()>=buffer_size); });
-            queue.push_back(value);
-            this->empty_condition.notify_one();
-        }
+    SyncQueue(int buffer_size = 20) : buffer_size(buffer_size) {}
 
-        /// Returns and removes an element from the front of the queue.
-        T pop(){
-            std::unique_lock<std::mutex> lock(this->q_mutex);
-            this->empty_condition.wait(lock, [=]{ return !this->queue.empty(); });
-            T rc(std::move(this->queue.front()));
-            this->queue.pop_front();
-            this->full_condition.notify_one();
-            return rc;
-        }
+    /// Adds an element to the end of the queue.
+    void push(T value) {
+      std::unique_lock<std::mutex> lock(this->q_mutex);
+      this->full_condition.wait(lock, [=] { return !(this->queue.size() >= buffer_size); });
+      queue.push_back(value);
+      this->empty_condition.notify_one();
+    }
 
-        /// Returns a reference to the element at the front of the queue.
-        T front(){
-            return this->queue.front();
-        }
+    /// Returns and removes an element from the front of the queue.
+    T pop() {
+      std::unique_lock<std::mutex> lock(this->q_mutex);
+      this->empty_condition.wait(lock, [=] { return !this->queue.empty(); });
+      T rc(std::move(this->queue.front()));
+      this->queue.pop_front();
+      this->full_condition.notify_one();
+      return rc;
+    }
 
-        /// Returns a reference to the element at the back of the queue.
-        T back(){
-            return this->queue.back();
-        }
+    /// Returns a reference to the element at the front of the queue.
+    T front() {
+      return this->queue.front();
+    }
 
-        /// Returns the number of elements in the queue.
-        int size() {
-            return queue.size();
-        }
+    /// Returns a reference to the element at the back of the queue.
+    T back() {
+      return this->queue.back();
+    }
 
-        /// Returns true if the queue is empty.
-        bool empty() {
-            return queue.empty();
-        }
+    /// Returns the number of elements in the queue.
+    int size() {
+      return queue.size();
+    }
 
-        /// Returns true if the queue is full.
-        bool full() {
-            return queue.size() >= buffer_size;
-        }
+    /// Returns true if the queue is empty.
+    bool empty() {
+      return queue.empty();
+    }
 
-        /// Returns a vector of elements from the front of the queue till a given a number of elements.
-        std::vector<T> getContent(int number_of_elements) {
-            std::unique_lock<std::mutex> lock(q_mutex);
-            this->empty_condition.wait(lock, [=]{ return !this->queue.empty(); });
-            if (queue.size() >= number_of_elements)
-                return std::vector<T>(queue.begin(), queue.begin()+number_of_elements);
-            else
-                return std::vector<T>(queue.begin(), queue.end());
-        }
+    /// Returns true if the queue is full.
+    bool full() {
+      return queue.size() >= buffer_size;
+    }
 
-        /// Returns the reference to the element at a given index on the queue.
-        T get(int index) {
-            std::unique_lock<std::mutex> lock(q_mutex);
-            this->empty_condition.wait(lock, [=]{ return !this->queue.empty(); });
-            auto queue_size = this->size();
-            index = index >= queue_size ? queue_size: index;
-            return queue.at(index);
-        }
-    };
+    /// Returns a vector of elements from the front of the queue till a given a
+    /// number of elements.
+    std::vector<T> getContent(int number_of_elements) {
+      std::unique_lock<std::mutex> lock(q_mutex);
+      this->empty_condition.wait(lock, [=] { return !this->queue.empty(); });
+      if (queue.size() >= number_of_elements) {
+        return std::vector<T>(queue.begin(), queue.begin() + number_of_elements);
+      } else {
+        return std::vector<T>(queue.begin(), queue.end());
+      }
+    }
+
+    /// Returns the reference to the element at a given index on the queue.
+    T get(int index) {
+      std::unique_lock<std::mutex> lock(q_mutex);
+      this->empty_condition.wait(lock, [=] { return !this->queue.empty(); });
+      auto queue_size = this->size();
+      index = index >= queue_size ? queue_size : index;
+      return queue.at(index);
+    }
+  };
+
 }

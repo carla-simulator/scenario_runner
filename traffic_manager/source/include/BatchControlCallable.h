@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <chrono>
@@ -9,29 +8,30 @@
 #include "PipelineCallable.h"
 #include "SharedData.h"
 
-
 namespace traffic_manager {
-    class BatchControlCallable: public PipelineCallable {
-        /// This class is the thread executable for the last stage in the pipeline.
-        /// This class is tasked with managing communicating actuation signals to
-        /// the simulator in batches.
+  class BatchControlCallable : public PipelineCallable {
+    /// This class is the thread executable for the last stage in the pipeline.
+    /// This class is tasked with managing communicating actuation signals to
+    /// the simulator in batches.
 
-        /// Note: Exactly one thread executables of this class should be instantiated
-        /// in the stage. This is because this executable runs in an infinite loop
-        /// throughout the lifetime of the pipeline.
+    /// Note: Exactly one thread executables of this class should be
+    /// instantiated
+    /// in the stage. This is because this executable runs in an infinite loop
+    /// throughout the lifetime of the pipeline.
 
-        private:
+  private:
 
-        SyncQueue<PipelineMessage>* input_queue;
+    SyncQueue<PipelineMessage> *input_queue;
 
-        public:
+  public:
 
-        BatchControlCallable(
-            SyncQueue<PipelineMessage>* input_queue,
-            SyncQueue<PipelineMessage>* output_queue,
-            SharedData* shared_data
-        );
-        ~BatchControlCallable();
-        PipelineMessage action(PipelineMessage message);       
-    };
+    BatchControlCallable(
+        SyncQueue<PipelineMessage> *input_queue,
+        SyncQueue<PipelineMessage> *output_queue,
+        SharedData *shared_data);
+    ~BatchControlCallable();
+    PipelineMessage action(PipelineMessage message);
+
+  };
+
 }

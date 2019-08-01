@@ -1,10 +1,10 @@
-//Definition of class members
+// Definition of class members
 
 #include "SharedData.h"
 
-namespace traffic_manager{
+namespace traffic_manager {
 
-    SharedData::SharedData(){}
-    SharedData::~SharedData(){}
+  SharedData::SharedData() {}
+  SharedData::~SharedData() {}
 
 }

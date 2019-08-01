@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <string>
@@ -6,46 +5,48 @@
 
 #include "carla/client/Actor.h"
 
-
 namespace traffic_manager {
 
-    class PipelineMessage {
-        
-        /// This class is used for messaging through the pipeline.
-        /// The class holds information about the vehicle the message is constructed for.
-        /// Also, the class has accessor methods to set and get attributes.
-        /// These attributes can be used to pass data from stage to stage.
+  class PipelineMessage {
 
-        private:
+    /// This class is used for messaging through the pipeline.
+    /// The class holds information about the vehicle the message is constructed
+    /// for.
+    /// Also, the class has accessor methods to set and get attributes.
+    /// These attributes can be used to pass data from stage to stage.
 
-        int actor_id;
-        carla::SharedPtr<carla::client::Actor> actor;
-        std::map<std::string, float> attributes;
+  private:
 
-        public:
+    int actor_id;
+    carla::SharedPtr<carla::client::Actor> actor;
+    std::map<std::string, float> attributes;
 
-        PipelineMessage();
-        virtual ~PipelineMessage();
+  public:
 
-        /// This method sets the actor information into the class object.
-        void setActor(carla::SharedPtr<carla::client::Actor> actor);
+    PipelineMessage();
+    virtual ~PipelineMessage();
 
-        /// Returns shared pointer to actor for which the message was constructed.
-        carla::SharedPtr<carla::client::Actor> getActor();
+    /// This method sets the actor information into the class object.
+    void setActor(carla::SharedPtr<carla::client::Actor> actor);
 
-        /// Returns vehicle's actor ID
-        int getActorID();
+    /// Returns shared pointer to actor for which the message was constructed.
+    carla::SharedPtr<carla::client::Actor> getActor();
 
-        /// Sets a float value corresponding to a string key.
-        void setAttribute(std::string, float);
+    /// Returns vehicle's actor ID
+    int getActorID();
 
-        /// Returns value for the string key passed.
-        float getAttribute(std::string);
+    /// Sets a float value corresponding to a string key.
+    void setAttribute(std::string, float);
 
-        /// Checks if a given attribute is set for the object.
-        bool hasAttribute(std::string);
+    /// Returns value for the string key passed.
+    float getAttribute(std::string);
 
-        /// Removes the attribute with the string key passed.
-        void removeAttribute(std::string);
-    };
+    /// Checks if a given attribute is set for the object.
+    bool hasAttribute(std::string);
+
+    /// Removes the attribute with the string key passed.
+    void removeAttribute(std::string);
+
+  };
+
 }

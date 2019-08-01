@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <chrono>
@@ -9,37 +8,39 @@
 #include "SharedData.h"
 #include "PIDController.h"
 
-
 namespace traffic_manager {
 
-    class MotionPlannerCallable: public PipelineCallable {
-        /*
-        This class is the thread executable for the motion planner stage.
-        The class is responsible for aggregating information from various stages
-        like traffic like state stage, collision detection stage and actuation signals
-        from PID controller and makes decisions on how to move the vehicle to follow
-        it's trajectory safely.
-        */
+  class MotionPlannerCallable : public PipelineCallable {
+    /*
+       This class is the thread executable for the motion planner stage.
+       The class is responsible for aggregating information from various stages
+       like traffic like state stage, collision detection stage and actuation
+          signals
+       from PID controller and makes decisions on how to move the vehicle to
+          follow
+       it's trajectory safely.
+     */
 
-        private:
+  private:
 
-        std::vector<float> longitudinal_parameters;
-        std::vector<float> lateral_parameters;
-        float target_velocity;
-        SharedData* shared_data;
-        PIDController controller;
-            
-        public:
+    std::vector<float> longitudinal_parameters;
+    std::vector<float> lateral_parameters;
+    float target_velocity;
+    SharedData *shared_data;
+    PIDController controller;
 
-        MotionPlannerCallable(
-            float target_velocity,
-            SyncQueue<PipelineMessage>* input_queue,
-            SyncQueue<PipelineMessage>* output_queue,
-            SharedData* shared_data,
-            std::vector<float> longitudinal_parameters,
-            std::vector<float> lateral_parameters
-        );
-        ~MotionPlannerCallable();
-        PipelineMessage action(PipelineMessage message);
-    };
+  public:
+
+    MotionPlannerCallable(
+        float target_velocity,
+        SyncQueue<PipelineMessage> *input_queue,
+        SyncQueue<PipelineMessage> *output_queue,
+        SharedData *shared_data,
+        std::vector<float> longitudinal_parameters,
+        std::vector<float> lateral_parameters);
+    ~MotionPlannerCallable();
+    PipelineMessage action(PipelineMessage message);
+
+  };
+
 }

@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <vector>
@@ -22,40 +21,42 @@
 
 namespace traffic_manager {
 
-    class Pipeline {
+  class Pipeline {
 
-        private:
+  private:
 
-        int NUMBER_OF_STAGES = 6;
+    int NUMBER_OF_STAGES = 6;
 
-        std::vector<carla::SharedPtr<carla::client::Actor>> actor_list;
-        carla::SharedPtr<carla::client::Map> world_map;
-        float target_velocity;
-        std::vector<float> longitudinal_PID_parameters;
-        std::vector<float> lateral_PID_parameters;
-        int pipeline_width;
-        carla::client::Client& client;
-        carla::client::DebugHelper debug_helper;
+    std::vector<carla::SharedPtr<carla::client::Actor>> actor_list;
+    carla::SharedPtr<carla::client::Map> world_map;
+    float target_velocity;
+    std::vector<float> longitudinal_PID_parameters;
+    std::vector<float> lateral_PID_parameters;
+    int pipeline_width;
+    carla::client::Client &client;
+    carla::client::DebugHelper debug_helper;
 
-        traffic_manager::SharedData shared_data;
-        std::vector<std::shared_ptr<SyncQueue<PipelineMessage>>> message_queues;
-        std::vector<std::shared_ptr<PipelineCallable>> callables;
-        std::vector<std::shared_ptr<PipelineStage>> stages;
+    traffic_manager::SharedData shared_data;
+    std::vector<std::shared_ptr<SyncQueue<PipelineMessage>>> message_queues;
+    std::vector<std::shared_ptr<PipelineCallable>> callables;
+    std::vector<std::shared_ptr<PipelineStage>> stages;
 
-        public:
+  public:
 
-        Pipeline(
-            const std::vector<carla::SharedPtr<carla::client::Actor>>& actor_list,
-            const carla::SharedPtr<carla::client::Map>& world_map,
-            float target_velocity,
-            std::vector<float> longitudinal_PID_parameters,
-            std::vector<float> lateral_PID_parameters,
-            int pipeline_width,
-            carla::client::Client& client,
-            carla::client::DebugHelper debug_helper
-        );
+    Pipeline(
+        const std::vector<carla::SharedPtr<carla::client::Actor>> &actor_list,
+        const carla::SharedPtr<carla::client::Map> &world_map,
+        float target_velocity,
+        std::vector<float> longitudinal_PID_parameters,
+        std::vector<float> lateral_PID_parameters,
+        int pipeline_width,
+        carla::client::Client &client,
+        carla::client::DebugHelper debug_helper);
 
-        void setup();
-        void start();
-    };
+    void setup();
+
+    void start();
+
+  };
+
 }

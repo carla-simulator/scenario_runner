@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <memory.h>
@@ -10,40 +9,43 @@
 
 namespace traffic_manager {
 
-    class SimpleWaypoint {
-        
-        /// This is a simple wrapper class on carla's waypoint object.
-        /// The class is used to represent descrete samples of the world map.
+  class SimpleWaypoint {
 
-        private:
+    /// This is a simple wrapper class on carla's waypoint object.
+    /// The class is used to represent descrete samples of the world map.
 
-        carla::SharedPtr<carla::client::Waypoint> waypoint;
-        std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints;
+  private:
 
-        public:
+    carla::SharedPtr<carla::client::Waypoint> waypoint;
+    std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints;
 
-        SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint> waypoint);
-        ~SimpleWaypoint();
+  public:
 
-        /// Returns the location object for this waypoint.
-        carla::geom::Location getLocation();
+    SimpleWaypoint(carla::SharedPtr<carla::client::Waypoint> waypoint);
+    ~SimpleWaypoint();
 
-        /// Returns the list of next waypoints.
-        std::vector<std::shared_ptr<SimpleWaypoint>> getNextWaypoint();
+    /// Returns the location object for this waypoint.
+    carla::geom::Location getLocation();
 
-        /// Returns the vector along the waypoint's direction.
-        carla::geom::Vector3D getVector();
+    /// Returns the list of next waypoints.
+    std::vector<std::shared_ptr<SimpleWaypoint>> getNextWaypoint();
 
-        /// Returns the location of the waypoint as a list of x,y,z float values.
-        std::vector<float> getXYZ();
+    /// Returns the vector along the waypoint's direction.
+    carla::geom::Vector3D getVector();
 
-        /// This method is used to set the next waypoints.
-        int setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints);
+    /// Returns the location of the waypoint as a list of x,y,z float values.
+    std::vector<float> getXYZ();
 
-        /// Calculates the distance from the object's waypoint to the passed location.
-        float distance(carla::geom::Location location);
+    /// This method is used to set the next waypoints.
+    int setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints);
 
-        /// Returns true if the object's waypoint belongs to an intersection.
-        bool checkJunction();
-    };
+    /// Calculates the distance from the object's waypoint to the passed
+    /// location.
+    float distance(carla::geom::Location location);
+
+    /// Returns true if the object's waypoint belongs to an intersection.
+    bool checkJunction();
+
+  };
+
 }

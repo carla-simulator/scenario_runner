@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "carla/client/Vehicle.h"
@@ -6,23 +5,24 @@
 
 #include "PipelineCallable.h"
 
-
 namespace traffic_manager {
 
-    class TrafficLightStateCallable: public PipelineCallable {
-        
-        /// This class is the thread executable for the traffic light stage.
-        /// The class is responsible to detect what is state of the traffic light
-        /// affecting the vehicle in the message.
+  class TrafficLightStateCallable : public PipelineCallable {
 
-        public:
+    /// This class is the thread executable for the traffic light stage.
+    /// The class is responsible to detect what is state of the traffic light
+    /// affecting the vehicle in the message.
 
-        TrafficLightStateCallable(
-            SyncQueue<PipelineMessage>* input_queue,
-            SyncQueue<PipelineMessage>* output_queue,
-            SharedData* shared_data);
-        ~TrafficLightStateCallable();
+  public:
 
-        PipelineMessage action(PipelineMessage message);
-    };
+    TrafficLightStateCallable(
+        SyncQueue<PipelineMessage> *input_queue,
+        SyncQueue<PipelineMessage> *output_queue,
+        SharedData *shared_data);
+    ~TrafficLightStateCallable();
+
+    PipelineMessage action(PipelineMessage message);
+
+  };
+
 }

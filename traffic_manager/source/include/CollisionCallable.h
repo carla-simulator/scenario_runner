@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <cmath>
@@ -18,51 +17,59 @@
 
 #include "PipelineCallable.h"
 
-
 namespace traffic_manager {
-    typedef boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double> > polygon;
+  typedef boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>> polygon;
 
-    class CollisionCallable : public PipelineCallable
-    {
-        /// This class is the thread executable for the collission detection stage.
-        /// The class is responsible for checking possible collisions with other vehicles
-        /// along the vehicle's trajectory.    
+  class CollisionCallable : public PipelineCallable {
+    /// This class is the thread executable for the collission detection stage.
+    /// The class is responsible for checking possible collisions with other
+    /// vehicles
+    /// along the vehicle's trajectory.
 
-        private:
+  private:
 
-        /// Draws a polygon connecting the vector of locations passed to it.
-        void drawBoundary(const std::vector<carla::geom::Location>&);
+    /// Draws a polygon connecting the vector of locations passed to it.
+    void drawBoundary(const std::vector<carla::geom::Location> &);
 
-        /// Returns true if there is a possible collision detected between the vehicles passed to the method.
-        /// Collision is predicted by extrapolating a boundary around the vehicle along it's trajectory
-        /// and checking if it overlaps with the extrapolated boundary of the other vehicle.
-        
-        bool checkGeodesicCollision(carla::SharedPtr<carla::client::Actor> vehicle , carla::SharedPtr<carla::client::Actor> ego_vehicle);
-        
-        /// Returns the bounding box corners of the vehicle passed to the method.
-        std::vector<carla::geom::Location> getBoundary (carla::SharedPtr<carla::client::Actor> actor);
+    /// Returns true if there is a possible collision detected between the
+    /// vehicles passed to the method.
+    /// Collision is predicted by extrapolating a boundary around the vehicle
+    /// along it's trajectory
+    /// and checking if it overlaps with the extrapolated boundary of the other
+    /// vehicle.
 
-        /// Returns the extrapolated bounding box of the vehicle along it's trajectory.
-        std::vector<carla::geom::Location> getGeodesicBoundary (
-            carla::SharedPtr<carla::client::Actor> actor, const std::vector<carla::geom::Location>& bbox);
+    bool checkGeodesicCollision(
+        carla::SharedPtr<carla::client::Actor> vehicle,
+        carla::SharedPtr<carla::client::Actor> ego_vehicle);
 
-        /// Method to construct a boost polygon object
-        polygon getPolygon(const std::vector<carla::geom::Location>& boundary);
+    /// Returns the bounding box corners of the vehicle passed to the method.
+    std::vector<carla::geom::Location> getBoundary(carla::SharedPtr<carla::client::Actor> actor);
 
-        /// Method returns true if ego_vehicle should stop and wait for other_vehicle to pass.
-        bool negotiateCollision(
-            carla::SharedPtr<carla::client::Actor> ego_vehicle,
-            carla::SharedPtr<carla::client::Actor> other_vehicle
-        );
+    /// Returns the extrapolated bounding box of the vehicle along it's
+    /// trajectory.
+    std::vector<carla::geom::Location> getGeodesicBoundary(
+        carla::SharedPtr<carla::client::Actor> actor,
+        const std::vector<carla::geom::Location> &bbox);
 
-        public:
+    /// Method to construct a boost polygon object
+    polygon getPolygon(const std::vector<carla::geom::Location> &boundary);
 
-        CollisionCallable(
-            SyncQueue<PipelineMessage>* input_queue,
-            SyncQueue<PipelineMessage>* output_queue,
-            SharedData* shared_data);
-        ~CollisionCallable();
+    /// Method returns true if ego_vehicle should stop and wait for
+    /// other_vehicle to pass.
+    bool negotiateCollision(
+        carla::SharedPtr<carla::client::Actor> ego_vehicle,
+        carla::SharedPtr<carla::client::Actor> other_vehicle);
 
-        PipelineMessage action (PipelineMessage message);
-    };
+  public:
+
+    CollisionCallable(
+        SyncQueue<PipelineMessage> *input_queue,
+        SyncQueue<PipelineMessage> *output_queue,
+        SharedData *shared_data);
+    ~CollisionCallable();
+
+    PipelineMessage action(PipelineMessage message);
+
+  };
+
 }
