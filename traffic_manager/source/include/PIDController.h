@@ -16,8 +16,7 @@ namespace traffic_manager {
 
     /// This class calculates PID actuation signals to control the vehicle
     /// such that the vehicle maintains a target velocity and aligns its
-    /// orientation
-    /// along it's trajectory.
+    /// orientation along it's trajectory.
 
   public:
 
@@ -33,13 +32,12 @@ namespace traffic_manager {
         TimeInstance current_time);
 
     /// This method calculates the actuation signals based on the resent state
-    /// change
-    /// of the vehicle to minimize PID error.
+    /// change of the vehicle to minimize PID error.
     ActuationSignal runStep(
         StateEntry present_state,
         StateEntry previous_state,
         const std::vector<float> &longitudinal_parameters,
-        const std::vector<float> &lateral_parameters);
+        const std::vector<float> &lateral_parameters)const;
 
   };
 

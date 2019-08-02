@@ -13,7 +13,7 @@ namespace traffic_manager {
 
   BatchControlCallable::~BatchControlCallable() {}
 
-  PipelineMessage BatchControlCallable::action(PipelineMessage message) {
+  PipelineMessage BatchControlCallable::action(PipelineMessage &message) {
 
     long count = 0;
     auto last_time = std::chrono::system_clock::now();

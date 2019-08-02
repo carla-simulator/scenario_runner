@@ -14,7 +14,7 @@ namespace traffic_manager {
 
   LocalizationCallable::~LocalizationCallable() {}
 
-  PipelineMessage LocalizationCallable::action(PipelineMessage message) {
+  PipelineMessage LocalizationCallable::action(PipelineMessage &message) {
 
     auto vehicle = message.getActor();
     auto actor_id = message.getActorID();
@@ -27,10 +27,9 @@ namespace traffic_manager {
 
     if (
       shared_data->buffer_map.find(actor_id) != shared_data->buffer_map.end()
-      and !shared_data->buffer_map[actor_id]->empty()) { // Existing actor in
-                                                         // buffer map
+      and !shared_data->buffer_map[actor_id]->empty()) { // Existing actor in buffer map
 
-      // Purge past waypoints
+      /// Purge past waypoints
       auto dot_product = deviationDotProduct(
           vehicle,
           shared_data->buffer_map[actor_id]->front()->getLocation());
@@ -45,24 +44,16 @@ namespace traffic_manager {
         }
       }
 
-      // Re-initialize buffer if empty
+      /// Re-initialize buffer if empty
       if (shared_data->buffer_map[actor_id]->empty()) {
         auto closest_waypoint = shared_data->local_map->getWaypoint(vehicle_location);
         shared_data->buffer_map[actor_id]->push(closest_waypoint);
       }
 
-      // Re-populate buffer
+      /// Re-populate buffer
       while (
         shared_data->buffer_map[actor_id]->back()->distance(
-        shared_data->buffer_map[actor_id]->front()->getLocation()) <= horizon_size //
-                                                                                   //
-                                                                                   // Make
-                                                                                   //
-                                                                                   // this
-                                                                                   //
-                                                                                   // a
-                                                                                   //
-                                                                                   // constant
+        shared_data->buffer_map[actor_id]->front()->getLocation()) <= horizon_size // Make this a constant
         ) {
         auto next_waypoints = shared_data->buffer_map[actor_id]->back()->getNextWaypoint();
         auto selection_index = next_waypoints.size() > 1 ? rand() % next_waypoints.size() : 0;
@@ -72,23 +63,15 @@ namespace traffic_manager {
 
     } else {       // New actor to buffer map
 
-      // Make size of queue a derived or constant
+      /// Make size of queue a derived or constant
       shared_data->buffer_map[actor_id] = std::make_shared<SyncQueue<std::shared_ptr<SimpleWaypoint>>>(200);
       auto closest_waypoint = shared_data->local_map->getWaypoint(vehicle_location);
-      // Initialize buffer for actor
+      /// Initialize buffer for actor
       shared_data->buffer_map[actor_id]->push(closest_waypoint);
-      // Populate buffer
+      /// Populate buffer
       while (
         shared_data->buffer_map[actor_id]->back()->distance(
-        shared_data->buffer_map[actor_id]->front()->getLocation()) <= horizon_size //
-                                                                                   //
-                                                                                   // Make
-                                                                                   //
-                                                                                   // this
-                                                                                   //
-                                                                                   // a
-                                                                                   //
-                                                                                   // constant
+        shared_data->buffer_map[actor_id]->front()->getLocation()) <= horizon_size // Make this a constant
         ) {
         auto next_waypoints = closest_waypoint->getNextWaypoint();
         auto selection_index = next_waypoints.size() > 1 ? rand() % next_waypoints.size() : 0;
@@ -97,7 +80,7 @@ namespace traffic_manager {
       }
     }
 
-    // Generate output message
+    /// Generate output message
     PipelineMessage out_message;
     auto horizon_index = static_cast<int>(
       std::max(
@@ -120,7 +103,7 @@ namespace traffic_manager {
 
   float LocalizationCallable::deviationDotProduct(
       carla::SharedPtr<carla::client::Actor> actor,
-      carla::geom::Location target_location) {
+      const carla::geom::Location& target_location) const{
     auto heading_vector = actor->GetTransform().GetForwardVector();
     auto next_vector = target_location - actor->GetLocation();
     next_vector = next_vector.MakeUnitVector();
@@ -131,7 +114,7 @@ namespace traffic_manager {
 
   float LocalizationCallable::deviationCrossProduct(
       carla::SharedPtr<carla::client::Actor> actor,
-      carla::geom::Location target_location) {
+      const carla::geom::Location& target_location) const {
     auto heading_vector = actor->GetTransform().GetForwardVector();
     auto next_vector = target_location - actor->GetLocation();
     next_vector = next_vector.MakeUnitVector();

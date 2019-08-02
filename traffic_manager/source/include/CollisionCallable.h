@@ -23,13 +23,12 @@ namespace traffic_manager {
   class CollisionCallable : public PipelineCallable {
     /// This class is the thread executable for the collission detection stage.
     /// The class is responsible for checking possible collisions with other
-    /// vehicles
-    /// along the vehicle's trajectory.
+    /// vehicles along the vehicle's trajectory.
 
   private:
 
     /// Draws a polygon connecting the vector of locations passed to it.
-    void drawBoundary(const std::vector<carla::geom::Location> &);
+    void drawBoundary(const std::vector<carla::geom::Location> &) const;
 
     /// Returns true if there is a possible collision detected between the
     /// vehicles passed to the method.
@@ -40,25 +39,25 @@ namespace traffic_manager {
 
     bool checkGeodesicCollision(
         carla::SharedPtr<carla::client::Actor> vehicle,
-        carla::SharedPtr<carla::client::Actor> ego_vehicle);
+        carla::SharedPtr<carla::client::Actor> ego_vehicle) const;
 
     /// Returns the bounding box corners of the vehicle passed to the method.
-    std::vector<carla::geom::Location> getBoundary(carla::SharedPtr<carla::client::Actor> actor);
+    std::vector<carla::geom::Location> getBoundary(carla::SharedPtr<carla::client::Actor> actor)const;
 
     /// Returns the extrapolated bounding box of the vehicle along it's
     /// trajectory.
     std::vector<carla::geom::Location> getGeodesicBoundary(
         carla::SharedPtr<carla::client::Actor> actor,
-        const std::vector<carla::geom::Location> &bbox);
+        const std::vector<carla::geom::Location> &bbox)const;
 
     /// Method to construct a boost polygon object
-    polygon getPolygon(const std::vector<carla::geom::Location> &boundary);
+    polygon getPolygon(const std::vector<carla::geom::Location> &boundary) const;
 
     /// Method returns true if ego_vehicle should stop and wait for
     /// other_vehicle to pass.
     bool negotiateCollision(
         carla::SharedPtr<carla::client::Actor> ego_vehicle,
-        carla::SharedPtr<carla::client::Actor> other_vehicle);
+        carla::SharedPtr<carla::client::Actor> other_vehicle)const;
 
   public:
 
@@ -68,7 +67,7 @@ namespace traffic_manager {
         SharedData *shared_data);
     ~CollisionCallable();
 
-    PipelineMessage action(PipelineMessage message);
+    PipelineMessage action(PipelineMessage &message);
 
   };
 

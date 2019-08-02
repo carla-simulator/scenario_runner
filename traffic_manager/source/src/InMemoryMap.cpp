@@ -16,22 +16,22 @@ namespace traffic_manager {
   InMemoryMap::~InMemoryMap() {}
 
   void InMemoryMap::setUp(int sampling_resolution) {
-    // Creating dense topology
+    /// Creating dense topology
     for (auto &pair : this->topology) {
 
-      // Looping through every topology segment
+      /// Looping through every topology segment
       auto begin_waypoint = pair.first;
       auto end_waypoint = pair.second;
 
       if (begin_waypoint->GetTransform().location.Distance(
           end_waypoint->GetTransform().location) > ZERO_LENGTH) {
 
-        // Adding entry waypoint
+        /// Adding entry waypoint
         auto current_waypoint = begin_waypoint;
         this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(current_waypoint));
         this->entry_node_list.push_back(this->dense_topology.back());
 
-        // Populating waypoints from begin_waypoint to end_waypoint
+        /// Populating waypoints from begin_waypoint to end_waypoint
         while (current_waypoint->GetTransform().location.Distance(
             end_waypoint->GetTransform().location) > sampling_resolution) {
 
@@ -41,7 +41,7 @@ namespace traffic_manager {
           previous_wp->setNextWaypoint({this->dense_topology.back()});
         }
 
-        // Adding exit waypoint
+        /// Adding exit waypoint
         auto previous_wp = this->dense_topology.back();
         this->dense_topology.push_back(std::make_shared<SimpleWaypoint>(end_waypoint));
         previous_wp->setNextWaypoint({this->dense_topology.back()});
@@ -49,7 +49,7 @@ namespace traffic_manager {
       }
     }
 
-    // Linking segments
+    /// Linking segments
     int i = 0, j = 0;
     for (auto end_point : this->exit_node_list) {
       for (auto begin_point : this->entry_node_list) {
@@ -61,7 +61,7 @@ namespace traffic_manager {
       i++;
     }
 
-    // Tying up loose ends
+    /// Tying up loose ends
     i = 0;
     for (auto end_point : this->exit_node_list) {
       if (end_point->getNextWaypoint().size() == 0) {
@@ -95,9 +95,9 @@ namespace traffic_manager {
     }
   }
 
-  std::shared_ptr<SimpleWaypoint> InMemoryMap::getWaypoint(carla::geom::Location location) {
-    /* Dumb first draft implementation. Need more efficient code for the
-       functionality */
+  std::shared_ptr<SimpleWaypoint> InMemoryMap::getWaypoint(const carla::geom::Location &location) const {
+    /// Dumb first draft implementation. Need more efficient code for the
+    /// functionality
     std::shared_ptr<SimpleWaypoint> closest_waypoint;
     float min_distance = std::numeric_limits<float>::max();
     for (auto simple_waypoint : this->dense_topology) {
@@ -110,7 +110,7 @@ namespace traffic_manager {
     return closest_waypoint;
   }
 
-  std::vector<std::shared_ptr<SimpleWaypoint>> InMemoryMap::get_dense_topology() {
+  std::vector<std::shared_ptr<SimpleWaypoint>> InMemoryMap::get_dense_topology() const {
     return this->dense_topology;
   }
 }

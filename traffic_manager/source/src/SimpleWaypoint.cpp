@@ -9,19 +9,19 @@ namespace traffic_manager {
   }
   SimpleWaypoint::~SimpleWaypoint() {}
 
-  std::vector<std::shared_ptr<SimpleWaypoint>> SimpleWaypoint::getNextWaypoint() {
+  std::vector<std::shared_ptr<SimpleWaypoint>> SimpleWaypoint::getNextWaypoint() const {
     return this->next_waypoints;
   }
 
-  carla::geom::Location SimpleWaypoint::getLocation() {
+  carla::geom::Location SimpleWaypoint::getLocation() const {
     return this->waypoint->GetTransform().location;
   }
 
-  carla::geom::Vector3D SimpleWaypoint::getVector() {
+  carla::geom::Vector3D SimpleWaypoint::getVector() const {
     return waypoint->GetTransform().rotation.GetForwardVector();
   }
 
-  std::vector<float> SimpleWaypoint::getXYZ() {
+  std::vector<float> SimpleWaypoint::getXYZ() const {
     float x = waypoint->GetTransform().location.x;
     float y = waypoint->GetTransform().location.y;
     float z = waypoint->GetTransform().location.z;
@@ -37,11 +37,11 @@ namespace traffic_manager {
     return waypoints.size();
   }
 
-  float SimpleWaypoint::distance(carla::geom::Location location) {
+  float SimpleWaypoint::distance(const carla::geom::Location& location) const {
     return this->waypoint->GetTransform().location.Distance(location);
   }
 
-  bool SimpleWaypoint::checkJunction() {
+  bool SimpleWaypoint::checkJunction() const {
     return this->waypoint->IsJunction();
   }
 }

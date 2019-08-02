@@ -30,19 +30,19 @@ namespace traffic_manager {
     void setActor(carla::SharedPtr<carla::client::Actor> actor);
 
     /// Returns shared pointer to actor for which the message was constructed.
-    carla::SharedPtr<carla::client::Actor> getActor();
+    carla::SharedPtr<carla::client::Actor> getActor() const;
 
     /// Returns vehicle's actor ID
-    int getActorID();
+    int getActorID() const;
 
     /// Sets a float value corresponding to a string key.
     void setAttribute(std::string, float);
 
     /// Returns value for the string key passed.
-    float getAttribute(std::string);
+    float getAttribute(const std::string &);
 
     /// Checks if a given attribute is set for the object.
-    bool hasAttribute(std::string);
+    bool hasAttribute(std::string)const;
 
     /// Removes the attribute with the string key passed.
     void removeAttribute(std::string);

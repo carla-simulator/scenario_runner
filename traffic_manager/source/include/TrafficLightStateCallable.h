@@ -21,7 +21,7 @@ namespace traffic_manager {
         SharedData *shared_data);
     ~TrafficLightStateCallable();
 
-    PipelineMessage action(PipelineMessage message);
+    PipelineMessage action(PipelineMessage &message);
 
   };
 

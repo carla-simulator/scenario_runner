@@ -25,7 +25,7 @@ namespace traffic_manager {
   };
 
   class SharedData {
-    /* This class is used to share common data among threads. */
+    /// This class is used to share common data among threads.
 
   public:
 

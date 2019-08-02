@@ -13,8 +13,7 @@ namespace traffic_manager {
     /// The class provides the base infrastructure to manage communication
     /// between
     /// previous and next stages as well providing a method to override where
-    /// the stage
-    /// specific logic should be placed.
+    /// the stage specific logic should be placed.
 
   private:
 
@@ -36,7 +35,7 @@ namespace traffic_manager {
     /// logic. The method takes a message from the previous stage, performs it's
     /// logic
     /// and returns an output message to be passed on to the next stage.
-    virtual PipelineMessage action(PipelineMessage message) = 0;
+    virtual PipelineMessage action(PipelineMessage &message) = 0;
 
   public:
 

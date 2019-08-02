@@ -25,26 +25,26 @@ namespace traffic_manager {
     ~SimpleWaypoint();
 
     /// Returns the location object for this waypoint.
-    carla::geom::Location getLocation();
+    carla::geom::Location getLocation() const;
 
     /// Returns the list of next waypoints.
-    std::vector<std::shared_ptr<SimpleWaypoint>> getNextWaypoint();
+    std::vector<std::shared_ptr<SimpleWaypoint>> getNextWaypoint() const;
 
     /// Returns the vector along the waypoint's direction.
-    carla::geom::Vector3D getVector();
+    carla::geom::Vector3D getVector()const;
 
     /// Returns the location of the waypoint as a list of x,y,z float values.
-    std::vector<float> getXYZ();
+    std::vector<float> getXYZ()const;
 
     /// This method is used to set the next waypoints.
     int setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints);
 
     /// Calculates the distance from the object's waypoint to the passed
     /// location.
-    float distance(carla::geom::Location location);
+    float distance(const carla::geom::Location& location)const;
 
     /// Returns true if the object's waypoint belongs to an intersection.
-    bool checkJunction();
+    bool checkJunction() const;
 
   };
 

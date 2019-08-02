@@ -20,7 +20,7 @@ namespace traffic_manager {
     : PipelineCallable(input_queue, output_queue, shared_data) {}
   CollisionCallable::~CollisionCallable() {}
 
-  PipelineMessage CollisionCallable::action(PipelineMessage message) {
+  PipelineMessage CollisionCallable::action(PipelineMessage &message) {
     auto actor_list = shared_data->registered_actors;
 
     float collision_hazard = -1;
@@ -50,7 +50,7 @@ namespace traffic_manager {
     return out_message;
   }
 
-  void CollisionCallable::drawBoundary(const std::vector<carla::geom::Location> &boundary) {
+  void CollisionCallable::drawBoundary(const std::vector<carla::geom::Location> &boundary) const{
     for (int i = 0; i < boundary.size(); i++) {
       shared_data->debug->DrawLine(
           boundary[i] + carla::geom::Location(0, 0, 1),
@@ -61,7 +61,7 @@ namespace traffic_manager {
 
   bool CollisionCallable::negotiateCollision(
       carla::SharedPtr<carla::client::Actor> ego_vehicle,
-      carla::SharedPtr<carla::client::Actor> other_vehicle) {
+      carla::SharedPtr<carla::client::Actor> other_vehicle) const {
     auto overlap = checkGeodesicCollision(ego_vehicle, other_vehicle);
 
     auto reference_heading_vector = ego_vehicle->GetTransform().GetForwardVector();
@@ -94,7 +94,7 @@ namespace traffic_manager {
 
   bool CollisionCallable::checkGeodesicCollision(
       carla::SharedPtr<carla::client::Actor> reference_vehicle,
-      carla::SharedPtr<carla::client::Actor> other_vehicle) {
+      carla::SharedPtr<carla::client::Actor> other_vehicle) const {
     auto reference_height = reference_vehicle->GetLocation().z;
     auto other_height = other_vehicle->GetLocation().z;
     if (abs(reference_height - other_height) < VERTICAL_OVERLAP_THRESHOLD) {
@@ -120,7 +120,7 @@ namespace traffic_manager {
     return false;
   }
 
-  traffic_manager::polygon CollisionCallable::getPolygon(const std::vector<carla::geom::Location> &boundary) {
+  traffic_manager::polygon CollisionCallable::getPolygon(const std::vector<carla::geom::Location> &boundary) const {
     std::string wkt_string;
     for (auto location: boundary) {
       wkt_string += std::to_string(location.x) + " " + std::to_string(location.y) + ",";
@@ -135,7 +135,7 @@ namespace traffic_manager {
 
   std::vector<carla::geom::Location> CollisionCallable::getGeodesicBoundary(
       carla::SharedPtr<carla::client::Actor> actor,
-      const std::vector<carla::geom::Location> &bbox) {
+      const std::vector<carla::geom::Location> &bbox) const {
     auto velocity = actor->GetVelocity().Length();
     int bbox_extension = static_cast<int>(
       std::max(std::sqrt(EXTENSION_SQUARE_POINT * velocity), BOUNDARY_EXTENSION_MINIMUM) +
@@ -169,7 +169,7 @@ namespace traffic_manager {
   }
 
   std::vector<carla::geom::Location> CollisionCallable::getBoundary(
-      carla::SharedPtr<carla::client::Actor> actor) {
+      carla::SharedPtr<carla::client::Actor> actor) const {
     auto vehicle = boost::static_pointer_cast<carla::client::Vehicle>(actor);
     auto bbox = vehicle->GetBoundingBox();
     auto extent = bbox.extent;

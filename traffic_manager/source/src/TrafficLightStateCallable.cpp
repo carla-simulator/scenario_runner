@@ -14,15 +14,15 @@ namespace traffic_manager {
 
   TrafficLightStateCallable::~TrafficLightStateCallable() {}
 
-  PipelineMessage TrafficLightStateCallable::action(PipelineMessage in_message) {
+  PipelineMessage TrafficLightStateCallable::action(PipelineMessage &message) {
     PipelineMessage out_message;
 
-    float throttle = in_message.getAttribute("throttle");
-    float brake = in_message.getAttribute("brake");
-    float steer = in_message.getAttribute("steer");
+    float throttle = message.getAttribute("throttle");
+    float brake = message.getAttribute("brake");
+    float steer = message.getAttribute("steer");
 
-    auto actor_id = in_message.getActorID();
-    auto vehicle = boost::static_pointer_cast<carla::client::Vehicle>(in_message.getActor());
+    auto actor_id = message.getActorID();
+    auto vehicle = boost::static_pointer_cast<carla::client::Vehicle>(message.getActor());
     auto traffic_light_state = vehicle->GetTrafficLightState();
 
     auto closest_waypoint = shared_data->buffer_map[actor_id]->front();
@@ -42,11 +42,11 @@ namespace traffic_manager {
       traffic_hazard = 1;
     }
 
-    out_message.setActor(in_message.getActor());
+    out_message.setActor(message.getActor());
     out_message.setAttribute("traffic_light", traffic_hazard);
-    out_message.setAttribute("collision", in_message.getAttribute("collision"));
-    out_message.setAttribute("velocity", in_message.getAttribute("velocity"));
-    out_message.setAttribute("deviation", in_message.getAttribute("deviation"));
+    out_message.setAttribute("collision", message.getAttribute("collision"));
+    out_message.setAttribute("velocity", message.getAttribute("velocity"));
+    out_message.setAttribute("deviation", message.getAttribute("deviation"));
 
     return out_message;
   }

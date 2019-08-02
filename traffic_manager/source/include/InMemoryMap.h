@@ -43,10 +43,10 @@ namespace traffic_manager {
     void setUp(int sampling_resolution);
 
     /// Returns the closest waypoint to a given location on the map.
-    std::shared_ptr<SimpleWaypoint> getWaypoint(carla::geom::Location location);
+    std::shared_ptr<SimpleWaypoint> getWaypoint(const carla::geom::Location &location) const;
 
     /// Returns the full list of descrete samples of the map in local cache.
-    std::vector<std::shared_ptr<SimpleWaypoint>> get_dense_topology();
+    std::vector<std::shared_ptr<SimpleWaypoint>> get_dense_topology() const;
 
   };
 

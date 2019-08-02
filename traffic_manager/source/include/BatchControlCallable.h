@@ -15,8 +15,8 @@ namespace traffic_manager {
     /// the simulator in batches.
 
     /// Note: Exactly one thread executables of this class should be
-    /// instantiated
-    /// in the stage. This is because this executable runs in an infinite loop
+    /// instantiated in the stage.
+    /// This is because this executable runs in an infinite loop
     /// throughout the lifetime of the pipeline.
 
   private:
@@ -30,7 +30,7 @@ namespace traffic_manager {
         SyncQueue<PipelineMessage> *output_queue,
         SharedData *shared_data);
     ~BatchControlCallable();
-    PipelineMessage action(PipelineMessage message);
+    PipelineMessage action(PipelineMessage &message);
 
   };
 
