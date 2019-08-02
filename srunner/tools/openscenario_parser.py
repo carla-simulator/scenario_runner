@@ -9,6 +9,8 @@
 This module provides a parser for scenario configuration files based on OpenSCENARIO
 """
 
+from __future__ import print_function
+
 import math
 import os
 import xml.etree.ElementTree as ET
@@ -155,12 +157,23 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         actor_transform = carla.Transform()
 
+        actor_found = False
+
         for private_action in self.init.iter("Private"):
             if private_action.attrib.get('object', None) == actor_name:
+                if actor_found:
+                    # pylint: disable=line-too-long
+                    print(
+                        "Warning: The actor '{}' was already assigned an initial position. Overwriting pose!".format(actor_name))
+                    # pylint: enable=line-too-long
+                actor_found = True
                 for position in private_action.iter('Position'):
                     transform = OpenScenarioParser.convert_position_to_transform(position)
                     if transform:
                         actor_transform = transform
+
+        if not actor_found:
+            print("Warning: The actor '{}' was not assigned an initial position. Using (0,0,0)".format(actor_name))
 
         return actor_transform
 
