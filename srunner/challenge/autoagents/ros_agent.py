@@ -20,7 +20,7 @@ from nav_msgs.msg import Path
 from sensor_msgs.msg import Image, PointCloud2, NavSatFix, NavSatStatus, CameraInfo
 from std_msgs.msg import Header, String
 from nav_msgs.msg import Odometry
-from carla_msgs.msg import CarlaEgoVehicleStatus, CarlaEgoVehicleInfo, CarlaEgoVehicleInfoWheel, CarlaEgoVehicleControl, CarlaMapInfo
+from carla_msgs.msg import CarlaEgoVehicleStatus, CarlaEgoVehicleInfo, CarlaEgoVehicleInfoWheel, CarlaEgoVehicleControl, CarlaWorldInfo
 
 from sensor_msgs.point_cloud2 import create_cloud_xyz32
 import tf
@@ -85,7 +85,7 @@ class RosAgent(AutonomousAgent):
         self.vehicle_info_publisher = None
         self.vehicle_status_publisher = None
         self.odometry_publisher = None
-        self.map_publisher = None
+        self.world_info_publisher = None
         self.map_file_publisher = None
         self.current_map_name = None
         self.tf_broadcaster = None
@@ -123,8 +123,8 @@ class RosAgent(AutonomousAgent):
             elif sensor['type'] == 'sensor.hd_map':
                 if not self.odometry_publisher:
                     self.odometry_publisher = rospy.Publisher('/carla/ego_vehicle/odometry', Odometry, queue_size=1, latch=True)
-                if not self.map_publisher:
-                    self.map_publisher = rospy.Publisher('/carla/map', CarlaMapInfo, queue_size=1, latch=True)
+                if not self.world_info_publisher:
+                    self.world_info_publisher = rospy.Publisher('/carla/world_info', CarlaWorldInfo, queue_size=1, latch=True)
                 if not self.map_file_publisher:
                     self.map_file_publisher = rospy.Publisher('/carla/map_file', String, queue_size=1, latch=True)
                 if not self.tf_broadcaster:
@@ -142,7 +142,7 @@ class RosAgent(AutonomousAgent):
             rospy.loginfo("Terminated stack.")
 
         rospy.loginfo("Stack is no longer running")
-        self.map_publisher.unregister()
+        self.world_info_publisher.unregister()
         self.map_file_publisher.unregister()
         self.vehicle_status_publisher.unregister()
         self.vehicle_info_publisher.unregister()
@@ -352,16 +352,15 @@ class RosAgent(AutonomousAgent):
 
             self.odometry_publisher.publish(odometry)
 
-        if self.map_publisher:
+        if self.world_info_publisher:
             #extract map name
             map_name = os.path.basename(data['map_file'])[:-4] 
             if self.current_map_name != map_name:
                 self.current_map_name = map_name
-                map_info = CarlaMapInfo()
-                map_info.header = self.get_header()
-                map_info.map_name = self.current_map_name
-                map_info.opendrive = data['opendrive']
-                self.map_publisher.publish(map_info)
+                world_info = CarlaWorldInfo()
+                world_info.map_name = self.current_map_name
+                world_info.opendrive = data['opendrive']
+                self.world_info_publisher.publish(world_info)
         if self.map_file_publisher:
             self.map_file_publisher.publish(data['map_file'])
 
