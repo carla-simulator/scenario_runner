@@ -51,7 +51,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
     _ego_distance_to_drive = 40          # Allowed distance to drive
 
     # other vehicle
-    _other_actor_target_velocity = 35      # Target velocity of other vehicle
+    _other_actor_target_velocity = 10      # Target velocity of other vehicle
     _other_actor_max_brake = 1.0           # Maximum brake of other vehicle
     _other_actor_distance = 50             # Distance the other vehicle should drive
 

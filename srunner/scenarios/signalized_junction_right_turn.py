@@ -44,7 +44,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        self._target_vel = 25
+        self._target_vel = 6.9
         self._brake_value = 0.5
         self._ego_distance = 40
         self._traffic_light = None

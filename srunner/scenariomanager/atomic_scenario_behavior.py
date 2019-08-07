@@ -1086,7 +1086,7 @@ class WaypointFollower(AtomicBehavior):
         super(WaypointFollower, self).__init__(name)
         self._actor_list = []
         self._actor_list.append(actor)
-        self._target_speed = target_speed
+        self._target_speed = target_speed * 3.6  # Note: Conversion from m/s to km/h required
         self._local_planner_list = []
         self._plan = plan
         self._blackboard_queue_name = blackboard_queue_name
