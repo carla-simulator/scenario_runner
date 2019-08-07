@@ -56,7 +56,7 @@ class FollowLeadingVehicle(BasicScenario):
 
         self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 25
-        self._first_vehicle_speed = 40
+        self._first_vehicle_speed = 10
         self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._other_actor_max_brake = 1.0
         self._other_actor_stop_in_front_intersection = 20
@@ -187,8 +187,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._first_actor_location = 25
         self._second_actor_location = self._first_actor_location + 41
-        self._first_actor_speed = 40
-        self._second_actor_speed = 5
+        self._first_actor_speed = 10
+        self._second_actor_speed = 1.5
         self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._other_actor_max_brake = 1.0
         self._first_actor_transform = None
@@ -265,7 +265,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         stop_near_intersection = py_trees.composites.Parallel(
             "Waiting for end position near Intersection",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        stop_near_intersection.add_child(WaypointFollower(self.other_actors[0], 35))
+        stop_near_intersection.add_child(WaypointFollower(self.other_actors[0], 10))
         stop_near_intersection.add_child(InTriggerDistanceToNextIntersection(self.other_actors[0], 20))
 
         driving_to_next_intersection.add_child(WaypointFollower(self.other_actors[0], self._first_actor_speed))
