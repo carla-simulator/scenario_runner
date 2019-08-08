@@ -40,8 +40,10 @@ class StandStill(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - name: Name of the behavior
+    - name: Name of the condition
     - duration: Duration of the behavior in seconds
+
+    The condition terminates with SUCCESS, when the actor does not move
     """
 
     def __init__(self, actor, name, duration=float("inf")):
@@ -78,6 +80,43 @@ class StandStill(AtomicBehavior):
         return new_status
 
 
+class TriggerVelocity(AtomicBehavior):
+
+    """
+    This class contains the trigger velocity (condition) of a scenario
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - name: Name of the condition
+    - target_velocity: The behavior is successful, if the actor is at least as fast as target_velocity in m/s
+
+    The condition terminates with SUCCESS, when the actor reached the target_velocity
+    """
+
+    def __init__(self, actor, target_velocity, name="TriggerVelocity"):
+        """
+        Setup trigger velocity
+        """
+        super(TriggerVelocity, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._target_velocity = target_velocity
+
+    def update(self):
+        """
+        Check if the actor has the trigger velocity
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
+        if delta_velocity < EPSILON:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class InTriggerRegion(AtomicBehavior):
 
     """
@@ -85,8 +124,10 @@ class InTriggerRegion(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - name: Name of the behavior
+    - name: Name of the condition
     - min_x, max_x, min_y, max_y: bounding box of the trigger region
+
+    The condition terminates with SUCCESS, when the actor reached the target region
     """
 
     def __init__(self, actor, min_x, max_x, min_y, max_y, name="TriggerRegion"):
@@ -132,8 +173,10 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - other_actor: Reference CARLA actor
-    - name: Name of the behavior
+    - name: Name of the condition
     - distance: Trigger distance between the two actors in meters
+
+    The condition terminates with SUCCESS, when the actor reached the target distance to the other actor
     """
 
     def __init__(self, other_actor, actor, distance, name="TriggerDistanceToVehicle"):
@@ -175,8 +218,10 @@ class InTriggerDistanceToLocation(AtomicBehavior):
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - target_location: Reference location (carla.location)
-    - name: Name of the behavior
+    - name: Name of the condition
     - distance: Trigger distance between the actor and the target location in meters
+
+    The condition terminates with SUCCESS, when the actor reached the target distance to the given location
     """
 
     def __init__(self, actor, target_location, distance, name="InTriggerDistanceToLocation"):
@@ -217,8 +262,10 @@ class InTriggerDistanceToNextIntersection(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - name: Name of the behavior
+    - name: Name of the condition
     - distance: Trigger distance between the actor and the next intersection in meters
+
+    The condition terminates with SUCCESS, when the actor reached the target distance to the next intersection
     """
 
     def __init__(self, actor, distance, name="InTriggerDistanceToNextIntersection"):
@@ -254,37 +301,52 @@ class InTriggerDistanceToNextIntersection(AtomicBehavior):
         return new_status
 
 
-class TriggerVelocity(AtomicBehavior):
+class InTriggerDistanceToLocationAlongRoute(AtomicBehavior):
 
     """
-    This class contains the trigger velocity (condition) of a scenario
+    Implementation for a behavior that will check if a given actor
+    is within a given distance to a given location considering a given route
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - name: Name of the behavior
-    - target_velocity: The behavior is successful, if the actor is at least as fast as target_velocity in m/s
+    - name: Name of the condition
+    - distance: Trigger distance between the actor and the next intersection in meters
+    - route: Route to be checked
+    - location: Location on the route to be checked
+
+    The condition terminates with SUCCESS, when the actor reached the target distance
+    along its route to the given location
     """
 
-    def __init__(self, actor, target_velocity, name="TriggerVelocity"):
+    def __init__(self, actor, route, location, distance, name="InTriggerDistanceToLocationAlongRoute"):
         """
-        Setup trigger velocity
+        Setup class members
         """
-        super(TriggerVelocity, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        super(InTriggerDistanceToLocationAlongRoute, self).__init__(name)
+        self._map = CarlaDataProvider.get_map()
         self._actor = actor
-        self._target_velocity = target_velocity
+        self._location = location
+        self._route = route
+        self._distance = distance
+
+        self._location_distance, _ = get_distance_along_route(self._route, self._location)
 
     def update(self):
-        """
-        Check if the actor has the trigger velocity
-        """
         new_status = py_trees.common.Status.RUNNING
 
-        delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
-        if delta_velocity < EPSILON:
-            new_status = py_trees.common.Status.SUCCESS
+        current_location = CarlaDataProvider.get_location(self._actor)
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        if current_location is None:
+            return new_status
+
+        if current_location.distance(self._location) < self._distance + 20:
+
+            actor_distance, _ = get_distance_along_route(self._route, current_location)
+
+            if (self._location_distance < actor_distance + self._distance and
+                actor_distance < self._location_distance) or \
+                    self._location_distance < 1.0:
+                new_status = py_trees.common.Status.SUCCESS
 
         return new_status
 
@@ -297,9 +359,11 @@ class InTimeToArrivalToLocation(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - name: Name of the behavior
+    - name: Name of the condition
     - time: The behavior is successful, if TTA is less than _time_ in seconds
-    - location:
+    - location: Location to be checked in this behavior
+
+    The condition terminates with SUCCESS, when the actor can reach the target location within the given time
     """
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
@@ -346,6 +410,14 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
     """
     This class contains a check if a actor arrives within a given time
     at another actor.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - name: Name of the condition
+    - time: The behavior is successful, if TTA is less than _time_ in seconds
+    - other_actor: Reference actor used in this behavior
+
+    The condition terminates with SUCCESS, when the actor can reach the other vehicle within the given time
     """
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
@@ -390,50 +462,16 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         return new_status
 
 
-class InTriggerDistanceToLocationAlongRoute(AtomicBehavior):
-
-    """
-    Implementation for a behavior that will check if a given actor
-    is within a given distance to a given location considering a given route
-    """
-
-    def __init__(self, actor, route, location, distance, name="InTriggerDistanceToLocationAlongRoute"):
-        """
-        Setup class members
-        """
-        super(InTriggerDistanceToLocationAlongRoute, self).__init__(name)
-        self._map = CarlaDataProvider.get_map()
-        self._actor = actor
-        self._location = location
-        self._route = route
-        self._distance = distance
-
-        self._location_distance, _ = get_distance_along_route(self._route, self._location)
-
-    def update(self):
-        new_status = py_trees.common.Status.RUNNING
-
-        current_location = CarlaDataProvider.get_location(self._actor)
-
-        if current_location is None:
-            return new_status
-
-        if current_location.distance(self._location) < self._distance + 20:
-
-            actor_distance, _ = get_distance_along_route(self._route, current_location)
-
-            if (self._location_distance < actor_distance + self._distance and
-                actor_distance < self._location_distance) or \
-                    self._location_distance < 1.0:
-                new_status = py_trees.common.Status.SUCCESS
-
-        return new_status
-
-
 class DriveDistance(AtomicBehavior):
 
     """
     This class contains an atomic behavior to drive a certain distance.
+
+    Important parameters:
+    - actor: CARLA actor to execute the condition
+    - distance: Distance for this condition in meters
+
+    The condition terminates with SUCCESS, when the actor drove at least the given distance
     """
 
     def __init__(self, actor, distance, name="DriveDistance"):
@@ -473,6 +511,12 @@ class WaitForTrafficLightState(AtomicBehavior):
     """
     This class contains an atomic behavior to wait for a given traffic light
     to have the desired state.
+
+    Important parameters:
+    - traffic_light: CARLA traffic light to execute the condition
+    - state: State to be checked in this condition
+
+    The condition terminates with SUCCESS, when the traffic light switches to the desired state
     """
 
     def __init__(self, traffic_light, state, name="WaitForTrafficLightState"):

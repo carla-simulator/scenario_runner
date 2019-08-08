@@ -1,5 +1,8 @@
 ## Latest changes
 
+* Split of behaviors into behaviors and conditions
+* Moved atomics into new submodule scenarioatomics
+* Updated documentation for all behaviors, conditions and test criteria
 * Fixed WaypointFollower behavior to use m/s instead of km/h
 * Added get_transform() method for CarlaDataProvider
 * Added support for weather conditions
