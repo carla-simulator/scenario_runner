@@ -10,8 +10,8 @@ Scenario spawning elements to make the town dynamic and interesting
 
 import py_trees
 
-from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenarios.basic_scenario import *
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficLightManipulator
+from srunner.scenarios.basic_scenario import BasicScenario
 
 
 class TrafficLightScenario(BasicScenario):

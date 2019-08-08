@@ -10,10 +10,11 @@ moving along the road and encountering a cyclist ahead.
 
 import py_trees
 
-from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
 from srunner.scenariomanager.timer import TimeOut
-from srunner.scenarios.basic_scenario import *
+from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import *
 
 OBJECT_CROSSING_SCENARIOS = [

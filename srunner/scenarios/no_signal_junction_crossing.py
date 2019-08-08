@@ -14,9 +14,10 @@ And encounters another vehicle passing across the junction.
 import py_trees
 import carla
 
-from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenarios.basic_scenario import *
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
+from srunner.scenarios.basic_scenario import BasicScenario
 
 
 NO_SIGNAL_JUNCTION_SCENARIOS = [

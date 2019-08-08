@@ -13,8 +13,7 @@ from __future__ import print_function
 
 import py_trees
 
-from srunner.scenariomanager.atomic_scenario_behavior import InTriggerDistanceToLocationAlongRoute
-from srunner.scenariomanager.atomic_scenario_behavior import InTimeToArrivalToLocation
+import srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as conditions
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import Scenario
 
@@ -102,13 +101,13 @@ class BasicScenario(object):
 
         if start_location:
             if ego_vehicle_route:
-                return InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
-                                                             ego_vehicle_route,
-                                                             start_location,
-                                                             5)
-            return InTimeToArrivalToLocation(self.ego_vehicles[0],
-                                             2.0,
-                                             start_location)
+                return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+                                                                        ego_vehicle_route,
+                                                                        start_location,
+                                                                        5)
+            return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
+                                                        2.0,
+                                                        start_location)
 
         return None
 

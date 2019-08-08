@@ -11,9 +11,9 @@ Basic CARLA Autonomous Driving training scenario
 import py_trees
 
 from srunner.tools.config_parser import RouteConfiguration
-from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenarios.basic_scenario import *
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
+from srunner.scenarios.basic_scenario import BasicScenario
 
 
 MASTER_SCENARIO = ["MasterScenario"]
