@@ -219,43 +219,6 @@ class KeepVelocity(AtomicBehavior):
         super(KeepVelocity, self).terminate(new_status)
 
 
-class UseAutoPilot(AtomicBehavior):
-
-    """
-    This class contains an atomic behavior to use the auto pilot.
-
-    Note: In parallel to this behavior a termination behavior has to be used
-          to terminate this behavior after a certain duration, or after a
-          certain distance, etc.
-    """
-
-    def __init__(self, actor, name="UseAutoPilot"):
-        """
-        Setup parameters
-        """
-        super(UseAutoPilot, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._actor = actor
-
-    def update(self):
-        """
-        Activate autopilot
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        self._actor.set_autopilot(True)
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-        return new_status
-
-    def terminate(self, new_status):
-        """
-        Deactivate autopilot
-        """
-        self._actor.set_autopilot(False)
-        super(UseAutoPilot, self).terminate(new_status)
-
-
 class ChangeAutoPilot(AtomicBehavior):
 
     """
