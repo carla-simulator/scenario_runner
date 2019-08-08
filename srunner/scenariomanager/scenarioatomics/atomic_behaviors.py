@@ -92,7 +92,7 @@ class AccelerateToVelocity(AtomicBehavior):
     a given _target_velocity_
     """
 
-    def __init__(self, actor, throttle_value, target_velocity, walker_direction=0, name="Acceleration"):
+    def __init__(self, actor, throttle_value, target_velocity, name="Acceleration"):
         """
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
@@ -100,12 +100,17 @@ class AccelerateToVelocity(AtomicBehavior):
         super(AccelerateToVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control, self._type = get_actor_control(actor)
-        if self._type == 'walker':
-            self._control.speed = target_velocity
-            self._control.direction = carla.Rotation(0, walker_direction, 0).get_forward_vector()
         self._actor = actor
         self._throttle_value = throttle_value
         self._target_velocity = target_velocity
+
+    def initialise(self):
+        # In case of walkers, we have to extract the current heading
+        if self._type == 'walker':
+            self._control.speed = self._target_velocity
+            self._control.direction = CarlaDataProvider.get_transform(self._actor).get_forward_vector()
+
+        super(AccelerateToVelocity, self).initialise()
 
     def update(self):
         """
