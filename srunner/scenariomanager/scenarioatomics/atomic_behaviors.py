@@ -493,9 +493,8 @@ class TrafficJamChecker(AtomicBehavior):
 
     MINIMUM_DISTANCE = 5.0  # meters
 
-    def __init__(self, ego_vehicle, debug=False, name="TrafficJamChecker"):
+    def __init__(self, debug=False, name="TrafficJamChecker"):
         super(TrafficJamChecker, self).__init__(name)
-        self.ego_vehicle = ego_vehicle
         self.debug = debug
         self.blackboard = Blackboard()
         self.world = CarlaDataProvider.get_world()
