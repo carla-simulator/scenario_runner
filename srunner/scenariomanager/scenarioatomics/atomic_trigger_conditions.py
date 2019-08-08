@@ -58,6 +58,9 @@ class StandStill(AtomicBehavior):
         self._start_time = 0
 
     def initialise(self):
+        """
+        Initialize the start time of this condition
+        """
         self._start_time = GameTime.get_time()
         super(StandStill, self).initialise()
 
