@@ -319,7 +319,6 @@ class DynamicObjectCrossing(BasicScenario):
         actor_start_cross_lane = AccelerateToVelocity(self.other_actors[0],
                                                       1.0,
                                                       self._other_actor_target_velocity,
-                                                      self._walker_yaw,
                                                       name="walker crossing lane accelerate velocity")
         actor_cross_lane = DriveDistance(self.other_actors[0],
                                          lane_width,
