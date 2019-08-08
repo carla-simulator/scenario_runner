@@ -9,6 +9,9 @@
 This module provides all atomic evaluation criteria required to analyze if a
 scenario was completed successfully or failed.
 
+Criteria should run continuously to monitor the state of a single actor, multiple
+actors or environmental parameters. Hence, a termination is not required.
+
 The atomic criteria are implemented with py_trees.
 """
 
@@ -79,6 +82,11 @@ class MaxVelocityTest(Criterion):
 
     """
     This class contains an atomic test for maximum velocity.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - max_velocity_allowed: maximum allowed velocity in m/s
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
     def __init__(self, actor, max_velocity_allowed, optional=False, name="CheckMaximumVelocity"):
@@ -117,6 +125,14 @@ class DrivenDistanceTest(Criterion):
 
     """
     This class contains an atomic test to check the driven distance
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - distance_success: If the actor's driven distance is more than this value (in meters),
+                        the test result is SUCCESS
+    - distance_acceptable: If the actor's driven distance is more than this value (in meters),
+                           the test result is ACCEPTABLE
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
     def __init__(self,
@@ -184,6 +200,14 @@ class AverageVelocityTest(Criterion):
 
     """
     This class contains an atomic test for average velocity.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - avg_velocity_success: If the actor's average velocity is more than this value (in m/s),
+                            the test result is SUCCESS
+    - avg_velocity_acceptable: If the actor's average velocity is more than this value (in m/s),
+                               the test result is ACCEPTABLE
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
     def __init__(self,
@@ -259,6 +283,11 @@ class CollisionTest(Criterion):
 
     """
     This class contains an atomic test for collisions.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
     def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
@@ -336,6 +365,10 @@ class KeepLaneTest(Criterion):
 
     """
     This class contains an atomic test for keeping lane.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
     def __init__(self, actor, optional=False, name="CheckKeepLane"):
@@ -393,6 +426,10 @@ class ReachedRegionTest(Criterion):
     """
     This class contains the reached region test
     The test is a success if the actor reaches a specified region
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - min_x, max_x, min_y, max_y: Bounding box of the checked region
     """
 
     def __init__(self, actor, min_x, max_x, min_y, max_y, name="ReachedRegionTest"):
@@ -439,6 +476,10 @@ class OnSidewalkTest(Criterion):
 
     """
     This class contains an atomic test to detect sidewalk invasions.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
     def __init__(self, actor, optional=False, name="OnSidewalkTest"):
@@ -502,6 +543,10 @@ class WrongLaneTest(Criterion):
 
     """
     This class contains an atomic test to detect invasions to wrong direction lanes.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
     MAX_ALLOWED_ANGLE = 140.0
 
@@ -596,6 +641,10 @@ class InRadiusRegionTest(Criterion):
 
     """
     The test is a success if the actor is within a given radius of a specified region
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - x, y, radius: Position (x,y) and radius (in meters) used to get the checked region
     """
 
     def __init__(self, actor, x, y, radius, name="InRadiusRegionTest"):
@@ -640,6 +689,13 @@ class InRouteTest(Criterion):
 
     """
     The test is a success if the actor is never outside route
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - radius: Allowed radius around the route (meters)
+    - route: Route to be checked
+    - offroad_max: Maximum allowed distance the actor can deviate from the route, when not driving on a road (meters)
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
     DISTANCE_THRESHOLD = 15.0  # meters
     WINDOWS_SIZE = 3
@@ -705,6 +761,11 @@ class RouteCompletionTest(Criterion):
 
     """
     Check at which stage of the route is the actor at each tick
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - route: Route to be checked
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
     DISTANCE_THRESHOLD = 15.0  # meters
     WINDOWS_SIZE = 2
@@ -785,6 +846,10 @@ class RunningRedLightTest(Criterion):
 
     """
     Check if an actor is running a red light
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
     DISTANCE_LIGHT = 10  # m
 
@@ -935,6 +1000,10 @@ class RunningStopTest(Criterion):
 
     """
     Check if an actor is running a stop sign
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
     PROXIMITY_THRESHOLD = 50.0  # meters
     SPEED_THRESHOLD = 0.1
