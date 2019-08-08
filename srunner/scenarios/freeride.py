@@ -11,9 +11,9 @@ Simple freeride scenario. No action, no triggers. Ego vehicle can simply cruise 
 
 import py_trees
 
-from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenariomanager.atomic_scenario_criteria import *
-from srunner.scenarios.basic_scenario import *
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenarios.basic_scenario import BasicScenario
 
 FREERIDE_SCENARIOS = [
     "FreeRide"
@@ -23,7 +23,7 @@ FREERIDE_SCENARIOS = [
 class FreeRide(BasicScenario):
 
     """
-    Implementation of a simple free ride scenario
+    Implementation of a simple free ride scenario that consits only of the ego vehicle
     """
 
     category = "FreeRide"

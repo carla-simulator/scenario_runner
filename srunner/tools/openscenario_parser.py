@@ -20,8 +20,9 @@ import xmlschema
 import carla
 from agents.navigation.local_planner import RoadOption
 
-from srunner.scenariomanager.atomic_scenario_behavior import *
-from srunner.scenariomanager.atomic_scenario_criteria import *
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
 from srunner.scenariomanager.timer import SimulationTimeCondition
 from srunner.tools.config_parser import ActorConfigurationData, ScenarioConfiguration, WeatherConfiguration
 
