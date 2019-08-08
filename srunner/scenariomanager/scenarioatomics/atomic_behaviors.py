@@ -64,6 +64,8 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
     """
     Base class for all atomic behaviors used to setup a scenario
 
+    *All behaviors should use this class as parent*
+
     Important parameters:
     - name: Name of the atomic behavior
     """
@@ -90,6 +92,13 @@ class AccelerateToVelocity(AtomicBehavior):
     This class contains an atomic acceleration behavior. The controlled
     traffic participant will accelerate with _throttle_value_ until reaching
     a given _target_velocity_
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - throttle_value: The amount of throttle used to accelerate in [0,1]
+    - target_velocity: The target velocity the actor should reach in m/s
+
+    The behavior will terminate, if the actor's velocity is at least target_velocity
     """
 
     def __init__(self, actor, throttle_value, target_velocity, name="Acceleration"):
@@ -139,8 +148,14 @@ class KeepVelocity(AtomicBehavior):
     until reaching a given _target_velocity_, which is then maintained for
     as long as this behavior is active.
 
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - target_velocity: The target velocity the actor should reach
+    - duration[optional]: Duration in seconds of this behavior
+    - distance[optional]: Maximum distance in meters covered by the actor during this behavior
+
     A termination can be enforced by providing distance or duration values.
-    Alternatively, a parallel termination behavior can be used.
+    Alternatively, a parallel termination behavior has to be used.
     """
 
     def __init__(self, actor, target_velocity, duration=float("inf"), distance=float("inf"), name="KeepVelocity"):
@@ -222,11 +237,12 @@ class KeepVelocity(AtomicBehavior):
 class ChangeAutoPilot(AtomicBehavior):
 
     """
-    This class contains an atomic behavior to disable/enable the use of the auto pilot.
+    This class contains an atomic behavior to disable/enable the use of the autopilot.
 
-    Note: In parallel to this behavior a termination behavior has to be used
-          to terminate this behavior after a certain duration, or after a
-          certain distance, etc.
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+
+    The behavior terminates after changing the autopilot state
     """
 
     def __init__(self, actor, activate, name="ChangeAutoPilot"):
@@ -255,6 +271,12 @@ class StopVehicle(AtomicBehavior):
     """
     This class contains an atomic stopping behavior. The controlled traffic
     participant will decelerate with _bake_value_ until reaching a full stop.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - brake_value: Brake value in [0,1] applied
+
+    The behavior terminates when the actor stopped moving
     """
 
     def __init__(self, actor, brake_value, name="Stopping"):
@@ -281,10 +303,10 @@ class StopVehicle(AtomicBehavior):
             else:
                 new_status = py_trees.common.Status.SUCCESS
                 self._control.brake = 0
-            self._actor.apply_control(self._control)
         else:
             new_status = py_trees.common.Status.SUCCESS
-            self._actor.apply_control(self._control)
+
+        self._actor.apply_control(self._control)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -298,6 +320,13 @@ class SyncArrival(AtomicBehavior):
     set velocity of actor so that it reaches location at the same time as
     actor_reference. The behavior assumes that the two actors are moving
     towards location in a straight line.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - actor_reference: Reference actor with which arrival is synchronized
+    - target_location: CARLA location where the actors should "meet"
+    - gain[optional]: Coefficient for actor's throttle and break controls
+
     Note: In parallel to this behavior a termination behavior has to be used
           to keep continue synchronization for a certain duration, or for a
           certain distance, etc.
@@ -305,11 +334,7 @@ class SyncArrival(AtomicBehavior):
 
     def __init__(self, actor, actor_reference, target_location, gain=1, name="SyncArrival"):
         """
-        actor : actor to be controlled
-        actor_ reference : reference actor with which arrival has to be
-                             synchronized
-        gain : coefficient for actor's throttle and break
-               controls
+        Setup required parameters
         """
         super(SyncArrival, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -371,6 +396,13 @@ class AddNoiseToVehicle(AtomicBehavior):
     """
     This class contains an atomic jitter behavior.
     To add noise to steer as well as throttle of the vehicle.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - steer_value: Applied steering noise in [0,1]
+    - throttle_value: Applied throttle noise in [0,1]
+
+    The behavior terminates after setting the new actor controls
     """
 
     def __init__(self, actor, steer_value, throttle_value, name="Jittering"):
@@ -404,6 +436,10 @@ class ChangeNoiseParameters(AtomicBehavior):
     """
     This class contains an atomic jitter behavior.
     To add noise to steer as well as throttle of the vehicle.
+
+    This behavior should be used in conjuction with AddNoiseToVehicle
+
+    The behavior terminates after one iteration
     """
 
     def __init__(self, new_steer_noise, new_throttle_noise,
@@ -441,6 +477,13 @@ class BasicAgentBehavior(AtomicBehavior):
     This class contains an atomic behavior, which uses the
     basic_agent from CARLA to control the actor until
     reaching a target location.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - target_location: Is the desired target location (carla.location),
+                       the actor should move to
+
+    The behavior terminates after reaching the target_location (within 2 meters)
     """
 
     _acceptable_target_distance = 2
@@ -481,13 +524,14 @@ class BasicAgentBehavior(AtomicBehavior):
 class TrafficJamChecker(AtomicBehavior):
 
     """
-    Atomic behavior that performs the followin actions:
+    Atomic behavior that performs the following actions:
        1. Instantiates a set of vehicles managed by a server autopilot
        2. Check for possible traffic jams
        3. Destroy the NPC actors (in autopilot mode) involved in the traffic jam
 
-    This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
+    This behavior stops when blackboard.get('master_scenario_command') == scenarios_stop_request
     """
+
     SOFT_NUMBER_BLOCKS = 10  # 10 seconds
     HARD_NUMBER_BLOCKS = 30  # 30 seconds
 
@@ -587,17 +631,38 @@ class Idle(AtomicBehavior):
 
     """
     This class contains an idle behavior scenario
+
+    Important parameters:
+    - duration[optional]: Duration in seconds of this behavior
+
+    A termination can be enforced by providing a duration value.
+    Alternatively, a parallel termination behavior has to be used.
     """
 
-    def __init__(self, name="Idle"):
+    def __init__(self, duration=float("inf"), name="Idle"):
         """
         Setup actor
         """
         super(Idle, self).__init__(name)
+        self._duration = duration
+        self._start_time = 0
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
+    def initialise(self):
+        """
+        Set start time
+        """
+        self._start_time = GameTime.get_time()
+        super(Idle, self).initialise()
+
     def update(self):
+        """
+        Keep running until termination condition is satisfied
+        """
         new_status = py_trees.common.Status.RUNNING
+
+        if GameTime.get_time() - self._start_time > self._duration:
+            new_status = py_trees.common.Status.SUCCESS
 
         return new_status
 
@@ -608,6 +673,14 @@ class WaypointFollower(AtomicBehavior):
     This is an atomic behavior to follow waypoints indefinitely
     while maintaining a given speed or if given a waypoint plan,
     follows the given plan
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - target_speed: Desired speed of the actor in m/s
+    - plan[optional]: Waypoint plan the actor should follow
+    - avoid_collision[optional]: Enable/Disable(=default) collision avoidance
+
+    A parallel termination behavior has to be used.
     """
 
     def __init__(self, actor, target_speed, plan=None, blackboard_queue_name=None,
@@ -692,6 +765,12 @@ class HandBrakeVehicle(AtomicBehavior):
     """
     This class contains an atomic hand brake behavior.
     To set the hand brake value of the vehicle.
+
+    Important parameters:
+    - vehicle: CARLA actor to execute the behavior
+    - hand_brake_value to be applied in [0,1]
+
+    The behavior terminates after setting the hand brake value
     """
 
     def __init__(self, vehicle, hand_brake_value, name="Braking"):
@@ -725,7 +804,12 @@ class ActorDestroy(AtomicBehavior):
 
     """
     This class contains an actor destroy behavior.
-    Given a actor this behavior will delete it.
+    Given an actor this behavior will delete it.
+
+    Important parameters:
+    - actor: CARLA actor to be deleted
+
+    The behavior terminates after removing the actor
     """
 
     def __init__(self, actor, name="ActorDestroy"):
@@ -751,6 +835,13 @@ class ActorTransformSetter(AtomicBehavior):
     """
     This class contains an atomic behavior to set the transform
     of an actor.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - transform: New target transform (position + orientation) of the actor
+    - physics [optional]: If physics is true, the actor physics will be reactivated upon success
+
+    The behavior terminates after trying to set the new actor transform
     """
 
     def __init__(self, actor, transform, physics=True, name="ActorTransformSetter"):
@@ -787,15 +878,24 @@ class ActorSource(AtomicBehavior):
     Implementation for a behavior that will indefinitely create actors
     at a given transform if no other actor exists in a given radius
     from the transform.
+
+    Important parameters:
+    - actor_type_list: Type of CARLA actors to be spawned
+    - transform: Spawn location
+    - threshold: Min available free distance between other actors and the spawn location
+    - blackboard_queue_name: Name of the blackboard used to control this behavior
+    - actor_limit [optional]: Maximum number of actors to be spawned (default=7)
+
+    A parallel termination behavior has to be used.
     """
 
-    def __init__(self, world, actor_type_list, transform, threshold, blackboard_queue_name,
+    def __init__(self, actor_type_list, transform, threshold, blackboard_queue_name,
                  actor_limit=7, name="ActorSource"):
         """
         Setup class members
         """
         super(ActorSource, self).__init__(name)
-        self._world = world
+        self._world = CarlaDataProvider.get_world()
         self._actor_types = actor_type_list
         self._spawn_point = transform
         self._threshold = threshold
@@ -834,14 +934,20 @@ class ActorSink(AtomicBehavior):
     """
     Implementation for a behavior that will indefinitely destroy actors
     that wander near a given location within a specified threshold.
+
+    Important parameters:
+    - actor_type_list: Type of CARLA actors to be spawned
+    - sink_location: Location (carla.location) at which actors will be deleted
+    - threshold: Distance around sink_location in which actors will be deleted
+
+    A parallel termination behavior has to be used.
     """
 
-    def __init__(self, world, sink_location, threshold, name="ActorSink"):
+    def __init__(self, sink_location, threshold, name="ActorSink"):
         """
         Setup class members
         """
         super(ActorSink, self).__init__(name)
-        self._world = world
         self._sink_location = sink_location
         self._threshold = threshold
 
@@ -854,8 +960,13 @@ class ActorSink(AtomicBehavior):
 class TrafficLightManipulator(AtomicBehavior):
 
     """
-    Atomic behavior that manipulate traffic lights to simulate TS07, TS08 and TS09
+    Atomic behavior that manipulates traffic lights around the ego_vehicle
     This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
+
+    Important parameters:
+    - ego_vehicle: CARLA actor that controls this behavior
+
+    This behavior stops when blackboard.get('master_scenario_command') == scenarios_stop_request
     """
 
     MAX_DISTANCE_TRAFFIC_LIGHT = 15
