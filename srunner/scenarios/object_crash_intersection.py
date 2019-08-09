@@ -164,7 +164,7 @@ class VehicleTurningRight(BasicScenario):
 
         if self._ego_route is not None:
             trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
-                                                                     self.other_actors[0].get_location(), 20)
+                                                                     self._other_actor_transform, 20)
         else:
             trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 20)
 
@@ -315,7 +315,7 @@ class VehicleTurningLeft(BasicScenario):
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
         if self._ego_route is not None:
             trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
-                                                                     self.other_actors[0].get_location(), 20)
+                                                                     self._other_actor_transform, 20)
         else:
             trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 25)
 
