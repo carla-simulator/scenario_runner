@@ -154,6 +154,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._adversary_type = adversary_type  # flag to select either pedestrian (False) or cyclist (True)
         self._walker_yaw = 0
         self._num_lane_changes = 1
+        self.transform = None
         self.transform2 = None
         self.timeout = timeout
         self._trigger_location = config.trigger_points[0].location
@@ -267,7 +268,7 @@ class DynamicObjectCrossing(BasicScenario):
                 if self._spawn_attempted >= self._number_of_attempts:
                     raise r
 
-        # Now that we found a posible position we just put the vehicle to the underground
+        # Now that we found a possible position we just put the vehicle to the underground
         disp_transform = carla.Transform(
             carla.Location(self.transform.location.x,
                            self.transform.location.y,
@@ -301,7 +302,7 @@ class DynamicObjectCrossing(BasicScenario):
         if self._ego_route is not None:
             start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
                                                                     self._ego_route,
-                                                                    self.other_actors[0].get_location(),
+                                                                    self.transform.location,
                                                                     15)
         else:
             start_condition = InTimeToArrivalToVehicle(self.other_actors[0],
