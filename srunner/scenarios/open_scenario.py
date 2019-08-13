@@ -52,8 +52,6 @@ class OpenScenario(BasicScenario):
 
     """
     Implementation of the OpenSCENARIO scenario
-
-    This is a single ego vehicle scenario
     """
 
     category = "OpenScenario"

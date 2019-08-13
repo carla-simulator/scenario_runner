@@ -22,6 +22,7 @@ from datetime import datetime
 from distutils.version import LooseVersion
 import importlib
 import inspect
+import os
 import time
 import pkg_resources
 
@@ -29,11 +30,9 @@ import carla
 
 from srunner.scenariomanager.carla_data_provider import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
-from srunner.scenarios.background_activity import *
 from srunner.scenarios.control_loss import *
 from srunner.scenarios.follow_leading_vehicle import *
 from srunner.scenarios.maneuver_opposite_direction import *
-from srunner.scenarios.master_scenario import *
 from srunner.scenarios.no_signal_junction_crossing import *
 from srunner.scenarios.object_crash_intersection import *
 from srunner.scenarios.object_crash_vehicle import *
@@ -41,9 +40,8 @@ from srunner.scenarios.opposite_vehicle_taking_priority import *
 from srunner.scenarios.other_leading_vehicle import *
 from srunner.scenarios.signalized_junction_left_turn import *
 from srunner.scenarios.signalized_junction_right_turn import *
-from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.open_scenario import OpenScenario
-from srunner.tools.config_parser import *
+from srunner.tools.config_parser import ScenarioConfigurationParser
 from srunner.tools.openscenario_parser import OpenScenarioConfiguration
 
 # Version of scenario_runner
@@ -54,7 +52,6 @@ VERSION = 0.5
 # key = Name of config file in Configs/
 # value = List as defined in the scenario module
 SCENARIOS = {
-    "BackgroundActivity": BACKGROUND_ACTIVITY_SCENARIOS,
     "FollowLeadingVehicle": FOLLOW_LEADING_VEHICLE_SCENARIOS,
     "ObjectCrossing": OBJECT_CROSSING_SCENARIOS,
     "RunningRedLight": RUNNING_RED_LIGHT_SCENARIOS,
@@ -65,7 +62,6 @@ SCENARIOS = {
     "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS,
     "SignalizedJunctionRightTurn": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS,
     "SignalizedJunctionLeftTurn": TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS,
-    "MasterScenario": MASTER_SCENARIO
 }
 
 
@@ -121,13 +117,13 @@ class ScenarioRunner(object):
         Cleanup and delete actors, ScenarioManager and CARLA world
         """
 
-        self.cleanup(True)
+        self._cleanup(True)
         if self.manager is not None:
             del self.manager
         if self.world is not None:
             del self.world
 
-    def get_scenario_class_or_fail(self, scenario):
+    def _get_scenario_class_or_fail(self, scenario):
         """
         Get scenario class by scenario name
         If scenario is not supported or not found, exit script
@@ -145,7 +141,7 @@ class ScenarioRunner(object):
         print("Scenario '{}' not supported ... Exiting".format(scenario))
         sys.exit(-1)
 
-    def cleanup(self, ego=False):
+    def _cleanup(self, ego=False):
         """
         Remove and destroy all actors
         """
@@ -160,16 +156,13 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i] = None
         self.ego_vehicles = []
 
-    def prepare_ego_vehicles(self, config, wait_for_ego_vehicles=False):
+    def _prepare_ego_vehicles(self, ego_vehicles, wait_for_ego_vehicles=False):
         """
-        Spawn or update the ego vehicle according to
-        its parameters provided in config
-
-        As the world is re-loaded for every scenario, no ego exists so far
+        Spawn or update the ego vehicles
         """
 
         if not wait_for_ego_vehicles:
-            for vehicle in config.ego_vehicles:
+            for vehicle in ego_vehicles:
                 self.ego_vehicles.append(CarlaActorPool.setup_actor(vehicle.model,
                                                                     vehicle.transform,
                                                                     vehicle.rolename,
@@ -179,7 +172,7 @@ class ScenarioRunner(object):
             while ego_vehicle_missing:
                 self.ego_vehicles = []
                 ego_vehicle_missing = False
-                for ego_vehicle in config.ego_vehicles:
+                for ego_vehicle in ego_vehicles:
                     ego_vehicle_found = False
                     carla_vehicles = CarlaDataProvider.get_world().get_actors().filter('vehicle.*')
                     for carla_vehicle in carla_vehicles:
@@ -192,12 +185,12 @@ class ScenarioRunner(object):
                         break
 
             for i, _ in enumerate(self.ego_vehicles):
-                self.ego_vehicles[i].set_transform(config.ego_vehicles[i].transform)
+                self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
         CarlaDataProvider.get_world().tick()
 
-    def analyze_scenario(self, args, config):
+    def _analyze_scenario(self, args, config):
         """
         Provide feedback about success/failure of a scenario
         """
@@ -218,13 +211,13 @@ class ScenarioRunner(object):
         else:
             print("Failure!")
 
-    def load_and_wait_for_world(self, args, config):
+    def _load_and_wait_for_world(self, args, town, ego_vehicles=None):
         """
         Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
         """
 
         if args.reloadWorld:
-            self.world = self.client.load_world(config.town)
+            self.world = self.client.load_world(town)
             settings = self.world.get_settings()
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
@@ -234,7 +227,7 @@ class ScenarioRunner(object):
             if args.waitForEgo:
                 while not ego_vehicle_found:
                     vehicles = self.client.get_world().get_actors().filter('vehicle.*')
-                    for ego_vehicle in config.ego_vehicles:
+                    for ego_vehicle in ego_vehicles:
                         ego_vehicle_found = False
                         for vehicle in vehicles:
                             if vehicle.attributes['role_name'] == ego_vehicle.rolename:
@@ -253,17 +246,47 @@ class ScenarioRunner(object):
         # Wait for the world to be ready
         self.world.tick()
 
-        if CarlaDataProvider.get_map().name != config.town:
+        if CarlaDataProvider.get_map().name != town:
             print("The CARLA server uses the wrong map!")
-            print("This scenario requires to use map {}".format(config.town))
+            print("This scenario requires to use map {}".format(town))
             return False
 
         return True
 
-    def load_and_run_scenario(self, args, config, scenario):
+    def _load_and_run_scenario(self, args, config):
         """
-        Load and run the given scenario
+        Load and run the scenario given by config
         """
+
+        if not self._load_and_wait_for_world(args, config.town, config.ego_vehicles):
+            self._cleanup()
+            return
+
+        # Prepare scenario
+        print("Preparing scenario: " + config.name)
+        try:
+            CarlaActorPool.set_world(self.world)
+            self._prepare_ego_vehicles(config.ego_vehicles, args.waitForEgo)
+            if args.openscenario:
+                scenario = OpenScenario(world=self.world,
+                                        ego_vehicles=self.ego_vehicles,
+                                        config=config,
+                                        config_file=args.openscenario,
+                                        timeout=100000)
+            else:
+                scenario_class = self._get_scenario_class_or_fail(config.type)
+                scenario = scenario_class(self.world,
+                                          self.ego_vehicles,
+                                          config,
+                                          args.randomize,
+                                          args.debug)
+        except Exception as exception:
+            print("The scenario cannot be loaded")
+            if args.debug:
+                traceback.print_exc()
+            print(exception)
+            self._cleanup()
+            return
 
         # Set the appropriate weather conditions
         weather = carla.WeatherParameters(
@@ -277,18 +300,62 @@ class ScenarioRunner(object):
 
         self.world.set_weather(weather)
 
+        # Create scenario manager
+        self.manager = ScenarioManager(self.world, args.debug)
+
         # Load scenario and run it
         self.manager.load_scenario(scenario)
         self.manager.run_scenario()
 
         # Provide outputs if required
-        self.analyze_scenario(args, config)
+        self._analyze_scenario(args, config)
 
-        # Stop scenario and cleanup
+        # Stop scenario and _cleanup
         self.manager.stop_scenario()
         scenario.remove_all_actors()
 
-        self.cleanup()
+        self._cleanup()
+
+    def _run_scenarios(self, args):
+        """
+        Run conventional scenarios (e.g. implemented using the Python API of ScenarioRunner)
+        """
+
+        # Setup and run the scenarios for repetition times
+        for _ in range(int(args.repetitions)):
+
+            # Load the scenario configurations provided in the config file
+            scenario_configurations = None
+            scenario_config_file = ScenarioConfigurationParser.find_scenario_config(args.scenario, args.configFile)
+            if scenario_config_file is None:
+                print("Configuration for scenario {} cannot be found!".format(args.scenario))
+                continue
+
+            scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(scenario_config_file,
+                                                                                               args.scenario)
+
+            # Execute each configuration
+            for config in scenario_configurations:
+                self._load_and_run_scenario(args, config)
+
+            self.cleanup(ego=(not args.waitForEgo))
+
+            print("No more scenarios .... Exiting")
+
+    def _run_openscenario(self, args):
+        """
+        Run a scenario based on OpenSCENARIO
+        """
+
+        # Load the scenario configurations provided in the config file
+        if not os.path.isfile(args.openscenario):
+            print("File does not exist")
+            self._cleanup()
+            return
+
+        config = OpenScenarioConfiguration(args.openscenario)
+        self._load_and_run_scenario(args, config)
+        self._cleanup(ego=(not args.waitForEgo))
 
     def run(self, args):
         """
@@ -296,101 +363,9 @@ class ScenarioRunner(object):
         """
 
         if args.openscenario:
-            self.run_openscenario(args)
-            return
-
-        # Setup and run the scenarios for repetition times
-        for _ in range(int(args.repetitions)):
-
-            # Load the scenario configurations provided in the config file
-            scenario_configurations = None
-            scenario_config_file = find_scenario_config(args.scenario, args.configFile)
-            if scenario_config_file is None:
-                print("Configuration for scenario {} cannot be found!".format(args.scenario))
-                continue
-
-            scenario_configurations = parse_scenario_configuration(scenario_config_file, args.scenario)
-
-            # Execute each configuration
-            config_counter = 0
-            for config in scenario_configurations:
-
-                if not self.load_and_wait_for_world(args, config):
-                    self.cleanup()
-                    continue
-
-                # Create scenario manager
-                self.manager = ScenarioManager(self.world, args.debug)
-
-                # Prepare scenario
-                print("Preparing scenario: " + config.name)
-                scenario_class = self.get_scenario_class_or_fail(config.type)
-                try:
-                    CarlaActorPool.set_world(self.world)
-                    self.prepare_ego_vehicles(config, args.waitForEgo)
-                    scenario = scenario_class(self.world,
-                                              self.ego_vehicles,
-                                              config,
-                                              args.randomize,
-                                              args.debug)
-                except Exception as exception:
-                    print("The scenario cannot be loaded")
-                    if args.debug:
-                        traceback.print_exc()
-                    print(exception)
-                    self.cleanup()
-                    config_counter += 1
-                    continue
-
-                self.load_and_run_scenario(args, config, scenario)
-
-                config_counter += 1
-
-            self.cleanup(ego=(not args.waitForEgo))
-
-            print("No more scenarios .... Exiting")
-
-    def run_openscenario(self, args):
-        """
-        Run openscenario
-        """
-
-        # Load the scenario configurations provided in the config file
-        if not os.path.isfile(args.openscenario):
-            print("File does not exist")
-            self.cleanup()
-            return
-
-        config = OpenScenarioConfiguration(args.openscenario)
-
-        if not self.load_and_wait_for_world(args, config):
-            self.cleanup()
-            return
-
-        # Create scenario manager
-        self.manager = ScenarioManager(self.world, args.debug)
-
-        # Prepare scenario
-        print("Preparing scenario: " + config.name)
-        try:
-            CarlaActorPool.set_world(self.world)
-            self.prepare_ego_vehicles(config, args.waitForEgo)
-            scenario = OpenScenario(world=self.world,
-                                    ego_vehicles=self.ego_vehicles,
-                                    config=config,
-                                    config_file=args.openscenario,
-                                    timeout=100000)
-        except Exception as exception:
-            print("The scenario cannot be loaded")
-            if args.debug:
-                traceback.print_exc()
-            print(exception)
-            self.cleanup()
-            return
-
-        self.load_and_run_scenario(args, config, scenario)
-
-        self.cleanup(ego=(not args.waitForEgo))
+            self._run_openscenario(args)
+        else:
+            self._run_scenarios(args)
 
         print("No more scenarios .... Exiting")
 
@@ -424,13 +399,13 @@ if __name__ == '__main__':
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     PARSER.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
-    PARSER.add_argument('--openscenario', help='Provide an OpenScenario definition')
+    PARSER.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
 
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")
-        print(*get_list_of_scenarios(ARGUMENTS.configFile), sep='\n')
+        print(*ScenarioConfigurationParser.get_list_of_scenarios(ARGUMENTS.configFile), sep='\n')
         sys.exit(0)
 
     if ARGUMENTS.listClass:
