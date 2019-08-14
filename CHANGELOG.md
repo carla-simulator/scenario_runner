@@ -3,13 +3,17 @@
 * Split of behaviors into behaviors and conditions
 * Moved atomics into new submodule scenarioatomics
 * Updated documentation for all behaviors, conditions and test criteria
-* Fixed WaypointFollower behavior to use m/s instead of km/h
-* Added get_transform() method for CarlaDataProvider
-* Added support for weather conditions
-* Added basic version check to ensure usage of correct CARLA version
-* Extended OpenScenario support
+* New Features:
+    - Added get_transform() method for CarlaDataProvider
+    - Added support for weather conditions
+    - Added basic version check to ensure usage of correct CARLA version
+* Extended OpenScenario support:
     - Added support for pedestrians
     - Full support for SimulationTime condition
+    - Added weather support
+* Fixes:
+    - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
+    - Fixed WaypointFollower behavior to use m/s instead of km/h
 
 ## CARLA Scenario_Runner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
