@@ -220,15 +220,20 @@ class ScenarioConfigurationParser(object):
         """
 
         list_of_config_files = glob.glob("{}/srunner/configs/*.xml".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
+        list_of_config_files += glob.glob("{}/srunner/configs/*.xosc".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
 
         if config_file_name != '':
             list_of_config_files.append(config_file_name)
 
         scenarios = []
         for file_name in list_of_config_files:
-            tree = ET.parse(file_name)
-            for scenario in tree.iter("scenario"):
-                scenarios.append(scenario.attrib.get('name', None))
+            if ".xosc" in file_name:
+                tree = ET.parse(file_name)
+                scenarios.append("{} (OpenSCENARIO)".format(tree.find("FileHeader").attrib.get('description', None)))
+            else:
+                tree = ET.parse(file_name)
+                for scenario in tree.iter("scenario"):
+                    scenarios.append(scenario.attrib.get('name', None))
 
         return scenarios
 
