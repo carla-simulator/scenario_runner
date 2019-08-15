@@ -327,7 +327,7 @@ class ScenarioRunner(object):
                 scenario_class = self.get_scenario_class_or_fail(config.type)
                 try:
                     CarlaActorPool.set_world(self.world)
-                    self.prepare_ego_vehicles(config)
+                    self.prepare_ego_vehicles(config, args.waitForEgo)
                     scenario = scenario_class(self.world,
                                               self.ego_vehicles,
                                               config,
