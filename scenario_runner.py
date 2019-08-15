@@ -338,7 +338,7 @@ class ScenarioRunner(object):
             for config in scenario_configurations:
                 self._load_and_run_scenario(args, config)
 
-            self.cleanup(ego=(not args.waitForEgo))
+            self._cleanup(ego=(not args.waitForEgo))
 
             print("No more scenarios .... Exiting")
 

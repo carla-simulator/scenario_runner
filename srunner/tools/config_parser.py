@@ -117,12 +117,12 @@ class WeatherConfiguration(object):
     This class provides basic weather configuration values
     """
 
-    cloudyness = 0
-    precipitation = 0
-    precipitation_deposits = 0
-    wind_intensity = 0
-    sun_azimuth = 360
-    sun_altitude = 0
+    cloudyness = -1
+    precipitation = -1
+    precipitation_deposits = -1
+    wind_intensity = -1
+    sun_azimuth = -1
+    sun_altitude = -1
 
 
 class ScenarioConfiguration(object):
