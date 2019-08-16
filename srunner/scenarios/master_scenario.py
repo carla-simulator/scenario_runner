@@ -60,7 +60,7 @@ class MasterScenario(BasicScenario):
         """
 
         # Build behavior tree
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence = py_trees.composites.Sequence("MasterScenario")
         idle_behavior = Idle()
         sequence.add_child(idle_behavior)
 
@@ -77,7 +77,7 @@ class MasterScenario(BasicScenario):
         else:
             route = self.route
 
-        collision_criterion = CollisionTest(self.ego_vehicles[0], terminate_on_failure=True)
+        collision_criterion = CollisionTest(self.ego_vehicles[0], terminate_on_failure=False)
 
         route_criterion = InRouteTest(self.ego_vehicles[0],
                                       radius=30.0,

@@ -158,14 +158,14 @@ class VehicleTurningRight(BasicScenario):
         """
 
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionRightTurn")
 
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
         if self._ego_route is not None:
             trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
-                                                                     self._other_actor_transform, 20)
+                                                                     self._other_actor_transform.location, 20)
         else:
             trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 20)
 
@@ -311,12 +311,13 @@ class VehicleTurningLeft(BasicScenario):
         within 90 seconds, a timeout stops the scenario.
         """
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionLeftTurn")
+
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
         if self._ego_route is not None:
             trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
-                                                                     self._other_actor_transform, 20)
+                                                                     self._other_actor_transform.location, 20)
         else:
             trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 25)
 
