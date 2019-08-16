@@ -491,7 +491,10 @@ class CarlaActorPool(object):
             else:
                 pass
         # wait for the actor to be spawned properly before we do anything
-        CarlaActorPool._world.tick()
+        if CarlaActorPool._world.get_settings().synchronous_mode:
+            CarlaActorPool._world.tick()
+        else:
+            CarlaActorPool._world.wait_for_tick()
         return actor
 
     @staticmethod
@@ -546,7 +549,10 @@ class CarlaActorPool(object):
             responses = CarlaActorPool._client.apply_batch_sync(batch)
 
         # wait for the actors to be spawned properly before we do anything
-        CarlaActorPool._world.tick()
+        if CarlaActorPool._world.get_settings().synchronous_mode:
+            CarlaActorPool._world.tick()
+        else:
+            CarlaActorPool._world.wait_for_tick()
 
         actor_list = []
         actor_ids = []

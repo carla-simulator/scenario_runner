@@ -47,7 +47,10 @@ class BasicScenario(object):
 
         # Initializing adversarial actors
         self._initialize_actors(config)
-        world.tick()
+        if world.get_settings().synchronous_mode:
+            world.tick()
+        else:
+            world.wait_for_tick()
 
         # Setup scenario
         if debug_mode:
@@ -65,7 +68,9 @@ class BasicScenario(object):
         if trigger_behavior:
             behavior_seq.add_child(trigger_behavior)
 
-        behavior_seq.add_child(behavior)
+        if behavior is not None:
+            behavior_seq.add_child(behavior)
+            behavior_seq.name = behavior.name
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
 

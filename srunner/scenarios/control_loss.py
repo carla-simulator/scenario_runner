@@ -100,10 +100,6 @@ class ControlLoss(BasicScenario):
         self.third_transform = carla.Transform(carla.Location(self.third_loc_prev.x,
                                                               self.third_loc_prev.y,
                                                               self.third_loc_prev.z))
-        if self._map.name == 'Town02':
-            self.first_transform.location.z += 0.2
-            self.sec_transform.location.z += 0.2
-            self.third_transform.location.z += 0.2
 
         first_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.first_transform)
         second_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.sec_transform)
@@ -149,7 +145,7 @@ class ControlLoss(BasicScenario):
         start_end_parallel.add_child(end_condition)
 
         # Build behavior tree
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence = py_trees.composites.Sequence("ControlLoss")
         sequence.add_child(ActorTransformSetter(self.other_actors[0], self.first_transform, physics=False))
         sequence.add_child(ActorTransformSetter(self.other_actors[1], self.sec_transform, physics=False))
         sequence.add_child(ActorTransformSetter(self.other_actors[2], self.third_transform, physics=False))

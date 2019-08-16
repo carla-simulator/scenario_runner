@@ -66,7 +66,7 @@ class BackgroundActivity(BasicScenario):
         """
 
         # Build behavior tree
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
+        sequence = py_trees.composites.Sequence("BackgroundActivity")
         check_jam = TrafficJamChecker(debug=self.debug)
         sequence.add_child(check_jam)
 
