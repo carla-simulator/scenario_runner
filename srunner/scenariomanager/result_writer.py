@@ -92,8 +92,10 @@ class ResultOutputProvider(object):
         # pylint: enable=line-too-long
 
         criteria = self._data.scenario.test_criteria
-        if isinstance(criteria, py_trees.composites.Parallel):
+        while isinstance(criteria, py_trees.composites.Parallel):
             criteria = criteria.children
+            if len(criteria) == 1:
+                criteria = criteria[0]
 
         for criterion in criteria:
             name_string = criterion.name

@@ -24,10 +24,7 @@ class RouteConfiguration(object):
     """
 
     def __init__(self, route=None):
-        if route is not None:
-            self.data = route
-        else:
-            self.data = None
+        self.data = route
 
     def parse_xml(self, node):
         """

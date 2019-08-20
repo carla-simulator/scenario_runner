@@ -365,10 +365,10 @@ class ScenarioRunner(object):
         route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
-        n_routes = len(route_descriptions_list) * repetitions
+        # n_routes = len(route_descriptions_list) * repetitions
 
-        for route_idx, route_description in enumerate(route_descriptions_list):
-            for repetition in range(repetitions):
+        for _, route_description in enumerate(route_descriptions_list):
+            for _ in range(repetitions):
 
                 config = RouteScenarioConfiguration(route_description, scenario_file)
 
@@ -429,7 +429,6 @@ if __name__ == '__main__':
     # pylint: disable=line-too-long
     PARSER.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
-    # pylint: enable=line-too-long
     PARSER.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
@@ -439,6 +438,7 @@ if __name__ == '__main__':
         '--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
+    # pylint: enable=line-too-long
 
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")

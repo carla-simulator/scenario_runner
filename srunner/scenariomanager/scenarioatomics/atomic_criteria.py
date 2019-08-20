@@ -774,7 +774,7 @@ class RouteCompletionTest(Criterion):
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
         """
         """
-        super(RouteCompletionTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
+        super(RouteCompletionTest, self).__init__(name, actor, 100, terminate_on_failure=terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._route = route
@@ -839,6 +839,8 @@ class RouteCompletionTest(Criterion):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        self.actual_value = self._percentage_route_completed
 
         return new_status
 
