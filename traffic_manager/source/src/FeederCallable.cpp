@@ -4,7 +4,7 @@
 
 namespace traffic_manager {
 
-  const float UPDATE_DURATION = 50;   // ms
+  const float UPDATE_FREQUENCY = 20;
 
   Feedercallable::Feedercallable(
       SyncQueue<PipelineMessage> *input_queue,
@@ -16,7 +16,7 @@ namespace traffic_manager {
   PipelineMessage Feedercallable::action(PipelineMessage &message) {
     int delay = 500;     // (micro seconds) default, good enough for 100 vehicles
     auto last_time = std::chrono::system_clock::now();
-    while (true) {
+    while (!exit_flag) {
       for (auto actor: shared_data->registered_actors) {
         message.setActor(actor);
         writeQueue(message);
@@ -28,7 +28,7 @@ namespace traffic_manager {
       if (diff.count() > 1.0) {         // Update delay every second
         last_time = current_time;
         delay = static_cast<int>(
-          1000000 / (shared_data->registered_actors.size() * UPDATE_DURATION)
+          1000000 / (shared_data->registered_actors.size() * UPDATE_FREQUENCY)
           );
       }
     }

@@ -22,7 +22,7 @@ namespace traffic_manager {
   }
 
   void PipelineCallable::run() {
-    while (true) {
+    while (!exit_flag) {
       PipelineMessage in_message;
       if (input_queue != NULL) {
         in_message = readQueue();
@@ -32,6 +32,10 @@ namespace traffic_manager {
         writeQueue(out_message);
       }
     }
+  }
+
+  void PipelineCallable::stop() {
+    exit_flag = true;
   }
 
 }

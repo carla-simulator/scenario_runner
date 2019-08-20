@@ -38,6 +38,8 @@ namespace traffic_manager {
 
     SharedData();
     ~SharedData();
+
+    void destroy();
   };
 
 }

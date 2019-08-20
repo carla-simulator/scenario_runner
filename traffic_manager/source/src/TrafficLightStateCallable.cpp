@@ -1,4 +1,4 @@
-// Member Defination for Class TrafficLightStateCallable
+// Member Definition for Class TrafficLightStateCallable
 
 #include "TrafficLightStateCallable.h"
 

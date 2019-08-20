@@ -18,7 +18,7 @@ namespace traffic_manager {
     long count = 0;
     auto last_time = std::chrono::system_clock::now();
 
-    while (true) {
+    while (!exit_flag) {
       std::vector<carla::rpc::Command> commands;
 
       for (auto _ : shared_data->registered_actors) {

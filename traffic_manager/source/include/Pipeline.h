@@ -2,14 +2,14 @@
 
 #include <vector>
 #include <memory>
+#include <random>
 
 #include "carla/Memory.h"
 #include "carla/client/Actor.h"
+#include "carla/client/World.h"
 #include "carla/client/Map.h"
-#include "carla/client/Client.h"
+#include "carla/client/BlueprintLibrary.h"
 
-#include "CarlaDataAccessLayer.h"
-#include "InMemoryMap.h"
 #include "SyncQueue.h"
 #include "FeederCallable.h"
 #include "LocalizationCallable.h"
@@ -21,22 +21,25 @@
 
 namespace traffic_manager {
 
+  int read_core_count();
+  std::vector<carla::SharedPtr<carla::client::Actor>> spawn_traffic (
+    carla::client::World& world,
+    int core_count,
+    int target_amount
+  );
+
   class Pipeline {
 
   private:
 
     int NUMBER_OF_STAGES = 6;
 
-    std::vector<carla::SharedPtr<carla::client::Actor>> actor_list;
-    carla::SharedPtr<carla::client::Map> world_map;
-    float target_velocity;
     std::vector<float> longitudinal_PID_parameters;
     std::vector<float> lateral_PID_parameters;
+    float target_velocity;
     int pipeline_width;
-    carla::client::Client &client;
-    carla::client::DebugHelper debug_helper;
 
-    traffic_manager::SharedData shared_data;
+    traffic_manager::SharedData& shared_data;
     std::vector<std::shared_ptr<SyncQueue<PipelineMessage>>> message_queues;
     std::vector<std::shared_ptr<PipelineCallable>> callables;
     std::vector<std::shared_ptr<PipelineStage>> stages;
@@ -44,18 +47,18 @@ namespace traffic_manager {
   public:
 
     Pipeline(
-        const std::vector<carla::SharedPtr<carla::client::Actor>> &actor_list,
-        const carla::SharedPtr<carla::client::Map> &world_map,
-        float target_velocity,
         std::vector<float> longitudinal_PID_parameters,
         std::vector<float> lateral_PID_parameters,
+        float target_velocity,
         int pipeline_width,
-        carla::client::Client &client,
-        carla::client::DebugHelper debug_helper);
+        SharedData& shared_data
+      );
 
     void setup();
 
     void start();
+
+    void stop();
 
   };
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "SyncQueue.h"
 #include "PipelineMessage.h"
 #include "SharedData.h"
@@ -23,6 +25,7 @@ namespace traffic_manager {
   protected:
 
     SharedData *const shared_data;
+    std::atomic<bool> exit_flag{false};
 
     /// This method reads and returns a message object from the previous stage.
     PipelineMessage readQueue();
@@ -52,6 +55,11 @@ namespace traffic_manager {
     /// output queue.
 
     void run();
+
+    /// This method halts the execution of the thread executables created
+    /// From this callable.
+
+    void stop();
 
   };
 

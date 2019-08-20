@@ -35,6 +35,9 @@ namespace traffic_manager {
     /// This method starts the threads for the stage.
     void start();
 
+    /// This method signals all threads created from this callable to stop.
+    void stop();
+
   };
 
 }
