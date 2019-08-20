@@ -508,7 +508,9 @@ class RouteScenario(BasicScenario):
     # pylint: enable=no-self-use
 
     def _initialize_actors(self, config):
-
+        """
+        Set other_actors to the superset of all scenario actors
+        """
         for scenario in self.list_scenarios:
             self.other_actors.extend(scenario.other_actors)
 
