@@ -83,9 +83,9 @@
                                 <Date day="25" month="6" year="2019" />
                             </TimeOfDay>
                             <Weather cloudState="free">
-                                <Sun intensity="1.0" azimuth="0.0" elevation="1.31" />
+                                <Sun intensity="1.01" azimuth="-1" elevation="-1" />
                                 <Fog visualRange="100000.0" />
-                                <Precipitation type="dry" intensity="0.0" />
+                                <Precipitation type="dry" intensity="-1.0" />
                             </Weather>
                             <RoadCondition frictionScale="1.0" />
                         </Environment>

@@ -41,11 +41,14 @@ from srunner.scenarios.other_leading_vehicle import *
 from srunner.scenarios.signalized_junction_left_turn import *
 from srunner.scenarios.signalized_junction_right_turn import *
 from srunner.scenarios.open_scenario import OpenScenario
+from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.config_parser import ScenarioConfigurationParser
 from srunner.tools.openscenario_parser import OpenScenarioConfiguration
+from srunner.tools.routescenario_parser import RouteScenarioConfiguration
+from srunner.tools.route_configuration_parser import RouteParser
 
 # Version of scenario_runner
-VERSION = 0.5
+VERSION = 0.6
 
 
 # Dictionary of all supported scenarios.
@@ -265,7 +268,6 @@ class ScenarioRunner(object):
         # Prepare scenario
         print("Preparing scenario: " + config.name)
         try:
-            CarlaActorPool.set_world(self.world)
             self._prepare_ego_vehicles(config.ego_vehicles, args.waitForEgo)
             if args.openscenario:
                 scenario = OpenScenario(world=self.world,
@@ -273,6 +275,10 @@ class ScenarioRunner(object):
                                         config=config,
                                         config_file=args.openscenario,
                                         timeout=100000)
+            elif args.route:
+                scenario = RouteScenario(world=self.world,
+                                         config=config,
+                                         debug_mode=args.debug)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
                 scenario = scenario_class(self.world,
@@ -342,6 +348,33 @@ class ScenarioRunner(object):
 
             print("No more scenarios .... Exiting")
 
+    def _run_challenge(self, args):
+        """
+        Run the challenge mode
+        """
+
+        routes = args.route[0]
+        scenario_file = args.route[1]
+        single_route = None
+        if args.route[2]:
+            single_route = args.route[2]
+
+        repetitions = 1
+        
+        # retrieve routes
+        route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
+        # find and filter potential scenarios for each of the evaluated routes
+        # For each of the routes and corresponding possible scenarios to be evaluated.
+        n_routes = len(route_descriptions_list) * repetitions
+        
+        for route_idx, route_description in enumerate(route_descriptions_list):
+            for repetition in range(repetitions):
+
+                config = RouteScenarioConfiguration(route_description, scenario_file)
+                
+                self._load_and_run_scenario(args, config)
+                self._cleanup(ego=(not args.waitForEgo))
+
     def _run_openscenario(self, args):
         """
         Run a scenario based on OpenSCENARIO
@@ -364,6 +397,8 @@ class ScenarioRunner(object):
 
         if args.openscenario:
             self._run_openscenario(args)
+        elif args.route:
+            self._run_challenge(args)
         else:
             self._run_scenarios(args)
 
@@ -400,6 +435,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     PARSER.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
     PARSER.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
+    PARSER.add_argument('--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
 
@@ -413,10 +449,18 @@ if __name__ == '__main__':
         print(*SCENARIOS.keys(), sep='\n')
         sys.exit(0)
 
-    if not ARGUMENTS.scenario and not ARGUMENTS.openscenario:
-        print("Please specify a scenario using '--scenario SCENARIONAME'\n\n")
+    if not ARGUMENTS.scenario and not ARGUMENTS.openscenario and not ARGUMENTS.route:
+        print("Please specify either a scenario or use the route mode\n\n")
         PARSER.print_help(sys.stdout)
         sys.exit(0)
+
+    if (ARGUMENTS.route and ARGUMENTS.openscenario) or (ARGUMENTS.route and ARGUMENTS.scenario):
+        print("The route mode cannot be used together with a scenario (incl. OpenSCENARIO)'\n\n")
+        PARSER.print_help(sys.stdout)
+        sys.exit(0)
+
+    if ARGUMENTS.route:
+        ARGUMENTS.reloadWorld = True
 
     SCENARIORUNNER = None
     try:
