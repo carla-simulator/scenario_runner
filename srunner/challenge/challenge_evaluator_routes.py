@@ -54,7 +54,7 @@ from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirect
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.challenge.utils.route_configuration_parser import TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
-from srunner.tools.config_parser import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
+from srunner.scenarioconfigs.scenario_configuration import ActorConfiguration, ScenarioConfiguration, ActorConfigurationData
 from srunner.scenariomanager.traffic_events import TrafficEventType
 from srunner.challenge.utils.route_manipulation import interpolate_trajectory, clean_route
 

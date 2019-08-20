@@ -22,13 +22,15 @@ import carla
 
 from agents.navigation.local_planner import RoadOption
 
+# pylint: disable=line-too-long
+from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData, ActorConfiguration
+# pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
-from srunner.tools.config_parser import ScenarioConfiguration, ActorConfigurationData, ActorConfiguration
-from srunner.tools.route_configuration_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
+from srunner.tools.route_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory, clean_route
 
 from srunner.scenarios.control_loss import ControlLoss
@@ -184,7 +186,7 @@ class RouteScenario(BasicScenario):
 
         ego_vehicle = self._update_ego_vehicle()
 
-        self._create_scenarios_along_route(world, ego_vehicle, config, debug_mode=False)
+        self._create_scenarios_along_route(world, ego_vehicle, config, debug_mode)
 
         super(RouteScenario, self).__init__("RouteScenario",
                                             ego_vehicles=[ego_vehicle],
@@ -259,19 +261,19 @@ class RouteScenario(BasicScenario):
                                                            self.route,
                                                            config.town,
                                                            timeout=self.timeout,
-                                                           debug_mode=debug_mode)
+                                                           debug_mode=False)
 
         self.background_scenario = self._build_background_scenario(world,
                                                                    ego_vehicle,
                                                                    config.town,
                                                                    timeout=self.timeout,
-                                                                   debug_mode=debug_mode)
+                                                                   debug_mode=False)
 
         self.traffic_light_scenario = self._build_trafficlight_scenario(world,
                                                                         ego_vehicle,
                                                                         config.town,
                                                                         timeout=self.timeout,
-                                                                        debug_mode=debug_mode)
+                                                                        debug_mode=False)
 
         self.list_scenarios = [self.master_scenario, self.background_scenario, self.traffic_light_scenario]
 

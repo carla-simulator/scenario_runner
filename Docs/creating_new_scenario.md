@@ -72,7 +72,7 @@ _atomic_scenario_criteria.py_.
 Note: From this list a parallel py_tree will be created automatically!
 
 ## Adding the scenario configuration
-Finally the scenario configuration should be added to the Configs/ folder. If you
+Finally the scenario configuration should be added to the examples/ folder. If you
 extend an already existing scenario module, you can simply extend the corresponding
 XML, otherwise add a new XML file. In this case you can use any of the existing
 XML files as blueprint.
