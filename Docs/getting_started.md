@@ -83,9 +83,21 @@ different scenarios may take place in different CARLA towns. This has to be
 respected when launching the CARLA server.
 
 ## Running scenarios using the OpenScenario format
-To run a scenario, which is based on the OpenScenario format, please run the scenario runner as follows:
+To run a scenario, which is based on the OpenScenario format, please run the ScenarioRunner as follows:
 ```
 python scenario_runner.py --openscenario <path/to/xosc-file>
 ```
 Please note that the OpenScenario support and the OpenScenario format itself are still work in progress.
 More information you can find in [OpenScenario support](openscenario_support.md)
+
+## Running route-based scenario (similar to the CARLA AD Challenge)
+To run a route-based scenario, please run the ScenarioRunner as follows:
+```
+python scenario_runner.py --route <path/to/route-file> <path/to/scenario_sample_file> [route id]
+```
+Example:
+```
+python scenario_runner.py /scenario_runner/srunner/challenge/routes_debug.xml /scenario_runner/srunner/challenge/all_towns_traffic_scenarios1_3_4.json 0
+```
+If no route id is provided, all routes within the given file will be executed.
+
