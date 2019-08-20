@@ -28,6 +28,8 @@ import pkg_resources
 
 import carla
 
+from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
+from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import *
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.scenarios.control_loss import *
@@ -42,17 +44,15 @@ from srunner.scenarios.signalized_junction_left_turn import *
 from srunner.scenarios.signalized_junction_right_turn import *
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
-from srunner.tools.config_parser import ScenarioConfigurationParser
-from srunner.tools.openscenario_parser import OpenScenarioConfiguration
-from srunner.tools.routescenario_parser import RouteScenarioConfiguration
-from srunner.tools.route_configuration_parser import RouteParser
+from srunner.tools.scenario_config_parser import ScenarioConfigurationParser
+from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
 VERSION = 0.6
 
 
 # Dictionary of all supported scenarios.
-# key = Name of config file in Configs/
+# key = Name of config file in examples/
 # value = List as defined in the scenario module
 SCENARIOS = {
     "FollowLeadingVehicle": FOLLOW_LEADING_VEHICLE_SCENARIOS,
@@ -360,18 +360,18 @@ class ScenarioRunner(object):
             single_route = args.route[2]
 
         repetitions = 1
-        
+
         # retrieve routes
         route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
         n_routes = len(route_descriptions_list) * repetitions
-        
+
         for route_idx, route_description in enumerate(route_descriptions_list):
             for repetition in range(repetitions):
 
                 config = RouteScenarioConfiguration(route_description, scenario_file)
-                
+
                 self._load_and_run_scenario(args, config)
                 self._cleanup(ego=(not args.waitForEgo))
 
@@ -435,7 +435,8 @@ if __name__ == '__main__':
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     PARSER.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
     PARSER.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
-    PARSER.add_argument('--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
+    PARSER.add_argument(
+        '--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     ARGUMENTS = PARSER.parse_args()
 

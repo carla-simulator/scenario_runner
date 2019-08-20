@@ -6,7 +6,7 @@ If you would like to use evaluation criteria for a scenario to evaluate pass/fai
 as EndConditions. However, not all features for these elements are yet available. If in doubt, please see the
 module documentation in srunner/tools/openscenario_paser.py
 
-An example for a supported scenario based on OpenScenario is available [here](../srunner/configs/FollowLeadingVehicle.xosc) 
+An example for a supported scenario based on OpenScenario is available [here](../srunner/examples/FollowLeadingVehicle.xosc) 
 
 
 ## Overview of available features of OpenScenario v0.9:
