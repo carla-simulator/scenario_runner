@@ -9,8 +9,6 @@
 This module provides the key configuration parameters for a route-based scenario
 """
 
-from __future__ import print_function
-
 import carla
 from agents.navigation.local_planner import RoadOption
 

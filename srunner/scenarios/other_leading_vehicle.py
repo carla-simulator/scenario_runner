@@ -15,8 +15,6 @@ collision and follow the leading car in other lane. The scenario ends
 either via a timeout, or if the ego vehicle drives some distance.
 """
 
-from __future__ import print_function
-
 import py_trees
 
 import carla

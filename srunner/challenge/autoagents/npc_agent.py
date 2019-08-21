@@ -1,17 +1,37 @@
-import scipy.misc
+#!/usr/bin/env python
+
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+
+"""
+This module provides an NPC agent to control the ego vehicle
+"""
+
+from __future__ import print_function
 
 import carla
-from agents.navigation.basic_agent import *
-
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from agents.navigation.basic_agent import BasicAgent
 
 from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+
 
 class NPCAgent(AutonomousAgent):
+
+    """
+    NPC autonomous agent to control the ego vehicle
+    """
+
+    _agent = None
+    _route_assigned = False
+
     def setup(self, path_to_conf_file):
+        """
+        Setup the agent parameters
+        """
         self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
-        self.route_assigned = False
+        self._route_assigned = False
         self._agent = None
 
     def sensors(self):
@@ -34,13 +54,16 @@ class NPCAgent(AutonomousAgent):
         """
 
         sensors = [
-            {'type':'sensor.camera.rgb', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+            {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
              'width': 300, 'height': 200, 'fov': 100, 'id': 'Left'},
         ]
 
         return sensors
 
     def run_step(self, input_data, timestamp):
+        """
+        Execute one step of navigation.
+        """
         control = carla.VehicleControl()
         control.steer = 0.0
         control.throttle = 0.0
@@ -58,7 +81,7 @@ class NPCAgent(AutonomousAgent):
 
             return control
 
-        if not self.route_assigned:
+        if not self._route_assigned:
             if self._global_plan:
                 plan = []
 
@@ -66,8 +89,8 @@ class NPCAgent(AutonomousAgent):
                     wp = CarlaDataProvider.get_map().get_waypoint(transform.location)
                     plan.append((wp, road_option))
 
-                self._agent._local_planner.set_global_plan(plan)
-                self.route_assigned = True
+                self._agent._local_planner.set_global_plan(plan)  # pylint: disable=protected-access
+                self._route_assigned = True
 
         else:
             print("[Timestamp: {}]".format(timestamp))

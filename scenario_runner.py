@@ -93,6 +93,9 @@ class ScenarioRunner(object):
 
     additional_scenario_module = None
 
+    agent_instance = None
+    module_agent = None
+
     def __init__(self, args):
         """
         Setup CARLA client and world
@@ -110,10 +113,18 @@ class ScenarioRunner(object):
             raise ImportError("CARLA version 0.9.6 or newer required. CARLA version found: {}".format(dist))
 
         # Load additional scenario definitions, if there are any
+        # If something goes wrong an exception will be thrown by importlib (ok here)
         if args.additionalScenario != '':
             module_name = os.path.basename(args.additionalScenario).split('.')[0]
             sys.path.insert(0, os.path.dirname(args.additionalScenario))
             self.additional_scenario_module = importlib.import_module(module_name)
+
+        # Load agent if requested via command line args
+        # If something goes wrong an exception will be thrown by importlib (ok here)
+        if args.agent is not None:
+            module_name = os.path.basename(args.agent).split('.')[0]
+            sys.path.insert(0, os.path.dirname(args.agent))
+            self.module_agent = importlib.import_module(module_name)
 
     def __del__(self):
         """
@@ -158,6 +169,10 @@ class ScenarioRunner(object):
                     self.ego_vehicles[i].destroy()
                 self.ego_vehicles[i] = None
         self.ego_vehicles = []
+
+        if self.agent_instance:
+            self.agent_instance.destroy()
+            self.agent_instance = None
 
     def _prepare_ego_vehicles(self, ego_vehicles, wait_for_ego_vehicles=False):
         """
@@ -246,8 +261,16 @@ class ScenarioRunner(object):
         CarlaActorPool.set_world(self.world)
         CarlaDataProvider.set_world(self.world)
 
+        if args.agent:
+            settings = self.world.get_settings()
+            settings.synchronous_mode = True
+            self.world.apply_settings(settings)
+
         # Wait for the world to be ready
-        self.world.tick()
+        if self.world.get_settings().synchronous_mode:
+            self.world.tick()
+        else:
+            self.world.wait_for_tick()
 
         if CarlaDataProvider.get_map().name != town:
             print("The CARLA server uses the wrong map!")
@@ -264,6 +287,16 @@ class ScenarioRunner(object):
         if not self._load_and_wait_for_world(args, config.town, config.ego_vehicles):
             self._cleanup()
             return
+
+        if args.agent:
+            agent_class_name = self.module_agent.__name__.title().replace('_', '')
+            try:
+                self.agent_instance = getattr(self.module_agent, agent_class_name)(args.agentConfig)
+                config.agent = self.agent_instance
+            except Exception as e:
+                print("Could not setup required agent due to {}".format(e))
+                self._cleanup()
+                return
 
         # Prepare scenario
         print("Preparing scenario: " + config.name)
@@ -307,7 +340,7 @@ class ScenarioRunner(object):
         self.world.set_weather(weather)
 
         # Create scenario manager
-        self.manager = ScenarioManager(self.world, args.debug)
+        self.manager = ScenarioManager(self.world, args.debug, self.agent_instance)
 
         # Load scenario and run it
         self.manager.load_scenario(scenario)
@@ -433,6 +466,9 @@ if __name__ == '__main__':
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     PARSER.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
+    PARSER.add_argument(
+        '--agent', help="Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.")
+    PARSER.add_argument("--agentConfig", type=str, help="Path to Agent's configuration file", default="")
     PARSER.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     PARSER.add_argument(
         '--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
@@ -457,6 +493,11 @@ if __name__ == '__main__':
 
     if (ARGUMENTS.route and ARGUMENTS.openscenario) or (ARGUMENTS.route and ARGUMENTS.scenario):
         print("The route mode cannot be used together with a scenario (incl. OpenSCENARIO)'\n\n")
+        PARSER.print_help(sys.stdout)
+        sys.exit(0)
+
+    if ARGUMENTS.agent and (ARGUMENTS.openscenario or ARGUMENTS.scenario):
+        print("Agents are currently only compatible with route scenarios'\n\n")
         PARSER.print_help(sys.stdout)
         sys.exit(0)
 

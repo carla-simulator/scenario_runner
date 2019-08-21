@@ -1,10 +1,22 @@
-import datetime
+#!/usr/bin/env python
+
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+
+"""
+This module provides the base class for all autonomous agents
+"""
+
+from __future__ import print_function
+
 from enum import Enum
 from srunner.challenge.envs.sensor_interface import SensorInterface
 from srunner.scenariomanager.timer import GameTime
 from srunner.challenge.utils.route_manipulation import downsample_route
 
+
 class Track(Enum):
+
     """
     This enum represents the different tracks of the CARLA AD challenge.
     """
@@ -13,14 +25,21 @@ class Track(Enum):
     ALL_SENSORS_HDMAP_WAYPOINTS = 3
     SCENE_LAYOUT = 4
 
-class AutonomousAgent():
+
+class AutonomousAgent(object):
+
+    """
+    Autonomous agent base class. All user agents have to be derived from this class
+    """
+
     def __init__(self, path_to_conf_file):
         self.track = Track.CAMERAS
         #  current global plans to reach a destination
-        self._global_plan = None,
+        self._global_plan = None
+        self._global_plan_world_coord = None
 
         # this data structure will contain all sensor data
-        self.sensor_interface  = SensorInterface()
+        self.sensor_interface = SensorInterface()
 
         # agent's initialization
         self.setup(path_to_conf_file)
@@ -35,7 +54,7 @@ class AutonomousAgent():
         """
         pass
 
-    def sensors(self):
+    def sensors(self):  # pylint: disable=no-self-use
         """
         Define the sensor suite required by the agent
 
@@ -57,7 +76,7 @@ class AutonomousAgent():
 
         return sensors
 
-    def run_step(self, timestamp):
+    def run_step(self, input_data, timestamp):
         """
         Execute one step of navigation.
         :return: control
@@ -72,6 +91,10 @@ class AutonomousAgent():
         pass
 
     def __call__(self):
+        """
+        Execute the agent call, e.g. agent()
+        Returns the next vehicle controls
+        """
         input_data = self.sensor_interface.get_data()
 
         timestamp = GameTime.get_time()
@@ -84,9 +107,16 @@ class AutonomousAgent():
         return control
 
     def all_sensors_ready(self):
+        """
+        Check if all sensors are ready
+        Returns true if sensors are ready
+        """
         return self.sensor_interface.all_sensors_ready()
 
     def set_global_plan(self, global_plan_gps, global_plan_world_coord):
+        """
+        Set the plan (route) for the agent
+        """
 
         if self.track == Track.CAMERAS or self.track == Track.ALL_SENSORS:
             ds_ids = downsample_route(global_plan_world_coord, 32)

@@ -8,6 +8,8 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encountering a cyclist ahead.
 """
 
+from __future__ import print_function
+
 import py_trees
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
