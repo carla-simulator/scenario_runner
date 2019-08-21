@@ -48,6 +48,8 @@ namespace traffic_manager {
     if (number_of_vehicles > spawn_points.size())
       number_of_vehicles = spawn_points.size();
 
+    std::cout << "Spawning " << number_of_vehicles << " vehicles" << std::endl;
+
     for (int i=0; i<number_of_vehicles; i++) {
       auto spawn_point = spawn_points[i];
       auto blueprint = RandomChoice(*blueprint_library, rng);

@@ -83,7 +83,7 @@ void test_pipeline(
   shared_data.debug = &debug_helper;
 
   auto core_count = traffic_manager::read_core_count();
-  std::cout << "Found " << core_count << " cores" << std::endl;
+  std::cout << "Found " << core_count << " CPU cores" << std::endl;
   shared_data.registered_actors = traffic_manager::spawn_traffic(world, core_count, target_traffic_amount);
 
   traffic_manager::Pipeline pipeline(
@@ -95,6 +95,8 @@ void test_pipeline(
       );
   pipeline.setup();
   pipeline.start();
+
+  std::cout << "Started " << 2 + 4 * std::ceil(core_count/4) << " pipeline threads" << std::endl;
 
   while (true) {
     sleep(1);
