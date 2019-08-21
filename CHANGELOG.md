@@ -17,6 +17,7 @@
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h
     - Fixed starting position of VehicleTurnLeft/Right scenarios
+    - Fixed spawn_point modification inside CarlaActorPool.setup_actor()
 
 ## CARLA Scenario_Runner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
