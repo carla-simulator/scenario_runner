@@ -21,11 +21,11 @@ namespace traffic_manager {
   CollisionCallable::~CollisionCallable() {}
 
   PipelineMessage CollisionCallable::action(PipelineMessage &message) {
-    auto actor_list = shared_data->registered_actors;
+    auto actor_list = getClosestActors(message.getActor());
 
     float collision_hazard = -1;
-    for (auto actor : actor_list) {
-
+    for(auto it = actor_list.begin(); it != actor_list.end(); it++ ) {
+      auto actor = it->first;
       if (
         actor->GetId() != message.getActorID()
         and shared_data->buffer_map.find(actor->GetId()) != shared_data->buffer_map.end()) {
@@ -187,5 +187,27 @@ namespace traffic_manager {
              carla::geom::Location(-1 * heading_vector * extent.x - perpendicular_vector * extent.y),
              location + carla::geom::Location(heading_vector * extent.x - perpendicular_vector * extent.y)
     };
+  }
+  std::map< carla::SharedPtr <carla::client::Actor > , int> CollisionCallable::getClosestActors(carla::SharedPtr<carla::client::Actor> actor) {
+
+    //getting nearest GridIDs
+    std::map< carla::SharedPtr <carla::client::Actor > , int> _closest_actors;
+    std::pair < int, int> grid_key;
+    auto GridID = shared_data->Grid.GetGridID(actor);
+    for ( int iter = -1 ; iter < 2 ; iter++) {
+
+      for (int iterator = -1 ; iterator < 2 ; iterator++) {
+
+        grid_key.first = GridID.first + iter;
+        grid_key.second = GridID.second + iterator;
+        auto actor_list_grid = shared_data->Grid.GetActor(grid_key);
+        if( actor_list_grid.size() > 0) {
+          //std::cout << "working" << std::endl;
+          _closest_actors.insert( actor_list_grid.begin(), actor_list_grid.end() );
+          }
+
+        }
+      }
+      return _closest_actors;
   }
 }

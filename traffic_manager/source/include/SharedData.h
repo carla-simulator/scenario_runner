@@ -8,6 +8,7 @@
 
 #include "InMemoryMap.h"
 #include "SyncQueue.h"
+#include "CreateGrid.hpp"
 
 namespace traffic_manager {
 
@@ -40,6 +41,7 @@ namespace traffic_manager {
     ~SharedData();
 
     void destroy();
+    CreateGrid Grid;
   };
 
 }
