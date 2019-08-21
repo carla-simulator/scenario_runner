@@ -241,6 +241,7 @@ class ChangeAutoPilot(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
+    - activate: True (=enable autopilot) or False (=disable autopilot)
 
     The behavior terminates after changing the autopilot state
     """

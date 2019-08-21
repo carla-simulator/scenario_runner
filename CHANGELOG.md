@@ -9,6 +9,7 @@
     - Added support for weather conditions
     - Added basic version check to ensure usage of correct CARLA version
     - Routes can be executed with the ScenarioRunner
+    - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
 * Extended OpenScenario support:
     - Added support for pedestrians
     - Full support for SimulationTime condition
@@ -18,6 +19,7 @@
     - Fixed WaypointFollower behavior to use m/s instead of km/h
     - Fixed starting position of VehicleTurnLeft/Right scenarios
     - Fixed spawn_point modification inside CarlaActorPool.setup_actor()
+    - Cleanup of pylint errors for all autonomous agents
 
 ## CARLA Scenario_Runner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
