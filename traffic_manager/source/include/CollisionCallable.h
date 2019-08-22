@@ -59,6 +59,9 @@ namespace traffic_manager {
         carla::SharedPtr<carla::client::Actor> ego_vehicle,
         carla::SharedPtr<carla::client::Actor> other_vehicle)const;
 
+    /* Method for getting the nearby vehicles */
+    std::map< carla::SharedPtr <carla::client::Actor > , int> getClosestActors(carla::SharedPtr<carla::client::Actor> actor);
+
   public:
 
     CollisionCallable(
