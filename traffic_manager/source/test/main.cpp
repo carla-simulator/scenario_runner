@@ -88,7 +88,7 @@ void test_pipeline(
 
   traffic_manager::Pipeline pipeline(
       {0.1f, 0.15f, 0.01f},
-      {10.0f, 0.0f, 0.1f},
+      {10.0f, 0.0f, 0.01f},
       7.0f,
       std::ceil(core_count/4),
       shared_data

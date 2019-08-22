@@ -27,13 +27,6 @@ namespace traffic_manager {
 
   void PipelineStage::stop() {
     thread_callable.stop();
-    // int i =0;
-    // for (auto& thread: threads) {
-    //   std::cout << "Joining thread " << i << std::endl;
-    //   thread.join();
-    //   std::cout << "Thread joined" << std::endl;
-    //   i++;
-    // }
   }
 
 }

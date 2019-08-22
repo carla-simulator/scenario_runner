@@ -132,9 +132,7 @@ namespace traffic_manager {
   void Pipeline::stop() {
     int i =0;
     for (auto stage: stages) {
-      // std::cout << "Stopping stage " << i << std::endl;
       stage->stop();
-      // std::cout << "Stopped stage " << i << std::endl;
       i++;
     }
   }

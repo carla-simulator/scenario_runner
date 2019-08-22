@@ -4,7 +4,7 @@
 
 namespace traffic_manager {
 
-  const float UPDATE_FREQUENCY = 20;
+  const float UPDATE_FREQUENCY = 30;
 
   Feedercallable::Feedercallable(
       SyncQueue<PipelineMessage> *input_queue,
@@ -14,23 +14,21 @@ namespace traffic_manager {
   Feedercallable::~Feedercallable() {}
 
   PipelineMessage Feedercallable::action(PipelineMessage &message) {
-    int delay = 500;     // (micro seconds) default, good enough for 100 vehicles
-    auto last_time = std::chrono::system_clock::now();
+
     while (!exit_flag) {
+
+      auto compute_time_start = std::chrono::system_clock::now();
       for (auto actor: shared_data->registered_actors) {
         message.setActor(actor);
         writeQueue(message);
-        std::this_thread::sleep_for(std::chrono::microseconds(delay));
       }
-      auto current_time = std::chrono::system_clock::now();
-      std::chrono::duration<double> diff = current_time - last_time;
+      auto compute_time_end = std::chrono::system_clock::now();
+      std::chrono::duration<double> compute_duration = compute_time_end - compute_time_start;
 
-      if (diff.count() > 1.0) {         // Update delay every second
-        last_time = current_time;
-        delay = static_cast<int>(
-          1000000 / (shared_data->registered_actors.size() * UPDATE_FREQUENCY)
-          );
-      }
+      double cpu_redundancy_time = (1.0/UPDATE_FREQUENCY) - compute_duration.count();
+      int redundancy_microseconds = static_cast<int>(std::floor(cpu_redundancy_time * 1000000));
+      redundancy_microseconds = redundancy_microseconds > 0 ? redundancy_microseconds: 0;
+      std::this_thread::sleep_for(std::chrono::microseconds(redundancy_microseconds));
     }
     PipelineMessage empty_message;
     return empty_message;
