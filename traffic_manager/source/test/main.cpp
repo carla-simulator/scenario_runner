@@ -19,14 +19,12 @@
 #include "Pipeline.h"
 
 void test_dense_topology(const carla::client::World &);
-
 void test_in_memory_map(carla::SharedPtr<carla::client::Map>);
-
+void test_lane_change(const carla::client::World &world);
 void test_pipeline_stages(
     carla::SharedPtr<carla::client::ActorList> actor_list,
     carla::SharedPtr<carla::client::Map> world_map,
     carla::client::Client &client_conn);
-
 void test_pipeline(
     carla::client::World& world,
     carla::client::Client &client_conn,
@@ -49,6 +47,7 @@ int main(int argc, char* argv[]) {
 
   // test_dense_topology(world);
   // test_in_memory_map(world_map);
+  // test_lane_change(world);
   // test_pipeline_stages(vehicle_list, world_map, client_conn);
   int target_traffic_amount =0;
   // if (argc > 1) {
@@ -204,5 +203,24 @@ void test_dense_topology(const carla::client::World &world) {
     debug.DrawPoint(location + carla::geom::Location(0,
         0,
         1), 0.2, carla::client::DebugHelper::Color{225U, 0U, 0U}, 30.0F);
+  }
+}
+
+void test_lane_change(const carla::client::World &world) {
+  auto debug = world.MakeDebugHelper();
+  auto dao = traffic_manager::CarlaDataAccessLayer(world.GetMap());
+  auto topology = dao.getTopology();
+  traffic_manager::InMemoryMap local_map(topology);
+  local_map.setUp(1.0);
+  for (auto point : local_map.get_dense_topology()) {
+    auto zoffset = carla::geom::Location(0,0,5);
+    if(point->getLeftWaypoint() != nullptr){
+      debug.DrawArrow(point->getLocation()+zoffset,(point->getLeftWaypoint())->getLocation()+zoffset);
+    }
+    world.WaitForTick(carla::time_duration(std::chrono::duration<int, std::milli>(1000)));
+    if(point->getRightWaypoint() != nullptr){
+      debug.DrawArrow(point->getLocation()+zoffset,(point->getRightWaypoint())->getLocation()+zoffset);
+    }
+    world.WaitForTick(carla::time_duration(std::chrono::duration<int, std::milli>(1000)));
   }
 }

@@ -18,6 +18,8 @@ namespace traffic_manager {
 
     carla::SharedPtr<carla::client::Waypoint> waypoint;
     std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints;
+    std::shared_ptr<SimpleWaypoint> next_left_waypoint;
+    std::shared_ptr<SimpleWaypoint> next_right_waypoint;
 
   public:
 
@@ -26,6 +28,9 @@ namespace traffic_manager {
 
     /// Returns the location object for this waypoint.
     carla::geom::Location getLocation() const;
+
+    /// Returns a carla::shared_ptr to carla::waypoint
+    carla::SharedPtr<carla::client::Waypoint> getWaypoint() const; 
 
     /// Returns the list of next waypoints.
     std::vector<std::shared_ptr<SimpleWaypoint>> getNextWaypoint() const;
@@ -38,6 +43,19 @@ namespace traffic_manager {
 
     /// This method is used to set the next waypoints.
     int setNextWaypoint(std::vector<std::shared_ptr<SimpleWaypoint>> next_waypoints);
+
+    /// This method is used to set the closest left waypoint for lane change
+    void setLeftWaypoint(std::shared_ptr<SimpleWaypoint> waypoint);
+
+    /// This method is used to set the closest right waypoint for lane change
+    void setRightWaypoint(std::shared_ptr<SimpleWaypoint> waypoint);
+
+    /// This method is used to get the closest left waypoint for lane change
+    std::shared_ptr<SimpleWaypoint> getLeftWaypoint();
+    
+    /// This method is used to get the closest right waypoint for lane change
+    std::shared_ptr<SimpleWaypoint> getRightWaypoint();
+
 
     /// Calculates the distance from the object's waypoint to the passed
     /// location.
