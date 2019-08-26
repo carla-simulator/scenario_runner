@@ -82,13 +82,13 @@ A list of supported scenarios is provided in
 different scenarios may take place in different CARLA towns. This has to be
 respected when launching the CARLA server.
 
-## Running scenarios using the OpenScenario format
-To run a scenario, which is based on the OpenScenario format, please run the ScenarioRunner as follows:
+## Running scenarios using the OpenSCENARIO format
+To run a scenario, which is based on the OpenSCENARIO format, please run the ScenarioRunner as follows:
 ```
 python scenario_runner.py --openscenario <path/to/xosc-file>
 ```
-Please note that the OpenScenario support and the OpenScenario format itself are still work in progress.
-More information you can find in [OpenScenario support](openscenario_support.md)
+Please note that the OpenSCENARIO support and the OpenSCENARIO format itself are still work in progress.
+More information you can find in [OpenSCENARIO support](openscenario_support.md)
 
 ## Running route-based scenario (similar to the CARLA AD Challenge)
 To run a route-based scenario, please run the ScenarioRunner as follows:
