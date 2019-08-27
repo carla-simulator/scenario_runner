@@ -184,7 +184,7 @@ class OpenScenarioParser(object):
                     atomic = InTriggerDistanceToLocation(
                         trigger_actor, transform.location, distance_value, name=condition_name)
                 elif entity_condition.find('Distance') is not None:
-                    distance_condition = entity_condition.find('RelativeDistance')
+                    distance_condition = entity_condition.find('Distance')
                     distance_value = float(distance_condition.attrib.get('value'))
                     if distance_condition.attrib.get('rule') != "less_than":
                         raise NotImplementedError(
