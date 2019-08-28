@@ -85,14 +85,18 @@ class OpenScenario(BasicScenario):
             if act.attrib.get('name') != 'Behavior':
                 continue
 
+
+            act_sequence = py_trees.composites.Sequence(
+                name="Act StartConditions and behaviours")
+
+            start_conditions = py_trees.composites.Parallel(
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="StartConditions Group") 
+                
             parallel_behavior = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Maneuver + EndConditions Group")
 
             parallel_sequences = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
-
-            act_sequence = py_trees.composites.Sequence(
-                name="Act StartConditions and behaviours")
 
             for sequence in act.iter("Sequence"):
                 sequence_behavior = py_trees.composites.Sequence()
@@ -109,7 +113,8 @@ class OpenScenario(BasicScenario):
                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence.attrib.get('name'))
                 for maneuver in sequence.iter("Maneuver"):
                     maneuver_sequence = py_trees.composites.Parallel(
-                        policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuver " + maneuver.attrib.get('name'))
+                        policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
+                        name="Maneuver " + maneuver.attrib.get('name'))
                     for event in maneuver.iter("Event"):
                         event_sequence = py_trees.composites.Sequence(
                             name="Event " + event.attrib.get('name'))
@@ -127,7 +132,7 @@ class OpenScenario(BasicScenario):
                                 # There is always one StartConditions block per Event
                                 parallel_condition_groups = self._create_condition_container(
                                     child, "Parallel Condition Groups")
-                                event_sequence.add(parallel_condition_groups)
+                                event_sequence.add_child(parallel_condition_groups)
 
                         event_sequence.add_child(parallel_actions)
                         maneuver_sequence.add_child(event_sequence)
