@@ -68,6 +68,18 @@ class Scenario(object):
             self.scenario_tree.add_child(self.criteria_tree)
         self.scenario_tree.setup(timeout=1)
 
+    def get_criteria(self):
+        """
+        Return the list of test criteria (all leave nodes)
+        """
+        criteria = self.test_criteria
+        while isinstance(criteria, py_trees.composites.Parallel):
+            criteria = criteria.children
+            if len(criteria) == 1:
+                criteria = criteria[0]
+
+        return criteria
+
     def terminate(self):
         """
         This function sets the status of all leaves in the scenario tree to INVALID
@@ -262,19 +274,14 @@ class ScenarioManager(object):
         if self.scenario.test_criteria is None:
             return True
 
-        if isinstance(self.scenario.test_criteria, py_trees.composites.Parallel):
-            if self.scenario.test_criteria.status == py_trees.common.Status.FAILURE:
+        for criterion in self.scenario.get_criteria():
+            if (not criterion.optional and
+                    criterion.test_status != "SUCCESS" and
+                    criterion.test_status != "ACCEPTABLE"):
                 failure = True
                 result = "FAILURE"
-        else:
-            for criterion in self.scenario.test_criteria:
-                if (not criterion.optional and
-                        criterion.test_status != "SUCCESS" and
-                        criterion.test_status != "ACCEPTABLE"):
-                    failure = True
-                    result = "FAILURE"
-                elif criterion.test_status == "ACCEPTABLE":
-                    result = "ACCEPTABLE"
+            elif criterion.test_status == "ACCEPTABLE":
+                result = "ACCEPTABLE"
 
         if self.scenario.timeout_node.timeout and not failure:
             timeout = True
