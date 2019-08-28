@@ -107,7 +107,7 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, world, debug_mode=False, agent=None):
+    def __init__(self, world, debug_mode=False, challenge_mode=False, agent=None):
         """
         Init requires scenario as input
         """
@@ -118,7 +118,7 @@ class ScenarioManager(object):
         self.other_actors = None
 
         self._debug_mode = debug_mode
-        self._agent = AgentWrapper(agent) if agent else None
+        self._agent = AgentWrapper(agent, challenge_mode) if agent else None
         self._running = False
         self._timestamp_last_run = 0.0
         self._my_lock = threading.Lock()
