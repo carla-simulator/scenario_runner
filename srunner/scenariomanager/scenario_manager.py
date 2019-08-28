@@ -19,6 +19,7 @@ import threading
 import py_trees
 
 from srunner.challenge.autoagents.agent_wrapper import AgentWrapper
+from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
@@ -43,6 +44,7 @@ class Scenario(object):
         self.behavior = behavior
         self.test_criteria = criteria
         self.timeout = timeout
+        self.name = name
 
         if self.test_criteria is not None and not isinstance(self.test_criteria, py_trees.composites.Parallel):
             # list of nodes
@@ -89,7 +91,7 @@ class Scenario(object):
         """
         Return the list of test criteria (all leave nodes)
         """
-        criteria_list = self._extract_nodes_from_tree(self.test_criteria)
+        criteria_list = self._extract_nodes_from_tree(self.criteria_tree)
         return criteria_list
 
     def terminate(self):
@@ -122,7 +124,7 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, world, debug_mode=False, challenge_mode=False, agent=None):
+    def __init__(self, debug_mode=False, challenge_mode=False):
         """
         Init requires scenario as input
         """
@@ -133,7 +135,8 @@ class ScenarioManager(object):
         self.other_actors = None
 
         self._debug_mode = debug_mode
-        self._agent = AgentWrapper(agent, challenge_mode) if agent else None
+        self._challenge_mode = challenge_mode
+        self._agent = None
         self._running = False
         self._timestamp_last_run = 0.0
         self._my_lock = threading.Lock()
@@ -145,7 +148,7 @@ class ScenarioManager(object):
 
         # Register the scenario tick as callback for the CARLA world
         # Use the callback_id inside the signal handler to allow external interrupts
-        self._callback_id = world.on_tick(self._tick_scenario)
+        self._callback_id = None
         signal.signal(signal.SIGINT, self._signal_handler)
 
     def _signal_handler(self, signum, frame):
@@ -156,11 +159,28 @@ class ScenarioManager(object):
         with self._my_lock:
             self._running = False
 
-    def load_scenario(self, scenario):
+    def _reset(self):
+        """
+        Reset all parameters
+        """
+        self._running = False
+        self._timestamp_last_run = 0.0
+        self.scenario_duration_system = 0.0
+        self.scenario_duration_game = 0.0
+        self.start_system_time = None
+        self.end_system_time = None
+        if self._callback_id:
+            CarlaDataProvider.get_world().remove_on_tick(self._callback_id)
+            self._callback_id = None
+        GameTime.restart()
+
+    def load_scenario(self, scenario, agent=None):
         """
         Load a new scenario
         """
-        self.restart()
+        self._reset()
+        self._callback_id = CarlaDataProvider.get_world().on_tick(self._tick_scenario)
+        self._agent = AgentWrapper(agent, self._challenge_mode) if agent else None
         self.scenario_class = scenario
         self.scenario = scenario.scenario
         self.scenario_tree = self.scenario.scenario_tree
@@ -172,20 +192,11 @@ class ScenarioManager(object):
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
 
+        if self._challenge_mode:
+            ChallengeStatisticsManager.next_scenario(self.scenario)
+
         if self._agent is not None:
             self._agent.setup_sensors(self.ego_vehicles[0], self._debug_mode)
-
-    def restart(self):
-        """
-        Reset all parameters
-        """
-        self._running = False
-        self._timestamp_last_run = 0.0
-        self.scenario_duration_system = 0.0
-        self.scenario_duration_game = 0.0
-        self.start_system_time = None
-        self.end_system_time = None
-        GameTime.restart()
 
     def run_scenario(self):
         """
@@ -216,11 +227,12 @@ class ScenarioManager(object):
         This function is a callback for world.on_tick()
 
         Important:
-        - It hast to be ensured that the scenario has not yet completed/failed
+        - It has to be ensured that the scenario has not yet completed/failed
           and that the time moved forward.
         - A thread lock should be used to avoid that the scenario tick is performed
           multiple times in parallel.
         """
+
         with self._my_lock:
             if self._running and self._timestamp_last_run < timestamp.elapsed_seconds:
                 self._timestamp_last_run = timestamp.elapsed_seconds
@@ -247,26 +259,37 @@ class ScenarioManager(object):
                 if self.scenario_tree.status != py_trees.common.Status.RUNNING:
                     self._running = False
 
+                if self._challenge_mode:
+                    ChallengeStatisticsManager.compute_current_statistics()
+
                 if self._agent is not None:
                     self.ego_vehicles[0].apply_control(ego_action)
-                    CarlaDataProvider.get_world().tick()
+
+        if self._agent:
+            CarlaDataProvider.get_world().tick()
 
     def stop_scenario(self):
         """
         This function triggers a proper termination of a scenario
         """
+        with self._my_lock:
+            if self._callback_id:
+                CarlaDataProvider.get_world().remove_on_tick(self._callback_id)
+                self._callback_id = None
+
         if self.scenario is not None:
             self.scenario.terminate()
 
         if self._agent is not None:
             self._agent.cleanup()
+            self._agent = None
 
         CarlaDataProvider.cleanup()
 
     def analyze_scenario(self, stdout, filename, junit):
         """
         This function is intended to be called from outside and provide
-        statistics about the scenario (human-readable, in form of a junit
+        the final statistics about the scenario (human-readable, in form of a junit
         report, etc.)
         """
 
@@ -292,5 +315,8 @@ class ScenarioManager(object):
 
         output = ResultOutputProvider(self, result, stdout, filename, junit)
         output.write()
+
+        if self._challenge_mode:
+            ChallengeStatisticsManager.record_scenario_statistics()
 
         return failure or timeout

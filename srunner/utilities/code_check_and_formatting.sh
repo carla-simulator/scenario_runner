@@ -13,6 +13,7 @@ autopep8 srunner/scenarioconfigs/*.py --in-place --max-line-length=120
 pylint --rcfile=.pylintrc --disable=I srunner/scenariomanager/
 pylint --rcfile=.pylintrc srunner/scenarios/
 pylint --rcfile=.pylintrc srunner/challenge/autoagents/
+pylint --rcfile=.pylintrc srunner/challenge/challenge_statistics_manager.py
 pylint --rcfile=.pylintrc srunner/tools/
 pylint --rcfile=.pylintrc srunner/scenarioconfigs/
 pylint --rcfile=.pylintrc scenario_runner.py

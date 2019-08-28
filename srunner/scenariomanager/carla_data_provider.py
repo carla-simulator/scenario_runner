@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import math
 import random
+import re
 from six import iteritems
 
 import carla
@@ -383,6 +384,16 @@ class CarlaDataProvider(object):
         Note: Can be None
         """
         return CarlaDataProvider._ego_vehicle_route
+
+    @staticmethod
+    def find_weather_presets():
+        """
+        Get weather presets from CARLA
+        """
+        rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
+        name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
+        presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
+        return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
 
     @staticmethod
     def cleanup():
