@@ -10,6 +10,7 @@
     - Added basic version check to ensure usage of correct CARLA version
     - Routes can be executed with the ScenarioRunner
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
+    - Challenge can be executed with the ScenarioRunner
 * Extended OpenScenario support:
     - Added support for pedestrians
     - Full support for SimulationTime condition

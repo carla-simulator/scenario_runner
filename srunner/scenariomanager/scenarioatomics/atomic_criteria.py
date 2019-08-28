@@ -533,6 +533,7 @@ class OnSidewalkTest(Criterion):
                 self.list_traffic_events.append(onsidewalk_event)
 
                 self.test_status = "FAILURE"
+                self.actual_value += 1
                 self._onsidewalk_active = True
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -626,6 +627,7 @@ class WrongLaneTest(Criterion):
                 # is there a difference of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane
                 # direction?
                 self._infractions += 1
+                self.actual_value += 1
 
                 wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
                 wrong_way_event.set_message('Agent invaded a lane in opposite direction: road_id={}, lane_id={}'.format(
@@ -949,6 +951,7 @@ class RunningRedLightTest(Criterion):
                     # is the vehicle traversing the stop line?
                     if self.is_vehicle_crossing_line((tail_pt0, tail_pt1), (area[0], area[-1])):
                         self.test_status = "FAILURE"
+                        self.actual_value += 1
                         location = traffic_light.get_transform().location
                         red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
                         red_light_event.set_message("Agent ran a red light {} at (x={}, y={}, x={})".format(
