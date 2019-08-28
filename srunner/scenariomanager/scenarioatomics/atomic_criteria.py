@@ -844,6 +844,14 @@ class RouteCompletionTest(Criterion):
 
         return new_status
 
+    def terminate(self, new_status):
+        """
+        Set test status to failure if not successful and terminate
+        """
+        if self.test_status == "INIT":
+            self.test_status = "FAILURE"
+        super(RouteCompletionTest, self).terminate(new_status)
+
 
 class RunningRedLightTest(Criterion):
 
