@@ -11,12 +11,14 @@ These must not be modified and are for reference only!
 """
 
 from __future__ import print_function
+import signal
 import sys
 import time
 import threading
 
 import py_trees
 
+from srunner.challenge.autoagents.agent_wrapper import AgentWrapper
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
@@ -105,7 +107,7 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, world, debug_mode=False):
+    def __init__(self, world, debug_mode=False, agent=None):
         """
         Init requires scenario as input
         """
@@ -116,8 +118,7 @@ class ScenarioManager(object):
         self.other_actors = None
 
         self._debug_mode = debug_mode
-        self.agent = None
-        self._autonomous_agent_plugged = False
+        self._agent = AgentWrapper(agent) if agent else None
         self._running = False
         self._timestamp_last_run = 0.0
         self._my_lock = threading.Lock()
@@ -127,7 +128,18 @@ class ScenarioManager(object):
         self.start_system_time = None
         self.end_system_time = None
 
-        world.on_tick(self._tick_scenario)
+        # Register the scenario tick as callback for the CARLA world
+        # Use the callback_id inside the signal handler to allow external interrupts
+        self._callback_id = world.on_tick(self._tick_scenario)
+        signal.signal(signal.SIGINT, self._signal_handler)
+
+    def _signal_handler(self, signum, frame):
+        """
+        Terminate scenario ticking when receiving a signal interrupt
+        """
+        CarlaDataProvider.get_world().remove_on_tick(self._callback_id)
+        with self._my_lock:
+            self._running = False
 
     def load_scenario(self, scenario):
         """
@@ -144,6 +156,9 @@ class ScenarioManager(object):
         CarlaDataProvider.register_actors(self.other_actors)
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
+
+        if self._agent is not None:
+            self._agent.setup_sensors(self.ego_vehicles[0], self._debug_mode)
 
     def restart(self):
         """
@@ -202,6 +217,9 @@ class ScenarioManager(object):
                 GameTime.on_carla_tick(timestamp)
                 CarlaDataProvider.on_carla_tick()
 
+                if self._agent is not None:
+                    ego_action = self._agent()
+
                 # Tick scenario
                 self.scenario_tree.tick_once()
 
@@ -214,12 +232,19 @@ class ScenarioManager(object):
                 if self.scenario_tree.status != py_trees.common.Status.RUNNING:
                     self._running = False
 
+                if self._agent is not None:
+                    self.ego_vehicles[0].apply_control(ego_action)
+                    CarlaDataProvider.get_world().tick()
+
     def stop_scenario(self):
         """
         This function triggers a proper termination of a scenario
         """
         if self.scenario is not None:
             self.scenario.terminate()
+
+        if self._agent is not None:
+            self._agent.cleanup()
 
         CarlaDataProvider.cleanup()
 

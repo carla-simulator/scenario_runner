@@ -1,34 +1,28 @@
-import cv2
-import numpy as np
+#!/usr/bin/env python
+
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+
+"""
+This module provides a human agent to control the ego vehicle via keyboard
+"""
+
 import time
 from threading import Thread
+import cv2
+import numpy as np
 
 try:
     import pygame
-    from pygame.locals import K_BACKSPACE
-    from pygame.locals import K_COMMA
     from pygame.locals import K_DOWN
-    from pygame.locals import K_ESCAPE
-    from pygame.locals import K_F1
     from pygame.locals import K_LEFT
-    from pygame.locals import K_PERIOD
     from pygame.locals import K_RIGHT
-    from pygame.locals import K_SLASH
     from pygame.locals import K_SPACE
-    from pygame.locals import K_TAB
     from pygame.locals import K_UP
     from pygame.locals import K_a
-    from pygame.locals import K_c
     from pygame.locals import K_d
-    from pygame.locals import K_h
-    from pygame.locals import K_m
-    from pygame.locals import K_p
-    from pygame.locals import K_q
-    from pygame.locals import K_r
     from pygame.locals import K_s
     from pygame.locals import K_w
-    from pygame.locals import K_MINUS
-    from pygame.locals import K_EQUALS
 except ImportError:
     raise RuntimeError('cannot import pygame, make sure pygame package is installed')
 
@@ -36,25 +30,32 @@ import carla
 
 from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 
-class HumanInterface():
+
+class HumanInterface(object):
+
     """
     Class to control a vehicle manually for debugging purposes
     """
+
     def __init__(self, parent):
         self.quit = False
         self._parent = parent
-        self.WIDTH = 800
-        self.HEIGHT = 600
-        self.THROTTLE_DELTA = 0.05
-        self.STEERING_DELTA = 0.01
+        self._width = 800
+        self._height = 600
+        self._throttle_delta = 0.05
+        self._steering_delta = 0.01
+        self._surface = None
 
         pygame.init()
         pygame.font.init()
         self._clock = pygame.time.Clock()
-        self._display = pygame.display.set_mode((self.WIDTH, self.HEIGHT), pygame.HWSURFACE | pygame.DOUBLEBUF)
+        self._display = pygame.display.set_mode((self._width, self._height), pygame.HWSURFACE | pygame.DOUBLEBUF)
         pygame.display.set_caption("Human Agent")
 
     def run(self):
+        """
+        Run the GUI
+        """
         while not self._parent.agent_engaged and not self.quit:
             time.sleep(0.5)
 
@@ -67,16 +68,16 @@ class HumanInterface():
 
             # process sensor data
             input_data = self._parent.sensor_interface.get_data()
-            image_center = input_data['Center'][1][:,:,-2::-1]
-            image_left = input_data['Left'][1][:,:,-2::-1]
-            image_right = input_data['Right'][1][:,:,-2::-1]
-            image_rear = input_data['Rear'][1][:,:,-2::-1]
+            image_center = input_data['Center'][1][:, :, -2::-1]
+            image_left = input_data['Left'][1][:, :, -2::-1]
+            image_right = input_data['Right'][1][:, :, -2::-1]
+            image_rear = input_data['Rear'][1][:, :, -2::-1]
 
             top_row = np.hstack((image_left, image_center, image_right))
-            bottom_row = np.hstack((0*image_rear, image_rear, 0*image_rear))
+            bottom_row = np.hstack((0 * image_rear, image_rear, 0 * image_rear))
             comp_image = np.vstack((top_row, bottom_row))
             # resize image
-            image_rescaled = cv2.resize(comp_image, dsize=(self.WIDTH, self.HEIGHT), interpolation=cv2.INTER_CUBIC)
+            image_rescaled = cv2.resize(comp_image, dsize=(self._width, self._height), interpolation=cv2.INTER_CUBIC)
 
             # display image
             self._surface = pygame.surfarray.make_surface(image_rescaled.swapaxes(0, 1))
@@ -89,7 +90,17 @@ class HumanInterface():
 
 class HumanAgent(AutonomousAgent):
 
+    """
+    Human agent to control the ego vehicle via keyboard
+    """
+
+    current_control = None
+    agent_engaged = False
+
     def setup(self, path_to_conf_file):
+        """
+        Setup the agent parameters
+        """
         self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
         self.agent_engaged = False
@@ -101,7 +112,6 @@ class HumanAgent(AutonomousAgent):
         self._hic = HumanInterface(self)
         self._thread = Thread(target=self._hic.run)
         self._thread.start()
-
 
     def sensors(self):
         """
@@ -122,42 +132,59 @@ class HumanAgent(AutonomousAgent):
         ]
 
         """
-        sensors = [{'type': 'sensor.camera.rgb', 'x':0.7, 'y':0.0, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':0.0,
-                    'width':300, 'height':200, 'fov':100, 'id': 'Center'},
+        sensors = [{'type': 'sensor.camera.rgb', 'x': 0.7, 'y': 0.0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                    'width': 300, 'height': 200, 'fov': 100, 'id': 'Center'},
 
-                   {'type': 'sensor.camera.rgb', 'x':0.7, 'y':-0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
+                   {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
                     'yaw': -45.0, 'width': 300, 'height': 200, 'fov': 100, 'id': 'Left'},
 
-                   {'type': 'sensor.camera.rgb', 'x': 0.7, 'y':0.4, 'z':1.60, 'roll':0.0, 'pitch':0.0, 'yaw':45.0,
-                    'width':300, 'height':200, 'fov': 100, 'id': 'Right'},
+                   {'type': 'sensor.camera.rgb', 'x': 0.7, 'y': 0.4, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0, 'yaw': 45.0,
+                    'width': 300, 'height': 200, 'fov': 100, 'id': 'Right'},
 
                    {'type': 'sensor.camera.rgb', 'x': -1.8, 'y': 0, 'z': 1.60, 'roll': 0.0, 'pitch': 0.0,
                     'yaw': 180.0, 'width': 300, 'height': 200, 'fov': 130, 'id': 'Rear'},
 
                    {'type': 'sensor.other.gnss', 'x': 0.7, 'y': -0.4, 'z': 1.60, 'id': 'GPS'}
-                  ]
+                   ]
 
         return sensors
 
     def run_step(self, input_data, timestamp):
+        """
+        Execute one step of navigation.
+        """
         self.agent_engaged = True
         time.sleep(0.1)
         return self.current_control
 
     def destroy(self):
+        """
+        Cleanup
+        """
         self._hic.quit = True
         self._thread.join()
 
 
 class KeyboardControl(object):
+
+    """
+    Keyboard control for the human agent
+    """
+
     def __init__(self):
+        """
+        Init
+        """
         self._control = carla.VehicleControl()
         self._steer_cache = 0.0
 
     def parse_events(self, control, clock):
+        """
+        Parse the keyboard events and set the vehicle controls accordingly
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return True
+                return
 
             self._parse_vehicle_keys(pygame.key.get_pressed(), clock.get_time())
             control.steer = self._control.steer
@@ -166,6 +193,9 @@ class KeyboardControl(object):
             control.hand_brake = self._control.hand_brake
 
     def _parse_vehicle_keys(self, keys, milliseconds):
+        """
+        Calculate new vehicle controls based on input keys
+        """
         self._control.throttle = 0.6 if keys[K_UP] or keys[K_w] else 0.0
         steer_increment = 15.0 * 5e-4 * milliseconds
         if keys[K_LEFT] or keys[K_a]:
@@ -179,6 +209,3 @@ class KeyboardControl(object):
         self._control.steer = round(self._steer_cache, 1)
         self._control.brake = 1.0 if keys[K_DOWN] or keys[K_s] else 0.0
         self._control.hand_brake = keys[K_SPACE]
-
-
-

@@ -211,8 +211,8 @@ class RouteScenario(BasicScenario):
         _route_description = copy.copy(config.route_description)
 
         # prepare route's trajectory
-        _, _route_description['trajectory'] = interpolate_trajectory(world,
-                                                                     _route_description['trajectory'])
+        gps_route, _route_description['trajectory'] = interpolate_trajectory(world,
+                                                                             _route_description['trajectory'])
 
         potential_scenarios_definitions, _ = RouteParser.scan_route_for_scenarios(_route_description,
                                                                                   world_annotations)
@@ -220,6 +220,8 @@ class RouteScenario(BasicScenario):
         self.route = _route_description['trajectory']
         self.target = self.route[-1][0]
         CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(self.route))
+
+        config.agent.set_global_plan(gps_route, self.route)
 
         # Sample the scenarios to be used for this route instance.
         self.sampled_scenarios_definitions = self._scenario_sampling(potential_scenarios_definitions)

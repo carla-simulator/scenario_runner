@@ -9,6 +9,8 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encounters a cyclist ahead after taking a right or left turn.
 """
 
+from __future__ import print_function
+
 import py_trees
 
 import carla

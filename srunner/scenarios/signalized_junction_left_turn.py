@@ -9,7 +9,6 @@ Collection of traffic scenarios where the ego vehicle (hero)
 is making a left turn
 """
 
-from __future__ import print_function
 from six.moves.queue import Queue  # pylint: disable=relative-import
 
 import py_trees
