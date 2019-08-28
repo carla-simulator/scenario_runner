@@ -90,8 +90,8 @@ class OpenScenario(BasicScenario):
                 name="Act StartConditions and behaviours")
 
             start_conditions = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="StartConditions Group") 
-                
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="StartConditions Group")
+
             parallel_behavior = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Maneuver + EndConditions Group")
 
