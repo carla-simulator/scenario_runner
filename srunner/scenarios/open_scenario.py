@@ -76,7 +76,8 @@ class OpenScenario(BasicScenario):
         Basic behavior do nothing, i.e. Idle
         """
 
-        story_behavior = py_trees.composites.Sequence("Story")
+        story_behavior = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Story")
 
         joint_actor_list = self.other_actors + self.ego_vehicles
 
@@ -84,7 +85,6 @@ class OpenScenario(BasicScenario):
 
             if act.attrib.get('name') != 'Behavior':
                 continue
-
 
             act_sequence = py_trees.composites.Sequence(
                 name="Act StartConditions and behaviours")
@@ -132,7 +132,8 @@ class OpenScenario(BasicScenario):
                                 # There is always one StartConditions block per Event
                                 parallel_condition_groups = self._create_condition_container(
                                     child, "Parallel Condition Groups")
-                                event_sequence.add_child(parallel_condition_groups)
+                                event_sequence.add_child(
+                                    parallel_condition_groups)
 
                         event_sequence.add_child(parallel_actions)
                         maneuver_sequence.add_child(event_sequence)
@@ -168,6 +169,9 @@ class OpenScenario(BasicScenario):
                 act_sequence.add_child(start_conditions)
             if parallel_behavior.children:
                 act_sequence.add_child(parallel_behavior)
+
+            if act_sequence.children:
+                story_behavior.add_child(act_sequence)
 
         # Build behavior tree
         # sequence.add_child(maneuver_behavior)
