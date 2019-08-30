@@ -19,6 +19,7 @@
     - Fixed WaypointFollower behavior to use m/s instead of km/h
     - Fixed starting position of VehicleTurnLeft/Right scenarios
     - Fixed spawn_point modification inside CarlaActorPool.setup_actor()
+    - Fixed result of DrivenDistanceTest
     - Cleanup of pylint errors for all autonomous agents
 
 ## CARLA Scenario_Runner 0.9.6
