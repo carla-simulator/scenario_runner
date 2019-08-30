@@ -191,7 +191,7 @@ class DrivenDistanceTest(Criterion):
         """
         Set final status
         """
-        if self.test_status == "RUNNING":
+        if self.test_status != "SUCCESS":
             self.test_status = "FAILURE"
         super(DrivenDistanceTest, self).terminate(new_status)
 
