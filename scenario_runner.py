@@ -359,6 +359,8 @@ class ScenarioRunner(object):
             self._cleanup(True)
             sys.exit(-1)
         except Exception as e:
+            if args.debug:
+                traceback.print_exc()
             print(e)
 
         self._cleanup()

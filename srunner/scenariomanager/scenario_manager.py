@@ -68,24 +68,11 @@ class Scenario(object):
             self.scenario_tree.add_child(self.criteria_tree)
         self.scenario_tree.setup(timeout=1)
 
-    def get_criteria(self):
+    def _extract_nodes_from_tree(self, tree):  # pylint: disable=no-self-use
         """
-        Return the list of test criteria (all leave nodes)
+        Returns the list of all nodes from the given tree
         """
-        criteria = self.test_criteria
-        while isinstance(criteria, py_trees.composites.Parallel):
-            criteria = criteria.children
-            if len(criteria) == 1:
-                criteria = criteria[0]
-
-        return criteria
-
-    def terminate(self):
-        """
-        This function sets the status of all leaves in the scenario tree to INVALID
-        """
-        # Get list of all leaves in the tree
-        node_list = [self.scenario_tree]
+        node_list = [tree]
         more_nodes_exist = True
         while more_nodes_exist:
             more_nodes_exist = False
@@ -95,6 +82,22 @@ class Scenario(object):
                     more_nodes_exist = True
                     for child in node.children:
                         node_list.append(child)
+
+        return node_list
+
+    def get_criteria(self):
+        """
+        Return the list of test criteria (all leave nodes)
+        """
+        criteria_list = self._extract_nodes_from_tree(self.test_criteria)
+        return criteria_list
+
+    def terminate(self):
+        """
+        This function sets the status of all leaves in the scenario tree to INVALID
+        """
+        # Get list of all nodes in the tree
+        node_list = self._extract_nodes_from_tree(self.scenario_tree)
 
         # Set status to INVALID
         for node in node_list:

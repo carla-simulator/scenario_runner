@@ -391,6 +391,7 @@ class CarlaDataProvider(object):
         """
         CarlaDataProvider._actor_velocity_map.clear()
         CarlaDataProvider._actor_location_map.clear()
+        CarlaDataProvider._actor_transform_map.clear()
         CarlaDataProvider._traffic_light_map.clear()
         CarlaDataProvider._map = None
         CarlaDataProvider._world = None
