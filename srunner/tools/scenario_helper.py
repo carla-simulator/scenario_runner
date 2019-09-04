@@ -257,6 +257,63 @@ def generate_target_waypoint_list(waypoint, turn=0):
     return plan, plan[-1][0]
 
 
+def generate_target_waypoint_list_multilane(waypoint, change='left',
+                                            distance_same_lane=10, distance_other_lane=25, check='true'):
+    """
+    This methods generates a waypoint list which leads the vehicle to a parallel lane.
+    The change input must be 'left' or 'right', depending on which lane you want to change.
+
+    The step distance between waypoints on the same lane is 2m.
+    The step distance between the lane change is set to 25m.
+
+    @returns a waypoint list from the starting point to the end point on a right or left parallel lane.
+    """
+    plan = []
+    plan.append((waypoint, RoadOption.LANEFOLLOW))  # start position
+
+    step_distance = 2
+
+    # check if lane change possible
+    if check == 'true':
+        lane_change_possibilities = ['Left', 'Right', 'Both']
+        if str(waypoint.lane_change) not in lane_change_possibilities:
+            # ERROR, lane change is not possible
+            return None
+
+    # same lane
+    distance = 0
+    while distance < distance_same_lane:
+        next_wp = plan[-1][0].next(step_distance)
+        distance += next_wp[0].transform.location.distance(plan[-1][0].transform.location)
+        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+
+    target_lane_id = None
+    if change == 'left':
+        # go left
+        wp_left = plan[-1][0].get_left_lane()
+        target_lane_id = wp_left.lane_id
+        next_wp = wp_left.next(25)
+        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+    elif change == 'right':
+        # go right
+        wp_right = plan[-1][0].get_right_lane()
+        target_lane_id = wp_right.lane_id
+        next_wp = wp_right.next(25)
+        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+    else:
+        # ERROR, input value for change must be 'left' or 'right'
+        return None
+
+    # other lane
+    distance = 0
+    while distance < distance_other_lane:
+        next_wp = plan[-1][0].next(step_distance)
+        distance += next_wp[0].transform.location.distance(plan[-1][0].transform.location)
+        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+
+    return plan, target_lane_id
+
+
 def generate_target_waypoint(waypoint, turn=0):
     """
     This method follow waypoints to a junction and choose path based on turn input.
