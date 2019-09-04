@@ -4,7 +4,9 @@
 * Moved atomics into new submodule scenarioatomics
 * Updated documentation for all behaviors, conditions and test criteria
 * Refactoring of scenario configurations and parsers
+* Added example scenario for lane change
 * New Features:
+    - Added LaneChange behavior atomic
     - Added get_transform() method for CarlaDataProvider
     - Added support for weather conditions
     - Added basic version check to ensure usage of correct CARLA version
