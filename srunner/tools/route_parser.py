@@ -71,8 +71,8 @@ class RouteParser(object):
 
             list_route_descriptions.append({
                 'id': route_id,
-                                        'town_name': route_town,
-                                        'trajectory': waypoint_list
+                'town_name': route_town,
+                'trajectory': waypoint_list
             })
 
         return list_route_descriptions

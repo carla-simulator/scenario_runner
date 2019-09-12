@@ -16,7 +16,7 @@ from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
-class NPCAgent(AutonomousAgent):
+class NpcAgent(AutonomousAgent):
 
     """
     NPC autonomous agent to control the ego vehicle

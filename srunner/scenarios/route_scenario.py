@@ -188,7 +188,7 @@ class RouteScenario(BasicScenario):
 
         self._create_scenarios_along_route(world, ego_vehicle, config, debug_mode)
 
-        super(RouteScenario, self).__init__("RouteScenario",
+        super(RouteScenario, self).__init__(name=config.name,
                                             ego_vehicles=[ego_vehicle],
                                             config=config,
                                             world=world,

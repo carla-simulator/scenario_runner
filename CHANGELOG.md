@@ -10,6 +10,7 @@
     - Added basic version check to ensure usage of correct CARLA version
     - Routes can be executed with the ScenarioRunner
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
+    - Challenge can be executed with the ScenarioRunner
 * Extended OpenScenario support:
     - Added support for pedestrians
     - Full support for SimulationTime condition
@@ -20,6 +21,7 @@
     - Fixed starting position of VehicleTurnLeft/Right scenarios
     - Fixed spawn_point modification inside CarlaActorPool.setup_actor()
     - Fixed result of DrivenDistanceTest
+    - Fixed exception in manual_control on fps visualization
     - Cleanup of pylint errors for all autonomous agents
 
 ## CARLA Scenario_Runner 0.9.6
