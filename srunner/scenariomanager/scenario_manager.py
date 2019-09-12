@@ -85,6 +85,9 @@ class Scenario(object):
                     for child in node.children:
                         node_list.append(child)
 
+        if len(node_list) == 1 and isinstance(node_list[0], py_trees.composites.Parallel):
+            return []
+
         return node_list
 
     def get_criteria(self):

@@ -72,7 +72,7 @@ def repeatable_behavior(behaviour, name=None):
     return sequence
 
 
-class ClearBlackboardVariablesStartingWith(behaviours.Success):
+class ClearBlackboardVariablesStartingWith(py_trees.behaviours.Success):
 
     """
     Clear the values starting with the specified string from the blackboard.
@@ -86,21 +86,20 @@ class ClearBlackboardVariablesStartingWith(behaviours.Success):
                  name="Clear Blackboard Variable Starting With",
                  variable_name_beginning="dummy",
                  ):
-        super(ClearBlackboardVariable, self).__init__(name)
+        super(ClearBlackboardVariablesStartingWith, self).__init__(name)
         self.variable_name_beginning = variable_name_beginning
 
     def initialise(self):
         """
         Delete the variables from the blackboard.
         """
-        self.blackboard = Blackboard()
-        blackboard_variables = [key for key, value in blackboard.__dict__.items(
-        ) if key.startswith(variable_name_beginning)]
+        blackboard_variables = [key for key, _ in py_trees.blackboard.__dict__.items(
+        ) if key.startswith(self.variable_name_beginning)]
         for variable in blackboard_variables:
-            blackboard.unset(variable)
+            delattr(py_trees.blackboard, variable)
 
 
-def get_py_tree_path(behaviour: py_trees.behaviour.Behaviour):
+def get_py_tree_path(behaviour):
     """
     Accept a behaviour/composite and return a string representation of its full path
     """
@@ -284,7 +283,14 @@ class OpenScenario(BasicScenario):
         parallel_criteria = py_trees.composites.Parallel("EndConditions (Criteria Group)",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        for condition in self.config.criteria:
+        criteria = []
+        for endcondition in self.config.storyboard.iter("EndConditions"):
+            for condition in endcondition.iter("Condition"):
+                if condition.attrib.get('name').startswith('criteria_'):
+                    condition.set('name', condition.attrib.get('name')[9:])
+                    criteria.append(condition)
+
+        for condition in criteria:
 
             criterion = OpenScenarioParser.convert_condition_to_atomic(
                 condition, self.ego_vehicles)
