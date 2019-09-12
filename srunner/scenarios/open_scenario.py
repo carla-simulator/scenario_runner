@@ -161,7 +161,7 @@ class OpenScenario(BasicScenario):
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
 
             for sequence in act.iter("Sequence"):
-                sequence_behavior = repeatable_behavior(py_trees.composites.Sequence())
+                sequence_behavior = oneshot_behavior(py_trees.composites.Sequence())
                 repetitions = sequence.attrib.get('numberOfExecutions', 1)
                 actor_ids = []
                 for actor in sequence.iter("Actors"):
@@ -171,22 +171,22 @@ class OpenScenario(BasicScenario):
                                 actor_ids.append(k)
                                 break
 
-                single_sequence_iteration = py_trees.composites.Parallel(
-                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence.attrib.get('name'))
+                single_sequence_iteration = repeatable_behavior(py_trees.composites.Parallel(
+                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence.attrib.get('name')))
                 for maneuver in sequence.iter("Maneuver"):
-                    maneuver_sequence = py_trees.composites.Parallel(
+                    maneuver_sequence = oneshot_behavior(py_trees.composites.Parallel(
                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
-                        name="Maneuver " + maneuver.attrib.get('name'))
+                        name="Maneuver " + maneuver.attrib.get('name')))
                     for event in maneuver.iter("Event"):
-                        event_sequence = py_trees.composites.Sequence(
-                            name="Event " + event.attrib.get('name'))
+                        event_sequence = oneshot_behavior(py_trees.composites.Sequence(
+                            name="Event " + event.attrib.get('name')))
                         parallel_actions = py_trees.composites.Parallel(
                             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Actions")
                         for child in event.iter():
                             if child.tag == "Action":
                                 for actor_id in actor_ids:
-                                    maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
-                                        child, joint_actor_list[actor_id])
+                                    maneuver_behavior = oneshot_behavior(OpenScenarioParser.convert_maneuver_to_atomic(
+                                        child, joint_actor_list[actor_id]))
                                     parallel_actions.add_child(
                                         maneuver_behavior)
 
