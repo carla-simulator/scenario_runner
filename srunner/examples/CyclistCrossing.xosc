@@ -262,37 +262,37 @@
         </Story>
         <EndConditions>
             <ConditionGroup>
-                <Condition name="RunningStopTest" delay="0" edge="rising">
+                <Condition name="criteria_RunningStopTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="RunningRedLightTest" delay="0" edge="rising">
+                <Condition name="criteria_RunningRedLightTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="WrongLaneTest" delay="0" edge="rising">
+                <Condition name="criteria_WrongLaneTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="OnSidewalkTest" delay="0" edge="rising">
+                <Condition name="criteria_OnSidewalkTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="KeepLaneTest" delay="0" edge="rising">
+                <Condition name="criteria_KeepLaneTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="CollisionTest" delay="0" edge="rising">
+                <Condition name="criteria_CollisionTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="DrivenDistanceTest" delay="0" edge="rising">
+                <Condition name="criteria_DrivenDistanceTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="distance_success" value="100" rule="less_than" />
                     </ByValue>

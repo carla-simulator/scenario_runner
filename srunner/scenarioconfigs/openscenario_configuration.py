@@ -45,7 +45,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         self.storyboard = self.xml_tree.find("Storyboard")
         self.story = self.storyboard.find("Story")
-        self.criteria = self.storyboard.find("EndConditions")
+        self.criteria = self.storyboard.find("EndConditions").xpath("//Condition[starts-with(@name,'criteria_')]")
         self.init = self.storyboard.find("Init")
 
         self._parse_openscenario_configuration()

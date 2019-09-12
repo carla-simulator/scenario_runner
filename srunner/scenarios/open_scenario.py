@@ -73,7 +73,7 @@ def repeatable_behavior(behaviour, name=None):
 
 
 class ClearBlackboardVariablesStartingWith(behaviours.Success):
-    
+
     """
     Clear the values starting with the specified string from the blackboard.
 
@@ -279,8 +279,13 @@ class OpenScenario(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        parallel_criteria = self._create_condition_container(
-            self.config.criteria, "EndConditions (Criteria Group)")
+        parallel_criteria = py_trees.composites.Parallel("EndConditions (Criteria Group)",
+                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
+        for condition in self.config.criteria:
+
+            criterion = OpenScenarioParser.convert_condition_to_atomic(condition, self.ego_vehicles)
+            parallel_criteria.add_child(criterion)
 
         return parallel_criteria
 
