@@ -50,6 +50,49 @@ def oneshot_behavior(behaviour, name=None):
     subtree_root.add_children([check_flag, sequence])
     return subtree_root
 
+def repeatable_behavior(behaviour, name=None):
+    """
+    This behaviour allows a composite with oneshot ancestors to run multiple
+    times, resetting the oneshot variables after each execution
+    """
+    if not name:
+        name = behaviour.name
+    clear_descendant_variables = ClearBlackboardVariablesStartingWith(
+        name="Clear Descendant Variables of {}".format(name),
+        variable_name_beginning=get_py_tree_path(behaviour) + ">"
+    )
+    # If it's a sequence, don't double-nest it in a redundant manner
+    if isinstance(behaviour, py_trees.composites.Sequence):
+        behaviour.add_child(clear_descendant_variables)
+        sequence = behaviour
+    else:
+        sequence = py_trees.composites.Sequence(name="RepeatableBehaviour")
+        sequence.add_children([behaviour, clear_descendant_variables])
+    return sequence
+
+class ClearBlackboardVariablesStartingWith(behaviours.Success):
+    """
+    Clear the values starting with the specified string from the blackboard.
+
+    Args:
+        name (:obj:`str`): name of the behaviour
+        variable_name_beginning (:obj:`str`): beginning of the names of variable to clear
+    """
+    def __init__(self,
+                 name="Clear Blackboard Variable Starting With",
+                 variable_name_beginning="dummy",
+                 ):
+        super(ClearBlackboardVariable, self).__init__(name)
+        self.variable_name_beginning = variable_name_beginning
+
+    def initialise(self):
+        """
+        Delete the variables from the blackboard.
+        """
+        self.blackboard = Blackboard()
+        blackboard_variables = [key for key, value in blackboard.__dict__.items() if key.startswith(variable_name_beginning)]
+        for variable in blackboard_variables:
+            blackboard.unset(variable)
 
 def get_py_tree_path(behaviour:py_trees.behaviour.Behaviour):
     """
@@ -118,7 +161,7 @@ class OpenScenario(BasicScenario):
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
 
             for sequence in act.iter("Sequence"):
-                sequence_behavior = py_trees.composites.Sequence()
+                sequence_behavior = repeatable_behavior(py_trees.composites.Sequence())
                 repetitions = sequence.attrib.get('numberOfExecutions', 1)
                 actor_ids = []
                 for actor in sequence.iter("Actors"):
