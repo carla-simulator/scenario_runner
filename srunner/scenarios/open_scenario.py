@@ -18,12 +18,15 @@ from srunner.tools.openscenario_parser import OpenScenarioParser
 OPENSCENARIO = ["OpenScenario"]
 
 
-def oneshot_behavior(name, variable_name, behaviour):
+def oneshot_behavior(behaviour, name=None):
     """
     This is taken from py_trees.idiom.oneshot. However, we use a different
     clearing policy to work around some issues for setting up StartConditions
     of OpenSCENARIO
     """
+    if not name:
+        name = behaviour.name
+    variable_name = get_py_tree_path(behaviour)
     subtree_root = py_trees.composites.Selector(name=name)
     check_flag = py_trees.blackboard.CheckBlackboardVariable(
         name=variable_name + " Done?",
@@ -47,6 +50,22 @@ def oneshot_behavior(name, variable_name, behaviour):
     subtree_root.add_children([check_flag, sequence])
     return subtree_root
 
+
+def get_py_tree_path(behaviour:py_trees.behaviour.Behaviour):
+    """
+    Accept a behaviour/composite and return a string representation of its full path
+    """
+    path = ""
+    target = behaviour
+    while True:
+        path = "{}>{}".format(target.name, path)
+        target = target.parent
+        if not target:
+            break
+
+    path = path[:-1]
+
+    return path
 
 class OpenScenario(BasicScenario):
 
@@ -196,10 +215,7 @@ class OpenScenario(BasicScenario):
                 criterion = OpenScenarioParser.convert_condition_to_atomic(
                     condition, self.other_actors + self.ego_vehicles)
                 if oneshot:
-                    criterion = oneshot_behavior(
-                        name=criterion.name,
-                        variable_name=criterion.name,
-                        behaviour=criterion)
+                    criterion = oneshot_behavior(criterion)
                 condition_group_sequence.add_child(criterion)
 
             if condition_group_sequence.children:
