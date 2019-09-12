@@ -50,6 +50,7 @@ def oneshot_behavior(behaviour, name=None):
     subtree_root.add_children([check_flag, sequence])
     return subtree_root
 
+
 def repeatable_behavior(behaviour, name=None):
     """
     This behaviour allows a composite with oneshot ancestors to run multiple
@@ -70,6 +71,7 @@ def repeatable_behavior(behaviour, name=None):
         sequence.add_children([behaviour, clear_descendant_variables])
     return sequence
 
+
 class ClearBlackboardVariablesStartingWith(behaviours.Success):
     """
     Clear the values starting with the specified string from the blackboard.
@@ -78,6 +80,7 @@ class ClearBlackboardVariablesStartingWith(behaviours.Success):
         name (:obj:`str`): name of the behaviour
         variable_name_beginning (:obj:`str`): beginning of the names of variable to clear
     """
+
     def __init__(self,
                  name="Clear Blackboard Variable Starting With",
                  variable_name_beginning="dummy",
@@ -90,11 +93,13 @@ class ClearBlackboardVariablesStartingWith(behaviours.Success):
         Delete the variables from the blackboard.
         """
         self.blackboard = Blackboard()
-        blackboard_variables = [key for key, value in blackboard.__dict__.items() if key.startswith(variable_name_beginning)]
+        blackboard_variables = [key for key, value in blackboard.__dict__.items(
+        ) if key.startswith(variable_name_beginning)]
         for variable in blackboard_variables:
             blackboard.unset(variable)
 
-def get_py_tree_path(behaviour:py_trees.behaviour.Behaviour):
+
+def get_py_tree_path(behaviour: py_trees.behaviour.Behaviour):
     """
     Accept a behaviour/composite and return a string representation of its full path
     """
@@ -109,6 +114,7 @@ def get_py_tree_path(behaviour:py_trees.behaviour.Behaviour):
     path = path[:-1]
 
     return path
+
 
 class OpenScenario(BasicScenario):
 
@@ -161,7 +167,8 @@ class OpenScenario(BasicScenario):
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
 
             for sequence in act.iter("Sequence"):
-                sequence_behavior = oneshot_behavior(py_trees.composites.Sequence())
+                sequence_behavior = oneshot_behavior(
+                    py_trees.composites.Sequence())
                 repetitions = sequence.attrib.get('numberOfExecutions', 1)
                 actor_ids = []
                 for actor in sequence.iter("Actors"):
