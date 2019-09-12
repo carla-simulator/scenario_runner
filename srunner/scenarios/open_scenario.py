@@ -73,6 +73,7 @@ def repeatable_behavior(behaviour, name=None):
 
 
 class ClearBlackboardVariablesStartingWith(behaviours.Success):
+    
     """
     Clear the values starting with the specified string from the blackboard.
 
