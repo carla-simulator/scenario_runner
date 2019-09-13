@@ -177,8 +177,8 @@ class OpenScenario(BasicScenario):
                                 actor_ids.append(k)
                                 break
 
-                single_sequence_iteration = repeatable_behavior(py_trees.composites.Parallel(
-                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence.attrib.get('name')))
+                single_sequence_iteration = py_trees.composites.Parallel(
+                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence.attrib.get('name'))
                 for maneuver in sequence.iter("Maneuver"):
                     maneuver_sequence = py_trees.composites.Parallel(
                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
@@ -209,6 +209,8 @@ class OpenScenario(BasicScenario):
                     single_sequence_iteration.add_child(
                         oneshot_behavior(maneuver_sequence))
 
+                single_sequence_iteration = repeatable_behavior(
+                    single_sequence_iteration)
                 for _ in range(int(repetitions)):
                     sequence_behavior.add_child(single_sequence_iteration)
 
