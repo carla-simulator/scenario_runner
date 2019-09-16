@@ -136,12 +136,13 @@ class AtStartCondition(AtomicBehavior):
         """
         Setup element details
         """
-        super(TriggerVelocity, self).__init__("AtStartCondition")
+        super(AtStartCondition, self).__init__("AtStartCondition")
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._element_type=element_type
         self._element_name=element_name
-        self.blackboard=Blackboard()
-    
+        self.blackboard=py_trees.blackboard.Blackboard()
+        self._start_time=None
+
     def initialise(self):
         """
         Initialize the start time of this condition
@@ -155,7 +156,7 @@ class AtStartCondition(AtomicBehavior):
         """
         new_status=py_trees.common.Status.RUNNING
 
-        blackboard_variable_name="({}){}-{}".format(self._element_type.upper(), self._element_name, "START"
+        blackboard_variable_name="({}){}-{}".format(self._element_type.upper(), self._element_name, "START")
         element_start_time=self.blackboard.get(blackboard_variable_name)
         if element_start_time and element_start_time >= self._start_time:
             new_status=py_trees.common.Status.SUCCESS
@@ -181,11 +182,12 @@ class AfterTerminationCondition(AtomicBehavior):
         """
         Setup element details
         """
-        super(TriggerVelocity, self).__init__("AfterTerminationCondition")
+        super(AfterTerminationCondition, self).__init__("AfterTerminationCondition")
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._element_type=element_type
         self._element_name=element_name
-        self.blackboard=Blackboard()
+        self.blackboard=py_trees.blackboard.Blackboard()
+        self._start_time=None
     
     def initialise(self):
         """
@@ -200,7 +202,7 @@ class AfterTerminationCondition(AtomicBehavior):
         """
         new_status=py_trees.common.Status.RUNNING
 
-        blackboard_variable_name="({}){}-{}".format(self._element_type.upper(), self._element_name, "END"
+        blackboard_variable_name="({}){}-{}".format(self._element_type.upper(), self._element_name, "END")
         element_start_time=self.blackboard.get(blackboard_variable_name)
         if element_start_time and element_start_time >= self._start_time:
             new_status=py_trees.common.Status.SUCCESS

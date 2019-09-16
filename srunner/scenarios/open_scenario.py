@@ -100,7 +100,7 @@ class ClearBlackboardVariablesStartingWith(py_trees.behaviours.Success):
             delattr(py_trees.blackboard, variable)
 
 
-class StoryElementStatusToBlackboard(Decorator):
+class StoryElementStatusToBlackboard(py_trees.decorators.Decorator):
 
     """
     Reflect the status of the decorator's child story element to the blackboard.
@@ -113,16 +113,15 @@ class StoryElementStatusToBlackboard(Decorator):
 
     def __init__(
             self,
-            *,
-            child: behaviour.Behaviour,
+            child: py_trees.behaviour.Behaviour,
             story_element_type: str,
             element_name: str,
-            name: str = common.Name.AUTO_GENERATED,
+            name: str = py_trees.common.Name.AUTO_GENERATED,
     ):
         super().__init__(name=name, child=child)
         self.story_element_type = story_element_type
         self.element_name = element_name
-        self.blackboard = blackboard.Blackboard()
+        self.blackboard = py_trees.blackboard.Blackboard()
 
     def initialise(self):
         """
