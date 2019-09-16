@@ -320,7 +320,18 @@ class OpenScenarioParser(object):
                 else:
                     raise AttributeError("Unknown longitudinal action")
             elif private_action.find('Lateral') is not None:
-                raise NotImplementedError("Lateral actions are not yet supported")
+                private_action = private_action.find('Lateral')
+                if private_action.find('LaneChange') is not None:
+                    lat_maneuver = private_action.find('LaneChange')
+                    target_lane_rel = float(lat_maneuver.find("Target").find("Relative").attrib.get('value', 0))
+                    distance = float(lat_maneuver.find("Dynamics").attrib.get('distance', float("inf")))
+                    atomic = LaneChange(actor,
+                                        5.0,
+                                        direction="left" if target_lane_rel < 0 else "right",
+                                        distance_same_lane=distance,
+                                        name=maneuver_name)
+                else:
+                    raise AttributeError("Unknown lateral action")
             elif private_action.find('Visibility') is not None:
                 raise NotImplementedError("Visibility actions are not yet supported")
             elif private_action.find('Meeting') is not None:
