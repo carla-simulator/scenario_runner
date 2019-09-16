@@ -167,11 +167,16 @@
                                             </EntityCondition>
                                         </ByEntity>
                                     </Condition>
+                                    <Condition name="AfterCyclistStartsWalking" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="CyclistStartsWalking" rule="any"/>
+                                        </ByState>
+                                    </Condition>
                                 </ConditionGroup>
                             </StartConditions>
                         </Event>
                         <Event name="CyclistWalksAway" priority="overwrite">
-                            <Action name="CyclistStartsWalking">
+                            <Action name="CyclistStartsWalkingAway">
                                 <Private>
                                     <Longitudinal>
                                         <Speed>
@@ -194,6 +199,11 @@
                                                 <StandStill duration="0.1" />
                                             </EntityCondition>
                                         </ByEntity>
+                                    </Condition>
+                                    <Condition name="AfterCyclistStopsAndWaits" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="CyclistStopsAndWaits" rule="any"/>
+                                        </ByState>
                                     </Condition>
                                 </ConditionGroup>
                             </StartConditions>
@@ -222,6 +232,11 @@
                                                 <StandStill duration="0.1" />
                                             </EntityCondition>
                                         </ByEntity>
+                                    </Condition>
+                                    <Condition name="AfterCyclistStartsWalking" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="CyclistStartsWalkingAway" rule="any"/>
+                                        </ByState>
                                     </Condition>
                                 </ConditionGroup>
                             </StartConditions>
@@ -262,37 +277,37 @@
         </Story>
         <EndConditions>
             <ConditionGroup>
-                <Condition name="RunningStopTest" delay="0" edge="rising">
+                <Condition name="criteria_RunningStopTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="RunningRedLightTest" delay="0" edge="rising">
+                <Condition name="criteria_RunningRedLightTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="WrongLaneTest" delay="0" edge="rising">
+                <Condition name="criteria_WrongLaneTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="OnSidewalkTest" delay="0" edge="rising">
+                <Condition name="criteria_OnSidewalkTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="KeepLaneTest" delay="0" edge="rising">
+                <Condition name="criteria_KeepLaneTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="CollisionTest" delay="0" edge="rising">
+                <Condition name="criteria_CollisionTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="" value="" rule="less_than" />
                     </ByValue>
                 </Condition>
-                <Condition name="DrivenDistanceTest" delay="0" edge="rising">
+                <Condition name="criteria_DrivenDistanceTest" delay="0" edge="rising">
                     <ByValue>
                         <Parameter name="distance_success" value="100" rule="less_than" />
                     </ByValue>

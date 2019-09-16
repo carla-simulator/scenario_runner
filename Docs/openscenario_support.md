@@ -55,8 +55,8 @@ An example for a supported scenario based on OpenSCENARIO is available [here](..
     * [x] ReachPosition
     * [x] Distance (not all comparisions are supported)
     * [x] RelativeDistance 
-    * [ ] AtStart 
-    * [ ] AfterTermination
+    * [x] AtStart 
+    * [x] AfterTermination
     * [ ] Command
     * [ ] Signal
     * [ ] Controller

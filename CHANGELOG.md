@@ -17,6 +17,8 @@
     - Added support for pedestrians
     - Full support for SimulationTime condition
     - Added weather support
+    - Updated implementation to be closer to upcoming OpenSCENARIO standard
+    - AfterTermination, AtStart conditions are supported
 * Fixes:
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h
