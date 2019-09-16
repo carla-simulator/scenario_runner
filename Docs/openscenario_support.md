@@ -8,6 +8,11 @@ module documentation in srunner/tools/openscenario_parser.py
 
 An example for a supported scenario based on OpenSCENARIO is available [here](../srunner/examples/FollowLeadingVehicle.xosc)
 
+## Important things to keep in mind when creating a scenario with OpenSCENARIO
+
+- All things in OpenSCENARIO happen in parallel, this includes stories, events, actions or conditions.
+- Sequences of actions or events can be created using an "AfterTermination" condition as StartCondition for the follow-up action or event
+
 
 ## Overview of available features of OpenSCENARIO v0.9:
 - [ ] Catalogs
@@ -53,7 +58,7 @@ An example for a supported scenario based on OpenSCENARIO is available [here](..
     * [ ] RelativeSpeed
     * [x] TraveledDistance
     * [x] ReachPosition
-    * [x] Distance (not all comparisions are supported)
+    * [x] Distance
     * [x] RelativeDistance 
     * [x] AtStart 
     * [x] AfterTermination
