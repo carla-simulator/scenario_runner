@@ -13,6 +13,7 @@ import py_trees
 
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import OpenScenarioParser
+from srunner.scenariomanager.timer import GameTime
 
 
 OPENSCENARIO = ["OpenScenario"]
@@ -99,6 +100,57 @@ class ClearBlackboardVariablesStartingWith(py_trees.behaviours.Success):
             delattr(py_trees.blackboard, variable)
 
 
+class StoryElementStatusToBlackboard(Decorator):
+    """
+    Reflect the status of the decorator's child story element to the blackboard.
+
+    Args:
+        child: the child behaviour or subtree
+        story_element_type: the element type [act,scene,maneuver,event,action]
+        element_name: the story element's name attribute
+    """
+
+    def __init__(
+            self,
+            *,
+            child: behaviour.Behaviour,
+            story_element_type: str,
+            element_name: str,            
+            name: str = common.Name.AUTO_GENERATED,
+    ):
+        super().__init__(name=name, child=child)
+        self.story_element_type = story_element_type
+        self.element_name = element_name
+        self.blackboard = blackboard.Blackboard()
+
+    def initialise(self):
+        """
+        Record the elements's start time on the blackboard
+        """
+        self.blackboard.set(
+            name="({}){}-{}".format(self.story_element_type.upper(),
+                                    self.element_name, "START"),
+            value=GameTime.get_time(),
+            overwrite=True
+        )
+
+    def update(self):
+        """
+        Reflect the decorated child's status
+        Returns: the decorated child's status
+        """
+        return self.decorated.status
+
+    def terminate(self, new_status):
+        # TODO Report whether we ended with End or Cancel
+        self.blackboard.set(
+            name="({}){}-{}".format(self.story_element_type.upper(),
+                                    self.element_name, "END"),
+            value=GameTime.get_time(),
+            overwrite=True
+        )
+
+
 def get_py_tree_path(behaviour):
     """
     Accept a behaviour/composite and return a string representation of its full path
@@ -180,7 +232,7 @@ class OpenScenario(BasicScenario):
                 single_sequence_iteration = py_trees.composites.Parallel(
                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence.attrib.get('name'))
                 for maneuver in sequence.iter("Maneuver"):
-                    maneuver_sequence = py_trees.composites.Parallel(
+                    maneuver_parallel = py_trees.composites.Parallel(
                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
                         name="Maneuver " + maneuver.attrib.get('name'))
                     for event in maneuver.iter("Event"):
@@ -193,6 +245,8 @@ class OpenScenario(BasicScenario):
                                 for actor_id in actor_ids:
                                     maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
                                         child, joint_actor_list[actor_id])
+                                    maneuver_behavior = StoryElementStatusToBlackboard(
+                                        maneuver_behavior, "ACTION", child.attrib.get('name'))
                                     parallel_actions.add_child(
                                         oneshot_behavior(maneuver_behavior))
 
@@ -203,12 +257,19 @@ class OpenScenario(BasicScenario):
                                 event_sequence.add_child(
                                     parallel_condition_groups)
 
+                        parallel_actions = StoryElementStatusToBlackboard(
+                            parallel_actions, "EVENT", event.attrib.get('name'))
                         event_sequence.add_child(parallel_actions)
-                        maneuver_sequence.add_child(
+                        maneuver_parallel.add_child(
                             oneshot_behavior(event_sequence))
+                    maneuver_parallel = StoryElementStatusToBlackboard(
+                        maneuver_parallel, "MANEUVER", maneuver.attrib.get('name'))
                     single_sequence_iteration.add_child(
-                        oneshot_behavior(maneuver_sequence))
+                        oneshot_behavior(maneuver_parallel))
 
+                # OpenSCENARIO refers to Sequences as Scenes in this instance
+                single_sequence_iteration = StoryElementStatusToBlackboard(
+                    single_sequence_iteration, "SCENE", sequence.attrib.get('name'))
                 single_sequence_iteration = repeatable_behavior(
                     single_sequence_iteration)
                 for _ in range(int(repetitions)):
@@ -219,6 +280,8 @@ class OpenScenario(BasicScenario):
                         oneshot_behavior(sequence_behavior))
 
             if parallel_sequences.children:
+                parallel_sequences = StoryElementStatusToBlackboard(
+                    parallel_sequences, "ACT", act.attrib.get('name'))
                 parallel_behavior.add_child(parallel_sequences)
 
             for conditions in act.iter("Conditions"):

@@ -215,7 +215,24 @@ class OpenScenarioParser(object):
                             "RelativeDistance condition with the given specification is not yet supported")
 
         elif condition.find('ByState') is not None:
-            raise NotImplementedError("ByState conditions are not yet supported")
+            state_condition = condition.find('ByState')
+            if state_condition.find('AtStart') is not None:
+                element_type = value_condition.find('type')
+                element_name = value_condition.find('name')
+                atomic = AtStartCondition(element_type, element_name)
+            elif state_condition.find('AfterTermination') is not None:
+                element_type = value_condition.find('type')
+                element_name = value_condition.find('name')
+                condition_rule = value_condition.find('rule')
+                atomic = AfterTerminationCondition(element_type, element_name)
+            elif state_condition.find('Command') is not None:
+                raise NotImplementedError("ByState Command conditions are not yet supported")
+            elif state_condition.find('Signal') is not None:
+                raise NotImplementedError("ByState Signal conditions are not yet supported")
+            elif state_condition.find('Controller') is not None:
+                raise NotImplementedError("ByState Controller conditions are not yet supported")
+            else:
+                raise AttributeError("Unknown ByState condition")
         elif condition.find('ByValue') is not None:
             value_condition = condition.find('ByValue')
             if value_condition.find('Parameter') is not None:
