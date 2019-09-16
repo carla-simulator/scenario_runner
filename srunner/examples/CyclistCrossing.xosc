@@ -167,6 +167,11 @@
                                             </EntityCondition>
                                         </ByEntity>
                                     </Condition>
+                                    <Condition name="AfterCyclistStartsWalking" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="CyclistStartsWalking" rule="any"/>
+                                        </ByState>
+                                    </Condition>
                                 </ConditionGroup>
                             </StartConditions>
                         </Event>
@@ -195,6 +200,11 @@
                                             </EntityCondition>
                                         </ByEntity>
                                     </Condition>
+                                    <Condition name="AfterCyclistStopsAndWaits" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="CyclistStopsAndWaits" rule="any"/>
+                                        </ByState>
+                                    </Condition>
                                 </ConditionGroup>
                             </StartConditions>
                         </Event>
@@ -222,6 +232,11 @@
                                                 <StandStill duration="0.1" />
                                             </EntityCondition>
                                         </ByEntity>
+                                    </Condition>
+                                    <Condition name="AfterCyclistStartsWalking" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="CyclistStartsWalking" rule="any"/>
+                                        </ByState>
                                     </Condition>
                                 </ConditionGroup>
                             </StartConditions>

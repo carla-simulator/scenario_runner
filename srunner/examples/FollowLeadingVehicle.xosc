@@ -167,6 +167,11 @@
                                             </EntityCondition>
                                         </ByEntity>
                                     </Condition>
+                                    <Condition name="AfterLeadingVehicleKeepsVelocity" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="LeadingVehicleKeepsVelocity" rule="any"/>
+                                        </ByState>
+                                    </Condition>
                                 </ConditionGroup>
                             </StartConditions>
                         </Event>
