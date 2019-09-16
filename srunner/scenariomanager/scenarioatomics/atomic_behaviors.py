@@ -29,6 +29,9 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 
+# import scenario_helper.py
+from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
+
 EPSILON = 0.001
 
 
@@ -759,6 +762,77 @@ class WaypointFollower(AtomicBehavior):
                 local_planner.reset_vehicle()
                 local_planner = None
         super(WaypointFollower, self).terminate(new_status)
+
+
+class LaneChange(WaypointFollower):
+
+    """
+     This class inherits from the class WaypointFollower.
+
+     This class contains an atomic lane change behavior to a parallel lane.
+     The vehicle follows a waypoint plan to the other lane, which is calculated in the initialise method.
+     This waypoint plan is calculated with a scenario helper function.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - speed: speed of the actor for the lane change, in m/s
+    - direction: 'right' or 'left', depending on which lane to change
+    - distance_same_lane: straight distance before lane change, in m
+    - distance_other_lane: straight distance after lane change, in m
+
+    The total distance driven is greater than the sum of distance_same_lane and distance_other_lane.
+    It results from the lane change distance plus the distance_same_lane plus distance_other_lane.
+    The lane change distance is set to 25m (straight), the driven distance is slightly greater.
+
+    A parallel termination behavior has to be used.
+
+
+    """
+
+    def __init__(self, actor, speed=10, direction='left',
+                 distance_same_lane=5, distance_other_lane=100, name='LaneChange'):
+
+        self._actor = actor
+        self._direction = direction
+        self._distance_same_lane = distance_same_lane
+        self._distance_other_lane = distance_other_lane
+
+        self._target_lane_id = None
+        self._distance_new_lane = 0
+        self._pos_before_lane_change = None
+
+        super(LaneChange, self).__init__(actor, target_speed=speed, name=name)
+
+    def initialise(self):
+
+        # get start position
+        position_actor = CarlaDataProvider.get_map().get_waypoint(self._actor.get_location())
+
+        # calculate plan with scenario_helper function
+        self._plan, self._target_lane_id = generate_target_waypoint_list_multilane(
+            position_actor, self._direction, self._distance_same_lane,
+            self._distance_other_lane, check='true')
+        super(LaneChange, self).initialise()
+
+    def update(self):
+        status = super(LaneChange, self).update()
+
+        current_position_actor = CarlaDataProvider.get_map().get_waypoint(self._actor.get_location())
+        current_lane_id = current_position_actor.lane_id
+
+        if current_lane_id == self._target_lane_id:
+            # driving on new lane
+            distance = current_position_actor.transform.location.distance(self._pos_before_lane_change)
+
+            if distance > 50:
+                # long enough distance on new lane --> SUCCESS
+                status = py_trees.common.Status.SUCCESS
+
+        else:
+            # no lane change yet
+            self._pos_before_lane_change = current_position_actor.transform.location
+
+        return status
 
 
 class HandBrakeVehicle(AtomicBehavior):
