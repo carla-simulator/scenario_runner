@@ -175,7 +175,7 @@
                             </StartConditions>
                         </Event>
                         <Event name="PedestrianWalksAway" priority="overwrite">
-                            <Action name="PedestrianStartsWalking">
+                            <Action name="PedestrianStartsWalkingAway">
                                 <Private>
                                     <Longitudinal>
                                         <Speed>
@@ -234,7 +234,7 @@
                                     </Condition>
                                     <Condition name="AfterPedestrianStartsWalking" delay="0" edge="rising">
                                         <ByState>
-                                            <AfterTermination type="action" name="PedestrianStartsWalking" rule="any"/>
+                                            <AfterTermination type="action" name="PedestrianStartsWalkingAway" rule="any"/>
                                         </ByState>
                                     </Condition>
                                 </ConditionGroup>

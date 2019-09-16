@@ -19,6 +19,91 @@ from srunner.scenariomanager.timer import GameTime
 OPENSCENARIO = ["OpenScenario"]
 
 
+class Decorator(py_trees.behaviour.Behaviour):
+
+    """
+    A decorator is responsible for handling the lifecycle of a single
+    child beneath
+
+    This is taken from py_trees 1.2 to work with our current implementation
+    that uses py_trees 0.8.2
+    """
+
+    def __init__(self, child, name):
+        """
+        Common initialisation steps for a decorator - type checks and
+        name construction (if None is given).
+        Args:
+            name (:obj:`str`): the decorator name
+            child (:class:`~py_trees.behaviour.Behaviour`): the child to be decorated
+        Raises:
+            TypeError: if the child is not an instance of :class:`~py_trees.behaviour.Behaviour`
+        """
+        # Checks
+        if not isinstance(child, py_trees.behaviour.Behaviour):
+            raise TypeError("A decorator's child must be an instance of py_trees.behaviours.Behaviour")
+        # Initialise
+        super(Decorator, self).__init__(name=name)
+        self.children.append(child)
+        # Give a convenient alias
+        self.decorated = self.children[0]
+        self.decorated.parent = self
+
+    def tick(self):
+        """
+        A decorator's tick is exactly the same as a normal proceedings for
+        a Behaviour's tick except that it also ticks the decorated child node.
+        Yields:
+            :class:`~py_trees.behaviour.Behaviour`: a reference to itself or one of its children
+        """
+        self.logger.debug("%s.tick()" % self.__class__.__name__)
+        # initialise just like other behaviours/composites
+        if self.status != py_trees.common.Status.RUNNING:
+            self.initialise()
+        # interrupt proceedings and process the child node
+        # (including any children it may have as well)
+        for node in self.decorated.tick():
+            yield node
+        # resume normal proceedings for a Behaviour's tick
+        new_status = self.update()
+        if new_status not in list(py_trees.common.Status):
+            self.logger.error(
+                "A behaviour returned an invalid status, setting to INVALID [%s][%s]" % (new_status, self.name))
+            new_status = py_trees.common.Status.INVALID
+        if new_status != py_trees.common.Status.RUNNING:
+            self.stop(new_status)
+        self.status = new_status
+        yield self
+
+    def stop(self, new_status=py_trees.common.Status.INVALID):
+        """
+        As with other composites, it checks if the child is running
+        and stops it if that is the case.
+        Args:
+            new_status (:class:`~py_trees.common.Status`): the behaviour is transitioning to this new status
+        """
+        self.logger.debug("%s.stop(%s)" % (self.__class__.__name__, new_status))
+        self.terminate(new_status)
+        # priority interrupt handling
+        if new_status == py_trees.common.Status.INVALID:
+            self.decorated.stop(new_status)
+        # if the decorator returns SUCCESS/FAILURE and should stop the child
+        if self.decorated.status == py_trees.common.Status.RUNNING:
+            self.decorated.stop(py_trees.common.Status.INVALID)
+        self.status = new_status
+
+    def tip(self):
+        """
+        Get the *tip* of this behaviour's subtree (if it has one) after it's last
+        tick. This corresponds to the the deepest node that was running before the
+        subtree traversal reversed direction and headed back to this node.
+        """
+        if self.decorated.status != py_trees.common.Status.INVALID:
+            return self.decorated.tip()
+
+        return super(Decorator, self).tip()
+
+
 def oneshot_behavior(behaviour, name=None):
     """
     This is taken from py_trees.idiom.oneshot. However, we use a different
@@ -100,7 +185,7 @@ class ClearBlackboardVariablesStartingWith(py_trees.behaviours.Success):
             delattr(py_trees.blackboard, variable)
 
 
-class StoryElementStatusToBlackboard(py_trees.decorators.Decorator):
+class StoryElementStatusToBlackboard(Decorator):
 
     """
     Reflect the status of the decorator's child story element to the blackboard.
@@ -113,12 +198,11 @@ class StoryElementStatusToBlackboard(py_trees.decorators.Decorator):
 
     def __init__(
             self,
-            child: py_trees.behaviour.Behaviour,
-            story_element_type: str,
-            element_name: str,
-            name: str = py_trees.common.Name.AUTO_GENERATED,
+            child,
+            story_element_type,
+            element_name
     ):
-        super().__init__(name=name, child=child)
+        super(StoryElementStatusToBlackboard, self).__init__(name=child.name, child=child)
         self.story_element_type = story_element_type
         self.element_name = element_name
         self.blackboard = py_trees.blackboard.Blackboard()
@@ -142,6 +226,9 @@ class StoryElementStatusToBlackboard(py_trees.decorators.Decorator):
         return self.decorated.status
 
     def terminate(self, new_status):
+        """
+        Terminate and mark Blackboard entry with END
+        """
         # TODO Report whether we ended with End or Cancel
         self.blackboard.set(
             name="({}){}-{}".format(self.story_element_type.upper(),

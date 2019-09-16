@@ -217,13 +217,13 @@ class OpenScenarioParser(object):
         elif condition.find('ByState') is not None:
             state_condition = condition.find('ByState')
             if state_condition.find('AtStart') is not None:
-                element_type = value_condition.find('type')
-                element_name = value_condition.find('name')
+                element_type = state_condition.find('AtStart').attrib.get('type')
+                element_name = state_condition.find('AtStart').attrib.get('name')
                 atomic = AtStartCondition(element_type, element_name)
             elif state_condition.find('AfterTermination') is not None:
-                element_type = value_condition.find('type')
-                element_name = value_condition.find('name')
-                condition_rule = value_condition.find('rule')
+                element_type = state_condition.find('AfterTermination').attrib.get('type')
+                element_name = state_condition.find('AfterTermination').attrib.get('name')
+                # condition_rule = state_condition.find('rule')
                 atomic = AfterTerminationCondition(element_type, element_name)
             elif state_condition.find('Command') is not None:
                 raise NotImplementedError("ByState Command conditions are not yet supported")
