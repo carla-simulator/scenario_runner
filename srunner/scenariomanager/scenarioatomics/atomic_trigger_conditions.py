@@ -181,7 +181,7 @@ class AfterTerminationCondition(AtomicBehavior):
         """
         Setup element details
         """
-        super(TriggerVelocity, self).__init__("AtStartCondition)
+        super(TriggerVelocity, self).__init__("AfterTerminationCondition")
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._element_type=element_type
         self._element_name=element_name
