@@ -101,6 +101,7 @@ class ClearBlackboardVariablesStartingWith(py_trees.behaviours.Success):
 
 
 class StoryElementStatusToBlackboard(Decorator):
+
     """
     Reflect the status of the decorator's child story element to the blackboard.
 
@@ -115,7 +116,7 @@ class StoryElementStatusToBlackboard(Decorator):
             *,
             child: behaviour.Behaviour,
             story_element_type: str,
-            element_name: str,            
+            element_name: str,
             name: str = common.Name.AUTO_GENERATED,
     ):
         super().__init__(name=name, child=child)

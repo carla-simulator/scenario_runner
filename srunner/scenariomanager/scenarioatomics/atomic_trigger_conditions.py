@@ -138,27 +138,28 @@ class AtStartCondition(AtomicBehavior):
         """
         super(TriggerVelocity, self).__init__("AtStartCondition)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._element_type = element_type
-        self._element_name = element_name
-        self.blackboard = Blackboard()
+        self._element_type=element_type
+        self._element_name=element_name
+        self.blackboard=Blackboard()
     
     def initialise(self):
         """
         Initialize the start time of this condition
         """
-        self._start_time = GameTime.get_time()
+        self._start_time=GameTime.get_time()
         super(AtStartCondition, self).initialise()
 
     def update(self):
         """
         Check if the specified story element has started since the beginning of the condition
         """
-        new_status = py_trees.common.Status.RUNNING
+        new_status=py_trees.common.Status.RUNNING
 
-        blackboard_variable_name = "({}){}-{}".format(self._element_type.upper(), self._element_name, "START"
-        element_start_time = self.blackboard.get(blackboard_variable_name)
+        blackboard_variable_name="({}){}-{}".format(self._element_type.upper(), self._element_name, "START"
+        element_start_time=self.blackboard.get(blackboard_variable_name)
         if element_start_time and element_start_time >= self._start_time:
-            new_status = py_trees.common.Status.SUCCESS
+            new_status=py_trees.common.Status.SUCCESS
+
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
@@ -182,27 +183,28 @@ class AfterTerminationCondition(AtomicBehavior):
         """
         super(TriggerVelocity, self).__init__("AtStartCondition)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._element_type = element_type
-        self._element_name = element_name
-        self.blackboard = Blackboard()
+        self._element_type=element_type
+        self._element_name=element_name
+        self.blackboard=Blackboard()
     
     def initialise(self):
         """
         Initialize the start time of this condition
         """
-        self._start_time = GameTime.get_time()
+        self._start_time=GameTime.get_time()
         super(AfterTerminationCondition, self).initialise()
 
     def update(self):
         """
         Check if the specified story element has ended since the beginning of the condition
         """
-        new_status = py_trees.common.Status.RUNNING
+        new_status=py_trees.common.Status.RUNNING
 
-        blackboard_variable_name = "({}){}-{}".format(self._element_type.upper(), self._element_name, "END"
-        element_start_time = self.blackboard.get(blackboard_variable_name)
+        blackboard_variable_name="({}){}-{}".format(self._element_type.upper(), self._element_name, "END"
+        element_start_time=self.blackboard.get(blackboard_variable_name)
         if element_start_time and element_start_time >= self._start_time:
-            new_status = py_trees.common.Status.SUCCESS
+            new_status=py_trees.common.Status.SUCCESS
+
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
