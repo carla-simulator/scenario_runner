@@ -229,13 +229,41 @@ class StoryElementStatusToBlackboard(Decorator):
         """
         Terminate and mark Blackboard entry with END
         """
-        # TODO Report whether we ended with End or Cancel
-        self.blackboard.set(
-            name="({}){}-{}".format(self.story_element_type.upper(),
-                                    self.element_name, "END"),
-            value=GameTime.get_time(),
-            overwrite=True
-        )
+        # Report whether we ended with End or Cancel
+        # If we were ended or cancelled, our state will be INVALID and
+        # We will have an ancestor (a parallel SUCCESS_ON_ALL) with a successful child/children
+        # It's possible we ENDed AND CANCELled if both condition groups were true simultaneously
+        # NOTE 'py_trees.common.Status.INVALID' is the status of a behaviur which was terminated by a parent
+        rules = []
+        if new_status == py_trees.common.Status.INVALID:
+            # We were terminated from above unnaturally
+            # Figure out if were ended or cancelled
+            terminating_ancestor = self.parent
+            while terminating_ancestor.status == py_trees.common.Status.INVALID:
+                terminating_ancestor = terminating_ancestor.parent
+            # We have found an ancestory which was not terminated by a parent
+            # Check what caused it to terminate its children
+            if terminating_ancestor.status == py_trees.common.Status.SUCCESS:
+                successful_children = [
+                    child.name
+                    for child
+                    in terminating_ancestor.children
+                    if child.status == py_trees.common.Status.SUCCESS]
+                if "EndConditions" in successful_children:
+                    rules.append("END")
+                if "CancelConditions" in successful_children:
+                    rules.append("CANCEL")
+
+        # END is the default status unless we have a more detailed one
+        rules = rules or ["END"]
+
+        for rule in rules:
+            self.blackboard.set(
+                name="({}){}-{}".format(self.story_element_type.upper(),
+                                        self.element_name, rule),
+                value=GameTime.get_time(),
+                overwrite=True
+            )
 
 
 def get_py_tree_path(behaviour):
@@ -374,17 +402,17 @@ class OpenScenario(BasicScenario):
             for conditions in act.iter("Conditions"):
                 for start_condition in conditions.iter("Start"):
                     parallel_start_criteria = self._create_condition_container(
-                        start_condition, "StartConditions Group", oneshot=True)
+                        start_condition, "StartConditions", oneshot=True)
                     if parallel_start_criteria.children:
                         start_conditions.add_child(parallel_start_criteria)
                 for end_condition in conditions.iter("End"):
                     parallel_end_criteria = self._create_condition_container(
-                        end_condition, "EndConditions Group")
+                        end_condition, "EndConditions")
                     if parallel_end_criteria.children:
                         parallel_behavior.add_child(parallel_end_criteria)
                 for cancel_condition in conditions.iter("Cancel"):
                     parallel_cancel_criteria = self._create_condition_container(
-                        cancel_condition, "CancelConditions Group")
+                        cancel_condition, "CancelConditions")
                     if parallel_cancel_criteria.children:
                         parallel_behavior.add_child(parallel_cancel_criteria)
 
