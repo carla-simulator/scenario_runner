@@ -178,14 +178,15 @@ class AfterTerminationCondition(AtomicBehavior):
     The condition terminates with SUCCESS, when the named story element ends
     """
 
-    def __init__(self, element_type, element_name):
+    def __init__(self, element_type, element_name, rule):
         """
         Setup element details
         """
         super(AfterTerminationCondition, self).__init__("AfterTerminationCondition")
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._element_type = element_type
+        self._element_type = element_type.upper()
         self._element_name = element_name
+        self._rule = rule.upper()
         self._start_time = None
         self._blackboard = py_trees.blackboard.Blackboard()
 
@@ -201,11 +202,17 @@ class AfterTerminationCondition(AtomicBehavior):
         Check if the specified story element has ended since the beginning of the condition
         """
         new_status = py_trees.common.Status.RUNNING
+        if self._rule == "ANY":
+            rules = ["END", "CANCEL"]
+        else:
+            rules = [self._rule]
 
-        blackboard_variable_name = "({}){}-{}".format(self._element_type.upper(), self._element_name, "END")
-        element_start_time = self._blackboard.get(blackboard_variable_name)
-        if element_start_time and element_start_time >= self._start_time:
-            new_status = py_trees.common.Status.SUCCESS
+        for rule in rules:
+            if new_status == py_trees.common.Status.RUNNING:
+                blackboard_variable_name = "({}){}-{}".format(self._element_type, self._element_name, rule)
+                element_start_time = self._blackboard.get(blackboard_variable_name)
+                if element_start_time and element_start_time >= self._start_time:
+                    new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
