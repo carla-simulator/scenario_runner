@@ -52,7 +52,7 @@ class OpenScenarioParser(object):
             roll = float(world_pos.attrib.get('r', 0))
             return carla.Transform(carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
         elif (position.find('RelativeWorld') is not None) or (position.find('RelativeObject') is not None):
-            rel_pos = position.find('RelativeWorld')
+            rel_pos = position.find('RelativeWorld') or position.find('RelativeObject')
             obj = float(rel_pos.attrib.get('object'))
             obj_actor = None
 
