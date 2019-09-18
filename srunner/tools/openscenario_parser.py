@@ -25,6 +25,11 @@ class OpenScenarioParser(object):
     """
     Pure static class providing conversions from OpenSCENARIO elements to ScenarioRunner elements
     """
+    operators = {
+        "greater_than": operator.gt,
+        "less_than": operator.lt,
+        "equal_to": operator.eq
+    }
 
     @staticmethod
     def convert_position_to_transform(position):
@@ -135,9 +140,9 @@ class OpenScenarioParser(object):
                     raise NotImplementedError("TimeHeadway conditions are not yet supported")
                 elif entity_condition.find('TimeToCollision') is not None:
                     ttc_condition = entity_condition.find('TimeToCollision')
-                    if ttc_condition.attrib.get('rule') != "less_than":
-                        raise NotImplementedError(
-                            "TimeToCollision condition with the given specification is not yet supported")
+
+                    condition_rule = ttc_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
 
                     condition_value = ttc_condition.find('value')
                     condition_target = ttc_condition.find('Target')
@@ -145,7 +150,8 @@ class OpenScenarioParser(object):
                     if condition_target.find('Position'):
                         position = condition_target.find('Position')
                         transform = OpenScenarioParser.convert_position_to_transform(position)
-                        atomic = InTimeToArrivalToLocation(triggered_actor, condition_value, condition_target.location)
+                        atomic = InTimeToArrivalToLocation(
+                            triggered_actor, condition_value, condition_target.location, condition_operator)
                     else:
                         for actor in actor_list:
                             if ttc_condition.attrib.get('entity', None) == actor.attributes['role_name']:
@@ -156,7 +162,8 @@ class OpenScenarioParser(object):
                             raise AttributeError("Cannot find actor '{}' for condition".format(
                                 ttc_condition.attrib.get('entity', None)))
 
-                        atomic = InTimeToArrivalToVehicle(trigger_actor, triggered_actor, condition_value)
+                        atomic = InTimeToArrivalToVehicle(
+                            trigger_actor, triggered_actor, condition_value, condition_operator)
                 elif entity_condition.find('Acceleration') is not None:
                     raise NotImplementedError("Acceleration conditions are not yet supported")
                 elif entity_condition.find('StandStill') is not None:
@@ -186,19 +193,18 @@ class OpenScenarioParser(object):
                 elif entity_condition.find('Distance') is not None:
                     distance_condition = entity_condition.find('Distance')
                     distance_value = float(distance_condition.attrib.get('value'))
-                    if distance_condition.attrib.get('rule') != "less_than":
-                        raise NotImplementedError(
-                            "Distance condition with the given specification is not yet supported")
+                    distance_rule = distance_condition.attrib.get('rule')
+                    distance_operator = OpenScenarioParser.operators[distance_rule]
+
                     if distance_condition.find('Position'):
                         position = distance_condition.find('Position')
                         transform = OpenScenarioParser.convert_position_to_transform(position)
                         atomic = InTriggerDistanceToLocation(
-                            triggered_actor, transform.location, distance_value, name=condition_name)
+                            triggered_actor, transform.location, distance_value, distance_operator, name=condition_name)
                 elif entity_condition.find('RelativeDistance') is not None:
                     distance_condition = entity_condition.find('RelativeDistance')
                     distance_value = float(distance_condition.attrib.get('value'))
-                    if (distance_condition.attrib.get('rule') == "less_than" and
-                            distance_condition.attrib.get('type') == "inertial"):
+                    if distance_condition.attrib.get('type') == "inertial":
                         for actor in actor_list:
                             if distance_condition.attrib.get('entity', None) == actor.attributes['role_name']:
                                 triggered_actor = actor
@@ -208,8 +214,10 @@ class OpenScenarioParser(object):
                             raise AttributeError("Cannot find actor '{}' for condition".format(
                                 distance_condition.attrib.get('entity', None)))
 
+                        condition_rule = distance_condition.attrib.get('rule')
+                        condition_operator = OpenScenarioParser.operators[condition_rule]
                         atomic = InTriggerDistanceToVehicle(
-                            triggered_actor, trigger_actor, distance_value, name=condition_name)
+                            triggered_actor, trigger_actor, distance_value, condition_operator, name=condition_name)
                     else:
                         raise NotImplementedError(
                             "RelativeDistance condition with the given specification is not yet supported")

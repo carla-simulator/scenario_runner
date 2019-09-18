@@ -20,6 +20,7 @@ base class
 
 from __future__ import print_function
 
+import operator
 import py_trees
 
 from agents.navigation.basic_agent import *
@@ -281,7 +282,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
     The condition terminates with SUCCESS, when the actor reached the target distance to the other actor
     """
 
-    def __init__(self, other_actor, actor, distance, name="TriggerDistanceToVehicle"):
+    def __init__(self, other_actor, actor, distance, comparison_operator=operator.lt, name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
         """
@@ -290,6 +291,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         self._other_actor = other_actor
         self._actor = actor
         self._distance = distance
+        self._comparison_operator = comparison_operator
 
     def update(self):
         """
@@ -303,7 +305,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         if ego_location is None or other_location is None:
             return new_status
 
-        if calculate_distance(ego_location, other_location) < self._distance:
+        if self._comparison_operator(calculate_distance(ego_location, other_location), self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -326,7 +328,12 @@ class InTriggerDistanceToLocation(AtomicBehavior):
     The condition terminates with SUCCESS, when the actor reached the target distance to the given location
     """
 
-    def __init__(self, actor, target_location, distance, name="InTriggerDistanceToLocation"):
+    def __init__(self,
+                 actor,
+                 target_location,
+                 distance,
+                 comparison_operator=operator.lt,
+                 name="InTriggerDistanceToLocation"):
         """
         Setup trigger distance
         """
@@ -335,6 +342,7 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         self._target_location = target_location
         self._actor = actor
         self._distance = distance
+        self._comparison_operator = comparison_operator
 
     def update(self):
         """
@@ -347,8 +355,8 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         if location is None:
             return new_status
 
-        if calculate_distance(
-                location, self._target_location) < self._distance:
+        if self._comparison_operator(calculate_distance(
+                location, self._target_location), self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -470,7 +478,7 @@ class InTimeToArrivalToLocation(AtomicBehavior):
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, actor, time, location, name="TimeToArrival"):
+    def __init__(self, actor, time, location, comparison_operator=operator.lt, name="TimeToArrival"):
         """
         Setup parameters
         """
@@ -479,6 +487,7 @@ class InTimeToArrivalToLocation(AtomicBehavior):
         self._actor = actor
         self._time = time
         self._target_location = location
+        self._comparison_operator = comparison_operator
 
     def update(self):
         """
@@ -499,7 +508,7 @@ class InTimeToArrivalToLocation(AtomicBehavior):
         if velocity > EPSILON:
             time_to_arrival = distance / velocity
 
-        if time_to_arrival < self._time:
+        if self._comparison_operator(time_to_arrival, self._time):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -524,7 +533,7 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, other_actor, actor, time, name="TimeToArrival"):
+    def __init__(self, other_actor, actor, time, comparison_operator=operator.lt, name="TimeToArrival"):
         """
         Setup parameters
         """
@@ -533,6 +542,7 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         self._other_actor = other_actor
         self._actor = actor
         self._time = time
+        self._comparison_operator = comparison_operator
 
     def update(self):
         """
@@ -556,7 +566,7 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         if current_velocity > other_velocity:
             time_to_arrival = 2 * distance / (current_velocity - other_velocity)
 
-        if time_to_arrival < self._time:
+        if self._comparison_operator(time_to_arrival, self._time):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
