@@ -6,7 +6,7 @@
 * Refactoring of scenario configurations and parsers
 * Added example scenario for lane change
 * New Features:
-    - Added LaneChange behavior atomic
+    - Added LaneChange and TrafficLightSateSetter behavior atomics
     - Added get_transform() method for CarlaDataProvider
     - Added support for weather conditions
     - Added basic version check to ensure usage of correct CARLA version
@@ -19,6 +19,9 @@
     - Added weather support
     - Updated implementation to be closer to upcoming OpenSCENARIO standard
     - AfterTermination, AtStart conditions are supported
+    - Added initial support for lateral action: LaneChange
+    - Added initial support for OSCGlobalAction to set state of traffic signal
+    - Added possibilit to change speed for FollowRoute action
 * Fixes:
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h

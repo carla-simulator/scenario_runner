@@ -358,18 +358,24 @@ class OpenScenarioParser(object):
                 transform = OpenScenarioParser.convert_position_to_transform(position)
                 atomic = ActorTransformSetter(actor, transform, name=maneuver_name)
             elif private_action.find('Routing') is not None:
+                target_speed = 5.0
                 private_action = private_action.find('Routing')
                 if private_action.find('FollowRoute') is not None:
                     private_action = private_action.find('FollowRoute')
                     if private_action.find('Route') is not None:
                         route = private_action.find('Route')
                         plan = []
+                        if route.find('ParameterDeclaration') is not None:
+                            if route.find('ParameterDeclaration').find('Parameter') is not None:
+                                parameter = route.find('ParameterDeclaration').find('Parameter')
+                                if parameter.attrib.get('name') == "Speed":
+                                    target_speed = float(parameter.attrib.get('value', 5.0))
                         for waypoint in route.iter('Waypoint'):
                             position = waypoint.find('Position')
                             transform = OpenScenarioParser.convert_position_to_transform(position)
                             waypoint = CarlaDataProvider.get_map().get_waypoint(transform.location)
                             plan.append((waypoint, RoadOption.LANEFOLLOW))
-                        atomic = WaypointFollower(actor, target_speed=5, plan=plan, name=maneuver_name)
+                        atomic = WaypointFollower(actor, target_speed=target_speed, plan=plan, name=maneuver_name)
                     elif private_action.find('CatalogReference') is not None:
                         raise NotImplementedError("CatalogReference private actions are not yet supported")
                     else:
