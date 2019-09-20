@@ -290,7 +290,18 @@ class OpenScenarioParser(object):
         maneuver_name = action.attrib.get('name', 'unknown')
 
         if action.find('Global') is not None:
-            raise NotImplementedError("Global actions are not yet supported")
+            global_action = action.find('Global')
+            if global_action.find('Infrastructure') is not None:
+                infrastructure_action = global_action.find('Infrastructure').find('Signal')
+                if infrastructure_action.find('SetState') is not None:
+                    traffic_light_action = infrastructure_action.find('SetState')
+                    traffic_light_id = traffic_light_action.attrib.get('name')
+                    traffic_light_state = traffic_light_action.attrib.get('state')
+                    atomic = TrafficLightStateSetter(traffic_light_id, traffic_light_state)
+                else:
+                    raise NotImplementedError("TrafficLights can only be influenced via SetState")
+            else:
+                raise NotImplementedError("Global actions are not yet supported")
         elif action.find('UserDefined') is not None:
             user_defined_action = action.find('UserDefined')
             if user_defined_action.find('Command') is not None:

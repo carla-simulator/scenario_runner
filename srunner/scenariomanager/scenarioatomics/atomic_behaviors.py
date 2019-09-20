@@ -947,6 +947,61 @@ class ActorTransformSetter(AtomicBehavior):
         return new_status
 
 
+class TrafficLightStateSetter(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to set the state of a given traffic light
+
+    Important parameters:
+    - traffic_light_id: ID of the traffic light that shall be changed
+    - state: New target state
+
+    The behavior terminates after trying to set the new state
+    """
+
+    def __init__(self, traffic_light_id, state, name="TrafficLightStateSetter"):
+        """
+        Init
+        """
+        super(TrafficLightStateSetter, self).__init__(name)
+
+        self._actor = None
+        actor_list = CarlaDataProvider.get_world().get_actors()
+        for actor in actor_list:
+            if actor.id == int(traffic_light_id):
+                self._actor = actor
+                break
+
+        new_state = carla.TrafficLightState.Unknown
+        if state.upper() == "GREEN":
+            new_state = carla.TrafficLightState.Green
+        elif state.upper() == "RED":
+            new_state = carla.TrafficLightState.Red
+        elif state.upper() == "YELLOW":
+            new_state = carla.TrafficLightState.Yellow
+        elif state.upper() == "OFF":
+            new_state = carla.TrafficLightState.Off
+
+        self._new_traffic_light_state = new_state
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Transform actor
+        """
+        if self._actor is None:
+            return py_trees.common.Status.FAILURE
+
+        new_status = py_trees.common.Status.RUNNING
+        if self._actor.is_alive:
+            self._actor.set_state(self._new_traffic_light_state)
+            new_status = py_trees.common.Status.SUCCESS
+        else:
+            # For some reason the actor is gone...
+            new_status = py_trees.common.Status.FAILURE
+        return new_status
+
+
 class ActorSource(AtomicBehavior):
 
     """
