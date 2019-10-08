@@ -13,7 +13,7 @@ from __future__ import print_function
 
 import copy
 import math
-import random
+import numpy.random as random
 import xml.etree.ElementTree as ET
 
 import py_trees
@@ -331,10 +331,14 @@ class RouteScenario(BasicScenario):
         world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=0.2,
                                color=carla.Color(255, 0, 0), life_time=persistency)
 
-    def _scenario_sampling(self, potential_scenarios_definitions):
+    def _scenario_sampling(self, potential_scenarios_definitions, random_seed=0):
         """
         The function used to sample the scenarios that are going to happen for this route.
         """
+
+        # fix the random seed for reproducibility
+        rgn = random.RandomState(random_seed)
+
         def position_sampled(scenario_choice, sampled_scenarios):
             """
             Check if a position was already sampled, i.e. used for another scenario
@@ -350,14 +354,15 @@ class RouteScenario(BasicScenario):
         sampled_scenarios = []
         for trigger in potential_scenarios_definitions.keys():
             possible_scenarios = potential_scenarios_definitions[trigger]
+
             scenario_choice = random.choice(possible_scenarios)
             del possible_scenarios[possible_scenarios.index(scenario_choice)]
             # We keep sampling and testing if this position is present on any of the scenarios.
             while position_sampled(scenario_choice, sampled_scenarios):
-                if possible_scenarios is None:
+                if possible_scenarios is None or not possible_scenarios:
                     scenario_choice = None
                     break
-                scenario_choice = random.choice(possible_scenarios)
+                scenario_choice = rgn.choice(possible_scenarios)
                 del possible_scenarios[possible_scenarios.index(scenario_choice)]
 
             if scenario_choice is not None:
