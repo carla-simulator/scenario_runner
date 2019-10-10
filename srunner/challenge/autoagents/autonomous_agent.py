@@ -10,6 +10,9 @@ This module provides the base class for all autonomous agents
 from __future__ import print_function
 
 from enum import Enum
+
+import carla
+
 from srunner.challenge.envs.sensor_interface import SensorInterface
 from srunner.scenariomanager.timer import GameTime
 from srunner.challenge.utils.route_manipulation import downsample_route
@@ -81,7 +84,13 @@ class AutonomousAgent(object):
         Execute one step of navigation.
         :return: control
         """
-        pass
+        control = carla.VehicleControl()
+        control.steer = 0.0
+        control.throttle = 0.0
+        control.brake = 0.0
+        control.hand_brake = False
+
+        return control
 
     def destroy(self):
         """
