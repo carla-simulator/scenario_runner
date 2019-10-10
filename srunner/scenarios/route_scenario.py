@@ -13,8 +13,8 @@ from __future__ import print_function
 
 import copy
 import math
-import numpy.random as random
 import xml.etree.ElementTree as ET
+import numpy.random as random
 
 import py_trees
 
