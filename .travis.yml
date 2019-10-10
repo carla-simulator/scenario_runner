@@ -43,20 +43,20 @@ matrix:
       script:
         - pylint --version
         - static_code_quality_passed=1
-        - pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/scenariomanager
-        - pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/scenarios
-        - pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/tools
-        - pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/scenarioconfigs
-        - pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy scenario_runner.py
-        - pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/challenge/autoagents
-        - pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/challenge/challenge_statistics_manager.py
-        - score=`pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/scenariomanager | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
-        - score=`pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/scenarios | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
-        - score=`pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/tools | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
-        - score=`pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/scenarioconfigs | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
-        - score=`pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy scenario_runner.py | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
-        - score=`pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/challenge/autoagents | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
-        - score=`pylint --rcfile=.pylintrc --disable=I --extension-pkg-whitelist=numpy srunner/challenge/challenge_statistics_manager.py | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - pylint --rcfile=.pylintrc --disable=I srunner/scenariomanager
+        - pylint --rcfile=.pylintrc --disable=I srunner/scenarios
+        - pylint --rcfile=.pylintrc --disable=I srunner/tools
+        - pylint --rcfile=.pylintrc --disable=I srunner/scenarioconfigs
+        - pylint --rcfile=.pylintrc --disable=I scenario_runner.py
+        - pylint --rcfile=.pylintrc --disable=I srunner/challenge/autoagents
+        - pylint --rcfile=.pylintrc --disable=I srunner/challenge/challenge_statistics_manager.py
+        - score=`pylint --rcfile=.pylintrc --disable=I srunner/scenariomanager | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - score=`pylint --rcfile=.pylintrc --disable=I srunner/scenarios | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - score=`pylint --rcfile=.pylintrc --disable=I srunner/tools | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - score=`pylint --rcfile=.pylintrc --disable=I srunner/scenarioconfigs | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - score=`pylint --rcfile=.pylintrc --disable=I scenario_runner.py | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - score=`pylint --rcfile=.pylintrc --disable=I srunner/challenge/autoagents | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - score=`pylint --rcfile=.pylintrc --disable=I srunner/challenge/challenge_statistics_manager.py | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
         - if [ $static_code_quality_passed -eq 0 ]; then echo "Code is not pylint compliant. Please run code_check_and_formatting.sh"; exit 1; fi
       after_failure:
         - tail --lines=2000 build.log
