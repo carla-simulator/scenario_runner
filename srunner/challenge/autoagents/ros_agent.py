@@ -277,7 +277,7 @@ class RosAgent(AutonomousAgent):
         # (as lidar point are express in left handed coordinate system, and ros need right handed)
         # we need a copy here, because the data are read only in carla numpy
         # array
-        lidar_data = -lidar_data
+        lidar_data = -1.0 * lidar_data
         # we also need to permute x and y
         lidar_data = lidar_data[..., [1, 0, 2]]
         msg = create_cloud_xyz32(header, lidar_data)
