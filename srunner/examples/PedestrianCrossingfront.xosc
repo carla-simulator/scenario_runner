@@ -48,7 +48,6 @@
                     <Rear maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3" />
                 </Axles>
                 <Properties>
-                    <Property name="rolename" value="hero" />
                     <Property name="type" value="ego_vehicle" />
                 </Properties>
             </Vehicle>
@@ -61,7 +60,6 @@
                     <Dimension width="2.1" length="4.5" height="1.8" />
                 </BoundingBox>
                 <Properties>
-                    <Property name="rolename" value="adversary" />
                     <Property name="type" value="simulation" />
                 </Properties>
             </Pedestrian>

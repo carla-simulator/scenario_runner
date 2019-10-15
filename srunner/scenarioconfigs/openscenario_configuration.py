@@ -123,13 +123,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         for entity in xml_tree.iter("Entities"):
             for obj in entity.iter("Object"):
+                rolename = obj.attrib.get('name', 'simulation')
                 for vehicle in obj.iter("Vehicle"):
                     model = vehicle.attrib.get('name', "vehicle.*")
-                    rolename = 'simulation'
                     ego_vehicle = False
                     for prop in obj.iter("Property"):
-                        if prop.get('name', '') == 'rolename':
-                            rolename = prop.get('value', 'simulation')
                         if prop.get('name', '') == 'type':
                             ego_vehicle = prop.get('value') == 'ego_vehicle'
 
@@ -142,12 +140,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         self.other_actors.append(new_actor)
 
                 for pedestrian in obj.iter("Pedestrian"):
-                    rolename = 'simulation'
                     model = pedestrian.attrib.get('model', "walker.*")
-
-                    for prop in obj.iter("Property"):
-                        if prop.get('name', '') == 'rolename':
-                            rolename = prop.get('value', 'simulation')
 
                     new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
                     new_actor.transform = self._get_actor_transform(rolename)
