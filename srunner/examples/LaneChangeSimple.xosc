@@ -112,21 +112,21 @@
                 <Private object="hero">
                     <Action>
                         <Position>
-                            <World x="-9.4" y="-152.8" z="0.5" h="90" />
+                            <World x="-9.4" y="-152.8" z="0.5" h="1.57079632679" />
                         </Position>
                     </Action>
                 </Private>
                 <Private object="adversary">
                     <Action>
                         <Position>
-                            <World x="-9.4" y="-71.0" z="0.5" h="90" />
+                            <World x="-9.4" y="-71.0" z="0.5" h="1.57079632679" />
                         </Position>
                     </Action>
                 </Private>
                 <Private object="standing">
                     <Action>
                         <Position>
-                            <World x="-8.2" y="29.2" z="0.5" h="90" />
+                            <World x="-8.2" y="29.2" z="0.5" h="1.57079632679" />
                         </Position>
                     </Action>
                 </Private>

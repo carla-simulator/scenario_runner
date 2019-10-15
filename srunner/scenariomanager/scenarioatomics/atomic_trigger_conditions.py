@@ -188,15 +188,8 @@ class AfterTerminationCondition(AtomicBehavior):
         self._element_type = element_type.upper()
         self._element_name = element_name
         self._rule = rule.upper()
-        self._start_time = None
-        self._blackboard = py_trees.blackboard.Blackboard()
-
-    def initialise(self):
-        """
-        Initialize the start time of this condition
-        """
         self._start_time = GameTime.get_time()
-        super(AfterTerminationCondition, self).initialise()
+        self._blackboard = py_trees.blackboard.Blackboard()
 
     def update(self):
         """
