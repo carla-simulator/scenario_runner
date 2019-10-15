@@ -31,9 +31,9 @@ The RoadNetwork points to the _Logic_ (OpenDRIVE) and _SceneGraph_ (OpenSceneGra
 The Entities section is used to define all traffic participants / objects relevant for the scenario. Objects can either be of type _Vehicle_ or of type _Pedestrian_ (see Images). For both, it is necessary to provide _BoundingBox_ information, to be compliant with the standard. However, this information is currently *NOT* evaluated. The same applies to the _Axles_ section for vehicles.
 <img src="images/OSC_entities_1.png" width="350" align="top"> <img src="images/OSC_entities_2.png" width="500" align="top">
 
-For the use with ScenarioRunner, it is important to set the Object _Properties_. The _rolename_ has to be set, and should be the name as the _name_ of the object and is used by CARLA to set the actor Blueprint. This allows for example to identify the ego vehicle by other CARLA clients, such as the ROS bridge. The _type_ property needs to be set to _ego_vehicle_, if the object is a user-controller ego vehicle, otherwise _simulation_ is a recommended value. In short:
+For the use with ScenarioRunner, it is important to set the Object _name_ and _Properties_. The _name_ has to be unique, and is used by CARLA to set the actor blueprint rolename. This allows for example to identify the ego vehicle by other CARLA clients, such as the ROS bridge. In addition, the _type_ property needs to be set to _ego_vehicle_, if the object is a user-controller ego vehicle, otherwise _simulation_ is a recommended value. In short:
 
-Object name = Property rolename = CARLA Blueprint rolename
+Object name = CARLA Blueprint rolename
 Property type = ego_vehicle for use-controlled vehicles, simulation otherwise
 
 ### Storyboard
