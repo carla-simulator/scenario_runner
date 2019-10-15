@@ -10,6 +10,7 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 """
 
 from __future__ import print_function
+import math
 
 import carla
 from agents.navigation.local_planner import RoadOption
@@ -47,9 +48,9 @@ class OpenScenarioParser(object):
             x = float(world_pos.attrib.get('x', 0))
             y = float(world_pos.attrib.get('y', 0))
             z = float(world_pos.attrib.get('z', 0))
-            yaw = float(world_pos.attrib.get('h', 0))
-            pitch = float(world_pos.attrib.get('p', 0))
-            roll = float(world_pos.attrib.get('r', 0))
+            yaw = math.degrees(float(world_pos.attrib.get('h', 0)))
+            pitch = math.degrees(float(world_pos.attrib.get('p', 0)))
+            roll = math.degrees(float(world_pos.attrib.get('r', 0)))
             return carla.Transform(carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
         elif (position.find('RelativeWorld') is not None) or (position.find('RelativeObject') is not None):
             rel_pos = position.find('RelativeWorld') or position.find('RelativeObject')
@@ -72,9 +73,9 @@ class OpenScenarioParser(object):
             if rel_pos.find('Orientation') is not None:
                 orientation = rel_pos.find('Orientation')
                 is_absolute = (orientation.attrib.get('type') == "absolute")
-                dyaw = float(orientation.attrib.get('h', 0))
-                dpitch = float(orientation.attrib.get('p', 0))
-                droll = float(orientation.attrib.get('r', 0))
+                dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
+                dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
+                droll = math.degrees(float(orientation.attrib.get('r', 0)))
 
             x = obj_actor.get_location().x + dx
             y = obj_actor.get_location().y + dy
