@@ -67,6 +67,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._set_carla_town(self.xml_tree)
         self._set_actor_information(self.xml_tree)
         self._set_carla_weather(self.xml_tree)
+        self._set_carla_friction(self.xml_tree)
 
         self._validate_result()
 
@@ -104,6 +105,15 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 self.weather.precipitation_deposits = 100  # if it rains, make the road wet
             elif precepitation.attrib.get('type') == "snow":
                 raise AttributeError("CARLA does not support snow precipitation")
+
+    def _set_carla_friction(self, xml_tree):
+        """
+        Extract road friction information from OpenSCENARIO config
+        """
+
+        road_condition = self.init.iter("RoadCondition")
+        for condition in road_condition:
+            self.friction = float(condition.attrib.get('frictionScale'))
 
     def _set_actor_information(self, xml_tree):
         """

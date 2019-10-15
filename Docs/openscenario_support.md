@@ -50,6 +50,8 @@ OpenSCENARIO requires certain environment settings as part of _Init_. These are 
 
 <img src="images/OSC_storyboard_init_2.png" width="300">
 
+Moreover, the road friction can be adjusted using the _RoadCondition_ action. A _frictionScale_ of 0.0 means no friction at all (no vehicle traction), where a value of 1.0 represents the highest possible friction.
+
 In addition, the object start positions are defined through _Private_ actions, as illustrated in the following image (Note: h is the yaw angle).
 
 #### Story
@@ -137,6 +139,6 @@ Please take a look into the provided example scenarios, for further details on t
 - Maneuver actions:
   * [ ] Lane change (lateral action): September 2019
 - Conditions:
-  * [ ] Complete distance checks: August/September 2019
+  * [x] Complete distance checks: August/September 2019
   * [x] AtStart: August/September 2019
   * [x] AfterTermination: August/September 2019
