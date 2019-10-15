@@ -318,9 +318,6 @@ class OpenScenario(BasicScenario):
 
         for act in self.config.story.iter("Act"):
 
-            if act.attrib.get('name') != 'Behavior':
-                continue
-
             act_sequence = py_trees.composites.Sequence(
                 name="Act StartConditions and behaviours")
 
