@@ -88,6 +88,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for logic in xml_tree.find("RoadNetwork").findall("Logics"):
             self.town = logic.attrib.get('filepath', None)
 
+        if self.town is not None and ".xodr" in self.town:
+            (_, tail) = os.path.split(self.town)
+            self.town = tail[:-5]
+
     def _set_carla_weather(self, xml_tree):
         """
         Extract weather information from OpenSCENARIO config

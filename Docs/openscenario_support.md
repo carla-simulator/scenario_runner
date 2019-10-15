@@ -23,7 +23,7 @@ Catalogs in OpenSCENARIO are a mean to import predefined information, for exampl
 Currently Catalogs are *NOT* supported.
 
 ### RoadNetwork
-The RoadNetwork points to the _Logic_ (OpenDRIVE) and _SceneGraph_ (OpenSceneGraph) files that the scenario makes use of. Currently, our implementation does not use and OpenSceneGraph information, and hence this flag is not parsed. For the Logic of the RoadNetwork, it is important to provide only the name of the CARLA town, e.g. Town01 and not the full path.
+The RoadNetwork points to the _Logic_ (OpenDRIVE) and _SceneGraph_ (OpenSceneGraph) files that the scenario makes use of. Currently, our implementation does not use OpenSceneGraph information, and hence this flag is not parsed. For the Logic of the RoadNetwork, either the name of the CARLA town, e.g. Town01 can be provided or the fully qualified path (e.g. /x/y/Town01.xodr).
 
 <img src="images/OSC_roadnetwork.png" width="200">
 
