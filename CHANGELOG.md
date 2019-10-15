@@ -21,7 +21,8 @@
     - AfterTermination, AtStart conditions are supported
     - Added initial support for lateral action: LaneChange
     - Added initial support for OSCGlobalAction to set state of traffic signal
-    - Added possibilit to change speed for FollowRoute action
+    - Added possibility to change speed for FollowRoute action
+    - Added support for RoadCondition: Friction
 * Fixes:
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h
@@ -30,6 +31,7 @@
     - Fixed result of DrivenDistanceTest
     - Fixed exception in manual_control on fps visualization
     - Cleanup of pylint errors for all autonomous agents
+    - Fixed randomness of route-based scenarios
 
 ## CARLA Scenario_Runner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
