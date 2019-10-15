@@ -32,6 +32,7 @@
     - Fixed exception in manual_control on fps visualization
     - Cleanup of pylint errors for all autonomous agents
     - Fixed randomness of route-based scenarios
+    - Fixed usage of radians instead of degrees for OpenSCENARIO
 
 ## CARLA Scenario_Runner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**

@@ -89,14 +89,14 @@
                 <Private object="hero">
                     <Action>
                         <Position>
-                            <World x="150" y="55" z="0" h="180" />
+                            <World x="150" y="55" z="0" h="3.14159265359" />
                         </Position>
                     </Action>
                 </Private>
                 <Private object="adversary">
                     <Action>
                         <Position>
-                            <World x="110" y="52" z="0.3" h="90" />
+                            <World x="110" y="52" z="0.3" h="1.57079632679" />
                         </Position>
                     </Action>
                 </Private>
