@@ -14,7 +14,12 @@ All scenarios based on OpenSCENARIO 0.9.5 have to follow this structure:
 
 <img src="images/OSC_main.png" width="300">
 
-The _FileHeader_ is only for informational purpose and does not influence any behavior. Nevertheless, providing a reasonable name is recommended. Then, there are four main components: _Catalogs_, _RoadNetwork_, _Entities_ and the _Storyboard_.
+The _FileHeader_ is only for informational purpose and does not influence any behavior. Nevertheless, providing a reasonable name is recommended. Then, there are four main components: _Catalogs_, _RoadNetwork_, _Entities_ and the _Storyboard_. In addition, parameters can be optionally declared inside the _ParameterDeclaration.
+
+### ParameterDeclaration
+Parameters can be used according to the _OSCParameterDeclaration_. Therefore, the parameter has to be provided with a name, its value and the type (integer, double or string). Important: The parameter name has to start with '$'.
+
+<img src="images/OSC_params.png" width="300">
 
 ### Catalogs
 Catalogs in OpenSCENARIO are a mean to import predefined information, for example about vehicle configurations. This allows, for example, to share certain setups or configurations among multiple scenarios.
