@@ -36,6 +36,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         self.xml_tree = ET.parse(filename)
 
+        self._set_global_parameters()
         self._validate_openscenario_configuration()
 
         self.other_actors = []
@@ -63,36 +64,36 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Parse the given OpenSCENARIO config file, set and validate parameters
         """
-        self._set_scenario_name(self.xml_tree)
-        self._set_carla_town(self.xml_tree)
-        self._set_actor_information(self.xml_tree)
-        self._set_carla_weather(self.xml_tree)
-        self._set_carla_friction(self.xml_tree)
+        self._set_scenario_name()
+        self._set_carla_town()
+        self._set_actor_information()
+        self._set_carla_weather()
+        self._set_carla_friction()
 
         self._validate_result()
 
-    def _set_scenario_name(self, xml_tree):
+    def _set_scenario_name(self):
         """
         Extract the scenario name from the OpenSCENARIO header information
         """
-        header = xml_tree.find("FileHeader")
+        header = self.xml_tree.find("FileHeader")
         self.name = header.attrib.get('description', 'Unknown')
 
-    def _set_carla_town(self, xml_tree):
+    def _set_carla_town(self):
         """
         Extract the CARLA town (level) from the RoadNetwork information from OpenSCENARIO
 
         Note: The specification allows multiple Logics elements within the RoadNetwork element.
               Hence, there can be multiple towns specified. We just use the _last_ one.
         """
-        for logic in xml_tree.find("RoadNetwork").findall("Logics"):
+        for logic in self.xml_tree.find("RoadNetwork").findall("Logics"):
             self.town = logic.attrib.get('filepath', None)
 
         if self.town is not None and ".xodr" in self.town:
             (_, tail) = os.path.split(self.town)
             self.town = tail[:-5]
 
-    def _set_carla_weather(self, xml_tree):
+    def _set_carla_weather(self):
         """
         Extract weather information from OpenSCENARIO config
         """
@@ -110,7 +111,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             elif precepitation.attrib.get('type') == "snow":
                 raise AttributeError("CARLA does not support snow precipitation")
 
-    def _set_carla_friction(self, xml_tree):
+    def _set_carla_friction(self):
         """
         Extract road friction information from OpenSCENARIO config
         """
@@ -119,13 +120,39 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for condition in road_condition:
             self.friction = float(condition.attrib.get('frictionScale'))
 
-    def _set_actor_information(self, xml_tree):
+    def _set_global_parameters(self):
+        """
+        Parse the complete scenario definition file, and replace all global parameter references
+        with the actual values
+        """
+
+        global_parameters = dict()
+
+        for parameter in self.xml_tree.find('ParameterDeclaration'):
+            name = parameter.attrib.get('name')
+            value = parameter.attrib.get('value')
+
+            global_parameters[name] = value
+
+        for node in self.xml_tree.find('Entities').iter():
+            for key in node.attrib:
+                for param in global_parameters:
+                    if node.attrib[key] == param:
+                        node.attrib[key] = global_parameters[param]
+
+        for node in self.xml_tree.find('Storyboard').iter():
+            for key in node.attrib:
+                for param in global_parameters:
+                    if node.attrib[key] == param:
+                        node.attrib[key] = global_parameters[param]
+
+    def _set_actor_information(self):
         """
         Extract all actors and their corresponding specification
 
         NOTE: The rolename property has to be unique!
         """
-        for entity in xml_tree.iter("Entities"):
+        for entity in self.xml_tree.iter("Entities"):
             for obj in entity.iter("Object"):
                 rolename = obj.attrib.get('name', 'simulation')
                 for vehicle in obj.iter("Vehicle"):

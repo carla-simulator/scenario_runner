@@ -24,6 +24,7 @@
     - Added possibility to change speed for FollowRoute action
     - Added support for RoadCondition: Friction
     - Redundant rolename object property is no longer required
+    - Added support for global parameters
 * Fixes:
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h
