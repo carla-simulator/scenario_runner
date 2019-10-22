@@ -127,8 +127,12 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
 
         global_parameters = dict()
+        parameters = self.xml_tree.find('ParameterDeclaration')
 
-        for parameter in self.xml_tree.find('ParameterDeclaration'):
+        if parameters is None:
+            return
+
+        for parameter in parameters:
             name = parameter.attrib.get('name')
             value = parameter.attrib.get('value')
 
