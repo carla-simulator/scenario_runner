@@ -4,9 +4,12 @@
 * Moved atomics into new submodule scenarioatomics
 * Updated documentation for all behaviors, conditions and test criteria
 * Refactoring of scenario configurations and parsers
+* Extended WaypointFollower atomic behavior to be able to use the current actor speed
 * Added example scenario for lane change
+* Added cut-in example scenario
 * New Features:
     - Added LaneChange and TrafficLightSateSetter behavior atomics
+    - Added AccelerateToCatchUp behavior atomic
     - Added get_transform() method for CarlaDataProvider
     - Added support for weather conditions
     - Added basic version check to ensure usage of correct CARLA version
@@ -35,6 +38,7 @@
     - Cleanup of pylint errors for all autonomous agents
     - Fixed randomness of route-based scenarios
     - Fixed usage of radians instead of degrees for OpenSCENARIO
+    - Fixed ActorTransformSetter behavior to avoid vehicles not reaching the desired transform
 
 ## CARLA Scenario_Runner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**

@@ -45,6 +45,7 @@ from srunner.scenarios.other_leading_vehicle import *
 from srunner.scenarios.signalized_junction_left_turn import *
 from srunner.scenarios.signalized_junction_right_turn import *
 from srunner.scenarios.change_lane import *
+from srunner.scenarios.cut_in import *
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_config_parser import ScenarioConfigurationParser
@@ -68,7 +69,8 @@ SCENARIOS = {
     "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS,
     "SignalizedJunctionRightTurn": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS,
     "SignalizedJunctionLeftTurn": TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS,
-    "ChangeLane": CHANGE_LANE_SCENARIOS
+    "ChangeLane": CHANGE_LANE_SCENARIOS,
+    "CutIn": CUT_IN_SCENARIOS,
 }
 
 
