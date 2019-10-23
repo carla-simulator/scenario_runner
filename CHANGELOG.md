@@ -28,6 +28,7 @@
     - Added support for RoadCondition: Friction
     - Redundant rolename object property is no longer required
     - Added support for global parameters
+    - Fixed coordinate system to use right-hand as default. Left-hand CARLA system can be used by adding "CARLA:" at the start of the description in the FileHeader.
 * Fixes:
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h

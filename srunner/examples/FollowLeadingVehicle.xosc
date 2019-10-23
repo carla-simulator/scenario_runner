@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>
-    <FileHeader revMajor="0" revMinor="9" date="2019-06-25" description="FollowLeadingVehicle" author="" />
+    <FileHeader revMajor="0" revMinor="9" date="2019-06-25" description="CARLA:FollowLeadingVehicle" author="" />
     <ParameterDeclaration>
     	<Parameter name="$leadingSpeed" type="double" value="2.0" />
     </ParameterDeclaration>

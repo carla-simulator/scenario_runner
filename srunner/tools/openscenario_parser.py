@@ -32,6 +32,17 @@ class OpenScenarioParser(object):
         "equal_to": operator.eq
     }
 
+    use_carla_coordinate_system = False
+
+    @staticmethod
+    def set_use_carla_coordinate_system():
+        """
+        CARLA internally uses a left-hand coordinate system (Unreal), but OpenSCENARIO and OpenDRIVE
+        are intended for right-hand coordinate system. Hence, we need to invert the coordinates, if
+        the scenario does not use CARLA coordinates, but instead right-hand coordinates.
+        """
+        OpenScenarioParser.use_carla_coordinate_system = True
+
     @staticmethod
     def convert_position_to_transform(position):
         """
@@ -51,6 +62,9 @@ class OpenScenarioParser(object):
             yaw = math.degrees(float(world_pos.attrib.get('h', 0)))
             pitch = math.degrees(float(world_pos.attrib.get('p', 0)))
             roll = math.degrees(float(world_pos.attrib.get('r', 0)))
+            if not OpenScenarioParser.use_carla_coordinate_system:
+                y = y * (-1.0)
+                yaw = yaw * (-1.0)
             return carla.Transform(carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
         elif (position.find('RelativeWorld') is not None) or (position.find('RelativeObject') is not None):
             rel_pos = position.find('RelativeWorld') or position.find('RelativeObject')
@@ -76,6 +90,10 @@ class OpenScenarioParser(object):
                 dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
                 dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
                 droll = math.degrees(float(orientation.attrib.get('r', 0)))
+
+            if not OpenScenarioParser.use_carla_coordinate_system:
+                dy = dy * (-1.0)
+                dyaw = dyaw * (-1.0)
 
             x = obj_actor.get_location().x + dx
             y = obj_actor.get_location().y + dy

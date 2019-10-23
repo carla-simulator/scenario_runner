@@ -14,7 +14,9 @@ All scenarios based on OpenSCENARIO 0.9.5 have to follow this structure:
 
 <img src="images/OSC_main.png" width="300">
 
-The _FileHeader_ is only for informational purpose and does not influence any behavior. Nevertheless, providing a reasonable name is recommended. Then, there are four main components: _Catalogs_, _RoadNetwork_, _Entities_ and the _Storyboard_. In addition, parameters can be optionally declared inside the _ParameterDeclaration.
+The _FileHeader_ is for informational purpose. If you design the scenario specifically to work with CARLA coordinates (left-hand Unreal coordinate system), ensure that the description starts with "CARLA:". Otherwise, the default coordinate system for OpenSCENARIO, which is a right-hand system, will be assumed (in alignment to OpenDRIVE). Besides, providing a reasonable name is recommended.
+
+Then, there are four main components: _Catalogs_, _RoadNetwork_, _Entities_ and the _Storyboard_. In addition, parameters can be optionally declared inside the _ParameterDeclaration.
 
 ### ParameterDeclaration
 Parameters can be used according to the _OSCParameterDeclaration_. Therefore, the parameter has to be provided with a name, its value and the type (integer, double or string). Important: The parameter name has to start with '$'.
@@ -82,6 +84,7 @@ Please take a look into the provided example scenarios, for further details on t
 
 - All things in OpenSCENARIO happen in parallel, this includes stories, events, actions or conditions.
 - Sequences of actions or events can be created using an "AfterTermination" condition as StartCondition for the follow-up action or event
+- If you design the scenario specifically to work with CARLA coordinates (left-hand Unreal coordinate system), ensure that the description in the FileHeader starts with "CARLA:". Otherwise, the default coordinate system for OpenSCENARIO, which is a right-hand system, will be assumed (in alignment to OpenDRIVE).
 
 
 ## Overview of available features of OpenSCENARIO v0.9:
