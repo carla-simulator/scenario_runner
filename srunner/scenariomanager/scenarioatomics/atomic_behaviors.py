@@ -917,6 +917,12 @@ class ActorTransformSetter(AtomicBehavior):
     - physics [optional]: If physics is true, the actor physics will be reactivated upon success
 
     The behavior terminates after trying to set the new actor transform
+
+    NOTE:
+    It is very important to ensure that the actor location is spawned to the new transform because of the
+    appearence of a rare runtime processing error. WaypointFollower with LocalPlanner,
+    might fail if new_status is set to success before the actor is really positioned at the new transform.
+    Therefore: calculate_distance(actor, transform) < 1 meter
     """
 
     def __init__(self, actor, transform, physics=True, name="ActorTransformSetter"):
@@ -929,21 +935,26 @@ class ActorTransformSetter(AtomicBehavior):
         self._physics = physics
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
+    def initialise(self):
+        if self._actor.is_alive:
+            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_transform(self._transform)
+
     def update(self):
         """
         Transform actor
         """
         new_status = py_trees.common.Status.RUNNING
-        if self._actor.is_alive:
-            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
-            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
-            self._actor.set_transform(self._transform)
+
+        if not self._actor.is_alive:
+            new_status = py_trees.common.Status.FAILURE
+
+        if calculate_distance(self._actor.get_location(), self._transform.location) < 1.0:
             if self._physics:
                 self._actor.set_simulate_physics(enabled=True)
             new_status = py_trees.common.Status.SUCCESS
-        else:
-            # For some reason the actor is gone...
-            new_status = py_trees.common.Status.FAILURE
+
         return new_status
 
 
