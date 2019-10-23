@@ -687,7 +687,7 @@ class WaypointFollower(AtomicBehavior):
     A parallel termination behavior has to be used.
     """
 
-    def __init__(self, actor, target_speed, plan=None, blackboard_queue_name=None,
+    def __init__(self, actor, target_speed=None, plan=None, blackboard_queue_name=None,
                  avoid_collision=False, name="FollowWaypoints"):
         """
         Set up actor and local planner
@@ -695,7 +695,7 @@ class WaypointFollower(AtomicBehavior):
         super(WaypointFollower, self).__init__(name)
         self._actor_list = []
         self._actor_list.append(actor)
-        self._target_speed = target_speed * 3.6  # Note: Conversion from m/s to km/h required
+        self._target_speed = target_speed
         self._local_planner_list = []
         self._plan = plan
         self._blackboard_queue_name = blackboard_queue_name
@@ -710,10 +710,15 @@ class WaypointFollower(AtomicBehavior):
         """
         for actor in self._actor_list:
             self._apply_local_planner(actor)
-
         return True
 
     def _apply_local_planner(self, actor):
+
+        if self._target_speed is None:
+            self._target_speed = CarlaDataProvider.get_velocity(actor) * 3.6
+        else:
+            self._target_speed = self._target_speed * 3.6
+
         local_planner = LocalPlanner(  # pylint: disable=undefined-variable
             actor, opt_dict={
                 'target_speed': self._target_speed,
