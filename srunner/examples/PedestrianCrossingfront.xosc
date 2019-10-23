@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>
-    <FileHeader revMajor="0" revMinor="9" date="2019-06-25" description="PedestrianCrossing" author="" />
+    <FileHeader revMajor="0" revMinor="9" date="2019-06-25" description="CARLA:PedestrianCrossing" author="" />
     <Catalogs>
         <VehicleCatalog>
             <Directory path="Catalogs/VehicleCatalogs" />

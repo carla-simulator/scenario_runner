@@ -79,6 +79,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         header = self.xml_tree.find("FileHeader")
         self.name = header.attrib.get('description', 'Unknown')
 
+        if self.name.startswith("CARLA:"):
+            OpenScenarioParser.set_use_carla_coordinate_system()
+
     def _set_carla_town(self):
         """
         Extract the CARLA town (level) from the RoadNetwork information from OpenSCENARIO
