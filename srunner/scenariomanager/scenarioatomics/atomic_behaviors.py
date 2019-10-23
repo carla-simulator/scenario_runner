@@ -143,6 +143,85 @@ class AccelerateToVelocity(AtomicBehavior):
         return new_status
 
 
+class AccelerateToCatchUp(AtomicBehavior):
+
+    """
+    This class contains an atomic acceleration behavior.
+    The car will accelerate until it is faster than another car, in order to catch up distance.
+    This behaviour is especially useful before a lane change (e.g. LaneChange atom).
+
+    Important parameters:
+    - actor: CARLA actor to execute the behaviour
+    - other_actor: Reference CARLA actor, actor you want to catch up to
+    - throttle_value: acceleration value between 0.0 and 1.0
+    - delta_velocity: speed up to the velocity of other actor plus delta_velocity
+    - trigger_distance: distance between the actors
+    - max_distance: driven distance to catch up has to be smaller than max_distance
+
+    The behaviour will terminate succesful, when the two actors are in trigger_distance.
+    If max_distance is driven by the actor before actors are in trigger_distance,
+    then the behaviour ends with a failure.
+    """
+
+    def __init__(self, actor, other_actor, throttle_value=1, delta_velocity=10, trigger_distance=5,
+                 max_distance=500, name="AccelerateToCatchUp"):
+        """
+        Setup parameters
+        The target_speet is calculated on the fly.
+        """
+        super(AccelerateToCatchUp, self).__init__(name)
+
+        self._actor = actor
+        self._other_actor = other_actor
+        self._throttle_value = throttle_value
+        self._delta_velocity = delta_velocity  # 1m/s=3.6km/h
+        self._trigger_distance = trigger_distance
+        self._max_distance = max_distance
+
+        self._control, self._type = get_actor_control(actor)
+
+        self._initial_actor_pos = None
+
+    def initialise(self):
+
+        # get initial actor position
+        self._initial_actor_pos = CarlaDataProvider.get_location(self._actor)
+
+    def update(self):
+
+        # get actor speed
+        actor_speed = CarlaDataProvider.get_velocity(self._actor)
+        target_speed = CarlaDataProvider.get_velocity(self._other_actor) + self._delta_velocity
+
+        # distance between actors
+        distance = CarlaDataProvider.get_location(self._actor).distance(
+            CarlaDataProvider.get_location(self._other_actor))
+
+        # driven distance of actor
+        driven_distance = CarlaDataProvider.get_location(self._actor).distance(self._initial_actor_pos)
+
+        if actor_speed < target_speed:
+            # set throttle to throttle_value to accelerate
+            self._control.throttle = self._throttle_value
+
+        if actor_speed >= target_speed:
+            # keep velocity until the actors are in trigger distance
+            self._control.throttle = 0
+
+        self._actor.apply_control(self._control)
+
+        # new status:
+        if distance <= self._trigger_distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        elif driven_distance > self._max_distance:
+            new_status = py_trees.common.Status.FAILURE
+        else:
+            new_status = py_trees.common.Status.RUNNING
+
+        return new_status
+
+
 class KeepVelocity(AtomicBehavior):
 
     """
