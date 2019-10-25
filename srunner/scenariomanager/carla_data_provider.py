@@ -462,7 +462,7 @@ class CarlaActorPool(object):
         CarlaActorPool._spawn_index = 0
 
     @staticmethod
-    def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False):
+    def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False, color=None):
         """
         Function to setup the most relevant actor parameters,
         incl. spawn point and vehicle model.
@@ -472,6 +472,8 @@ class CarlaActorPool(object):
 
         # Get vehicle by model
         blueprint = random.choice(blueprint_library.filter(model))
+        if color:
+            blueprint.set_attribute('color', color)
 
         # is it a pedestrian? -> make it mortal
         if blueprint.has_attribute('is_invincible'):
@@ -599,12 +601,12 @@ class CarlaActorPool(object):
         return actors
 
     @staticmethod
-    def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False):
+    def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False, color=None):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
         """
-        actor = CarlaActorPool.setup_actor(model, spawn_point, rolename, hero, autopilot, random_location)
+        actor = CarlaActorPool.setup_actor(model, spawn_point, rolename, hero, autopilot, random_location, color)
 
         if actor is None:
             return None
