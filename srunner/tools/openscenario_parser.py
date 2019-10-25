@@ -54,11 +54,11 @@ class OpenScenarioParser(object):
             return carla.Transform(carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
         elif (position.find('RelativeWorld') is not None) or (position.find('RelativeObject') is not None):
             rel_pos = position.find('RelativeWorld') or position.find('RelativeObject')
-            obj = float(rel_pos.attrib.get('object'))
+            obj = rel_pos.attrib.get('object')
             obj_actor = None
 
             for actor in CarlaDataProvider.get_world().get_actors():
-                if actor.attributes['role_name'] == obj:
+                if 'role_name' in actor.attributes and actor.attributes['role_name'] == obj:
                     obj_actor = actor
                     break
 
