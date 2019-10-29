@@ -471,7 +471,10 @@ class CarlaActorPool(object):
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
 
         # Get vehicle by model
-        blueprint = random.choice(blueprint_library.filter(model))
+        try:
+            blueprint = random.choice(blueprint_library.filter(model))
+        except:
+            blueprint = random.choice(blueprint_library.filter("vehicle"))
         if color:
             blueprint.set_attribute('color', color)
 
