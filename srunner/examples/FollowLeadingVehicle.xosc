@@ -39,7 +39,7 @@
     </RoadNetwork>
     <Entities>
         <Object name="hero">
-            <Vehicle name="vehicle.tesla.model3" category="car">
+            <Vehicle name="vehicle.lincoln.mkz2017" category="car">
                 <ParameterDeclaration />
                 <Performance maxSpeed="69.444" maxDeceleration="10.0" mass="1800.0" />
                 <BoundingBox>
@@ -52,6 +52,7 @@
                 </Axles>
                 <Properties>
                     <Property name="type" value="ego_vehicle" />
+                    <Property name="color" value="0,0,255" />
                 </Properties>
             </Vehicle>
         </Object>
@@ -69,6 +70,7 @@
                 </Axles>
                 <Properties>
                     <Property name="type" value="simulation" />
+                    <Property name="color" value="255,0,0" />
                 </Properties>
             </Vehicle>
         </Object>

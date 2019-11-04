@@ -462,11 +462,25 @@ class CarlaActorPool(object):
         CarlaActorPool._spawn_index = 0
 
     @staticmethod
-    def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False, color=None):
+    def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
+                    random_location=False, color=None, vehicle_category="car"):
         """
         Function to setup the most relevant actor parameters,
         incl. spawn point and vehicle model.
         """
+
+        _vehicle_blueprint_categories = {
+            'car': 'vehicle.tesla.model3',
+            'van': 'vehicle.volkswagen.t2',
+            'truck': 'vehicle.carlamotors.carlacola',
+            'trailer': '',
+            'semitrailer': '',
+            'bus': 'vehicle.volkswagen.t2',
+            'motorbike': 'vehicle.kawasaki.ninja',
+            'bicycle': 'vehicle.diamondback.century',
+            'train': '',
+            'tram': '',
+        }
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
 
@@ -474,9 +488,19 @@ class CarlaActorPool(object):
         try:
             blueprint = random.choice(blueprint_library.filter(model))
         except:
-            blueprint = random.choice(blueprint_library.filter("vehicle"))
-        if color:
-            blueprint.set_attribute('color', color)
+            # The model is not part of the blueprint library. Let's take a default one for the given category
+            bp_filter = "vehicle.*"
+            new_model = _vehicle_blueprint_categories[vehicle_category]
+            if new_model != '':
+                bp_filter = new_model
+            print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
+            blueprint = random.choice(blueprint_library.filter(bp_filter))
+        try:
+            if color:
+                blueprint.set_attribute('color', color)
+        except:
+            pass
+            # Color can't be set for this vehicle
 
         # is it a pedestrian? -> make it mortal
         if blueprint.has_attribute('is_invincible'):
@@ -516,6 +540,7 @@ class CarlaActorPool(object):
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
+
         return actor
 
     @staticmethod
@@ -604,12 +629,14 @@ class CarlaActorPool(object):
         return actors
 
     @staticmethod
-    def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False, random_location=False, color=None):
+    def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
+                          random_location=False, color=None, vehicle_category=None):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
         """
-        actor = CarlaActorPool.setup_actor(model, spawn_point, rolename, hero, autopilot, random_location, color)
+        actor = CarlaActorPool.setup_actor(
+            model, spawn_point, rolename, hero, autopilot, random_location, color, vehicle_category)
 
         if actor is None:
             return None

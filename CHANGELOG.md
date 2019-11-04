@@ -29,6 +29,8 @@
     - Redundant rolename object property is no longer required
     - Added support for global parameters
     - Fixed coordinate system to use right-hand as default. Left-hand CARLA system can be used by adding "CARLA:" at the start of the description in the FileHeader.
+    - Added support to change actor color
+    - Added support for a default actor model, in case the stated model is not available
 * Fixes:
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h
