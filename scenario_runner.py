@@ -208,7 +208,8 @@ class ScenarioRunner(object):
                                                                     vehicle.transform,
                                                                     vehicle.rolename,
                                                                     True,
-                                                                    color=vehicle.color))
+                                                                    color=vehicle.color,
+                                                                    vehicle_category=vehicle.category))
         else:
             ego_vehicle_missing = True
             while ego_vehicle_missing:
@@ -325,31 +326,31 @@ class ScenarioRunner(object):
         # Prepare scenario
         print("Preparing scenario: " + config.name)
         try:
-        self._prepare_ego_vehicles(config.ego_vehicles, args.waitForEgo)
-        if args.openscenario:
-            scenario = OpenScenario(world=self.world,
-                                    ego_vehicles=self.ego_vehicles,
-                                    config=config,
-                                    config_file=args.openscenario,
-                                    timeout=100000)
-        elif args.route:
-            scenario = RouteScenario(world=self.world,
-                                     config=config,
-                                 debug_mode=args.debug)
-        else:
-            scenario_class = self._get_scenario_class_or_fail(config.type)
-            scenario = scenario_class(self.world,
-                                      self.ego_vehicles,
-                                      config,
-                                      args.randomize,
-                                      args.debug)
+            self._prepare_ego_vehicles(config.ego_vehicles, args.waitForEgo)
+            if args.openscenario:
+                scenario = OpenScenario(world=self.world,
+                                        ego_vehicles=self.ego_vehicles,
+                                        config=config,
+                                        config_file=args.openscenario,
+                                        timeout=100000)
+            elif args.route:
+                scenario = RouteScenario(world=self.world,
+                                         config=config,
+                                         debug_mode=args.debug)
+            else:
+                scenario_class = self._get_scenario_class_or_fail(config.type)
+                scenario = scenario_class(self.world,
+                                          self.ego_vehicles,
+                                          config,
+                                          args.randomize,
+                                          args.debug)
         except Exception as exception:
-           print("The scenario cannot be loaded")
-           if args.debug:
-               traceback.print_exc()
-           print(exception)
-           self._cleanup()
-           return
+            print("The scenario cannot be loaded")
+            if args.debug:
+                traceback.print_exc()
+            print(exception)
+            self._cleanup()
+            return
 
         # Set the appropriate weather conditions
         weather = carla.WeatherParameters(
