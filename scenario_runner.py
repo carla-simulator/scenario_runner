@@ -30,6 +30,8 @@ import carla
 
 from srunner.challenge.autoagents.agent_wrapper import SensorConfigurationInvalid
 from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
+from srunner.challenge.challenge_execution_manager import ChallengeExecutionManager
+from srunner.challenge.route_execution_manager import RouteExecutionManager
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import *
@@ -148,7 +150,7 @@ class ScenarioRunner(object):
         if self.world is not None:
             del self.world
 
-    def _within_available_time(self):
+    def _within_available_time(self, time_budget_seconds):
         """
         Check if the elapsed runtime is within the remaining user time budget
         Only relevant when running in challenge mode
@@ -156,7 +158,7 @@ class ScenarioRunner(object):
         current_time = datetime.now()
         elapsed_seconds = (current_time - self._start_wall_time).seconds
 
-        return elapsed_seconds < os.getenv('CHALLENGE_TIME_AVAILABLE', '1080000')
+        return elapsed_seconds < time_budget_seconds
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -430,69 +432,54 @@ class ScenarioRunner(object):
 
             print("No more scenarios .... Exiting")
 
-    def _run_challenge(self, args):
-        """
-        Run the challenge mode
+    def _resume_execution(self, url):
         """
 
-        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
-        phase = phase_codename.split("_")[0]
+        last_execution_state = { 'last_route_id'    : str,
+                                 'last_repetition'  : int,
+                                 'list_statistics'  : [ {  'route_id'       : str,
+                                                           'repetition'     : int,
+                                                           'score_penalty'  : float,
+                                                           'score_route'    : float,
+                                                           'score_composed' : float,
+                                                           'collisions'     : list,
+                                                           'red_lights'     : list,
+                                                           'wrong_way'      : list,
+                                                           'route_dev'      : list,
+                                                           'sidewalk_inv'   : list,
+                                                           'stop_inf'       : list
+                                                        }
+                                                        , ... , {}]
+                                }
 
-        repetitions = args.repetitions
+        :param url:
+        :return:
+        """
+    def _run_routes_challenge(self, args):
+        """
+        Run the "route" mode
+        """
 
-        if args.challenge:
-            weather_profiles = CarlaDataProvider.find_weather_presets()
-            scenario_runner_root = os.getenv('ROOT_SCENARIO_RUNNER', "./")
+        route_manager = ChallengeExecutionManager(phase=args.challenge_phase, repetitions=args.repetitions)
 
-            if phase == 'dev':
-                routes = '{}/srunner/challenge/routes_devtest.xml'.format(scenario_runner_root)
-                repetitions = 1
-            elif phase == 'validation':
-                routes = '{}/srunner/challenge/routes_testprep.xml'.format(scenario_runner_root)
-                repetitions = 3
-            elif phase == 'test':
-                routes = '{}/srunner/challenge/routes_testchallenge.xml'.format(scenario_runner_root)
-                repetitions = 3
-            else:
-                # debug mode
-                routes = '{}/srunner/challenge/routes_debug.xml'.format(scenario_runner_root)
-                repetitions = 1
+        # should we resume the execution?
+        last_execution_state = self._resume_execution(args.challenge_resume_url)
+        if last_execution_state:
+            route_manager.set_route(last_execution_state['last_route'], last_execution_state['last_repetition'])
+            ChallengeStatisticsManager.load_statistics(last_execution_state)
 
-        if args.route:
-            routes = args.route[0]
-            scenario_file = args.route[1]
-            single_route = None
-            if len(args.route) > 2:
-                single_route = args.route[2]
+        while route_manager.peek_next_route():
+            route_configuration, repetition = route_manager.next_route()
 
-        # retrieve routes
-        route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
-        # find and filter potential scenarios for each of the evaluated routes
-        # For each of the routes and corresponding possible scenarios to be evaluated.
-        if args.challenge:
-            n_routes = len(route_descriptions_list) * repetitions
-            ChallengeStatisticsManager.set_number_of_scenarios(n_routes)
+            if not self._within_available_time(args.challenge_time_budget):
+                error_message = 'Not enough simulation time available to continue'
+                print(error_message)
+                ChallengeStatisticsManager.record_fatal_error(error_message)
+                self._cleanup(True)
+                sys.exit(-1)
 
-        for _, route_description in enumerate(route_descriptions_list):
-            for repetition in range(repetitions):
-
-                if args.challenge and not self._within_available_time():
-                    error_message = 'Not enough simulation time available to continue'
-                    print(error_message)
-                    ChallengeStatisticsManager.record_fatal_error(error_message)
-                    self._cleanup(True)
-                    sys.exit(-1)
-
-                config = RouteScenarioConfiguration(route_description, scenario_file)
-
-                if args.challenge:
-                    profile = weather_profiles[repetition % len(weather_profiles)]
-                    config.weather = profile[0]
-                    config.weather.sun_azimuth = -1
-                    config.weather.sun_altitude = -1
-
-                self._load_and_run_scenario(args, config)
-                self._cleanup(ego=(not args.waitForEgo))
+            self._load_and_run_scenario(args, route_configuration)
+            self._cleanup(ego=(not args.waitForEgo))
 
     def _run_openscenario(self, args):
         """
@@ -516,7 +503,7 @@ class ScenarioRunner(object):
         if args.openscenario:
             self._run_openscenario(args)
         elif args.route or args.challenge:
-            self._run_challenge(args)
+            self._run_routes(args)
         else:
             self._run_scenarios(args)
 
@@ -558,6 +545,11 @@ if __name__ == '__main__':
     PARSER.add_argument(
         '--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
     PARSER.add_argument('--challenge', action="store_true", help='Run in challenge mode')
+    PARSER.add_argument('--challenge-phase', type=str, default='dev_track_3', help='Codename of the phase, e.g. test_track_1')
+    PARSER.add_argument('--challenge-time-budget', type=int, default=1080000, help='Time given to finish the challenge')
+    PARSER.add_argument('--challenge-resume-url', type=str, default='', help='URL to fetch the last checkpoint')
+
+
     PARSER.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
     PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))

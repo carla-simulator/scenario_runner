@@ -18,19 +18,28 @@ import py_trees
 
 from srunner.scenariomanager.traffic_events import TrafficEventType
 
-PENALTY_COLLISION_STATIC = 6
-PENALTY_COLLISION_VEHICLE = 6
-PENALTY_COLLISION_PEDESTRIAN = 9
-PENALTY_TRAFFIC_LIGHT = 3
-PENALTY_WRONG_WAY = 2
-PENALTY_SIDEWALK_INVASION = 2
-PENALTY_STOP = 2
+PENALTY_COLLISION_STATIC = 0.8
+PENALTY_COLLISION_VEHICLE = 0.8
+PENALTY_COLLISION_PEDESTRIAN = 0.8
+PENALTY_TRAFFIC_LIGHT = 0.95
+PENALTY_WRONG_WAY = 0.95
+PENALTY_SIDEWALK_INVASION = 0.85
+PENALTY_STOP = 0.95
+
+class RouteStatistics(object):
+    def __init__(self):
+        self.list_traffic_events = []
+        self.route_id = 0
+        self.repetition = 0
+        self.score_composed = 0.0
+        self.score_penalty = 0.0
+        self.score_route = 0.0
 
 
 class ChallengeStatisticsManager(object):
 
     """
-    This is the statistics manager for the CARLA AD challenge
+    This is the statistics manager for the CARLA AD Benchmark.
     It gathers data at runtime via the scenario evaluation criteria and
     provides the final results as json output.
 
@@ -50,6 +59,16 @@ class ChallengeStatisticsManager(object):
     list_route_dev = []
     list_sidewalk_inv = []
     list_stop_inf = []
+
+    dict_statistics = {}
+
+    # TODO: do it!
+    @staticmethod
+    def fetch_statistics(url):
+        """
+        Fecth statistics from a previous execution
+        """
+        pass
 
     @staticmethod
     def set_number_of_scenarios(number):
@@ -103,7 +122,7 @@ class ChallengeStatisticsManager(object):
         Compute the current statistics by evaluating all relevant scenario criteria
         """
         target_reached = False
-        score_penalty = 0.0
+        score_penalty = 1.0
         score_route = 0.0
         list_traffic_events = []
 
@@ -121,31 +140,31 @@ class ChallengeStatisticsManager(object):
         # analyze all traffic events
         for event in list_traffic_events:
             if event.get_type() == TrafficEventType.COLLISION_STATIC:
-                score_penalty += PENALTY_COLLISION_STATIC
+                score_penalty *= PENALTY_COLLISION_STATIC
                 msg = event.get_message()
                 if msg:
                     ChallengeStatisticsManager.list_collisions.append(event.get_message())
 
             elif event.get_type() == TrafficEventType.COLLISION_VEHICLE:
-                score_penalty += PENALTY_COLLISION_VEHICLE
+                score_penalty *= PENALTY_COLLISION_VEHICLE
                 msg = event.get_message()
                 if msg:
                     ChallengeStatisticsManager.list_collisions.append(event.get_message())
 
             elif event.get_type() == TrafficEventType.COLLISION_PEDESTRIAN:
-                score_penalty += PENALTY_COLLISION_PEDESTRIAN
+                score_penalty *= PENALTY_COLLISION_PEDESTRIAN
                 msg = event.get_message()
                 if msg:
                     ChallengeStatisticsManager.list_collisions.append(event.get_message())
 
             elif event.get_type() == TrafficEventType.TRAFFIC_LIGHT_INFRACTION:
-                score_penalty += PENALTY_TRAFFIC_LIGHT
+                score_penalty *= PENALTY_TRAFFIC_LIGHT
                 msg = event.get_message()
                 if msg:
                     ChallengeStatisticsManager.list_red_lights.append(event.get_message())
 
             elif event.get_type() == TrafficEventType.WRONG_WAY_INFRACTION:
-                score_penalty += PENALTY_WRONG_WAY
+                score_penalty *= PENALTY_WRONG_WAY
                 msg = event.get_message()
                 if msg:
                     ChallengeStatisticsManager.list_wrong_way.append(event.get_message())
@@ -156,13 +175,13 @@ class ChallengeStatisticsManager(object):
                     ChallengeStatisticsManager.list_route_dev.append(event.get_message())
 
             elif event.get_type() == TrafficEventType.ON_SIDEWALK_INFRACTION:
-                score_penalty += PENALTY_SIDEWALK_INVASION
+                score_penalty *= PENALTY_SIDEWALK_INVASION
                 msg = event.get_message()
                 if msg:
                     ChallengeStatisticsManager.list_sidewalk_inv.append(event.get_message())
 
             elif event.get_type() == TrafficEventType.STOP_INFRACTION:
-                score_penalty += PENALTY_STOP
+                score_penalty *= PENALTY_STOP
                 msg = event.get_message()
                 if msg:
                     ChallengeStatisticsManager.list_stop_inf.append(event.get_message())
@@ -213,11 +232,11 @@ class ChallengeStatisticsManager(object):
             return_message += "\n=================================="
 
         score_composed = max(
-            ChallengeStatisticsManager.current_route_score - ChallengeStatisticsManager.current_penalty, 0.0)
+            ChallengeStatisticsManager.current_route_score * ChallengeStatisticsManager.current_penalty, 0.0)
 
         return_message += "\n=================================="
         # pylint: disable=line-too-long
-        return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=-{})]".format(route_id, result,
+        return_message += "\n==[r{}:{}] [Score = {:.2f} : (route_score={}, infractions=*{})]".format(route_id, result,
                                                                                                      score_composed,
                                                                                                      ChallengeStatisticsManager.current_route_score,
                                                                                                      ChallengeStatisticsManager.current_penalty)
