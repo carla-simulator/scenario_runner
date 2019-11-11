@@ -169,7 +169,7 @@
                                 <Private>
                                     <Lateral>
                                         <LaneChange>
-                                            <Dynamics distance="10" shape="linear" />
+                                            <Dynamics distance="25" shape="linear" />
                                             <Target>
                                                 <Relative object="adversary" value="-1" />
                                             </Target>

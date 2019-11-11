@@ -257,7 +257,9 @@ def generate_target_waypoint_list(waypoint, turn=0):
 
 
 def generate_target_waypoint_list_multilane(waypoint, change='left',
-                                            distance_same_lane=10, distance_other_lane=25, check='true'):
+                                            distance_same_lane=10,
+                                            distance_other_lane=25,
+                                            total_lane_change_distance=25, check='true'):
     """
     This methods generates a waypoint list which leads the vehicle to a parallel lane.
     The change input must be 'left' or 'right', depending on which lane you want to change.
@@ -291,13 +293,13 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',
         # go left
         wp_left = plan[-1][0].get_left_lane()
         target_lane_id = wp_left.lane_id
-        next_wp = wp_left.next(25)
+        next_wp = wp_left.next(total_lane_change_distance)
         plan.append((next_wp[0], RoadOption.LANEFOLLOW))
     elif change == 'right':
         # go right
         wp_right = plan[-1][0].get_right_lane()
         target_lane_id = wp_right.lane_id
-        next_wp = wp_right.next(25)
+        next_wp = wp_right.next(total_lane_change_distance)
         plan.append((next_wp[0], RoadOption.LANEFOLLOW))
     else:
         # ERROR, input value for change must be 'left' or 'right'
