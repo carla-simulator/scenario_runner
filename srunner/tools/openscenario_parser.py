@@ -355,9 +355,9 @@ class OpenScenarioParser(object):
                     target_lane_rel = float(lat_maneuver.find("Target").find("Relative").attrib.get('value', 0))
                     distance = float(lat_maneuver.find("Dynamics").attrib.get('distance', float("inf")))
                     atomic = LaneChange(actor,
-                                        5.0,
+                                        None,
                                         direction="left" if target_lane_rel < 0 else "right",
-                                        distance_same_lane=distance,
+                                        distance_lane_change=distance,
                                         name=maneuver_name)
                 else:
                     raise AttributeError("Unknown lateral action")

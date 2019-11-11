@@ -863,6 +863,7 @@ class LaneChange(WaypointFollower):
     - direction: 'right' or 'left', depending on which lane to change
     - distance_same_lane: straight distance before lane change, in m
     - distance_other_lane: straight distance after lane change, in m
+    - distance_lane_change: straight distance for the lane change itself, in m
 
     The total distance driven is greater than the sum of distance_same_lane and distance_other_lane.
     It results from the lane change distance plus the distance_same_lane plus distance_other_lane.
@@ -874,12 +875,13 @@ class LaneChange(WaypointFollower):
     """
 
     def __init__(self, actor, speed=10, direction='left',
-                 distance_same_lane=5, distance_other_lane=100, name='LaneChange'):
+                 distance_same_lane=5, distance_other_lane=100, distance_lane_change=25, name='LaneChange'):
 
         self._actor = actor
         self._direction = direction
         self._distance_same_lane = distance_same_lane
         self._distance_other_lane = distance_other_lane
+        self._distance_lane_change = distance_lane_change
 
         self._target_lane_id = None
         self._distance_new_lane = 0
@@ -895,7 +897,7 @@ class LaneChange(WaypointFollower):
         # calculate plan with scenario_helper function
         self._plan, self._target_lane_id = generate_target_waypoint_list_multilane(
             position_actor, self._direction, self._distance_same_lane,
-            self._distance_other_lane, check='true')
+            self._distance_other_lane, self._distance_lane_change, check='true')
         super(LaneChange, self).initialise()
 
     def update(self):
