@@ -381,6 +381,7 @@ class ChallengeEvaluator(object):
             if args.record:
                 self.client.start_recorder("{}/{}.log".format(os.getenv('ROOT_SCENARIO_RUNNER', "./"), config.name))
             self.manager.load_scenario(scenario, self.agent_instance)
+            self.statistics_manager.set_master_scenario(scenario)
             self.manager.run_scenario()
 
             # Stop scenario
@@ -404,27 +405,25 @@ class ChallengeEvaluator(object):
 
         self._cleanup()
 
-    def _run_routes_challenge(self, args):
+    def run_routes_challenge(self, args):
         """
         Run the "route" mode
         """
-
         route_manager = ChallengeExecutionManager(phase=args.challenge_phase, repetitions=args.repetitions)
-        statistics_manager = ChallengeStatisticsManager(args.challenge_resume_url)
 
         # should we resume the execution?
-        last_execution_state = statistics_manager.resume_execution()
+        last_execution_state = self.statistics_manager.resume_execution()
         if last_execution_state:
             route_manager.set_route(last_execution_state['last_route'], last_execution_state['last_repetition'])
 
         while route_manager.peek_next_route():
             route_configuration, repetition = route_manager.next_route()
-            statistics_manager.next_route(route_configuration['id'], repetition)
+            self.statistics_manager.next_route(route_configuration['id'], repetition)
 
             if not self._within_available_time(args.challenge_time_budget):
                 error_message = 'Not enough simulation time available to continue'
                 print(error_message)
-                statistics_manager.record_fatal_error(error_message)
+                self.statistics_manager.record_fatal_error(error_message)
                 self._cleanup(True)
                 sys.exit(-1)
 
@@ -432,7 +431,7 @@ class ChallengeEvaluator(object):
             self._cleanup(ego=(not args.waitForEgo))
 
             # save execution
-            statistics_manager.save_execution()
+            self.statistics_manager.save_execution()
 
 
 def main():
