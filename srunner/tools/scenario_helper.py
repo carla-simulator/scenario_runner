@@ -9,7 +9,6 @@
 Summary of useful helper functions for scenarios
 """
 
-from __future__ import print_function
 import math
 import shapely.geometry
 import shapely.affinity

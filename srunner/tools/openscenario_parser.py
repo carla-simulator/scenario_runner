@@ -9,7 +9,6 @@
 This module provides a parser for scenario configuration files based on OpenSCENARIO
 """
 
-from __future__ import print_function
 import math
 
 import carla

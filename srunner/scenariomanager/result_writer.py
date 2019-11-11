@@ -124,7 +124,7 @@ class ResultOutputProvider(object):
         """
         test_count = 0
         failure_count = 0
-        for criterion in self._data.scenario.test_criteria:
+        for criterion in self._data.scenario.get_criteria():
             test_count += 1
             if criterion.test_status != "SUCCESS":
                 failure_count += 1
@@ -155,7 +155,7 @@ class ResultOutputProvider(object):
                               self._data.scenario_duration_system))
         junit_file.write(test_suite_string)
 
-        for criterion in self._data.scenario.test_criteria:
+        for criterion in self._data.scenario.get_criteria():
             testcase_name = criterion.name + "_" + \
                 criterion.actor.type_id[8:] + "_" + str(criterion.actor.id)
             result_string = ("    <testcase name=\"{}\" status=\"run\" "
