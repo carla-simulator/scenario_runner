@@ -17,14 +17,15 @@ from collections import OrderedDict
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import *
 from srunner.tools.route_parser import RouteParser
+import pdb
 
 class ChallengeExecutionManager(object):
     """
     TODO: X
     """
-    def __init__(self, challenge_phase, scenario_file):
+    def __init__(self, routes_file, scenarios_file, challenge_phase, repetitions):
         self._phase = challenge_phase.split("_")[0]
-        self._repetitions = 1
+        self._repetitions = 0
         self._routes_dict = OrderedDict()
         self._route_pointer = 0
         self._indices_to_keys = []
@@ -42,9 +43,8 @@ class ChallengeExecutionManager(object):
             routes_file = '{}/srunner/challenge/routes_testchallenge.xml'.format(scenario_runner_root)
             self._repetitions = 3
         else:
-            # debug mode
-            routes_file = '{}/srunner/challenge/routes_debug.xml'.format(scenario_runner_root)
-            self._repetitions = 1
+            # debug mode: use provided routes_file
+            self._repetitions = repetitions
 
         route_descriptions_list = RouteParser.parse_routes_file(routes_file)
 
@@ -52,7 +52,7 @@ class ChallengeExecutionManager(object):
             for repetition in range(self._repetitions):
                 profile = weather_profiles[repetition % len(weather_profiles)]
 
-                route_config = RouteScenarioConfiguration(route_description, scenario_file)
+                route_config = RouteScenarioConfiguration(route_description, scenarios_file)
                 route_config.weather = profile[0]
                 route_config.weather.sun_azimuth = -1
                 route_config.weather.sun_altitude = -1
@@ -72,5 +72,6 @@ class ChallengeExecutionManager(object):
         route_key = self._indices_to_keys[self._route_pointer]
         route_config = self._routes_dict[route_key]
         self._route_pointer = min(self._route_pointer + 1, len(self._routes_dict))
+        repetition = int(route_key.split('/')[1])
 
-        return route_config
+        return route_config, repetition

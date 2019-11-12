@@ -49,6 +49,7 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_config_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
+import pdb
 
 # Version of scenario_runner
 VERSION = 0.6
@@ -117,13 +118,6 @@ class ChallengeEvaluator(object):
         dist = pkg_resources.get_distribution("carla")
         if LooseVersion(dist.version) < LooseVersion('0.9.6'):
             raise ImportError("CARLA version 0.9.6 or newer required. CARLA version found: {}".format(dist))
-
-        # Load additional scenario definitions, if there are any
-        # If something goes wrong an exception will be thrown by importlib (ok here)
-        if args.additionalScenario != '':
-            module_name = os.path.basename(args.additionalScenario).split('.')[0]
-            sys.path.insert(0, os.path.dirname(args.additionalScenario))
-            self.additional_scenario_module = importlib.import_module(module_name)
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -331,7 +325,7 @@ class ChallengeEvaluator(object):
                                         config=config,
                                         config_file=args.openscenario,
                                         timeout=100000)
-            elif args.route:
+            elif args.challenge:
                 scenario = RouteScenario(world=self.world,
                                          config=config,
                                          debug_mode=args.debug)
@@ -409,7 +403,10 @@ class ChallengeEvaluator(object):
         """
         Run the "route" mode
         """
-        route_manager = ChallengeExecutionManager(phase=args.challenge_phase, repetitions=args.repetitions)
+        route_manager = ChallengeExecutionManager(args.challenge_routes_file,
+                                                  args.challenge_scenarios_file,
+                                                  args.challenge_phase,
+                                                  args.repetitions)
 
         # should we resume the execution?
         last_execution_state = self.statistics_manager.resume_execution()
@@ -418,7 +415,7 @@ class ChallengeEvaluator(object):
 
         while route_manager.peek_next_route():
             route_configuration, repetition = route_manager.next_route()
-            self.statistics_manager.next_route(route_configuration['id'], repetition)
+            self.statistics_manager.next_route(route_configuration.route_description['id'], repetition)
 
             if not self._within_available_time(args.challenge_time_budget):
                 error_message = 'Not enough simulation time available to continue'
@@ -459,15 +456,14 @@ def main():
         '--agent',
         help="Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.")
     parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
-    parser.add_argument(
-        '--route',
-        help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))',
-        nargs='+', type=str)
+
     parser.add_argument('--challenge', action="store_true", help='Run in challenge mode')
-    parser.add_argument('--challenge-phase', type=str, default='dev_track_3',
+    parser.add_argument('-challenge-routes-file', type=str, help='Path to routes')
+    parser.add_argument('-challenge-scenarios-file', type=str, help='Path to scenarios')
+    parser.add_argument('-challenge-phase', type=str, default='dev_track_3',
                         help='Codename of the phase, e.g. test_track_1')
-    parser.add_argument('--challenge-time-budget', type=int, default=1080000, help='Time given to finish the challenge')
-    parser.add_argument('--challenge-resume-url', type=str, default='', help='URL to fetch the last checkpoint')
+    parser.add_argument('-challenge-time-budget', type=int, default=1080000, help='Time given to finish the challenge')
+    parser.add_argument('-challenge-resume-file', type=str, default='', help='File to fetch the last checkpoint')
 
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
@@ -485,14 +481,14 @@ def main():
         print(*SCENARIOS.keys(), sep='\n')
         sys.exit(0)
 
-    if arguments.route:
+    if arguments.challenge:
         arguments.reloadWorld = True
 
     evaluator = None
     statistics_manager = None
 
     try:
-        statistics_manager = ChallengeStatisticsManager(arguments.challenge_resume_url)
+        statistics_manager = ChallengeStatisticsManager(arguments.challenge_resume_file)
         evaluator = ChallengeEvaluator(arguments, statistics_manager)
         evaluator.run_routes_challenge(arguments)
     finally:
