@@ -16,6 +16,7 @@
     - Routes can be executed with the ScenarioRunner
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
     - Challenge can be executed with the ScenarioRunner
+    - Extended InTriggerDistanceToVehicle behavior atomic to consider also a delta position to the reference actor
 * Extended OpenScenario support:
     - Added support for pedestrians
     - Full support for SimulationTime condition
@@ -31,6 +32,7 @@
     - Fixed coordinate system to use right-hand as default. Left-hand CARLA system can be used by adding "CARLA:" at the start of the description in the FileHeader.
     - Added support to change actor color
     - Added support for a default actor model, in case the stated model is not available
+    - Added support for position conditions that use relative vehicle positions
 * Fixes:
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h
