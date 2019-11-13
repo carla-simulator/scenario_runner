@@ -12,6 +12,7 @@ Evaluate Autonomous Agents for the CARLA Autonomous Driving benchmark.
 
 from __future__ import print_function
 
+import logging
 import traceback
 import argparse
 from argparse import RawTextHelpFormatter
@@ -167,7 +168,7 @@ class ChallengeEvaluator(object):
             if scenario in member and inspect.isclass(member[1]):
                 return member[1]
 
-        print("Scenario '{}' not supported ... Exiting".format(scenario))
+        logging.error("Scenario '{}' not supported ... Exiting".format(scenario))
         sys.exit(-1)
 
     def _cleanup(self, ego=False):
@@ -242,9 +243,9 @@ class ChallengeEvaluator(object):
             filename = config_name + current_time + ".txt"
 
         if not self.manager.analyze_scenario(args.output, filename, junit_filename):
-            print("Success!")
+            logging.debug("Success!")
         else:
-            print("Failure!")
+            logging.debug("Failure!")
 
     def _load_and_wait_for_world(self, args, town, ego_vehicles=None):
         """
@@ -269,7 +270,7 @@ class ChallengeEvaluator(object):
                                 ego_vehicle_found = True
                                 break
                         if not ego_vehicle_found:
-                            print("Not all ego vehicles ready. Waiting ... ")
+                            logging.debug("Not all ego vehicles ready. Waiting ... ")
                             time.sleep(1)
                             break
 
@@ -290,8 +291,8 @@ class ChallengeEvaluator(object):
             self.world.wait_for_tick()
 
         if CarlaDataProvider.get_map().name != town:
-            print("The CARLA server uses the wrong map!")
-            print("This scenario requires to use map {}".format(town))
+            logging.debug("The CARLA server uses the wrong map!")
+            logging.debug("This scenario requires to use map {}".format(town))
             return False
 
         return True
@@ -311,12 +312,12 @@ class ChallengeEvaluator(object):
                 self.agent_instance = getattr(self.module_agent, agent_class_name)(args.agentConfig)
                 config.agent = self.agent_instance
             except Exception as e:
-                print("Could not setup required agent due to {}".format(e))
+                logging.error("Could not setup required agent due to {}".format(e))
                 self._cleanup()
                 return
 
         # Prepare scenario
-        print("Preparing scenario: " + config.name)
+        logging.debug("Preparing scenario: " + config.name)
         try:
             self._prepare_ego_vehicles(config.ego_vehicles, args.waitForEgo)
             if args.openscenario:
@@ -337,7 +338,7 @@ class ChallengeEvaluator(object):
                                           args.randomize,
                                           args.debug)
         except Exception as exception:
-            print("The scenario cannot be loaded")
+            logging.error("The scenario cannot be loaded")
             if args.debug:
                 traceback.print_exc()
             print(exception)
@@ -434,7 +435,6 @@ class ChallengeEvaluator(object):
 def main():
     DESCRIPTION = ("CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
                    "Current version: " + str(VERSION))
-
     parser = argparse.ArgumentParser(description=DESCRIPTION, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--host', default='127.0.0.1',
                         help='IP of the host server (default: localhost)')
@@ -449,25 +449,22 @@ def main():
     parser.add_argument('--reloadWorld', action="store_true",
                         help='Reload the CARLA world before starting a scenario (default=True)')
     # pylint: disable=line-too-long
-    parser.add_argument('--repetitions', default=1, help='Number of scenario executions')
     parser.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     parser.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
-    parser.add_argument(
-        '--agent',
-        help="Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.")
-    parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
-
-    parser.add_argument('--challenge', action="store_true", help='Run in challenge mode')
-    parser.add_argument('-challenge-routes-file', type=str, help='Path to routes')
-    parser.add_argument('-challenge-scenarios-file', type=str, help='Path to scenarios')
-    parser.add_argument('-challenge-phase', type=str, default='dev_track_3',
-                        help='Codename of the phase, e.g. test_track_1')
-    parser.add_argument('-challenge-time-budget', type=int, default=1080000, help='Time given to finish the challenge')
-    parser.add_argument('-challenge-resume-file', type=str, default='', help='File to fetch the last checkpoint')
-
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
+
+    parser.add_argument('--challenge-routes-file', type=str, help='Path to routes', required=True)
+    parser.add_argument('--challenge-scenarios-file', type=str, help='Path to scenarios', required=True)
+    parser.add_argument('--challenge-phase', type=str, default='dev_track_3',
+                        help='Codename of the phase, e.g. test_track_1')
+    parser.add_argument('--challenge-time-budget', type=int, default=1080000, help='Time given to finish the challenge')
+    parser.add_argument('--challenge-resume-file', type=str, default='', help='File to fetch the last checkpoint')
+    parser.add_argument('--repetitions', default=1, help='Number of route repetitions')
+    parser.add_argument('--agent',
+        help="Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.")
+    parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
     arguments = parser.parse_args()
     # pylint: enable=line-too-long
 
@@ -481,11 +478,14 @@ def main():
         print(*SCENARIOS.keys(), sep='\n')
         sys.exit(0)
 
-    if arguments.challenge:
-        arguments.reloadWorld = True
+    arguments.challenge = True
+    arguments.reloadWorld = True
 
     evaluator = None
     statistics_manager = None
+
+    log_level = logging.INFO
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
     try:
         statistics_manager = ChallengeStatisticsManager(arguments.challenge_resume_file)
@@ -493,7 +493,7 @@ def main():
         evaluator.run_routes_challenge(arguments)
     finally:
         if arguments.challenge:
-            statistics_manager.report_challenge_statistics('results.json', arguments.debug)
+            ChallengeStatisticsManager.report_challenge_statistics(statistics_manager, 'results.json', arguments.debug)
         if evaluator is not None:
             del evaluator
 

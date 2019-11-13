@@ -13,6 +13,7 @@ from __future__ import print_function
 
 import os
 import json
+import logging
 
 import py_trees
 
@@ -63,25 +64,17 @@ class ChallengeStatisticsManager(object):
     """
 
     def __init__(self, filename):
+        if not filename:
+            error_msg = 'File {} not found. Please, make sure you specify the ' \
+                        'right file to save the execution'.format(filename)
+
+            logging.error(error_msg)
+            raise FileNotFoundError(error_msg)
+
         self._filename = filename
         self._routes_statistics = RouteStatistics()
         self._master_scenario = None
 
-        system_error = None
-        error_message = ""
-        n_routes = 1
-        statistics_routes = []
-
-        current_route_score = 0
-        current_penalty = 0
-        list_collisions = []
-        list_red_lights = []
-        list_wrong_way = []
-        list_route_dev = []
-        list_sidewalk_inv = []
-        list_stop_inf = []
-
-        dict_statistics = {}
 
     def set_master_scenario(self, scenario):
         """
@@ -172,6 +165,7 @@ class ChallengeStatisticsManager(object):
         pass
 
     def save_execution(self):
+
         json_data = {'route_id': self._routes_statistics.route_id,
                      'repetition': self._routes_statistics.repetition,
                      'list_statistics': self._routes_statistics.list_statistics
@@ -307,60 +301,65 @@ class ChallengeStatisticsManager(object):
         ChallengeStatisticsManager.statistics_routes.append(current_statistics)
 
     @staticmethod
-    def report_challenge_statistics(filename, debug):
+    def report_challenge_statistics(class_obj, filename, debug):
         """
         Print and save the challenge statistics over all routes
         """
-        score_composed = 0.0
-        score_route = 0.0
-        score_penalty = 0.0
-        help_message = ""
-
-        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
-        phase = phase_codename.split("_")[0]
-
-        if ChallengeStatisticsManager.system_error:
-            submission_status = 'FAILED'
-
-            for stats in ChallengeStatisticsManager.statistics_routes:
-                help_message += "{}\n\n".format(stats['help_text'])
-
+        if class_obj:
+            print('The statistics manager is alive!')
         else:
-            submission_status = 'FINISHED'
+            print('The statistics manager is dead!')
 
-            for stats in ChallengeStatisticsManager.statistics_routes:
-                score_composed += stats['score_composed'] / float(ChallengeStatisticsManager.n_routes)
-                score_route += stats['score_route'] / float(ChallengeStatisticsManager.n_routes)
-                score_penalty += stats['score_penalty'] / float(ChallengeStatisticsManager.n_routes)
-                help_message += "{}\n\n".format(stats['help_text'])
-
-            if debug:
-                print(help_message)
-
-        # create json structure
-        json_data = {
-            'submission_status': submission_status,
-            'stderr': help_message if phase == 'dev' or phase == 'debug' else 'No metadata provided for this phase',
-            'result': [
-                {
-                    'split': phase,
-                    'accuracies': {
-                        'avg. route points': score_route,
-                        'infraction points': score_penalty,
-                        'total avg.': score_composed
-                    }
-                }],
-            'metadata': [
-                {
-                    'stderr': help_message,
-                    'accuracies': {
-                        'avg. route points': score_route,
-                        'infraction points': score_penalty,
-                        'total avg.': score_composed
-                    }
-                }
-            ]
-        }
-
-        with open(filename, "w+") as fd:
-            fd.write(json.dumps(json_data, indent=4))
+        # score_composed = 0.0
+        # score_route = 0.0
+        # score_penalty = 0.0
+        # help_message = ""
+        #
+        # phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
+        # phase = phase_codename.split("_")[0]
+        #
+        # if ChallengeStatisticsManager.system_error:
+        #     submission_status = 'FAILED'
+        #
+        #     for stats in ChallengeStatisticsManager.statistics_routes:
+        #         help_message += "{}\n\n".format(stats['help_text'])
+        #
+        # else:
+        #     submission_status = 'FINISHED'
+        #
+        #     for stats in ChallengeStatisticsManager.statistics_routes:
+        #         score_composed += stats['score_composed'] / float(ChallengeStatisticsManager.n_routes)
+        #         score_route += stats['score_route'] / float(ChallengeStatisticsManager.n_routes)
+        #         score_penalty += stats['score_penalty'] / float(ChallengeStatisticsManager.n_routes)
+        #         help_message += "{}\n\n".format(stats['help_text'])
+        #
+        #     if debug:
+        #         print(help_message)
+        #
+        # # create json structure
+        # json_data = {
+        #     'submission_status': submission_status,
+        #     'stderr': help_message if phase == 'dev' or phase == 'debug' else 'No metadata provided for this phase',
+        #     'result': [
+        #         {
+        #             'split': phase,
+        #             'accuracies': {
+        #                 'avg. route points': score_route,
+        #                 'infraction points': score_penalty,
+        #                 'total avg.': score_composed
+        #             }
+        #         }],
+        #     'metadata': [
+        #         {
+        #             'stderr': help_message,
+        #             'accuracies': {
+        #                 'avg. route points': score_route,
+        #                 'infraction points': score_penalty,
+        #                 'total avg.': score_composed
+        #             }
+        #         }
+        #     ]
+        # }
+        #
+        # with open(filename, "w+") as fd:
+        #     fd.write(json.dumps(json_data, indent=4))
