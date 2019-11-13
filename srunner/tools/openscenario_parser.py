@@ -9,6 +9,7 @@
 This module provides a parser for scenario configuration files based on OpenSCENARIO
 """
 
+from distutils.util import strtobool
 import math
 
 import carla
@@ -17,7 +18,7 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
-from srunner.scenariomanager.timer import SimulationTimeCondition
+from srunner.scenariomanager.timer import *
 
 
 class OpenScenarioParser(object):
@@ -128,11 +129,19 @@ class OpenScenarioParser(object):
         """
         Convert an OpenSCENARIO condition into a Behavior/Criterion atomic
 
+        If there is a delay defined in the condition, then the condition is checked after the delay time
+        passed by, e.g. <Condition name="" delay="5">.
+
         Note: Not all conditions are currently supported.
         """
 
         atomic = None
+        delay_atomic = None
         condition_name = condition.attrib.get('name')
+
+        if condition.attrib.get('delay') is not None and str(condition.attrib.get('delay')) != '0':
+            delay = float(condition.attrib.get('delay'))
+            delay_atomic = TimeOut(delay)
 
         if condition.find('ByEntity') is not None:
 
@@ -214,11 +223,33 @@ class OpenScenarioParser(object):
                     distance_rule = distance_condition.attrib.get('rule')
                     distance_operator = OpenScenarioParser.operators[distance_rule]
 
-                    if distance_condition.find('Position'):
+                    if distance_condition.find('Position') is not None:
                         position = distance_condition.find('Position')
                         transform = OpenScenarioParser.convert_position_to_transform(position)
                         atomic = InTriggerDistanceToLocation(
                             triggered_actor, transform.location, distance_value, distance_operator, name=condition_name)
+
+                        if position.find('RelativeObject') is not None:
+                            relative_object = position.find('RelativeObject')
+
+                            # relative actor, triggering actor
+                            relative_actor_role_name = relative_object.attrib.get('object')
+
+                            for actor in actor_list:
+                                if relative_actor_role_name == actor.attributes['role_name']:
+                                    relative_actor = actor
+
+                            # condition_operator
+                            condition_operator = distance_operator
+
+                            # dx, dy, dz
+                            dx = float(relative_object.attrib.get('dx'))
+                            dy = float(relative_object.attrib.get('dy'))
+                            dz = float(relative_object.attrib.get('dz'))
+
+                            atomic = InTriggerDistanceToVehicle(relative_actor, trigger_actor, distance_value,
+                                                                dx, dy, dz, condition_operator, name=condition_name)
+
                 elif entity_condition.find('RelativeDistance') is not None:
                     distance_condition = entity_condition.find('RelativeDistance')
                     distance_value = float(distance_condition.attrib.get('value'))
@@ -234,8 +265,8 @@ class OpenScenarioParser(object):
 
                         condition_rule = distance_condition.attrib.get('rule')
                         condition_operator = OpenScenarioParser.operators[condition_rule]
-                        atomic = InTriggerDistanceToVehicle(
-                            triggered_actor, trigger_actor, distance_value, condition_operator, name=condition_name)
+                        atomic = InTriggerDistanceToVehicle(triggered_actor, trigger_actor, distance_value,
+                                                            0, 0, 0, condition_operator, name=condition_name)
                     else:
                         raise NotImplementedError(
                             "RelativeDistance condition with the given specification is not yet supported")
@@ -295,7 +326,14 @@ class OpenScenarioParser(object):
         else:
             raise AttributeError("Unknown condition")
 
-        return atomic
+        if delay_atomic is not None and atomic is not None:
+            new_atomic = py_trees.composites.Sequence("delayed sequence")
+            new_atomic.add_child(delay_atomic)
+            new_atomic.add_child(atomic)
+        else:
+            new_atomic = atomic
+
+        return new_atomic
 
     @staticmethod
     def convert_maneuver_to_atomic(action, actor):
@@ -367,7 +405,7 @@ class OpenScenarioParser(object):
                 raise NotImplementedError("Meeting actions are not yet supported")
             elif private_action.find('Autonomous') is not None:
                 private_action = private_action.find('Autonomous')
-                activate = private_action.attrib.get('activate')
+                activate = strtobool(private_action.attrib.get('activate'))
                 atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
             elif private_action.find('Controller') is not None:
                 raise NotImplementedError("Controller actions are not yet supported")

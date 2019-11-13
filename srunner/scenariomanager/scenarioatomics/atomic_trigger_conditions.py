@@ -268,22 +268,27 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - other_actor: Reference CARLA actor
+    - reference_actor: Reference CARLA actor
     - name: Name of the condition
     - distance: Trigger distance between the two actors in meters
+    - dx, dy, dz: distance to reference_location (location of reference_actor)
 
     The condition terminates with SUCCESS, when the actor reached the target distance to the other actor
     """
 
-    def __init__(self, other_actor, actor, distance, comparison_operator=operator.lt, name="TriggerDistanceToVehicle"):
+    def __init__(self, reference_actor, actor, distance, dx=0, dy=0, dz=0, comparison_operator=operator.lt,
+                 name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
         """
         super(InTriggerDistanceToVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._other_actor = other_actor
+        self._reference_actor = reference_actor
         self._actor = actor
         self._distance = distance
+        self._dx = dx
+        self._dy = dy
+        self._dz = dz
         self._comparison_operator = comparison_operator
 
     def update(self):
@@ -292,13 +297,17 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        ego_location = CarlaDataProvider.get_location(self._actor)
-        other_location = CarlaDataProvider.get_location(self._other_actor)
+        location = CarlaDataProvider.get_location(self._actor)
 
-        if ego_location is None or other_location is None:
+        reference_location = CarlaDataProvider.get_location(self._reference_actor)
+        reference_location = carla.Location(reference_location.x + self._dx,
+                                            reference_location.y + self._dy,
+                                            reference_location.z + self._dz)
+
+        if location is None or reference_location is None:
             return new_status
 
-        if self._comparison_operator(calculate_distance(ego_location, other_location), self._distance):
+        if self._comparison_operator(calculate_distance(location, reference_location), self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
