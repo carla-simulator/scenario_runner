@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
      name='srunner',
-     version='0.1',
+     version='0.15',
      scripts=[],
      author="Carla Team",
      author_email="carla.simulatort@gmail.com",
