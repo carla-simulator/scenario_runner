@@ -1,5 +1,6 @@
 ## Latest changes
 
+* Added the setup.py file to upload to pip
 * Split of behaviors into behaviors and conditions
 * Moved atomics into new submodule scenarioatomics
 * Updated documentation for all behaviors, conditions and test criteria
