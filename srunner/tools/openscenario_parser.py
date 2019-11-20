@@ -11,14 +11,16 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 
 from distutils.util import strtobool
 import math
+import operator
 
 import carla
 from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
 from srunner.scenariomanager.timer import *
+
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTimeToArrivalToLocation, StandStill, DriveDistance, InTimeToArrivalToVehicle, AtStartCondition, AfterTerminationCondition, InTriggerDistanceToOSCPosition, InTimeToArrivalToOSCPosition
 
 
 class OpenScenarioParser(object):
@@ -44,7 +46,7 @@ class OpenScenarioParser(object):
         OpenScenarioParser.use_carla_coordinate_system = True
 
     @staticmethod
-    def convert_position_to_transform(position):
+    def convert_position_to_transform(position, actor_list=None):
         """
         Convert an OpenScenario position into a CARLA transform
 
@@ -66,23 +68,32 @@ class OpenScenarioParser(object):
                 y = y * (-1.0)
                 yaw = yaw * (-1.0)
             return carla.Transform(carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
-        elif (position.find('RelativeWorld') is not None) or (position.find('RelativeObject') is not None):
-            rel_pos = position.find('RelativeWorld') or position.find('RelativeObject')
+
+        elif ((position.find('RelativeWorld') is not None) or (position.find('RelativeObject') is not None) or
+              (position.find('RelativeLane') is not None)):
+            rel_pos = position.find('RelativeWorld') or position.find('RelativeObject') or position.find('RelativeLane')
+
+            # get relative object and relative position
             obj = rel_pos.attrib.get('object')
             obj_actor = None
+            actor_transform = None
 
-            for actor in CarlaDataProvider.get_world().get_actors():
-                if 'role_name' in actor.attributes and actor.attributes['role_name'] == obj:
-                    obj_actor = actor
-                    break
+            if actor_list is not None:
+                for actor in actor_list:
+                    if actor.rolename == obj:
+                        obj_actor = actor
+                        actor_transform = actor.transform
+            else:
+                for actor in CarlaDataProvider.get_world().get_actors():
+                    if 'role_name' in actor.attributes and actor.attributes['role_name'] == obj:
+                        obj_actor = actor
+                        actor_transform = obj_actor.get_transform()
+                        break
 
             if obj_actor is None:
                 raise AttributeError("Object '{}' provided as position reference is not known".format(obj))
 
-            dx = float(rel_pos.attrib.get('dx', 0))
-            dy = float(rel_pos.attrib.get('dy', 0))
-            dz = float(rel_pos.attrib.get('dz', 0))
-
+            # calculate orientation h, p, r
             is_absolute = False
             if rel_pos.find('Orientation') is not None:
                 orientation = rel_pos.find('Orientation')
@@ -92,15 +103,12 @@ class OpenScenarioParser(object):
                 droll = math.degrees(float(orientation.attrib.get('r', 0)))
 
             if not OpenScenarioParser.use_carla_coordinate_system:
-                dy = dy * (-1.0)
                 dyaw = dyaw * (-1.0)
 
-            x = obj_actor.get_location().x + dx
-            y = obj_actor.get_location().y + dy
-            z = obj_actor.get_location().z + dz
-            yaw = obj_actor.get_transform().rotation.yaw
-            pitch = obj_actor.get_transform().rotation.pitch
-            roll = obj_actor.get_transform().rotation.roll
+            yaw = actor_transform.rotation.yaw
+            pitch = actor_transform.rotation.pitch
+            roll = actor_transform.rotation.roll
+
             if not is_absolute:
                 yaw = yaw + dyaw
                 pitch = pitch + dpitch
@@ -110,15 +118,63 @@ class OpenScenarioParser(object):
                 pitch = dpitch
                 roll = droll
 
+            # calculate location x, y, z
+            # dx, dy, dz
+            if (position.find('RelativeWorld') is not None) or (position.find('RelativeObject') is not None):
+                dx = float(rel_pos.attrib.get('dx', 0))
+                dy = float(rel_pos.attrib.get('dy', 0))
+                dz = float(rel_pos.attrib.get('dz', 0))
+
+                if not OpenScenarioParser.use_carla_coordinate_system:
+                    dy = dy * (-1.0)
+
+                x = actor_transform.location.x + dx
+                y = actor_transform.location.y + dy
+                z = actor_transform.location.z + dz
+
+            # dLane, ds, offset
+            elif position.find('RelativeLane') is not None:
+                dlane = float(rel_pos.attrib.get('dLane'))
+                ds = float(rel_pos.attrib.get('ds'))
+                offset = float(rel_pos.attrib.get('offset'))
+
+                carla_map = CarlaDataProvider.get_map()
+                relative_waypoint = carla_map.get_waypoint(actor_transform.location)
+
+                if dlane == 0:
+                    wp = relative_waypoint
+                elif dlane == -1:
+                    wp = relative_waypoint.get_left_lane()
+                elif dlane == 1:
+                    wp = relative_waypoint.get_right_lane()
+                if wp == None:
+                    raise AttributeError("Object '{}' position with dLane={} is not valid".format(obj, dlane))
+
+                wp = wp.next(ds)[-1]
+
+                # offset
+                # Verschiebung von Mittelpunkt
+                h = math.radians(wp.transform.rotation.yaw)
+                x_offset = math.sin(h) * offset
+                y_offset = math.cos(h) * offset
+
+                if OpenScenarioParser.use_carla_coordinate_system:
+                    x_offset = x_offset * (-1.0)
+                    y_offset = y_offset * (-1.0)
+
+                x = wp.transform.location.x + x_offset
+                y = wp.transform.location.y + y_offset
+                z = wp.transform.location.z
+
             return carla.Transform(carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
+
+        # Not implemented
         elif position.find('Road') is not None:
             raise NotImplementedError("Road positions are not yet supported")
         elif position.find('RelativeRoad') is not None:
             raise NotImplementedError("RelativeRoad positions are not yet supported")
         elif position.find('Lane') is not None:
             raise NotImplementedError("Lane positions are not yet supported")
-        elif position.find('RelativeLane') is not None:
-            raise NotImplementedError("RelativeLane positions are not yet supported")
         elif position.find('Route') is not None:
             raise NotImplementedError("Route positions are not yet supported")
         else:
@@ -171,20 +227,18 @@ class OpenScenarioParser(object):
                     condition_rule = ttc_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
-                    condition_value = ttc_condition.find('value')
+                    condition_value = ttc_condition.attrib.get('value')
                     condition_target = ttc_condition.find('Target')
 
                     if condition_target.find('Position'):
                         position = condition_target.find('Position')
-                        transform = OpenScenarioParser.convert_position_to_transform(position)
-                        atomic = InTimeToArrivalToLocation(
-                            triggered_actor, condition_value, condition_target.location, condition_operator)
+                        atomic = InTimeToArrivalToOSCPosition(
+                            trigger_actor, position, condition_value, condition_operator)
                     else:
                         for actor in actor_list:
                             if ttc_condition.attrib.get('entity', None) == actor.attributes['role_name']:
                                 triggered_actor = actor
                                 break
-
                         if triggered_actor is None:
                             raise AttributeError("Cannot find actor '{}' for condition".format(
                                 ttc_condition.attrib.get('entity', None)))
@@ -214,41 +268,17 @@ class OpenScenarioParser(object):
                     rp_condition = entity_condition.find('ReachPosition')
                     distance_value = float(rp_condition.attrib.get('tolerance'))
                     position = rp_condition.find('Position')
-                    transform = OpenScenarioParser.convert_position_to_transform(position)
-                    atomic = InTriggerDistanceToLocation(
-                        trigger_actor, transform.location, distance_value, name=condition_name)
+                    atomic = InTriggerDistanceToOSCPosition(
+                        trigger_actor, position, distance_value, name=condition_name)
                 elif entity_condition.find('Distance') is not None:
                     distance_condition = entity_condition.find('Distance')
                     distance_value = float(distance_condition.attrib.get('value'))
                     distance_rule = distance_condition.attrib.get('rule')
                     distance_operator = OpenScenarioParser.operators[distance_rule]
-
                     if distance_condition.find('Position') is not None:
                         position = distance_condition.find('Position')
-                        transform = OpenScenarioParser.convert_position_to_transform(position)
-                        atomic = InTriggerDistanceToLocation(
-                            triggered_actor, transform.location, distance_value, distance_operator, name=condition_name)
-
-                        if position.find('RelativeObject') is not None:
-                            relative_object = position.find('RelativeObject')
-
-                            # relative actor, triggering actor
-                            relative_actor_role_name = relative_object.attrib.get('object')
-
-                            for actor in actor_list:
-                                if relative_actor_role_name == actor.attributes['role_name']:
-                                    relative_actor = actor
-
-                            # condition_operator
-                            condition_operator = distance_operator
-
-                            # dx, dy, dz
-                            dx = float(relative_object.attrib.get('dx'))
-                            dy = float(relative_object.attrib.get('dy'))
-                            dz = float(relative_object.attrib.get('dz'))
-
-                            atomic = InTriggerDistanceToVehicle(relative_actor, trigger_actor, distance_value,
-                                                                dx, dy, dz, condition_operator, name=condition_name)
+                        atomic = InTriggerDistanceToOSCPosition(
+                            trigger_actor, position, distance_value, distance_operator, name=condition_name)
 
                 elif entity_condition.find('RelativeDistance') is not None:
                     distance_condition = entity_condition.find('RelativeDistance')
@@ -265,8 +295,8 @@ class OpenScenarioParser(object):
 
                         condition_rule = distance_condition.attrib.get('rule')
                         condition_operator = OpenScenarioParser.operators[condition_rule]
-                        atomic = InTriggerDistanceToVehicle(triggered_actor, trigger_actor, distance_value,
-                                                            0, 0, 0, condition_operator, name=condition_name)
+                        atomic = InTriggerDistanceToVehicle(
+                            triggered_actor, trigger_actor, distance_value, condition_operator, name=condition_name)
                     else:
                         raise NotImplementedError(
                             "RelativeDistance condition with the given specification is not yet supported")
@@ -411,8 +441,7 @@ class OpenScenarioParser(object):
                 raise NotImplementedError("Controller actions are not yet supported")
             elif private_action.find('Position') is not None:
                 position = private_action.find('Position')
-                transform = OpenScenarioParser.convert_position_to_transform(position)
-                atomic = ActorTransformSetter(actor, transform, name=maneuver_name)
+                atomic = ActorTransformSetterToOSCPosition(actor, position, name=maneuver_name)
             elif private_action.find('Routing') is not None:
                 target_speed = 5.0
                 private_action = private_action.find('Routing')

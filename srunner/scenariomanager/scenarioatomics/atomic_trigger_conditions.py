@@ -31,7 +31,125 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import get_distance_along_route
 
+# OpenScenarioParser.convert_position_to_transform
+import srunner.tools
+
 EPSILON = 0.001
+
+
+class InTriggerDistanceToOSCPosition(AtomicBehavior):
+
+    """
+    OpenSCENARIO atomic
+    This class contains the trigger condition for a distance to an OpenSCENARIO position
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - osc_position: OpenSCENARIO position
+    - distance: Trigger distance between the actor and the target location in meters
+    - name: Name of the condition
+
+    The condition terminates with SUCCESS, when the actor reached the target distance to the openSCENARIO position
+    """
+
+    def __init__(self,
+                 actor,
+                 osc_position,
+                 distance,
+                 comparison_operator=operator.lt,
+                 name="InTriggerDistanceToOSCPosition"):
+        """
+        Setup parameters
+        """
+        super(InTriggerDistanceToOSCPosition, self).__init__(name)
+        self._actor = actor
+        self._osc_position = osc_position
+        self._distance = distance
+        self._comparison_operator = comparison_operator
+
+    def initialise(self):
+        if self._distance < 0:
+            raise ValueError("distance value must be positive")
+
+    def update(self):
+        """
+        Check if actor is in trigger distance
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # calculate transform with method in openscenario_parser.py
+        osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            self._osc_position)
+
+        if osc_transform is not None:
+            osc_location = osc_transform.location
+            actor_location = CarlaDataProvider.get_location(self._actor)
+            distance = calculate_distance(osc_location, actor_location)
+
+            if self._comparison_operator(distance, self._distance):
+                new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
+class InTimeToArrivalToOSCPosition(AtomicBehavior):
+
+    """
+    OpenSCENARIO atomic
+    This class contains a trigger if an actor arrives within a given time to an OpenSCENARIO position
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - osc_position: OpenSCENARIO position
+    - time: The behavior is successful, if TTA is less than _time_ in seconds
+    - name: Name of the condition
+
+    The condition terminates with SUCCESS, when the actor can reach the position within the given time
+    """
+
+    def __init__(self, actor, osc_position, time, comparison_operator=operator.lt, name="InTimeToArrivalToOSCPosition"):
+        """
+        Setup parameters
+        """
+        super(InTimeToArrivalToOSCPosition, self).__init__(name)
+        self._actor = actor
+        self._osc_position = osc_position
+        self._time = float(time)
+        self._comparison_operator = comparison_operator
+
+    def initialise(self):
+        if self._time < 0:
+            raise ValueError("time value must be positive")
+
+    def update(self):
+        """
+        Check if actor can arrive within trigger time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # calculate transform with method in openscenario_parser.py
+        osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            self._osc_position)
+        target_location = osc_transform.location
+        actor_location = CarlaDataProvider.get_location(self._actor)
+
+        if target_location is None or actor_location is None:
+            return new_status
+
+        distance = calculate_distance(actor_location, target_location)
+        actor_velocity = CarlaDataProvider.get_velocity(self._actor)
+
+        # time to arrival
+        if actor_velocity > 0:
+            time_to_arrival = distance / actor_velocity
+        elif distance == 0:
+            time_to_arrival = 0
+        else:
+            time_to_arrival = float('inf')
+
+        if self._comparison_operator(time_to_arrival, self._time):
+            new_status = py_trees.common.Status.SUCCESS
+        return new_status
 
 
 class StandStill(AtomicBehavior):
@@ -276,7 +394,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
     The condition terminates with SUCCESS, when the actor reached the target distance to the other actor
     """
 
-    def __init__(self, reference_actor, actor, distance, dx=0, dy=0, dz=0, comparison_operator=operator.lt,
+    def __init__(self, reference_actor, actor, distance, comparison_operator=operator.lt,
                  name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
@@ -286,9 +404,6 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         self._reference_actor = reference_actor
         self._actor = actor
         self._distance = distance
-        self._dx = dx
-        self._dy = dy
-        self._dz = dz
         self._comparison_operator = comparison_operator
 
     def update(self):
@@ -298,11 +413,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         location = CarlaDataProvider.get_location(self._actor)
-
         reference_location = CarlaDataProvider.get_location(self._reference_actor)
-        reference_location = carla.Location(reference_location.x + self._dx,
-                                            reference_location.y + self._dy,
-                                            reference_location.z + self._dz)
 
         if location is None or reference_location is None:
             return new_status
@@ -350,6 +461,7 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         """
         Check if the actor is within trigger distance to the target location
         """
+
         new_status = py_trees.common.Status.RUNNING
 
         location = CarlaDataProvider.get_location(self._actor)

@@ -16,6 +16,8 @@ import os
 import xml.etree.ElementTree as ET
 
 import xmlschema
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
+
 
 import carla
 
@@ -32,12 +34,13 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
     - Only one Story + Init is supported per Storyboard
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, client):
 
         self.xml_tree = ET.parse(filename)
 
         self._set_global_parameters()
         self._validate_openscenario_configuration()
+        self.client = client
 
         self.other_actors = []
         self.ego_vehicles = []
@@ -95,6 +98,12 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         if self.town is not None and ".xodr" in self.town:
             (_, tail) = os.path.split(self.town)
             self.town = tail[:-5]
+
+        # workaround for relative positions during init
+        self.client.load_world(self.town)
+        world = self.client.get_world()
+        CarlaDataProvider.set_world(world)
+        world.wait_for_tick()
 
     def _set_carla_weather(self):
         """
@@ -212,7 +221,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     # pylint: enable=line-too-long
                 actor_found = True
                 for position in private_action.iter('Position'):
-                    transform = OpenScenarioParser.convert_position_to_transform(position)
+                    transform = OpenScenarioParser.convert_position_to_transform(
+                        position, actor_list=self.other_actors)
                     if transform:
                         actor_transform = transform
 
