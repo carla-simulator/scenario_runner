@@ -331,7 +331,7 @@ class OpenScenario(BasicScenario):
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
 
             for sequence in act.iter("Sequence"):
-                sequence_behavior = py_trees.composites.Sequence()
+                sequence_behavior = py_trees.composites.Sequence(name="Seq:" + sequence.attrib.get('name'))
                 repetitions = sequence.attrib.get('numberOfExecutions', 1)
                 actor_ids = []
                 for actor in sequence.iter("Actors"):
