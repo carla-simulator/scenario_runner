@@ -22,6 +22,7 @@ import carla
 # pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration, WeatherConfiguration
 # pylint: enable=line-too-long
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
 from srunner.tools.openscenario_parser import OpenScenarioParser
 
 
@@ -32,12 +33,13 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
     - Only one Story + Init is supported per Storyboard
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, client):
 
         self.xml_tree = ET.parse(filename)
 
         self._set_global_parameters()
         self._validate_openscenario_configuration()
+        self.client = client
 
         self.other_actors = []
         self.ego_vehicles = []
@@ -95,6 +97,12 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         if self.town is not None and ".xodr" in self.town:
             (_, tail) = os.path.split(self.town)
             self.town = tail[:-5]
+
+        # workaround for relative positions during init
+        self.client.load_world(self.town)
+        world = self.client.get_world()
+        CarlaDataProvider.set_world(world)
+        world.wait_for_tick()
 
     def _set_carla_weather(self):
         """
@@ -196,7 +204,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         Note: - The OpenScenario specification allows multiple definitions. We use the _first_ one
               - The OpenScenario specification allows different ways of specifying a position.
-                We currently only support a specification with absolute world coordinates
+                We currently support the specification with absolute world coordinates and the relative positions
+                RelativeWorld, RelativeObject and RelativeLane
+              - When using relative positions the relevant reference point (e.g. transform of another actor)
+                should be defined before!
         """
 
         actor_transform = carla.Transform()
@@ -212,7 +223,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     # pylint: enable=line-too-long
                 actor_found = True
                 for position in private_action.iter('Position'):
-                    transform = OpenScenarioParser.convert_position_to_transform(position)
+                    transform = OpenScenarioParser.convert_position_to_transform(
+                        position, actor_list=self.other_actors)
                     if transform:
                         actor_transform = transform
 

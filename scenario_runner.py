@@ -507,7 +507,7 @@ class ScenarioRunner(object):
             self._cleanup()
             return
 
-        config = OpenScenarioConfiguration(args.openscenario)
+        config = OpenScenarioConfiguration(args.openscenario, self.client)
         self._load_and_run_scenario(args, config)
         self._cleanup(ego=(not args.waitForEgo))
 

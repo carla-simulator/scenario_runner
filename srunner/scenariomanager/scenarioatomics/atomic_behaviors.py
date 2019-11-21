@@ -32,6 +32,9 @@ from srunner.tools.scenario_helper import detect_lane_obstacle
 # import scenario_helper.py
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
 
+# OpenScenarioParser.convert_position_to_transform
+import srunner.tools
+
 EPSILON = 0.001
 
 
@@ -87,6 +90,63 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
 
     def terminate(self, new_status):
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+
+class ActorTransformSetterToOSCPosition(AtomicBehavior):
+
+    """
+    OpenSCENARIO atomic
+    This class contains an atomic behavior to set the transform of an OpenSCENARIO actor.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - osc_position: OpenSCENARIO position
+    - physics [optional]: If physics is true, the actor physics will be reactivated upon success
+
+    The behavior terminates when actor is set to the new actor transform (closer than 1 meter)
+
+    NOTE:
+    It is very important to ensure that the actor location is spawned to the new transform because of the
+    appearence of a rare runtime processing error. WaypointFollower with LocalPlanner,
+    might fail if new_status is set to success before the actor is really positioned at the new transform.
+    Therefore: calculate_distance(actor, transform) < 1 meter
+    """
+
+    def __init__(self, actor, osc_position, physics=True, name="ActorTransformSetterToOSCPosition"):
+        """
+        Setup parameters
+        """
+        super(ActorTransformSetterToOSCPosition, self).__init__(name)
+        self._actor = actor
+        self._osc_position = osc_position
+        self._physics = physics
+        self._osc_transform = None
+
+    def initialise(self):
+        if self._actor.is_alive:
+            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+
+    def update(self):
+        """
+        Transform actor
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # calculate transform with method in openscenario_parser.py
+        self._osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            self._osc_position)
+        self._actor.set_transform(self._osc_transform)
+
+        if not self._actor.is_alive:
+            new_status = py_trees.common.Status.FAILURE
+
+        if calculate_distance(self._actor.get_location(), self._osc_transform.location) < 1.0:
+            if self._physics:
+                self._actor.set_simulate_physics(enabled=True)
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
 
 
 class AccelerateToVelocity(AtomicBehavior):
@@ -1002,7 +1062,7 @@ class ActorTransformSetter(AtomicBehavior):
     - transform: New target transform (position + orientation) of the actor
     - physics [optional]: If physics is true, the actor physics will be reactivated upon success
 
-    The behavior terminates after trying to set the new actor transform
+    The behavior terminates when actor is set to the new actor transform (closer than 1 meter)
 
     NOTE:
     It is very important to ensure that the actor location is spawned to the new transform because of the
