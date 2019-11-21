@@ -132,10 +132,10 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
         Transform actor
         """
         new_status = py_trees.common.Status.RUNNING
-        
+
         # calculate transform with method in openscenario_parser.py
         self._osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
-                self._osc_position)
+            self._osc_position)
         self._actor.set_transform(self._osc_transform)
 
         if not self._actor.is_alive:
