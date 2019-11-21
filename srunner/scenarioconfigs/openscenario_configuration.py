@@ -205,7 +205,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         Note: - The OpenScenario specification allows multiple definitions. We use the _first_ one
               - The OpenScenario specification allows different ways of specifying a position.
-                We currently only support a specification with absolute world coordinates
+                We currently support the specification with absolute world coordinates and the relative positions RelativeWorld,
+                RelativeObject and RelativeLane
+              - When using relative positions the relevant reference point (e.g. transform of another actor) should be defined before!
         """
 
         actor_transform = carla.Transform()
