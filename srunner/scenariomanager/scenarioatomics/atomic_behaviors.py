@@ -127,16 +127,16 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
             self._actor.set_velocity(carla.Vector3D(0, 0, 0))
             self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
 
-            # calculate transform with method in openscenario_parser.py
-            self._osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
-                self._osc_position)
-            self._actor.set_transform(self._osc_transform)
-
     def update(self):
         """
         Transform actor
         """
         new_status = py_trees.common.Status.RUNNING
+        
+        # calculate transform with method in openscenario_parser.py
+        self._osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+                self._osc_position)
+        self._actor.set_transform(self._osc_transform)
 
         if not self._actor.is_alive:
             new_status = py_trees.common.Status.FAILURE
