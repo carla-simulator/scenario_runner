@@ -17,6 +17,11 @@
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
     - Challenge can be executed with the ScenarioRunner
 * Extended OpenScenario support:
+    - Extentended convert_position_to_transform with RelativeWorld, RelativeObject and RelativeLane osc_positions
+    - Added new trigger atomics InTriggerDistanceToOSCPosition and InTimeToArrivalToOSCPosition to support relative osc_positions
+    - Added new atomic behaviour ActorTransformSetterToOSCPosition
+    - Workaround for relative osc_positions: World is started earlier to support relative osc_positions in story init
+    - Added delay condition support in convert_condition_to_atomic
     - Added support for pedestrians
     - Full support for SimulationTime condition
     - Added weather support

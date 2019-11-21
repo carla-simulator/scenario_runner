@@ -147,7 +147,7 @@ class OpenScenarioParser(object):
                     wp = relative_waypoint.get_left_lane()
                 elif dlane == 1:
                     wp = relative_waypoint.get_right_lane()
-                if wp == None:
+                if wp is None:
                     raise AttributeError("Object '{}' position with dLane={} is not valid".format(obj, dlane))
 
                 wp = wp.next(ds)[-1]
