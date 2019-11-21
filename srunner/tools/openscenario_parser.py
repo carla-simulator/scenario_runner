@@ -20,7 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
 from srunner.scenariomanager.timer import *
 
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTimeToArrivalToLocation, StandStill, DriveDistance, InTimeToArrivalToVehicle, AtStartCondition, AfterTerminationCondition, InTriggerDistanceToOSCPosition, InTimeToArrivalToOSCPosition
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
 
 
 class OpenScenarioParser(object):
