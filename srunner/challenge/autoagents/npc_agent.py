@@ -97,3 +97,5 @@ class NpcAgent(AutonomousAgent):
             control = self._agent.run_step()
 
         return control
+
+__name__="NpcAgent"

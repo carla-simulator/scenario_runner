@@ -82,3 +82,5 @@ class DummyAgent(AutonomousAgent):
         control.hand_brake = False
 
         return control
+
+__name__="DummyAgent"

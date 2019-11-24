@@ -449,3 +449,5 @@ class RosAgent(AutonomousAgent):
         # if the stepping mode is not used or active, there is no need to wait here
 
         return self.current_control
+
+__name__="RosAgent"
