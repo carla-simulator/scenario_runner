@@ -83,4 +83,4 @@ class DummyAgent(AutonomousAgent):
 
         return control
 
-__name__="DummyAgent"
+__name__ = "DummyAgent"

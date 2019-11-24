@@ -98,4 +98,4 @@ class NpcAgent(AutonomousAgent):
 
         return control
 
-__name__="NpcAgent"
+__name__ = "NpcAgent"

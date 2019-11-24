@@ -450,4 +450,4 @@ class RosAgent(AutonomousAgent):
 
         return self.current_control
 
-__name__="RosAgent"
+__name__ = "RosAgent"
