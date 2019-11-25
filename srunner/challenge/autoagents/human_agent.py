@@ -209,5 +209,3 @@ class KeyboardControl(object):
         self._control.steer = round(self._steer_cache, 1)
         self._control.brake = 1.0 if keys[K_DOWN] or keys[K_s] else 0.0
         self._control.hand_brake = keys[K_SPACE]
-
-__name__ = "HumanAgent"
