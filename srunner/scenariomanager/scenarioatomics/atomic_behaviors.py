@@ -149,6 +149,90 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
         return new_status
 
 
+class SetRelativeOSCVelocity(AtomicBehavior):
+
+    """
+    OpenSCENARIO atomic
+    This class contains an atomic behavior to set a relative velocity of an OpenSCENARIO actor.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - relative_actor: Relative CARLA actor for relative_velocity
+    - value: offset or factor for relative_velocity
+    - value_type: Must be delta or factor
+    - continuous: Boolean value, not considered
+    - duration[optional]: Maximum duration in seconds
+    - distance[optional]: Maximum distance in meters
+
+    The behavior terminates successfully after driven distance is reached or maximum duration
+    passed by. There is no check whether the target velocity is reached.
+    If duration and distance are both set to None, then the behavior will not terminate.
+    """
+
+    def __init__(self, actor, relative_actor, value, value_type, continuous,
+                 duration=None, distance=None, name="SetRelativeOSCVelocity"):
+        """
+        Setup parameters
+        """
+        super(SetRelativeOSCVelocity, self).__init__(name)
+        self._actor = actor
+        self._relative_actor = relative_actor
+        self._value = value
+        self._value_type = value_type
+        self._continuous = continuous
+        self._duration = duration
+        self._distance = distance
+
+        self._start_time = None
+        self._start_location = None
+
+        self._control, self._type = get_actor_control(actor)
+
+    def initialise(self):
+        """
+        Set initial start values for time and location
+        """
+        self._start_time = GameTime.get_time()
+        self._start_location = CarlaDataProvider.get_location(self._actor)
+        super(SetRelativeOSCVelocity, self).initialise()
+
+    def update(self):
+        """
+        Set speed value and check termination conditions
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        actor_velocity = CarlaDataProvider.get_velocity(self._actor)
+        relative_velocity = CarlaDataProvider.get_velocity(self._relative_actor)
+
+        # get target velocity
+        if self._value_type == 'delta':
+            target_velocity = relative_velocity + self._value
+        elif self._value_type == 'factor':
+            target_velocity = relative_velocity * self._value
+        else:
+            print('self._value_type must be delta or factor')
+
+        # set target velocity
+        if actor_velocity < target_velocity:
+            self._control.throttle = 1.0
+            self._control.brake = 0.0
+        else:
+            self._control.throttle = 0.0
+            self._control.brake = 1.0
+        self._actor.apply_control(self._control)
+
+        # check duration and driven_distance
+        if (self._duration is not None) and (GameTime.get_time() - self._start_time > self._duration):
+            new_status = py_trees.common.Status.SUCCESS
+
+        driven_distance = CarlaDataProvider.get_location(self._actor).distance(self._start_location)
+        if (self._distance is not None) and (driven_distance > self._distance):
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
 class AccelerateToVelocity(AtomicBehavior):
 
     """

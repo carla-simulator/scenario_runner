@@ -400,18 +400,45 @@ class OpenScenarioParser(object):
                 raise NotImplementedError("UserDefined script actions are not yet supported")
         elif action.find('Private') is not None:
             private_action = action.find('Private')
+
             if private_action.find('Longitudinal') is not None:
                 private_action = private_action.find('Longitudinal')
+
                 if private_action.find('Speed') is not None:
                     long_maneuver = private_action.find('Speed')
-                    target_speed = float(long_maneuver.find("Target").find("Absolute").attrib.get('value', 0))
-                    distance = float(long_maneuver.find("Dynamics").attrib.get('distance', float("inf")))
+
+                    # duration and distance
                     duration = float(long_maneuver.find("Dynamics").attrib.get('time', float("inf")))
-                    atomic = KeepVelocity(actor,
-                                          target_speed,
-                                          distance=distance,
-                                          duration=duration,
-                                          name=maneuver_name)
+                    distance = float(long_maneuver.find("Dynamics").attrib.get('distance', float("inf")))
+
+                    # absolute velocity with given target speed
+                    if long_maneuver.find("Target").find("Absolute") is not None:
+                        target_speed = float(long_maneuver.find("Target").find("Absolute").attrib.get('value', 0))
+                        atomic = KeepVelocity(actor,
+                                              target_speed,
+                                              distance=distance,
+                                              duration=duration,
+                                              name=maneuver_name)
+
+                    # relative velocity to given actor
+                    if long_maneuver.find("Target").find("Relative") is not None:
+                        relative_speed = long_maneuver.find("Target").find("Relative")
+                        obj = relative_speed.attrib.get('object')
+                        value = float(relative_speed.attrib.get('value', 0))
+                        value_type = relative_speed.attrib.get('valueType')
+                        continuous = relative_speed.attrib.get('continuous')
+
+                        for object in CarlaDataProvider.get_world().get_actors():
+                            if 'role_name' in object.attributes and object.attributes['role_name'] == obj:
+                                obj_actor = object
+                        atomic = SetRelativeOSCVelocity(actor,
+                                                        obj_actor,
+                                                        value,
+                                                        value_type,
+                                                        continuous,
+                                                        duration,
+                                                        distance)
+
                 elif private_action.find('Distance') is not None:
                     raise NotImplementedError("Longitudinal distance actions are not yet supported")
                 else:
