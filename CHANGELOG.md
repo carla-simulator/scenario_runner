@@ -17,6 +17,7 @@
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
     - Challenge can be executed with the ScenarioRunner
 * Extended OpenScenario support:
+	- Added support for relative velocities
     - Extentended convert_position_to_transform with RelativeWorld, RelativeObject and RelativeLane osc_positions
     - Added new trigger atomics InTriggerDistanceToOSCPosition and InTimeToArrivalToOSCPosition to support relative osc_positions
     - Added new atomic behaviour ActorTransformSetterToOSCPosition
