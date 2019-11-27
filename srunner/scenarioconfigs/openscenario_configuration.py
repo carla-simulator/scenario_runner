@@ -99,10 +99,12 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             self.town = tail[:-5]
 
         # workaround for relative positions during init
-        self.client.load_world(self.town)
         world = self.client.get_world()
-        CarlaDataProvider.set_world(world)
-        world.wait_for_tick()
+        if world is None or world.get_map().name != self.town:
+            self.client.load_world(self.town)
+            world = self.client.get_world()
+            CarlaDataProvider.set_world(world)
+            world.wait_for_tick()
 
     def _set_carla_weather(self):
         """
