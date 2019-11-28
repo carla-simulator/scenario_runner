@@ -95,6 +95,7 @@
     - Added method to calculate distance along a route
     - In challenge mode spawn exception are caught and the corresponding scenario is removed
 * Reworked scenario execution
+    - compare actor IDs instead of object in CarlaDataProvider in get_velocity, get_transform and get_location
     - Updated folder structure and naming convention in lowercase
     - Extended CarlaDataProvider with method to get next relevant traffic light
     - Every scenario has to have a configuration provided as XML file.
