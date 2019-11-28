@@ -17,6 +17,7 @@
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
     - Challenge can be executed with the ScenarioRunner
 * Extended OpenScenario support:
+	- Added support for relative velocities
     - Extentended convert_position_to_transform with RelativeWorld, RelativeObject and RelativeLane osc_positions
     - Added new trigger atomics InTriggerDistanceToOSCPosition and InTimeToArrivalToOSCPosition to support relative osc_positions
     - Added new atomic behaviour ActorTransformSetterToOSCPosition
@@ -37,6 +38,7 @@
     - Added support to change actor color
     - Added support for a default actor model, in case the stated model is not available
 * Fixes:
+    - Fixed missing ego_vehicle: compare actor IDs instead of object in CarlaDataProvider in get_velocity, get_transform and get_location
     - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
     - Fixed WaypointFollower behavior to use m/s instead of km/h
     - Fixed starting position of VehicleTurnLeft/Right scenarios
