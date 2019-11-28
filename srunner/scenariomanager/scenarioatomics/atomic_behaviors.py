@@ -17,6 +17,7 @@ from __future__ import print_function
 
 import random
 
+import math
 import numpy as np
 import py_trees
 from py_trees.blackboard import Blackboard
@@ -76,16 +77,23 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
     - name: Name of the atomic behavior
     """
 
-    def __init__(self, name):
+    def __init__(self, name, actor=None):
         super(AtomicBehavior, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.name = name
+        self._actor = actor
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
         return True
 
     def initialise(self):
+        # terminate potential WaypointFollower from SetOSCInitSpeed for actor
+        py_trees.blackboard.SetBlackboardVariable(
+            name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_value=True
+        )
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
@@ -915,7 +923,7 @@ class WaypointFollower(AtomicBehavior):
         """
         Set up actor and local planner
         """
-        super(WaypointFollower, self).__init__(name)
+        super(WaypointFollower, self).__init__(name, actor)
         self._actor_list = []
         self._actor_list.append(actor)
         self._target_speed = target_speed
@@ -954,7 +962,6 @@ class WaypointFollower(AtomicBehavior):
         """
         Run local planner, obtain and apply control to actor
         """
-
         new_status = py_trees.common.Status.RUNNING
 
         if self._blackboard_queue_name is not None:
@@ -1062,6 +1069,74 @@ class LaneChange(WaypointFollower):
             # no lane change yet
             self._pos_before_lane_change = current_position_actor.transform.location
 
+        return status
+
+
+class SetOSCInitSpeed(WaypointFollower):
+
+    """
+    OpenSCENARIO atomic
+    This class inherits from the class WaypointFollower.
+    This class contains an atomic behavior to set the init_speed of an OpenSCENARIO actor.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - init_speed: initial actor speed when scenario starts, in m/s
+
+    Termination of behavior with blackboard variable.
+    """
+
+    def __init__(self, actor, init_speed=10, name='SetOSCInitSpeed'):
+
+        self._actor = actor
+        self._target_speed = init_speed
+        self._terminate = None
+
+        super(SetOSCInitSpeed, self).__init__(actor, target_speed=init_speed, name=name)
+
+    def initialise(self):
+
+        self._target_speed = self._target_speed * 3.6
+        transform = self._actor.get_transform()
+        yaw = transform.rotation.yaw * (math.pi / 180)
+
+        x = math.cos(yaw) * self._target_speed
+        y = math.sin(yaw) * self._target_speed
+
+        self._actor.set_velocity(carla.Vector3D(x, y, 0))
+        self._apply_local_planner(self._actor)
+
+        py_trees.blackboard.SetBlackboardVariable(
+            name="WF_actor_{}_terminate".format(self._actor.id),
+                variable_name="WF_actor_{}_terminate".format(self._actor.id),
+                variable_value=False).initialise()
+
+    def _apply_local_planner(self, actor):
+
+        local_planner = LocalPlanner(
+            actor, opt_dict={
+                'target_speed': self._target_speed,
+                'lateral_control_dict': self._args_lateral_dict})
+
+        self._local_planner_list.append(local_planner)
+
+    def update(self):
+        """
+        Run local planner
+        """
+        self._terminate = py_trees.blackboard.CheckBlackboardVariable(
+            name="WF_actor_{}_terminate".format(self._actor.id),
+                                variable_name="WF_actor_{}_terminate".format(self._actor.id),
+                                expected_value=True,
+                                clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
+
+        if str(self._terminate) == 'Status.SUCCESS':
+            # terminate WF
+            status = py_trees.common.Status.SUCCESS
+            return status
+
+        # else WF is still running
+        status = super(SetOSCInitSpeed, self).update()
         return status
 
 
