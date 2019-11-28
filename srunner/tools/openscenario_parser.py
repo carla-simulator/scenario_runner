@@ -428,9 +428,9 @@ class OpenScenarioParser(object):
                         value_type = relative_speed.attrib.get('valueType')
                         continuous = relative_speed.attrib.get('continuous')
 
-                        for actors in CarlaDataProvider.get_world().get_actors():
-                            if 'role_name' in actors.attributes and actors.attributes['role_name'] == obj:
-                                obj_actor = actors
+                        for traffic_actor in CarlaDataProvider.get_world().get_actors():
+                            if 'role_name' in traffic_actor.attributes and traffic_actor.attributes['role_name'] == obj:
+                                obj_actor = traffic_actor
                         atomic = SetRelativeOSCVelocity(actor,
                                                         obj_actor,
                                                         value,
