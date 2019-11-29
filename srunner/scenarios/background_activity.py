@@ -29,12 +29,14 @@ class BackgroundActivity(BasicScenario):
 
     category = "BackgroundActivity"
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, timeout=35 * 60):
+    def __init__(self, world, ego_vehicles, config, randomize=False, cross_factor=0.01,
+                 debug_mode=False, timeout=35 * 60):
         """
         Setup all relevant parameters and create scenario
         """
         self.config = config
         self.debug = debug_mode
+        self.cross_factor = cross_factor
 
         self.timeout = timeout  # Timeout of scenario in seconds
 
@@ -47,6 +49,11 @@ class BackgroundActivity(BasicScenario):
                                                  criteria_enable=True)
 
     def _initialize_actors(self, config):
+        """
+            This initialize actors for the background actitivy. The actors can be both \
+            walkers (pedestrians) or vehicles (cars, bicycles, trucks ...)
+        """
+
         for actor in config.other_actors:
             new_actors = CarlaActorPool.request_new_batch_actors(actor.model,
                                                                  actor.amount,
@@ -54,6 +61,15 @@ class BackgroundActivity(BasicScenario):
                                                                  hero=False,
                                                                  autopilot=actor.autopilot,
                                                                  random_location=actor.random_location)
+
+            new_actors += CarlaActorPool.request_new_batch_actors_walkers(actor.model,
+                                                                         actor.amount,
+                                                                         actor.transform,
+                                                                 cross_factor=self.cross_factor
+
+
+            )
+
             if new_actors is None:
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
