@@ -12,6 +12,7 @@ local buffers to avoid blocking calls to CARLA
 
 from __future__ import print_function
 
+import logging
 import math
 import random
 import re
@@ -550,9 +551,15 @@ class CarlaActorPool(object):
         return actor
 
     @staticmethod
+    def _sync(frame):
+        while frame > CarlaActorPool._world.get_snapshot().timestamp.frame:
+            pass
+        assert frame == CarlaActorPool._world.get_snapshot().timestamp.frame
+
+    @staticmethod
     def setup_batch_actors(model, amount, spawn_point, hero=False, autopilot=False,
                            random_location=False, cross_factor=0.01):
-         """
+        """
         Function to setup a batch of actors with the most relevant parameters,
         incl. spawn point and vehicle model.
         """
@@ -579,19 +586,20 @@ class CarlaActorPool(object):
                 blueprint.set_attribute('role_name', 'hero')
             elif autopilot:
                 blueprint.set_attribute('role_name', 'autopilot')
-            elif walker:
+            elif 'walker' in model:
                 blueprint.set_attribute('role_name', 'walker')
             else:
                 blueprint.set_attribute('role_name', 'scenario')
 
             if random_location:
-                if walker:
+                if 'walker' in model:
                     spawn_point = carla.Transform()
                     spawn_point.location = CarlaDataProvider._world.get_random_location_from_navigation()
                     spawn_point.location.z = spawn_point.location.z + 1.0
                     if spawn_point.location is None:
-                        print ( " NONE POINT ON NAVIGATION ")
+                        print ("Wrong location")
                 elif CarlaActorPool._spawn_index >= len(CarlaActorPool._spawn_points):
+
                     CarlaActorPool._spawn_index = len(CarlaActorPool._spawn_points)
                     spawn_point = None
                 elif hero_actor is not None:
@@ -603,9 +611,8 @@ class CarlaActorPool(object):
                 else:
                     spawn_point = CarlaActorPool._spawn_points[CarlaActorPool._spawn_index]
                     CarlaActorPool._spawn_index += 1
-
             if spawn_point:
-                if walker:  # If the model is a walker we try to directly set the autopilot to it.
+                if 'walker' in model:  # If the model is a walker we try to directly set the autopilot to it.
                     walker_bp = random.choice(blueprint_library.filter('walker.*'))
                     # set as not invencible
                     if walker_bp.has_attribute('is_invincible'):
@@ -629,6 +636,7 @@ class CarlaActorPool(object):
                     batch.append(walker_shape)
 
                 else:
+                    logging.debug("Spawn Vehicle !!!")
                     batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor,
                                                                                       autopilot)))
 
@@ -642,18 +650,21 @@ class CarlaActorPool(object):
         actor_ids = []
         controllers_ids = []
         controllers = []
-        if responses and walker:
+        if responses:
             for response in responses:
                 if not response.error:
+                    if 'walker' in CarlaActorPool._world.get_actor(response.actor_id).type_id:
+
+                        logging.debug("SPAWN WALKER CONTROL into ID %d" % response.actor_id)
+                        walker_controller_bp = blueprint_library.find(
+                            'controller.ai.walker')
+                        walker_control = SpawnActor(walker_controller_bp, carla.Transform(),
+                                                    response.actor_id)
+                        controllers.append(walker_control)
+                    # Regardless of being a walker or a vehicle we add to the list
                     actor_ids.append(response.actor_id)
-                    logging.debug("SPAWN WALKER CONTROL into ID %d" % response.actor_id)
-                    walker_controller_bp = blueprint_library.find(
-                        'controller.ai.walker')
-                    walker_control = SpawnActor(walker_controller_bp, carla.Transform(),
-                                                response.actor_id)
-                    controllers.append(walker_control)
                 else:
-                    print (response.error)
+                    print ("Response", response.error)
 
         # Second spawn for the controllers
         if CarlaActorPool._client:
@@ -683,18 +694,22 @@ class CarlaActorPool(object):
                             CarlaActorPool._world.get_random_location_from_navigation())
             # random max speed
             walkers_present[i].set_max_speed(1 + random.random())    # max speed between 1 and 2 (default is 1.4 m/s)
-
+            logging.debug(" walker send to location")
 
         return actor_list
 
 
     @staticmethod
-    def request_new_batch_actors(model, amount, spawn_point, hero=False, autopilot=False, random_location=False):
+    def request_new_batch_actors(model, amount, spawn_point, hero=False, autopilot=False,
+                                 random_location=False, cross_factor=0.01):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
         """
-        actors = CarlaActorPool.setup_batch_actors(model, amount, spawn_point, hero, autopilot, random_location)
+        actors = CarlaActorPool.setup_batch_actors(model, amount, spawn_point, hero=hero,
+                                                   autopilot=autopilot,
+                                                   random_location=random_location,
+                                                   cross_factor=cross_factor)
 
         if actors is None:
             return None
@@ -703,21 +718,6 @@ class CarlaActorPool(object):
             CarlaActorPool._carla_actor_pool[actor.id] = actor
         return actors
 
-    @staticmethod
-    def request_new_batch_actors_walkers(model, amount, spawn_point):
-        """
-        This method tries to create a new actor. If this was
-        successful, the new actor is returned, None otherwise.
-        """
-        actors = CarlaActorPool.setup_batch_actors(model, amount, spawn_point, walker=True,
-                                                   random_location=True)
-        # For now it is always true.
-        if actors is None:
-            return None
-
-        for actor in actors:
-            CarlaActorPool._carla_actor_pool[actor.id] = actor
-        return actors
 
 
     @staticmethod

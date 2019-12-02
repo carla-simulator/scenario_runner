@@ -52,6 +52,7 @@ class BackgroundActivity(BasicScenario):
         """
             This initialize actors for the background actitivy. The actors can be both \
             walkers (pedestrians) or vehicles (cars, bicycles, trucks ...)
+            The pedestrian can have a cross factor, how often they cross the road.
         """
 
         for actor in config.other_actors:
@@ -60,15 +61,10 @@ class BackgroundActivity(BasicScenario):
                                                                  actor.transform,
                                                                  hero=False,
                                                                  autopilot=actor.autopilot,
-                                                                 random_location=actor.random_location)
-
-            new_actors += CarlaActorPool.request_new_batch_actors_walkers(actor.model,
-                                                                         actor.amount,
-                                                                         actor.transform,
-                                                                 cross_factor=self.cross_factor
+                                                                 random_location=actor.random_location,
+                                                                 cross_factor=self.cross_factor)
 
 
-            )
 
             if new_actors is None:
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
