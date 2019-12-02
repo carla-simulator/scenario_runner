@@ -698,7 +698,6 @@ class CarlaActorPool(object):
 
         return actor_list
 
-
     @staticmethod
     def request_new_batch_actors(model, amount, spawn_point, hero=False, autopilot=False,
                                  random_location=False, cross_factor=0.01):
@@ -717,8 +716,6 @@ class CarlaActorPool(object):
         for actor in actors:
             CarlaActorPool._carla_actor_pool[actor.id] = actor
         return actors
-
-
 
     @staticmethod
     def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
