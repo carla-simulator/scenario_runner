@@ -4,7 +4,7 @@
 version: 2
 
 mkdocs:
-  configuration: .github/mkdocs.yml
+  configuration: mkdocs.yml
 
 formats: all
 

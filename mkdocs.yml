@@ -1,0 +1,20 @@
+site_name: CARLA ScenarioRunner
+repo_url: https://github.com/carla-simulator/scenario_runner
+docs_dir: Docs
+edit_uri: 'edit/master/Docs/'
+theme: readthedocs
+
+nav:
+- Home: index.md
+- Quick start:
+  - Getting started: getting_started.md
+- OpenSCENARIO:
+  - OpenSCENARIO support: openscenario_support.md
+- FAQ: FAQ.md
+- Release Notes: CHANGELOG.md
+
+markdown_extensions:
+  - admonition
+  - markdown_include.include:
+      base_path: '.'
+
