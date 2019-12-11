@@ -1,10 +1,12 @@
-## Latest changes
+## Table of Contents
+* [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.6](#carla-scenariorunner-096)
+* [CARLA ScenarioRunner 0.9.5.1](#carla-scenariorunner-0951)
+* [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
+* [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
-* Split of behaviors into behaviors and conditions
-* Moved atomics into new submodule scenarioatomics
-* Updated documentation for all behaviors, conditions and test criteria
-* Refactoring of scenario configurations and parsers
-* Extended WaypointFollower atomic behavior to be able to use the current actor speed
+## Latest Changes
+### :rocket: New Features
 * Added example scenario for lane change
 * Added cut-in example scenario
 * New Features:
@@ -37,29 +39,39 @@
     - Fixed coordinate system to use right-hand as default. Left-hand CARLA system can be used by adding "CARLA:" at the start of the description in the FileHeader.
     - Added support to change actor color
     - Added support for a default actor model, in case the stated model is not available
-* Fixes:
-    - Fixed missing ego_vehicle: compare actor IDs instead of object in CarlaDataProvider in get_velocity, get_transform and get_location
-    - Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
-    - Fixed WaypointFollower behavior to use m/s instead of km/h
-    - Fixed starting position of VehicleTurnLeft/Right scenarios
-    - Fixed spawn_point modification inside CarlaActorPool.setup_actor()
-    - Fixed result of DrivenDistanceTest
-    - Fixed exception in manual_control on fps visualization
-    - Cleanup of pylint errors for all autonomous agents
-    - Fixed randomness of route-based scenarios
-    - Fixed usage of radians instead of degrees for OpenSCENARIO
-    - Fixed ActorTransformSetter behavior to avoid vehicles not reaching the desired transform
+### :bug: Bug Fixes
+* Fixed missing ego_vehicle: compare actor IDs instead of object in CarlaDataProvider in get_velocity, get_transform and get_location
+* Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
+* Fixed WaypointFollower behavior to use m/s instead of km/h
+* Fixed starting position of VehicleTurnLeft/Right scenarios
+* Fixed spawn_point modification inside CarlaActorPool.setup_actor()
+* Fixed result of DrivenDistanceTest
+* Fixed exception in manual_control on fps visualization
+* Cleanup of pylint errors for all autonomous agents
+* Fixed randomness of route-based scenarios
+* Fixed usage of radians instead of degrees for OpenSCENARIO
+* Fixed ActorTransformSetter behavior to avoid vehicles not reaching the desired transform
+### :ghost: Maintenance
+* Split of behaviors into behaviors and conditions
+* Moved atomics into new submodule scenarioatomics
+* Updated documentation for all behaviors, conditions and test criteria
+* Refactoring of scenario configurations and parsers
+* Extended WaypointFollower atomic behavior to be able to use the current actor speed
 
-## CARLA Scenario_Runner 0.9.6
+
+
+## CARLA ScenarioRunner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
+### :ghost: Maintenance
 * Adapted to CARLA API changes
     - Frame rate is set now via Python
     - Renamed frame_count and frame_number to frame
     - Removed wait_for_tick() calls
 
 
-## CARLA Scenario_Runner 0.9.5.1
+## CARLA ScenarioRunner 0.9.5.1
 **This is the _last_ release that works with CARLA 0.9.5**
+### :rocket: New Features
 * Added initial support for OpenScenario v0.9.1
 * Added support for multiple ego vehicles plus an example
 * Added commandline option for output directory
@@ -71,11 +83,13 @@
     - Extended StandStill atomic behavior to support duration based
       termination
     - Added behavior to activate/deactivate autopilot
-    - Fixed WaypointFollower initialization
+### :bug: Bug Fixes
+* Fixed WaypointFollower initialization
 
 
-## CARLA Scenario_Runner 0.9.5
+## CARLA ScenarioRunner 0.9.5
 **This is the _first_ release to work with CARLA 0.9.5**
+### :rocket: New Features
 * Added support for CARLA challenge
     - Added logging functionalities to challenge_evaluator_routes.py
     - Added wall clock timeout for the CARLA challenge
@@ -95,19 +109,6 @@
     - Added various helper methods to allow generic scenario execution
     - Added method to calculate distance along a route
     - In challenge mode spawn exception are caught and the corresponding scenario is removed
-* Reworked scenario execution
-    - Updated folder structure and naming convention in lowercase
-    - Extended CarlaDataProvider with method to get next relevant traffic light
-    - Every scenario has to have a configuration provided as XML file.
-      Currently there is one XML file for each scenario class
-    - The scenario runner is now responsible for spawning/destroying the ego vehicle
-    - Added a CarlaActorPool to share scenario-related actors between scenarios and the scenario_runner
-    - Renamed vehicle -> actor
-    - If all scenarios in one configurations file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
-    - Generalized ControlLoss and FollowLeadingVehicle scenarios
-    - Added randomization option to scenario_runner and scenarios
-    - The scenario behavior always starts with a wait behavior until the ego vehicle reached the scenario starting position
-    - Created method _initialize_actors in basic scenario that can be overridden for scenario specific actor initialization
 * Added new atomic behaviors using py_trees behavior tree library
     - BasicAgentBehavior: drive to target location using CARLA's BasicAgent
     - StandStill: check if a vehicle stands still
@@ -123,19 +124,35 @@
     - Added running red light test
     - Added running stop test
     - Added wrong way test
-* Fixes
-    - Fixed SteerVehicle atomic behavior to keep vehicle velocity
-* Updated NHTSA Traffic Scenarios
-    - OppositeVehicleRunningRedLight: Updated to allow execution at different locations
 * Added NHTSA Traffic Scenarios
     - Updated all traffic scenarios to let the other actors appear upon scenario triggering and removal on scenario end
     - ManeuverOppositeDirection: hero vehicle must maneuver in the opposite lane to pass a leading vehicle.
     - OtherLeadingVehicle: hero vehicle must react to the deceleration of leading vehicle and change lane to avoid collision and follow the vehicle in changed lane
     - SignalizedJunctionRightTurn: hero vehicle must turn right into the same direction of another vehicle crossing straight initially from a lateral direction and avoid collision at a signalized intersection.
     - SignalizedJunctionLeftTurn : hero vehicle is turning left at signalized intersection, cuts across the path of another vehicle coming straight crossing from an opposite direction.
+### :bug: Bug Fixes
+* Fixed SteerVehicle atomic behavior to keep vehicle velocity    
+### :ghost: Maintenance
+* Reworked scenario execution
+    - Updated folder structure and naming convention in lowercase
+    - Extended CarlaDataProvider with method to get next relevant traffic light
+    - Every scenario has to have a configuration provided as XML file.
+      Currently there is one XML file for each scenario class
+    - The scenario runner is now responsible for spawning/destroying the ego vehicle
+    - Added a CarlaActorPool to share scenario-related actors between scenarios and the scenario_runner
+    - Renamed vehicle -> actor
+    - If all scenarios in one configurations file should be executed, the scenario_runner can be started with --scenario group:<CONFIG_FILE>
+    - Generalized ControlLoss and FollowLeadingVehicle scenarios
+    - Added randomization option to scenario_runner and scenarios
+    - The scenario behavior always starts with a wait behavior until the ego vehicle reached the scenario starting position
+    - Created method _initialize_actors in basic scenario that can be overridden for scenario specific actor initialization
+* Updated NHTSA Traffic Scenarios
+    - OppositeVehicleRunningRedLight: Updated to allow execution at different locations    
 
-## CARLA Scenario_Runner 0.9.2
+
+## CARLA ScenarioRunner 0.9.2
 **This release is designed to work with CARLA 0.9.2**
+### :rocket: New Features
 * Added Traffic Scenarios engine to reproduce complex traffic situations for training and evaluating driving agents
 * Added NHTSA Traffic Scenarios
     - FollowLeadingVehicle: hero vehicle must react to the deceleration of a leading vehicle
