@@ -1097,8 +1097,7 @@ class SetOSCInitSpeed(WaypointFollower):
         You must not call AtomicBehavior.initialise() here
         AtomicBehavior.initialise() would terminate the OSC_init_speed behavior
         """
-
-        self._target_speed = self._target_speed * 3.6
+        
         transform = self._actor.get_transform()
         yaw = transform.rotation.yaw * (math.pi / 180)
 
@@ -1117,7 +1116,7 @@ class SetOSCInitSpeed(WaypointFollower):
 
         local_planner = LocalPlanner(  # pylint: disable=undefined-variable
             actor, opt_dict={
-                'target_speed': self._target_speed,
+                'target_speed': self._target_speed * 3.6,
                 'lateral_control_dict': self._args_lateral_dict})
 
         self._local_planner_list.append(local_planner)
@@ -1128,11 +1127,15 @@ class SetOSCInitSpeed(WaypointFollower):
         """
         new_status = super(SetOSCInitSpeed, self).update()
 
-        # set velocity, because local planner doesn't hold velocity
-        self._actor.set_velocity(carla.Vector3D(self._vx, self._vy, 0))
+        # set velocity, workaround because local planner doesn't hold velocity        
+        if abs(self._target_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
+            yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
+            self._vx = math.cos(yaw) * self._target_speed
+            self._vy = math.sin(yaw) * self._target_speed
+            self._actor.set_velocity(carla.Vector3D(self._vx, self._vy, 0))
 
         terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
-            name="WF_actor_{}_terminate".format(self._actor.id),
+                                name="WF_actor_{}_terminate".format(self._actor.id),
                                 variable_name="WF_actor_{}_terminate".format(self._actor.id),
                                 expected_value=True,
                                 clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
