@@ -442,17 +442,14 @@ class OpenScenario(BasicScenario):
                 story_behavior.add_child(act_sequence)
 
         # Build behavior tree
-        # sequence.add_child(maneuver_behavior)
-
         behavior = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="behavior")
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="behavior")
 
         init_behavior = self._create_init_behavior()
         if init_behavior is not None:
-            behavior.add_child(init_behavior)
-            behavior.add_child(story_behavior)
-        else:
-            behavior.add_child(story_behavior)
+            behavior.add_child(oneshot_behavior(init_behavior))
+
+        behavior.add_child(story_behavior)
 
         return behavior
 
