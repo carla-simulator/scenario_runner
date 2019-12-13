@@ -1,3 +1,5 @@
 mkdocs >= 1.0
 markdown-include
 mkdocs-redirects
+pymdown-extensions
+pygments

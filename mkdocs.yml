@@ -8,8 +8,11 @@ nav:
 - Home: index.md
 - Quick start:
   - Getting started: getting_started.md
-- OpenSCENARIO:
-  - OpenSCENARIO support: openscenario_support.md
+- Scenarios:
+  - Agents: agent_evaluation.md
+  - Python scenario: creating_new_scenario.md
+  - OpenSCENARIO: openscenario_support.md
+  - List of pre-defined scenarios: list_of_scenarios.md
 - FAQ: FAQ.md
 - Release Notes: CHANGELOG.md
 
@@ -17,4 +20,6 @@ markdown_extensions:
   - admonition
   - markdown_include.include:
       base_path: '.'
-
+  - pymdownx.emoji
+  - toc:
+      toc_depth: 2-3

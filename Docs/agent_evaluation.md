@@ -2,7 +2,8 @@
 
 To have your agent evaluated by the challenge evaluation system
 you must define an Agent class that inherits the
-[AutonomousAgent](../srunner/challenge/autoagents/autonomous_agent.py) base class. In addition, you need to setup your environment as described in [the Challenge evaluator tutorial](challenge_evaluation.md).
+[AutonomousAgent](https://github.com/carla-simulator/scenario_runner/blob/master/srunner/challenge/autoagents/autonomous_agent.py) base class.
+In addition, you need to setup your environment as described in [the Challenge evaluator tutorial](challenge_evaluation.md).
 
 On your agent class there are three main functions to be overwritten
 that need to be defined in order to set your agent to run.
@@ -20,7 +21,7 @@ file to be parsed by the user.
 When executing the "challenge_evaluator.py" you should pass the
 configuration file path as a parameter. For example:
 
-```
+```bash
 python srunner/challenge/challenge_evaluator_routes.py  --agent=<path_to_my_agent> --config=myconfigfilename.format
 ```
 
@@ -71,7 +72,7 @@ This function should return a [vehicle control](https://carla.readthedocs.io/en/
 On the beginning of the execution, the entire route that the hero agent
 should travel is set on  the "self.global_plan" variable:
 
-```
+```Python
 [({'z': 0.0, 'lat': 48.99822669411668, 'lon': 8.002271601998707}, <RoadOption.LANEFOLLOW: 4>),
  ({'z': 0.0, 'lat': 48.99822669411668, 'lon': 8.002709765148996}, <RoadOption.LANEFOLLOW: 4>),
  ...

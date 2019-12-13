@@ -516,7 +516,9 @@ class RouteScenario(BasicScenario):
 
                 subbehavior.add_child(oneshot_idiom)
 
-        behavior.add_child(subbehavior)
+        if subbehavior.children:
+            # don't add the subbehavior node if there weren't additional scenarios besides master!
+            behavior.add_child(subbehavior)
 
         return behavior
 

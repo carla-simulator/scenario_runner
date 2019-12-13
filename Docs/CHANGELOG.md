@@ -5,8 +5,10 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
+---
+
 ## Latest Changes
-### :rocket: New Features
+####:rocket: New Features
 * Added example scenario for lane change
 * Added cut-in example scenario
 * New Features:
@@ -46,7 +48,7 @@
     - Added support for a default actor model, in case the stated model is not available
     - Added support for MiscObjects (besides vehicles and pedestrians)
     - Reworked traffic signal handling: The name has to start now either with "id=" or "pos=" depending on whether the position or id is used as unique identifier
-### :bug: Bug Fixes
+####:bug: Bug Fixes
 * Fixed bug causing occasional frame_errors
 * Fixed #426: Avoid underground vehicles fall forever by disabling physics when spawning underground.
 * Fixed #427: Removed unnecessary warnings when using get_next_traffic_light() with non-cached locations
@@ -61,7 +63,7 @@
 * Fixed randomness of route-based scenarios
 * Fixed usage of radians instead of degrees for OpenSCENARIO
 * Fixed ActorTransformSetter behavior to avoid vehicles not reaching the desired transform
-### :ghost: Maintenance
+####:ghost: Maintenance
 * Split of behaviors into behaviors and conditions
 * Moved atomics into new submodule scenarioatomics
 * Updated documentation for all behaviors, conditions and test criteria
@@ -78,18 +80,21 @@
 * Adaptions to CARLA API Changes
      - Renamed GnssEvent to GnssMeasurement
 
+---
+
 ## CARLA ScenarioRunner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
-### :ghost: Maintenance
+####:ghost: Maintenance
 * Adapted to CARLA API changes
     - Frame rate is set now via Python
     - Renamed frame_count and frame_number to frame
     - Removed wait_for_tick() calls
 
+---
 
 ## CARLA ScenarioRunner 0.9.5.1
 **This is the _last_ release that works with CARLA 0.9.5**
-### :rocket: New Features
+####:rocket: New Features
 * Added initial support for OpenScenario v0.9.1
 * Added support for multiple ego vehicles plus an example
 * Added commandline option for output directory
@@ -101,13 +106,14 @@
     - Extended StandStill atomic behavior to support duration based
       termination
     - Added behavior to activate/deactivate autopilot
-### :bug: Bug Fixes
+####:bug: Bug Fixes
 * Fixed WaypointFollower initialization
 
+---
 
 ## CARLA ScenarioRunner 0.9.5
 **This is the _first_ release to work with CARLA 0.9.5**
-### :rocket: New Features
+####:rocket: New Features
 * Added support for CARLA challenge
     - Added logging functionalities to challenge_evaluator_routes.py
     - Added wall clock timeout for the CARLA challenge
@@ -148,9 +154,9 @@
     - OtherLeadingVehicle: hero vehicle must react to the deceleration of leading vehicle and change lane to avoid collision and follow the vehicle in changed lane
     - SignalizedJunctionRightTurn: hero vehicle must turn right into the same direction of another vehicle crossing straight initially from a lateral direction and avoid collision at a signalized intersection.
     - SignalizedJunctionLeftTurn : hero vehicle is turning left at signalized intersection, cuts across the path of another vehicle coming straight crossing from an opposite direction.
-### :bug: Bug Fixes
+####:bug: Bug Fixes
 * Fixed SteerVehicle atomic behavior to keep vehicle velocity    
-### :ghost: Maintenance
+####:ghost: Maintenance
 * Reworked scenario execution
     - Updated folder structure and naming convention in lowercase
     - Extended CarlaDataProvider with method to get next relevant traffic light
@@ -167,10 +173,11 @@
 * Updated NHTSA Traffic Scenarios
     - OppositeVehicleRunningRedLight: Updated to allow execution at different locations    
 
+---
 
 ## CARLA ScenarioRunner 0.9.2
 **This release is designed to work with CARLA 0.9.2**
-### :rocket: New Features
+####:rocket: New Features
 * Added Traffic Scenarios engine to reproduce complex traffic situations for training and evaluating driving agents
 * Added NHTSA Traffic Scenarios
     - FollowLeadingVehicle: hero vehicle must react to the deceleration of a leading vehicle
