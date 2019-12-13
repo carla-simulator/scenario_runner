@@ -950,6 +950,7 @@ class WaypointFollower(AtomicBehavior):
             actor, opt_dict={
                 'target_speed': self._target_speed,
                 'lateral_control_dict': self._args_lateral_dict})
+
         if self._plan is not None:
             local_planner.set_global_plan(self._plan)
         self._local_planner_list.append(local_planner)
@@ -1083,7 +1084,7 @@ class SetOSCInitSpeed(WaypointFollower):
 
     def __init__(self, actor, init_speed=10, name='SetOSCInitSpeed'):
 
-        self._target_speed = init_speed
+        self._init_speed = init_speed
         self._terminate = None
 
         super(SetOSCInitSpeed, self).__init__(actor, target_speed=init_speed, name=name)
@@ -1093,28 +1094,19 @@ class SetOSCInitSpeed(WaypointFollower):
         Calculate the init_velocity and set blackboard variable
         WF_actor_ID_terminate to False to stop termination of behavior
         """
+        super(SetOSCInitSpeed, self).initialise()
+
         transform = self._actor.get_transform()
         yaw = transform.rotation.yaw * (math.pi / 180)
 
-        vx = math.cos(yaw) * self._target_speed
-        vy = math.sin(yaw) * self._target_speed
-
+        vx = math.cos(yaw) * self._init_speed
+        vy = math.sin(yaw) * self._init_speed
         self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-        self._apply_local_planner(self._actor)
 
         py_trees.blackboard.SetBlackboardVariable(
             name="WF_actor_{}_terminate".format(self._actor.id),
             variable_name="WF_actor_{}_terminate".format(self._actor.id),
             variable_value=False).initialise()
-
-    def _apply_local_planner(self, actor):
-
-        local_planner = LocalPlanner(  # pylint: disable=undefined-variable
-            actor, opt_dict={
-                'target_speed': self._target_speed * 3.6,
-                'lateral_control_dict': self._args_lateral_dict})
-
-        self._local_planner_list.append(local_planner)
 
     def update(self):
         """
@@ -1125,10 +1117,10 @@ class SetOSCInitSpeed(WaypointFollower):
         new_status = super(SetOSCInitSpeed, self).update()
 
         # set velocity, workaround because local planner doesn't hold velocity
-        if abs(self._target_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
+        if abs(self._init_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
             yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-            vx = math.cos(yaw) * self._target_speed
-            vy = math.sin(yaw) * self._target_speed
+            vx = math.cos(yaw) * self._init_speed
+            vy = math.sin(yaw) * self._init_speed
             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
         terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
