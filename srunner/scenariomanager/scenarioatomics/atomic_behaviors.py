@@ -1024,7 +1024,6 @@ class LaneChange(WaypointFollower):
     def __init__(self, actor, speed=10, direction='left',
                  distance_same_lane=5, distance_other_lane=100, distance_lane_change=25, name='LaneChange'):
 
-        # self._actor = actor
         self._direction = direction
         self._distance_same_lane = distance_same_lane
         self._distance_other_lane = distance_other_lane
@@ -1078,8 +1077,8 @@ class SetOSCInitSpeed(WaypointFollower):
     - actor: CARLA actor to execute the behavior
     - init_speed: initial actor speed when scenario starts, in m/s
 
-    Termination of behavior with blackboard variable,
-    which is set in initialise() of all other behavioral atomics.
+    Termination of behavior with blackboard variable which is set in
+    super(classname, self).initialise() of all other behavioral atomics.
     """
 
     def __init__(self, actor, init_speed=10, name='SetOSCInitSpeed'):
@@ -1087,30 +1086,26 @@ class SetOSCInitSpeed(WaypointFollower):
         self._target_speed = init_speed
         self._terminate = None
 
-        self._vx = 0
-        self._vy = 0
-
         super(SetOSCInitSpeed, self).__init__(actor, target_speed=init_speed, name=name)
 
     def initialise(self):
         """
-        You must not call AtomicBehavior.initialise() here
-        AtomicBehavior.initialise() would terminate the OSC_init_speed behavior
+        Calculate the init_velocity and set blackboard variable
+        WF_actor_ID_terminate to False to stop termination of behavior
         """
-        
         transform = self._actor.get_transform()
         yaw = transform.rotation.yaw * (math.pi / 180)
 
-        self._vx = math.cos(yaw) * self._target_speed
-        self._vy = math.sin(yaw) * self._target_speed
+        vx = math.cos(yaw) * self._target_speed
+        vy = math.sin(yaw) * self._target_speed
 
-        self._actor.set_velocity(carla.Vector3D(self._vx, self._vy, 0))
+        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
         self._apply_local_planner(self._actor)
 
         py_trees.blackboard.SetBlackboardVariable(
             name="WF_actor_{}_terminate".format(self._actor.id),
-             variable_name="WF_actor_{}_terminate".format(self._actor.id),
-             variable_value=False).initialise()
+            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_value=False).initialise()
 
     def _apply_local_planner(self, actor):
 
@@ -1123,22 +1118,24 @@ class SetOSCInitSpeed(WaypointFollower):
 
     def update(self):
         """
-        Run local planner
+        Run local planner and calculate a new velocity if the deviation from target_speed
+        is greater than 3m/s. Check whether the SetOSCInitSpeed behavior should terminate by
+        checking the corresponding blackboard variable.
         """
         new_status = super(SetOSCInitSpeed, self).update()
 
-        # set velocity, workaround because local planner doesn't hold velocity        
+        # set velocity, workaround because local planner doesn't hold velocity
         if abs(self._target_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
-            yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
-            self._vx = math.cos(yaw) * self._target_speed
-            self._vy = math.sin(yaw) * self._target_speed
-            self._actor.set_velocity(carla.Vector3D(self._vx, self._vy, 0))
+            yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
+            vx = math.cos(yaw) * self._target_speed
+            vy = math.sin(yaw) * self._target_speed
+            self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
         terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
-                                name="WF_actor_{}_terminate".format(self._actor.id),
-                                variable_name="WF_actor_{}_terminate".format(self._actor.id),
-                                expected_value=True,
-                                clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
+            name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            expected_value=True,
+            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
 
         if str(terminate_behavior) == 'Status.SUCCESS':
             new_status = py_trees.common.Status.SUCCESS
