@@ -15,6 +15,7 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import OpenScenarioParser
 from srunner.scenariomanager.timer import GameTime
 
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SetOSCInitSpeed
 
 OPENSCENARIO = ["OpenScenario"]
 
@@ -306,6 +307,25 @@ class OpenScenario(BasicScenario):
                                            world=world, debug_mode=debug_mode,
                                            terminate_on_failure=False, criteria_enable=criteria_enable)
 
+    def _create_init_behavior(self):
+
+        init_behavior = None
+
+        # set initial speed
+        for actor in self.config.other_actors:
+            if actor.speed > 0:
+                rolename = actor.rolename
+                init_speed = actor.speed
+
+        for actor in self.other_actors:
+            if 'role_name' in actor.attributes and actor.attributes['role_name'] == rolename:
+                init_behavior = py_trees.composites.Parallel(
+                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="InitBehaviour")
+                set_init_speed = SetOSCInitSpeed(actor, init_speed)
+                init_behavior.add_child(set_init_speed)
+
+        return init_behavior
+
     def _create_behavior(self):
         """
         Basic behavior do nothing, i.e. Idle
@@ -422,9 +442,16 @@ class OpenScenario(BasicScenario):
                 story_behavior.add_child(act_sequence)
 
         # Build behavior tree
-        # sequence.add_child(maneuver_behavior)
+        behavior = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="behavior")
 
-        return story_behavior
+        init_behavior = self._create_init_behavior()
+        if init_behavior is not None:
+            behavior.add_child(oneshot_behavior(init_behavior))
+
+        behavior.add_child(story_behavior)
+
+        return behavior
 
     def _create_condition_container(self, node, name='Conditions Group', oneshot=False):
         """

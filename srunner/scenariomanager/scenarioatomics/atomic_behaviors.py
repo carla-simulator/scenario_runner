@@ -17,6 +17,7 @@ from __future__ import print_function
 
 import random
 
+import math
 import numpy as np
 import py_trees
 from py_trees.blackboard import Blackboard
@@ -76,16 +77,24 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
     - name: Name of the atomic behavior
     """
 
-    def __init__(self, name):
+    def __init__(self, name, actor=None):
         super(AtomicBehavior, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.name = name
+        self._actor = actor
 
     def setup(self, unused_timeout=15):
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
         return True
 
     def initialise(self):
+        # terminate potential WaypointFollower from SetOSCInitSpeed for actor
+        py_trees.blackboard.SetBlackboardVariable(
+            name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_value=True
+        ).initialise()
+
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
@@ -116,13 +125,15 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
         """
         Setup parameters
         """
-        super(ActorTransformSetterToOSCPosition, self).__init__(name)
-        self._actor = actor
+        super(ActorTransformSetterToOSCPosition, self).__init__(name, actor)
         self._osc_position = osc_position
         self._physics = physics
         self._osc_transform = None
 
     def initialise(self):
+
+        super(ActorTransformSetterToOSCPosition, self).initialise()
+
         if self._actor.is_alive:
             self._actor.set_velocity(carla.Vector3D(0, 0, 0))
             self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
@@ -174,8 +185,7 @@ class SetRelativeOSCVelocity(AtomicBehavior):
         """
         Setup parameters
         """
-        super(SetRelativeOSCVelocity, self).__init__(name)
-        self._actor = actor
+        super(SetRelativeOSCVelocity, self).__init__(name, actor)
         self._relative_actor = relative_actor
         self._value = value
         self._value_type = value_type
@@ -253,10 +263,9 @@ class AccelerateToVelocity(AtomicBehavior):
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
         """
-        super(AccelerateToVelocity, self).__init__(name)
+        super(AccelerateToVelocity, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control, self._type = get_actor_control(actor)
-        self._actor = actor
         self._throttle_value = throttle_value
         self._target_velocity = target_velocity
 
@@ -313,9 +322,8 @@ class AccelerateToCatchUp(AtomicBehavior):
         Setup parameters
         The target_speet is calculated on the fly.
         """
-        super(AccelerateToCatchUp, self).__init__(name)
+        super(AccelerateToCatchUp, self).__init__(name, actor)
 
-        self._actor = actor
         self._other_actor = other_actor
         self._throttle_value = throttle_value
         self._delta_velocity = delta_velocity  # 1m/s=3.6km/h
@@ -330,6 +338,7 @@ class AccelerateToCatchUp(AtomicBehavior):
 
         # get initial actor position
         self._initial_actor_pos = CarlaDataProvider.get_location(self._actor)
+        super(AccelerateToCatchUp, self).initialise()
 
     def update(self):
 
@@ -389,9 +398,8 @@ class KeepVelocity(AtomicBehavior):
         Setup parameters including acceleration value (via throttle_value)
         and target velocity
         """
-        super(KeepVelocity, self).__init__(name)
+        super(KeepVelocity, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._actor = actor
         self._target_velocity = target_velocity
 
         self._control, self._type = get_actor_control(actor)
@@ -476,9 +484,8 @@ class ChangeAutoPilot(AtomicBehavior):
         """
         Setup parameters
         """
-        super(ChangeAutoPilot, self).__init__(name)
+        super(ChangeAutoPilot, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._actor = actor
         self._activate = activate
 
     def update(self):
@@ -510,12 +517,11 @@ class StopVehicle(AtomicBehavior):
         """
         Setup _actor and maximum braking value
         """
-        super(StopVehicle, self).__init__(name)
+        super(StopVehicle, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control, self._type = get_actor_control(actor)
         if self._type == 'walker':
             self._control.speed = 0
-        self._actor = actor
         self._brake_value = brake_value
 
     def update(self):
@@ -563,10 +569,9 @@ class SyncArrival(AtomicBehavior):
         """
         Setup required parameters
         """
-        super(SyncArrival, self).__init__(name)
+        super(SyncArrival, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
-        self._actor = actor
         self._actor_reference = actor_reference
         self._target_location = target_location
         self._gain = gain
@@ -636,10 +641,9 @@ class AddNoiseToVehicle(AtomicBehavior):
         """
         Setup actor , maximum steer value and throttle value
         """
-        super(AddNoiseToVehicle, self).__init__(name)
+        super(AddNoiseToVehicle, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._control = carla.VehicleControl()
-        self._actor = actor
         self._steer_value = steer_value
         self._throttle_value = throttle_value
 
@@ -719,12 +723,11 @@ class BasicAgentBehavior(AtomicBehavior):
         """
         Setup actor and maximum steer value
         """
-        super(BasicAgentBehavior, self).__init__(name)
+        super(BasicAgentBehavior, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._agent = BasicAgent(actor)  # pylint: disable=undefined-variable
         self._agent.set_destination((target_location.x, target_location.y, target_location.z))
         self._control = carla.VehicleControl()
-        self._actor = actor
         self._target_location = target_location
 
     def update(self):
@@ -915,7 +918,7 @@ class WaypointFollower(AtomicBehavior):
         """
         Set up actor and local planner
         """
-        super(WaypointFollower, self).__init__(name)
+        super(WaypointFollower, self).__init__(name, actor)
         self._actor_list = []
         self._actor_list.append(actor)
         self._target_speed = target_speed
@@ -931,6 +934,7 @@ class WaypointFollower(AtomicBehavior):
         """
         Delayed one-time initialization
         """
+        super(WaypointFollower, self).initialise()
         for actor in self._actor_list:
             self._apply_local_planner(actor)
         return True
@@ -946,6 +950,7 @@ class WaypointFollower(AtomicBehavior):
             actor, opt_dict={
                 'target_speed': self._target_speed,
                 'lateral_control_dict': self._args_lateral_dict})
+
         if self._plan is not None:
             local_planner.set_global_plan(self._plan)
         self._local_planner_list.append(local_planner)
@@ -954,7 +959,6 @@ class WaypointFollower(AtomicBehavior):
         """
         Run local planner, obtain and apply control to actor
         """
-
         new_status = py_trees.common.Status.RUNNING
 
         if self._blackboard_queue_name is not None:
@@ -1021,7 +1025,6 @@ class LaneChange(WaypointFollower):
     def __init__(self, actor, speed=10, direction='left',
                  distance_same_lane=5, distance_other_lane=100, distance_lane_change=25, name='LaneChange'):
 
-        self._actor = actor
         self._direction = direction
         self._distance_same_lane = distance_same_lane
         self._distance_other_lane = distance_other_lane
@@ -1057,12 +1060,80 @@ class LaneChange(WaypointFollower):
             if distance > 50:
                 # long enough distance on new lane --> SUCCESS
                 status = py_trees.common.Status.SUCCESS
-
         else:
             # no lane change yet
             self._pos_before_lane_change = current_position_actor.transform.location
 
         return status
+
+
+class SetOSCInitSpeed(WaypointFollower):
+
+    """
+    OpenSCENARIO atomic
+    This class inherits from the class WaypointFollower.
+    This class contains an atomic behavior to set the init_speed of an OpenSCENARIO actor.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - init_speed: initial actor speed when scenario starts, in m/s
+
+    Termination of behavior with blackboard variable which is set in
+    super(classname, self).initialise() of all other behavioral atomics.
+    """
+
+    def __init__(self, actor, init_speed=10, name='SetOSCInitSpeed'):
+
+        self._init_speed = init_speed
+        self._terminate = None
+
+        super(SetOSCInitSpeed, self).__init__(actor, target_speed=init_speed, name=name)
+
+    def initialise(self):
+        """
+        Calculate the init_velocity and set blackboard variable
+        WF_actor_ID_terminate to False to stop termination of behavior
+        """
+        super(SetOSCInitSpeed, self).initialise()
+
+        transform = self._actor.get_transform()
+        yaw = transform.rotation.yaw * (math.pi / 180)
+
+        vx = math.cos(yaw) * self._init_speed
+        vy = math.sin(yaw) * self._init_speed
+        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+
+        py_trees.blackboard.SetBlackboardVariable(
+            name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_value=False).initialise()
+
+    def update(self):
+        """
+        Run local planner and calculate a new velocity if the deviation from target_speed
+        is greater than 3m/s. Check whether the SetOSCInitSpeed behavior should terminate by
+        checking the corresponding blackboard variable.
+        """
+        new_status = super(SetOSCInitSpeed, self).update()
+
+        # set velocity, workaround because local planner doesn't hold velocity
+        if abs(self._init_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
+            yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
+            vx = math.cos(yaw) * self._init_speed
+            vy = math.sin(yaw) * self._init_speed
+            self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+
+        terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
+            name="WF_actor_{}_terminate".format(self._actor.id),
+            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            expected_value=True,
+            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
+
+        if str(terminate_behavior) == 'Status.SUCCESS':
+            new_status = py_trees.common.Status.SUCCESS
+            return new_status
+
+        return new_status
 
 
 class HandBrakeVehicle(AtomicBehavior):
@@ -1121,8 +1192,7 @@ class ActorDestroy(AtomicBehavior):
         """
         Setup actor
         """
-        super(ActorDestroy, self).__init__(name)
-        self._actor = actor
+        super(ActorDestroy, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
@@ -1159,8 +1229,7 @@ class ActorTransformSetter(AtomicBehavior):
         """
         Init
         """
-        super(ActorTransformSetter, self).__init__(name)
-        self._actor = actor
+        super(ActorTransformSetter, self).__init__(name, actor)
         self._transform = transform
         self._physics = physics
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -1170,6 +1239,7 @@ class ActorTransformSetter(AtomicBehavior):
             self._actor.set_velocity(carla.Vector3D(0, 0, 0))
             self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
             self._actor.set_transform(self._transform)
+        super(ActorTransformSetter, self).initialise()
 
     def update(self):
         """

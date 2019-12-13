@@ -183,8 +183,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         if prop.get('name', '') == 'color':
                             color = prop.get('value')
 
+                    speed = self._get_actor_speed(rolename)
                     new_actor = ActorConfigurationData(
-                        model, carla.Transform(), rolename, color=color, category=category)
+                        model, carla.Transform(), rolename, speed, color=color, category=category)
                     new_actor.transform = self._get_actor_transform(rolename)
 
                     if ego_vehicle:
@@ -234,6 +235,34 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             print("Warning: The actor '{}' was not assigned an initial position. Using (0,0,0)".format(actor_name))
 
         return actor_transform
+
+    def _get_actor_speed(self, actor_name):
+        """
+        Get the initial actor speed provided by the Init section
+        """
+        actor_speed = 0
+        actor_found = False
+
+        for private_action in self.init.iter("Private"):
+            if private_action.attrib.get('object', None) == actor_name:
+                if actor_found:
+                    print(
+                        """Warning: The actor '{}' was already assigned an initial position.
+                        Overwriting pose!""".format(actor_name))
+                actor_found = True
+
+                for longitudinal_action in private_action.iter('Longitudinal'):
+                    for speed in longitudinal_action.iter('Speed'):
+                        for target in speed.iter('Target'):
+                            for absolute in target.iter('Absolute'):
+                                speed = float(absolute.attrib.get('value', 0))
+                                if speed > 0:
+                                    actor_speed = speed
+                                else:
+                                    raise(
+                                        """Warning: Speed value of actor {} must be positive.
+                                        Speed set to 0.""" .format(actor_name))
+        return actor_speed
 
     def _validate_result(self):
         """

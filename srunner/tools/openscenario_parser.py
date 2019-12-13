@@ -372,7 +372,6 @@ class OpenScenarioParser(object):
 
         Note not all OpenSCENARIO actions are currently supported
         """
-
         maneuver_name = action.attrib.get('name', 'unknown')
 
         if action.find('Global') is not None:

@@ -64,7 +64,7 @@ class CarlaDataProvider(object):
         """
         if actor in CarlaDataProvider._actor_velocity_map:
             raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor))
+                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
         else:
             CarlaDataProvider._actor_velocity_map[actor] = 0.0
 
