@@ -90,8 +90,8 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
     def initialise(self):
         # terminate potential WaypointFollower from SetOSCInitSpeed for actor
         py_trees.blackboard.SetBlackboardVariable(
-            name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            name="terminate_init_speed_actor_{}".format(self._actor.id),
+            variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
             variable_value=True
         ).initialise()
 
@@ -935,6 +935,25 @@ class WaypointFollower(AtomicBehavior):
         Delayed one-time initialization
         """
         super(WaypointFollower, self).initialise()
+
+        # if WF is already running
+#         control = carla.VehicleControl()
+#         control.throttle = 0.0
+#         control.brake = 0.0
+#         control.steer = 0.0
+#         self._actor.apply_control(control)
+
+        yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
+        vx = math.cos(yaw) * self._target_speed
+        vy = math.sin(yaw) * self._target_speed
+        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+
+        # set BB variable to False --> running
+        py_trees.blackboard.SetBlackboardVariable(
+            name="terminate_WF_actor_{}".format(self._actor.id),
+            variable_name="terminate_WF_actor_{}".format(self._actor.id),
+            variable_value=False).initialise()
+
         for actor in self._actor_list:
             self._apply_local_planner(actor)
         return True
@@ -942,13 +961,13 @@ class WaypointFollower(AtomicBehavior):
     def _apply_local_planner(self, actor):
 
         if self._target_speed is None:
-            self._target_speed = CarlaDataProvider.get_velocity(actor) * 3.6
+            self._target_speed = CarlaDataProvider.get_velocity(actor)
         else:
-            self._target_speed = self._target_speed * 3.6
+            self._target_speed = self._target_speed
 
         local_planner = LocalPlanner(  # pylint: disable=undefined-variable
             actor, opt_dict={
-                'target_speed': self._target_speed,
+                'target_speed': self._target_speed * 3.6,
                 'lateral_control_dict': self._args_lateral_dict})
 
         if self._plan is not None:
@@ -960,6 +979,29 @@ class WaypointFollower(AtomicBehavior):
         Run local planner, obtain and apply control to actor
         """
         new_status = py_trees.common.Status.RUNNING
+
+        # set velocity, workaround because local planner doesn't hold velocity
+        if abs(self._target_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
+            print('Speed correction!')
+            print(self._target_speed - CarlaDataProvider.get_velocity(self._actor))
+            yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
+            vx = math.cos(yaw) * self._target_speed
+            vy = math.sin(yaw) * self._target_speed
+            self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+
+        # terminate WaypointFollower
+        # @TODO: other behaviors have to set the terminate value to True
+        # ? maybe one atomic to switch off WaypointFollower in specific situations?
+        terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
+            name="terminate_WF_actor_{}".format(self._actor.id),
+            variable_name="terminate_WF_actor_{}".format(self._actor.id),
+            expected_value=True,
+            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
+
+        if terminate_behavior == 'Status.SUCCESS':
+            new_status = py_trees.common.Status.SUCCESS
+            return new_status
+        #
 
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
@@ -993,6 +1035,7 @@ class WaypointFollower(AtomicBehavior):
             if local_planner is not None:
                 local_planner.reset_vehicle()
                 local_planner = None
+
         super(WaypointFollower, self).terminate(new_status)
 
 
@@ -1092,7 +1135,7 @@ class SetOSCInitSpeed(WaypointFollower):
     def initialise(self):
         """
         Calculate the init_velocity and set blackboard variable
-        WF_actor_ID_terminate to False to stop termination of behavior
+        terminate_init_speed_actor_ID to False to stop termination of behavior
         """
         super(SetOSCInitSpeed, self).initialise()
 
@@ -1104,8 +1147,8 @@ class SetOSCInitSpeed(WaypointFollower):
         self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
         py_trees.blackboard.SetBlackboardVariable(
-            name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            name="terminate_init_speed_actor_{}".format(self._actor.id),
+            variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
             variable_value=False).initialise()
 
     def update(self):
@@ -1124,12 +1167,12 @@ class SetOSCInitSpeed(WaypointFollower):
             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
         terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
-            name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_name="WF_actor_{}_terminate".format(self._actor.id),
+            name="terminate_init_speed_actor_{}".format(self._actor.id),
+            variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
             expected_value=True,
             clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
 
-        if str(terminate_behavior) == 'Status.SUCCESS':
+        if terminate_behavior == 'Status.SUCCESS':
             new_status = py_trees.common.Status.SUCCESS
             return new_status
 
