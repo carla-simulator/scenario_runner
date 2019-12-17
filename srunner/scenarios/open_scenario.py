@@ -317,12 +317,12 @@ class OpenScenario(BasicScenario):
                 rolename = actor.rolename
                 init_speed = actor.speed
 
-        for actor in self.other_actors:
-            if 'role_name' in actor.attributes and actor.attributes['role_name'] == rolename:
-                init_behavior = py_trees.composites.Parallel(
-                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="InitBehaviour")
-                set_init_speed = SetOSCInitSpeed(actor, init_speed)
-                init_behavior.add_child(set_init_speed)
+                for carla_actor in self.other_actors:
+                    if 'role_name' in carla_actor.attributes and carla_actor.attributes['role_name'] == rolename:
+                        init_behavior = py_trees.composites.Parallel(
+                            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="InitBehaviour")
+                        set_init_speed = SetOSCInitSpeed(actor, init_speed)
+                        init_behavior.add_child(set_init_speed)
 
         return init_behavior
 
