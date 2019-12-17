@@ -89,11 +89,12 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
 
     def initialise(self):
         # terminate potential WaypointFollower from SetOSCInitSpeed for actor
-        py_trees.blackboard.SetBlackboardVariable(
-            name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_value=True
-        ).initialise()
+        if self._actor is not None:
+            py_trees.blackboard.SetBlackboardVariable(
+                name="WF_actor_{}_terminate".format(self._actor.id),
+                variable_name="WF_actor_{}_terminate".format(self._actor.id),
+                variable_value=True
+            ).initialise()
 
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
