@@ -584,10 +584,10 @@ class CarlaActorPool(object):
 
             if hero:
                 blueprint.set_attribute('role_name', 'hero')
-            elif autopilot:
-                blueprint.set_attribute('role_name', 'autopilot')
             elif 'walker' in model:
                 blueprint.set_attribute('role_name', 'walker')
+            elif autopilot:
+                blueprint.set_attribute('role_name', 'autopilot')
             else:
                 blueprint.set_attribute('role_name', 'scenario')
 
@@ -613,7 +613,7 @@ class CarlaActorPool(object):
                     CarlaActorPool._spawn_index += 1
             if spawn_point:
                 if 'walker' in model:  # If the model is a walker we try to directly set the autopilot to it.
-                    walker_bp = random.choice(blueprint_library.filter('walker.*'))
+                    walker_bp = random.choice(blueprint_library.filter('walker.pedestrian*'))
                     # set as not invencible
                     if walker_bp.has_attribute('is_invincible'):
                         walker_bp.set_attribute('is_invincible', 'false')
@@ -621,7 +621,7 @@ class CarlaActorPool(object):
                     walker_bp.set_attribute('role_name', 'walker')
 
                     if walker_bp.has_attribute('speed'):
-                        if (random.random() > 0.1):  # TODO THIS is problematic.
+                        if (random.random() > 0.1):
                             # walking
                             walker_speed.append(
                                 walker_bp.get_attribute('speed').recommended_values[1])
@@ -641,7 +641,7 @@ class CarlaActorPool(object):
                                                                                       autopilot)))
 
         if CarlaActorPool._client:
-            responses = CarlaActorPool._client.apply_batch_sync(batch)
+            responses = CarlaActorPool._client.apply_batch_sync(batch, True)
 
         # wait for the actors to be spawned properly before we do anything
         CarlaActorPool._sync(CarlaActorPool._world.tick())
@@ -684,17 +684,19 @@ class CarlaActorPool(object):
         walkers_present = CarlaActorPool._world.get_actors(controllers_ids)
 
         # This function set how often pedestrians cross
+        print (" SETTING A CROSS FACTOR OF ", cross_factor)
         CarlaActorPool._world.set_pedestrians_cross_factor(cross_factor)
 
         for i in range(0, len(walkers_present)):
             # start walker
             walkers_present[i].start()
             # set walk to random point
-            walkers_present[i].go_to_location(
-                            CarlaActorPool._world.get_random_location_from_navigation())
+            location_to_go = CarlaActorPool._world.get_random_location_from_navigation()
+            walkers_present[i].go_to_location(location_to_go)
             # random max speed
             walkers_present[i].set_max_speed(1 + random.random())    # max speed between 1 and 2 (default is 1.4 m/s)
-            logging.debug(" walker send to location")
+            logging.debug(f" walker send to location {location_to_go.x},"
+                          f"        {location_to_go.y} {location_to_go.z} ")
 
         return actor_list
 
