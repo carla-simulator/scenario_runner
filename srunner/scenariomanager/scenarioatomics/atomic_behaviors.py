@@ -936,23 +936,37 @@ class WaypointFollower(AtomicBehavior):
         """
         super(WaypointFollower, self).initialise()
 
-        # if WF is already running
-#         control = carla.VehicleControl()
-#         control.throttle = 0.0
-#         control.brake = 0.0
-#         control.steer = 0.0
-#         self._actor.apply_control(control)
+        # check whether WF for this actor is already active
+        wf_active = py_trees.blackboard.CheckBlackboardVariable(
+            name="running_WF_actor_{}".format(self._actor.id),
+            variable_name="running_WF_actor_{}".format(self._actor.id),
+            expected_value=True,
+            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
+
+        if wf_active == 'Status.SUCCESS':
+            py_trees.blackboard.SetBlackboardVariable(
+                name="terminate_WF_actor_{}".format(self._actor.id),
+                variable_name="terminate_WF_actor_{}".format(self._actor.id),
+                variable_value=True).initialise()
+                # the other WF will be terminated in next update
+                # ? tick necessary or time.sleep(0.1)
+
+        # set BlackboardVariable running_WF_actor_ID
+        py_trees.blackboard.SetBlackboardVariable(
+            name="running_WF_actor_{}".format(self._actor.id),
+            variable_name="running_WF_actor_{}".format(self._actor.id),
+            variable_value=True).initialise()
+
+        # set BlackboardVariable terminate_WF_actor_ID
+        py_trees.blackboard.SetBlackboardVariable(
+            name="terminate_WF_actor_{}".format(self._actor.id),
+                variable_name="terminate_WF_actor_{}".format(self._actor.id),
+                variable_value=False).initialise()
 
         yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
         vx = math.cos(yaw) * self._target_speed
         vy = math.sin(yaw) * self._target_speed
         self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-
-        # set BB variable to False --> running
-        py_trees.blackboard.SetBlackboardVariable(
-            name="terminate_WF_actor_{}".format(self._actor.id),
-            variable_name="terminate_WF_actor_{}".format(self._actor.id),
-            variable_value=False).initialise()
 
         for actor in self._actor_list:
             self._apply_local_planner(actor)
@@ -980,28 +994,25 @@ class WaypointFollower(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        # set velocity, workaround because local planner doesn't hold velocity
-        if abs(self._target_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
-            print('Speed correction!')
-            print(self._target_speed - CarlaDataProvider.get_velocity(self._actor))
-            yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-            vx = math.cos(yaw) * self._target_speed
-            vy = math.sin(yaw) * self._target_speed
-            self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-
-        # terminate WaypointFollower
-        # @TODO: other behaviors have to set the terminate value to True
-        # ? maybe one atomic to switch off WaypointFollower in specific situations?
-        terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
+        # terminate WF
+        terminate_wf = py_trees.blackboard.CheckBlackboardVariable(
             name="terminate_WF_actor_{}".format(self._actor.id),
             variable_name="terminate_WF_actor_{}".format(self._actor.id),
             expected_value=True,
             clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
 
-        if terminate_behavior == 'Status.SUCCESS':
+        if terminate_wf == 'Status.SUCCESS':
             new_status = py_trees.common.Status.SUCCESS
             return new_status
-        #
+
+        # set velocity, workaround because local planner doesn't hold velocity
+#         if abs(self._target_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
+#             print('Speed correction!')
+#             print(self._target_speed - CarlaDataProvider.get_velocity(self._actor))
+#             yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
+#             vx = math.cos(yaw) * self._target_speed
+#             vy = math.sin(yaw) * self._target_speed
+#             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
