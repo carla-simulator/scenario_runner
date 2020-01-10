@@ -15,9 +15,12 @@ The atomic behaviors are implemented with py_trees.
 
 from __future__ import print_function
 
-import random
-
+import copy
 import math
+import operator
+import random
+import time
+
 import numpy as np
 import py_trees
 from py_trees.blackboard import Blackboard
@@ -911,6 +914,10 @@ class WaypointFollower(AtomicBehavior):
     - avoid_collision[optional]: Enable/Disable(=default) collision avoidance
 
     A parallel termination behavior has to be used.
+
+    OpenScenario:
+    Blackboard variables with lists are used for consecutive WaypointFollower behaviors.
+    The WaypointFollower atomic must be called with an individual name if multiple consecutive WFs.
     """
 
     def __init__(self, actor, target_speed=None, plan=None, blackboard_queue_name=None,
@@ -929,44 +936,30 @@ class WaypointFollower(AtomicBehavior):
             self._queue = Blackboard().get(blackboard_queue_name)
         self._args_lateral_dict = {'K_P': 1.0, 'K_D': 0.01, 'K_I': 0.0, 'dt': 0.05}
         self._avoid_collision = avoid_collision
+        self._unique_id = 0
 
     def initialise(self):
         """
         Delayed one-time initialization
         """
         super(WaypointFollower, self).initialise()
+        self._unique_id = int(round(time.time() * 1000))
 
-        # check whether WF for this actor is already active
-        wf_active = py_trees.blackboard.CheckBlackboardVariable(
-            name="running_WF_actor_{}".format(self._actor.id),
-            variable_name="running_WF_actor_{}".format(self._actor.id),
-            expected_value=True,
-            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
-
-        if wf_active == 'Status.SUCCESS':
-            py_trees.blackboard.SetBlackboardVariable(
-                name="terminate_WF_actor_{}".format(self._actor.id),
-                variable_name="terminate_WF_actor_{}".format(self._actor.id),
-                variable_value=True).initialise()
-                # the other WF will be terminated in next update
-                # ? tick necessary or time.sleep(0.1)
-
-        # set BlackboardVariable running_WF_actor_ID
-        py_trees.blackboard.SetBlackboardVariable(
-            name="running_WF_actor_{}".format(self._actor.id),
-            variable_name="running_WF_actor_{}".format(self._actor.id),
-            variable_value=True).initialise()
-
-        # set BlackboardVariable terminate_WF_actor_ID
-        py_trees.blackboard.SetBlackboardVariable(
-            name="terminate_WF_actor_{}".format(self._actor.id),
-                variable_name="terminate_WF_actor_{}".format(self._actor.id),
-                variable_value=False).initialise()
-
-        yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-        vx = math.cos(yaw) * self._target_speed
-        vy = math.sin(yaw) * self._target_speed
-        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+        try:
+            # check whether WF for this actor is already running and terminate all active WFs
+            check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+            terminate_wf = check_attr(py_trees.blackboard.Blackboard())
+            py_trees.blackboard.Blackboard().set(
+                "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
+            # add new WF to running_WF list
+            active_wf = copy.copy(terminate_wf)
+            active_wf.append(self._unique_id)
+            py_trees.blackboard.Blackboard().set(
+                "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
+        except:
+            py_trees.blackboard.Blackboard().set("terminate_WF_actor_{}".format(self._actor.id), [], overwrite=True)
+            py_trees.blackboard.Blackboard().set(
+                "running_WF_actor_{}".format(self._actor.id), [self._unique_id], overwrite=True)
 
         for actor in self._actor_list:
             self._apply_local_planner(actor)
@@ -994,25 +987,24 @@ class WaypointFollower(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        # terminate WF
-        terminate_wf = py_trees.blackboard.CheckBlackboardVariable(
-            name="terminate_WF_actor_{}".format(self._actor.id),
-            variable_name="terminate_WF_actor_{}".format(self._actor.id),
-            expected_value=True,
-            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
+        try:
+            check_attr = operator.attrgetter("terminate_WF_actor_{}".format(self._actor.id))
+            terminate_wf = check_attr(py_trees.blackboard.Blackboard())
 
-        if terminate_wf == 'Status.SUCCESS':
-            new_status = py_trees.common.Status.SUCCESS
-            return new_status
+            check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+            active_wf = check_attr(py_trees.blackboard.Blackboard())
 
-        # set velocity, workaround because local planner doesn't hold velocity
-#         if abs(self._target_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
-#             print('Speed correction!')
-#             print(self._target_speed - CarlaDataProvider.get_velocity(self._actor))
-#             yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-#             vx = math.cos(yaw) * self._target_speed
-#             vy = math.sin(yaw) * self._target_speed
-#             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+            if self._unique_id in terminate_wf:
+                terminate_wf.remove(self._unique_id)
+                active_wf.remove(self._unique_id)
+                py_trees.blackboard.Blackboard().set(
+                    "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
+                py_trees.blackboard.Blackboard().set(
+                    "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
+                new_status = py_trees.common.Status.SUCCESS
+                return new_status
+        except:
+            print('Error with Blackboard variables of actor {}'.format(self._actor.id))
 
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
@@ -1036,6 +1028,7 @@ class WaypointFollower(AtomicBehavior):
         On termination of this behavior,
         the throttle, brake and steer should be set back to 0.
         """
+
         control = carla.VehicleControl()
         control.throttle = 0.0
         control.brake = 0.0
@@ -1047,6 +1040,8 @@ class WaypointFollower(AtomicBehavior):
                 local_planner.reset_vehicle()
                 local_planner = None
 
+        self._local_planner_list = []
+        self._actor_list = []
         super(WaypointFollower, self).terminate(new_status)
 
 
