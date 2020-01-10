@@ -202,12 +202,11 @@ class RouteParser(object):
                                                                          route_description['trajectory'])
                         if scenario_subtype is None:
                             continue
-                        scenario_description = {
-                            'name': scenario_name,
-                                               'other_actors': other_vehicles,
-                                               'trigger_position': waypoint,
-                                               'type': scenario_subtype,  # some scenarios have different configurations
-                        }
+                        scenario_description = {'name': scenario_name,
+                                                'other_actors': other_vehicles,
+                                                'trigger_position': waypoint,
+                                                'type': scenario_subtype,  # some scenarios have different configs
+                                                }
 
                         trigger_id = RouteParser.check_trigger_position(waypoint, existent_triggers)
                         if trigger_id is None:

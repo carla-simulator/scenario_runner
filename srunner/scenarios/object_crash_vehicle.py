@@ -10,19 +10,24 @@ moving along the road and encountering a cyclist ahead.
 
 from __future__ import print_function
 
+import math
 import py_trees
+import carla
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      ActorDestroy,
+                                                                      AccelerateToVelocity,
+                                                                      HandBrakeVehicle,
+                                                                      KeepVelocity,
+                                                                      StopVehicle)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocationAlongRoute,
+                                                                               InTimeToArrivalToVehicle,
+                                                                               DriveDistance)
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import *
-
-OBJECT_CROSSING_SCENARIOS = [
-    "StationaryObjectCrossing",
-    "DynamicObjectCrossing"
-]
+from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 
 
 class StationaryObjectCrossing(BasicScenario):
@@ -35,8 +40,6 @@ class StationaryObjectCrossing(BasicScenario):
 
     This is a single ego vehicle scenario
     """
-
-    category = "ObjectCrossing"
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
@@ -137,8 +140,6 @@ class DynamicObjectCrossing(BasicScenario):
 
     This is a single ego vehicle scenario
     """
-
-    category = "ObjectCrossing"
 
     def __init__(self, world, ego_vehicles, config, randomize=False,
                  debug_mode=False, criteria_enable=True, adversary_type=False, timeout=60):

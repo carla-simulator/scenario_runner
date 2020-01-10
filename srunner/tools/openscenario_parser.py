@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -13,14 +13,44 @@ from distutils.util import strtobool
 import math
 import operator
 
+import py_trees
 import carla
 from agents.navigation.local_planner import RoadOption
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.timer import *
-
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLightStateSetter,
+                                                                      ActorTransformSetterToOSCPosition,
+                                                                      AccelerateToVelocity,
+                                                                      ChangeAutoPilot,
+                                                                      Idle,
+                                                                      KeepVelocity,
+                                                                      LaneChange,
+                                                                      SetRelativeOSCVelocity,
+                                                                      WaypointFollower)
+# pylint: disable=unused-import
+# For the following includes the pylint check is disabled, as these are accessed via globals()
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTest,
+                                                                     MaxVelocityTest,
+                                                                     DrivenDistanceTest,
+                                                                     AverageVelocityTest,
+                                                                     KeepLaneTest,
+                                                                     ReachedRegionTest,
+                                                                     OnSidewalkTest,
+                                                                     WrongLaneTest,
+                                                                     InRadiusRegionTest,
+                                                                     InRouteTest,
+                                                                     RouteCompletionTest,
+                                                                     RunningRedLightTest,
+                                                                     RunningStopTest)
+# pylint: enable=unused-import
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
+                                                                               InTriggerDistanceToOSCPosition,
+                                                                               InTimeToArrivalToOSCPosition,
+                                                                               InTimeToArrivalToVehicle,
+                                                                               DriveDistance,
+                                                                               StandStill,
+                                                                               OSCStartEndCondition)
+from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 
 
 class OpenScenarioParser(object):
@@ -306,12 +336,13 @@ class OpenScenarioParser(object):
             if state_condition.find('AtStart') is not None:
                 element_type = state_condition.find('AtStart').attrib.get('type')
                 element_name = state_condition.find('AtStart').attrib.get('name')
-                atomic = AtStartCondition(element_type, element_name)
+                atomic = OSCStartEndCondition(element_type, element_name, rule="START", name="AtStartCondition")
             elif state_condition.find('AfterTermination') is not None:
                 element_type = state_condition.find('AfterTermination').attrib.get('type')
                 element_name = state_condition.find('AfterTermination').attrib.get('name')
                 condition_rule = state_condition.find('AfterTermination').attrib.get('rule')
-                atomic = AfterTerminationCondition(element_type, element_name, condition_rule)
+                atomic = OSCStartEndCondition(
+                    element_type, element_name, condition_rule, name="AfterTerminationCondition")
             elif state_condition.find('Command') is not None:
                 raise NotImplementedError("ByState Command conditions are not yet supported")
             elif state_condition.find('Signal') is not None:

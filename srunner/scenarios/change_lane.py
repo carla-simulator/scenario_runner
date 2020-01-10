@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2019-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -18,20 +18,19 @@ The ego vehicle adjusts its velocity or changes the lane as well.
 """
 
 import random
-
 import py_trees
-
 import carla
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      StopVehicle,
+                                                                      LaneChange,
+                                                                      WaypointFollower,
+                                                                      Idle)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToVehicle, StandStill
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import *
-
-CHANGE_LANE_SCENARIOS = [
-    "ChangeLane"
-]
+from srunner.tools.scenario_helper import get_waypoint_in_distance
 
 
 class ChangeLane(BasicScenario):
@@ -46,7 +45,6 @@ class ChangeLane(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    category = "ChangeLane"
     timeout = 1200
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
@@ -130,9 +128,8 @@ class ChangeLane(BasicScenario):
         sequence_tesla.add_child(tesla_visible)
 
         # drive fast towards slow vehicle
-        just_drive = py_trees.composites.Parallel(
-            "DrivingTowardsSlowVehicle",
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        just_drive = py_trees.composites.Parallel("DrivingTowardsSlowVehicle",
+                                                  policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         tesla_driving_fast = WaypointFollower(self.other_actors[0], self._fast_vehicle_velocity)
         just_drive.add_child(tesla_driving_fast)
         distance_to_vehicle = InTriggerDistanceToVehicle(

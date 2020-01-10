@@ -10,12 +10,9 @@ Scenario spawning elements to make the town dynamic and interesting
 
 import py_trees
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficJamChecker
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficJamChecker
 from srunner.scenarios.basic_scenario import BasicScenario
-
-
-BACKGROUND_ACTIVITY_SCENARIOS = ["BackgroundActivity"]
 
 
 class BackgroundActivity(BasicScenario):
@@ -26,8 +23,6 @@ class BackgroundActivity(BasicScenario):
 
     This is a single ego vehicle scenario
     """
-
-    category = "BackgroundActivity"
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, timeout=35 * 60):
         """

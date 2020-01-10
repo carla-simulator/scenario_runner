@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -22,9 +22,6 @@ from __future__ import print_function
 
 import operator
 import py_trees
-
-from agents.navigation.basic_agent import *
-from agents.navigation.roaming_agent import *
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior, calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -239,26 +236,28 @@ class TriggerVelocity(AtomicBehavior):
         return new_status
 
 
-class AtStartCondition(AtomicBehavior):
+class OSCStartEndCondition(AtomicBehavior):
 
     """
-    This class contains a check if a named story element has started.
+    This class contains a check if a named story element has started/terminated.
 
     Important parameters:
     - element_name: The story element's name attribute
     - element_type: The element type [act,scene,maneuver,event,action]
+    - rule: One or more of [START, END, CANCEL]
 
     The condition terminates with SUCCESS, when the named story element starts
     """
 
-    def __init__(self, element_type, element_name):
+    def __init__(self, element_type, element_name, rule, name="OSCStartEndCondition"):
         """
         Setup element details
         """
-        super(AtStartCondition, self).__init__("AtStartCondition")
+        super(OSCStartEndCondition, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._element_type = element_type
+        self._element_type = element_type.upper()
         self._element_name = element_name
+        self._rule = rule.upper()
         self._start_time = None
         self._blackboard = py_trees.blackboard.Blackboard()
 
@@ -267,53 +266,14 @@ class AtStartCondition(AtomicBehavior):
         Initialize the start time of this condition
         """
         self._start_time = GameTime.get_time()
-        super(AtStartCondition, self).initialise()
+        super(OSCStartEndCondition, self).initialise()
 
     def update(self):
         """
-        Check if the specified story element has started since the beginning of the condition
+        Check if the specified story element has started/ended since the beginning of the condition
         """
         new_status = py_trees.common.Status.RUNNING
 
-        blackboard_variable_name = "({}){}-{}".format(self._element_type.upper(), self._element_name, "START")
-        element_start_time = self._blackboard.get(blackboard_variable_name)
-        if element_start_time and element_start_time >= self._start_time:
-            new_status = py_trees.common.Status.SUCCESS
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
-        return new_status
-
-
-class AfterTerminationCondition(AtomicBehavior):
-
-    """
-    This class contains a check if a named story element has terminated.
-
-    Important parameters:
-    - element_name: The story element's name attribute
-    - element_type: The element type [act,scene,maneuver,event,action]
-
-    The condition terminates with SUCCESS, when the named story element ends
-    """
-
-    def __init__(self, element_type, element_name, rule):
-        """
-        Setup element details
-        """
-        super(AfterTerminationCondition, self).__init__("AfterTerminationCondition")
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._element_type = element_type.upper()
-        self._element_name = element_name
-        self._rule = rule.upper()
-        self._start_time = GameTime.get_time()
-        self._blackboard = py_trees.blackboard.Blackboard()
-
-    def update(self):
-        """
-        Check if the specified story element has ended since the beginning of the condition
-        """
-        new_status = py_trees.common.Status.RUNNING
         if self._rule == "ANY":
             rules = ["END", "CANCEL"]
         else:

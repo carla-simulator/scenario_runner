@@ -19,16 +19,15 @@ import py_trees
 
 import carla
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      WaypointFollower,
+                                                                      ActorDestroy)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
+                                                                               DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
-
-OTHER_LEADING_VEHICLE_SCENARIOS = [
-    "OtherLeadingVehicle"
-]
 
 
 class OtherLeadingVehicle(BasicScenario):
@@ -40,7 +39,6 @@ class OtherLeadingVehicle(BasicScenario):
 
     This is a single ego vehicle scenario
     """
-    category = "OtherLeadingVehicle"
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):

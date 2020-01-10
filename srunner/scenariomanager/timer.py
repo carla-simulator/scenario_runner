@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -64,54 +64,6 @@ class GameTime(object):
         return GameTime._platform_timestamp
 
 
-class TimeOut(py_trees.behaviour.Behaviour):
-
-    """
-    This class contains an atomic timeout behavior.
-    It uses the CARLA game time, not the system time which is used by
-    the py_trees timer.
-    """
-
-    def __init__(self, timeout, name="TimeOut"):
-        """
-        Setup timeout
-        """
-        super(TimeOut, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._timeout_value = timeout
-        self._start_time = 0.0
-        self.timeout = False
-
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
-    def initialise(self):
-        self._start_time = GameTime.get_time()
-        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
-
-    def update(self):
-        """
-        Get current game time, and compare it to the timeout value
-        Upon reaching the timeout value the status changes to SUCCESS
-        """
-
-        elapsed_time = GameTime.get_time() - self._start_time
-
-        if elapsed_time < self._timeout_value:
-            new_status = py_trees.common.Status.RUNNING
-        else:
-            new_status = py_trees.common.Status.SUCCESS
-            self.timeout = True
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
-        return new_status
-
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
-
 class SimulationTimeCondition(py_trees.behaviour.Behaviour):
 
     """
@@ -136,11 +88,10 @@ class SimulationTimeCondition(py_trees.behaviour.Behaviour):
                      "equal_to": (lambda x, y: x == y),
                      "less_than": (lambda x, y: x < y)}
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
     def initialise(self):
+        """
+        Set start_time to current GameTime
+        """
         self._start_time = GameTime.get_time()
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
@@ -162,5 +113,30 @@ class SimulationTimeCondition(py_trees.behaviour.Behaviour):
 
         return new_status
 
-    def terminate(self, new_status):
-        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+class TimeOut(SimulationTimeCondition):
+
+    """
+    This class contains an atomic timeout behavior.
+    It uses the CARLA game time, not the system time which is used by
+    the py_trees timer.
+    """
+
+    def __init__(self, timeout, name="TimeOut"):
+        """
+        Setup timeout
+        """
+        super(TimeOut, self).__init__(timeout, name=name)
+        self.timeout = False
+
+    def update(self):
+        """
+        Upon reaching the timeout value the status changes to SUCCESS
+        """
+
+        new_status = super(TimeOut, self).update()
+
+        if new_status == py_trees.common.Status.SUCCESS:
+            self.timeout = True
+
+        return new_status
