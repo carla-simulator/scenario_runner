@@ -13,17 +13,20 @@ vehicle traveling in the opposite direction.
 
 from six.moves.queue import Queue   # pylint: disable=relative-import
 
+import math
 import py_trees
+import carla
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      ActorDestroy,
+                                                                      ActorSource,
+                                                                      ActorSink,
+                                                                      WaypointFollower)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
-
-MANEUVER_OPPOSITE_DIRECTION = [
-    "ManeuverOppositeDirection"
-]
 
 
 class ManeuverOppositeDirection(BasicScenario):
@@ -33,8 +36,6 @@ class ManeuverOppositeDirection(BasicScenario):
 
     This is a single ego vehicle scenario
     """
-
-    category = "ManeuverOppositeDirection"
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  obstacle_type='barrier', timeout=120):
@@ -54,7 +55,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._source_transform = None
         self._sink_location = None
         self._blackboard_queue_name = 'ManeuverOppositeDirection/actor_flow_queue'
-        self._queue = Blackboard().set(self._blackboard_queue_name, Queue())
+        self._queue = py_trees.blackboard.Blackboard().set(self._blackboard_queue_name, Queue())
         self._obstacle_type = obstacle_type
         self._first_actor_transform = None
         self._second_actor_transform = None

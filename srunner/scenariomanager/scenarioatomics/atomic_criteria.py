@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -64,14 +64,16 @@ class Criterion(py_trees.behaviour.Behaviour):
         self.optional = optional
         self.list_traffic_events = []
 
-    def setup(self, unused_timeout=15):
-        self.logger.debug("%s.setup()" % (self.__class__.__name__))
-        return True
-
     def initialise(self):
+        """
+        Initialise the criterion. Can be extended by the user-derived class
+        """
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
+        """
+        Terminate the criterion. Can be extended by the user-derived class
+        """
         if (self.test_status == "RUNNING") or (self.test_status == "INIT"):
             self.test_status = "SUCCESS"
 

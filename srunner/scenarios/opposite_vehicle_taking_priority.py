@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -17,18 +17,20 @@ import py_trees
 import carla
 from agents.navigation.local_planner import RoadOption
 
-from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import *
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      ActorDestroy,
+                                                                      WaypointFollower,
+                                                                      SyncArrival)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, DrivenDistanceTest, MaxVelocityTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
+                                                                               InTriggerDistanceToNextIntersection,
+                                                                               DriveDistance)
 from srunner.scenariomanager.timer import TimeOut
-
-
-RUNNING_RED_LIGHT_SCENARIOS = [
-    "OppositeVehicleRunningRedLight"
-]
+from srunner.scenarios.basic_scenario import BasicScenario
+from srunner.tools.scenario_helper import (get_crossing_point,
+                                           get_geometric_linear_intersection,
+                                           generate_target_waypoint_list)
 
 
 class OppositeVehicleRunningRedLight(BasicScenario):
@@ -41,8 +43,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
     This is a single ego vehicle scenario
     """
-
-    category = "RunningRedLight"
 
     # ego vehicle parameters
     _ego_max_velocity_allowed = 20       # Maximum allowed velocity [m/s]

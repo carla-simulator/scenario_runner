@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -23,6 +23,7 @@ from distutils.version import LooseVersion
 import importlib
 import inspect
 import os
+import sys
 import time
 import pkg_resources
 
@@ -32,20 +33,23 @@ from srunner.challenge.autoagents.agent_wrapper import SensorConfigurationInvali
 from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
-from srunner.scenariomanager.carla_data_provider import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
 from srunner.scenariomanager.scenario_manager import ScenarioManager
-from srunner.scenarios.control_loss import *
-from srunner.scenarios.follow_leading_vehicle import *
-from srunner.scenarios.maneuver_opposite_direction import *
-from srunner.scenarios.no_signal_junction_crossing import *
-from srunner.scenarios.object_crash_intersection import *
-from srunner.scenarios.object_crash_vehicle import *
-from srunner.scenarios.opposite_vehicle_taking_priority import *
-from srunner.scenarios.other_leading_vehicle import *
-from srunner.scenarios.signalized_junction_left_turn import *
-from srunner.scenarios.signalized_junction_right_turn import *
-from srunner.scenarios.change_lane import *
-from srunner.scenarios.cut_in import *
+# pylint: disable=unused-import
+# For the following includes the pylint check is disabled, as these are accessed via globals()
+from srunner.scenarios.control_loss import ControlLoss
+from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle, FollowLeadingVehicleWithObstacle
+from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
+from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
+from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
+from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing, DynamicObjectCrossing
+from srunner.scenarios.opposite_vehicle_taking_priority import OppositeVehicleRunningRedLight
+from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
+from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLeftTurn
+from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
+from srunner.scenarios.change_lane import ChangeLane
+from srunner.scenarios.cut_in import CutIn
+# pylint: enable=unused-import
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_config_parser import ScenarioConfigurationParser
@@ -53,25 +57,6 @@ from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
 VERSION = 0.6
-
-
-# Dictionary of all supported scenarios.
-# key = Name of config file in examples/
-# value = List as defined in the scenario module
-SCENARIOS = {
-    "FollowLeadingVehicle": FOLLOW_LEADING_VEHICLE_SCENARIOS,
-    "ObjectCrossing": OBJECT_CROSSING_SCENARIOS,
-    "RunningRedLight": RUNNING_RED_LIGHT_SCENARIOS,
-    "NoSignalJunction": NO_SIGNAL_JUNCTION_SCENARIOS,
-    "VehicleTurning": VEHICLE_TURNING_SCENARIOS,
-    "ControlLoss": CONTROL_LOSS_SCENARIOS,
-    "OppositeDirection": MANEUVER_OPPOSITE_DIRECTION,
-    "OtherLeadingVehicle": OTHER_LEADING_VEHICLE_SCENARIOS,
-    "SignalizedJunctionRightTurn": TURNING_RIGHT_SIGNALIZED_JUNCTION_SCENARIOS,
-    "SignalizedJunctionLeftTurn": TURN_LEFT_SIGNALIZED_JUNCTION_SCENARIOS,
-    "ChangeLane": CHANGE_LANE_SCENARIOS,
-    "CutIn": CUT_IN_SCENARIOS,
-}
 
 
 class ScenarioRunner(object):
@@ -164,10 +149,8 @@ class ScenarioRunner(object):
         If scenario is not supported or not found, exit script
         """
 
-        for scenarios in SCENARIOS.values():
-            if scenario in scenarios:
-                if scenario in globals():
-                    return globals()[scenario]
+        if scenario in globals():
+            return globals()[scenario]
 
         for member in inspect.getmembers(self.additional_scenario_module):
             if scenario in member and inspect.isclass(member[1]):
@@ -430,8 +413,6 @@ class ScenarioRunner(object):
 
             self._cleanup(ego=(not args.waitForEgo))
 
-            print("No more scenarios .... Exiting")
-
     def _run_challenge(self, args):
         """
         Run the challenge mode
@@ -552,7 +533,6 @@ if __name__ == '__main__':
     PARSER.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
     PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
     PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
-    PARSER.add_argument('--listClass', action="store_true", help='List all supported scenario classes and exit')
     PARSER.add_argument(
         '--agent', help="Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.")
     PARSER.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
@@ -569,11 +549,6 @@ if __name__ == '__main__':
     if ARGUMENTS.list:
         print("Currently the following scenarios are supported:")
         print(*ScenarioConfigurationParser.get_list_of_scenarios(ARGUMENTS.configFile), sep='\n')
-        sys.exit(0)
-
-    if ARGUMENTS.listClass:
-        print("Currently the following scenario classes are supported:")
-        print(*SCENARIOS.keys(), sep='\n')
         sys.exit(0)
 
     if not ARGUMENTS.scenario and not ARGUMENTS.openscenario and not ARGUMENTS.route:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2019-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -19,15 +19,14 @@ import random
 import py_trees
 import carla
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import *
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import *
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      LaneChange,
+                                                                      WaypointFollower,
+                                                                      AccelerateToCatchUp)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToVehicle, DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import *
-
-CUT_IN_SCENARIOS = [
-    "CutIn"
-]
 
 
 class CutIn(BasicScenario):
@@ -37,7 +36,6 @@ class CutIn(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    category = "CutIn"
     timeout = 1200
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
@@ -69,20 +67,20 @@ class CutIn(BasicScenario):
 
     def _initialize_actors(self, config):
 
-    # direction of lane, on which other_actor is driving before lane change
+        # direction of lane, on which other_actor is driving before lane change
         if 'LEFT' in self._config.name.upper():
             self._direction = 'left'
 
         if 'RIGHT' in self._config.name.upper():
             self._direction = 'right'
 
-    # add actors from xml file
+        # add actors from xml file
         for actor in config.other_actors:
             vehicle = CarlaActorPool.request_new_actor(actor.model, actor.transform)
             self.other_actors.append(vehicle)
             vehicle.set_simulate_physics(enabled=False)
 
-    # transform visible
+        # transform visible
         other_actor_transform = self.other_actors[0].get_transform()
         self._transform_visible = carla.Transform(
             carla.Location(other_actor_transform.location.x,
@@ -107,8 +105,7 @@ class CutIn(BasicScenario):
 
         # just_drive
         just_drive = py_trees.composites.Parallel(
-            "DrivingStraight",
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            "DrivingStraight", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         car_driving = WaypointFollower(self.other_actors[0], self._velocity)
         just_drive.add_child(car_driving)
