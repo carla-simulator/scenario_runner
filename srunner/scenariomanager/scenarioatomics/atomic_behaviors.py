@@ -91,13 +91,24 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
         return True
 
     def initialise(self):
-        # terminate potential WaypointFollower from SetOSCInitSpeed for actor
-        py_trees.blackboard.SetBlackboardVariable(
-            name="terminate_init_speed_actor_{}".format(self._actor.id),
-            variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
-            variable_value=True
-        ).initialise()
 
+        if hasattr(self._actor, 'id'):
+            # terminate WaypointFollower from SetOSCInitSpeed
+            py_trees.blackboard.SetBlackboardVariable(
+                name="terminate_init_speed_actor_{}".format(self._actor.id),
+                variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
+                variable_value=True
+            ).initialise()
+
+            # terminate WaypointFollower
+            # check whether WF for this actor is running and terminate all active WFs
+            try:
+                check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+                terminate_wf = check_attr(py_trees.blackboard.Blackboard())
+                py_trees.blackboard.Blackboard().set(
+                    "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
+            except:
+                pass
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
@@ -916,8 +927,10 @@ class WaypointFollower(AtomicBehavior):
     A parallel termination behavior has to be used.
 
     OpenScenario:
-    Blackboard variables with lists are used for consecutive WaypointFollower behaviors.
     The WaypointFollower atomic must be called with an individual name if multiple consecutive WFs.
+    Blackboard variables with lists are used for consecutive WaypointFollower behaviors.
+    Termination of active WaypointFollowers in initialise of AtomicBehavior because any
+    following behavior must terminate the WaypointFollower.
     """
 
     def __init__(self, actor, target_speed=None, plan=None, blackboard_queue_name=None,
@@ -946,13 +959,10 @@ class WaypointFollower(AtomicBehavior):
         self._unique_id = int(round(time.time() * 1e9))
 
         try:
-            # check whether WF for this actor is already running and terminate all active WFs
+            # check whether WF for this actor is already running and add new WF to running_WF list
             check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
-            terminate_wf = check_attr(py_trees.blackboard.Blackboard())
-            py_trees.blackboard.Blackboard().set(
-                "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
-            # add new WF to running_WF list
-            active_wf = copy.copy(terminate_wf)
+            running = check_attr(py_trees.blackboard.Blackboard())
+            active_wf = copy.copy(running)
             active_wf.append(self._unique_id)
             py_trees.blackboard.Blackboard().set(
                 "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
@@ -1004,6 +1014,10 @@ class WaypointFollower(AtomicBehavior):
                     "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
                 py_trees.blackboard.Blackboard().set(
                     "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
+                new_status = py_trees.common.Status.SUCCESS
+                return new_status
+
+            if not active_wf and not terminate_wf:
                 new_status = py_trees.common.Status.SUCCESS
                 return new_status
         except:
