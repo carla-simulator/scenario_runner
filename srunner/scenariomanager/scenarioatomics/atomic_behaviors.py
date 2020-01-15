@@ -943,7 +943,7 @@ class WaypointFollower(AtomicBehavior):
         Delayed one-time initialization
         """
         super(WaypointFollower, self).initialise()
-        self._unique_id = int(round(time.time() * 1000))
+        self._unique_id = int(round(time.time() * 1e9))
 
         try:
             # check whether WF for this actor is already running and terminate all active WFs
@@ -957,6 +957,7 @@ class WaypointFollower(AtomicBehavior):
             py_trees.blackboard.Blackboard().set(
                 "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
         except:
+            # no WF is active for this actor
             py_trees.blackboard.Blackboard().set("terminate_WF_actor_{}".format(self._actor.id), [], overwrite=True)
             py_trees.blackboard.Blackboard().set(
                 "running_WF_actor_{}".format(self._actor.id), [self._unique_id], overwrite=True)
@@ -994,6 +995,8 @@ class WaypointFollower(AtomicBehavior):
             check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
             active_wf = check_attr(py_trees.blackboard.Blackboard())
 
+            # Termination of WF if the WFs unique_id is listed in terminate_wf
+            # only one WF should be active, therefore all previous WF have to be terminated
             if self._unique_id in terminate_wf:
                 terminate_wf.remove(self._unique_id)
                 active_wf.remove(self._unique_id)
@@ -1004,6 +1007,7 @@ class WaypointFollower(AtomicBehavior):
                 new_status = py_trees.common.Status.SUCCESS
                 return new_status
         except:
+            # should not happen because Blackboard variables are defined in the initialise setup of behavior
             print('Error with Blackboard variables of actor {}'.format(self._actor.id))
 
         if self._blackboard_queue_name is not None:
