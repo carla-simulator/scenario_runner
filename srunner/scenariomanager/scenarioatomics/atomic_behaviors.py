@@ -106,7 +106,8 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
                 terminate_wf = copy.copy(check_attr(py_trees.blackboard.Blackboard()))
                 py_trees.blackboard.Blackboard().set(
                     "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
-            except:
+            except AttributeError:
+                # It is ok to continue, if the Blackboard variable does not exist
                 pass
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
@@ -968,7 +969,7 @@ class WaypointFollower(AtomicBehavior):
             active_wf.append(self._unique_id)
             py_trees.blackboard.Blackboard().set(
                 "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
-        except:
+        except AttributeError:
             # no WF is active for this actor
             py_trees.blackboard.Blackboard().set("terminate_WF_actor_{}".format(self._actor.id), [], overwrite=True)
             py_trees.blackboard.Blackboard().set(
@@ -1000,29 +1001,25 @@ class WaypointFollower(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        try:
-            check_term = operator.attrgetter("terminate_WF_actor_{}".format(self._actor.id))
-            terminate_wf = check_term(py_trees.blackboard.Blackboard())
+        check_term = operator.attrgetter("terminate_WF_actor_{}".format(self._actor.id))
+        terminate_wf = check_term(py_trees.blackboard.Blackboard())
 
-            check_run = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
-            active_wf = check_run(py_trees.blackboard.Blackboard())
+        check_run = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+        active_wf = check_run(py_trees.blackboard.Blackboard())
 
-            # Termination of WF if the WFs unique_id is listed in terminate_wf
-            # only one WF should be active, therefore all previous WF have to be terminated
-            if self._unique_id in terminate_wf:
-                terminate_wf.remove(self._unique_id)
-                if self._unique_id in active_wf:
-                    active_wf.remove(self._unique_id)
+        # Termination of WF if the WFs unique_id is listed in terminate_wf
+        # only one WF should be active, therefore all previous WF have to be terminated
+        if self._unique_id in terminate_wf:
+            terminate_wf.remove(self._unique_id)
+            if self._unique_id in active_wf:
+                active_wf.remove(self._unique_id)
 
-                py_trees.blackboard.Blackboard().set(
-                    "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
-                py_trees.blackboard.Blackboard().set(
-                    "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
-                new_status = py_trees.common.Status.SUCCESS
-                return new_status
-        except:
-            # should not happen because Blackboard variables are defined in the initialise setup of behavior
-            print('Error with Blackboard variables of actor {}'.format(self._actor.id))
+            py_trees.blackboard.Blackboard().set(
+                "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
+            py_trees.blackboard.Blackboard().set(
+                "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
+            new_status = py_trees.common.Status.SUCCESS
+            return new_status
 
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
@@ -1414,7 +1411,7 @@ class ActorSource(AtomicBehavior):
                     new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
                     self._actor_limit -= 1
                     self._queue.put(new_actor)
-                except:
+                except:                             # pylint: disable=bare-except
                     print("ActorSource unable to spawn actor")
         return new_status
 
