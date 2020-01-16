@@ -301,7 +301,8 @@ class ScenarioRunner(object):
             try:
                 self.agent_instance = getattr(self.module_agent, agent_class_name)(args.agentConfig)
                 config.agent = self.agent_instance
-            except Exception as e:
+            except Exception as e:          # pylint: disable=broad-except
+                traceback.print_exc()
                 print("Could not setup required agent due to {}".format(e))
                 self._cleanup()
                 return
@@ -327,10 +328,9 @@ class ScenarioRunner(object):
                                           config,
                                           args.randomize,
                                           args.debug)
-        except Exception as exception:
+        except Exception as exception:                  # pylint: disable=broad-except
             print("The scenario cannot be loaded")
-            if args.debug:
-                traceback.print_exc()
+            traceback.print_exc()
             print(exception)
             self._cleanup()
             return
@@ -380,9 +380,8 @@ class ScenarioRunner(object):
             self._cleanup(True)
             ChallengeStatisticsManager.record_fatal_error(e)
             sys.exit(-1)
-        except Exception as e:
-            if args.debug:
-                traceback.print_exc()
+        except Exception as e:              # pylint: disable=broad-except
+            traceback.print_exc()
             if args.challenge:
                 ChallengeStatisticsManager.set_error_message(traceback.format_exc())
             print(e)

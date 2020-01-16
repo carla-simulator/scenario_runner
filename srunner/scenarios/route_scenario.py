@@ -13,6 +13,7 @@ from __future__ import print_function
 
 import copy
 import math
+import traceback
 import xml.etree.ElementTree as ET
 import numpy.random as random
 
@@ -445,7 +446,9 @@ class RouteScenario(BasicScenario):
             try:
                 scenario_instance = scenario_class(world, [ego_vehicle], scenario_configuration,
                                                    criteria_enable=False, timeout=timeout)
-            except Exception as e:
+            except Exception as e:      # pylint: disable=broad-except
+                if debug_mode:
+                    traceback.print_exc()
                 print("Skipping scenario '{}' due to setup error: {}".format(definition['name'], e))
                 continue
 

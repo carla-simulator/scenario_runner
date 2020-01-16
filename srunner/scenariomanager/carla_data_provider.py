@@ -431,7 +431,7 @@ class CarlaActorPool(object):
         # Get vehicle by model
         try:
             blueprint = random.choice(blueprint_library.filter(model))
-        except:
+        except IndexError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
             new_model = _vehicle_blueprint_categories[vehicle_category]
@@ -440,12 +440,21 @@ class CarlaActorPool(object):
             print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
             blueprint = random.choice(blueprint_library.filter(bp_filter))
 
-        try:
-            if color:
-                blueprint.set_attribute('color', color)
-        except Exception as e:
-            # Color can't be set for this vehicle
-            print("WARNING: Color cannot be set for actor {} due to '{}'".format(model, e))
+        if color:
+            if not blueprint.has_attribute('color'):
+                print(
+                    "WARNING: Cannot set Color ({}) for actor {} due to missing blueprint attribute".format(
+                        color, blueprint.id))
+            else:
+                default_color_rgba = blueprint.get_attribute('color').as_color()
+                default_color = '({}, {}, {})'.format(default_color_rgba.r, default_color_rgba.g, default_color_rgba.b)
+                try:
+                    blueprint.set_attribute('color', color)
+                except ValueError:
+                    # Color can't be set for this vehicle
+                    print("WARNING: Color ({}) cannot be set for actor {}. Using instead: ({})".format(
+                        color, blueprint.id, default_color))
+                    blueprint.set_attribute('color', default_color)
 
         # is it a pedestrian? -> make it mortal
         if blueprint.has_attribute('is_invincible'):
@@ -473,7 +482,7 @@ class CarlaActorPool(object):
 
         if actor is None:
             raise RuntimeError(
-                "Error: Unable to spawn vehicle {} at {}".format(model, spawn_point))
+                "Error: Unable to spawn vehicle {} at {}".format(blueprint.id, spawn_point))
         else:
             # Let's deactivate the autopilot of the actor if it belongs to vehicle
             if actor in blueprint_library.filter('vehicle.*'):
