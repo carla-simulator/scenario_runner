@@ -14,7 +14,7 @@ For example, such a condition could be "InTriggerRegion", which checks
 that a given actor reached a certain region on the map, and then starts/stops
 a behavior of this actor.
 
-The atomics are implemented with py_trees and make use of the AtomicBehavior
+The atomics are implemented with py_trees and make use of the AtomicCondition
 base class
 """
 
@@ -23,7 +23,7 @@ from __future__ import print_function
 import operator
 import py_trees
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior, calculate_distance
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import get_distance_along_route
@@ -34,7 +34,46 @@ import srunner.tools
 EPSILON = 0.001
 
 
-class InTriggerDistanceToOSCPosition(AtomicBehavior):
+class AtomicCondition(py_trees.behaviour.Behaviour):
+
+    """
+    Base class for all atomic conditions used to setup a scenario
+
+    *All behaviors should use this class as parent*
+
+    Important parameters:
+    - name: Name of the atomic condition
+    """
+
+    def __init__(self, name):
+        """
+        Default init. Has to be called via super from derived class
+        """
+        super(AtomicCondition, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.name = name
+
+    def setup(self, unused_timeout=15):
+        """
+        Default setup
+        """
+        self.logger.debug("%s.setup()" % (self.__class__.__name__))
+        return True
+
+    def initialise(self):
+        """
+        Initialise setup
+        """
+        self.logger.debug("%s.initialise()" % (self.__class__.__name__))
+
+    def terminate(self, new_status):
+        """
+        Default terminate. Can be extended in derived class
+        """
+        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+
+class InTriggerDistanceToOSCPosition(AtomicCondition):
 
     """
     OpenSCENARIO atomic
@@ -89,7 +128,7 @@ class InTriggerDistanceToOSCPosition(AtomicBehavior):
         return new_status
 
 
-class InTimeToArrivalToOSCPosition(AtomicBehavior):
+class InTimeToArrivalToOSCPosition(AtomicCondition):
 
     """
     OpenSCENARIO atomic
@@ -149,7 +188,7 @@ class InTimeToArrivalToOSCPosition(AtomicBehavior):
         return new_status
 
 
-class StandStill(AtomicBehavior):
+class StandStill(AtomicCondition):
 
     """
     This class contains a standstill behavior of a scenario
@@ -199,7 +238,7 @@ class StandStill(AtomicBehavior):
         return new_status
 
 
-class TriggerVelocity(AtomicBehavior):
+class TriggerVelocity(AtomicCondition):
 
     """
     This class contains the trigger velocity (condition) of a scenario
@@ -236,7 +275,7 @@ class TriggerVelocity(AtomicBehavior):
         return new_status
 
 
-class OSCStartEndCondition(AtomicBehavior):
+class OSCStartEndCondition(AtomicCondition):
 
     """
     This class contains a check if a named story element has started/terminated.
@@ -291,7 +330,7 @@ class OSCStartEndCondition(AtomicBehavior):
         return new_status
 
 
-class InTriggerRegion(AtomicBehavior):
+class InTriggerRegion(AtomicCondition):
 
     """
     This class contains the trigger region (condition) of a scenario
@@ -338,7 +377,7 @@ class InTriggerRegion(AtomicBehavior):
         return new_status
 
 
-class InTriggerDistanceToVehicle(AtomicBehavior):
+class InTriggerDistanceToVehicle(AtomicCondition):
 
     """
     This class contains the trigger distance (condition) between to actors
@@ -386,7 +425,7 @@ class InTriggerDistanceToVehicle(AtomicBehavior):
         return new_status
 
 
-class InTriggerDistanceToLocation(AtomicBehavior):
+class InTriggerDistanceToLocation(AtomicCondition):
 
     """
     This class contains the trigger (condition) for a distance to a fixed
@@ -438,7 +477,7 @@ class InTriggerDistanceToLocation(AtomicBehavior):
         return new_status
 
 
-class InTriggerDistanceToNextIntersection(AtomicBehavior):
+class InTriggerDistanceToNextIntersection(AtomicCondition):
 
     """
     This class contains the trigger (condition) for a distance to the
@@ -485,7 +524,7 @@ class InTriggerDistanceToNextIntersection(AtomicBehavior):
         return new_status
 
 
-class InTriggerDistanceToLocationAlongRoute(AtomicBehavior):
+class InTriggerDistanceToLocationAlongRoute(AtomicCondition):
 
     """
     Implementation for a behavior that will check if a given actor
@@ -535,7 +574,7 @@ class InTriggerDistanceToLocationAlongRoute(AtomicBehavior):
         return new_status
 
 
-class InTimeToArrivalToLocation(AtomicBehavior):
+class InTimeToArrivalToLocation(AtomicCondition):
 
     """
     This class contains a check if a actor arrives within a given time
@@ -590,7 +629,7 @@ class InTimeToArrivalToLocation(AtomicBehavior):
         return new_status
 
 
-class InTimeToArrivalToVehicle(AtomicBehavior):
+class InTimeToArrivalToVehicle(AtomicCondition):
 
     """
     This class contains a check if a actor arrives within a given time
@@ -648,7 +687,7 @@ class InTimeToArrivalToVehicle(AtomicBehavior):
         return new_status
 
 
-class DriveDistance(AtomicBehavior):
+class DriveDistance(AtomicCondition):
 
     """
     This class contains an atomic behavior to drive a certain distance.
@@ -692,7 +731,7 @@ class DriveDistance(AtomicBehavior):
         return new_status
 
 
-class WaitForTrafficLightState(AtomicBehavior):
+class WaitForTrafficLightState(AtomicCondition):
 
     """
     This class contains an atomic behavior to wait for a given traffic light

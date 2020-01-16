@@ -19,6 +19,7 @@
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
     - Challenge can be executed with the ScenarioRunner
 * Extended OpenScenario support:
+    - Extensions in WaypointFollower atomic for consecutive WaypointFollowers
     - Added init speed behavior for vehicles
     - Added support for relative velocities
     - Extended convert_position_to_transform with RelativeWorld, RelativeObject and RelativeLane osc_positions

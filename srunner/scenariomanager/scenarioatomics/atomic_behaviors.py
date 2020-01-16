@@ -15,9 +15,12 @@ The atomic behaviors are implemented with py_trees.
 
 from __future__ import print_function
 
-import random
-
+import copy
 import math
+import operator
+import random
+import time
+
 import numpy as np
 import py_trees
 from py_trees.blackboard import Blackboard
@@ -94,16 +97,17 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
 
     def initialise(self):
         """
-        Default initialise. Can be extended in derived class
+        Initialise setup terminates WaypointFollowers
+        Check whether WF for this actor is running and terminate all active WFs
         """
-        # terminate potential WaypointFollower from SetOSCInitSpeed for actor
         if self._actor is not None:
-            py_trees.blackboard.SetBlackboardVariable(
-                name="WF_actor_{}_terminate".format(self._actor.id),
-                variable_name="WF_actor_{}_terminate".format(self._actor.id),
-                variable_value=True
-            ).initialise()
-
+            try:
+                check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+                terminate_wf = copy.copy(check_attr(py_trees.blackboard.Blackboard()))
+                py_trees.blackboard.Blackboard().set(
+                    "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
+            except:
+                pass
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
@@ -923,6 +927,12 @@ class WaypointFollower(AtomicBehavior):
     - avoid_collision[optional]: Enable/Disable(=default) collision avoidance
 
     A parallel termination behavior has to be used.
+
+    OpenScenario:
+    The WaypointFollower atomic must be called with an individual name if multiple consecutive WFs.
+    Blackboard variables with lists are used for consecutive WaypointFollower behaviors.
+    Termination of active WaypointFollowers in initialise of AtomicBehavior because any
+    following behavior must terminate the WaypointFollower.
     """
 
     def __init__(self, actor, target_speed=None, plan=None, blackboard_queue_name=None,
@@ -941,12 +951,29 @@ class WaypointFollower(AtomicBehavior):
             self._queue = Blackboard().get(blackboard_queue_name)
         self._args_lateral_dict = {'K_P': 1.0, 'K_D': 0.01, 'K_I': 0.0, 'dt': 0.05}
         self._avoid_collision = avoid_collision
+        self._unique_id = 0
 
     def initialise(self):
         """
         Delayed one-time initialization
         """
         super(WaypointFollower, self).initialise()
+        self._unique_id = int(round(time.time() * 1e9))
+
+        try:
+            # check whether WF for this actor is already running and add new WF to running_WF list
+            check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+            running = check_attr(py_trees.blackboard.Blackboard())
+            active_wf = copy.copy(running)
+            active_wf.append(self._unique_id)
+            py_trees.blackboard.Blackboard().set(
+                "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
+        except:
+            # no WF is active for this actor
+            py_trees.blackboard.Blackboard().set("terminate_WF_actor_{}".format(self._actor.id), [], overwrite=True)
+            py_trees.blackboard.Blackboard().set(
+                "running_WF_actor_{}".format(self._actor.id), [self._unique_id], overwrite=True)
+
         for actor in self._actor_list:
             self._apply_local_planner(actor)
         return True
@@ -954,13 +981,13 @@ class WaypointFollower(AtomicBehavior):
     def _apply_local_planner(self, actor):
 
         if self._target_speed is None:
-            self._target_speed = CarlaDataProvider.get_velocity(actor) * 3.6
+            self._target_speed = CarlaDataProvider.get_velocity(actor)
         else:
-            self._target_speed = self._target_speed * 3.6
+            self._target_speed = self._target_speed
 
         local_planner = LocalPlanner(  # pylint: disable=undefined-variable
             actor, opt_dict={
-                'target_speed': self._target_speed,
+                'target_speed': self._target_speed * 3.6,
                 'lateral_control_dict': self._args_lateral_dict})
 
         if self._plan is not None:
@@ -972,6 +999,30 @@ class WaypointFollower(AtomicBehavior):
         Run local planner, obtain and apply control to actor
         """
         new_status = py_trees.common.Status.RUNNING
+
+        try:
+            check_term = operator.attrgetter("terminate_WF_actor_{}".format(self._actor.id))
+            terminate_wf = check_term(py_trees.blackboard.Blackboard())
+
+            check_run = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+            active_wf = check_run(py_trees.blackboard.Blackboard())
+
+            # Termination of WF if the WFs unique_id is listed in terminate_wf
+            # only one WF should be active, therefore all previous WF have to be terminated
+            if self._unique_id in terminate_wf:
+                terminate_wf.remove(self._unique_id)
+                if self._unique_id in active_wf:
+                    active_wf.remove(self._unique_id)
+
+                py_trees.blackboard.Blackboard().set(
+                    "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
+                py_trees.blackboard.Blackboard().set(
+                    "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
+                new_status = py_trees.common.Status.SUCCESS
+                return new_status
+        except:
+            # should not happen because Blackboard variables are defined in the initialise setup of behavior
+            print('Error with Blackboard variables of actor {}'.format(self._actor.id))
 
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
@@ -1005,6 +1056,9 @@ class WaypointFollower(AtomicBehavior):
             if local_planner is not None:
                 local_planner.reset_vehicle()
                 local_planner = None
+
+        self._local_planner_list = []
+        self._actor_list = []
         super(WaypointFollower, self).terminate(new_status)
 
 
@@ -1030,8 +1084,6 @@ class LaneChange(WaypointFollower):
     The lane change distance is set to 25m (straight), the driven distance is slightly greater.
 
     A parallel termination behavior has to be used.
-
-
     """
 
     def __init__(self, actor, speed=10, direction='left',
@@ -1104,7 +1156,7 @@ class SetOSCInitSpeed(WaypointFollower):
     def initialise(self):
         """
         Calculate the init_velocity and set blackboard variable
-        WF_actor_ID_terminate to False to stop termination of behavior
+        terminate_init_speed_actor_ID to False to stop termination of behavior
         """
         super(SetOSCInitSpeed, self).initialise()
 
@@ -1114,11 +1166,6 @@ class SetOSCInitSpeed(WaypointFollower):
         vx = math.cos(yaw) * self._init_speed
         vy = math.sin(yaw) * self._init_speed
         self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-
-        py_trees.blackboard.SetBlackboardVariable(
-            name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_value=False).initialise()
 
     def update(self):
         """
@@ -1134,16 +1181,6 @@ class SetOSCInitSpeed(WaypointFollower):
             vx = math.cos(yaw) * self._init_speed
             vy = math.sin(yaw) * self._init_speed
             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-
-        terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
-            name="WF_actor_{}_terminate".format(self._actor.id),
-            variable_name="WF_actor_{}_terminate".format(self._actor.id),
-            expected_value=True,
-            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
-
-        if str(terminate_behavior) == 'Status.SUCCESS':
-            new_status = py_trees.common.Status.SUCCESS
-            return new_status
 
         return new_status
 
