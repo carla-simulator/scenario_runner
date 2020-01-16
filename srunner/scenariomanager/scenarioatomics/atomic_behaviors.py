@@ -96,8 +96,11 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
         return True
 
     def initialise(self):
+        """
+        Initialise setup terminates WaypointFollowers
+        Check whether WF for this actor is running and terminate all active WFs
+        """
         if self._actor is not None:
-            # check whether WF for this actor is running and terminate all active WFs
             try:
                 check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
                 terminate_wf = copy.copy(check_attr(py_trees.blackboard.Blackboard()))
@@ -979,8 +982,6 @@ class WaypointFollower(AtomicBehavior):
 
         if self._target_speed is None:
             self._target_speed = CarlaDataProvider.get_velocity(actor)
-            if self._target_speed == 0:
-                self._target_speed = 10
         else:
             self._target_speed = self._target_speed
 
