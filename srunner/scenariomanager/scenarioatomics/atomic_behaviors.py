@@ -93,18 +93,11 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
     def initialise(self):
 
         if hasattr(self._actor, 'id'):
-            # terminate WaypointFollower from SetOSCInitSpeed
-            py_trees.blackboard.SetBlackboardVariable(
-                name="terminate_init_speed_actor_{}".format(self._actor.id),
-                variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
-                variable_value=True
-            ).initialise()
 
-            # terminate WaypointFollower
             # check whether WF for this actor is running and terminate all active WFs
             try:
                 check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
-                terminate_wf = check_attr(py_trees.blackboard.Blackboard())
+                terminate_wf = copy.copy(check_attr(py_trees.blackboard.Blackboard()))
                 py_trees.blackboard.Blackboard().set(
                     "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
             except:
@@ -980,6 +973,8 @@ class WaypointFollower(AtomicBehavior):
 
         if self._target_speed is None:
             self._target_speed = CarlaDataProvider.get_velocity(actor)
+            if self._target_speed == 0:
+                self._target_speed = 10
         else:
             self._target_speed = self._target_speed
 
@@ -999,25 +994,23 @@ class WaypointFollower(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         try:
-            check_attr = operator.attrgetter("terminate_WF_actor_{}".format(self._actor.id))
-            terminate_wf = check_attr(py_trees.blackboard.Blackboard())
+            check_term = operator.attrgetter("terminate_WF_actor_{}".format(self._actor.id))
+            terminate_wf = check_term(py_trees.blackboard.Blackboard())
 
-            check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
-            active_wf = check_attr(py_trees.blackboard.Blackboard())
+            check_run = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
+            active_wf = check_run(py_trees.blackboard.Blackboard())
 
             # Termination of WF if the WFs unique_id is listed in terminate_wf
             # only one WF should be active, therefore all previous WF have to be terminated
             if self._unique_id in terminate_wf:
                 terminate_wf.remove(self._unique_id)
-                active_wf.remove(self._unique_id)
+                if self._unique_id in active_wf:
+                    active_wf.remove(self._unique_id)
+
                 py_trees.blackboard.Blackboard().set(
                     "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
                 py_trees.blackboard.Blackboard().set(
                     "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
-                new_status = py_trees.common.Status.SUCCESS
-                return new_status
-
-            if not active_wf and not terminate_wf:
                 new_status = py_trees.common.Status.SUCCESS
                 return new_status
         except:
@@ -1046,7 +1039,6 @@ class WaypointFollower(AtomicBehavior):
         On termination of this behavior,
         the throttle, brake and steer should be set back to 0.
         """
-
         control = carla.VehicleControl()
         control.throttle = 0.0
         control.brake = 0.0
@@ -1085,8 +1077,6 @@ class LaneChange(WaypointFollower):
     The lane change distance is set to 25m (straight), the driven distance is slightly greater.
 
     A parallel termination behavior has to be used.
-
-
     """
 
     def __init__(self, actor, speed=10, direction='left',
@@ -1170,11 +1160,6 @@ class SetOSCInitSpeed(WaypointFollower):
         vy = math.sin(yaw) * self._init_speed
         self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
-        py_trees.blackboard.SetBlackboardVariable(
-            name="terminate_init_speed_actor_{}".format(self._actor.id),
-            variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
-            variable_value=False).initialise()
-
     def update(self):
         """
         Run local planner and calculate a new velocity if the deviation from target_speed
@@ -1189,16 +1174,6 @@ class SetOSCInitSpeed(WaypointFollower):
             vx = math.cos(yaw) * self._init_speed
             vy = math.sin(yaw) * self._init_speed
             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-
-        terminate_behavior = py_trees.blackboard.CheckBlackboardVariable(
-            name="terminate_init_speed_actor_{}".format(self._actor.id),
-            variable_name="terminate_init_speed_actor_{}".format(self._actor.id),
-            expected_value=True,
-            clearing_policy=py_trees.common.ClearingPolicy.NEVER).update()
-
-        if terminate_behavior == 'Status.SUCCESS':
-            new_status = py_trees.common.Status.SUCCESS
-            return new_status
 
         return new_status
 
