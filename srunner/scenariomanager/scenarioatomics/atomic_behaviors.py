@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -26,8 +26,7 @@ import py_trees
 from py_trees.blackboard import Blackboard
 
 import carla
-from agents.navigation.basic_agent import *
-from agents.navigation.roaming_agent import *
+from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
@@ -81,19 +80,23 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
     """
 
     def __init__(self, name, actor=None):
+        """
+        Default init. Has to be called via super from derived class
+        """
         super(AtomicBehavior, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.name = name
         self._actor = actor
 
     def setup(self, unused_timeout=15):
+        """
+        Default setup
+        """
         self.logger.debug("%s.setup()" % (self.__class__.__name__))
         return True
 
     def initialise(self):
-
-        if hasattr(self._actor, 'id'):
-
+        if self._actor is not None:
             # check whether WF for this actor is running and terminate all active WFs
             try:
                 check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
@@ -105,6 +108,9 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
+        """
+        Default terminate. Can be extended in derived class
+        """
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
 

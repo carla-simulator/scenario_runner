@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -32,6 +32,7 @@ from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.tools.route_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory, clean_route
+from srunner.tools.py_trees_port import oneshot_behavior
 
 from srunner.scenarios.control_loss import ControlLoss
 from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
@@ -44,8 +45,6 @@ from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionR
 from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 
-
-ROUTESCENARIO = ["RouteScenario"]
 
 MAX_ALLOWED_RADIUS_SENSOR = 5.0
 SECONDS_GIVEN_PER_METERS = 0.4
@@ -63,34 +62,6 @@ NUMBER_CLASS_TRANSLATION = {
     "Scenario9": [SignalizedJunctionRightTurn],
     "Scenario10": [NoSignalJunctionCrossing]
 }
-
-
-def oneshot_behavior(name, variable_name, behaviour):
-    """
-    This is taken from py_trees.idiom.oneshot.
-    """
-    subtree_root = py_trees.composites.Selector(name=name)
-    check_flag = py_trees.blackboard.CheckBlackboardVariable(
-        name=variable_name + " Done?",
-        variable_name=variable_name,
-        expected_value=True,
-        clearing_policy=py_trees.common.ClearingPolicy.ON_INITIALISE
-    )
-    set_flag = py_trees.blackboard.SetBlackboardVariable(
-        name="Mark Done",
-        variable_name=variable_name,
-        variable_value=True
-    )
-    # If it's a sequence, don't double-nest it in a redundant manner
-    if isinstance(behaviour, py_trees.composites.Sequence):
-        behaviour.add_child(set_flag)
-        sequence = behaviour
-    else:
-        sequence = py_trees.composites.Sequence(name="OneShot")
-        sequence.add_children([behaviour, set_flag])
-
-    subtree_root.add_children([check_flag, sequence])
-    return subtree_root
 
 
 def convert_json_to_transform(actor_dict):
@@ -170,8 +141,6 @@ class RouteScenario(BasicScenario):
     Implementation of a RouteScenario, i.e. a scenario that consists of driving along a pre-defined route,
     along which several smaller scenarios are triggered
     """
-
-    category = "RouteScenario"
 
     def __init__(self, world, config, debug_mode=False, criteria_enable=True, timeout=300):
         """
@@ -533,11 +502,13 @@ class RouteScenario(BasicScenario):
         subbehavior = py_trees.composites.Parallel(name="Behavior",
                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
-        for scenario in self.list_scenarios:
+        for i in range(len(self.list_scenarios)):
+            scenario = self.list_scenarios[i]
             if scenario.scenario.behavior is not None and scenario.scenario.behavior.name != "MasterScenario":
+                name = "{} - {}".format(i, scenario.scenario.behavior.name)
                 oneshot_idiom = oneshot_behavior(
-                    name=scenario.scenario.behavior.name,
-                    variable_name=scenario.scenario.behavior.name,
+                    name=name,
+                    variable_name=name,
                     behaviour=scenario.scenario.behavior)
 
                 subbehavior.add_child(oneshot_idiom)

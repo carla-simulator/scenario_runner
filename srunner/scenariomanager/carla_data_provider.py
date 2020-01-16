@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -238,24 +238,13 @@ class CarlaDataProvider(object):
         """
         reset_params = []
 
-        if 'ego' in states:
-            prev_state = ego_light.get_state()
-            prev_green_time = ego_light.get_green_time()
-            prev_red_time = ego_light.get_red_time()
-            prev_yellow_time = ego_light.get_yellow_time()
-            reset_params.append({'light': ego_light,
-                                 'state': prev_state,
-                                 'green_time': prev_green_time,
-                                 'red_time': prev_red_time,
-                                 'yellow_time': prev_yellow_time})
-
-            ego_light.set_state(states['ego'])
-            if freeze:
-                ego_light.set_green_time(timeout)
-                ego_light.set_red_time(timeout)
-                ego_light.set_yellow_time(timeout)
-        if 'ref' in states:
-            for light in annotations['ref']:
+        for state in states:
+            relevant_lights = []
+            if state == 'ego':
+                relevant_lights = [ego_light]
+            else:
+                relevant_lights = annotations[state]
+            for light in relevant_lights:
                 prev_state = light.get_state()
                 prev_green_time = light.get_green_time()
                 prev_red_time = light.get_red_time()
@@ -266,58 +255,7 @@ class CarlaDataProvider(object):
                                      'red_time': prev_red_time,
                                      'yellow_time': prev_yellow_time})
 
-                light.set_state(states['ref'])
-                if freeze:
-                    light.set_green_time(timeout)
-                    light.set_red_time(timeout)
-                    light.set_yellow_time(timeout)
-        if 'left' in states:
-            for light in annotations['left']:
-                prev_state = light.get_state()
-                prev_green_time = light.get_green_time()
-                prev_red_time = light.get_red_time()
-                prev_yellow_time = light.get_yellow_time()
-                reset_params.append({'light': light,
-                                     'state': prev_state,
-                                     'green_time': prev_green_time,
-                                     'red_time': prev_red_time,
-                                     'yellow_time': prev_yellow_time})
-
-                light.set_state(states['left'])
-                if freeze:
-                    light.set_green_time(timeout)
-                    light.set_red_time(timeout)
-                    light.set_yellow_time(timeout)
-        if 'right' in states:
-            for light in annotations['right']:
-                prev_state = light.get_state()
-                prev_green_time = light.get_green_time()
-                prev_red_time = light.get_red_time()
-                prev_yellow_time = light.get_yellow_time()
-                reset_params.append({'light': light,
-                                     'state': prev_state,
-                                     'green_time': prev_green_time,
-                                     'red_time': prev_red_time,
-                                     'yellow_time': prev_yellow_time})
-
-                light.set_state(states['right'])
-                if freeze:
-                    light.set_green_time(timeout)
-                    light.set_red_time(timeout)
-                    light.set_yellow_time(timeout)
-        if 'opposite' in states:
-            for light in annotations['opposite']:
-                prev_state = light.get_state()
-                prev_green_time = light.get_green_time()
-                prev_red_time = light.get_red_time()
-                prev_yellow_time = light.get_yellow_time()
-                reset_params.append({'light': light,
-                                     'state': prev_state,
-                                     'green_time': prev_green_time,
-                                     'red_time': prev_red_time,
-                                     'yellow_time': prev_yellow_time})
-
-                light.set_state(states['opposite'])
+                light.set_state(states[state])
                 if freeze:
                     light.set_green_time(timeout)
                     light.set_red_time(timeout)
@@ -501,12 +439,13 @@ class CarlaActorPool(object):
                 bp_filter = new_model
             print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
             blueprint = random.choice(blueprint_library.filter(bp_filter))
+
         try:
             if color:
                 blueprint.set_attribute('color', color)
-        except:
-            pass
+        except Exception as e:
             # Color can't be set for this vehicle
+            print("WARNING: Color cannot be set for actor {} due to '{}'".format(model, e))
 
         # is it a pedestrian? -> make it mortal
         if blueprint.has_attribute('is_invincible'):

@@ -21,8 +21,8 @@
 * Extended OpenScenario support:
     - Extensions in WaypointFollower atomic for consecutive WaypointFollowers
     - Added init speed behavior for vehicles
-	- Added support for relative velocities
-    - Extentended convert_position_to_transform with RelativeWorld, RelativeObject and RelativeLane osc_positions
+    - Added support for relative velocities
+    - Extended convert_position_to_transform with RelativeWorld, RelativeObject and RelativeLane osc_positions
     - Added new trigger atomics InTriggerDistanceToOSCPosition and InTimeToArrivalToOSCPosition to support relative osc_positions
     - Added new atomic behaviour ActorTransformSetterToOSCPosition
     - Workaround for relative osc_positions: World is started earlier to support relative osc_positions in story init
@@ -59,7 +59,13 @@
 * Updated documentation for all behaviors, conditions and test criteria
 * Refactoring of scenario configurations and parsers
 * Extended WaypointFollower atomic behavior to be able to use the current actor speed
-
+* Removed usage of 'import *' to have cleaner Python imports
+* Python-Scenarios: Removed obsolete categories
+* ScenarioRunner: Removed scenario dictonary, use imports directly
+* CarlaDataProvider: Simplified update_light_states() to remove code duplication
+* Timer: class TimeOut() is derived from SimulationTimeCondition() to  avoid code duplication
+* Moved backported py_trees classes and methods to tools/py_trees_port.py to avoid code duplication
+* Removed setup_environment.sh
 
 
 ## CARLA ScenarioRunner 0.9.6

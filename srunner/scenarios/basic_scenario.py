@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -34,7 +34,6 @@ class BasicScenario(object):
         if not self.timeout:     # pylint: disable=access-member-before-definition
             self.timeout = 60    # If no timeout was provided, set it to 60 seconds
 
-        self.category = None     # Scenario category, e.g. control_loss, follow_leading_vehicle, ...
         self.criteria_list = []  # List of evaluation criteria
         self.scenario = None
         # Check if the CARLA server uses the correct map

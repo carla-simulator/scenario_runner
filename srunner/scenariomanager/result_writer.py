@@ -41,8 +41,9 @@ class ResultOutputProvider(object):
         self._end_time = time.strftime('%Y-%m-%d %H:%M:%S',
                                        time.localtime(self._data.end_system_time))
 
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger("ResultProvider")
         self.logger.setLevel(logging.INFO)
+        self.logger.propagate = False
 
     def write(self):
         """

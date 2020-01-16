@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2020 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -15,18 +15,12 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
 
-FREERIDE_SCENARIOS = [
-    "FreeRide"
-]
-
 
 class FreeRide(BasicScenario):
 
     """
     Implementation of a simple free ride scenario that consits only of the ego vehicle
     """
-
-    category = "FreeRide"
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=10000000):

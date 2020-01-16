@@ -2,7 +2,6 @@
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/carla-simulator/scenario_runner.svg)
 [![Build Status](https://travis-ci.com/carla-simulator/scenario_runner.svg?branch=master)](https://travis-ci.com/carla/scenario_runner)
 
-
 ScenarioRunner for CARLA
 ========================
 This repository contains traffic scenario definition and an execution engine
@@ -13,7 +12,6 @@ Scenarios can be defined through a Python interface, and with the newest version
 the scenario_runner also the upcoming [OpenSCENARIO](http://www.openscenario.org/) standard is supported.
 
 [![Scenario_Runner for CARLA](Docs/img/scenario_runner_video.png)](https://youtu.be/ChmF8IFagpo?t=68)
-
 
 Getting the ScenarioRunner
 ---------------------------
@@ -31,7 +29,6 @@ To use a particular version you can either download the corresponding tarball or
 
 Currently no build is required, as all code is in Python.
 
-
 Using the ScenarioRunner
 ------------------------
 
@@ -44,21 +41,16 @@ Challenge Evaluation
 You can evaluate your own agents using a reproduction
 of the CARLA Challenge by following [this tutorial](Docs/challenge_evaluation.md)
 
-
 Contributing
 ------------
 
-Please take a look at our [Contribution guidelines][contriblink].
+Please take a look at our [Contribution guidelines](http://carla.readthedocs.io/en/latest/CONTRIBUTING).
 
-[contriblink]: http://carla.readthedocs.io/en/latest/CONTRIBUTING
-
-
-F.A.Q.
+FAQ
 ------
 
 If you run into problems, check our
 [FAQ](http://carla.readthedocs.io/en/latest/faq/).
-
 
 License
 -------

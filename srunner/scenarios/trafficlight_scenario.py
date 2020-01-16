@@ -24,8 +24,6 @@ class TrafficLightScenario(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    category = "TrafficLightScenario"
-
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, timeout=35 * 60):
         """
         Setup all relevant parameters and create scenario
