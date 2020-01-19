@@ -81,11 +81,9 @@ class SignalizedJunctionLeftTurn(BasicScenario):
                            config.other_actors[0].transform.location.y,
                            config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
-        try:
-            first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, self._other_actor_transform)
-        except RuntimeError as r:
-            raise r
+        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, self._other_actor_transform)
         first_vehicle.set_transform(first_vehicle_transform)
+        first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
