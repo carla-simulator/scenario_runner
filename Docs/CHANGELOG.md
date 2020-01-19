@@ -42,6 +42,7 @@
     - Added support to change actor color
     - Added support for a default actor model, in case the stated model is not available
 ### :bug: Bug Fixes
+* Fixed #427: Removed unnecessary warnings when using get_next_traffic_light() with non-cached locations
 * Fixed missing ego_vehicle: compare actor IDs instead of object in CarlaDataProvider in get_velocity, get_transform and get_location
 * Avoided use of 'controller.ai.walker' as walker type in DynamicObjectCrossing scenario
 * Fixed WaypointFollower behavior to use m/s instead of km/h
@@ -60,6 +61,7 @@
 * Refactoring of scenario configurations and parsers
 * Extended WaypointFollower atomic behavior to be able to use the current actor speed
 * Removed usage of 'import *' to have cleaner Python imports
+* Removed broad-except and bare-except where possible
 * Python-Scenarios: Removed obsolete categories
 * ScenarioRunner: Removed scenario dictonary, use imports directly
 * CarlaDataProvider: Simplified update_light_states() to remove code duplication
