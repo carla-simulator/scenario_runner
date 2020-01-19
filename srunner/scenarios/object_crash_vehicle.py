@@ -287,6 +287,8 @@ class DynamicObjectCrossing(BasicScenario):
 
         first_vehicle.set_transform(disp_transform)
         blocker.set_transform(prop_disp_transform)
+        first_vehicle.set_simulate_physics(enabled=False)
+        blocker.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
         self.other_actors.append(blocker)
 

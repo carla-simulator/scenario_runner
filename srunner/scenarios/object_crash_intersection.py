@@ -147,6 +147,7 @@ class VehicleTurningRight(BasicScenario):
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle.set_transform(actor_transform)
+        first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -300,6 +301,7 @@ class VehicleTurningLeft(BasicScenario):
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle.set_transform(actor_transform)
+        first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):

@@ -101,6 +101,7 @@ class FollowLeadingVehicle(BasicScenario):
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
+        first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -240,6 +241,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         second_actor = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                         second_actor_transform)
 
+        first_actor.set_simulate_physics(enabled=False)
+        second_actor.set_simulate_physics(enabled=False)
         self.other_actors.append(first_actor)
         self.other_actors.append(second_actor)
 

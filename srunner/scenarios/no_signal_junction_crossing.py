@@ -71,6 +71,7 @@ class NoSignalJunctionCrossing(BasicScenario):
                            config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
         first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+        first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
