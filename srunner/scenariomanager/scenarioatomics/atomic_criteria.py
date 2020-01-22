@@ -364,6 +364,95 @@ class CollisionTest(Criterion):
             self.list_traffic_events.append(collision_event)
 
 
+class CollisionTestLeaderboard(Criterion):
+
+    """
+    This class contains an atomic test for collisions.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
+    """
+
+    def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
+        """
+        Construction with sensor setup
+        """
+        super(CollisionTestLeaderboard, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        world = self.actor.get_world()
+        blueprint = world.get_blueprint_library().find('sensor.other.collision')
+        self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
+        self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
+        self.previous_static_object_type = None
+
+    def update(self):
+        """
+        Check collision count
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        Cleanup sensor
+        """
+        if self._collision_sensor is not None:
+            self._collision_sensor.destroy()
+        self._collision_sensor = None
+        super(CollisionTestLeaderboard, self).terminate(new_status)
+
+    @staticmethod
+    def _count_collisions(weak_self, event):
+        """
+        Callback to update collision count
+        """
+        self = weak_self()
+        if not self:
+            return
+
+        registered = False
+        actor_type = None
+
+        self.test_status = "FAILURE"
+        self.actual_value += 1
+
+        if 'static' in event.other_actor.type_id and 'sidewalk' not in event.other_actor.type_id:
+            actor_type = TrafficEventType.COLLISION_STATIC
+            if (event.other_actor.type_id != self.previous_static_object_type):
+                self.previous_static_object_type = event.other_actor.type_id
+            else:
+                self.actual_value -= 1
+                registered = True
+        elif 'vehicle' in event.other_actor.type_id:
+            for traffic_event in self.list_traffic_events:
+                if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
+                        and traffic_event.get_dict()['id'] == event.other_actor.id:   # pylint: disable=bad-indentation
+                        registered = True                                             # pylint: disable=bad-indentation
+            actor_type = TrafficEventType.COLLISION_VEHICLE
+        elif 'walker' in event.other_actor.type_id:
+            for traffic_event in self.list_traffic_events:
+                if traffic_event.get_type() == TrafficEventType.COLLISION_PEDESTRIAN \
+                        and traffic_event.get_dict()['id'] == event.other_actor.id:
+                    registered = True
+            actor_type = TrafficEventType.COLLISION_PEDESTRIAN
+
+        if not registered:
+            collision_event = TrafficEvent(event_type=actor_type)
+            collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
+            collision_event.set_message("Agent collided against object with type={} and id={}".format(
+                event.other_actor.type_id, event.other_actor.id))
+            self.list_traffic_events.append(collision_event)
+
+
 class KeepLaneTest(Criterion):
 
     """
@@ -543,6 +632,94 @@ class OnSidewalkTest(Criterion):
         return new_status
 
 
+class OnSidewalkTestPerMeter(Criterion):
+
+    """
+    This class is a variance of OnSideWalkTest used to additionally count the amount of meters.
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
+    """
+
+    def __init__(self, actor, optional=False, name="OnSidewalkTestPerMeter"):
+        """
+        Construction with sensor setup
+        """
+        super(OnSidewalkTestPerMeter, self).__init__(name, actor, 0, None, optional)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._actor = actor
+        self._map = CarlaDataProvider.get_map()
+        self._onsidewalk_active = False
+
+        self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 1.2)])
+        self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -1.2)])
+        self._actor_location = self._actor.get_location()
+        self._wrong_distance = 0
+
+    def update(self):
+        """
+        Check lane invasion count
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        current_transform = self._actor.get_transform()
+        current_location = current_transform.location
+        current_yaw = current_transform.rotation.yaw
+
+        rot_x = shapely.affinity.rotate(self.positive_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
+        rot_nx = shapely.affinity.rotate(self.negative_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
+
+        sample_point_right = current_location + carla.Location(x=rot_x.coords[1][0], y=rot_x.coords[1][1])
+        sample_point_left = current_location + carla.Location(x=rot_nx.coords[1][0], y=rot_nx.coords[1][1])
+
+        closest_waypoint_right = self._map.get_waypoint(sample_point_right, lane_type=carla.LaneType.Any)
+        closest_waypoint_left = self._map.get_waypoint(sample_point_left, lane_type=carla.LaneType.Any)
+
+        if closest_waypoint_right and closest_waypoint_left \
+                and closest_waypoint_right.lane_type != carla.LaneType.Sidewalk \
+                and closest_waypoint_left.lane_type != carla.LaneType.Sidewalk:
+            # we are not on a sidewalk
+            self._onsidewalk_active = False
+
+        else:
+            if not self._onsidewalk_active:
+
+                self.test_status = "FAILURE"
+                self._onsidewalk_active = True
+
+        if self._onsidewalk_active and self._actor_location != self._actor.get_location():
+            
+            distance_vector = self._actor.get_location() - self._actor_location
+            distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+
+            self._wrong_distance += distance
+
+        if not self._onsidewalk_active and self._wrong_distance > 0:
+
+            self.actual_value += 1
+
+            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_PER_METER_INFRACTION)
+            onsidewalk_event.set_message('Agent invaded the sidewalk for about {} meters'.format(round(self._wrong_distance, 3)))
+            
+            onsidewalk_event.set_dict({'x': current_location.x, 'y': current_location.y, 'distance': self._wrong_distance})
+            self.list_traffic_events.append(onsidewalk_event)
+
+            self._wrong_distance = 0
+        
+
+        self._actor_location = self._actor.get_location()
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+
 class WrongLaneTestPerMeter(Criterion):
 
     """
@@ -592,8 +769,6 @@ class WrongLaneTestPerMeter(Criterion):
             distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
 
             self._wrong_distance += distance
-
-        print(self._in_lane, " , ", self._wrong_distance)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -666,6 +841,7 @@ class WrongLaneTestPerMeter(Criterion):
         # remember the current lane and road
         self._last_lane_id = current_lane_id
         self._last_road_id = current_road_id
+
 
 class WrongLaneTest(Criterion):
 
