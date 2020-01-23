@@ -427,7 +427,7 @@ class CollisionTestLeaderboard(Criterion):
 
         if 'static' in event.other_actor.type_id and 'sidewalk' not in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
-            if (event.other_actor.type_id != self.previous_static_object_type):
+            if event.other_actor.type_id != self.previous_static_object_type:
                 self.previous_static_object_type = event.other_actor.type_id
             else:
                 self.actual_value -= 1
@@ -704,9 +704,11 @@ class OnSidewalkTestPerMeter(Criterion):
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_PER_METER_INFRACTION)
-            onsidewalk_event.set_message('Agent invaded the sidewalk for about {} meters'.format(round(self._wrong_distance, 3)))
+            onsidewalk_event.set_message('Agent invaded the sidewalk for about {} meters'.format(
+                round(self._wrong_distance, 3)))
             
-            onsidewalk_event.set_dict({'x': current_location.x, 'y': current_location.y, 'distance': self._wrong_distance})
+            onsidewalk_event.set_dict({'x': current_location.x, 'y': current_location.y,
+                'distance': self._wrong_distance})
             self.list_traffic_events.append(onsidewalk_event)
 
             self._wrong_distance = 0
@@ -787,10 +789,12 @@ class WrongLaneTestPerMeter(Criterion):
             current_road_id = lane_waypoint.road_id
 
             wrong_way_per_meter_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_PER_METER_INFRACTION)
-            wrong_way_per_meter_event.set_message('Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
-            current_road_id, current_lane_id, round(self._wrong_distance, 3)))
-            wrong_way_per_meter_event.set_dict({'road_id': current_road_id, 'lane_id': current_lane_id, 'distance': self._wrong_distance})
-            
+            wrong_way_per_meter_event.set_message(
+                'Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
+                current_road_id, current_lane_id, round(self._wrong_distance, 3)))
+            wrong_way_per_meter_event.set_dict({'road_id': current_road_id, 'lane_id': current_lane_id,
+                'distance': self._wrong_distance})
+
             self.list_traffic_events.append(wrong_way_per_meter_event)
 
         if self._lane_sensor is not None:
@@ -841,12 +845,14 @@ class WrongLaneTestPerMeter(Criterion):
                 self._in_lane = True
 
                 if self._wrong_distance > 0:
-        
+
                     wrong_way_per_meter_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_PER_METER_INFRACTION)
-                    wrong_way_per_meter_event.set_message('Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
+                    wrong_way_per_meter_event.set_message(
+                        'Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
                     current_road_id, current_lane_id, round(self._wrong_distance, 3)))
-                    wrong_way_per_meter_event.set_dict({'road_id': self._last_road_id, 'lane_id': self._last_lane_id, 'distance': self._wrong_distance})
-                    
+                    wrong_way_per_meter_event.set_dict({'road_id': self._last_road_id, 'lane_id': self._last_lane_id,
+                        'distance': self._wrong_distance})
+
                     self.list_traffic_events.append(wrong_way_per_meter_event)
 
                 self._wrong_distance = 0
