@@ -789,10 +789,12 @@ class WrongLaneTestPerMeter(Criterion):
             current_road_id = lane_waypoint.road_id
 
             wrong_way_per_meter_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_PER_METER_INFRACTION)
-            wrong_way_per_meter_event.set_message('Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
-            current_road_id, current_lane_id, round(self._wrong_distance, 3)))
-            wrong_way_per_meter_event.set_dict({'road_id': current_road_id, 'lane_id': current_lane_id, 'distance': self._wrong_distance})
-            
+            wrong_way_per_meter_event.set_message(
+                'Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
+                current_road_id, current_lane_id, round(self._wrong_distance, 3)))
+            wrong_way_per_meter_event.set_dict({'road_id': current_road_id, 'lane_id': current_lane_id,
+                'distance': self._wrong_distance})
+
             self.list_traffic_events.append(wrong_way_per_meter_event)
 
         if self._lane_sensor is not None:
@@ -843,14 +845,18 @@ class WrongLaneTestPerMeter(Criterion):
                 self._in_lane = True
 
                 if self._wrong_distance > 0:
-        
+
                     wrong_way_per_meter_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_PER_METER_INFRACTION)
                     wrong_way_per_meter_event.set_message(
                         'Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
                     current_road_id, current_lane_id, round(self._wrong_distance, 3)))
                     wrong_way_per_meter_event.set_dict({'road_id': self._last_road_id, 'lane_id': self._last_lane_id,
                         'distance': self._wrong_distance})
+<<<<<<< HEAD
                     
+=======
+
+>>>>>>> Divided lines that are too long
                     self.list_traffic_events.append(wrong_way_per_meter_event)
 
                 self._wrong_distance = 0
