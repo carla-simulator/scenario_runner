@@ -594,16 +594,11 @@ class WrongLaneTest(Criterion):
         super(WrongLaneTest, self).__init__(name, actor, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-        # self._world = self.actor.get_world()
         self._actor = actor
         self._map = CarlaDataProvider.get_map()
-        # self._infractions = 0
         self._last_lane_id = None
         self._last_road_id = None
 
-        # blueprint = self._world.get_blueprint_library().find('sensor.other.lane_invasion')
-        # self._lane_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        # self._lane_sensor.listen(lambda event: self._lane_change(weakref.ref(self), event))
         self._in_lane = True
         self._wrong_distance = 0
         self._actor_location = self._actor.get_location()
@@ -702,65 +697,6 @@ class WrongLaneTest(Criterion):
             self.list_traffic_events.append(wrong_way_per_meter_event)
 
         super(WrongLaneTest, self).terminate(new_status)
-
-    # @staticmethod
-    # def _lane_change(weak_self, event):
-    #     """
-    #     Callback to update lane invasion count
-    #     """
-    #     # pylint: disable=protected-access
-
-    #     self = weak_self()
-    #     if not self:
-    #         return
-
-    #     check the lane direction
-    #     lane_waypoint = self._map.get_waypoint(self._actor.get_location())
-    #     current_lane_id = lane_waypoint.lane_id
-    #     current_road_id = lane_waypoint.road_id
-
-    #     if not (self._last_road_id == current_road_id and self._last_lane_id == current_lane_id):
-    #         next_waypoint = lane_waypoint.next(2.0)[0]
-
-    #         if not next_waypoint:
-    #             return
-
-    #         vector_wp = np.array([next_waypoint.transform.location.x - lane_waypoint.transform.location.x,
-    #                               next_waypoint.transform.location.y - lane_waypoint.transform.location.y])
-
-    #         vector_actor = np.array([math.cos(math.radians(self._actor.get_transform().rotation.yaw)),
-    #                                  math.sin(math.radians(self._actor.get_transform().rotation.yaw))])
-
-    #         ang = math.degrees(
-    #             math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
-    #         if ang > self.MAX_ALLOWED_ANGLE:
-    #             self.test_status = "FAILURE"
-    #             self._in_lane = False
-    #             # is there a difference of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane
-    #             # direction?
-    #             self._infractions += 1
-    #             self.actual_value += 1
-
-    #         else:
-    #             # Reset variables
-    #             self._in_lane = True
-
-    #             if self._wrong_distance > 0:
-
-    #                 wrong_way_per_meter_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
-    #                 wrong_way_per_meter_event.set_message(
-    #                     'Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
-    #                 current_road_id, current_lane_id, round(self._wrong_distance, 3)))
-    #                 wrong_way_per_meter_event.set_dict({'road_id': self._last_road_id, 'lane_id': self._last_lane_id,
-    #                     'distance': self._wrong_distance})
-
-    #                 self.list_traffic_events.append(wrong_way_per_meter_event)
-
-    #             self._wrong_distance = 0
-
-    #     # remember the current lane and road
-    #     self._last_lane_id = current_lane_id
-    #     self._last_road_id = current_road_id
 
 
 class InRadiusRegionTest(Criterion):
