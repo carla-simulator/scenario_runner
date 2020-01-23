@@ -303,6 +303,7 @@ class CollisionTest(Criterion):
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
+        self.previous_static_object_type = None
 
     def update(self):
         """
@@ -343,92 +344,10 @@ class CollisionTest(Criterion):
 
         if 'static' in event.other_actor.type_id and 'sidewalk' not in event.other_actor.type_id:
             actor_type = TrafficEventType.COLLISION_STATIC
-        elif 'vehicle' in event.other_actor.type_id:
-            for traffic_event in self.list_traffic_events:
-                if traffic_event.get_type() == TrafficEventType.COLLISION_VEHICLE \
-                        and traffic_event.get_dict()['id'] == event.other_actor.id:   # pylint: disable=bad-indentation
-                        registered = True                                             # pylint: disable=bad-indentation
-            actor_type = TrafficEventType.COLLISION_VEHICLE
-        elif 'walker' in event.other_actor.type_id:
-            for traffic_event in self.list_traffic_events:
-                if traffic_event.get_type() == TrafficEventType.COLLISION_PEDESTRIAN \
-                        and traffic_event.get_dict()['id'] == event.other_actor.id:
-                    registered = True
-            actor_type = TrafficEventType.COLLISION_PEDESTRIAN
-
-        if not registered:
-            collision_event = TrafficEvent(event_type=actor_type)
-            collision_event.set_dict({'type': event.other_actor.type_id, 'id': event.other_actor.id})
-            collision_event.set_message("Agent collided against object with type={} and id={}".format(
-                event.other_actor.type_id, event.other_actor.id))
-            self.list_traffic_events.append(collision_event)
-
-
-class CollisionTestLeaderboard(Criterion):
-
-    """
-    This class contains an atomic test for collisions.
-
-    Important parameters:
-    - actor: CARLA actor to be used for this test
-    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
-    - optional [optional]: If True, the result is not considered for an overall pass/fail result
-    """
-
-    def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
-        """
-        Construction with sensor setup
-        """
-        super(CollisionTestLeaderboard, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-
-        world = self.actor.get_world()
-        blueprint = world.get_blueprint_library().find('sensor.other.collision')
-        self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
-        self.previous_static_object_type = None
-
-    def update(self):
-        """
-        Check collision count
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        if self._terminate_on_failure and (self.test_status == "FAILURE"):
-            new_status = py_trees.common.Status.FAILURE
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
-        return new_status
-
-    def terminate(self, new_status):
-        """
-        Cleanup sensor
-        """
-        if self._collision_sensor is not None:
-            self._collision_sensor.destroy()
-        self._collision_sensor = None
-        super(CollisionTestLeaderboard, self).terminate(new_status)
-
-    @staticmethod
-    def _count_collisions(weak_self, event):
-        """
-        Callback to update collision count
-        """
-        self = weak_self()
-        if not self:
-            return
-
-        registered = False
-        actor_type = None
-
-        self.test_status = "FAILURE"
-        self.actual_value += 1
-
-        if 'static' in event.other_actor.type_id and 'sidewalk' not in event.other_actor.type_id:
-            actor_type = TrafficEventType.COLLISION_STATIC
             if event.other_actor.type_id != self.previous_static_object_type:
                 self.previous_static_object_type = event.other_actor.type_id
+                print("--- Collision with type={} and id={}".format(
+                event.other_actor.type_id, event.other_actor.id))
             else:
                 self.actual_value -= 1
                 registered = True
@@ -587,74 +506,6 @@ class OnSidewalkTest(Criterion):
 
         self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 1.2)])
         self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -1.2)])
-
-    def update(self):
-        """
-        Check lane invasion count
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        if self._terminate_on_failure and (self.test_status == "FAILURE"):
-            new_status = py_trees.common.Status.FAILURE
-
-        current_transform = self._actor.get_transform()
-        current_location = current_transform.location
-        current_yaw = current_transform.rotation.yaw
-
-        rot_x = shapely.affinity.rotate(self.positive_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
-        rot_nx = shapely.affinity.rotate(self.negative_shift, angle=current_yaw, origin=shapely.geometry.Point(0, 0))
-
-        sample_point_right = current_location + carla.Location(x=rot_x.coords[1][0], y=rot_x.coords[1][1])
-        sample_point_left = current_location + carla.Location(x=rot_nx.coords[1][0], y=rot_nx.coords[1][1])
-
-        closest_waypoint_right = self._map.get_waypoint(sample_point_right, lane_type=carla.LaneType.Any)
-        closest_waypoint_left = self._map.get_waypoint(sample_point_left, lane_type=carla.LaneType.Any)
-
-        if closest_waypoint_right and closest_waypoint_left \
-                and closest_waypoint_right.lane_type != carla.LaneType.Sidewalk \
-                and closest_waypoint_left.lane_type != carla.LaneType.Sidewalk:
-            # we are not on a sidewalk
-            self._onsidewalk_active = False
-
-        else:
-            if not self._onsidewalk_active:
-                onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-                onsidewalk_event.set_message('Agent invaded the sidewalk')
-                onsidewalk_event.set_dict({'x': current_location.x, 'y': current_location.y})
-                self.list_traffic_events.append(onsidewalk_event)
-
-                self.test_status = "FAILURE"
-                self.actual_value += 1
-                self._onsidewalk_active = True
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
-        return new_status
-
-
-class OnSidewalkTestPerMeter(Criterion):
-
-    """
-    This class is a variance of OnSideWalkTest used to additionally count the amount of meters.
-
-    Important parameters:
-    - actor: CARLA actor to be used for this test
-    - optional [optional]: If True, the result is not considered for an overall pass/fail result
-    """
-
-    def __init__(self, actor, optional=False, name="OnSidewalkTestPerMeter"):
-        """
-        Construction with sensor setup
-        """
-        super(OnSidewalkTestPerMeter, self).__init__(name, actor, 0, None, optional)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-
-        self._actor = actor
-        self._map = CarlaDataProvider.get_map()
-        self._onsidewalk_active = False
-
-        self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 1.2)])
-        self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -1.2)])
         self._actor_location = self._actor.get_location()
         self._wrong_distance = 0
 
@@ -666,6 +517,9 @@ class OnSidewalkTestPerMeter(Criterion):
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
+
+        if self._onsidewalk_active:
+            print("--- Sidewalk for ____ {} meters ___".format(self._wrong_distance))
 
         current_transform = self._actor.get_transform()
         current_location = current_transform.location
@@ -721,7 +575,7 @@ class OnSidewalkTestPerMeter(Criterion):
         return new_status
 
 
-class WrongLaneTestPerMeter(Criterion):
+class WrongLaneTest(Criterion):
 
     """
     This class contains an atomic test to detect invasions to wrong direction lanes.
@@ -736,7 +590,7 @@ class WrongLaneTestPerMeter(Criterion):
         """
         Construction with sensor setup
         """
-        super(WrongLaneTestPerMeter, self).__init__(name, actor, 0, None, optional)
+        super(WrongLaneTest, self).__init__(name, actor, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         self._world = self.actor.get_world()
@@ -771,9 +625,9 @@ class WrongLaneTestPerMeter(Criterion):
 
             self._wrong_distance += distance
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
         self._actor_location = self._actor.get_location()
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -800,7 +654,7 @@ class WrongLaneTestPerMeter(Criterion):
         if self._lane_sensor is not None:
             self._lane_sensor.destroy()
         self._lane_sensor = None
-        super(WrongLaneTestPerMeter, self).terminate(new_status)
+        super(WrongLaneTest, self).terminate(new_status)
 
     @staticmethod
     def _lane_change(weak_self, event):
@@ -856,105 +710,6 @@ class WrongLaneTestPerMeter(Criterion):
                     self.list_traffic_events.append(wrong_way_per_meter_event)
 
                 self._wrong_distance = 0
-
-        # remember the current lane and road
-        self._last_lane_id = current_lane_id
-        self._last_road_id = current_road_id
-
-
-class WrongLaneTest(Criterion):
-
-    """
-    This class contains an atomic test to detect invasions to wrong direction lanes.
-
-    Important parameters:
-    - actor: CARLA actor to be used for this test
-    - optional [optional]: If True, the result is not considered for an overall pass/fail result
-    """
-    MAX_ALLOWED_ANGLE = 140.0
-
-    def __init__(self, actor, optional=False, name="WrongLaneTest"):
-        """
-        Construction with sensor setup
-        """
-        super(WrongLaneTest, self).__init__(name, actor, 0, None, optional)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-
-        self._world = self.actor.get_world()
-        self._actor = actor
-        self._map = CarlaDataProvider.get_map()
-        self._infractions = 0
-        self._last_lane_id = None
-        self._last_road_id = None
-
-        blueprint = self._world.get_blueprint_library().find('sensor.other.lane_invasion')
-        self._lane_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._lane_sensor.listen(lambda event: self._lane_change(weakref.ref(self), event))
-
-    def update(self):
-        """
-        Check lane invasion count
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        if self._terminate_on_failure and (self.test_status == "FAILURE"):
-            new_status = py_trees.common.Status.FAILURE
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
-        return new_status
-
-    def terminate(self, new_status):
-        """
-        Cleanup sensor
-        """
-        if self._lane_sensor is not None:
-            self._lane_sensor.destroy()
-        self._lane_sensor = None
-        super(WrongLaneTest, self).terminate(new_status)
-
-    @staticmethod
-    def _lane_change(weak_self, event):
-        """
-        Callback to update lane invasion count
-        """
-        # pylint: disable=protected-access
-
-        self = weak_self()
-        if not self:
-            return
-
-        # check the lane direction
-        lane_waypoint = self._map.get_waypoint(self._actor.get_location())
-        current_lane_id = lane_waypoint.lane_id
-        current_road_id = lane_waypoint.road_id
-
-        if not (self._last_road_id == current_road_id and self._last_lane_id == current_lane_id):
-            next_waypoint = lane_waypoint.next(2.0)[0]
-
-            if not next_waypoint:
-                return
-
-            vector_wp = np.array([next_waypoint.transform.location.x - lane_waypoint.transform.location.x,
-                                  next_waypoint.transform.location.y - lane_waypoint.transform.location.y])
-
-            vector_actor = np.array([math.cos(math.radians(self._actor.get_transform().rotation.yaw)),
-                                     math.sin(math.radians(self._actor.get_transform().rotation.yaw))])
-
-            ang = math.degrees(
-                math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
-            if ang > self.MAX_ALLOWED_ANGLE:
-                self.test_status = "FAILURE"
-                # is there a difference of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane
-                # direction?
-                self._infractions += 1
-                self.actual_value += 1
-
-                wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
-                wrong_way_event.set_message('Agent invaded a lane in opposite direction: road_id={}, lane_id={}'.format(
-                    current_road_id, current_lane_id))
-                wrong_way_event.set_dict({'road_id': current_road_id, 'lane_id': current_lane_id})
-                self.list_traffic_events.append(wrong_way_event)
 
         # remember the current lane and road
         self._last_lane_id = current_lane_id
