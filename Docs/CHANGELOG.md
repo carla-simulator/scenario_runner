@@ -69,7 +69,8 @@
 * Timer: class TimeOut() is derived from SimulationTimeCondition() to  avoid code duplication
 * Moved backported py_trees classes and methods to tools/py_trees_port.py to avoid code duplication
 * Removed setup_environment.sh
-
+* Adaptions to CARLA API Changes
+     - Renamed GnssEvent to GnssMeasurement
 
 ## CARLA ScenarioRunner 0.9.6
 **This is the _first_ release to work with CARLA 0.9.6**
