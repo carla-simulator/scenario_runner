@@ -641,7 +641,6 @@ class WrongLaneTest(Criterion):
                 self._in_lane = False
                 # is there a difference of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane
                 # direction?
-                # self._infractions += 1
                 self.actual_value += 1
 
             else:
