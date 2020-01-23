@@ -7,10 +7,6 @@
 
 ## Latest Changes
 ### :rocket: New Features
-* Added 3 new atomic criteria:
-    - CollisionTestLeaderboard
-    - WrongWayTestPerMeter
-    - OnSidewalkTestPerMeter
 * Added example scenario for lane change
 * Added cut-in example scenario
 * New Features:
