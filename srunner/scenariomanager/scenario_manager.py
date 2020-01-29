@@ -182,7 +182,6 @@ class ScenarioManager(object):
         Load a new scenario
         """
         self._reset()
-        self._callback_id = CarlaDataProvider.get_world().on_tick(self._tick_scenario)
         self._agent = AgentWrapper(agent, self._challenge_mode) if agent else None
         self.scenario_class = scenario
         self.scenario = scenario.scenario
@@ -212,7 +211,7 @@ class ScenarioManager(object):
         self._running = True
 
         while self._running:
-            time.sleep(0.5)
+            self._tick_scenario(CarlaDataProvider.get_world().get_snapshot().timestamp)
 
         self.end_system_time = time.time()
         end_game_time = GameTime.get_time()
@@ -237,7 +236,7 @@ class ScenarioManager(object):
         """
 
         with self._my_lock:
-            if self._running and self._timestamp_last_run < timestamp.elapsed_seconds:
+            if self._timestamp_last_run < timestamp.elapsed_seconds:
                 self._timestamp_last_run = timestamp.elapsed_seconds
 
                 if self._debug_mode:
