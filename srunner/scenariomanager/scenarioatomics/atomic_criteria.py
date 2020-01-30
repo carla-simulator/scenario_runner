@@ -539,12 +539,16 @@ class OnSidewalkTest(Criterion):
         self._actor = actor
         self._map = CarlaDataProvider.get_map()
         self._onsidewalk_active = False
+        self._outside_lane_active = True
 
         # self.positive_shift = shapely.geometry.LineString([(0, 0), (0.0, 0.9)])
         # self.negative_shift = shapely.geometry.LineString([(0, 0), (0.0, -0.9)])
         self._actor_location = self._actor.get_location()
-        self._wrong_distance = 0
+        self._wrong_sidewalk_distance = 0
+        self._wrong_outside_lane_distance = 0
         self._sidewalk_start_location = None
+        self._outside_lane_start_location = None
+        # self._last_lane_type = None
 
     def update(self):
         """
@@ -558,7 +562,7 @@ class OnSidewalkTest(Criterion):
         # Get the four vertices
         current_transform = self._actor.get_transform()
         current_location = current_transform.location
-        # current_yaw = current_transform.rotation.yaw
+        current_waypoint = self._map.get_waypoint(current_location, lane_type=carla.LaneType.Any)
 
         heading_vector = current_transform.get_forward_vector()
         heading_vector.z = 0
@@ -571,9 +575,9 @@ class OnSidewalkTest(Criterion):
 
         bounding_box = [
             current_location + carla.Location(x_boundary_vector - y_boundary_vector),
+            current_location + carla.Location(x_boundary_vector + y_boundary_vector),
             current_location + carla.Location(-1*x_boundary_vector - y_boundary_vector),
-            current_location + carla.Location(-1*x_boundary_vector + y_boundary_vector),
-            current_location + carla.Location(x_boundary_vector + y_boundary_vector)]
+            current_location + carla.Location(-1*x_boundary_vector + y_boundary_vector)]
 
         bounding_box_points = [
             self._map.get_waypoint(bounding_box[0], lane_type=carla.LaneType.Any),
@@ -581,34 +585,115 @@ class OnSidewalkTest(Criterion):
             self._map.get_waypoint(bounding_box[2], lane_type=carla.LaneType.Any),
             self._map.get_waypoint(bounding_box[3], lane_type=carla.LaneType.Any)]
 
-        for vertex in bounding_box_points:
-            if vertex.lane_type == carla.LaneType.Sidewalk:
-                if not self._onsidewalk_active:
+        # TODO: finish this
+        if current_waypoint.lane_type == carla.LaneType.Sidewalk:
+            self._onsidewalk_active = True
+        elif current_waypoint.lane_type != carla.LaneType.Sidewalk \
+            and current_waypoint.lane_type != carla.LaneType.Driving:
 
-                    self.test_status = "FAILURE"
-                    self._onsidewalk_active = True
-                    self._sidewalk_start_location = current_location
-                break
-            else:
-                self._onsidewalk_active = False
+            # Check if the vertices are at a sidewalk (ignore mini Shoulders between Driving and Sidewalk)
+            for vertex in bounding_box_points:
+                if vertex.lane_type == carla.LaneType.Sidewalk:
+                    if not self._onsidewalk_active:
 
+                        self.test_status = "FAILURE"
+                        self._onsidewalk_active = True
+                        self._sidewalk_start_location = current_location
+                    break
+            
+            self._outside_lane_active = True
+        else:
+            # Avoid false positives at junctions by checkign the distance vehicle-waypoint
+            current_waypoint = self._map.get_waypoint(current_location, lane_type=carla.LaneType.Any)
+            vehicle_wp_dist = math.sqrt(
+                            math.pow(current_waypoint.transform.location.x - current_location.x, 2) +
+                            math.pow(current_waypoint.transform.location.y - current_location.y, 2))
+            # print(" {}, {}".format(vehicle_wp_dist, current_waypoint.lane_width))
+            if vehicle_wp_dist >= current_waypoint.lane_width / 2:
+                self._onsidewalk_active = True
+
+        # # Case 0) In junctions, get_waypoint() is not reliable, creating some false negatives
+        # in_junction = False
+        # for vertex in bounding_box_points:
+        #     if vertex.is_junction:
+        #         in_junction = True
+        #         break
+
+        # # Case 1) One of the vertices is on a sidewalk
+        # self._onsidewalk_active = False
+        # for vertex in bounding_box_points:
+
+        #     if vertex.lane_type == carla.LaneType.Sidewalk:
+        #         if not self._onsidewalk_active:
+
+        #             self.test_status = "FAILURE"
+        #             self._onsidewalk_active = True
+        #             self._sidewalk_start_location = current_location
+
+        #         break
+
+        # # Filter some false positives at junctions
+        # if in_junction and not self._onsidewalk_active:
+        #     current_waypoint = self._map.get_waypoint(current_location, lane_type=carla.LaneType.Any)
+        #     vehicle_wp_dist = math.sqrt(
+        #                     math.pow(current_waypoint.transform.location.x - current_location.x, 2) +
+        #                     math.pow(current_waypoint.transform.location.y - current_location.y, 2))
+        #     # print(" {}, {}".format(vehicle_wp_dist, current_waypoint.lane_width))
+        #     if vehicle_wp_dist >= current_waypoint.lane_width / 2:
+        #         self._onsidewalk_active = True
+
+
+        # # Case 2) Might be outside the lane but as there are no sidewalks
+        # # in direct contact, previous check fails
+        # if not self._onsidewalk_active:
+
+        #     # Check is the actor is outside the lane. Much less restrictive than the sidewalk check
+        #     outside = True
+        #     for vertex in bounding_box_points:
+        #         if vertex.lane_type == carla.LaneType.Driving:
+        #             outside = False
+        #             break
+
+        #     if outside:
+        #         # Actor is outside the lane
+        #         if not self._outside_lane_active:
+
+        #             self.test_status = "FAILURE"
+        #             self._outside_lane_active = True
+        #             self._outside_lane_start_location = current_location
+
+        #     else:
+        #         self._outside_lane_active = False
+
+
+
+        # Update the distances
         distance_vector = self._actor.get_location() - self._actor_location
         distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
 
-        if distance >= 0.02: # Used to avoid micro-changes adding add to considerable sums
+        if distance >= 0.02: # Used to avoid micro-changes adding to considerable sums
             self._actor_location = self._actor.get_location()
 
             if self._onsidewalk_active:
-                self._wrong_distance += distance
+                self._wrong_sidewalk_distance += distance
+            elif self._outside_lane_active:
+                # Only add if car is outside the lane but ISN'T in a junction
+                self._wrong_outside_lane_distance += distance
 
-        if not self._onsidewalk_active and self._wrong_distance > 0:
+        if self._onsidewalk_active:
+            print("Invaded sidewalk for: ------------ {} meters".format(self._wrong_sidewalk_distance))
+        if self._outside_lane_active:
+            print("Outside your lane for: ----------- {} meters".format(self._wrong_outside_lane_distance))
+
+        # Register the sidewalk event
+        if not self._onsidewalk_active and self._wrong_sidewalk_distance > 0:
 
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
             onsidewalk_event.set_message(
                 'Agent invaded the sidewalk for about {} meters, starting at (x={}, y={}, z={})'.format(
-                round(self._wrong_distance, 3),
+                round(self._wrong_sidewalk_distance, 3),
                 round(self._sidewalk_start_location.x, 3),
                 round(self._sidewalk_start_location.y, 3),
                 round(self._sidewalk_start_location.z, 3)))
@@ -616,11 +701,33 @@ class OnSidewalkTest(Criterion):
                 'x': round(self._sidewalk_start_location.x, 3),
                 'y': round(self._sidewalk_start_location.y, 3),
                 'z': round(self._sidewalk_start_location.z, 3),
-                'distance': round(self._wrong_distance, 3)})
+                'distance': round(self._wrong_sidewalk_distance, 3)})
 
+            self._onsidewalk_active = False
+            self._wrong_sidewalk_distance = 0
             self.list_traffic_events.append(onsidewalk_event)
 
-            self._wrong_distance = 0
+        # Register the outside of a lane event
+        if not self._outside_lane_active and self._wrong_outside_lane_distance > 0:
+
+            self.actual_value += 1
+
+            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
+            outsidelane_event.set_message(
+                'Agent went outside the lane for about {} meters, starting at (x={}, y={}, z={})'.format(
+                round(self._wrong_outside_lane_distance, 3),
+                round(self._outside_lane_start_location.x, 3),
+                round(self._outside_lane_start_location.y, 3),
+                round(self._outside_lane_start_location.z, 3)))
+            outsidelane_event.set_dict({
+                'x': round(self._outside_lane_start_location.x, 3),
+                'y': round(self._outside_lane_start_location.y, 3),
+                'z': round(self._outside_lane_start_location.z, 3),
+                'distance': round(self._wrong_outside_lane_distance, 3)})
+
+            self._outside_lane_active = False
+            self._wrong_outside_lane_distance = 0
+            self.list_traffic_events.append(outsidelane_event)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -631,30 +738,49 @@ class OnSidewalkTest(Criterion):
         If there is currently an event running, it is registered
         """
         # If currently outside of our lane, register the event
-        if self._wrong_distance > 0:
+        if self._onsidewalk_active:
 
-            # terminate is called twice, register the event only once
-            if len(self.list_traffic_events) > 0:
-                last_distance = self.list_traffic_events[-1].get_dict()['distance']
-            else:
-                last_distance = -1
+            print("Sidewalk! ")
+            self.actual_value += 1
 
-            if last_distance != self._wrong_distance:
+            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
+            onsidewalk_event.set_message(
+                'Agent invaded the sidewalk for {} meters, starting at (x={}, y={}, z={})'.format(
+                round(self._wrong_sidewalk_distance, 3),
+                round(self._sidewalk_start_location.x, 3),
+                round(self._sidewalk_start_location.y, 3),
+                round(self._sidewalk_start_location.z, 3)))
+            onsidewalk_event.set_dict({
+                'x': round(self._sidewalk_start_location.x, 3),
+                'y': round(self._sidewalk_start_location.y, 3),
+                'z': round(self._sidewalk_start_location.z, 3),
+                'distance': round(self._wrong_sidewalk_distance, 3)})
 
-                onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-                onsidewalk_event.set_message(
-                    'Agent invaded the sidewalk for {} meters, starting at (x={}, y={}, z={})'.format(
-                    round(self._wrong_distance, 3),
-                    round(self._sidewalk_start_location.x, 3),
-                    round(self._sidewalk_start_location.y, 3),
-                    round(self._sidewalk_start_location.z, 3)))
-                onsidewalk_event.set_dict({
-                    'x': round(self._sidewalk_start_location.x, 3),
-                    'y': round(self._sidewalk_start_location.y, 3),
-                    'z': round(self._sidewalk_start_location.z, 3),
-                    'distance': round(self._wrong_distance, 3)})
+            self._onsidewalk_active = False
+            self._wrong_sidewalk_distance = 0
+            self.list_traffic_events.append(onsidewalk_event)
 
-                self.list_traffic_events.append(onsidewalk_event)
+        if self._outside_lane_active:
+
+            print("Outside lane! ")
+            self.actual_value += 1
+
+            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
+            outsidelane_event.set_message(
+                'Agent went outside the lane for about {} meters, starting at (x={}, y={}, z={})'.format(
+                round(self._wrong_outside_lane_distance, 3),
+                round(self._outside_lane_start_location.x, 3),
+                round(self._outside_lane_start_location.y, 3),
+                round(self._outside_lane_start_location.z, 3)))
+            outsidelane_event.set_dict({
+                'x': round(self._outside_lane_start_location.x, 3),
+                'y': round(self._outside_lane_start_location.y, 3),
+                'z': round(self._outside_lane_start_location.z, 3),
+                'distance': round(self._wrong_outside_lane_distance, 3)})
+
+            self._outside_lane_active = False
+            self._wrong_outside_lane_distance = 0
+            self.list_traffic_events.append(outsidelane_event)
 
 
 class WrongLaneTest(Criterion):
@@ -782,6 +908,9 @@ class WrongLaneTest(Criterion):
 
             if not self._in_lane and not lane_waypoint.is_junction:
                 self._wrong_distance += distance
+
+        if not self._in_lane:
+            print("In a wrong lane for: ------------- {} meters".format(self._wrong_distance))
 
         # remember the current lane and road
         self._last_lane_id = current_lane_id
