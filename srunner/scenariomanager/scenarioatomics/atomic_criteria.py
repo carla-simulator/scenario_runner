@@ -807,7 +807,7 @@ class WrongLaneTest(Criterion):
             next_waypoint = lane_waypoint.next(2.0)[0]
 
             if not next_waypoint:
-                return
+                return new_status
 
             # The waypoint route direction can be considered continuous.
             # Therefore just check for a big gap in waypoint directions.
