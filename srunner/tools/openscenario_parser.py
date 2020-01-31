@@ -410,10 +410,27 @@ class OpenScenarioParser(object):
             if global_action.find('Infrastructure') is not None:
                 infrastructure_action = global_action.find('Infrastructure').find('Signal')
                 if infrastructure_action.find('SetState') is not None:
+                    traffic_light_id = None
                     traffic_light_action = infrastructure_action.find('SetState')
-                    traffic_light_id = traffic_light_action.attrib.get('name')
+                    name = traffic_light_action.attrib.get('name')
+                    if name.startswith("id="):
+                        traffic_light_id = name[3:]
+                    elif name.startswith("pos="):
+                        position = name[4:]
+                        pos = position.split(",")
+                        for carla_actor in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+                            carla_actor_loc = carla_actor.get_transform().location
+                            distance = carla_actor_loc.distance(carla.Location(x=float(pos[0]),
+                                                                               y=float(pos[1]),
+                                                                               z=carla_actor_loc.z))
+                            if distance < 2.0:
+                                traffic_light_id = actor.id
+                                break
+                    if traffic_light_id is None:
+                        raise AttributeError("Unknown  traffic light {}".format(name))
                     traffic_light_state = traffic_light_action.attrib.get('state')
-                    atomic = TrafficLightStateSetter(traffic_light_id, traffic_light_state)
+                    atomic = TrafficLightStateSetter(
+                        traffic_light_id, traffic_light_state, name=maneuver_name + "_" + str(traffic_light_id))
                 else:
                     raise NotImplementedError("TrafficLights can only be influenced via SetState")
             else:

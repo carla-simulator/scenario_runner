@@ -201,6 +201,17 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
                     self.other_actors.append(new_actor)
 
+                for misc in obj.iter("MiscObject"):
+                    category = misc.attrib.get('category')
+                    if category == "barrier":
+                        model = "static.prop.streetbarrier"
+                    elif category == "guardRail":
+                        model = "static.prop.chainbarrier"
+                    else:
+                        model = "static.*"
+                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
+                    new_actor.transform = self._get_actor_transform(rolename)
+
     def _get_actor_transform(self, actor_name):
         """
         Get the initial actor transform provided by the Init section
