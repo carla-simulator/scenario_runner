@@ -22,7 +22,7 @@ Python 3.5. Depending on your Python version, execute:
 
 #Python 2.x
 sudo apt remove python-networkx #if installed, remove old version of networkx
-pip2 install --user py_trees==0.8.3 networkx==2.2 psutil shapely xmlschema
+pip2 install --user py_trees==0.8.3 networkx==2.2 psutil shapely xmlschema==1.0.18
 #Python 3.x
 sudo apt remove python3-networkx #if installed, remove old version of networkx
 pip3 install --user py_trees==0.8.3 networkx==2.2 psutil shapely xmlschema
