@@ -614,7 +614,6 @@ class OnSidewalkTest(Criterion):
                     self._onsidewalk_active = True
                     self._sidewalk_start_location = current_loc
 
-
             else:
                 distance_vehicle_wp = current_loc.distance(current_wp.transform.location)
 
