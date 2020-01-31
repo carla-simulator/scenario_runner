@@ -379,8 +379,6 @@ class CollisionTest(Criterion):
         # Register it if needed
         if not registered:
 
-            print("Collision!")
-
             if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
                 and 'sidewalk' not in event.other_actor.type_id:
                 actor_type = TrafficEventType.COLLISION_STATIC
@@ -565,7 +563,6 @@ class OnSidewalkTest(Criterion):
 
         # Case 1) Car center is at a sidewalk
         if current_waypoint.lane_type == carla.LaneType.Sidewalk:
-            print("Inside a SIDEWALK")
             if not self._onsidewalk_active:
                 self.test_status = "FAILURE"
                 self._onsidewalk_active = True
@@ -603,7 +600,6 @@ class OnSidewalkTest(Criterion):
                 or bounding_box_points[2].lane_type == (carla.LaneType.Driving or carla.LaneType.Parking) \
                 or bounding_box_points[3].lane_type == (carla.LaneType.Driving or carla.LaneType.Parking):
 
-                print("DRIVING safely (Edge case)")
                 self._onsidewalk_active = False
                 self._outside_lane_active = False
 
@@ -612,28 +608,26 @@ class OnSidewalkTest(Criterion):
                 or bounding_box_points[1].lane_type == carla.LaneType.Sidewalk \
                 or bounding_box_points[2].lane_type == carla.LaneType.Sidewalk \
                 or bounding_box_points[3].lane_type == carla.LaneType.Sidewalk:
-                print("Inside a SIDEWALK (Edge case)")
+
                 if not self._onsidewalk_active:
                     self.test_status = "FAILURE"
                     self._onsidewalk_active = True
                     self._sidewalk_start_location = current_location
 
-            
+
             else:
                 distance_vehicle_waypoint = current_location.distance(current_waypoint.transform.location)
 
                 # Case 2.3) Outside lane
                 if distance_vehicle_waypoint >= current_waypoint.lane_width / 2:
 
-                    print("OUTSIDE the driving lanes")
                     if not self._outside_lane_active:
                         self.test_status = "FAILURE"
                         self._outside_lane_active = True
                         self._outside_lane_start_location = current_location
 
-                # Case 2.4) Very very edge case (but still inside driving lanes)  
+                # Case 2.4) Very very edge case (but still inside driving lanes)
                 else:
-                    # print("DRIVING safely (Very edgy case)")
                     self._onsidewalk_active = False
                     self._outside_lane_active = False
 
@@ -646,16 +640,11 @@ class OnSidewalkTest(Criterion):
                     math.pow(current_waypoint.transform.location.y - current_location.y, 2))
 
                 if distance_vehicle_waypoint <= current_waypoint.lane_width / 2:
-                    # print("DRIVING safely (Junction)")
                     self._onsidewalk_active = False
                     self._outside_lane_active = False
-                else:
-                    print("INVALID point, keeping the last state")
-                    pass
-                    # Do nothing, the waypoint is too far to consider it a correct position
+                # Else, do nothing, the waypoint is too far to consider it a correct position
             else:
 
-                # print("DRIVING safely (Road)")
                 self._onsidewalk_active = False
                 self._outside_lane_active = False
 
@@ -671,11 +660,6 @@ class OnSidewalkTest(Criterion):
             elif self._outside_lane_active:
                 # Only add if car is outside the lane but ISN'T in a junction
                 self._wrong_outside_lane_distance += distance
-
-        if self._onsidewalk_active:
-            print("----------------------------- Invaded sidewalk for:  {} meters".format(self._wrong_sidewalk_distance))
-        if self._outside_lane_active:
-            print("----------------------------- Outside your lane for: {} meters".format(self._wrong_outside_lane_distance))
 
         # Register the sidewalk event
         if not self._onsidewalk_active and self._wrong_sidewalk_distance > 0:
@@ -876,9 +860,6 @@ class WrongLaneTest(Criterion):
             if not self._in_lane and not lane_waypoint.is_junction:
                 self._wrong_distance += distance
 
-        if not self._in_lane:
-            print("In a wrong lane for: ------------- {} meters".format(self._wrong_distance))
-
         # Register the event
         if self._in_lane and self._wrong_distance > 0:
 
@@ -902,9 +883,6 @@ class WrongLaneTest(Criterion):
 
             self.list_traffic_events.append(wrong_way_event)
             self._wrong_distance = 0
-
-
-
 
         # Remember the last state
         self._last_lane_id = current_lane_id
