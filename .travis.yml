@@ -39,7 +39,7 @@ matrix:
             - python-pip
       before_install:
         - pip2 install --user pylint==1.9.4
-        - pip2 install --user py_trees==0.8.3 networkx==2.2 psutil shapely numpy xmlschema opencv-python
+        - pip2 install --user py_trees==0.8.3 networkx==2.2 psutil shapely numpy xmlschema==1.0.18 opencv-python
       script:
         - pylint --version
         - static_code_quality_passed=1

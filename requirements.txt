@@ -2,5 +2,5 @@ py-trees==0.8.3
 networkx==2.2
 Shapely
 psutil
-xmlschema
+xmlschema==1.0.18
 carla
