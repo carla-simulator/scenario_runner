@@ -41,6 +41,8 @@
     - Fixed coordinate system to use right-hand as default. Left-hand CARLA system can be used by adding "CARLA:" at the start of the description in the FileHeader.
     - Added support to change actor color
     - Added support for a default actor model, in case the stated model is not available
+    - Added support for MiscObjects (besides vehicles and pedestrians)
+    - Reworked traffic signal handling: The name has to start now either with "id=" or "pos=" depending on whether the position or id is used as unique identifier
 ### :bug: Bug Fixes
 * Fixed #426: Avoid underground vehicles fall forever by disabling physics when spawning underground.
 * Fixed #427: Removed unnecessary warnings when using get_next_traffic_light() with non-cached locations
