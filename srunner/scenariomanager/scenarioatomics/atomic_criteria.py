@@ -667,8 +667,10 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-            self.set_event_message(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
-            self.set_event_dict(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self.set_event_message(
+                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self.set_event_dict(
+                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
             self._wrong_sidewalk_distance = 0
@@ -680,8 +682,10 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
-            self.set_event_message(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
-            self.set_event_dict(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_message(
+                outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_dict(
+                outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
 
             self._outside_lane_active = False
             self._wrong_outside_lane_distance = 0
@@ -701,8 +705,10 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-            self.set_event_message(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
-            self.set_event_dict(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self.set_event_message(
+                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self.set_event_dict(
+                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
             self._wrong_sidewalk_distance = 0
@@ -714,15 +720,19 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
-            self.set_event_message(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
-            self.set_event_dict(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_message(
+                outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_dict(
+                outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
 
             self._outside_lane_active = False
             self._wrong_outside_lane_distance = 0
             self.list_traffic_events.append(outsidelane_event)
 
     def set_event_message(self, event, location, distance):
-
+        """
+        Sets the message of the event
+        """
         event.set_message(
             'Agent went outside the lane for about {} meters, starting at (x={}, y={}, z={})'.format(
                 round(distance, 3),
@@ -732,7 +742,9 @@ class OnSidewalkTest(Criterion):
 
 
     def set_event_dict(self, event, location, distance):
-
+        """
+        Sets the dictionary of the event
+        """
         event.set_dict({
             'x': round(location.x, 3),
             'y': round(location.y, 3),
@@ -887,9 +899,12 @@ class WrongLaneTest(Criterion):
             self._wrong_distance = 0
             self._in_lane = True
             self.list_traffic_events.append(wrong_way_event)
-    
+
     def set_event_message(self, event, location, distance, road_id, lane_id):
-        
+        """
+        Sets the message of the event
+        """
+
         event.set_message(
             "Agent invaded a lane in opposite direction for {} meters, starting at (x={}, y={}, z={}). "
             "road_id={}, lane_id={}".format(
@@ -901,7 +916,9 @@ class WrongLaneTest(Criterion):
                 lane_id))
 
     def set_event_dict(self, event, location, distance, road_id, lane_id):
-        
+        """
+        Sets the dictionary of the event
+        """
         event.set_dict({
             'x': round(location.x, 3),
             'y': round(location.y, 3),
@@ -1240,7 +1257,6 @@ class RunningRedLightTest(Criterion):
                 waypoints = []
                 for pt in area:
                     waypoints.append(self._map.get_waypoint(pt))
-                    # self._world.debug.draw_point(self._map.get_waypoint(pt).transform.location, size=0.1, color=carla.Color(0,255,255), life_time=50)
                 self._list_traffic_lights.append((_actor, center, area, waypoints))
 
     # pylint: disable=no-self-use
@@ -1305,6 +1321,7 @@ class RunningRedLightTest(Criterion):
                     # this light is red and is affecting our lane!
                     # is the vehicle traversing the stop line?
                     if self.is_vehicle_crossing_line((tail_pt0, tail_pt1), (area[0], area[-1])):
+
                         self.test_status = "FAILURE"
                         self.actual_value += 1
                         location = traffic_light.get_transform().location
