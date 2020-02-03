@@ -362,7 +362,7 @@ class CollisionTest(Criterion):
         self.test_status = "FAILURE"
         self.actual_value += 1
 
-        actor_location = self.actor.get_location()
+        actor_location = CarlaDataProvider.get_location(self.actor)
 
         # Loops through all the previous registered collisions
         for collision_location in self.registered_collisions:
@@ -542,7 +542,7 @@ class OnSidewalkTest(Criterion):
         self._onsidewalk_active = False
         self._outside_lane_active = False
 
-        self._actor_location = CarlaDataProvider.get_location(self._actor)
+        self._actor_location = self._actor.get_location()
         self._wrong_sidewalk_distance = 0
         self._wrong_outside_lane_distance = 0
         self._sidewalk_start_location = None
@@ -649,11 +649,11 @@ class OnSidewalkTest(Criterion):
                 self._outside_lane_active = False
 
         # Update the distances
-        distance_vector = self._actor.get_location() - self._actor_location
+        distance_vector = CarlaDataProvider.get_location(self._actor) - self._actor_location
         distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
 
         if distance >= 0.02:  # Used to avoid micro-changes adding to considerable sums
-            self._actor_location = self._actor.get_location()
+            self._actor_location = CarlaDataProvider.get_location(self._actor)
 
             if self._onsidewalk_active:
                 self._wrong_sidewalk_distance += distance
@@ -667,7 +667,7 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-            self.set_event_message(onsidewalk_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_message(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self.set_event_dict(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
@@ -680,8 +680,8 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
-            self.set_event_message(onsidewalk_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
-            self.set_event_dict(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self.set_event_message(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_dict(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
 
             self._outside_lane_active = False
             self._wrong_outside_lane_distance = 0
@@ -701,7 +701,7 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-            self.set_event_message(onsidewalk_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_message(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self.set_event_dict(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
@@ -714,8 +714,8 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
-            self.set_event_message(onsidewalk_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
-            self.set_event_dict(onsidewalk_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_message(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
+            self.set_event_dict(outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
 
             self._outside_lane_active = False
             self._wrong_outside_lane_distance = 0
@@ -812,7 +812,7 @@ class WrongLaneTest(Criterion):
                 self.test_status = "FAILURE"
                 self._in_lane = False
                 self.actual_value += 1
-                self._wrong_lane_start_location = self._actor.get_location()
+                self._wrong_lane_start_location = self._actor_location
 
             else:
                 # Reset variables
@@ -842,7 +842,7 @@ class WrongLaneTest(Criterion):
         distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
 
         if distance >= 0.02:  # Used to avoid micro-changes adding add to considerable sums
-            self._actor_location = self._actor.get_location()
+            self._actor_location = CarlaDataProvider.get_location(self._actor)
 
             if not self._in_lane and not lane_waypoint.is_junction:
                 self._wrong_distance += distance
@@ -1231,7 +1231,7 @@ class RunningRedLightTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._list_traffic_lights = []
         self._last_red_light_id = None
-        self.debug = True
+        self.debug = False
 
         all_actors = self._world.get_actors()
         for _actor in all_actors:
