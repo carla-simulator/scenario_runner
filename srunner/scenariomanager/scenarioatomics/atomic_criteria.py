@@ -684,7 +684,7 @@ class OnSidewalkTest(Criterion):
             outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
-            self._et_event_dict(
+            self._set_event_dict(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
 
             self._outside_lane_active = False
@@ -864,9 +864,9 @@ class WrongLaneTest(Criterion):
 
             wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
             self._set_event_message(wrong_way_event, self._wrong_lane_start_location,
-                                   self._wrong_distance, current_road_id, current_lane_id)
+                                    self._wrong_distance, current_road_id, current_lane_id)
             self._set_event_dict(wrong_way_event, self._wrong_lane_start_location,
-                                self._wrong_distance, current_road_id, current_lane_id)
+                                 self._wrong_distance, current_road_id, current_lane_id)
 
             self.list_traffic_events.append(wrong_way_event)
             self._wrong_distance = 0
@@ -892,9 +892,9 @@ class WrongLaneTest(Criterion):
 
             wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
             self._set_event_message(wrong_way_event, self._wrong_lane_start_location,
-                                   self._wrong_distance, current_road_id, current_lane_id)
+                                    self._wrong_distance, current_road_id, current_lane_id)
             self._set_event_dict(wrong_way_event, self._wrong_lane_start_location,
-                                self._wrong_distance, current_road_id, current_lane_id)
+                                 self._wrong_distance, current_road_id, current_lane_id)
 
             self._wrong_distance = 0
             self._in_lane = True
