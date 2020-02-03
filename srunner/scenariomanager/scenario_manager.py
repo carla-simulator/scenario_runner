@@ -151,14 +151,12 @@ class ScenarioManager(object):
 
         # Register the scenario tick as callback for the CARLA world
         # Use the callback_id inside the signal handler to allow external interrupts
-        self._callback_id = None
         signal.signal(signal.SIGINT, self._signal_handler)
 
     def _signal_handler(self, signum, frame):
         """
         Terminate scenario ticking when receiving a signal interrupt
         """
-        CarlaDataProvider.get_world().remove_on_tick(self._callback_id)
         with self._my_lock:
             self._running = False
 
@@ -172,9 +170,6 @@ class ScenarioManager(object):
         self.scenario_duration_game = 0.0
         self.start_system_time = None
         self.end_system_time = None
-        if self._callback_id:
-            CarlaDataProvider.get_world().remove_on_tick(self._callback_id)
-            self._callback_id = None
         GameTime.restart()
 
     def load_scenario(self, scenario, agent=None):
@@ -182,7 +177,6 @@ class ScenarioManager(object):
         Load a new scenario
         """
         self._reset()
-        self._callback_id = CarlaDataProvider.get_world().on_tick(self._tick_scenario)
         self._agent = AgentWrapper(agent, self._challenge_mode) if agent else None
         self.scenario_class = scenario
         self.scenario = scenario.scenario
@@ -212,7 +206,7 @@ class ScenarioManager(object):
         self._running = True
 
         while self._running:
-            time.sleep(0.5)
+            self._tick_scenario(CarlaDataProvider.get_world().get_snapshot().timestamp)
 
         self.end_system_time = time.time()
         end_game_time = GameTime.get_time()
@@ -237,7 +231,7 @@ class ScenarioManager(object):
         """
 
         with self._my_lock:
-            if self._running and self._timestamp_last_run < timestamp.elapsed_seconds:
+            if self._timestamp_last_run < timestamp.elapsed_seconds:
                 self._timestamp_last_run = timestamp.elapsed_seconds
 
                 if self._debug_mode:
@@ -275,11 +269,6 @@ class ScenarioManager(object):
         """
         This function triggers a proper termination of a scenario
         """
-        with self._my_lock:
-            if self._callback_id:
-                CarlaDataProvider.get_world().remove_on_tick(self._callback_id)
-                self._callback_id = None
-
         if self.scenario is not None:
             self.scenario.terminate()
 

@@ -47,6 +47,7 @@
     - Added support for MiscObjects (besides vehicles and pedestrians)
     - Reworked traffic signal handling: The name has to start now either with "id=" or "pos=" depending on whether the position or id is used as unique identifier
 ### :bug: Bug Fixes
+* Fixed bug causing occasional frame_errors
 * Fixed #426: Avoid underground vehicles fall forever by disabling physics when spawning underground.
 * Fixed #427: Removed unnecessary warnings when using get_next_traffic_light() with non-cached locations
 * Fixed missing ego_vehicle: compare actor IDs instead of object in CarlaDataProvider in get_velocity, get_transform and get_location
