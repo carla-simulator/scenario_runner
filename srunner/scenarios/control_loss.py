@@ -102,6 +102,10 @@ class ControlLoss(BasicScenario):
         second_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.sec_transform)
         third_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.third_transform)
 
+        first_debris.set_transform(self.first_transform)
+        second_debris.set_transform(self.sec_transform)
+        third_debris.set_transform(self.third_transform)
+
         self.obj.extend([first_debris, second_debris, third_debris])
         for debris in self.obj:
             debris.set_simulate_physics(False)
