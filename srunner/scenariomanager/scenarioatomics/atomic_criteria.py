@@ -733,12 +733,19 @@ class OnSidewalkTest(Criterion):
         """
         Sets the message of the event
         """
+        if event.get_type() == TrafficEventType.ON_SIDEWALK_INFRACTION:
+            message_start = 'Agent invaded the sidewalk'
+        else:
+            message_start = 'Agent went outside the lane'
+        
         event.set_message(
-            'Agent went outside the lane for about {} meters, starting at (x={}, y={}, z={})'.format(
+            '{} for about {} meters, starting at (x={}, y={}, z={})'.format(
+                message_start,
                 round(distance, 3),
                 round(location.x, 3),
                 round(location.y, 3),
                 round(location.z, 3)))
+
 
     def _set_event_dict(self, event, location, distance):
         """
@@ -926,80 +933,6 @@ class WrongLaneTest(Criterion):
             'distance': round(distance, 3),
             'road_id': road_id,
             'lane_id': lane_id})
-
-    # @staticmethod
-    # def _lane_change(weak_self, event):
-    #     """
-    #     Callback to update lane invasion count
-    #     """
-    #     # pylint: disable=protected-access
-
-    #     self = weak_self()
-    #     if not self:
-    #         return
-
-    #     check the lane direction
-    #     lane_waypoint = self._map.get_waypoint(self._actor.get_location())
-    #     current_lane_id = lane_waypoint.lane_id
-    #     current_road_id = lane_waypoint.road_id
-
-    #     if not (self._last_road_id == current_road_id and self._last_lane_id == current_lane_id):
-    #         next_waypoint = lane_waypoint.next(2.0)[0]
-
-    #         if not next_waypoint:
-    #             return
-
-    #         vector_wp = np.array([next_waypoint.transform.location.x - lane_waypoint.transform.location.x,
-    #                               next_waypoint.transform.location.y - lane_waypoint.transform.location.y])
-
-    #         vector_actor = np.array([math.cos(math.radians(self._actor.get_transform().rotation.yaw)),
-    #                                  math.sin(math.radians(self._actor.get_transform().rotation.yaw))])
-
-    #         ang = math.degrees(
-    #             math.acos(np.clip(np.dot(vector_actor, vector_wp) / (np.linalg.norm(vector_wp)), -1.0, 1.0)))
-    #         if ang > self.MAX_ALLOWED_ANGLE:
-    #             self.test_status = "FAILURE"
-    #             self._in_lane = False
-    #             # is there a difference of orientation greater than MAX_ALLOWED_ANGLE deg with respect of the lane
-    #             # direction?
-    #             self._infractions += 1
-    #             self.actual_value += 1
-
-    #         else:
-    #             # Reset variables
-    #             self._in_lane = True
-
-    #             if self._wrong_distance > 0:
-
-<<<<<<< HEAD
-                    wrong_way_per_meter_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_PER_METER_INFRACTION)
-                    wrong_way_per_meter_event.set_message(
-                        'Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
-                    current_road_id, current_lane_id, round(self._wrong_distance, 3)))
-                    wrong_way_per_meter_event.set_dict({'road_id': self._last_road_id, 'lane_id': self._last_lane_id,
-                        'distance': self._wrong_distance})
-<<<<<<< HEAD
-                    
-=======
-
->>>>>>> Divided lines that are too long
-                    self.list_traffic_events.append(wrong_way_per_meter_event)
-=======
-    #                 wrong_way_per_meter_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
-    #                 wrong_way_per_meter_event.set_message(
-    #                     'Agent invaded a lane in opposite direction: road_id={}, lane_id={} for about {} meters'.format(
-    #                 current_road_id, current_lane_id, round(self._wrong_distance, 3)))
-    #                 wrong_way_per_meter_event.set_dict({'road_id': self._last_road_id, 'lane_id': self._last_lane_id,
-    #                     'distance': self._wrong_distance})
-
-    #                 self.list_traffic_events.append(wrong_way_per_meter_event)
->>>>>>> WIP: Improving WrongLaneTest
-
-    #             self._wrong_distance = 0
-
-    #     # remember the current lane and road
-    #     self._last_lane_id = current_lane_id
-    #     self._last_road_id = current_road_id
 
 
 class InRadiusRegionTest(Criterion):
