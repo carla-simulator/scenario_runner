@@ -667,9 +667,9 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-            self.set_event_message(
+            self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
-            self.set_event_dict(
+            self._set_event_dict(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
@@ -682,9 +682,9 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
-            self.set_event_message(
+            self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
-            self.set_event_dict(
+            self._et_event_dict(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
 
             self._outside_lane_active = False
@@ -705,9 +705,9 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
-            self.set_event_message(
+            self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
-            self.set_event_dict(
+            self._set_event_dict(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
@@ -720,16 +720,16 @@ class OnSidewalkTest(Criterion):
             self.actual_value += 1
 
             outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
-            self.set_event_message(
+            self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
-            self.set_event_dict(
+            self._set_event_dict(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
 
             self._outside_lane_active = False
             self._wrong_outside_lane_distance = 0
             self.list_traffic_events.append(outsidelane_event)
 
-    def set_event_message(self, event, location, distance):
+    def _set_event_message(self, event, location, distance):
         """
         Sets the message of the event
         """
@@ -740,8 +740,7 @@ class OnSidewalkTest(Criterion):
                 round(location.y, 3),
                 round(location.z, 3)))
 
-
-    def set_event_dict(self, event, location, distance):
+    def _set_event_dict(self, event, location, distance):
         """
         Sets the dictionary of the event
         """
@@ -750,6 +749,7 @@ class OnSidewalkTest(Criterion):
             'y': round(location.y, 3),
             'z': round(location.z, 3),
             'distance': round(distance, 3)})
+
 
 class WrongLaneTest(Criterion):
 
@@ -863,9 +863,9 @@ class WrongLaneTest(Criterion):
         if self._in_lane and self._wrong_distance > 0:
 
             wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
-            self.set_event_message(wrong_way_event, self._wrong_lane_start_location,
+            self._set_event_message(wrong_way_event, self._wrong_lane_start_location,
                                    self._wrong_distance, current_road_id, current_lane_id)
-            self.set_event_dict(wrong_way_event, self._wrong_lane_start_location,
+            self._set_event_dict(wrong_way_event, self._wrong_lane_start_location,
                                 self._wrong_distance, current_road_id, current_lane_id)
 
             self.list_traffic_events.append(wrong_way_event)
@@ -891,16 +891,16 @@ class WrongLaneTest(Criterion):
             current_road_id = lane_waypoint.road_id
 
             wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
-            self.set_event_message(wrong_way_event, self._wrong_lane_start_location,
+            self._set_event_message(wrong_way_event, self._wrong_lane_start_location,
                                    self._wrong_distance, current_road_id, current_lane_id)
-            self.set_event_dict(wrong_way_event, self._wrong_lane_start_location,
+            self._set_event_dict(wrong_way_event, self._wrong_lane_start_location,
                                 self._wrong_distance, current_road_id, current_lane_id)
 
             self._wrong_distance = 0
             self._in_lane = True
             self.list_traffic_events.append(wrong_way_event)
 
-    def set_event_message(self, event, location, distance, road_id, lane_id):
+    def _set_event_message(self, event, location, distance, road_id, lane_id):
         """
         Sets the message of the event
         """
@@ -915,7 +915,7 @@ class WrongLaneTest(Criterion):
                 road_id,
                 lane_id))
 
-    def set_event_dict(self, event, location, distance, road_id, lane_id):
+    def _set_event_dict(self, event, location, distance, road_id, lane_id):
         """
         Sets the dictionary of the event
         """
