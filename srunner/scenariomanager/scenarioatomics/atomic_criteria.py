@@ -737,7 +737,7 @@ class OnSidewalkTest(Criterion):
             message_start = 'Agent invaded the sidewalk'
         else:
             message_start = 'Agent went outside the lane'
-        
+
         event.set_message(
             '{} for about {} meters, starting at (x={}, y={}, z={})'.format(
                 message_start,
@@ -745,7 +745,6 @@ class OnSidewalkTest(Criterion):
                 round(location.x, 3),
                 round(location.y, 3),
                 round(location.z, 3)))
-
 
     def _set_event_dict(self, event, location, distance):
         """
