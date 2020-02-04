@@ -27,15 +27,14 @@ from py_trees.blackboard import Blackboard
 
 import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
+from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
-
-# import scenario_helper.py
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
 
-# OpenScenarioParser.convert_position_to_transform
+
 import srunner.tools
 
 EPSILON = 0.001
@@ -57,13 +56,12 @@ def get_actor_control(actor):
     """
     Method to return the type of control to the actor.
     """
-    control = None
+    control = actor.get_control()
     actor_type = actor.type_id.split('.')[0]
-    if actor.type_id.split('.')[0] == 'vehicle':
-        control = carla.VehicleControl()
+    if not isinstance(actor, carla.Walker):
         control.steering = 0
-    elif actor.type_id.split('.')[0] == 'walker':
-        control = carla.WalkerControl()
+    else:
+        control.speed = 0
 
     return control, actor_type
 
@@ -917,23 +915,43 @@ class Idle(AtomicBehavior):
 class WaypointFollower(AtomicBehavior):
 
     """
-    This is an atomic behavior to follow waypoints indefinitely
-    while maintaining a given speed or if given a waypoint plan,
-    follows the given plan
+    This is an atomic behavior to follow waypoints while maintaining a given speed.
+    If no plan is provided, the actor will follow its foward waypoints indefinetely.
+    Otherwise, the behavior will end with SUCCESS upon reaching the end of the plan.
+    If no target velocity is provided, the actor continues with its current velocity.
 
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - target_speed: Desired speed of the actor in m/s
-    - plan[optional]: Waypoint plan the actor should follow
-    - avoid_collision[optional]: Enable/Disable(=default) collision avoidance
+    Args:
+        actor (carla.Actor):  CARLA actor to execute the behavior.
+        target_speed (float, optional): Desired speed of the actor in m/s. Defaults to None.
+        plan ([carla.Location] or [(carla.Waypoint, carla.agent.navigation.local_planner)], optional):
+            Waypoint plan the actor should follow. Defaults to None.
+        blackboard_queue_name (str, optional):
+            Blackboard variable name, if additional actors should be created on-the-fly. Defaults to None.
+        avoid_collision (bool, optional):
+            Enable/Disable(=default) collision avoidance for vehicles/bikes. Defaults to False.
+        name (str, optional): Name of the behavior. Defaults to "FollowWaypoints".
 
-    A parallel termination behavior has to be used.
+    Attributes:
+        actor (carla.Actor):  CARLA actor to execute the behavior.
+        name (str, optional): Name of the behavior.
+        _target_speed (float, optional): Desired speed of the actor in m/s. Defaults to None.
+        _plan ([carla.Location] or [(carla.Waypoint, carla.agent.navigation.local_planner)]):
+            Waypoint plan the actor should follow. Defaults to None.
+        _blackboard_queue_name (str):
+            Blackboard variable name, if additional actors should be created on-the-fly. Defaults to None.
+        _avoid_collision (bool): Enable/Disable(=default) collision avoidance for vehicles/bikes. Defaults to False.
+        _actor_dict: Dictonary of all actors, and their corresponding plans (e.g. {actor: plan}).
+        _local_planner_list: List of local planners used for the actors. Either "Walker" for pedestrians,
+            or a carla.agent.navigation.LocalPlanner for other actors.
+        _args_lateral_dict: Parameters for the PID of the used carla.agent.navigation.LocalPlanner.
+        _unique_id: Unique ID of the behavior based on timestamp in nanoseconds.
 
-    OpenScenario:
-    The WaypointFollower atomic must be called with an individual name if multiple consecutive WFs.
-    Blackboard variables with lists are used for consecutive WaypointFollower behaviors.
-    Termination of active WaypointFollowers in initialise of AtomicBehavior because any
-    following behavior must terminate the WaypointFollower.
+    Note:
+        OpenScenario:
+        The WaypointFollower atomic must be called with an individual name if multiple consecutive WFs.
+        Blackboard variables with lists are used for consecutive WaypointFollower behaviors.
+        Termination of active WaypointFollowers in initialise of AtomicBehavior because any
+        following behavior must terminate the WaypointFollower.
     """
 
     def __init__(self, actor, target_speed=None, plan=None, blackboard_queue_name=None,
@@ -942,8 +960,8 @@ class WaypointFollower(AtomicBehavior):
         Set up actor and local planner
         """
         super(WaypointFollower, self).__init__(name, actor)
-        self._actor_list = []
-        self._actor_list.append(actor)
+        self._actor_dict = {}
+        self._actor_dict[actor] = None
         self._target_speed = target_speed
         self._local_planner_list = []
         self._plan = plan
@@ -957,6 +975,9 @@ class WaypointFollower(AtomicBehavior):
     def initialise(self):
         """
         Delayed one-time initialization
+
+        Checks if a another WaypointFollower behavior is already running for this actor.
+        If this is the case, a termination signal is sent to the running behavior.
         """
         super(WaypointFollower, self).initialise()
         self._unique_id = int(round(time.time() * 1e9))
@@ -975,29 +996,51 @@ class WaypointFollower(AtomicBehavior):
             py_trees.blackboard.Blackboard().set(
                 "running_WF_actor_{}".format(self._actor.id), [self._unique_id], overwrite=True)
 
-        for actor in self._actor_list:
+        for actor in self._actor_dict:
             self._apply_local_planner(actor)
         return True
 
     def _apply_local_planner(self, actor):
-
+        """
+        Convert the plan into locations for walkers (pedestrians), or to a waypoint list for other actors.
+        For non-walkers, activate the carla.agent.navigation.LocalPlanner module.
+        """
         if self._target_speed is None:
             self._target_speed = CarlaDataProvider.get_velocity(actor)
         else:
             self._target_speed = self._target_speed
 
-        local_planner = LocalPlanner(  # pylint: disable=undefined-variable
-            actor, opt_dict={
-                'target_speed': self._target_speed * 3.6,
-                'lateral_control_dict': self._args_lateral_dict})
+        if isinstance(actor, carla.Walker):
+            self._local_planner_list.append("Walker")
+            if self._plan is not None:
+                if isinstance(self._plan[0], carla.Location):
+                    self._actor_dict[actor] = self._plan
+                else:
+                    self._actor_dict[actor] = [element[0].transform.location for element in self._plan]
+        else:
+            local_planner = LocalPlanner(  # pylint: disable=undefined-variable
+                actor, opt_dict={
+                    'target_speed': self._target_speed * 3.6,
+                    'lateral_control_dict': self._args_lateral_dict})
 
-        if self._plan is not None:
-            local_planner.set_global_plan(self._plan)
-        self._local_planner_list.append(local_planner)
+            if self._plan is not None:
+                if isinstance(self._plan[0], carla.Location):
+                    plan = []
+                    for location in self._plan:
+                        waypoint = CarlaDataProvider.get_map().get_waypoint(location,
+                                                                            project_to_road=True,
+                                                                            lane_type=carla.LaneType.Any)
+                        plan.append((waypoint, RoadOption.LANEFOLLOW))
+                    local_planner.set_global_plan(plan)
+                else:
+                    local_planner.set_global_plan(self._plan)
+
+            self._local_planner_list.append(local_planner)
+            self._actor_dict[actor] = self._plan
 
     def update(self):
         """
-        Run local planner, obtain and apply control to actor
+        Compute next control step for the given waypoint plan, obtain and apply control to actor
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -1024,38 +1067,60 @@ class WaypointFollower(AtomicBehavior):
         if self._blackboard_queue_name is not None:
             while not self._queue.empty():
                 actor = self._queue.get()
-                if actor is not None and actor not in self._actor_list:
-                    self._actor_list.append(actor)
+                if actor is not None and actor not in self._actor_dict:
                     self._apply_local_planner(actor)
 
-        for actor, local_planner in zip(self._actor_list, self._local_planner_list):
+        success = True
+        for actor, local_planner in zip(self._actor_dict, self._local_planner_list):
             if actor is not None and actor.is_alive and local_planner is not None:
-                control = local_planner.run_step(debug=False)
-                if self._avoid_collision and detect_lane_obstacle(actor):
-                    control.throttle = 0.0
-                    control.brake = 1.0
-                actor.apply_control(control)
+                # Check if the actor is a vehicle/bike
+                if not isinstance(actor, carla.Walker):
+                    control = local_planner.run_step(debug=False)
+                    if self._avoid_collision and detect_lane_obstacle(actor):
+                        control.throttle = 0.0
+                        control.brake = 1.0
+                    actor.apply_control(control)
+                    # Check if the actor reached the end of the plan
+                    # @TODO replace access to private _waypoints_queue with public getter
+                    if local_planner._waypoints_queue:  # pylint: disable=protected-access
+                        success = False
+                # If the actor is a pedestrian, we have to use the WalkerAIController
+                # The walker is sent to the next waypoint in its plan
+                else:
+                    actor_location = CarlaDataProvider.get_location(actor)
+                    if self._actor_dict[actor]:
+                        success = False
+                        location = self._actor_dict[actor][0]
+                        direction = location - actor_location
+                        direction_norm = math.sqrt(direction.x**2 + direction.y**2)
+                        if direction_norm > 1.0:
+                            control = actor.get_control()
+                            control.speed = self._target_speed
+                            control.direction = direction / direction_norm
+                            actor.apply_control(control)
+                        else:
+                            self._actor_dict[actor] = self._actor_dict[actor][1:]
+
+        if success:
+            new_status = py_trees.common.Status.SUCCESS
 
         return new_status
 
     def terminate(self, new_status):
         """
         On termination of this behavior,
-        the throttle, brake and steer should be set back to 0.
+        the controls should be set back to 0.
         """
-        control = carla.VehicleControl()
-        control.throttle = 0.0
-        control.brake = 0.0
-        control.steer = 0.0
-        for actor, local_planner in zip(self._actor_list, self._local_planner_list):
+        for actor, local_planner in zip(self._actor_dict, self._local_planner_list):
             if actor is not None and actor.is_alive:
+                control, _ = get_actor_control(actor)
                 actor.apply_control(control)
-            if local_planner is not None:
-                local_planner.reset_vehicle()
-                local_planner = None
+                if local_planner is not None and local_planner != "Walker":
+                    local_planner.reset_vehicle()
+                    local_planner = None
 
         self._local_planner_list = []
-        self._actor_list = []
+        self._actor_dict = {}
         super(WaypointFollower, self).terminate(new_status)
 
 

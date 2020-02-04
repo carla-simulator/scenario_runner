@@ -15,7 +15,6 @@ import operator
 
 import py_trees
 import carla
-from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLightStateSetter,
@@ -424,7 +423,7 @@ class OpenScenarioParser(object):
                                                                                y=float(pos[1]),
                                                                                z=carla_actor_loc.z))
                             if distance < 2.0:
-                                traffic_light_id = actor.id
+                                traffic_light_id = carla_actor.id
                                 break
                     if traffic_light_id is None:
                         raise AttributeError("Unknown  traffic light {}".format(name))
@@ -532,8 +531,7 @@ class OpenScenarioParser(object):
                         for waypoint in route.iter('Waypoint'):
                             position = waypoint.find('Position')
                             transform = OpenScenarioParser.convert_position_to_transform(position)
-                            waypoint = CarlaDataProvider.get_map().get_waypoint(transform.location)
-                            plan.append((waypoint, RoadOption.LANEFOLLOW))
+                            plan.append(transform.location)
                         atomic = WaypointFollower(actor, target_speed=target_speed, plan=plan, name=maneuver_name)
                     elif private_action.find('CatalogReference') is not None:
                         raise NotImplementedError("CatalogReference private actions are not yet supported")
