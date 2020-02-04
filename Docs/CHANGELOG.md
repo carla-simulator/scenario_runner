@@ -21,6 +21,7 @@
     - Routes can be executed with the ScenarioRunner
     - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
     - Challenge can be executed with the ScenarioRunner
+    - WaypointFollower atomic can handle pedestrians
 * Extended OpenScenario support:
     - Extensions in WaypointFollower atomic for consecutive WaypointFollowers
     - Added init speed behavior for vehicles
@@ -37,7 +38,7 @@
     - AfterTermination, AtStart conditions are supported
     - Added initial support for lateral action: LaneChange
     - Added initial support for OSCGlobalAction to set state of traffic signal
-    - Added possibility to change speed for FollowRoute action
+    - FollowRoute action is supported for vehicles and pedestrians, for global world positions.
     - Added support for RoadCondition: Friction
     - Redundant rolename object property is no longer required
     - Added support for global parameters

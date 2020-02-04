@@ -212,6 +212,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
                     new_actor.transform = self._get_actor_transform(rolename)
 
+                    self.other_actors.append(new_actor)
+
     def _get_actor_transform(self, actor_name):
         """
         Get the initial actor transform provided by the Init section
