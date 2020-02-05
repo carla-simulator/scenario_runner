@@ -48,6 +48,7 @@
     - Added support for MiscObjects (besides vehicles and pedestrians)
     - Reworked traffic signal handling: The name has to start now either with "id=" or "pos=" depending on whether the position or id is used as unique identifier
 ### :bug: Bug Fixes
+* Fixed #443: Repetitions in OpenSCENARIO were not properly working
 * Fixed bug causing RunningStopTest atomic criteria to trigger when lane changing near a STOP signal
 * Fixed bug causing RunningRedLightTest atomic criteria to occasionally not trigger
 * Fixed bug causing occasional frame_errors
