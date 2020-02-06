@@ -19,3 +19,16 @@ No more scenarios .... Exiting
 ```
 and you see nothing happening, it is most likely due to the fact, that you did not launch a program to control
 the ego vehicle. Run for example manual_control.py, and you should now see something happening.
+
+
+## Scenario Runner exits with error when using --debug commandline parameter
+
+In case you receive the following output
+```
+UnicodeEncodeError: 'ascii' codec can't encode character '\u2713' in position 58: ordinal not in range(128)
+```
+Please set environment variable
+```
+PYTHONIOENCODING=utf-8
+```
+
