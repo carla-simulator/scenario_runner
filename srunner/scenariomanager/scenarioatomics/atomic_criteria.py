@@ -1207,10 +1207,10 @@ class RunningRedLightTest(Criterion):
 
         veh_extent = self._actor.bounding_box.extent.x
 
-        tail_close_pt = self.rotate_point(carla.Vector3D(-0.8*veh_extent, 0.0, location.z), transform.rotation.yaw)
+        tail_close_pt = self.rotate_point(carla.Vector3D(-0.8 * veh_extent, 0.0, location.z), transform.rotation.yaw)
         tail_close_pt = location + carla.Location(tail_close_pt)
 
-        tail_far_pt = self.rotate_point(carla.Vector3D(-veh_extent -1, 0.0, location.z), transform.rotation.yaw)
+        tail_far_pt = self.rotate_point(carla.Vector3D(-veh_extent - 1, 0.0, location.z), transform.rotation.yaw)
         tail_far_pt = location + carla.Location(tail_far_pt)
 
         for traffic_light, center, waypoints in self._list_traffic_lights:
@@ -1256,9 +1256,9 @@ class RunningRedLightTest(Criterion):
                     lane_width = wp.lane_width
                     location_wp = wp.transform.location
 
-                    lft_lane_wp = self.rotate_point(carla.Vector3D(0.4*lane_width, 0.0, location_wp.z), yaw_wp + 90)
+                    lft_lane_wp = self.rotate_point(carla.Vector3D(0.4 * lane_width, 0.0, location_wp.z), yaw_wp + 90)
                     lft_lane_wp = location_wp + carla.Location(lft_lane_wp)
-                    rgt_lane_wp = self.rotate_point(carla.Vector3D(0.4*lane_width, 0.0, location_wp.z), yaw_wp - 90)
+                    rgt_lane_wp = self.rotate_point(carla.Vector3D(0.4 * lane_width, 0.0, location_wp.z), yaw_wp - 90)
                     rgt_lane_wp = location_wp + carla.Location(rgt_lane_wp)
 
                     # Is the vehicle traversing the stop line?
@@ -1309,7 +1309,7 @@ class RunningRedLightTest(Criterion):
 
         # Discretize the trigger box into points
         area_ext = traffic_light.trigger_volume.extent
-        x_values = np.arange(-0.9*area_ext.x, 0.9*area_ext.x, 1.0) # 0.9 to avoid crossing to adjacent lanes
+        x_values = np.arange(-0.9 * area_ext.x, 0.9 * area_ext.x, 1.0) # 0.9 to avoid crossing to adjacent lanes
 
         area = []
         for x in x_values:
@@ -1322,7 +1322,7 @@ class RunningRedLightTest(Criterion):
         for pt in area:
             wpx = self._map.get_waypoint(pt)
             # As x_values are arranged in order, only the last one has to be checked
-            if len(ini_wps) == 0 or ini_wps[-1].road_id != wpx.road_id or ini_wps[-1].lane_id != wpx.lane_id:
+            if not ini_wps or ini_wps[-1].road_id != wpx.road_id or ini_wps[-1].lane_id != wpx.lane_id:
                 ini_wps.append(wpx)
 
         # Advance them until the intersection
@@ -1437,7 +1437,7 @@ class RunningStopTest(Criterion):
 
         dot_ve_wp = ve_dir.x * wp_dir.x + ve_dir.y * wp_dir.y + ve_dir.z * wp_dir.z
 
-        if dot_ve_wp > 0: # Ignore all when going in a wrong lane
+        if dot_ve_wp > 0:  # Ignore all when going in a wrong lane
             for stop_sign in self._list_stop_signs:
                 if self.is_actor_affected_by_stop(self._actor, stop_sign):
                     # this stop sign is affecting the vehicle
