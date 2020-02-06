@@ -1309,7 +1309,7 @@ class RunningRedLightTest(Criterion):
 
         # Discretize the trigger box into points
         area_ext = traffic_light.trigger_volume.extent
-        x_values = np.arange(-0.9 * area_ext.x, 0.9 * area_ext.x, 1.0) # 0.9 to avoid crossing to adjacent lanes
+        x_values = np.arange(-0.9 * area_ext.x, 0.9 * area_ext.x, 1.0)  # 0.9 to avoid crossing to adjacent lanes
 
         area = []
         for x in x_values:
