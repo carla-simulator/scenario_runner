@@ -776,16 +776,11 @@ class WrongLaneTest(Criterion):
         super(WrongLaneTest, self).__init__(name, actor, 0, None, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-        # self._world = self.actor.get_world()
         self._actor = actor
         self._map = CarlaDataProvider.get_map()
-        # self._infractions = 0
         self._last_lane_id = None
         self._last_road_id = None
 
-        # blueprint = self._world.get_blueprint_library().find('sensor.other.lane_invasion')
-        # self._lane_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        # self._lane_sensor.listen(lambda event: self._lane_change(weakref.ref(self), event))
         self._in_lane = True
         self._wrong_distance = 0
         self._actor_location = self._actor.get_location()
@@ -1180,7 +1175,7 @@ class RunningRedLightTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._list_traffic_lights = []
         self._last_red_light_id = None
-        self.debug = True
+        self.debug = False
 
         all_actors = self._world.get_actors()
         for _actor in all_actors:
@@ -1193,13 +1188,7 @@ class RunningRedLightTest(Criterion):
         """
         check if vehicle crosses a line segment
         """
-        self._world.debug.draw_line(seg1[0] + carla.Location(z=2), seg1[1] + carla.Location(z=2), color=carla.Color(100, 0, 100), life_time=0.01, thickness = 0.2)
-        self._world.debug.draw_line(seg2[0] + carla.Location(z=2), seg2[1] + carla.Location(z=2), color=carla.Color(100, 100, 0), life_time=0.01, thickness = 0.2)
-        self._world.debug.draw_point(seg1[0] + carla.Location(z=2), size=0.1, color=carla.Color(100, 0, 100), life_time=0.01)
-        self._world.debug.draw_point(seg1[1] + carla.Location(z=2), size=0.1, color=carla.Color(100, 0, 100), life_time=0.01)
-        self._world.debug.draw_point(seg2[0] + carla.Location(z=2), size=0.1, color=carla.Color(100, 100, 0), life_time=0.01)
-        self._world.debug.draw_point(seg2[1] + carla.Location(z=2), size=0.1, color=carla.Color(100, 100, 0), life_time=0.01)
-
+        
         line1 = shapely.geometry.LineString([(seg1[0].x, seg1[0].y), (seg1[1].x, seg1[1].y)])
         line2 = shapely.geometry.LineString([(seg2[0].x, seg2[0].y), (seg2[1].x, seg2[1].y)])
         inter = line1.intersection(line2)
@@ -1258,13 +1247,12 @@ class RunningRedLightTest(Criterion):
                 tail_wp = self._map.get_waypoint(tail_far_pt)
 
                 # Calculate the dot product (Might be unscaled, as only its sign is important)
-                ve_dir = self._actor.get_transform().get_forward_vector()
+                ve_dir = CarlaDataProvider.get_transform(self._actor).get_forward_vector()
                 wp_dir = wp.transform.get_forward_vector()
                 dot_ve_wp = ve_dir.x * wp_dir.x + ve_dir.y * wp_dir.y + ve_dir.z * wp_dir.z
 
                 # Check the lane until all the "tail" has passed
                 if tail_wp.road_id == wp.road_id and tail_wp.lane_id == wp.lane_id and dot_ve_wp > 0:
-                    print("Affected by a traffic light at road={}, lane={}".format(wp.road_id, wp.lane_id))
                     # This light is red and is affecting our lane
                     yaw_wp = wp.transform.rotation.yaw
                     lane_width = wp.lane_width
@@ -1278,7 +1266,6 @@ class RunningRedLightTest(Criterion):
                     # Is the vehicle traversing the stop line?
                     if self.is_vehicle_crossing_line((tail_close_pt, tail_far_pt), (lft_lane_wp, rgt_lane_wp)):
 
-                        print("Didn't you see that red light?")
                         self.test_status = "FAILURE"
                         self.actual_value += 1
                         location = traffic_light.get_transform().location
@@ -1422,7 +1409,6 @@ class RunningStopTest(Criterion):
         if stop_location.distance(current_location) > self.PROXIMITY_THRESHOLD:
             return affected
 
-        # print("Affected by stop!")
         stop_t = stop.get_transform()
         transformed_tv = stop_t.transform(stop.trigger_volume.location)
 
@@ -1475,15 +1461,12 @@ class RunningStopTest(Criterion):
         if not self._target_stop_sign:
             # scan for stop signs
             self._target_stop_sign = self._scan_for_stop_sign()
-            if self._target_stop_sign:
-                print("Found a Stop Sign")
         else:
             # we were in the middle of dealing with a stop sign
             if not self._stop_completed:
                 # did the ego-vehicle stop?
                 current_speed = CarlaDataProvider.get_velocity(self._actor)
                 if current_speed < self.SPEED_THRESHOLD:
-                    print("Stopped! Congratz")
                     self._stop_completed = True
 
             if not self._affected_by_stop:
@@ -1491,14 +1474,11 @@ class RunningStopTest(Criterion):
                 stop_extent = self._target_stop_sign.trigger_volume.extent
 
                 if self.point_inside_boundingbox(location, stop_location, stop_extent):
-                    print("Affected by the STOP signal")
                     self._affected_by_stop = True
 
             if not self.is_actor_affected_by_stop(self._actor, self._target_stop_sign):
-                print("No longer affected by the STOP signal")
                 # is the vehicle out of the influence of this stop sign now?
                 if not self._stop_completed and self._affected_by_stop:
-                    print("Didn't you see that STOP sign?")
                     # did we stop?
                     self.test_status = "FAILURE"
                     stop_location = self._target_stop_sign.get_transform().location
