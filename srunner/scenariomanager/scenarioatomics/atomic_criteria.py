@@ -989,7 +989,7 @@ class InRouteTest(Criterion):
     - offroad_max: Maximum allowed distance the actor can deviate from the route, when not driving on a road (meters)
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    DISTANCE_THRESHOLD = 200.0  # meters
+    DISTANCE_THRESHOLD = 15.0  # meters
     WINDOWS_SIZE = 3
 
     def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
