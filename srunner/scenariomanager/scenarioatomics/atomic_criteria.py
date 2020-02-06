@@ -1188,7 +1188,6 @@ class RunningRedLightTest(Criterion):
         """
         check if vehicle crosses a line segment
         """
-        
         line1 = shapely.geometry.LineString([(seg1[0].x, seg1[0].y), (seg1[1].x, seg1[1].y)])
         line2 = shapely.geometry.LineString([(seg2[0].x, seg2[0].y), (seg2[1].x, seg2[1].y)])
         inter = line1.intersection(line2)
@@ -1227,7 +1226,6 @@ class RunningRedLightTest(Criterion):
                 self._world.debug.draw_point(center + carla.Location(z=z), size=0.2, color=color, life_time=0.01)
                 for wp in waypoints:
                     text = "{}.{}".format(wp.road_id, wp.lane_id)
-
                     self._world.debug.draw_string(
                         wp.transform.location + carla.Location(x=1, z=z), text, color=color, life_time=0.01)
                     self._world.debug.draw_point(
