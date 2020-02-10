@@ -19,13 +19,10 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLightStateSetter,
                                                                       ActorTransformSetterToOSCPosition,
-                                                                      AccelerateToVelocity,
                                                                       ChangeAutoPilot,
                                                                       Idle,
-                                                                      KeepVelocity,
                                                                       LaneChange,
-                                                                      SetRelativeOSCVelocity,
-                                                                      WaypointFollower)
+                                                                      OscAgent)
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTest,
@@ -48,6 +45,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                InTimeToArrivalToVehicle,
                                                                                DriveDistance,
                                                                                StandStill,
+                                                                               TriggerVelocity,
                                                                                OSCStartEndCondition)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 
@@ -286,7 +284,7 @@ class OpenScenarioParser(object):
                     if s_condition.attrib.get('rule') != "greater_than":
                         raise NotImplementedError(
                             "Speed condition with the given specification is not yet supported")
-                    atomic = AccelerateToVelocity(trigger_actor, value, condition_name)
+                    atomic = TriggerVelocity(trigger_actor, value, condition_name)
                 elif entity_condition.find('RelativeSpeed') is not None:
                     raise NotImplementedError("RelativeSpeed conditions are not yet supported")
                 elif entity_condition.find('TraveledDistance') is not None:
@@ -460,11 +458,8 @@ class OpenScenarioParser(object):
                     # absolute velocity with given target speed
                     if long_maneuver.find("Target").find("Absolute") is not None:
                         target_speed = float(long_maneuver.find("Target").find("Absolute").attrib.get('value', 0))
-                        atomic = KeepVelocity(actor,
-                                              target_speed,
-                                              distance=distance,
-                                              duration=duration,
-                                              name=maneuver_name)
+                        atomic = OscAgent(actor, target_speed=target_speed, plan=None,
+                                          distance=distance, duration=duration, name=maneuver_name)
 
                     # relative velocity to given actor
                     if long_maneuver.find("Target").find("Relative") is not None:
@@ -472,18 +467,13 @@ class OpenScenarioParser(object):
                         obj = relative_speed.attrib.get('object')
                         value = float(relative_speed.attrib.get('value', 0))
                         value_type = relative_speed.attrib.get('valueType')
-                        continuous = relative_speed.attrib.get('continuous')
+                        # continuous = relative_speed.attrib.get('continuous')
 
                         for traffic_actor in CarlaDataProvider.get_world().get_actors():
                             if 'role_name' in traffic_actor.attributes and traffic_actor.attributes['role_name'] == obj:
                                 obj_actor = traffic_actor
-                        atomic = SetRelativeOSCVelocity(actor,
-                                                        obj_actor,
-                                                        value,
-                                                        value_type,
-                                                        continuous,
-                                                        duration,
-                                                        distance)
+                        atomic = OscAgent(actor, obj_actor, value_type=value_type, value=value,
+                                          plan=None, duration=float("inf"), distance=float("inf"), name=maneuver_name)
 
                 elif private_action.find('Distance') is not None:
                     raise NotImplementedError("Longitudinal distance actions are not yet supported")
@@ -532,7 +522,7 @@ class OpenScenarioParser(object):
                             position = waypoint.find('Position')
                             transform = OpenScenarioParser.convert_position_to_transform(position)
                             plan.append(transform.location)
-                        atomic = WaypointFollower(actor, target_speed=target_speed, plan=plan, name=maneuver_name)
+                        atomic = OscAgent(actor, target_speed=target_speed, plan=plan, name=maneuver_name)
                     elif private_action.find('CatalogReference') is not None:
                         raise NotImplementedError("CatalogReference private actions are not yet supported")
                     else:
