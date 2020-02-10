@@ -192,7 +192,7 @@ class ScenarioRunner(object):
                                                                     vehicle.rolename,
                                                                     True,
                                                                     color=vehicle.color,
-                                                                    vehicle_category=vehicle.category))
+                                                                    actor_category=vehicle.category))
         else:
             ego_vehicle_missing = True
             while ego_vehicle_missing:

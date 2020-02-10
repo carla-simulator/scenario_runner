@@ -196,7 +196,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 for pedestrian in obj.iter("Pedestrian"):
                     model = pedestrian.attrib.get('model', "walker.*")
 
-                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
+                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="pedestrian")
                     new_actor.transform = self._get_actor_transform(rolename)
 
                     self.other_actors.append(new_actor)
@@ -269,12 +269,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         for target in speed.iter('Target'):
                             for absolute in target.iter('Absolute'):
                                 speed = float(absolute.attrib.get('value', 0))
-                                if speed > 0:
+                                if speed >= 0:
                                     actor_speed = speed
                                 else:
-                                    raise(
-                                        """Warning: Speed value of actor {} must be positive.
-                                        Speed set to 0.""" .format(actor_name))
+                                    raise AttributeError(
+                                        "Warning: Speed value of actor {} must be positive. Speed set to 0.".format(actor_name))  # pylint: disable=line-too-long
         return actor_speed
 
     def _validate_result(self):

@@ -259,7 +259,7 @@ class OpenScenarioParser(object):
                     condition_value = ttc_condition.attrib.get('value')
                     condition_target = ttc_condition.find('Target')
 
-                    if condition_target.find('Position'):
+                    if condition_target.find('Position') is not None:
                         position = condition_target.find('Position')
                         atomic = InTimeToArrivalToOSCPosition(
                             trigger_actor, position, condition_value, condition_operator)
