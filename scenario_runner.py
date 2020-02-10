@@ -23,6 +23,7 @@ from distutils.version import LooseVersion
 import importlib
 import inspect
 import os
+import signal
 import sys
 import time
 import pkg_resources
@@ -120,6 +121,10 @@ class ScenarioRunner(object):
         # Create the ScenarioManager
         self.manager = ScenarioManager(args.debug, args.challenge)
 
+        # Create signal handler for SIGINT
+        self._shutdown_requested = False
+        signal.signal(signal.SIGINT, self._signal_handler)
+
         self._start_wall_time = datetime.now()
 
     def __del__(self):
@@ -132,6 +137,15 @@ class ScenarioRunner(object):
             del self.manager
         if self.world is not None:
             del self.world
+
+    def _signal_handler(self, signum, frame):
+        """
+        Terminate scenario ticking when receiving a signal interrupt
+        """
+        self._shutdown_requested = True
+        if self.manager:
+            self.manager.stop_scenario()
+            self._cleanup(True)
 
     def _within_available_time(self):
         """
@@ -165,6 +179,7 @@ class ScenarioRunner(object):
         """
 
         self.client.stop_recorder()
+        self.manager.cleanup()
 
         CarlaDataProvider.cleanup()
         CarlaActorPool.cleanup()
@@ -251,7 +266,7 @@ class ScenarioRunner(object):
             # if the world should not be reloaded, wait at least until all ego vehicles are ready
             ego_vehicle_found = False
             if args.waitForEgo:
-                while not ego_vehicle_found:
+                while not ego_vehicle_found and not self._shutdown_requested:
                     vehicles = self.client.get_world().get_actors().filter('vehicle.*')
                     for ego_vehicle in ego_vehicles:
                         ego_vehicle_found = False
@@ -367,9 +382,6 @@ class ScenarioRunner(object):
                 self.client.start_recorder("{}/{}.log".format(os.getenv('ROOT_SCENARIO_RUNNER', "./"), config.name))
             self.manager.load_scenario(scenario, self.agent_instance)
             self.manager.run_scenario()
-
-            # Stop scenario
-            self.manager.stop_scenario()
 
             # Provide outputs if required
             self._analyze_scenario(args, config)

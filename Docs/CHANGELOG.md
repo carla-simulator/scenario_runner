@@ -66,6 +66,7 @@
 * Fixed usage of radians instead of degrees for OpenSCENARIO
 * Fixed ActorTransformSetter behavior to avoid vehicles not reaching the desired transform
 * Fixed spawning of debris for ControlLoss scenario (Scenario01)
+* Fixed CTRL+C termination of ScenarioRunner
 ### :ghost: Maintenance
 * Split of behaviors into behaviors and conditions
 * Moved atomics into new submodule scenarioatomics
