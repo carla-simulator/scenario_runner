@@ -28,7 +28,6 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import get_distance_along_route
 
-# OpenScenarioParser.convert_position_to_transform
 import srunner.tools
 
 EPSILON = 0.001
@@ -164,8 +163,11 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         # calculate transform with method in openscenario_parser.py
-        osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
-            self._osc_position)
+        try:
+            osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+                self._osc_position)
+        except AttributeError:
+            return py_trees.common.Status.FAILURE
         target_location = osc_transform.location
         actor_location = CarlaDataProvider.get_location(self._actor)
 

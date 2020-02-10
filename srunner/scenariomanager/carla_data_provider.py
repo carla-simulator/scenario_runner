@@ -408,13 +408,13 @@ class CarlaActorPool(object):
 
     @staticmethod
     def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
-                    random_location=False, color=None, vehicle_category="car"):
+                    random_location=False, color=None, actor_category="car"):
         """
         Function to setup the most relevant actor parameters,
         incl. spawn point and vehicle model.
         """
 
-        _vehicle_blueprint_categories = {
+        _actor_blueprint_categories = {
             'car': 'vehicle.tesla.model3',
             'van': 'vehicle.volkswagen.t2',
             'truck': 'vehicle.carlamotors.carlacola',
@@ -425,6 +425,7 @@ class CarlaActorPool(object):
             'bicycle': 'vehicle.diamondback.century',
             'train': '',
             'tram': '',
+            'pedestrian': 'walker.pedestrian.0001',
         }
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
@@ -435,7 +436,7 @@ class CarlaActorPool(object):
         except IndexError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
-            new_model = _vehicle_blueprint_categories[vehicle_category]
+            new_model = _actor_blueprint_categories[actor_category]
             if new_model != '':
                 bp_filter = new_model
             print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
@@ -585,13 +586,13 @@ class CarlaActorPool(object):
 
     @staticmethod
     def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
-                          random_location=False, color=None, vehicle_category=None):
+                          random_location=False, color=None, actor_category=None):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
         """
         actor = CarlaActorPool.setup_actor(
-            model, spawn_point, rolename, hero, autopilot, random_location, color, vehicle_category)
+            model, spawn_point, rolename, hero, autopilot, random_location, color, actor_category)
 
         if actor is None:
             return None

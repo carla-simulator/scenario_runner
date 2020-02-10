@@ -86,7 +86,7 @@ class BasicScenario(object):
                                                          autopilot=actor.autopilot,
                                                          random_location=actor.random_location,
                                                          color=actor.color,
-                                                         vehicle_category=actor.category)
+                                                         actor_category=actor.category)
             if new_actor is None:
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
