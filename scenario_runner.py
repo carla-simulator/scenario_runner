@@ -408,7 +408,7 @@ class ScenarioRunner(object):
         """
         Run conventional scenarios (e.g. implemented using the Python API of ScenarioRunner)
         """
-
+        result = False
         # Setup and run the scenarios for repetition times
         for _ in range(int(args.repetitions)):
 
@@ -424,15 +424,16 @@ class ScenarioRunner(object):
 
             # Execute each configuration
             for config in scenario_configurations:
-                self._load_and_run_scenario(args, config)
+                result = self._load_and_run_scenario(args, config)
 
             self._cleanup(ego=(not args.waitForEgo))
+        return result
 
     def _run_challenge(self, args):
         """
         Run the challenge mode
         """
-
+        result = False
         phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
         phase = phase_codename.split("_")[0]
 
@@ -479,7 +480,7 @@ class ScenarioRunner(object):
                     print(error_message)
                     ChallengeStatisticsManager.record_fatal_error(error_message)
                     self._cleanup(True)
-                    sys.exit(-1)
+                    return False
 
                 config = RouteScenarioConfiguration(route_description, scenario_file)
 
@@ -489,8 +490,9 @@ class ScenarioRunner(object):
                     config.weather.sun_azimuth = -1
                     config.weather.sun_altitude = -1
 
-                self._load_and_run_scenario(args, config)
+                result = self._load_and_run_scenario(args, config)
                 self._cleanup(ego=(not args.waitForEgo))
+        return result
 
     def _run_openscenario(self, args):
         """
