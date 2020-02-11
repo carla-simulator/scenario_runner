@@ -220,14 +220,14 @@ class CarlaDataProvider(object):
             if diff < 0.0:
                 diff = 360.0 + diff
 
-            if diff <= 45.0 or diff > 340.0:
+            if diff <= 45.0 or diff > 320.0:
                 dict_annotations['ref'].append(target_tl)
-            elif diff > 240 and diff < 300:
-                dict_annotations['left'].append(target_tl)
+            elif diff > 240 and diff <= 320:
+                dict_annotations['right'].append(target_tl)
             elif diff > 160.0 and diff <= 240.0:
                 dict_annotations['opposite'].append(target_tl)
             else:
-                dict_annotations['right'].append(target_tl)
+                dict_annotations['left'].append(target_tl)
 
         return dict_annotations
 

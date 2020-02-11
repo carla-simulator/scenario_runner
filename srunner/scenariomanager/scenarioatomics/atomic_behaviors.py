@@ -1605,3 +1605,104 @@ class TrafficLightManipulator(AtomicBehavior):
                         self.intervention = False
 
         return new_status
+
+
+class TrafficLightManipulatorRoute(AtomicBehavior):
+
+    """
+    Atomic behavior that manipulates traffic lights around the ego_vehicle
+    This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
+
+    Important parameters:
+    - ego_vehicle: CARLA actor that controls this behavior
+
+    This behavior stops when blackboard.get('master_scenario_command') == scenarios_stop_request
+    """
+
+    MAX_DISTANCE_TRAFFIC_LIGHT = 15
+    RED = carla.TrafficLightState.Red
+    GREEN = carla.TrafficLightState.Green
+
+    INT_CONF_OPP = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
+    INT_CONF_LFT = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
+    INT_CONF_RGT = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
+
+    # Depending on the scenario and the route, trigger on configuration or another
+    DIRECTION_CONFIGURATION_TRANSLATION = {
+        "left": INT_CONF_LFT,
+        "right": INT_CONF_RGT,
+        "opposite": INT_CONF_OPP
+    }
+
+    def __init__(self, ego_vehicle, direction, debug=False, name="TrafficLightManipulatorRoute"):
+        super(TrafficLightManipulatorRoute, self).__init__(name)
+        self.ego_vehicle = ego_vehicle
+        self.direction = direction
+        self.debug = True
+        self.target_traffic_light = None
+        self.inside_junction = False
+        self.annotations = None
+        self.reset_annotations = None
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+
+        new_status = py_trees.common.Status.RUNNING
+
+        # find a suitable target
+        if not self.target_traffic_light:
+            traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
+            if not traffic_light:
+                # nothing else to do in this iteration...
+                return new_status
+
+            base_transform = traffic_light.get_transform()
+            area_loc = carla.Location(base_transform.transform(traffic_light.trigger_volume.location))
+            distance_to_traffic_light = area_loc.distance(self.ego_vehicle.get_location())
+
+            if self.debug:
+                print("[{}] distance={}".format(traffic_light.id, distance_to_traffic_light))
+
+            if distance_to_traffic_light < self.MAX_DISTANCE_TRAFFIC_LIGHT:
+                self.target_traffic_light = traffic_light
+                if self.debug:
+                    print("--- We are going to affect the following intersection")
+                    loc = self.target_traffic_light.get_location()
+                    CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
+                                                                    size=0.5, color=carla.Color(255, 255, 0),
+                                                                    life_time=50000)
+                self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
+        else:
+            if not self.reset_annotations:
+                # the light has not been manipulated yet
+
+                configuration = self.DIRECTION_CONFIGURATION_TRANSLATION[self.direction]
+                self.reset_annotations = CarlaDataProvider.update_light_states(
+                    self.target_traffic_light,
+                    self.annotations,
+                    configuration,
+                    freeze=True)
+
+            else:
+                # the traffic light has been manipulated, wait until the vehicle finsihes the intersection
+                ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+                ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+
+                # Wait for the ego_vehicle to enter a junction
+                if not self.inside_junction and ego_waypoint.is_junction:
+                    self.inside_junction = True
+
+                # And to leave it
+                if self.inside_junction and not ego_waypoint.is_junction:
+                    if self.debug:
+                        print("--- Leaving the junction")
+                    new_status = py_trees.common.Status.SUCCESS
+
+                    if self.reset_annotations:
+                        CarlaDataProvider.reset_lights(self.reset_annotations)
+                        self.target_traffic_light = None
+                        self.reset_annotations = None
+                        self.annotations = None
+                    new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
