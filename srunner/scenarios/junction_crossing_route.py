@@ -15,7 +15,7 @@ import random
 import py_trees
 import carla
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficLightManipulatorRoute
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficLightManipulator
 
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, DrivenDistanceTest, MaxVelocityTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, WaitEndIntersection
@@ -83,7 +83,7 @@ class SignalJunctionCrossingRoute(BasicScenario):
             tlights_config = random.choice(possible_tlights_config)
         else:
             tlights_config = possible_tlights_config[0]
-        traffic_hack = TrafficLightManipulatorRoute(self.ego_vehicles[0], tlights_config)
+        traffic_hack = TrafficLightManipulator(self.ego_vehicles[0], tlights_config)
 
         # finally wait that ego vehicle drove a specific distance
         wait = DriveDistance(
@@ -131,8 +131,8 @@ class NoSignalJunctionCrossingRoute(BasicScenario):
 
     """
     At routes, these scenarios are simplified, as they can be triggered making
-    use of the background activity. To ensure interactions with this background
-    activity, the traffic lights are modified, setting two of them to green
+    use of the background activity. For unsignalized intersections, just wait
+    until the ego_vehicle has left the intersection.
     """
 
     # ego vehicle parameters
