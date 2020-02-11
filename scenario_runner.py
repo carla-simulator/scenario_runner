@@ -68,7 +68,7 @@ class ScenarioRunner(object):
 
     Usage:
     scenario_runner = ScenarioRunner(args)
-    scenario_runner.run(args)
+    scenario_runner.run()
     del scenario_runner
     """
 
@@ -93,6 +93,7 @@ class ScenarioRunner(object):
         Setup CARLA client and world
         Setup ScenarioManager
         """
+        self._args = args
 
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
@@ -106,20 +107,20 @@ class ScenarioRunner(object):
 
         # Load additional scenario definitions, if there are any
         # If something goes wrong an exception will be thrown by importlib (ok here)
-        if args.additionalScenario != '':
+        if self._args.additionalScenario != '':
             module_name = os.path.basename(args.additionalScenario).split('.')[0]
             sys.path.insert(0, os.path.dirname(args.additionalScenario))
             self.additional_scenario_module = importlib.import_module(module_name)
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
-        if args.agent is not None:
+        if self._args.agent is not None:
             module_name = os.path.basename(args.agent).split('.')[0]
             sys.path.insert(0, os.path.dirname(args.agent))
             self.module_agent = importlib.import_module(module_name)
 
         # Create the ScenarioManager
-        self.manager = ScenarioManager(args.debug, args.challenge)
+        self.manager = ScenarioManager(self._args.debug, self._args.challenge)
 
         # Create signal handler for SIGINT
         self._shutdown_requested = False
@@ -128,16 +129,18 @@ class ScenarioRunner(object):
 
         self._start_wall_time = datetime.now()
 
-    def __del__(self):
+    def destroy(self):
         """
         Cleanup and delete actors, ScenarioManager and CARLA world
         """
 
-        self._cleanup(True)
+        self._cleanup()
         if self.manager is not None:
             del self.manager
         if self.world is not None:
             del self.world
+        if self.client is not None:
+            del self.client
 
     def _signal_handler(self, signum, frame):
         """
@@ -146,7 +149,7 @@ class ScenarioRunner(object):
         self._shutdown_requested = True
         if self.manager:
             self.manager.stop_scenario()
-            self._cleanup(True)
+            self._cleanup()
 
     def _within_available_time(self):
         """
@@ -174,7 +177,7 @@ class ScenarioRunner(object):
         print("Scenario '{}' not supported ... Exiting".format(scenario))
         sys.exit(-1)
 
-    def _cleanup(self, ego=False):
+    def _cleanup(self):
         """
         Remove and destroy all actors
         """
@@ -187,7 +190,8 @@ class ScenarioRunner(object):
 
         for i, _ in enumerate(self.ego_vehicles):
             if self.ego_vehicles[i]:
-                if ego:
+                if not self._args.waitForEgo:
+                    print("Destroying ego vehicle {}".format(self.ego_vehicles[i].id))
                     self.ego_vehicles[i].destroy()
                 self.ego_vehicles[i] = None
         self.ego_vehicles = []
@@ -196,12 +200,12 @@ class ScenarioRunner(object):
             self.agent_instance.destroy()
             self.agent_instance = None
 
-    def _prepare_ego_vehicles(self, ego_vehicles, wait_for_ego_vehicles=False):
+    def _prepare_ego_vehicles(self, ego_vehicles):
         """
         Spawn or update the ego vehicles
         """
 
-        if not wait_for_ego_vehicles:
+        if not self._args.waitForEgo:
             for vehicle in ego_vehicles:
                 self.ego_vehicles.append(CarlaActorPool.setup_actor(vehicle.model,
                                                                     vehicle.transform,
@@ -232,7 +236,7 @@ class ScenarioRunner(object):
         # sync state
         CarlaDataProvider.get_world().tick()
 
-    def _analyze_scenario(self, args, config):
+    def _analyze_scenario(self, config):
         """
         Provide feedback about success/failure of a scenario
         """
@@ -240,25 +244,25 @@ class ScenarioRunner(object):
         current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
         junit_filename = None
         config_name = config.name
-        if args.outputDir != '':
-            config_name = os.path.join(args.outputDir, config_name)
-        if args.junit:
+        if self._args.outputDir != '':
+            config_name = os.path.join(self._args.outputDir, config_name)
+        if self._args.junit:
             junit_filename = config_name + current_time + ".xml"
         filename = None
-        if args.file:
+        if self._args.file:
             filename = config_name + current_time + ".txt"
 
-        if not self.manager.analyze_scenario(args.output, filename, junit_filename):
+        if not self.manager.analyze_scenario(self._args.output, filename, junit_filename):
             print("Success!")
         else:
             print("Failure!")
 
-    def _load_and_wait_for_world(self, args, town, ego_vehicles=None):
+    def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """
         Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
         """
 
-        if args.reloadWorld:
+        if self._args.reloadWorld:
             self.world = self.client.load_world(town)
             settings = self.world.get_settings()
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
@@ -266,7 +270,7 @@ class ScenarioRunner(object):
         else:
             # if the world should not be reloaded, wait at least until all ego vehicles are ready
             ego_vehicle_found = False
-            if args.waitForEgo:
+            if self._args.waitForEgo:
                 while not ego_vehicle_found and not self._shutdown_requested:
                     vehicles = self.client.get_world().get_actors().filter('vehicle.*')
                     for ego_vehicle in ego_vehicles:
@@ -285,7 +289,7 @@ class ScenarioRunner(object):
         CarlaActorPool.set_world(self.world)
         CarlaDataProvider.set_world(self.world)
 
-        if args.agent:
+        if self._args.agent:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
             self.world.apply_settings(settings)
@@ -303,19 +307,19 @@ class ScenarioRunner(object):
 
         return True
 
-    def _load_and_run_scenario(self, args, config):
+    def _load_and_run_scenario(self, config):
         """
         Load and run the scenario given by config
         """
         result = False
-        if not self._load_and_wait_for_world(args, config.town, config.ego_vehicles):
+        if not self._load_and_wait_for_world(config.town, config.ego_vehicles):
             self._cleanup()
             return False
 
-        if args.agent:
+        if self._args.agent:
             agent_class_name = self.module_agent.__name__.title().replace('_', '')
             try:
-                self.agent_instance = getattr(self.module_agent, agent_class_name)(args.agentConfig)
+                self.agent_instance = getattr(self.module_agent, agent_class_name)(self._args.agentConfig)
                 config.agent = self.agent_instance
             except Exception as e:          # pylint: disable=broad-except
                 traceback.print_exc()
@@ -326,24 +330,24 @@ class ScenarioRunner(object):
         # Prepare scenario
         print("Preparing scenario: " + config.name)
         try:
-            self._prepare_ego_vehicles(config.ego_vehicles, args.waitForEgo)
-            if args.openscenario:
+            self._prepare_ego_vehicles(config.ego_vehicles)
+            if self._args.openscenario:
                 scenario = OpenScenario(world=self.world,
                                         ego_vehicles=self.ego_vehicles,
                                         config=config,
-                                        config_file=args.openscenario,
+                                        config_file=self._args.openscenario,
                                         timeout=100000)
-            elif args.route:
+            elif self._args.route:
                 scenario = RouteScenario(world=self.world,
                                          config=config,
-                                         debug_mode=args.debug)
+                                         debug_mode=self._args.debug)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
                 scenario = scenario_class(self.world,
                                           self.ego_vehicles,
                                           config,
-                                          args.randomize,
-                                          args.debug)
+                                          self._args.randomize,
+                                          self._args.debug)
         except Exception as exception:                  # pylint: disable=broad-except
             print("The scenario cannot be loaded")
             traceback.print_exc()
@@ -379,24 +383,24 @@ class ScenarioRunner(object):
 
         try:
             # Load scenario and run it
-            if args.record:
+            if self._args.record:
                 self.client.start_recorder("{}/{}.log".format(os.getenv('ROOT_SCENARIO_RUNNER', "./"), config.name))
             self.manager.load_scenario(scenario, self.agent_instance)
             self.manager.run_scenario()
 
             # Provide outputs if required
-            self._analyze_scenario(args, config)
+            self._analyze_scenario(config)
 
             # Remove all actors
             scenario.remove_all_actors()
             result = True
         except SensorConfigurationInvalid as e:
-            self._cleanup(True)
+            self._cleanup()
             ChallengeStatisticsManager.record_fatal_error(e)
             sys.exit(-1)
         except Exception as e:              # pylint: disable=broad-except
             traceback.print_exc()
-            if args.challenge:
+            if self._args.challenge:
                 ChallengeStatisticsManager.set_error_message(traceback.format_exc())
             print(e)
             result = False
@@ -404,32 +408,34 @@ class ScenarioRunner(object):
         self._cleanup()
         return result
 
-    def _run_scenarios(self, args):
+    def _run_scenarios(self):
         """
         Run conventional scenarios (e.g. implemented using the Python API of ScenarioRunner)
         """
         result = False
         # Setup and run the scenarios for repetition times
-        for _ in range(int(args.repetitions)):
+        for _ in range(int(self._args.repetitions)):
 
             # Load the scenario configurations provided in the config file
             scenario_configurations = None
-            scenario_config_file = ScenarioConfigurationParser.find_scenario_config(args.scenario, args.configFile)
+            scenario_config_file = ScenarioConfigurationParser.find_scenario_config(
+                self._args.scenario,
+                self._args.config_file)
             if scenario_config_file is None:
-                print("Configuration for scenario {} cannot be found!".format(args.scenario))
+                print("Configuration for scenario {} cannot be found!".format(self._args.scenario))
                 continue
 
             scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(scenario_config_file,
-                                                                                               args.scenario)
+                                                                                               self._args.scenario)
 
             # Execute each configuration
             for config in scenario_configurations:
-                result = self._load_and_run_scenario(args, config)
+                result = self._load_and_run_scenario(config)
 
-            self._cleanup(ego=(not args.waitForEgo))
+            self._cleanup()
         return result
 
-    def _run_challenge(self, args):
+    def _run_challenge(self):
         """
         Run the challenge mode
         """
@@ -437,9 +443,9 @@ class ScenarioRunner(object):
         phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
         phase = phase_codename.split("_")[0]
 
-        repetitions = args.repetitions
+        repetitions = self._args.repetitions
 
-        if args.challenge:
+        if self._args.challenge:
             weather_profiles = CarlaDataProvider.find_weather_presets()
             scenario_runner_root = os.getenv('ROOT_SCENARIO_RUNNER', "./")
 
@@ -457,70 +463,70 @@ class ScenarioRunner(object):
                 routes = '{}/srunner/challenge/routes_debug.xml'.format(scenario_runner_root)
                 repetitions = 1
 
-        if args.route:
-            routes = args.route[0]
-            scenario_file = args.route[1]
+        if self._args.route:
+            routes = self._args.route[0]
+            scenario_file = self._args.route[1]
             single_route = None
-            if len(args.route) > 2:
-                single_route = args.route[2]
+            if len(self._args.route) > 2:
+                single_route = self._args.route[2]
 
         # retrieve routes
         route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
-        if args.challenge:
+        if self._args.challenge:
             n_routes = len(route_descriptions_list) * repetitions
             ChallengeStatisticsManager.set_number_of_scenarios(n_routes)
 
         for _, route_description in enumerate(route_descriptions_list):
             for repetition in range(repetitions):
 
-                if args.challenge and not self._within_available_time():
+                if self._args.challenge and not self._within_available_time():
                     error_message = 'Not enough simulation time available to continue'
                     print(error_message)
                     ChallengeStatisticsManager.record_fatal_error(error_message)
-                    self._cleanup(True)
+                    self._cleanup()
                     return False
 
                 config = RouteScenarioConfiguration(route_description, scenario_file)
 
-                if args.challenge:
+                if self._args.challenge:
                     profile = weather_profiles[repetition % len(weather_profiles)]
                     config.weather = profile[0]
                     config.weather.sun_azimuth = -1
                     config.weather.sun_altitude = -1
 
-                result = self._load_and_run_scenario(args, config)
-                self._cleanup(ego=(not args.waitForEgo))
+                result = self._load_and_run_scenario(config)
+                self._cleanup()
         return result
 
-    def _run_openscenario(self, args):
+    def _run_openscenario(self):
         """
         Run a scenario based on OpenSCENARIO
         """
 
         # Load the scenario configurations provided in the config file
-        if not os.path.isfile(args.openscenario):
+        if not os.path.isfile(self._args.openscenario):
             print("File does not exist")
             self._cleanup()
             return False
 
-        config = OpenScenarioConfiguration(args.openscenario, self.client)
-        result = self._load_and_run_scenario(args, config)
-        self._cleanup(ego=(not args.waitForEgo))
+        config = OpenScenarioConfiguration(self._args.openscenario, self.client)
+        result = self._load_and_run_scenario(config)
+        self._cleanup()
         return result
 
-    def run(self, args):
+    def run(self):
         """
         Run all scenarios according to provided commandline args
         """
         result = True
-        if args.openscenario:
-            result = self._run_openscenario(args)
-        elif args.route or args.challenge:
-            result = self._run_challenge(args)
+        if self._args.openscenario:
+            result = self._run_openscenario()
+        elif self._args.route or self._args.challenge:
+            result = self._run_challenge()
         else:
-            result = self._run_scenarios(args)
+            result = self._run_scenarios()
 
         print("No more scenarios .... Exiting")
         return result
@@ -600,11 +606,12 @@ def main():
     result = True
     try:
         scenario_runner = ScenarioRunner(arguments)
-        result = scenario_runner.run(arguments)
+        result = scenario_runner.run()
     finally:
         if arguments.challenge:
             ChallengeStatisticsManager.report_challenge_statistics('results.json', arguments.debug)
         if scenario_runner is not None:
+            scenario_runner.destroy()
             del scenario_runner
     return not result
 
