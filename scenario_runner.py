@@ -124,6 +124,7 @@ class ScenarioRunner(object):
         # Create signal handler for SIGINT
         self._shutdown_requested = False
         signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
 
         self._start_wall_time = datetime.now()
 
@@ -306,10 +307,10 @@ class ScenarioRunner(object):
         """
         Load and run the scenario given by config
         """
-
+        result = False
         if not self._load_and_wait_for_world(args, config.town, config.ego_vehicles):
             self._cleanup()
-            return
+            return False
 
         if args.agent:
             agent_class_name = self.module_agent.__name__.title().replace('_', '')
@@ -320,7 +321,7 @@ class ScenarioRunner(object):
                 traceback.print_exc()
                 print("Could not setup required agent due to {}".format(e))
                 self._cleanup()
-                return
+                return False
 
         # Prepare scenario
         print("Preparing scenario: " + config.name)
@@ -348,7 +349,7 @@ class ScenarioRunner(object):
             traceback.print_exc()
             print(exception)
             self._cleanup()
-            return
+            return False
 
         # Set the appropriate weather conditions
         weather = carla.WeatherParameters(
@@ -388,6 +389,7 @@ class ScenarioRunner(object):
 
             # Remove all actors
             scenario.remove_all_actors()
+            result = True
         except SensorConfigurationInvalid as e:
             self._cleanup(True)
             ChallengeStatisticsManager.record_fatal_error(e)
@@ -397,14 +399,16 @@ class ScenarioRunner(object):
             if args.challenge:
                 ChallengeStatisticsManager.set_error_message(traceback.format_exc())
             print(e)
+            result = False
 
         self._cleanup()
+        return result
 
     def _run_scenarios(self, args):
         """
         Run conventional scenarios (e.g. implemented using the Python API of ScenarioRunner)
         """
-
+        result = False
         # Setup and run the scenarios for repetition times
         for _ in range(int(args.repetitions)):
 
@@ -420,15 +424,16 @@ class ScenarioRunner(object):
 
             # Execute each configuration
             for config in scenario_configurations:
-                self._load_and_run_scenario(args, config)
+                result = self._load_and_run_scenario(args, config)
 
             self._cleanup(ego=(not args.waitForEgo))
+        return result
 
     def _run_challenge(self, args):
         """
         Run the challenge mode
         """
-
+        result = False
         phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
         phase = phase_codename.split("_")[0]
 
@@ -475,7 +480,7 @@ class ScenarioRunner(object):
                     print(error_message)
                     ChallengeStatisticsManager.record_fatal_error(error_message)
                     self._cleanup(True)
-                    sys.exit(-1)
+                    return False
 
                 config = RouteScenarioConfiguration(route_description, scenario_file)
 
@@ -485,8 +490,9 @@ class ScenarioRunner(object):
                     config.weather.sun_azimuth = -1
                     config.weather.sun_altitude = -1
 
-                self._load_and_run_scenario(args, config)
+                result = self._load_and_run_scenario(args, config)
                 self._cleanup(ego=(not args.waitForEgo))
+        return result
 
     def _run_openscenario(self, args):
         """
@@ -497,100 +503,110 @@ class ScenarioRunner(object):
         if not os.path.isfile(args.openscenario):
             print("File does not exist")
             self._cleanup()
-            return
+            return False
 
         config = OpenScenarioConfiguration(args.openscenario, self.client)
-        self._load_and_run_scenario(args, config)
+        result = self._load_and_run_scenario(args, config)
         self._cleanup(ego=(not args.waitForEgo))
+        return result
 
     def run(self, args):
         """
         Run all scenarios according to provided commandline args
         """
+        result = True
         if args.openscenario:
-            self._run_openscenario(args)
+            result = self._run_openscenario(args)
         elif args.route or args.challenge:
-            self._run_challenge(args)
+            result = self._run_challenge(args)
         else:
-            self._run_scenarios(args)
+            result = self._run_scenarios(args)
 
         print("No more scenarios .... Exiting")
+        return result
 
 
-if __name__ == '__main__':
-
-    DESCRIPTION = ("CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
+def main():
+    """
+    main function
+    """
+    description = ("CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
                    "Current version: " + str(VERSION))
 
-    PARSER = argparse.ArgumentParser(description=DESCRIPTION,
+    parser = argparse.ArgumentParser(description=description,
                                      formatter_class=RawTextHelpFormatter)
-    PARSER.add_argument('--host', default='127.0.0.1',
+    parser.add_argument('--host', default='127.0.0.1',
                         help='IP of the host server (default: localhost)')
-    PARSER.add_argument('--port', default='2000',
+    parser.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
-    PARSER.add_argument('--debug', action="store_true", help='Run with debug output')
-    PARSER.add_argument('--output', action="store_true", help='Provide results on stdout')
-    PARSER.add_argument('--file', action="store_true", help='Write results into a txt file')
-    PARSER.add_argument('--junit', action="store_true", help='Write results into a junit file')
-    PARSER.add_argument('--outputDir', default='', help='Directory for output files (default: this directory)')
-    PARSER.add_argument('--waitForEgo', action="store_true", help='Connect the scenario to an existing ego vehicle')
-    PARSER.add_argument('--configFile', default='', help='Provide an additional scenario configuration file (*.xml)')
-    PARSER.add_argument('--additionalScenario', default='', help='Provide additional scenario implementations (*.py)')
-    PARSER.add_argument('--reloadWorld', action="store_true",
+    parser.add_argument('--debug', action="store_true", help='Run with debug output')
+    parser.add_argument('--output', action="store_true", help='Provide results on stdout')
+    parser.add_argument('--file', action="store_true", help='Write results into a txt file')
+    parser.add_argument('--junit', action="store_true", help='Write results into a junit file')
+    parser.add_argument('--outputDir', default='', help='Directory for output files (default: this directory)')
+    parser.add_argument('--waitForEgo', action="store_true", help='Connect the scenario to an existing ego vehicle')
+    parser.add_argument('--configFile', default='', help='Provide an additional scenario configuration file (*.xml)')
+    parser.add_argument('--additionalScenario', default='', help='Provide additional scenario implementations (*.py)')
+    parser.add_argument('--reloadWorld', action="store_true",
                         help='Reload the CARLA world before starting a scenario (default=True)')
     # pylint: disable=line-too-long
-    PARSER.add_argument(
+    parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
-    PARSER.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
-    PARSER.add_argument('--repetitions', default=1, help='Number of scenario executions')
-    PARSER.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
-    PARSER.add_argument(
+    parser.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
+    parser.add_argument('--repetitions', default=1, help='Number of scenario executions')
+    parser.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
+    parser.add_argument(
         '--agent', help="Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.")
-    PARSER.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
-    PARSER.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
-    PARSER.add_argument(
+    parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
+    parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
+    parser.add_argument(
         '--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
-    PARSER.add_argument('--challenge', action="store_true", help='Run in challenge mode')
-    PARSER.add_argument('--record', action="store_true",
+    parser.add_argument('--challenge', action="store_true", help='Run in challenge mode')
+    parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
-    PARSER.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
-    ARGUMENTS = PARSER.parse_args()
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
+    arguments = parser.parse_args()
     # pylint: enable=line-too-long
 
-    if ARGUMENTS.list:
+    if arguments.list:
         print("Currently the following scenarios are supported:")
-        print(*ScenarioConfigurationParser.get_list_of_scenarios(ARGUMENTS.configFile), sep='\n')
-        sys.exit(0)
+        print(*ScenarioConfigurationParser.get_list_of_scenarios(arguments.configFile), sep='\n')
+        return 1
 
-    if not ARGUMENTS.scenario and not ARGUMENTS.openscenario and not ARGUMENTS.route:
+    if not arguments.scenario and not arguments.openscenario and not arguments.route:
         print("Please specify either a scenario or use the route mode\n\n")
-        PARSER.print_help(sys.stdout)
-        sys.exit(0)
+        parser.print_help(sys.stdout)
+        return 1
 
-    if (ARGUMENTS.route and ARGUMENTS.openscenario) or (ARGUMENTS.route and ARGUMENTS.scenario):
+    if (arguments.route and arguments.openscenario) or (arguments.route and arguments.scenario):
         print("The route mode cannot be used together with a scenario (incl. OpenSCENARIO)'\n\n")
-        PARSER.print_help(sys.stdout)
-        sys.exit(0)
+        parser.print_help(sys.stdout)
+        return 1
 
-    if ARGUMENTS.agent and (ARGUMENTS.openscenario or ARGUMENTS.scenario):
+    if arguments.agent and (arguments.openscenario or arguments.scenario):
         print("Agents are currently only compatible with route scenarios'\n\n")
-        PARSER.print_help(sys.stdout)
-        sys.exit(0)
+        parser.print_help(sys.stdout)
+        return 1
 
-    if ARGUMENTS.challenge and (ARGUMENTS.openscenario or ARGUMENTS.scenario):
+    if arguments.challenge and (arguments.openscenario or arguments.scenario):
         print("The challenge mode can only be used with route-based scenarios'\n\n")
-        PARSER.print_help(sys.stdout)
-        sys.exit(0)
+        parser.print_help(sys.stdout)
+        return 1
 
-    if ARGUMENTS.route:
-        ARGUMENTS.reloadWorld = True
+    if arguments.route:
+        arguments.reloadWorld = True
 
-    SCENARIORUNNER = None
+    scenario_runner = None
+    result = True
     try:
-        SCENARIORUNNER = ScenarioRunner(ARGUMENTS)
-        SCENARIORUNNER.run(ARGUMENTS)
+        scenario_runner = ScenarioRunner(arguments)
+        result = scenario_runner.run(arguments)
     finally:
-        if ARGUMENTS.challenge:
-            ChallengeStatisticsManager.report_challenge_statistics('results.json', ARGUMENTS.debug)
-        if SCENARIORUNNER is not None:
-            del SCENARIORUNNER
+        if arguments.challenge:
+            ChallengeStatisticsManager.report_challenge_statistics('results.json', arguments.debug)
+        if scenario_runner is not None:
+            del scenario_runner
+    return not result
+
+if __name__ == "__main__":
+    sys.exit(main())
