@@ -83,7 +83,6 @@ class SignalJunctionCrossingRoute(BasicScenario):
             tlights_config = random.choice(possible_tlights_config)
         else:
             tlights_config = possible_tlights_config[0]
-        print("Chose --- {} --- configuration".format(tlights_config))
         traffic_hack = TrafficLightManipulatorRoute(self.ego_vehicles[0], tlights_config)
 
         # finally wait that ego vehicle drove a specific distance
