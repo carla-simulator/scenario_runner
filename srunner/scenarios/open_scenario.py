@@ -298,18 +298,16 @@ class OpenScenario(BasicScenario):
 
             for conditions in act.iter("Conditions"):
                 for start_condition in conditions.iter("Start"):
-                    parallel_start_criteria = self._create_condition_container(
-                        start_condition, "StartConditions", oneshot=True)
+                    parallel_start_criteria = self._create_condition_container(start_condition, "StartConditions")
                     if parallel_start_criteria.children:
                         start_conditions.add_child(parallel_start_criteria)
                 for end_condition in conditions.iter("End"):
-                    parallel_end_criteria = self._create_condition_container(
-                        end_condition, "EndConditions")
+                    parallel_end_criteria = self._create_condition_container(end_condition, "EndConditions")
                     if parallel_end_criteria.children:
                         parallel_behavior.add_child(parallel_end_criteria)
                 for cancel_condition in conditions.iter("Cancel"):
                     parallel_cancel_criteria = self._create_condition_container(
-                        cancel_condition, "CancelConditions")
+                        cancel_condition, "CancelConditions", success_on_all=False)
                     if parallel_cancel_criteria.children:
                         parallel_behavior.add_child(parallel_cancel_criteria)
 
@@ -334,26 +332,28 @@ class OpenScenario(BasicScenario):
 
         return behavior
 
-    def _create_condition_container(self, node, name='Conditions Group', oneshot=False):
+    def _create_condition_container(self, node, name='Conditions Group', success_on_all=True):
         """
         This is a generic function to handle conditions utilising ConditionGroups
         Each ConditionGroup is represented as a Sequence of Conditions
         The ConditionGroups are grouped under a SUCCESS_ON_ONE Parallel
-        If oneshot is set to True, oneshot_behaviour will be applied to conditions
         """
 
         parallel_condition_groups = py_trees.composites.Parallel(name,
                                                                  policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         for condition_group in node.iter("ConditionGroup"):
-            condition_group_sequence = py_trees.composites.Sequence(
-                name="Condition Group")
+            if success_on_all:
+                condition_group_sequence = py_trees.composites.Parallel(
+                    name="Condition Group", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+            else:
+                condition_group_sequence = py_trees.composites.Parallel(
+                    name="Condition Group", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
             for condition in condition_group.iter("Condition"):
                 criterion = OpenScenarioParser.convert_condition_to_atomic(
                     condition, self.other_actors + self.ego_vehicles)
-                if oneshot:
-                    criterion = oneshot_behavior(variable_name=get_xml_path(
-                        self.config.story, condition), behaviour=criterion)
+                criterion = oneshot_behavior(variable_name=get_xml_path(
+                    self.config.story, condition), behaviour=criterion)
                 condition_group_sequence.add_child(criterion)
 
             if condition_group_sequence.children:
