@@ -38,11 +38,11 @@ class SignalJunctionCrossingRoute(BasicScenario):
 
     # Depending on the route, decide which traffic lights can be modified
     DIRECTION_TRAFFIC_MANIPULATOR_TRANSLATION = {
-        "left7": ["left"],
-        "right7": ["left"],
-        "opposite7": ["right", "left"],
-        "left8": ["opposite"],
-        "right9": ["left"]
+        "S7left": ["left"],
+        "S7right": ["left"],
+        "S7opposite": ["right", "left"],
+        "S8left": ["opposite"],
+        "S9right": ["left"]
     }
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,

@@ -387,8 +387,8 @@ class VehicleTurningRoute(BasicScenario):
     """
 
     DIRECTION_INDEX_TRANSLATION = {
-        "left": -1,
-        "right": 1
+        "S4left": -1,
+        "S4right": 1
     }
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
