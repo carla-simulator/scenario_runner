@@ -425,7 +425,7 @@ class VehicleTurningRoute(BasicScenario):
         """
 
         waypoint = self._reference_waypoint
-        direction = self.DIRECTION_INDEX_TRANSLATION[config.route_direction]
+        direction = self.DIRECTION_INDEX_TRANSLATION[config.subtype]
         waypoint = generate_target_waypoint(waypoint, direction)
         _start_distance = 8
         while True:

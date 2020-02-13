@@ -1577,7 +1577,6 @@ class TrafficLightManipulator(AtomicBehavior):
         else:
             if not self.reset_annotations:
                 # the light has not been manipulated yet
-
                 configuration = self.DIRECTION_CONFIGURATION_TRANSLATION[self.direction]
                 self.reset_annotations = CarlaDataProvider.update_light_states(
                     self.target_traffic_light,

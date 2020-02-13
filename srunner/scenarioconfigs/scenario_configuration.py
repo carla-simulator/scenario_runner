@@ -101,4 +101,4 @@ class ScenarioConfiguration(object):
     agent = None
     weather = WeatherConfiguration()
     friction = None
-    route_direction = None
+    subtype = None

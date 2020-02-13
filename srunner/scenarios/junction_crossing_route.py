@@ -53,7 +53,7 @@ class SignalJunctionCrossingRoute(BasicScenario):
         """
         # Timeout of scenario in seconds
         self.timeout = timeout
-        self._route_direction = config.route_direction
+        self.subtype = config.subtype
 
         super(SignalJunctionCrossingRoute, self).__init__("SignalJunctionCrossingRoute",
                                                              ego_vehicles,
@@ -78,7 +78,7 @@ class SignalJunctionCrossingRoute(BasicScenario):
         """
 
         # Changes traffic lights
-        possible_tlights_config = self.DIRECTION_TRAFFIC_MANIPULATOR_TRANSLATION[self._route_direction]
+        possible_tlights_config = self.DIRECTION_TRAFFIC_MANIPULATOR_TRANSLATION[self.subtype]
         if len(possible_tlights_config) > 1:
             tlights_config = random.choice(possible_tlights_config)
         else:
