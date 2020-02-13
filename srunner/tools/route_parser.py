@@ -90,7 +90,7 @@ class RouteParser(object):
             dx = trigger['x'] - new_trigger['x']
             dy = trigger['y'] - new_trigger['y']
             distance = math.sqrt(dx * dx + dy * dy)
-            dyaw = trigger['yaw'] - trigger['yaw']
+            dyaw = trigger['yaw'] - new_trigger['yaw']
             dist_angle = math.sqrt(dyaw * dyaw)
             if distance < (TRIGGER_THRESHOLD * 2) and dist_angle < TRIGGER_ANGLE_THRESHOLD:
                 return trigger_id

@@ -785,7 +785,7 @@ class WaitEndIntersection(AtomicCondition):
     def __init__(self, ego_vehicle, debug=False, name="WaitEndIntersection"):
         super(WaitEndIntersection, self).__init__(name)
         self.ego_vehicle = ego_vehicle
-        self.debug = True
+        self.debug = debug
         self.inside_junction = False
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
