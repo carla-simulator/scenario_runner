@@ -536,3 +536,4 @@ class VehicleTurningRoute(BasicScenario):
         Remove all actors upon deletion
         """
         self.remove_all_actors()
+
