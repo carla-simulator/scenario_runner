@@ -292,7 +292,7 @@ class CollisionTest(Criterion):
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
-    MIN_AREA_OF_COLLISION = 3
+    MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
 
     def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
@@ -308,6 +308,7 @@ class CollisionTest(Criterion):
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
         self.registered_collisions = []
+        self.last_walker_id = None
 
     def update(self):
         """
@@ -376,6 +377,12 @@ class CollisionTest(Criterion):
                 self.actual_value -= 1
                 registered = True
                 break
+
+        # As walkers can be moved around, they might go out of the collision radius
+        if not registered and 'walker' in event.other_actor.type_id \
+                and self.last_walker_id == event.other_actor.id:
+            self.actual_value -= 1
+            registered = True
 
         # Register it if needed
         if not registered:
