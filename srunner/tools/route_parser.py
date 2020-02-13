@@ -145,20 +145,53 @@ class RouteParser(object):
         :param scenario: the scenario name
         :param match_position: the matching position for the scenarion
         :param trajectory: the route trajectory the ego is following
-        :return: 0 for option, 0 ,1 for option
+        :return: tag representing this subtype
+        Also used to check which are not viable (Such as an scenario
+        that triggers when turning but the route doesnt')
+        WARNING: These tags are used at:
+            - VehicleTurningRoute
+            - SignalJunctionCrossingRoute
+        and changes to these tags will affect them
         """
 
         if scenario == 'Scenario4':
             for tuple_wp_turn in trajectory[match_position:]:
                 if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                     if RoadOption.LEFT == tuple_wp_turn[1]:
-                        return 1
+                        return 'S4left'
                     elif RoadOption.RIGHT == tuple_wp_turn[1]:
-                        return 0
+                        return 'S4right'
+                    return None
+            return None
+        if scenario == 'Scenario7':
+            for tuple_wp_turn in trajectory[match_position:]:
+                if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                    if RoadOption.LEFT == tuple_wp_turn[1]:
+                        return 'S7left'
+                    elif RoadOption.RIGHT == tuple_wp_turn[1]:
+                        return 'S7right'
+                    elif RoadOption.STRAIGHT == tuple_wp_turn[1]:
+                        return 'S7opposite'
+                    return None
+            return None
+        if scenario == 'Scenario8':
+            for tuple_wp_turn in trajectory[match_position:]:
+                if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                    if RoadOption.LEFT == tuple_wp_turn[1]:
+                        return 'S8left'
+                    return None
+            return None
+        if scenario == 'Scenario9':
+            for tuple_wp_turn in trajectory[match_position:]:
+                if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                    if RoadOption.RIGHT == tuple_wp_turn[1]:
+                        return 'S9right'
                     return None
             return None
 
-        return 0
+        # Unused tag for the rest of scenarios,
+        # can't be None as they are still valid scenarios
+        return 'straight'
 
     @staticmethod
     def scan_route_for_scenarios(route_description, world_annotations):
@@ -204,11 +237,12 @@ class RouteParser(object):
                                                                          route_description['trajectory'])
                         if scenario_subtype is None:
                             continue
-                        scenario_description = {'name': scenario_name,
-                                                'other_actors': other_vehicles,
-                                                'trigger_position': waypoint,
-                                                'type': scenario_subtype,  # some scenarios have different configs
-                                                }
+                        scenario_description = {
+                            'name': scenario_name,
+                            'other_actors': other_vehicles,
+                            'trigger_position': waypoint,
+                            'scenario_type': scenario_subtype,  # some scenarios have route dependent configs
+                            }
 
                         trigger_id = RouteParser.check_trigger_position(waypoint, existent_triggers)
                         if trigger_id is None:
