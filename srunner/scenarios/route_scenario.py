@@ -38,12 +38,8 @@ from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.scenarios.control_loss import ControlLoss
 from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
 from srunner.scenarios.object_crash_vehicle import DynamicObjectCrossing
-from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft, VehicleTurningRoute
+from srunner.scenarios.object_crash_intersection import VehicleTurningRoute
 from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
-from srunner.scenarios.opposite_vehicle_taking_priority import OppositeVehicleRunningRedLight
-from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLeftTurn
-from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
-from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 from srunner.scenarios.junction_crossing_route import SignalJunctionCrossingRoute, NoSignalJunctionCrossingRoute
 
@@ -236,14 +232,13 @@ class RouteScenario(BasicScenario):
                                                            timeout=self.timeout,
                                                            debug_mode=False)
 
-        # self.background_scenario = self._build_background_scenario(world,
-        #                                                            ego_vehicle,
-        #                                                            config.town,
-        #                                                            timeout=self.timeout,
-        #                                                            debug_mode=False)
+        self.background_scenario = self._build_background_scenario(world,
+                                                                   ego_vehicle,
+                                                                   config.town,
+                                                                   timeout=self.timeout,
+                                                                   debug_mode=False)
 
-        # self.list_scenarios = [self.master_scenario, self.background_scenario]
-        self.list_scenarios = [self.master_scenario]
+        self.list_scenarios = [self.master_scenario, self.background_scenario]
 
         # build the instance based on the parsed definitions.
         self.list_scenarios += self._build_scenario_instances(world,

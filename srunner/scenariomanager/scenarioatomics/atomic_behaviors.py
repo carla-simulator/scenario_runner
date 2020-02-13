@@ -1571,8 +1571,8 @@ class TrafficLightManipulator(AtomicBehavior):
                     print("--- We are going to affect the following intersection")
                     loc = self.target_traffic_light.get_location()
                     CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
-                                                                    size=0.5, color=carla.Color(255, 255, 0),
-                                                                    life_time=50000)
+                                                                   size=0.5, color=carla.Color(255, 255, 0),
+                                                                   life_time=50000)
                 self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
         else:
             if not self.reset_annotations:

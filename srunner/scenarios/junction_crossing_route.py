@@ -13,7 +13,6 @@ from __future__ import print_function
 import random
 
 import py_trees
-import carla
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficLightManipulator
 
@@ -56,11 +55,11 @@ class SignalJunctionCrossingRoute(BasicScenario):
         self.subtype = config.subtype
 
         super(SignalJunctionCrossingRoute, self).__init__("SignalJunctionCrossingRoute",
-                                                             ego_vehicles,
-                                                             config,
-                                                             world,
-                                                             debug_mode,
-                                                             criteria_enable=criteria_enable)
+                                                          ego_vehicles,
+                                                          config,
+                                                          world,
+                                                          debug_mode,
+                                                          criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
@@ -150,11 +149,11 @@ class NoSignalJunctionCrossingRoute(BasicScenario):
         self.timeout = timeout
 
         super(NoSignalJunctionCrossingRoute, self).__init__("NoSignalJunctionCrossingRoute",
-                                                             ego_vehicles,
-                                                             config,
-                                                             world,
-                                                             debug_mode,
-                                                             criteria_enable=criteria_enable)
+                                                            ego_vehicles,
+                                                            config,
+                                                            world,
+                                                            debug_mode,
+                                                            criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """

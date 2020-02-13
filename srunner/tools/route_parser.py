@@ -242,7 +242,7 @@ class RouteParser(object):
                             'other_actors': other_vehicles,
                             'trigger_position': waypoint,
                             'scenario_type': scenario_subtype,  # some scenarios have route dependent configs
-                            }
+                        }
 
                         trigger_id = RouteParser.check_trigger_position(waypoint, existent_triggers)
                         if trigger_id is None:
