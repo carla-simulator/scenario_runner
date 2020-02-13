@@ -20,6 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
+
 class SignalJunctionCrossingRoute(BasicScenario):
 
     """
@@ -125,6 +126,7 @@ class SignalJunctionCrossingRoute(BasicScenario):
         """
         self._traffic_light = None
         self.remove_all_actors()
+
 
 class NoSignalJunctionCrossingRoute(BasicScenario):
 
