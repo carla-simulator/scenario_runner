@@ -154,44 +154,53 @@ class RouteParser(object):
         and changes to these tags will affect them
         """
 
+        # Unused tag for the rest of scenarios,
+        # can't be None as they are still valid scenarios
+        subtype = 'undetermined'
+
         if scenario == 'Scenario4':
             for tuple_wp_turn in trajectory[match_position:]:
                 if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                     if RoadOption.LEFT == tuple_wp_turn[1]:
-                        return 'S4left'
+                        subtype = 'S4left'
                     elif RoadOption.RIGHT == tuple_wp_turn[1]:
-                        return 'S4right'
-                    return None
-            return None
+                        subtype = 'S4right'
+                    subtype = None
+                    break # Avoid checking all of them
+            subtype = None
+
         if scenario == 'Scenario7':
             for tuple_wp_turn in trajectory[match_position:]:
                 if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                     if RoadOption.LEFT == tuple_wp_turn[1]:
-                        return 'S7left'
+                        subtype = 'S7left'
                     elif RoadOption.RIGHT == tuple_wp_turn[1]:
-                        return 'S7right'
+                        subtype = 'S7right'
                     elif RoadOption.STRAIGHT == tuple_wp_turn[1]:
-                        return 'S7opposite'
-                    return None
-            return None
+                        subtype = 'S7opposite'
+                    subtype = None
+                    break # Avoid checking all of them
+            subtype = None
+
         if scenario == 'Scenario8':
             for tuple_wp_turn in trajectory[match_position:]:
                 if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                     if RoadOption.LEFT == tuple_wp_turn[1]:
-                        return 'S8left'
-                    return None
-            return None
+                        subtype = 'S8left'
+                    subtype = None
+                    break # Avoid checking all of them
+            subtype = None
+            
         if scenario == 'Scenario9':
             for tuple_wp_turn in trajectory[match_position:]:
                 if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                     if RoadOption.RIGHT == tuple_wp_turn[1]:
-                        return 'S9right'
-                    return None
-            return None
+                        subtype = 'S9right'
+                    subtype = None
+                    break # Avoid checking all of them
+            subtype = None
 
-        # Unused tag for the rest of scenarios,
-        # can't be None as they are still valid scenarios
-        return 'straight'
+        return subtype
 
     @staticmethod
     def scan_route_for_scenarios(route_description, world_annotations):
