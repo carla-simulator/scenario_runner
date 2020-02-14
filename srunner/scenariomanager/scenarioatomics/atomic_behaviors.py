@@ -1529,17 +1529,27 @@ class TrafficLightManipulator(AtomicBehavior):
     INT_CONF_LFT = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
     INT_CONF_RGT = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
 
-    # Depending on the scenario and the route, trigger on configuration or another
-    DIRECTION_CONFIGURATION_TRANSLATION = {
-        "left": INT_CONF_LFT,
-        "right": INT_CONF_RGT,
-        "opposite": INT_CONF_OPP
+    # Depending on the scenario, IN ORDER OF IMPORTANCE, the traffic light changed
+    # The list has to contain only items of the INT_CONF
+    SUBTYPE_CONFIG_TRANSLATION = {
+        'S7left': ['left', 'opposite', 'right'],
+        'S7right': ['left', 'opposite'],
+        'S7opposite': ['right', 'left', 'opposite'],
+        'S8left': ['opposite'],
+        'S9right': ['left', 'opposite']
     }
 
-    def __init__(self, ego_vehicle, direction, debug=False, name="TrafficLightManipulator"):
+    CONFIG_TLM_TRANSLATION = {
+        'left': INT_CONF_LFT,
+        'right': INT_CONF_RGT,
+        'opposite': INT_CONF_OPP
+    }
+
+    def __init__(self, ego_vehicle, subtype, debug=False, name="TrafficLightManipulator"):
         super(TrafficLightManipulator, self).__init__(name)
         self.ego_vehicle = ego_vehicle
-        self.direction = direction
+        self.subtype = subtype
+        self.valid_subtype = True
         self.debug = debug
         self.target_traffic_light = None
         self.inside_junction = False
@@ -1575,13 +1585,21 @@ class TrafficLightManipulator(AtomicBehavior):
                                                                    life_time=50000)
                 self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
         else:
-            if not self.reset_annotations:
+            if not self.reset_annotations and self.valid_subtype:
                 # the light has not been manipulated yet
-                configuration = self.DIRECTION_CONFIGURATION_TRANSLATION[self.direction]
+                configuration = self.get_traffic_light_configuration(self.subtype, self.annotations)
+
+                if configuration is None:
+                    # No available config, move to the next step
+                    self.valid_subtype = False
+                    return new_status
+
+                choice = self.CONFIG_TLM_TRANSLATION[configuration]
+
                 self.reset_annotations = CarlaDataProvider.update_light_states(
                     self.target_traffic_light,
                     self.annotations,
-                    configuration,
+                    choice,
                     freeze=True)
 
             else:
@@ -1607,3 +1625,44 @@ class TrafficLightManipulator(AtomicBehavior):
                     new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+    def get_traffic_light_configuration(self, subtype, annotations):
+        """
+        Checks the list of possible altered traffic lights and gets
+        the first one that exists in the intersection
+
+        Important parameters:
+        - subtype: Subtype of the scenario
+        - annotations: list of the traffic light of the junction, with their direction (right, left...)
+        """
+        configuration = None
+
+        if subtype in self.SUBTYPE_CONFIG_TRANSLATION:
+            possible_configurations = self.SUBTYPE_CONFIG_TRANSLATION[self.subtype]
+            print(possible_configurations)
+            while possible_configurations:
+                # Choose one at random
+                print("----------------------")
+                configuration = possible_configurations[0]
+                print("Chose {}".format(configuration))
+                possible_configurations.remove(configuration)
+                if configuration in annotations:
+                    if annotations[configuration]:
+                        print("FOUND!")
+                        # Found a valid configuration
+                        break
+                    else:
+                        print("NOT FOUND!")
+                        # The traffic light doesn't exist, get another one
+                        configuration = None
+                else:
+                    print("Wrong name")
+                    configuration = None
+
+            if configuration is None and self.debug:
+                print("This subtype has no traffic light available")
+        else:
+            if self.debug:
+                print("This subtype is unknown")
+
+        return configuration

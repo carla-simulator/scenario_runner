@@ -37,13 +37,7 @@ class SignalJunctionCrossingRoute(BasicScenario):
     _traffic_light = None
 
     # Depending on the route, decide which traffic lights can be modified
-    DIRECTION_TRAFFIC_MANIPULATOR_TRANSLATION = {
-        "S7left": ["left"],
-        "S7right": ["left"],
-        "S7opposite": ["right", "left"],
-        "S8left": ["opposite"],
-        "S9right": ["left"]
-    }
+ 
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
@@ -72,18 +66,13 @@ class SignalJunctionCrossingRoute(BasicScenario):
         Scenario behavior:
         When close to an intersection, the traffic lights will turn green for
         both the ego_vehicle and another lane, allowing the background activity
-        to "run" their red light.
+        to "run" their red light, creating scenarios 7, 8 and 9.
 
         If this does not happen within 120 seconds, a timeout stops the scenario
         """
 
         # Changes traffic lights
-        possible_tlights_config = self.DIRECTION_TRAFFIC_MANIPULATOR_TRANSLATION[self.subtype]
-        if len(possible_tlights_config) > 1:
-            tlights_config = random.choice(possible_tlights_config)
-        else:
-            tlights_config = possible_tlights_config[0]
-        traffic_hack = TrafficLightManipulator(self.ego_vehicles[0], tlights_config)
+        traffic_hack = TrafficLightManipulator(self.ego_vehicles[0], self.subtype)
 
         # finally wait that ego vehicle drove a specific distance
         wait = DriveDistance(
