@@ -123,7 +123,7 @@ class RouteParser(object):
             dz = float(waypoint1['z']) - wtransform.location.z
             dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
 
-            dyaw = float(waypoint1['yaw']) - wtransform.rotation.yaw
+            dyaw = float(waypoint1['yaw'] % 360) - (wtransform.rotation.yaw % 360)
 
             dist_angle = math.sqrt(dyaw * dyaw)
 
