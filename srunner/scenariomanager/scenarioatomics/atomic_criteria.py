@@ -378,12 +378,6 @@ class CollisionTest(Criterion):
                 registered = True
                 break
 
-        # As walkers can be moved around, they might go out of the collision radius
-        if not registered and 'walker' in event.other_actor.type_id \
-                and self.last_walker_id == event.other_actor.id:
-            self.actual_value -= 1
-            registered = True
-
         # Register it if needed
         if not registered:
 
