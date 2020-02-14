@@ -89,7 +89,7 @@ Please take a look into the provided example scenarios, for further details on t
 
 ## Overview of available features of OpenSCENARIO v0.9:
 - [ ] Catalogs
-- [ ] Use of parameter
+- [x] Use of parameter (only global parameters are supported)
 - [ ] RoadNetwork:
     * [x] Logics (OpenDrive): Specifying the OpenDrive file is supported
     * [ ] OpenSceneGraph:
@@ -113,7 +113,7 @@ Please take a look into the provided example scenarios, for further details on t
        * [ ] FollowTrajectory
        * [ ] AquirePosition
     * [x] Command (Support for command 'Idle')
-    * [ ] Script
+    * [x] Script (The script file has to be fully qualified and contain the interpreter as well as arguments: Example: python /path/to/script.py --arg1)
     * [ ] SetEnvironment (Weather is supported)
     * [ ] Entity
     * [ ] Parameter
@@ -141,12 +141,3 @@ Please take a look into the provided example scenarios, for further details on t
     * [x] Parameter
     * [ ] TimeOfDay
     * [x] SimulationTime
-
-## Roadmap of planned extensions
-
-- Maneuver actions:
-  * [ ] Lane change (lateral action): September 2019
-- Conditions:
-  * [x] Complete distance checks: August/September 2019
-  * [x] AtStart: August/September 2019
-  * [x] AfterTermination: August/September 2019

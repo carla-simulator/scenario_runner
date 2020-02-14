@@ -208,7 +208,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     elif category == "guardRail":
                         model = "static.prop.chainbarrier"
                     else:
-                        model = "static.*"
+                        model = misc.attrib.get('name')
                     new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
                     new_actor.transform = self._get_actor_transform(rolename)
 
