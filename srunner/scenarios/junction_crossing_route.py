@@ -37,7 +37,6 @@ class SignalJunctionCrossingRoute(BasicScenario):
     _traffic_light = None
 
     # Depending on the route, decide which traffic lights can be modified
- 
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
