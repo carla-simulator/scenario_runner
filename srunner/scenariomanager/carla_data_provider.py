@@ -53,6 +53,7 @@ class CarlaDataProvider(object):
     _traffic_light_map = dict()
     _map = None
     _world = None
+    _trafficmanager = None
     _sync_flag = False
     _ego_vehicle_route = None
 
@@ -188,6 +189,20 @@ class CarlaDataProvider(object):
         settings = world.get_settings()
         CarlaDataProvider._sync_flag = settings.synchronous_mode
         CarlaDataProvider._map = CarlaDataProvider._world.get_map()
+
+    @staticmethod
+    def get_trafficmanager():
+        """
+        Return tm
+        """
+        return CarlaDataProvider._trafficmanager
+
+    @staticmethod
+    def set_trafficmanager(trafficmanager):
+        """
+        Set the tm and tm settings
+        """
+        CarlaDataProvider._trafficmanager = trafficmanager
 
     @staticmethod
     def get_map(world=None):
@@ -368,6 +383,7 @@ class CarlaActorPool(object):
     """
     _client = None
     _world = None
+    _trafficmanager = None
     _carla_actor_pool = dict()
     _spawn_points = None
     _spawn_index = 0
@@ -386,6 +402,14 @@ class CarlaActorPool(object):
         """
         CarlaActorPool._world = world
         CarlaActorPool.generate_spawn_points()
+
+    @staticmethod
+    def set_trafficmanager(trafficmanager):
+        """
+        Set the CARLA client
+        """
+        CarlaActorPool._trafficmanager = trafficmanager
+
 
     @staticmethod
     def get_actors():
@@ -493,9 +517,13 @@ class CarlaActorPool(object):
                 pass
         # wait for the actor to be spawned properly before we do anything
         if CarlaActorPool._world.get_settings().synchronous_mode:
+            print('spawn tick 1')
+            #CarlaActorPool._trafficmanager.synchronous_tick()
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
+            print('If we ever wait for tick pt.2 ')
+
 
         return actor
 
@@ -552,9 +580,12 @@ class CarlaActorPool(object):
 
         # wait for the actors to be spawned properly before we do anything
         if CarlaActorPool._world.get_settings().synchronous_mode:
+            print('spawn tick 2')
+            CarlaActorPool._trafficmanager.synchronous_tick()
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
+            print('If we ever wait for tick pt.3 ')
 
         actor_list = []
         actor_ids = []

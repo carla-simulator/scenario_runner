@@ -72,7 +72,7 @@ class WeatherConfiguration(object):
     This class provides basic weather configuration values
     """
 
-    cloudyness = -1
+    cloudiness = -1
     precipitation = -1
     precipitation_deposits = -1
     wind_intensity = -1

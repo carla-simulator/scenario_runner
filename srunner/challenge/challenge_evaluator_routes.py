@@ -450,6 +450,7 @@ class ChallengeEvaluator(object):
             if self.debug > 0:
                 print(" waiting for one data reading from sensors...")
             self.world.tick()
+            print('waiting for one data reading 1')
 
     def get_actors_instances(self, list_of_antagonist_actors):
         """
@@ -619,6 +620,7 @@ class ChallengeEvaluator(object):
             # update all scenarios
             GameTime.on_carla_tick(self.timestamp)
             CarlaDataProvider.on_carla_tick()
+            print('dataprovider on carla tick 1')
             # update all scenarios
 
             ego_action = self.agent_instance()
@@ -659,6 +661,7 @@ class ChallengeEvaluator(object):
             while attempts < self.MAX_CONNECTION_ATTEMPTS:
                 try:
                     self.world.tick()
+                    print('run route attempt 1')
                     break
                 except Exception:
                     attempts += 1
@@ -1035,21 +1038,21 @@ class ChallengeEvaluator(object):
             settings = self.world.get_settings()
             settings.synchronous_mode = False
             settings.no_rendering_mode = False
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = None
             self.world.apply_settings(settings)
         else:
             world = client.get_world()
             settings = world.get_settings()
             settings.synchronous_mode = False
             settings.no_rendering_mode = False
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = None
             world.apply_settings(settings)
             world = None
 
         self.world = client.load_world(town_name)
         settings = self.world.get_settings()
         settings.synchronous_mode = True
-        settings.fixed_delta_seconds = 1.0 / self.frame_rate
+        settings.fixed_delta_seconds = 0.05
         if self.track == 4:
             settings.no_rendering_mode = True
         self.world.apply_settings(settings)
@@ -1244,6 +1247,7 @@ class ChallengeEvaluator(object):
                     CarlaDataProvider.set_world(self.world)
                     # tick world so we can start.
                     self.world.tick()
+                    print('3')
 
                     # start recording logs for the current route
                     client.start_recorder('log_{}_track{}_route_{:0>4d}.log'.format(self.phase, self.track, route_idx))
@@ -1295,6 +1299,7 @@ class ChallengeEvaluator(object):
                 self.background_scenario = None
 
                 self.world.tick()
+                print('4')
 
                 if self.debug > 0:
                     break

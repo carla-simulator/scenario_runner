@@ -249,6 +249,7 @@ class ScenarioManager(object):
             # Update game time and actor information
             GameTime.on_carla_tick(timestamp)
             CarlaDataProvider.on_carla_tick()
+            print('carladataprovider on tick 2')
 
             if self._agent is not None:
                 ego_action = self._agent()
@@ -271,7 +272,9 @@ class ScenarioManager(object):
                 self.ego_vehicles[0].apply_control(ego_action)
 
         if self._agent:
+            CarlaDataProvider.get_trafficmanager().synchronous_tick()
             CarlaDataProvider.get_world().tick()
+            print('self.agent tick')
 
     def stop_scenario(self):
         """

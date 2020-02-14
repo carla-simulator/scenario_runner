@@ -54,7 +54,7 @@ class ScenarioConfigurationParser(object):
             new_config.trigger_points = []
 
             for weather in scenario.iter("weather"):
-                new_config.weather.cloudyness = float(weather.attrib.get("cloudyness", 0))
+                new_config.weather.cloudiness = float(weather.attrib.get("cloudiness", 0))
                 new_config.weather.precipitation = float(weather.attrib.get("precipitation", 0))
                 new_config.weather.precipitation_deposits = float(weather.attrib.get("precipitation_deposits", 0))
                 new_config.weather.wind_intensity = float(weather.attrib.get("wind_intensity", 0))

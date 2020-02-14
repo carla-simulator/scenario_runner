@@ -85,6 +85,7 @@ def test_routes(args):
     CarlaDataProvider.set_world(challenge.world)
     # tick world so we can start.
     challenge.world.tick()
+    print('tick world so we can start 1')
     # prepare route's trajectory
     gps_route, route_description['trajectory'] = interpolate_trajectory(challenge.world,
                                                                         route_description['trajectory'])

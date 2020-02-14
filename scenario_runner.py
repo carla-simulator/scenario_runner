@@ -82,6 +82,7 @@ class ScenarioRunner(object):
     # CARLA world and scenario handlers
     world = None
     manager = None
+    trafficmanager = None
 
     additional_scenario_module = None
 
@@ -100,6 +101,7 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
+        self.trafficmanager = None
 
         dist = pkg_resources.get_distribution("carla")
         if LooseVersion(dist.version) < LooseVersion('0.9.6'):
@@ -141,6 +143,8 @@ class ScenarioRunner(object):
             del self.world
         if self.client is not None:
             del self.client
+        if self.trafficmanager is not None:
+            del self.trafficmanager
 
     def _signal_handler(self, signum, frame):
         """
@@ -234,6 +238,8 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
+        print('sync state')
+        CarlaDataProvider.get_trafficmanager().synchronous_tick()
         CarlaDataProvider.get_world().tick()
 
     def _analyze_scenario(self, config):
@@ -265,7 +271,7 @@ class ScenarioRunner(object):
         if self._args.reloadWorld:
             self.world = self.client.load_world(town)
             settings = self.world.get_settings()
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = 0.05
             self.world.apply_settings(settings)
         else:
             # if the world should not be reloaded, wait at least until all ego vehicles are ready
@@ -284,21 +290,30 @@ class ScenarioRunner(object):
                             time.sleep(1)
                             break
 
+        self.trafficmanager = self.client.get_trafficmanager()
         self.world = self.client.get_world()
         CarlaActorPool.set_client(self.client)
         CarlaActorPool.set_world(self.world)
+        CarlaActorPool.set_trafficmanager(self.trafficmanager)
         CarlaDataProvider.set_world(self.world)
+        CarlaDataProvider.set_trafficmanager(self.trafficmanager)
 
         if self._args.agent:
+            self.trafficmanager.set_synchronous_mode(True)
             settings = self.world.get_settings()
             settings.synchronous_mode = True
             self.world.apply_settings(settings)
 
         # Wait for the world to be ready
         if self.world.get_settings().synchronous_mode:
+            print('pre tm tick')
+            self.trafficmanager.synchronous_tick()
+            print('post tm tick')
             self.world.tick()
+            print('post world tick')
         else:
             self.world.wait_for_tick()
+            print('If we ever wait for tick pt.1 ')
 
         if CarlaDataProvider.get_map().name != town:
             print("The CARLA server uses the wrong map!")
@@ -357,7 +372,7 @@ class ScenarioRunner(object):
 
         # Set the appropriate weather conditions
         weather = carla.WeatherParameters(
-            cloudyness=config.weather.cloudyness,
+            cloudiness=config.weather.cloudiness,
             precipitation=config.weather.precipitation,
             precipitation_deposits=config.weather.precipitation_deposits,
             wind_intensity=config.weather.wind_intensity,

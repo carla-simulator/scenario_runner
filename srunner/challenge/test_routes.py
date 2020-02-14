@@ -89,7 +89,7 @@ def test_routes(args):
         # tick world so we can start.
 
         challenge.world.tick()
-
+        print('challenge.world.tick() 2')
         # create agent
         challenge.agent_instance = getattr(challenge.module_agent, challenge.module_agent.__name__)(args.config)
         correct_sensors, error_message = challenge.valid_sensors_configuration(

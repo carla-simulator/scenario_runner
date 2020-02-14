@@ -105,6 +105,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world = self.client.get_world()
             CarlaDataProvider.set_world(world)
             world.wait_for_tick()
+            print('If we ever wait for tick pt.2 ')
 
     def _set_carla_weather(self):
         """
@@ -115,7 +116,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             sun = weather.find("Sun")
             self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
             self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
-            self.weather.cloudyness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+            self.weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
             precepitation = weather.find("Precipitation")
             self.weather.precipitation = 0
             if precepitation.attrib.get('type') == "rain":

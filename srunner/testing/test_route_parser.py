@@ -64,6 +64,8 @@ class TestRouteGenerator(unittest.TestCase):
             # Returns the interpolation in a different format
 
             challenge.world.wait_for_tick()
+            print('If we ever wait for tick pt.5 ')
+
             gps_route, route_description['trajectory'] = interpolate_trajectory(challenge.world,
                                                                                 route_description['trajectory'])
 

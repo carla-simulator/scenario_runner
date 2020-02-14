@@ -63,6 +63,7 @@ class TestScenarioBuilder(unittest.TestCase):
             CarlaDataProvider.set_world(challenge.world)
             # find and filter potential scenarios
             # Returns the iterpolation in a different format
+            print('If we ever wait for tick pt.7 ')
 
             challenge.world.wait_for_tick()
             gps_route, route_description['trajectory'] = interpolate_trajectory(challenge.world,
