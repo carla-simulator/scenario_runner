@@ -1639,20 +1639,15 @@ class TrafficLightManipulator(AtomicBehavior):
 
         if subtype in self.SUBTYPE_CONFIG_TRANSLATION:
             possible_configurations = self.SUBTYPE_CONFIG_TRANSLATION[self.subtype]
-            print(possible_configurations)
             while possible_configurations:
-                # Choose one at random
-                print("----------------------")
+                # Chose the first one and delete it
                 configuration = possible_configurations[0]
-                print("Chose {}".format(configuration))
                 possible_configurations.remove(configuration)
                 if configuration in annotations:
                     if annotations[configuration]:
-                        print("FOUND!")
                         # Found a valid configuration
                         break
                     else:
-                        print("NOT FOUND!")
                         # The traffic light doesn't exist, get another one
                         configuration = None
                 else:
