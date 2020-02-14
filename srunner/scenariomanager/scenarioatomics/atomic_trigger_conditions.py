@@ -793,15 +793,15 @@ class WaitEndIntersection(AtomicCondition):
 
         new_status = py_trees.common.Status.RUNNING
 
-        ego_location = CarlaDataProvider.get_location(self.actor)
-        ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+        location = CarlaDataProvider.get_location(self.actor)
+        waypoint = CarlaDataProvider.get_map().get_waypoint(location)
 
         # Wait for the actor to enter a junction
-        if not self.inside_junction and ego_waypoint.is_junction:
+        if not self.inside_junction and waypoint.is_junction:
             self.inside_junction = True
 
         # And to leave it
-        if self.inside_junction and not ego_waypoint.is_junction:
+        if self.inside_junction and not waypoint.is_junction:
             if self.debug:
                 print("--- Leaving the junction")
             new_status = py_trees.common.Status.SUCCESS
