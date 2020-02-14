@@ -782,9 +782,9 @@ class WaitEndIntersection(AtomicCondition):
     If currently inside no intersection, it will wait until one is found
     """
 
-    def __init__(self, ego_vehicle, debug=False, name="WaitEndIntersection"):
+    def __init__(self, actor, debug=False, name="WaitEndIntersection"):
         super(WaitEndIntersection, self).__init__(name)
-        self.ego_vehicle = ego_vehicle
+        self.actor = actor
         self.debug = debug
         self.inside_junction = False
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -793,10 +793,10 @@ class WaitEndIntersection(AtomicCondition):
 
         new_status = py_trees.common.Status.RUNNING
 
-        ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+        ego_location = CarlaDataProvider.get_location(self.actor)
         ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
-        # Wait for the ego_vehicle to enter a junction
+        # Wait for the actor to enter a junction
         if not self.inside_junction and ego_waypoint.is_junction:
             self.inside_junction = True
 
