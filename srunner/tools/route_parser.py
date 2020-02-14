@@ -165,9 +165,10 @@ class RouteParser(object):
                         subtype = 'S4left'
                     elif RoadOption.RIGHT == tuple_wp_turn[1]:
                         subtype = 'S4right'
-                    subtype = None
+                    else:
+                        subtype = None
                     break  # Avoid checking all of them
-            subtype = None
+                subtype = None
 
         if scenario == 'Scenario7':
             for tuple_wp_turn in trajectory[match_position:]:
@@ -178,27 +179,30 @@ class RouteParser(object):
                         subtype = 'S7right'
                     elif RoadOption.STRAIGHT == tuple_wp_turn[1]:
                         subtype = 'S7opposite'
-                    subtype = None
+                    else:
+                        subtype = None
                     break  # Avoid checking all of them
-            subtype = None
+                subtype = None
 
         if scenario == 'Scenario8':
             for tuple_wp_turn in trajectory[match_position:]:
                 if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                     if RoadOption.LEFT == tuple_wp_turn[1]:
                         subtype = 'S8left'
-                    subtype = None
+                    else:
+                        subtype = None
                     break  # Avoid checking all of them
-            subtype = None
+                subtype = None
 
         if scenario == 'Scenario9':
             for tuple_wp_turn in trajectory[match_position:]:
                 if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
                     if RoadOption.RIGHT == tuple_wp_turn[1]:
                         subtype = 'S9right'
-                    subtype = None
+                    else:
+                        subtype = None
                     break  # Avoid checking all of them
-            subtype = None
+                subtype = None
 
         return subtype
 
