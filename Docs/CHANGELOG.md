@@ -10,8 +10,10 @@
 * Added example scenario for lane change
 * Added cut-in example scenario
 * New Features:
+    - Scenarios 7 to 10 are now visible when running routes (instead of being triggered in the background). Their
+    methodology has remained unchanged
     - Changed SidewalkTest atomic criteria to also track other type of out of lane conditions
-    - SidewalkTest and WrongLaneTest atomic criterias now track the amount of meters traversed.
+    - SidewalkTest and WrongLaneTest atomic criterias now track the amount of meters traversed
     - CollisionTest atomic criteria now correctly ignores multiple micro-collisions with the same object
     - Added LaneChange and TrafficLightSateSetter behavior atomics
     - Added AccelerateToCatchUp behavior atomic
