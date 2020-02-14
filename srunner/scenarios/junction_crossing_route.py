@@ -9,9 +9,9 @@
 All intersection related scenarios that are part of a route.
 """
 
-import py_trees
-
 from __future__ import print_function
+
+import py_trees
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficLightManipulator
 
