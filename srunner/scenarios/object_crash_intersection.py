@@ -386,7 +386,7 @@ class VehicleTurningRoute(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    DIRECTION_INDEX_TRANSLATION = {
+    SUBTYPE_INDEX_TRANSLATION = {
         "S4left": -1,
         "S4right": 1
     }
@@ -425,7 +425,7 @@ class VehicleTurningRoute(BasicScenario):
         """
 
         waypoint = self._reference_waypoint
-        direction = self.DIRECTION_INDEX_TRANSLATION[config.subtype]
+        direction = self.SUBTYPE_INDEX_TRANSLATION[config.subtype]
         waypoint = generate_target_waypoint(waypoint, direction)
         _start_distance = 8
         while True:
