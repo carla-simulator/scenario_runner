@@ -12,13 +12,7 @@ import py_trees
 
 from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTest,
-                                                                     InRouteTest,
-                                                                     OnSidewalkTest,
-                                                                     RouteCompletionTest,
-                                                                     RunningRedLightTest,
-                                                                     RunningStopTest,
-                                                                     WrongLaneTest)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import *
 from srunner.scenarios.basic_scenario import BasicScenario
 
 
@@ -89,9 +83,7 @@ class MasterScenario(BasicScenario):
 
         completion_criterion = RouteCompletionTest(self.ego_vehicles[0], route=route)
 
-        wrong_way_criterion = WrongLaneTest(self.ego_vehicles[0])
-
-        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicles[0])
+        outsidelane_criterion = OutsideRouteLanesTest(self.ego_vehicles[0])
 
         red_light_criterion = RunningRedLightTest(self.ego_vehicles[0])
 
@@ -103,8 +95,7 @@ class MasterScenario(BasicScenario):
         parallel_criteria.add_child(completion_criterion)
         parallel_criteria.add_child(collision_criterion)
         parallel_criteria.add_child(route_criterion)
-        parallel_criteria.add_child(wrong_way_criterion)
-        parallel_criteria.add_child(onsidewalk_criterion)
+        parallel_criteria.add_child(outsidelane_criterion)
         parallel_criteria.add_child(red_light_criterion)
         parallel_criteria.add_child(stop_criterion)
 
