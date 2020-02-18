@@ -365,25 +365,27 @@ class CollisionTest(Criterion):
 
         actor_location = CarlaDataProvider.get_location(self.actor)
 
-        # As walkers can be moved around, they might go out of the collision radius
-        if 'walker' in event.other_actor.type_id:
-            if self.last_walker_id == event.other_actor.id:
+        # Loops through all the previous registered collisions
+        for collision_location in self.registered_collisions:
+
+            # Get the distance to the collision point
+            distance_vector = actor_location - collision_location
+            distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+
+            # Ignore the current one if close to a previous one
+            if distance <= self.MIN_AREA_OF_COLLISION:
                 self.actual_value -= 1
                 registered = True
+                if 'walker' in event.other_actor.type_id:
+                    # Register the id if it's a walker
+                    self.last_walker_id = event.other_actor.id
+                break
 
-        else:
-            # Loops through all the previous registered collisions
-            for collision_location in self.registered_collisions:
-
-                # Get the distance to the collision point
-                distance_vector = actor_location - collision_location
-                distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
-
-                # Ignore the current one if close to a previous one
-                if distance <= self.MIN_AREA_OF_COLLISION:
-                    self.actual_value -= 1
-                    registered = True
-                    break
+            # As walkers can be moved around, they might go out of the collision radius
+            elif 'walker' in event.other_actor.type_id and self.last_walker_id == event.other_actor.id:
+                self.actual_value -= 1
+                registered = True
+                break
 
         # Register it if needed
         if not registered:
