@@ -10,6 +10,7 @@
 * Added example scenario for lane change
 * Added cut-in example scenario
 * New Features:
+    - Added new OutsideRouteLanesTest atomic criter that encompasses both SidewalkTest and WrongLaneTest, without differentiating the out of lane type
     - Changed SidewalkTest atomic criteria to also track other type of out of lane conditions
     - SidewalkTest and WrongLaneTest atomic criterias now track the amount of meters traversed.
     - CollisionTest atomic criteria now correctly ignores multiple micro-collisions with the same object
