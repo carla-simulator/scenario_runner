@@ -778,9 +778,9 @@ class OutsideRouteLanesTest(Criterion):
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
-    ALLOWED_OUT_DISTANCE = 1.3 # At least 0.5, due to the mini-shoulder between lanes and sidewalks
+    ALLOWED_OUT_DISTANCE = 1.3  # At least 0.5, due to the mini-shoulder between lanes and sidewalks
     MAX_ALLOWED_VEHICLE_ANGLE = 120.0  # Maximum angle between the yaw and  waypoint lane
-    MAX_ALLOWED_WAYPOINT_ANGLE = 150.0 # Maximum change between the yaw-lane angle between frames
+    MAX_ALLOWED_WAYPOINT_ANGLE = 150.0  # Maximum change between the yaw-lane angle between frames
 
     def __init__(self, actor, optional=False, name="OutsideRouteLanesTest"):
         """
@@ -820,7 +820,7 @@ class OutsideRouteLanesTest(Criterion):
         current_parking_wp = self._map.get_waypoint(current_loc, lane_type=carla.LaneType.Parking, project_to_road=True)
 
         driving_distance = current_loc.distance(current_driving_wp.transform.location)
-        if current_parking_wp is not None: # Some towns have no parking
+        if current_parking_wp is not None:  # Some towns have no parking
             parking_distance = current_loc.distance(current_parking_wp.transform.location)
         else:
             parking_distance = float('inf')
@@ -870,7 +870,7 @@ class OutsideRouteLanesTest(Criterion):
 
             # Check for a big gap in waypoint directions.
             else:
-                if (waypoint_angle >= self.MAX_ALLOWED_WAYPOINT_ANGLE \
+                if (waypoint_angle >= self.MAX_ALLOWED_WAYPOINT_ANGLE
                     or waypoint_angle >= (360 - self.MAX_ALLOWED_WAYPOINT_ANGLE)) \
                         and not self._wrong_lane_active:
                     self._times_wrong_lane += 1
@@ -942,7 +942,7 @@ class OutsideRouteLanesTest(Criterion):
             'distance': round(distance, 3),
             'times_outside_lane': times_out,
             'times_wrong_lane': times_wrong
-            })
+        })
 
 
 class WrongLaneTest(Criterion):
