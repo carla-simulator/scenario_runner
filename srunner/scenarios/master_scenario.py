@@ -88,7 +88,7 @@ class MasterScenario(BasicScenario):
 
         completion_criterion = RouteCompletionTest(self.ego_vehicles[0], route=route)
 
-        outsidelane_criterion = OutsideRouteLanesTest(self.ego_vehicles[0])
+        outsidelane_criterion = OutsideRouteLanesTest(self.ego_vehicles[0], route=route)
 
         red_light_criterion = RunningRedLightTest(self.ego_vehicles[0])
 
