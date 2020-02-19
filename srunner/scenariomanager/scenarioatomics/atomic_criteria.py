@@ -376,12 +376,13 @@ class CollisionTest(Criterion):
             if distance <= self.MIN_AREA_OF_COLLISION:
                 self.actual_value -= 1
                 registered = True
-                if 'walker' in event.other_actor.type_id:
-                    # Register the id if it's a walker
+                if 'walker' in event.other_actor.type_id \
+                        or event.other_actor.type_id == 'vehicle.diamondback.century':
+                    # Register the id if it's a walker (or bike)
                     self.last_walker_id = event.other_actor.id
                 break
 
-            # As walkers can be moved around, they might go out of the collision radius
+            # As walkers and bikes can be moved around, they might go out of the collision radius
             elif 'walker' in event.other_actor.type_id and self.last_walker_id == event.other_actor.id:
                 self.actual_value -= 1
                 registered = True
