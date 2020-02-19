@@ -826,6 +826,9 @@ class OutsideRouteLanesTest(Criterion):
         self._is_outside_driving_lanes(location)
         self._is_at_wrong_lane(location)
 
+        if self._outside_lane_active or self._wrong_lane_active:
+            self.test_status = "FAILURE"
+
         # 2) Get the traveled distance
         for index in range(self._current_index + 1,
                            min(self._current_index + self.WINDOWS_SIZE + 1, self._route_length)):
