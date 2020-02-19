@@ -1323,10 +1323,8 @@ class RouteCompletionTest(Criterion):
                     self._current_index = index
                     self._percentage_route_completed = 100.0 * float(self._accum_meters[self._current_index]) \
                         / float(self._accum_meters[-1])
-
                     self._traffic_event.set_dict({
-                        'route_completed': self._percentage_route_completed
-                    })
+                        'route_completed': self._percentage_route_completed})
                     self._traffic_event.set_message(
                         "Agent has completed > {:.2f}% of the route".format(
                             self._percentage_route_completed))
