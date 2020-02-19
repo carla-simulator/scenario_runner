@@ -876,10 +876,7 @@ class OutsideRouteLanesTest(Criterion):
             distance = driving_distance
             lane_width = current_driving_wp.lane_width
 
-        if distance > lane_width / 2 + self.ALLOWED_OUT_DISTANCE:
-            self._outside_lane_active = True
-        else:
-            self._outside_lane_active = False
+        self._outside_lane_active = bool(distance > (lane_width / 2 + self.ALLOWED_OUT_DISTANCE))
 
     def _is_at_wrong_lane(self, location):
         """
@@ -918,12 +915,11 @@ class OutsideRouteLanesTest(Criterion):
                 if waypoint_angle >= self.MAX_ALLOWED_WAYPOINT_ANGLE \
                         and waypoint_angle <= (360 - self.MAX_ALLOWED_WAYPOINT_ANGLE):
 
-                    # Is the ego vehicle going back to the lane, or going out?
-                    if not self._wrong_lane_active:
-                        self._wrong_lane_active = True
-                    else:
-                        self._wrong_lane_active = False
+                    # Is the ego vehicle going back to the lane, or going out? Take the opposite
+                    self._wrong_lane_active = not bool(self._wrong_lane_active)
                 else:
+
+                    # Changing to a lane with the same direction
                     self._wrong_lane_active = False
 
         # Remember the last state
@@ -941,10 +937,11 @@ class OutsideRouteLanesTest(Criterion):
             percentage = round(self._wrong_distance / self._total_distance * 100, 2)
 
             outside_lane = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION)
-            outside_lane.set_message("Agent went outside its route lanes for about {} meters "
+            outside_lane.set_message(
+                "Agent went outside its route lanes for about {} meters "
                 "({}% of the completed route)".format(
-                round(self._wrong_distance, 3),
-                percentage))
+                    round(self._wrong_distance, 3),
+                    percentage))
 
             outside_lane.set_dict({
                 'distance': self._wrong_distance,
