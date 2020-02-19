@@ -238,7 +238,6 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
-        print('sync state')
         CarlaDataProvider.get_trafficmanager().synchronous_tick()
         CarlaDataProvider.get_world().tick()
 
@@ -306,14 +305,10 @@ class ScenarioRunner(object):
 
         # Wait for the world to be ready
         if self.world.get_settings().synchronous_mode:
-            print('pre tm tick')
             self.trafficmanager.synchronous_tick()
-            print('post tm tick')
             self.world.tick()
-            print('post world tick')
         else:
             self.world.wait_for_tick()
-            print('If we ever wait for tick pt.1 ')
 
         if CarlaDataProvider.get_map().name != town:
             print("The CARLA server uses the wrong map!")
@@ -435,7 +430,7 @@ class ScenarioRunner(object):
             scenario_configurations = None
             scenario_config_file = ScenarioConfigurationParser.find_scenario_config(
                 self._args.scenario,
-                self._args.config_file)
+                self._args.configFile)
             if scenario_config_file is None:
                 print("Configuration for scenario {} cannot be found!".format(self._args.scenario))
                 continue

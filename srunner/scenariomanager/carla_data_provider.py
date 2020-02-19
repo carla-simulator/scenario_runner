@@ -517,12 +517,10 @@ class CarlaActorPool(object):
                 pass
         # wait for the actor to be spawned properly before we do anything
         if CarlaActorPool._world.get_settings().synchronous_mode:
-            print('spawn tick 1')
-            #CarlaActorPool._trafficmanager.synchronous_tick()
+            CarlaActorPool._trafficmanager.synchronous_tick()
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
-            print('If we ever wait for tick pt.2 ')
 
 
         return actor
@@ -580,12 +578,10 @@ class CarlaActorPool(object):
 
         # wait for the actors to be spawned properly before we do anything
         if CarlaActorPool._world.get_settings().synchronous_mode:
-            print('spawn tick 2')
             CarlaActorPool._trafficmanager.synchronous_tick()
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
-            print('If we ever wait for tick pt.3 ')
 
         actor_list = []
         actor_ids = []

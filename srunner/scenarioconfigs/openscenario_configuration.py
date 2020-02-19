@@ -105,7 +105,6 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world = self.client.get_world()
             CarlaDataProvider.set_world(world)
             world.wait_for_tick()
-            print('If we ever wait for tick pt.2 ')
 
     def _set_carla_weather(self):
         """

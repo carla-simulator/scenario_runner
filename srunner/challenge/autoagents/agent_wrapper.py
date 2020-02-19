@@ -117,7 +117,6 @@ class AgentWrapper(object):
         while not self._agent.all_sensors_ready():
             if debug_mode:
                 print(" waiting for one data reading from sensors...")
-            print('what are we waiting for sensor?')
             CarlaDataProvider.get_trafficmanager().synchronous_tick()
             CarlaDataProvider.get_world().tick()
 

@@ -50,10 +50,8 @@ class BasicScenario(object):
         if world.get_settings().synchronous_mode:
             self.trafficmanager.synchronous_tick()
             world.tick()
-            print('basic_tick')
         else:
             world.wait_for_tick()
-            print('If we ever wait for tick pt.4 ')
 
         # Setup scenario
         if debug_mode:
