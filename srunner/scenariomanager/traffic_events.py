@@ -28,6 +28,7 @@ class TrafficEventType(Enum):
     ON_SIDEWALK_INFRACTION = 9
     STOP_INFRACTION = 10
     OUTSIDE_LANE_INFRACTION = 11
+    OUTSIDE_ROUTE_LANES_INFRACTION = 12
 
 
 class TrafficEvent(object):
