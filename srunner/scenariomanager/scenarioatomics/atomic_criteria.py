@@ -295,6 +295,12 @@ class CollisionTest(Criterion):
     MIN_AREA_OF_COLLISION = 3
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
 
+    BIKES_BLUEPRINTS = [
+        'vehicle.diamondback.century',
+        'vehicle.gazelle.omafiets',
+        'vehicle.bh.crossbike'
+    ]
+
     def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
         """
         Construction with sensor setup
@@ -377,7 +383,7 @@ class CollisionTest(Criterion):
                 self.actual_value -= 1
                 registered = True
                 if 'walker' in event.other_actor.type_id \
-                        or event.other_actor.type_id == 'vehicle.diamondback.century':
+                        or event.other_actor.type_id in self.BIKES_BLUEPRINTS:
                     # Register the id if it's a walker (or bike)
                     self.last_walker_id = event.other_actor.id
                 break
