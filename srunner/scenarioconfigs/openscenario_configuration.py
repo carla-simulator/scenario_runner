@@ -147,18 +147,29 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         Extract weather information from OpenSCENARIO config
         """
 
-        for weather in self.init.iter("Weather"):
-            sun = weather.find("Sun")
-            self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
-            self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
-            self.weather.cloudyness = 100 - float(sun.attrib.get('intensity', 0)) * 100
-            precepitation = weather.find("Precipitation")
-            self.weather.precipitation = 0
-            if precepitation.attrib.get('type') == "rain":
-                self.weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
-                self.weather.precipitation_deposits = 100  # if it rains, make the road wet
-            elif precepitation.attrib.get('type') == "snow":
-                raise AttributeError("CARLA does not support snow precipitation")
+        set_environment = next(self.init.iter("SetEnvironment"))
+
+        print (set_environment)
+
+        if set_environment.find("Weather") is not None:
+            environment = set_environment.find("Environment")
+        elif set_environment.find("CatalogReference") is not None:
+            catalog_reference = set_environment.find("CatalogReference")
+            environment = self.catalogs[catalog_reference.attrib.get("catalogName")] \
+                                       [catalog_reference.attrib.get("entryName")]
+
+        weather = environment.find("Weather")
+        sun = weather.find("Sun")
+        self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
+        self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
+        self.weather.cloudyness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+        precepitation = weather.find("Precipitation")
+        self.weather.precipitation = 0
+        if precepitation.attrib.get('type') == "rain":
+            self.weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
+            self.weather.precipitation_deposits = 100  # if it rains, make the road wet
+        elif precepitation.attrib.get('type') == "snow":
+            raise AttributeError("CARLA does not support snow precipitation")
 
     def _set_carla_friction(self):
         """
