@@ -11,6 +11,7 @@ This module provides the key configuration parameters for a scenario based on Op
 
 from __future__ import print_function
 
+import logging
 import math
 import os
 import xml.etree.ElementTree as ET
@@ -41,6 +42,17 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._validate_openscenario_configuration()
         self.client = client
 
+        self.catalogs = {"Vehicle": {},
+                         "Driver": {},
+                         "Pedestrian": {},
+                         "PedestrianController": {},
+                         "MiscObject": {},
+                         "Environment": {},
+                         "Maneuver": {},
+                         "Trajectory": {},
+                         "Route": {}
+        }
+
         self.other_actors = []
         self.ego_vehicles = []
         self.trigger_points = []
@@ -49,6 +61,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.storyboard = self.xml_tree.find("Storyboard")
         self.story = self.storyboard.find("Story")
         self.init = self.storyboard.find("Init")
+
+        self.logger = logging.getLogger("CatalogMessages")
 
         self._parse_openscenario_configuration()
 
@@ -66,6 +80,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Parse the given OpenSCENARIO config file, set and validate parameters
         """
+        self._load_catalogs()
+
         self._set_scenario_name()
         self._set_carla_town()
         self._set_actor_information()
@@ -73,6 +89,30 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._set_carla_friction()
 
         self._validate_result()
+
+    def _load_catalogs(self):
+        """
+        Read Catalog xml files into dictionary for later use
+        """
+        catalogs = self.xml_tree.find("Catalogs")
+        catalog_names = ["Vehicle",
+                         "Driver",
+                         "Pedestrian",
+                         "PedestrianController",
+                         "MiscObject",
+                         "Environment",
+                         "Maneuver",
+                         "Route"]
+        for catalog_name in catalog_names:
+            catalog_path = catalogs.find(catalog_name + "Catalog") \
+                                   .find("Directory") \
+                                   .attrib.get('path')
+            if not os.path.isfile(catalog_path):
+                self.logger.warning("The %s path for the %s Catalog is invalid", catalog_path, catalog_name)
+            else:
+                xml_tree = ET.parse(catalog_path)
+                for entry in xml_tree.find("Catalog"):
+                    self.catalogs[catalog_name][entry.attrib.get("name")] = entry
 
     def _set_scenario_name(self):
         """
