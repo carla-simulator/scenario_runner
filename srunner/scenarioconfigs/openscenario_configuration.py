@@ -42,16 +42,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._validate_openscenario_configuration()
         self.client = client
 
-        self.catalogs = {"Vehicle": {},
-                         "Driver": {},
-                         "Pedestrian": {},
-                         "PedestrianController": {},
-                         "MiscObject": {},
-                         "Environment": {},
-                         "Maneuver": {},
-                         "Trajectory": {},
-                         "Route": {}
-        }
+        self.catalogs = {}
 
         self.other_actors = []
         self.ego_vehicles = []
@@ -93,9 +84,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
     def _load_catalogs(self):
         """
         Read Catalog xml files into dictionary for later use
+
+        NOTE: Catalogs must have distinct names, even across different types
         """
         catalogs = self.xml_tree.find("Catalogs")
-        catalog_names = ["Vehicle",
+        catalog_types = ["Vehicle",
                          "Driver",
                          "Pedestrian",
                          "PedestrianController",
@@ -103,15 +96,18 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                          "Environment",
                          "Maneuver",
                          "Route"]
-        for catalog_name in catalog_names:
-            catalog_path = catalogs.find(catalog_name + "Catalog") \
+        for catalog_type in catalog_types:
+            catalog_path = catalogs.find(catalog_type + "Catalog") \
                                    .find("Directory") \
                                    .attrib.get('path')
             if not os.path.isfile(catalog_path):
-                self.logger.warning("The %s path for the %s Catalog is invalid", catalog_path, catalog_name)
+                self.logger.warning("The %s path for the %s Catalog is invalid", catalog_path, catalog_type)
             else:
                 xml_tree = ET.parse(catalog_path)
-                for entry in xml_tree.find("Catalog"):
+                catalog = xml_tree.find("Catalog")
+                catalog_name = catalog.attrib.get("name")
+                self.catalogs[catalog_name] = {}
+                for entry in catalog:
                     self.catalogs[catalog_name][entry.attrib.get("name")] = entry
 
     def _set_scenario_name(self):
@@ -212,47 +208,77 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for entity in self.xml_tree.iter("Entities"):
             for obj in entity.iter("Object"):
                 rolename = obj.attrib.get('name', 'simulation')
-                for vehicle in obj.iter("Vehicle"):
-                    color = None
-                    model = vehicle.attrib.get('name', "vehicle.*")
-                    category = vehicle.attrib.get('category', "car")
-                    ego_vehicle = False
-                    for prop in obj.iter("Property"):
-                        if prop.get('name', '') == 'type':
-                            ego_vehicle = prop.get('value') == 'ego_vehicle'
-                        if prop.get('name', '') == 'color':
-                            color = prop.get('value')
-
-                    speed = self._get_actor_speed(rolename)
-                    new_actor = ActorConfigurationData(
-                        model, carla.Transform(), rolename, speed, color=color, category=category)
-                    new_actor.transform = self._get_actor_transform(rolename)
-
-                    if ego_vehicle:
-                        self.ego_vehicles.append(new_actor)
+                for catalog_reference in obj.iter("CatalogReference"):
+                    entry = self.catalogs[catalog_reference.attrib.get("catalogName")] \
+                                         [catalog_reference.attrib.get("entryName")]
+                    if entry.tag == "Vehicle":
+                        self._extract_vehicle_information(entry, rolename, entry)
+                    elif entry.tag == "Pedestrian":
+                        self._extract_pedestrian_information(entry, rolename, entry)
+                    elif entry.tag == "MiscObject":
+                        self._extract_misc_information(entry, rolename, entry)
                     else:
-                        self.other_actors.append(new_actor)
+                        self.logger.error("A CatalogReference specifies a reference that is not an Entity. Skipping...")
+
+                for vehicle in obj.iter("Vehicle"):
+                    self._extract_vehicle_information(obj, rolename, vehicle)
 
                 for pedestrian in obj.iter("Pedestrian"):
-                    model = pedestrian.attrib.get('model', "walker.*")
-
-                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="pedestrian")
-                    new_actor.transform = self._get_actor_transform(rolename)
-
-                    self.other_actors.append(new_actor)
+                    self._extract_pedestrian_information(obj, rolename, pedestrian)
 
                 for misc in obj.iter("MiscObject"):
-                    category = misc.attrib.get('category')
-                    if category == "barrier":
-                        model = "static.prop.streetbarrier"
-                    elif category == "guardRail":
-                        model = "static.prop.chainbarrier"
-                    else:
-                        model = "static.*"
-                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
-                    new_actor.transform = self._get_actor_transform(rolename)
+                    self._extract_misc_information(obj, rolename, misc)
 
-                    self.other_actors.append(new_actor)
+    def _extract_vehicle_information(self, obj, rolename, vehicle):
+        """
+        Helper function to _set_actor_information for getting vehicle information from XML tree
+        """
+        color = None
+        model = vehicle.attrib.get('name', "vehicle.*")
+        category = vehicle.attrib.get('category', "car")
+        ego_vehicle = False
+        for prop in obj.iter("Property"):
+            if prop.get('name', '') == 'type':
+                ego_vehicle = prop.get('value') == 'ego_vehicle'
+            if prop.get('name', '') == 'color':
+                color = prop.get('value')
+
+        speed = self._get_actor_speed(rolename)
+        new_actor = ActorConfigurationData(
+            model, carla.Transform(), rolename, speed, color=color, category=category)
+        new_actor.transform = self._get_actor_transform(rolename)
+
+        if ego_vehicle:
+            self.ego_vehicles.append(new_actor)
+        else:
+            self.other_actors.append(new_actor)
+
+    def _extract_pedestrian_information(self, obj, rolename, pedestrian):
+        """
+        Helper function to _set_actor_information for getting pedestrian information from XML tree
+        """
+        model = pedestrian.attrib.get('model', "walker.*")
+
+        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="pedestrian")
+        new_actor.transform = self._get_actor_transform(rolename)
+
+        self.other_actors.append(new_actor)
+
+    def _extract_misc_information(self, obj, rolename, misc):
+        """
+        Helper function to _set_actor_information for getting vehicle information from XML tree
+        """
+        category = misc.attrib.get('category')
+        if category == "barrier":
+            model = "static.prop.streetbarrier"
+        elif category == "guardRail":
+            model = "static.prop.chainbarrier"
+        else:
+            model = "static.*"
+        new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
+        new_actor.transform = self._get_actor_transform(rolename)
+
+        self.other_actors.append(new_actor)
 
     def _get_actor_transform(self, actor_name):
         """
