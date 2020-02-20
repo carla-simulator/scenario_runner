@@ -1185,30 +1185,50 @@ class InRadiusRegionTest(Criterion):
 class InRouteTest(Criterion):
 
     """
-    The test is a success if the actor is never outside route
+    The test is a success if the actor is never outside route. The actor can go outside of the route
+    but only for a certain amount of distance
 
     Important parameters:
     - actor: CARLA actor to be used for this test
-    - radius: Allowed radius around the route (meters)
     - route: Route to be checked
-    - offroad_max: Maximum allowed distance the actor can deviate from the route, when not driving on a road (meters)
+    - offroad_max: Maximum distance (in meters) the actor can deviate from the route
+    - offroad_min: Maximum safe distance (in meters). Might eventually cause failure
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    DISTANCE_THRESHOLD = 15.0  # meters
-    WINDOWS_SIZE = 3
+    MAX_ROUTE_PERCENTAGE = 30  # %
+    WINDOWS_SIZE = 2  # Amount of additional waypoints checked
 
-    def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
+    def __init__(self, actor, route, offroad_min=-1, offroad_max=30, name="InRouteTest", terminate_on_failure=False):
         """
         """
         super(InRouteTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._route = route
+        self._offroad_max = offroad_max
+        # Unless specified, halve of the max value
+        if offroad_min == -1:
+            self._offroad_min = self._offroad_max / 2
+        else:
+            self._offroad_min = self._offroad_min
 
-        self._wsize = self.WINDOWS_SIZE
+        self._world = CarlaDataProvider.get_world()
         self._waypoints, _ = zip(*self._route)
         self._route_length = len(self._route)
         self._current_index = 0
+        self._out_route_distance = 0
+
+        self._accum_meters = []
+        prev_wp = self._waypoints[0]
+        for i, wp in enumerate(self._waypoints):
+            d = wp.distance(prev_wp)
+            if i > 0:
+                accum = self._accum_meters[i - 1]
+            else:
+                accum = 0
+
+            self._accum_meters.append(d + accum)
+            prev_wp = wp
 
     def update(self):
         """
@@ -1224,21 +1244,43 @@ class InRouteTest(Criterion):
             new_status = py_trees.common.Status.FAILURE
 
         elif self.test_status == "RUNNING" or self.test_status == "INIT":
-            # are we too far away from the route waypoints (i.e., off route)?
+
             off_route = True
 
             shortest_distance = float('inf')
-            for index in range(max(0, self._current_index - self._wsize),
-                               min(self._current_index + self._wsize + 1, self._route_length)):
-                # look for the distance to the current waipoint + windows_size
+            closest_index = -1
+
+            # Get the closest distance
+            for index in range(self._current_index,
+                               min(self._current_index + self.WINDOWS_SIZE + 1, self._route_length)):
                 ref_waypoint = self._waypoints[index]
                 distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
-                if distance < self.DISTANCE_THRESHOLD \
-                        and distance <= shortest_distance \
-                        and index >= self._current_index:
+                if distance <= shortest_distance:
+                    closest_index = index
                     shortest_distance = distance
-                    self._current_index = index
-                    off_route = False
+
+            if closest_index == -1 or shortest_distance == float('inf'):
+                return new_status
+
+            # Check if the actor is out of route
+            if shortest_distance < self._offroad_max:
+                off_route = False
+                in_safe_route = bool(shortest_distance < self._offroad_min)
+
+            # If actor advanced a step, record the distance
+            if self._current_index != closest_index:
+
+                new_dist = self._accum_meters[closest_index] - self._accum_meters[self._current_index]
+
+                # If too far from the route, add it and check if its value
+                if not in_safe_route:
+                    self._out_route_distance += new_dist
+                    out_route_percentage = 100 * self._out_route_distance / self._accum_meters[-1]
+                    if out_route_percentage > self.MAX_ROUTE_PERCENTAGE:
+                        off_route = True
+
+                self._current_index = closest_index
+
             if off_route:
                 route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION)
                 route_deviation_event.set_message(
