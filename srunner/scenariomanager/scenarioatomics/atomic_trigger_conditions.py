@@ -773,3 +773,37 @@ class WaitForTrafficLightState(AtomicCondition):
     def terminate(self, new_status):
         self._traffic_light = None
         super(WaitForTrafficLightState, self).terminate(new_status)
+
+
+class WaitEndIntersection(AtomicCondition):
+
+    """
+    Atomic behavior that waits until the vehicles has gone outside the junction.
+    If currently inside no intersection, it will wait until one is found
+    """
+
+    def __init__(self, actor, debug=False, name="WaitEndIntersection"):
+        super(WaitEndIntersection, self).__init__(name)
+        self.actor = actor
+        self.debug = debug
+        self.inside_junction = False
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self.actor)
+        waypoint = CarlaDataProvider.get_map().get_waypoint(location)
+
+        # Wait for the actor to enter a junction
+        if not self.inside_junction and waypoint.is_junction:
+            self.inside_junction = True
+
+        # And to leave it
+        if self.inside_junction and not waypoint.is_junction:
+            if self.debug:
+                print("--- Leaving the junction")
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status

@@ -292,14 +292,21 @@ class CollisionTest(Criterion):
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
-    MIN_AREA_OF_COLLISION = 3
+    MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
+
+    BIKES_BLUEPRINTS = [
+        'vehicle.diamondback.century',
+        'vehicle.gazelle.omafiets',
+        'vehicle.bh.crossbike'
+    ]
 
     def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
         """
         Construction with sensor setup
         """
         self._actor = actor
+        self.last_walker_id = None
         super(CollisionTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -308,6 +315,7 @@ class CollisionTest(Criterion):
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
         self.registered_collisions = []
+        self.last_walker_id = None
 
     def update(self):
         """
@@ -375,6 +383,16 @@ class CollisionTest(Criterion):
             if distance <= self.MIN_AREA_OF_COLLISION:
                 self.actual_value -= 1
                 registered = True
+                if 'walker' in event.other_actor.type_id \
+                        or event.other_actor.type_id in self.BIKES_BLUEPRINTS:
+                    # Register the id if it's a walker (or bike)
+                    self.last_walker_id = event.other_actor.id
+                break
+
+            # As walkers and bikes can be moved around, they might go out of the collision radius
+            elif 'walker' in event.other_actor.type_id and self.last_walker_id == event.other_actor.id:
+                self.actual_value -= 1
+                registered = True
                 break
 
         # Register it if needed
@@ -388,15 +406,16 @@ class CollisionTest(Criterion):
                 actor_type = TrafficEventType.COLLISION_VEHICLE
 
             elif 'walker' in event.other_actor.type_id:
+                self.last_walker_id = event.other_actor.id
                 actor_type = TrafficEventType.COLLISION_PEDESTRIAN
 
             collision_event = TrafficEvent(event_type=actor_type)
             collision_event.set_dict({
                 'type': event.other_actor.type_id,
                 'id': event.other_actor.id,
-                'x': round(actor_location.x, 3),
-                'y': round(actor_location.y, 3),
-                'z': round(actor_location.z, 3)})
+                'x': actor_location.x,
+                'y': actor_location.y,
+                'z': actor_location.z})
             collision_event.set_message(
                 "Agent collided against object with type={} and id={} at (x={}, y={}, z={})".format(
                     event.other_actor.type_id,
@@ -751,10 +770,197 @@ class OnSidewalkTest(Criterion):
         Sets the dictionary of the event
         """
         event.set_dict({
-            'x': round(location.x, 3),
-            'y': round(location.y, 3),
-            'z': round(location.z, 3),
-            'distance': round(distance, 3)})
+            'x': location.x,
+            'y': location.y,
+            'z': location.z,
+            'distance': distance})
+
+
+class OutsideRouteLanesTest(Criterion):
+
+    """
+    This class contains an atomic test to detect if the vehicle is either on a sidewalk or at a wrong lane.
+    The distance spent outside is computed and it is returned as a percentage to the total distance traveled
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - route: series of locations representing the route waypoints
+    - optional [optional]: If True, the result is not considered for an overall pass/fail result
+    """
+
+    ALLOWED_OUT_DISTANCE = 1.3          # At least 0.5, due to the mini-shoulder between lanes and sidewalks
+    MAX_ALLOWED_VEHICLE_ANGLE = 120.0   # Maximum angle between the yaw and waypoint lane
+    MAX_ALLOWED_WAYPOINT_ANGLE = 150.0  # Maximum change between the yaw-lane angle between frames
+    WINDOWS_SIZE = 3                    # Amount of additional waypoints checked (in case the first on fails)
+
+    def __init__(self, actor, route, optional=False, name="OutsideRouteLanesTest"):
+        """
+        Constructor
+        """
+        super(OutsideRouteLanesTest, self).__init__(name, actor, 0, None, optional)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._actor = actor
+        self._route = route
+        self._current_index = 0
+        self._route_length = len(self._route)
+        self._waypoints, _ = zip(*self._route)
+
+        self._map = CarlaDataProvider.get_map()
+        self._pre_ego_waypoint = self._map.get_waypoint(self._actor.get_location())
+
+        self._outside_lane_active = False
+        self._wrong_lane_active = False
+        self._last_road_id = None
+        self._last_lane_id = None
+        self._total_distance = 0
+        self._wrong_distance = 0
+
+    def update(self):
+        """
+        Check lane invasion count
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        # Some of the vehicle parameters
+        location = CarlaDataProvider.get_location(self._actor)
+        if location is None:
+            return new_status
+
+        # 1) Check if outside route lanes
+        self._is_outside_driving_lanes(location)
+        self._is_at_wrong_lane(location)
+
+        if self._outside_lane_active or self._wrong_lane_active:
+            self.test_status = "FAILURE"
+
+        # 2) Get the traveled distance
+        for index in range(self._current_index + 1,
+                           min(self._current_index + self.WINDOWS_SIZE + 1, self._route_length)):
+            # Get the dot product to know if it has passed this location
+            index_location = self._waypoints[index]
+            index_waypoint = self._map.get_waypoint(index_location)
+
+            wp_dir = index_waypoint.transform.get_forward_vector()  # Waypoint's forward vector
+            wp_veh = location - index_location  # vector waypoint - vehicle
+            dot_ve_wp = wp_veh.x * wp_dir.x + wp_veh.y * wp_dir.y + wp_veh.z * wp_dir.z
+
+            if dot_ve_wp > 0:
+                # Get the distance traveled
+                index_location = self._waypoints[index]
+                current_index_location = self._waypoints[self._current_index]
+                new_dist = current_index_location.distance(index_location)
+
+                # Add it to the total distance
+                self._current_index = index
+                self._total_distance += new_dist
+
+                # And to the wrong one if outside route lanes
+                if self._outside_lane_active or self._wrong_lane_active:
+                    self._wrong_distance += new_dist
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def _is_outside_driving_lanes(self, location):
+        """
+        Detects if the ego_vehicle is outside driving lanes
+        """
+
+        current_driving_wp = self._map.get_waypoint(location, lane_type=carla.LaneType.Driving, project_to_road=True)
+        current_parking_wp = self._map.get_waypoint(location, lane_type=carla.LaneType.Parking, project_to_road=True)
+
+        driving_distance = location.distance(current_driving_wp.transform.location)
+        if current_parking_wp is not None:  # Some towns have no parking
+            parking_distance = location.distance(current_parking_wp.transform.location)
+        else:
+            parking_distance = float('inf')
+
+        if driving_distance >= parking_distance:
+            distance = parking_distance
+            lane_width = current_parking_wp.lane_width
+        else:
+            distance = driving_distance
+            lane_width = current_driving_wp.lane_width
+
+        self._outside_lane_active = bool(distance > (lane_width / 2 + self.ALLOWED_OUT_DISTANCE))
+
+    def _is_at_wrong_lane(self, location):
+        """
+        Detects if the ego_vehicle has invaded a wrong lane
+        """
+
+        current_waypoint = self._map.get_waypoint(location, lane_type=carla.LaneType.Driving, project_to_road=True)
+        current_lane_id = current_waypoint.lane_id
+        current_road_id = current_waypoint.road_id
+
+        # Lanes and roads are too chaotic at junctions
+        if current_waypoint.is_junction:
+            self._wrong_lane_active = False
+        elif self._last_road_id != current_road_id or self._last_lane_id != current_lane_id:
+
+            # Route direction can be considered continuous, except after exiting a junction.
+            if self._pre_ego_waypoint.is_junction:
+                yaw_waypt = current_waypoint.transform.rotation.yaw % 360
+                yaw_actor = self._actor.get_transform().rotation.yaw % 360
+
+                vehicle_lane_angle = (yaw_waypt - yaw_actor) % 360
+
+                if vehicle_lane_angle < self.MAX_ALLOWED_VEHICLE_ANGLE \
+                        or vehicle_lane_angle > (360 - self.MAX_ALLOWED_VEHICLE_ANGLE):
+                    self._wrong_lane_active = False
+                else:
+                    self._wrong_lane_active = True
+
+            else:
+                # Check for a big gap in waypoint directions.
+                yaw_pre_wp = self._pre_ego_waypoint.transform.rotation.yaw % 360
+                yaw_cur_wp = current_waypoint.transform.rotation.yaw % 360
+
+                waypoint_angle = (yaw_pre_wp - yaw_cur_wp) % 360
+
+                if waypoint_angle >= self.MAX_ALLOWED_WAYPOINT_ANGLE \
+                        and waypoint_angle <= (360 - self.MAX_ALLOWED_WAYPOINT_ANGLE):
+
+                    # Is the ego vehicle going back to the lane, or going out? Take the opposite
+                    self._wrong_lane_active = not bool(self._wrong_lane_active)
+                else:
+
+                    # Changing to a lane with the same direction
+                    self._wrong_lane_active = False
+
+        # Remember the last state
+        self._last_lane_id = current_lane_id
+        self._last_road_id = current_road_id
+        self._pre_ego_waypoint = current_waypoint
+
+    def terminate(self, new_status):
+        """
+        If there is currently an event running, it is registered
+        """
+
+        if self._wrong_distance > 0:
+
+            percentage = round(self._wrong_distance / self._total_distance * 100, 2)
+
+            outside_lane = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION)
+            outside_lane.set_message(
+                "Agent went outside its route lanes for about {} meters "
+                "({}% of the completed route)".format(
+                    round(self._wrong_distance, 3),
+                    percentage))
+
+            outside_lane.set_dict({
+                'distance': self._wrong_distance,
+                'percentage': percentage
+            })
+
+            self._wrong_distance = 0
+            self.list_traffic_events.append(outside_lane)
 
 
 class WrongLaneTest(Criterion):
@@ -921,10 +1127,10 @@ class WrongLaneTest(Criterion):
         Sets the dictionary of the event
         """
         event.set_dict({
-            'x': round(location.x, 3),
-            'y': round(location.y, 3),
-            'z': round(location.y, 3),
-            'distance': round(distance, 3),
+            'x': location.x,
+            'y': location.y,
+            'z': location.y,
+            'distance': distance,
             'road_id': road_id,
             'lane_id': lane_id})
 
@@ -980,30 +1186,50 @@ class InRadiusRegionTest(Criterion):
 class InRouteTest(Criterion):
 
     """
-    The test is a success if the actor is never outside route
+    The test is a success if the actor is never outside route. The actor can go outside of the route
+    but only for a certain amount of distance
 
     Important parameters:
     - actor: CARLA actor to be used for this test
-    - radius: Allowed radius around the route (meters)
     - route: Route to be checked
-    - offroad_max: Maximum allowed distance the actor can deviate from the route, when not driving on a road (meters)
+    - offroad_max: Maximum distance (in meters) the actor can deviate from the route
+    - offroad_min: Maximum safe distance (in meters). Might eventually cause failure
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    DISTANCE_THRESHOLD = 15.0  # meters
-    WINDOWS_SIZE = 3
+    MAX_ROUTE_PERCENTAGE = 30  # %
+    WINDOWS_SIZE = 2  # Amount of additional waypoints checked
 
-    def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
+    def __init__(self, actor, route, offroad_min=-1, offroad_max=30, name="InRouteTest", terminate_on_failure=False):
         """
         """
         super(InRouteTest, self).__init__(name, actor, 0, terminate_on_failure=terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._route = route
+        self._offroad_max = offroad_max
+        # Unless specified, halve of the max value
+        if offroad_min == -1:
+            self._offroad_min = self._offroad_max / 2
+        else:
+            self._offroad_min = self._offroad_min
 
-        self._wsize = self.WINDOWS_SIZE
+        self._world = CarlaDataProvider.get_world()
         self._waypoints, _ = zip(*self._route)
         self._route_length = len(self._route)
         self._current_index = 0
+        self._out_route_distance = 0
+
+        self._accum_meters = []
+        prev_wp = self._waypoints[0]
+        for i, wp in enumerate(self._waypoints):
+            d = wp.distance(prev_wp)
+            if i > 0:
+                accum = self._accum_meters[i - 1]
+            else:
+                accum = 0
+
+            self._accum_meters.append(d + accum)
+            prev_wp = wp
 
     def update(self):
         """
@@ -1019,21 +1245,43 @@ class InRouteTest(Criterion):
             new_status = py_trees.common.Status.FAILURE
 
         elif self.test_status == "RUNNING" or self.test_status == "INIT":
-            # are we too far away from the route waypoints (i.e., off route)?
+
             off_route = True
 
             shortest_distance = float('inf')
-            for index in range(max(0, self._current_index - self._wsize),
-                               min(self._current_index + self._wsize + 1, self._route_length)):
-                # look for the distance to the current waipoint + windows_size
+            closest_index = -1
+
+            # Get the closest distance
+            for index in range(self._current_index,
+                               min(self._current_index + self.WINDOWS_SIZE + 1, self._route_length)):
                 ref_waypoint = self._waypoints[index]
                 distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
-                if distance < self.DISTANCE_THRESHOLD \
-                        and distance <= shortest_distance \
-                        and index >= self._current_index:
+                if distance <= shortest_distance:
+                    closest_index = index
                     shortest_distance = distance
-                    self._current_index = index
-                    off_route = False
+
+            if closest_index == -1 or shortest_distance == float('inf'):
+                return new_status
+
+            # Check if the actor is out of route
+            if shortest_distance < self._offroad_max:
+                off_route = False
+                in_safe_route = bool(shortest_distance < self._offroad_min)
+
+            # If actor advanced a step, record the distance
+            if self._current_index != closest_index:
+
+                new_dist = self._accum_meters[closest_index] - self._accum_meters[self._current_index]
+
+                # If too far from the route, add it and check if its value
+                if not in_safe_route:
+                    self._out_route_distance += new_dist
+                    out_route_percentage = 100 * self._out_route_distance / self._accum_meters[-1]
+                    if out_route_percentage > self.MAX_ROUTE_PERCENTAGE:
+                        off_route = True
+
+                self._current_index = closest_index
+
             if off_route:
                 route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION)
                 route_deviation_event.set_message(
@@ -1042,9 +1290,9 @@ class InRouteTest(Criterion):
                         round(location.y, 3),
                         round(location.z, 3)))
                 route_deviation_event.set_dict({
-                    'x': round(location.x, 3),
-                    'y': round(location.y, 3),
-                    'z': round(location.z, 3)})
+                    'x': location.x,
+                    'y': location.y,
+                    'z': location.z})
 
                 self.list_traffic_events.append(route_deviation_event)
 
@@ -1076,6 +1324,7 @@ class RouteCompletionTest(Criterion):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._route = route
+        self._map = CarlaDataProvider.get_map()
 
         self._wsize = self.WINDOWS_SIZE
         self._current_index = 0
@@ -1115,10 +1364,14 @@ class RouteCompletionTest(Criterion):
         elif self.test_status == "RUNNING" or self.test_status == "INIT":
 
             for index in range(self._current_index, min(self._current_index + self._wsize + 1, self._route_length)):
-                # look for the distance to the current waipoint + windows_size
+                # Get the dot product to know if it has passed this location
                 ref_waypoint = self._waypoints[index]
-                distance = math.sqrt(((location.x - ref_waypoint.x) ** 2) + ((location.y - ref_waypoint.y) ** 2))
-                if distance < self.DISTANCE_THRESHOLD:
+                wp = self._map.get_waypoint(ref_waypoint)
+                wp_dir = wp.transform.get_forward_vector()          # Waypoint's forward vector
+                wp_veh = location - ref_waypoint                    # vector waypoint - vehicle
+                dot_ve_wp = wp_veh.x * wp_dir.x + wp_veh.y * wp_dir.y + wp_veh.z * wp_dir.z
+
+                if dot_ve_wp > 0:
                     # good! segment completed!
                     self._current_index = index
                     self._percentage_route_completed = 100.0 * float(self._accum_meters[self._current_index]) \
@@ -1276,9 +1529,9 @@ class RunningRedLightTest(Criterion):
                                 round(location.z, 3)))
                         red_light_event.set_dict({
                             'id': traffic_light.id,
-                            'x': round(location.x, 3),
-                            'y': round(location.y, 3),
-                            'z': round(location.z, 3)})
+                            'x': location.x,
+                            'y': location.y,
+                            'z': location.z})
 
                         self.list_traffic_events.append(red_light_event)
                         self._last_red_light_id = traffic_light.id
@@ -1489,9 +1742,9 @@ class RunningStopTest(Criterion):
                             round(stop_location.z, 3)))
                     running_stop_event.set_dict({
                         'id': self._target_stop_sign.id,
-                        'x': round(stop_location.x, 3),
-                        'y': round(stop_location.y, 3),
-                        'z': round(stop_location.z, 3)})
+                        'x': stop_location.x,
+                        'y': stop_location.y,
+                        'z': stop_location.z})
 
                     self.list_traffic_events.append(running_stop_event)
 

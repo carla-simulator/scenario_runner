@@ -14,11 +14,10 @@ from srunner.scenarioconfigs.route_scenario_configuration import RouteConfigurat
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTest,
                                                                      InRouteTest,
-                                                                     OnSidewalkTest,
                                                                      RouteCompletionTest,
+                                                                     OutsideRouteLanesTest,
                                                                      RunningRedLightTest,
-                                                                     RunningStopTest,
-                                                                     WrongLaneTest)
+                                                                     RunningStopTest)
 from srunner.scenarios.basic_scenario import BasicScenario
 
 
@@ -82,16 +81,13 @@ class MasterScenario(BasicScenario):
         collision_criterion = CollisionTest(self.ego_vehicles[0], terminate_on_failure=False)
 
         route_criterion = InRouteTest(self.ego_vehicles[0],
-                                      radius=30.0,
                                       route=route,
-                                      offroad_max=20,
+                                      offroad_max=30,
                                       terminate_on_failure=True)
 
         completion_criterion = RouteCompletionTest(self.ego_vehicles[0], route=route)
 
-        wrong_way_criterion = WrongLaneTest(self.ego_vehicles[0])
-
-        onsidewalk_criterion = OnSidewalkTest(self.ego_vehicles[0])
+        outsidelane_criterion = OutsideRouteLanesTest(self.ego_vehicles[0], route=route)
 
         red_light_criterion = RunningRedLightTest(self.ego_vehicles[0])
 
@@ -103,8 +99,7 @@ class MasterScenario(BasicScenario):
         parallel_criteria.add_child(completion_criterion)
         parallel_criteria.add_child(collision_criterion)
         parallel_criteria.add_child(route_criterion)
-        parallel_criteria.add_child(wrong_way_criterion)
-        parallel_criteria.add_child(onsidewalk_criterion)
+        parallel_criteria.add_child(outsidelane_criterion)
         parallel_criteria.add_child(red_light_criterion)
         parallel_criteria.add_child(stop_criterion)
 
