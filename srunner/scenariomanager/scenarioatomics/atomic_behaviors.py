@@ -1522,33 +1522,44 @@ class TrafficLightManipulator(AtomicBehavior):
     """
 
     MAX_DISTANCE_TRAFFIC_LIGHT = 15
-    RANDOM_VALUE_INTERVENTION = 0.4
     RED = carla.TrafficLightState.Red
     GREEN = carla.TrafficLightState.Green
 
     INT_CONF_OPP = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
     INT_CONF_LFT = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
     INT_CONF_RGT = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
-    INTERSECTION_CONFIGURATIONS = [INT_CONF_OPP, INT_CONF_LFT, INT_CONF_RGT]
 
-    def __init__(self, ego_vehicle, debug=False, name="TrafficLightManipulator"):
+    # Depending on the scenario, IN ORDER OF IMPORTANCE, the traffic light changed
+    # The list has to contain only items of the INT_CONF
+    SUBTYPE_CONFIG_TRANSLATION = {
+        'S7left': ['left', 'opposite', 'right'],
+        'S7right': ['left', 'opposite'],
+        'S7opposite': ['right', 'left', 'opposite'],
+        'S8left': ['opposite'],
+        'S9right': ['left', 'opposite']
+    }
+
+    CONFIG_TLM_TRANSLATION = {
+        'left': INT_CONF_LFT,
+        'right': INT_CONF_RGT,
+        'opposite': INT_CONF_OPP
+    }
+
+    def __init__(self, ego_vehicle, subtype, debug=False, name="TrafficLightManipulator"):
         super(TrafficLightManipulator, self).__init__(name)
         self.ego_vehicle = ego_vehicle
+        self.subtype = subtype
+        self.valid_subtype = True
         self.debug = debug
-        self.blackboard = Blackboard()
         self.target_traffic_light = None
+        self.inside_junction = False
         self.annotations = None
         self.reset_annotations = None
-        self.intervention = False
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
-        master_scenario_command = self.blackboard.get('master_scenario_command')
-        if master_scenario_command and master_scenario_command == 'scenarios_stop_request':
-            new_status = py_trees.common.Status.SUCCESS
-            return new_status
-        else:
-            new_status = py_trees.common.Status.RUNNING
+
+        new_status = py_trees.common.Status.RUNNING
 
         # find a suitable target
         if not self.target_traffic_light:
@@ -1566,42 +1577,87 @@ class TrafficLightManipulator(AtomicBehavior):
 
             if distance_to_traffic_light < self.MAX_DISTANCE_TRAFFIC_LIGHT:
                 self.target_traffic_light = traffic_light
-                self.intervention = random.random() > self.RANDOM_VALUE_INTERVENTION
-
-                if self.intervention:
-                    if self.debug:
-                        print("--- We are going to affect the following intersection")
-                        loc = self.target_traffic_light.get_location()
-                        CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
-                                                                       size=0.5, color=carla.Color(255, 255, 0),
-                                                                       life_time=50000)
-                    self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
+                if self.debug:
+                    print("--- We are going to affect the following intersection")
+                    loc = self.target_traffic_light.get_location()
+                    CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
+                                                                   size=0.5, color=carla.Color(255, 255, 0),
+                                                                   life_time=50000)
+                self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
         else:
-            if not self.reset_annotations:
-                if self.intervention:
-                    # the light has not been manipulated yet
-                    choice = random.choice(self.INTERSECTION_CONFIGURATIONS)
-                    self.reset_annotations = CarlaDataProvider.update_light_states(
-                        self.target_traffic_light,
-                        self.annotations,
-                        choice,
-                        freeze=True)
+            if not self.reset_annotations and self.valid_subtype:
+                # the light has not been manipulated yet
+                configuration = self.get_traffic_light_configuration(self.subtype, self.annotations)
+
+                if configuration is None:
+                    # No available config, move to the next step
+                    self.valid_subtype = False
+                    return new_status
+
+                choice = self.CONFIG_TLM_TRANSLATION[configuration]
+
+                self.reset_annotations = CarlaDataProvider.update_light_states(
+                    self.target_traffic_light,
+                    self.annotations,
+                    choice,
+                    freeze=True)
 
             else:
-                # the traffic light has been manipulated...
-                base_transform = self.target_traffic_light.get_transform()
-                area_loc = carla.Location(base_transform.transform(self.target_traffic_light.trigger_volume.location))
-                distance_to_traffic_light = area_loc.distance(self.ego_vehicle.get_location())
+                # the traffic light has been manipulated, wait until the vehicle finsihes the intersection
+                ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+                ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
-                if self.debug:
-                    print("++ distance={}".format(distance_to_traffic_light))
+                # Wait for the ego_vehicle to enter a junction
+                if not self.inside_junction and ego_waypoint.is_junction:
+                    self.inside_junction = True
 
-                if distance_to_traffic_light > self.MAX_DISTANCE_TRAFFIC_LIGHT:
+                # And to leave it
+                if self.inside_junction and not ego_waypoint.is_junction:
+                    if self.debug:
+                        print("--- Returning the intersection to its previous state")
+                    self.inside_junction = False
+
                     if self.reset_annotations:
                         CarlaDataProvider.reset_lights(self.reset_annotations)
                         self.target_traffic_light = None
                         self.reset_annotations = None
                         self.annotations = None
-                        self.intervention = False
+                    new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+    def get_traffic_light_configuration(self, subtype, annotations):
+        """
+        Checks the list of possible altered traffic lights and gets
+        the first one that exists in the intersection
+
+        Important parameters:
+        - subtype: Subtype of the scenario
+        - annotations: list of the traffic light of the junction, with their direction (right, left...)
+        """
+        configuration = None
+
+        if subtype in self.SUBTYPE_CONFIG_TRANSLATION:
+            possible_configurations = self.SUBTYPE_CONFIG_TRANSLATION[self.subtype]
+            while possible_configurations:
+                # Chose the first one and delete it
+                configuration = possible_configurations[0]
+                possible_configurations.remove(configuration)
+                if configuration in annotations:
+                    if annotations[configuration]:
+                        # Found a valid configuration
+                        break
+                    else:
+                        # The traffic light doesn't exist, get another one
+                        configuration = None
+                else:
+                    print("Wrong name")
+                    configuration = None
+
+            if configuration is None and self.debug:
+                print("This subtype has no traffic light available")
+        else:
+            if self.debug:
+                print("This subtype is unknown")
+
+        return configuration

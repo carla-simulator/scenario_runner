@@ -48,7 +48,7 @@ class TrafficLightScenario(BasicScenario):
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("TrafficLightManipulator")
-        traffic_manipulator = TrafficLightManipulator(self.ego_vehicles[0], debug=self.debug)
+        traffic_manipulator = TrafficLightManipulator(self.ego_vehicles[0], subtype=None, debug=self.debug)
         sequence.add_child(traffic_manipulator)
 
         return sequence

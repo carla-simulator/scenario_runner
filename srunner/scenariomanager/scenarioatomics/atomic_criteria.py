@@ -292,7 +292,7 @@ class CollisionTest(Criterion):
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
-    MIN_AREA_OF_COLLISION = 3
+    MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
 
     BIKES_BLUEPRINTS = [
@@ -315,6 +315,7 @@ class CollisionTest(Criterion):
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
         self.registered_collisions = []
+        self.last_walker_id = None
 
     def update(self):
         """
