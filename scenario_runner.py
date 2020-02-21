@@ -102,6 +102,7 @@ class ScenarioRunner(object):
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
         self.trafficmanager = None
+        self.counter = 3000
 
         dist = pkg_resources.get_distribution("carla")
         if LooseVersion(dist.version) < LooseVersion('0.9.6'):
@@ -266,6 +267,7 @@ class ScenarioRunner(object):
         """
         Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
         """
+        self.counter += 5
 
         if self._args.reloadWorld:
             self.world = self.client.load_world(town)
@@ -289,7 +291,7 @@ class ScenarioRunner(object):
                             time.sleep(1)
                             break
 
-        self.trafficmanager = self.client.get_trafficmanager()
+        self.trafficmanager = self.client.get_trafficmanager(self.counter)
         self.world = self.client.get_world()
         CarlaActorPool.set_client(self.client)
         CarlaActorPool.set_world(self.world)
