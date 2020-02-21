@@ -574,7 +574,7 @@ class CarlaActorPool(object):
                 batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
 
         if CarlaActorPool._client:
-            responses = CarlaActorPool._client.apply_batch_sync(batch)
+            responses = CarlaActorPool._client.apply_batch_sync(batch, True)
 
         # wait for the actors to be spawned properly before we do anything
         if CarlaActorPool._world.get_settings().synchronous_mode:
