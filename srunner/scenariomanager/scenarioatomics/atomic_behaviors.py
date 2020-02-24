@@ -1642,7 +1642,7 @@ class TrafficLightManipulator(AtomicBehavior):
             while possible_configurations:
                 # Chose the first one and delete it
                 configuration = possible_configurations[0]
-                possible_configurations.remove(configuration)
+                possible_configurations = possible_configurations[1:]
                 if configuration in annotations:
                     if annotations[configuration]:
                         # Found a valid configuration
@@ -1651,7 +1651,8 @@ class TrafficLightManipulator(AtomicBehavior):
                         # The traffic light doesn't exist, get another one
                         configuration = None
                 else:
-                    print("Wrong name")
+                    if self.debug:
+                        print("This configuration name is wrong")
                     configuration = None
 
             if configuration is None and self.debug:
