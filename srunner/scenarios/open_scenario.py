@@ -149,8 +149,9 @@ def get_xml_path(tree, node):
 
     Note: Catalogs are pulled from a separate file so the XML tree is split.
           This means that in order to get the XML path, it must be done in 2 steps.
-          Some places in this python script do that by concatenating the results of 2 get_xml_path calls with another ">".
-          Example: concatenate "Behavior>AutopilotSequence" with ">" and "StartAutopilot>StartAutopilot>StartAutopilot"
+          Some places in this python script do that by concatenating the results
+          of 2 get_xml_path calls with another ">".
+          Example: "Behavior>AutopilotSequence" + ">" + "StartAutopilot>StartAutopilot>StartAutopilot"
     """
 
     path = ""
@@ -270,8 +271,9 @@ class OpenScenario(BasicScenario):
                                             maneuver_behavior, "ACTION", child.attrib.get('name'))
 
                                         parallel_actions.add_child(
-                                            oneshot_behavior(variable_name=get_xml_path(self.config.story, sequence) + '>' +
-                                                                           get_xml_path(maneuver, child), # See note in get_xml_path
+                                            oneshot_behavior(variable_name=         # See note in get_xml_path
+                                                                get_xml_path(self.config.story, sequence) + '>' + \
+                                                                get_xml_path(maneuver, child),
                                                              behaviour=maneuver_behavior))
 
                                 if child.tag == "StartConditions":
@@ -349,7 +351,8 @@ class OpenScenario(BasicScenario):
 
         return behavior
 
-    def _create_condition_container(self, node, name='Conditions Group', sequence=None, maneuver=None, success_on_all=True):
+    def _create_condition_container(self, node, name='Conditions Group', sequence=None,
+                                                                         maneuver=None, success_on_all=True):
         """
         This is a generic function to handle conditions utilising ConditionGroups
         Each ConditionGroup is represented as a Sequence of Conditions
@@ -370,7 +373,7 @@ class OpenScenario(BasicScenario):
                 criterion = OpenScenarioParser.convert_condition_to_atomic(
                     condition, self.other_actors + self.ego_vehicles)
                 if sequence is not None and maneuver is not None:
-                    xml_path = get_xml_path(self.config.story, sequence) + '>' +
+                    xml_path = get_xml_path(self.config.story, sequence) + '>' + \
                                get_xml_path(maneuver, condition) # See note in get_xml_path
                 else:
                     xml_path = get_xml_path(self.config.story, condition)
