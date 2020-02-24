@@ -16,3 +16,6 @@ results*.txt
 *.log
 .project
 .pydevproject
+*.png
+*.svg
+*.dot

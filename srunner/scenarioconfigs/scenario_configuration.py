@@ -101,3 +101,4 @@ class ScenarioConfiguration(object):
     agent = None
     weather = WeatherConfiguration()
     friction = None
+    subtype = None
