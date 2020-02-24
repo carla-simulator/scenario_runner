@@ -149,9 +149,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         set_environment = next(self.init.iter("SetEnvironment"))
 
-        print (set_environment)
-
-        if set_environment.find("Weather") is not None:
+        if next(set_environment.iter("Weather")) is not None:
             environment = set_environment.find("Environment")
         elif set_environment.find("CatalogReference") is not None:
             catalog_reference = set_environment.find("CatalogReference")
