@@ -28,6 +28,7 @@
     - Challenge can be executed with the ScenarioRunner
     - WaypointFollower atomic can handle pedestrians
 * Extended OpenScenario support:
+    - Added initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
     - Added support for UserDefinedActions (e.g. to run additional scripts)
     - Extensions in WaypointFollower atomic for consecutive WaypointFollowers
     - Added init speed behavior for vehicles
