@@ -172,6 +172,12 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for entity in self.xml_tree.iter("Entities"):
             for obj in entity.iter("Object"):
                 rolename = obj.attrib.get('name', 'simulation')
+                args = dict()
+                for prop in obj.iter("Property"):
+                    key = prop.get('name')
+                    value = prop.get('value')
+                    args[key] = value
+
                 for vehicle in obj.iter("Vehicle"):
                     color = None
                     model = vehicle.attrib.get('name', "vehicle.*")
@@ -185,7 +191,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
                     speed = self._get_actor_speed(rolename)
                     new_actor = ActorConfigurationData(
-                        model, carla.Transform(), rolename, speed, color=color, category=category)
+                        model, carla.Transform(), rolename, speed, color=color, category=category, args=args)
                     new_actor.transform = self._get_actor_transform(rolename)
 
                     if ego_vehicle:
@@ -196,7 +202,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 for pedestrian in obj.iter("Pedestrian"):
                     model = pedestrian.attrib.get('model', "walker.*")
 
-                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="pedestrian")
+                    new_actor = ActorConfigurationData(
+                        model, carla.Transform(), rolename, category="pedestrian", args=args)
                     new_actor.transform = self._get_actor_transform(rolename)
 
                     self.other_actors.append(new_actor)
@@ -209,7 +216,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         model = "static.prop.chainbarrier"
                     else:
                         model = misc.attrib.get('name')
-                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename)
+                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="misc", args=args)
                     new_actor.transform = self._get_actor_transform(rolename)
 
                     self.other_actors.append(new_actor)

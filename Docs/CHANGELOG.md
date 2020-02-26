@@ -53,6 +53,7 @@
     - Added support for a default actor model, in case the stated model is not available
     - Added support for MiscObjects (besides vehicles and pedestrians)
     - Reworked traffic signal handling: The name has to start now either with "id=" or "pos=" depending on whether the position or id is used as unique identifier
+    - Actor physics can now be set via Object Properties (<Property name="physics" value="off" />)
 ### :bug: Bug Fixes
 * Fixed wrong handling of OpenSCENARIO ConditionGroups, which should be handled as parallel composites, not sequences
 * Fixed #443: Repetitions in OpenSCENARIO were not properly working
