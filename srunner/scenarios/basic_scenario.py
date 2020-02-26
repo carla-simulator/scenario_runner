@@ -78,18 +78,12 @@ class BasicScenario(object):
         Default initialization of other actors.
         Override this method in child class to provide custom initialization.
         """
-        for actor in config.other_actors:
-            new_actor = CarlaActorPool.request_new_actor(actor.model,
-                                                         actor.transform,
-                                                         rolename=actor.rolename,
-                                                         hero=False,
-                                                         autopilot=actor.autopilot,
-                                                         random_location=actor.random_location,
-                                                         color=actor.color,
-                                                         actor_category=actor.category)
-            if new_actor is None:
-                raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
+        new_actors = CarlaActorPool.request_new_actors(config.other_actors)
+        if new_actors is None:
+            raise Exception("Error: Unable to add actors")
+
+        for new_actor in new_actors:
             self.other_actors.append(new_actor)
 
     def _setup_scenario_trigger(self, config):
