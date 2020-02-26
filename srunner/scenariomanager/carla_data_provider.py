@@ -543,7 +543,6 @@ class CarlaActorPool(object):
         else:
             CarlaActorPool._world.wait_for_tick()
 
-
         return actor
 
     @staticmethod
