@@ -82,7 +82,6 @@ class ScenarioRunner(object):
     # CARLA world and scenario handlers
     world = None
     manager = None
-    trafficmanager = None
 
     additional_scenario_module = None
 
@@ -101,8 +100,6 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-        self.trafficmanager = None
-        self.counter = 3000
 
         dist = pkg_resources.get_distribution("carla")
         if LooseVersion(dist.version) < LooseVersion('0.9.6'):
@@ -144,8 +141,6 @@ class ScenarioRunner(object):
             del self.world
         if self.client is not None:
             del self.client
-        if self.trafficmanager is not None:
-            del self.trafficmanager
 
     def _signal_handler(self, signum, frame):
         """
@@ -239,7 +234,6 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
-        CarlaDataProvider.get_trafficmanager().synchronous_tick()
         CarlaDataProvider.get_world().tick()
 
     def _analyze_scenario(self, config):
@@ -267,7 +261,6 @@ class ScenarioRunner(object):
         """
         Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
         """
-        self.counter += 5
 
         if self._args.reloadWorld:
             self.world = self.client.load_world(town)
@@ -291,23 +284,18 @@ class ScenarioRunner(object):
                             time.sleep(1)
                             break
 
-        self.trafficmanager = self.client.get_trafficmanager(self.counter)
         self.world = self.client.get_world()
         CarlaActorPool.set_client(self.client)
         CarlaActorPool.set_world(self.world)
-        CarlaActorPool.set_trafficmanager(self.trafficmanager)
         CarlaDataProvider.set_world(self.world)
-        CarlaDataProvider.set_trafficmanager(self.trafficmanager)
 
         if self._args.agent:
-            self.trafficmanager.set_synchronous_mode(True)
             settings = self.world.get_settings()
             settings.synchronous_mode = True
             self.world.apply_settings(settings)
 
         # Wait for the world to be ready
         if self.world.get_settings().synchronous_mode:
-            self.trafficmanager.synchronous_tick()
             self.world.tick()
         else:
             self.world.wait_for_tick()
