@@ -75,6 +75,7 @@
 * Fixed spawning of debris for ControlLoss scenario (Scenario01)
 * Fixed CTRL+C termination of ScenarioRunner
 ### :ghost: Maintenance
+* Increased speed of actor initialization by using CARLA batch mode and buffering CARLA blueprint library
 * Split of behaviors into behaviors and conditions
 * Moved atomics into new submodule scenarioatomics
 * Updated documentation for all behaviors, conditions and test criteria
