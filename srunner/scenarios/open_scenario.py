@@ -271,9 +271,9 @@ class OpenScenario(BasicScenario):
                                             maneuver_behavior, "ACTION", child.attrib.get('name'))
 
                                         parallel_actions.add_child(
-                                            oneshot_behavior(variable_name=  # See note in get_xml_path
-                                                                get_xml_path(self.config.story, sequence) + '>' + \
-                                                                get_xml_path(maneuver, child),
+                                            oneshot_behavior(variable_name=# See note in get_xml_path
+                                                             get_xml_path(self.config.story, sequence) + '>' + \
+                                                             get_xml_path(maneuver, child),
                                                              behaviour=maneuver_behavior))
 
                                 if child.tag == "StartConditions":
@@ -288,13 +288,13 @@ class OpenScenario(BasicScenario):
                             event_sequence.add_child(parallel_actions)
                             maneuver_parallel.add_child(
                                 oneshot_behavior(variable_name=get_xml_path(self.config.story, sequence) + '>' +
-                                                               get_xml_path(maneuver, event),  # See get_xml_path
+                                                 get_xml_path(maneuver, event),  # See get_xml_path
                                                  behaviour=event_sequence))
                         maneuver_parallel = StoryElementStatusToBlackboard(
                             maneuver_parallel, "MANEUVER", maneuver.attrib.get('name'))
                         single_sequence_iteration.add_child(
                             oneshot_behavior(variable_name=get_xml_path(self.config.story, sequence) + '>' +
-                                                           get_xml_path(maneuver, maneuver),  # See get_xml_path
+                                             get_xml_path(maneuver, maneuver),  # See get_xml_path
                                              behaviour=maneuver_parallel))
 
                     # OpenSCENARIO refers to Sequences as Scenes in this instance
@@ -374,7 +374,7 @@ class OpenScenario(BasicScenario):
                     condition, self.other_actors + self.ego_vehicles)
                 if sequence is not None and maneuver is not None:
                     xml_path = get_xml_path(self.config.story, sequence) + '>' + \
-                               get_xml_path(maneuver, condition)  # See note in get_xml_path
+                        get_xml_path(maneuver, condition)  # See note in get_xml_path
                 else:
                     xml_path = get_xml_path(self.config.story, condition)
                 criterion = oneshot_behavior(variable_name=xml_path, behaviour=criterion)
