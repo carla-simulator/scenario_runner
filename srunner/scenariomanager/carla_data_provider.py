@@ -371,6 +371,7 @@ class CarlaActorPool(object):
     _carla_actor_pool = dict()
     _spawn_points = None
     _spawn_index = 0
+    _blueprint_library = None
 
     @staticmethod
     def set_client(client):
@@ -385,6 +386,7 @@ class CarlaActorPool(object):
         Set the CARLA world
         """
         CarlaActorPool._world = world
+        CarlaActorPool._blueprint_library = world.get_blueprint_library()
         CarlaActorPool.generate_spawn_points()
 
     @staticmethod
@@ -407,8 +409,7 @@ class CarlaActorPool(object):
         CarlaActorPool._spawn_index = 0
 
     @staticmethod
-    def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
-                    random_location=False, color=None, actor_category="car"):
+    def create_blueprint(model, rolename='scenario', hero=False, autopilot=False, color=None, actor_category="car"):
         """
         Function to setup the most relevant actor parameters,
         incl. spawn point and vehicle model.
@@ -428,11 +429,9 @@ class CarlaActorPool(object):
             'pedestrian': 'walker.pedestrian.0001',
         }
 
-        blueprint_library = CarlaActorPool._world.get_blueprint_library()
-
         # Get vehicle by model
         try:
-            blueprint = random.choice(blueprint_library.filter(model))
+            blueprint = random.choice(CarlaActorPool._blueprint_library.filter(model))
         except IndexError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
@@ -440,7 +439,7 @@ class CarlaActorPool(object):
             if new_model != '':
                 bp_filter = new_model
             print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
-            blueprint = random.choice(blueprint_library.filter(bp_filter))
+            blueprint = random.choice(CarlaActorPool._blueprint_library.filter(bp_filter))
 
         if color:
             if not blueprint.has_attribute('color'):
@@ -467,6 +466,55 @@ class CarlaActorPool(object):
         else:
             blueprint.set_attribute('role_name', rolename)
 
+        return blueprint
+
+    @staticmethod
+    def handle_actor_batch(batch):
+        """
+        Forward a CARLA command batch to spawn actors to CARLA, and gather the responses
+
+        returns list of actors on success, none otherwise
+        """
+
+        actors = []
+
+        sync_mode = CarlaActorPool._world.get_settings().synchronous_mode
+
+        if CarlaActorPool._client and batch is not None:
+            responses = CarlaActorPool._client.apply_batch_sync(batch, sync_mode)
+        else:
+            return None
+
+        # wait for the actors to be spawned properly before we do anything
+        if sync_mode:
+            CarlaActorPool._world.tick()
+        else:
+            CarlaActorPool._world.wait_for_tick()
+
+        actor_ids = []
+        if responses:
+            for response in responses:
+                if not response.error:
+                    actor_ids.append(response.actor_id)
+                else:
+                    raise RuntimeError("Error: Unable to spawn actor")
+
+        carla_actors = CarlaActorPool._world.get_actors(actor_ids)
+        for actor in carla_actors:
+            actors.append(actor)
+
+        return actors
+
+    @staticmethod
+    def setup_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
+                    random_location=False, color=None, actor_category="car"):
+        """
+        Function to setup the most relevant actor parameters,
+        incl. spawn point and vehicle model.
+        """
+
+        blueprint = CarlaActorPool.create_blueprint(model, rolename, hero, autopilot, color, actor_category)
+
         if random_location:
             actor = None
             while not actor:
@@ -487,7 +535,7 @@ class CarlaActorPool(object):
                 "Error: Unable to spawn vehicle {} at {}".format(blueprint.id, spawn_point))
         else:
             # Let's deactivate the autopilot of the actor if it belongs to vehicle
-            if actor in blueprint_library.filter('vehicle.*'):
+            if actor in CarlaActorPool._blueprint_library.filter('vehicle.*'):
                 actor.set_autopilot(autopilot)
             else:
                 pass
@@ -499,6 +547,43 @@ class CarlaActorPool(object):
 
 
         return actor
+
+    @staticmethod
+    def setup_actors(actor_list):
+        """
+        Function to setup a complete list of actors
+        """
+
+        SpawnActor = carla.command.SpawnActor               # pylint: disable=invalid-name
+        PhysicsCommand = carla.command.SetSimulatePhysics   # pylint: disable=invalid-name
+        FutureActor = carla.command.FutureActor             # pylint: disable=invalid-name
+        ApplyTransform = carla.command.ApplyTransform       # pylint: disable=invalid-name
+        batch = []
+        actors = []
+        for actor in actor_list:
+            blueprint = CarlaActorPool.create_blueprint(model=actor.model,
+                                                        rolename=actor.rolename,
+                                                        hero=False,
+                                                        autopilot=actor.autopilot,
+                                                        color=actor.color,
+                                                        actor_category=actor.category)
+            # slightly lift the actor to avoid collisions with ground when spawning the actor
+            # DO NOT USE spawn_point directly, as this will modify spawn_point permanently
+            _spawn_point = carla.Transform(carla.Location(), actor.transform.rotation)
+            _spawn_point.location.x = actor.transform.location.x
+            _spawn_point.location.y = actor.transform.location.y
+            _spawn_point.location.z = actor.transform.location.z + 0.2
+
+            if 'physics' in actor.args and actor.args['physics'] == "off":
+                command = SpawnActor(blueprint, _spawn_point).then(
+                    ApplyTransform(FutureActor, actor.transform)).then(PhysicsCommand(FutureActor, False))
+            else:
+                command = SpawnActor(blueprint, _spawn_point).then(PhysicsCommand(FutureActor, True))
+            batch.append(command)
+
+        actors = CarlaActorPool.handle_actor_batch(batch)
+
+        return actors
 
     @staticmethod
     def setup_batch_actors(model, amount, spawn_point, hero=False, autopilot=False, random_location=False):
@@ -548,25 +633,7 @@ class CarlaActorPool(object):
             if spawn_point:
                 batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
 
-        if CarlaActorPool._client:
-            responses = CarlaActorPool._client.apply_batch_sync(batch, True)
-
-        # wait for the actors to be spawned properly before we do anything
-        if CarlaActorPool._world.get_settings().synchronous_mode:
-            CarlaActorPool._world.tick()
-        else:
-            CarlaActorPool._world.wait_for_tick()
-
-        actor_list = []
-        actor_ids = []
-        if responses:
-            for response in responses:
-                if not response.error:
-                    actor_ids.append(response.actor_id)
-
-        carla_actors = CarlaActorPool._world.get_actors(actor_ids)
-        for actor in carla_actors:
-            actor_list.append(actor)
+        actor_list = CarlaActorPool.handle_actor_batch(batch)
 
         return actor_list
 
@@ -600,6 +667,21 @@ class CarlaActorPool(object):
 
         CarlaActorPool._carla_actor_pool[actor.id] = actor
         return actor
+
+    @staticmethod
+    def request_new_actors(actor_list):
+        """
+        This method tries to create a list of new actors. If this was
+        successful, the new actors are returned, None otherwise.
+        """
+        actors = CarlaActorPool.setup_actors(actor_list)
+
+        if actors is None:
+            return None
+
+        for actor in actors:
+            CarlaActorPool._carla_actor_pool[actor.id] = actor
+        return actors
 
     @staticmethod
     def actor_id_exists(actor_id):

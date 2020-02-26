@@ -28,6 +28,7 @@
     - Challenge can be executed with the ScenarioRunner
     - WaypointFollower atomic can handle pedestrians
 * Extended OpenScenario support:
+    - Added support for UserDefinedActions (e.g. to run additional scripts)
     - Extensions in WaypointFollower atomic for consecutive WaypointFollowers
     - Added init speed behavior for vehicles
     - Added support for relative velocities
@@ -52,6 +53,7 @@
     - Added support for a default actor model, in case the stated model is not available
     - Added support for MiscObjects (besides vehicles and pedestrians)
     - Reworked traffic signal handling: The name has to start now either with "id=" or "pos=" depending on whether the position or id is used as unique identifier
+    - Actor physics can now be set via Object Properties (<Property name="physics" value="off" />)
 ### :bug: Bug Fixes
 * Fixed wrong handling of OpenSCENARIO ConditionGroups, which should be handled as parallel composites, not sequences
 * Fixed #443: Repetitions in OpenSCENARIO were not properly working
@@ -74,6 +76,7 @@
 * Fixed spawning of debris for ControlLoss scenario (Scenario01)
 * Fixed CTRL+C termination of ScenarioRunner
 ### :ghost: Maintenance
+* Increased speed of actor initialization by using CARLA batch mode and buffering CARLA blueprint library
 * Split of behaviors into behaviors and conditions
 * Moved atomics into new submodule scenarioatomics
 * Updated documentation for all behaviors, conditions and test criteria

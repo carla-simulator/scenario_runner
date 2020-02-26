@@ -124,6 +124,7 @@ class ScenarioRunner(object):
 
         # Create signal handler for SIGINT
         self._shutdown_requested = False
+        signal.signal(signal.SIGHUP, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
 
