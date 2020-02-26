@@ -266,7 +266,7 @@ class ScenarioRunner(object):
         if self._args.reloadWorld:
             self.world = self.client.load_world(town)
             settings = self.world.get_settings()
-            settings.fixed_delta_seconds = 0.05
+            settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
         else:
             # if the world should not be reloaded, wait at least until all ego vehicles are ready
