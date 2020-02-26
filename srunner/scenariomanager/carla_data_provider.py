@@ -494,8 +494,6 @@ class CarlaActorPool(object):
             for response in responses:
                 if not response.error:
                     actor_ids.append(response.actor_id)
-                else:
-                    raise RuntimeError("Error: Unable to spawn actor")
 
         carla_actors = CarlaActorPool._world.get_actors(actor_ids)
         for actor in carla_actors:
