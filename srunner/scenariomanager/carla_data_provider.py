@@ -495,7 +495,7 @@ class CarlaActorPool(object):
                 if not response.error:
                     actor_ids.append(response.actor_id)
                 else:
-                    print("WARNING: Could not spawn an actor")
+                    raise RuntimeError("Error: Unable to spawn actor")
 
         carla_actors = CarlaActorPool._world.get_actors(actor_ids)
         for actor in carla_actors:
@@ -551,7 +551,10 @@ class CarlaActorPool(object):
         Function to setup a complete list of actors
         """
 
-        SpawnActor = carla.command.SpawnActor       # pylint: disable=invalid-name
+        SpawnActor = carla.command.SpawnActor               # pylint: disable=invalid-name
+        PhysicsCommand = carla.command.SetSimulatePhysics   # pylint: disable=invalid-name
+        FutureActor = carla.command.FutureActor             # pylint: disable=invalid-name
+        ApplyTransform = carla.command.ApplyTransform       # pylint: disable=invalid-name
         batch = []
         actors = []
         for actor in actor_list:
@@ -567,7 +570,13 @@ class CarlaActorPool(object):
             _spawn_point.location.x = actor.transform.location.x
             _spawn_point.location.y = actor.transform.location.y
             _spawn_point.location.z = actor.transform.location.z + 0.2
-            batch.append(SpawnActor(blueprint, _spawn_point))
+
+            if 'physics' in actor.args and actor.args['physics'] == "off":
+                command = SpawnActor(blueprint, _spawn_point).then(
+                    ApplyTransform(FutureActor, actor.transform)).then(PhysicsCommand(FutureActor, False))
+            else:
+                command = SpawnActor(blueprint, _spawn_point).then(PhysicsCommand(FutureActor, True))
+            batch.append(command)
 
         actors = CarlaActorPool.handle_actor_batch(batch)
 
@@ -654,7 +663,6 @@ class CarlaActorPool(object):
             return None
 
         CarlaActorPool._carla_actor_pool[actor.id] = actor
-        actor.set_simulate_physics(True)
         return actor
 
     @staticmethod
@@ -670,7 +678,6 @@ class CarlaActorPool(object):
 
         for actor in actors:
             CarlaActorPool._carla_actor_pool[actor.id] = actor
-            actor.set_simulate_physics(True)
         return actors
 
     @staticmethod

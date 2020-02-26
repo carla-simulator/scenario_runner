@@ -19,7 +19,7 @@ class ActorConfigurationData(object):
     """
 
     def __init__(self, model, transform, rolename='other', speed=0, autopilot=False,
-                 random=False, amount=1, color=None, category="car"):
+                 random=False, amount=1, color=None, category="car", args=None):
         self.model = model
         self.rolename = rolename
         self.transform = transform
@@ -29,6 +29,7 @@ class ActorConfigurationData(object):
         self.amount = amount
         self.color = color
         self.category = category
+        self.args = args
 
 
 class ActorConfiguration(ActorConfigurationData):
