@@ -153,8 +153,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             environment = set_environment.find("Environment")
         elif set_environment.find("CatalogReference") is not None:
             catalog_reference = set_environment.find("CatalogReference")
-            environment = self.catalogs[catalog_reference.attrib.get("catalogName")] \
-                                       [catalog_reference.attrib.get("entryName")]
+            environment = self.catalogs[catalog_reference.attrib.get(
+                "catalogName")][catalog_reference.attrib.get("entryName")]
 
         weather = environment.find("Weather")
         sun = weather.find("Sun")
@@ -218,8 +218,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             for obj in entity.iter("Object"):
                 rolename = obj.attrib.get('name', 'simulation')
                 for catalog_reference in obj.iter("CatalogReference"):
-                    entry = self.catalogs[catalog_reference.attrib.get("catalogName")] \
-                                         [catalog_reference.attrib.get("entryName")]
+                    entry = self.catalogs[catalog_reference.attrib.get(
+                        "catalogName")][catalog_reference.attrib.get("entryName")]
                     if entry.tag == "Vehicle":
                         self._extract_vehicle_information(entry, rolename, entry)
                     elif entry.tag == "Pedestrian":

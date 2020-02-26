@@ -615,5 +615,6 @@ def main():
             del scenario_runner
     return not result
 
+
 if __name__ == "__main__":
     sys.exit(main())
