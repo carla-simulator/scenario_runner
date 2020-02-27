@@ -242,7 +242,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     self._extract_pedestrian_information(obj, rolename, pedestrian, args)
 
                 for misc in obj.iter("MiscObject"):
-                    self._extract_misc_information(obj, rolename, misc)
+                    self._extract_misc_information(obj, rolename, misc, args)
 
     def _extract_vehicle_information(self, obj, rolename, vehicle, args):
         """
