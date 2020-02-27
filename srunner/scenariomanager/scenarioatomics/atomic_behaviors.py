@@ -1569,11 +1569,14 @@ class TrafficLightManipulator(AtomicBehavior):
     RED = carla.TrafficLightState.Red
     GREEN = carla.TrafficLightState.Green
     MIN_SECONDS_WAITED = 3 # seconds
-    TRIGGER_DISTANCE = 2 # meters
+    TRIGGER_DISTANCE = 3 # meters
 
-    INT_CONF_OPP = {'ego': RED, 'ref': RED, 'left': RED, 'right': RED, 'opposite': GREEN}
-    INT_CONF_LFT = {'ego': RED, 'ref': RED, 'left': GREEN, 'right': RED, 'opposite': RED}
-    INT_CONF_RGT = {'ego': RED, 'ref': RED, 'left': RED, 'right': GREEN, 'opposite': RED}
+    INT_CONF_OPP1 = {'ego': RED, 'ref': RED, 'left': RED, 'right': RED, 'opposite': GREEN}
+    INT_CONF_OPP2 = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
+    INT_CONF_LFT1 = {'ego': RED, 'ref': RED, 'left': GREEN, 'right': RED, 'opposite': RED}
+    INT_CONF_LFT2 = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
+    INT_CONF_RGT1 = {'ego': RED, 'ref': RED, 'left': RED, 'right': GREEN, 'opposite': RED}
+    INT_CONF_RGT2 = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
     INT_CONF_REF = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': RED}
 
     # Depending on the scenario, IN ORDER OF IMPORTANCE, the traffic light changed
@@ -1587,9 +1590,9 @@ class TrafficLightManipulator(AtomicBehavior):
     }
 
     CONFIG_TLM_TRANSLATION = {
-        'left': INT_CONF_LFT,
-        'right': INT_CONF_RGT,
-        'opposite': INT_CONF_OPP,
+        'left': [INT_CONF_LFT1, INT_CONF_LFT2],
+        'right': [INT_CONF_RGT1, INT_CONF_RGT2],
+        'opposite': [INT_CONF_OPP1, INT_CONF_OPP2]
     }
 
     def __init__(self, ego_vehicle, subtype, debug=False, name="TrafficLightManipulator"):
@@ -1603,10 +1606,8 @@ class TrafficLightManipulator(AtomicBehavior):
         self.configuration = None
         self.annotations = None
         self.prev_junction_state = None
-        self.ego_vehicle_near_intersection = False
         self.seconds_waited = 0
         self.current_step = 1
-        self.all_set = False
 
         self.inside_junction = False
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -1661,7 +1662,7 @@ class TrafficLightManipulator(AtomicBehavior):
             if distance < self.TRIGGER_DISTANCE:
                 print("Ego vehicle at an intersection")
 
-                choice = self.CONFIG_TLM_TRANSLATION[self.configuration]
+                choice = self.CONFIG_TLM_TRANSLATION[self.configuration][0]
                 print("Chose: {}".format(choice))
 
                 _ = CarlaDataProvider.update_light_states(
@@ -1670,8 +1671,10 @@ class TrafficLightManipulator(AtomicBehavior):
                     choice,
                     freeze=True)
                 self.current_step += 1
+
             elif distance > 20:
                 self.current_step += 0
+
             else:
                 if self.debug:
                     print("Distance until traffic light changes: {}".format(distance))
@@ -1688,10 +1691,11 @@ class TrafficLightManipulator(AtomicBehavior):
                 self.seconds_waited += (timestamp - self.prev_time)
                 self.prev_time = timestamp
             else:
+                choice = self.CONFIG_TLM_TRANSLATION[self.configuration][1]
                 _ = CarlaDataProvider.update_light_states(
                     self.target_traffic_light,
                     self.annotations,
-                    self.INT_CONF_REF,
+                    choice,
                     freeze=True)
                 print("Last manipulation is DONE")
                 self.current_step += 1
@@ -1728,14 +1732,10 @@ class TrafficLightManipulator(AtomicBehavior):
         self.configuration = None
         self.annotations = None
         self.prev_junction_state = None
-        self.ego_vehicle_near_intersection = False
         self.seconds_waited = 0
-        self.all_set = False
         self.prev_time = None
         self.current_step = 1
         self.inside_junction = False
-
-
 
     def get_traffic_light_configuration(self, subtype, annotations):
         """

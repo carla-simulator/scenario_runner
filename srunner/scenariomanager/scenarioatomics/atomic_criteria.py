@@ -1428,7 +1428,7 @@ class RunningRedLightTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._list_traffic_lights = []
         self._last_red_light_id = None
-        self.debug = False
+        self.debug = True
 
         all_actors = self._world.get_actors()
         for _actor in all_actors:
