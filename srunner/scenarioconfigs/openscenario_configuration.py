@@ -11,6 +11,7 @@ This module provides the key configuration parameters for a scenario based on Op
 
 from __future__ import print_function
 
+import logging
 import math
 import os
 import xml.etree.ElementTree as ET
@@ -41,6 +42,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._validate_openscenario_configuration()
         self.client = client
 
+        self.catalogs = {}
+
         self.other_actors = []
         self.ego_vehicles = []
         self.trigger_points = []
@@ -49,6 +52,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.storyboard = self.xml_tree.find("Storyboard")
         self.story = self.storyboard.find("Story")
         self.init = self.storyboard.find("Init")
+
+        self.logger = logging.getLogger("CatalogMessages")
 
         self._parse_openscenario_configuration()
 
@@ -66,6 +71,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Parse the given OpenSCENARIO config file, set and validate parameters
         """
+        self._load_catalogs()
+
         self._set_scenario_name()
         self._set_carla_town()
         self._set_actor_information()
@@ -73,6 +80,35 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._set_carla_friction()
 
         self._validate_result()
+
+    def _load_catalogs(self):
+        """
+        Read Catalog xml files into dictionary for later use
+
+        NOTE: Catalogs must have distinct names, even across different types
+        """
+        catalogs = self.xml_tree.find("Catalogs")
+        catalog_types = ["Vehicle",
+                         "Driver",
+                         "Pedestrian",
+                         "PedestrianController",
+                         "MiscObject",
+                         "Environment",
+                         "Maneuver",
+                         "Route"]
+        for catalog_type in catalog_types:
+            catalog_path = catalogs.find(catalog_type + "Catalog") \
+                                   .find("Directory") \
+                                   .attrib.get('path')
+            if not os.path.isfile(catalog_path):
+                self.logger.warning("The %s path for the %s Catalog is invalid", catalog_path, catalog_type)
+            else:
+                xml_tree = ET.parse(catalog_path)
+                catalog = xml_tree.find("Catalog")
+                catalog_name = catalog.attrib.get("name")
+                self.catalogs[catalog_name] = {}
+                for entry in catalog:
+                    self.catalogs[catalog_name][entry.attrib.get("name")] = entry
 
     def _set_scenario_name(self):
         """
@@ -111,18 +147,27 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         Extract weather information from OpenSCENARIO config
         """
 
-        for weather in self.init.iter("Weather"):
-            sun = weather.find("Sun")
-            self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
-            self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
-            self.weather.cloudyness = 100 - float(sun.attrib.get('intensity', 0)) * 100
-            precepitation = weather.find("Precipitation")
-            self.weather.precipitation = 0
-            if precepitation.attrib.get('type') == "rain":
-                self.weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
-                self.weather.precipitation_deposits = 100  # if it rains, make the road wet
-            elif precepitation.attrib.get('type') == "snow":
-                raise AttributeError("CARLA does not support snow precipitation")
+        set_environment = next(self.init.iter("SetEnvironment"))
+
+        if sum(1 for _ in set_environment.iter("Weather")) != 0:
+            environment = set_environment.find("Environment")
+        elif set_environment.find("CatalogReference") is not None:
+            catalog_reference = set_environment.find("CatalogReference")
+            environment = self.catalogs[catalog_reference.attrib.get(
+                "catalogName")][catalog_reference.attrib.get("entryName")]
+
+        weather = environment.find("Weather")
+        sun = weather.find("Sun")
+        self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
+        self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
+        self.weather.cloudyness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+        precepitation = weather.find("Precipitation")
+        self.weather.precipitation = 0
+        if precepitation.attrib.get('type') == "rain":
+            self.weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
+            self.weather.precipitation_deposits = 100  # if it rains, make the road wet
+        elif precepitation.attrib.get('type') == "snow":
+            raise AttributeError("CARLA does not support snow precipitation")
 
     def _set_carla_friction(self):
         """
@@ -178,48 +223,77 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     value = prop.get('value')
                     args[key] = value
 
-                for vehicle in obj.iter("Vehicle"):
-                    color = None
-                    model = vehicle.attrib.get('name', "vehicle.*")
-                    category = vehicle.attrib.get('category', "car")
-                    ego_vehicle = False
-                    for prop in obj.iter("Property"):
-                        if prop.get('name', '') == 'type':
-                            ego_vehicle = prop.get('value') == 'ego_vehicle'
-                        if prop.get('name', '') == 'color':
-                            color = prop.get('value')
-
-                    speed = self._get_actor_speed(rolename)
-                    new_actor = ActorConfigurationData(
-                        model, carla.Transform(), rolename, speed, color=color, category=category, args=args)
-                    new_actor.transform = self._get_actor_transform(rolename)
-
-                    if ego_vehicle:
-                        self.ego_vehicles.append(new_actor)
+                for catalog_reference in obj.iter("CatalogReference"):
+                    entry = self.catalogs[catalog_reference.attrib.get(
+                        "catalogName")][catalog_reference.attrib.get("entryName")]
+                    if entry.tag == "Vehicle":
+                        self._extract_vehicle_information(entry, rolename, entry, args)
+                    elif entry.tag == "Pedestrian":
+                        self._extract_pedestrian_information(entry, rolename, entry, args)
+                    elif entry.tag == "MiscObject":
+                        self._extract_misc_information(entry, rolename, entry, args)
                     else:
-                        self.other_actors.append(new_actor)
+                        self.logger.error("A CatalogReference specifies a reference that is not an Entity. Skipping...")
+
+                for vehicle in obj.iter("Vehicle"):
+                    self._extract_vehicle_information(obj, rolename, vehicle, args)
 
                 for pedestrian in obj.iter("Pedestrian"):
-                    model = pedestrian.attrib.get('model', "walker.*")
-
-                    new_actor = ActorConfigurationData(
-                        model, carla.Transform(), rolename, category="pedestrian", args=args)
-                    new_actor.transform = self._get_actor_transform(rolename)
-
-                    self.other_actors.append(new_actor)
+                    self._extract_pedestrian_information(obj, rolename, pedestrian, args)
 
                 for misc in obj.iter("MiscObject"):
-                    category = misc.attrib.get('category')
-                    if category == "barrier":
-                        model = "static.prop.streetbarrier"
-                    elif category == "guardRail":
-                        model = "static.prop.chainbarrier"
-                    else:
-                        model = misc.attrib.get('name')
-                    new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="misc", args=args)
-                    new_actor.transform = self._get_actor_transform(rolename)
+                    self._extract_misc_information(obj, rolename, misc, args)
 
-                    self.other_actors.append(new_actor)
+    def _extract_vehicle_information(self, obj, rolename, vehicle, args):
+        """
+        Helper function to _set_actor_information for getting vehicle information from XML tree
+        """
+        color = None
+        model = vehicle.attrib.get('name', "vehicle.*")
+        category = vehicle.attrib.get('category', "car")
+        ego_vehicle = False
+        for prop in obj.iter("Property"):
+            if prop.get('name', '') == 'type':
+                ego_vehicle = prop.get('value') == 'ego_vehicle'
+            if prop.get('name', '') == 'color':
+                color = prop.get('value')
+
+        speed = self._get_actor_speed(rolename)
+        new_actor = ActorConfigurationData(
+            model, carla.Transform(), rolename, speed, color=color, category=category, args=args)
+        new_actor.transform = self._get_actor_transform(rolename)
+
+        if ego_vehicle:
+            self.ego_vehicles.append(new_actor)
+        else:
+            self.other_actors.append(new_actor)
+
+    def _extract_pedestrian_information(self, obj, rolename, pedestrian, args):
+        """
+        Helper function to _set_actor_information for getting pedestrian information from XML tree
+        """
+        model = pedestrian.attrib.get('model', "walker.*")
+
+        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="pedestrian", args=args)
+        new_actor.transform = self._get_actor_transform(rolename)
+
+        self.other_actors.append(new_actor)
+
+    def _extract_misc_information(self, obj, rolename, misc, args):
+        """
+        Helper function to _set_actor_information for getting vehicle information from XML tree
+        """
+        category = misc.attrib.get('category')
+        if category == "barrier":
+            model = "static.prop.streetbarrier"
+        elif category == "guardRail":
+            model = "static.prop.chainbarrier"
+        else:
+            model = misc.attrib.get('name')
+        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="misc", args=args)
+        new_actor.transform = self._get_actor_transform(rolename)
+
+        self.other_actors.append(new_actor)
 
     def _get_actor_transform(self, actor_name):
         """

@@ -36,6 +36,7 @@
     - WaypointFollower atomic can handle pedestrians
     - Extensions in WaypointFollower atomic for consecutive WaypointFollowers (one WF cancels the previous one)
 * Extended OpenScenario support:
+    - Added initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
     - Added support for UserDefinedActions (e.g. to run additional scripts)
     - Added init speed behavior for vehicles
     - Added support for relative velocities
