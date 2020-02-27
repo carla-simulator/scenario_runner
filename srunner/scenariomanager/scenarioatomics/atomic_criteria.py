@@ -1197,7 +1197,7 @@ class InRouteTest(Criterion):
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
     MAX_ROUTE_PERCENTAGE = 30  # %
-    WINDOWS_SIZE = 2  # Amount of additional waypoints checked
+    WINDOWS_SIZE = 5  # Amount of additional waypoints checked
 
     def __init__(self, actor, route, offroad_min=-1, offroad_max=30, name="InRouteTest", terminate_on_failure=False):
         """
@@ -1314,7 +1314,7 @@ class RouteCompletionTest(Criterion):
     - route: Route to be checked
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    DISTANCE_THRESHOLD = 15.0  # meters
+    DISTANCE_THRESHOLD = 10.0  # meters
     WINDOWS_SIZE = 2
 
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):

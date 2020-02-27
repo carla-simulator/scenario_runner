@@ -212,24 +212,57 @@ class CarlaDataProvider(object):
         """
         dict_annotations = {'ref': [], 'opposite': [], 'left': [], 'right': []}
 
+        # Get the waypoints
+        ref_location = CarlaDataProvider.get_trafficlight_trigger_location(traffic_light)
+        ref_waypoint = CarlaDataProvider.get_map().get_waypoint(ref_location)
+        ref_yaw = ref_waypoint.transform.rotation.yaw
+
         ref_yaw = traffic_light.get_transform().rotation.yaw
         group_tl = traffic_light.get_group_traffic_lights()
         for target_tl in group_tl:
-            target_yaw = target_tl.get_transform().rotation.yaw
-            diff = target_yaw - ref_yaw
-            if diff < 0.0:
-                diff = 360.0 + diff
-
-            if diff <= 45.0 or diff > 320.0:
+            if traffic_light.id == target_tl.id:
                 dict_annotations['ref'].append(target_tl)
-            elif diff > 240 and diff <= 320:
-                dict_annotations['right'].append(target_tl)
-            elif diff > 160.0 and diff <= 240.0:
-                dict_annotations['opposite'].append(target_tl)
             else:
-                dict_annotations['left'].append(target_tl)
+                # Get the angle between yaws
+                target_location = CarlaDataProvider.get_trafficlight_trigger_location(target_tl)
+                target_waypoint = CarlaDataProvider.get_map().get_waypoint(target_location)
+                target_yaw = target_waypoint.transform.rotation.yaw
+                diff = (target_yaw - ref_yaw) % 360
+
+                if diff > 330:
+                    continue
+                elif diff > 225:
+                    dict_annotations['right'].append(target_tl)
+                elif diff > 135.0:
+                    dict_annotations['opposite'].append(target_tl)
+                elif diff > 30:
+                    dict_annotations['left'].append(target_tl)
 
         return dict_annotations
+
+    @staticmethod
+    def get_trafficlight_trigger_location(traffic_light):
+        """
+        Calculates the yaw of the waypoint that represents the trigger volume of the traffic light
+        """
+        def rotate_point(point, angle):
+            """
+            rotate a given point by a given angle
+            """
+            x_ = math.cos(math.radians(angle)) * point.x - math.sin(math.radians(angle)) * point.y
+            y_ = math.sin(math.radians(angle)) * point.x - math.cos(math.radians(angle)) * point.y
+
+            return carla.Vector3D(x_, y_, point.z)
+
+        base_transform = traffic_light.get_transform()
+        base_rot = base_transform.rotation.yaw
+        area_loc = base_transform.transform(traffic_light.trigger_volume.location)
+        area_ext = traffic_light.trigger_volume.extent
+
+        point = rotate_point(carla.Vector3D(0, 0, area_ext.z), base_rot)
+        point_location = area_loc + carla.Location(x=point.x, y=point.y)
+
+        return point_location
 
     @staticmethod
     def update_light_states(ego_light, annotations, states, freeze=False, timeout=1000000000):
@@ -478,13 +511,15 @@ class CarlaActorPool(object):
 
         actors = []
 
+        sync_mode = CarlaActorPool._world.get_settings().synchronous_mode
+
         if CarlaActorPool._client and batch is not None:
-            responses = CarlaActorPool._client.apply_batch_sync(batch)
+            responses = CarlaActorPool._client.apply_batch_sync(batch, sync_mode)
         else:
             return None
 
         # wait for the actors to be spawned properly before we do anything
-        if CarlaActorPool._world.get_settings().synchronous_mode:
+        if sync_mode:
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
@@ -591,6 +626,21 @@ class CarlaActorPool(object):
         FutureActor = carla.command.FutureActor     # pylint: disable=invalid-name
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
+        # TODO: Change
+        # Get vehicle by model
+        blueprints = blueprint_library.filter(model)
+
+        # Remove bikes
+        blueprints = [x for x in blueprints if not x.id == 'vehicle.diamondback.century']
+        blueprints = [x for x in blueprints if not x.id == 'vehicle.gazelle.omafiets']
+        blueprints = [x for x in blueprints if not x.id == 'vehicle.bh.crossbike']
+        # And "unsafe" vehicles
+        blueprints = [x for x in blueprints if not x.id.endswith('isseta')]
+        blueprints = [x for x in blueprints if not x.id.endswith('cybertruck')]
+        blueprints = [x for x in blueprints if not x.id.endswith('carlacola')]
+        blueprints = [x for x in blueprints if not x.id.endswith('t2')]
+        # And lincoln.mkz2017 to avoid confusions when debugging
+        blueprints = [x for x in blueprints if not x.id == 'vehicle.lincoln.mkz2017']
 
         if not hero:
             hero_actor = CarlaActorPool.get_hero_actor()
@@ -599,7 +649,7 @@ class CarlaActorPool(object):
         batch = []
         for _ in range(amount):
             # Get vehicle by model
-            blueprint = random.choice(blueprint_library.filter(model))
+            blueprint = random.choice(blueprints)
             # is it a pedestrian? -> make it mortal
             if blueprint.has_attribute('is_invincible'):
                 blueprint.set_attribute('is_invincible', 'false')

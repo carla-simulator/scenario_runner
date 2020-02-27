@@ -1561,20 +1561,20 @@ class TrafficLightManipulator(AtomicBehavior):
     """
     Atomic behavior that manipulates traffic lights around the ego_vehicle
     This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
-
     Important parameters:
     - ego_vehicle: CARLA actor that controls this behavior
-
     This behavior stops when blackboard.get('master_scenario_command') == scenarios_stop_request
     """
 
-    MAX_DISTANCE_TRAFFIC_LIGHT = 15
     RED = carla.TrafficLightState.Red
     GREEN = carla.TrafficLightState.Green
+    MIN_SECONDS_WAITED = 3 # seconds
+    TRIGGER_DISTANCE = 2 # meters
 
-    INT_CONF_OPP = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
-    INT_CONF_LFT = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
-    INT_CONF_RGT = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
+    INT_CONF_OPP = {'ego': RED, 'ref': RED, 'left': RED, 'right': RED, 'opposite': GREEN}
+    INT_CONF_LFT = {'ego': RED, 'ref': RED, 'left': GREEN, 'right': RED, 'opposite': RED}
+    INT_CONF_RGT = {'ego': RED, 'ref': RED, 'left': RED, 'right': GREEN, 'opposite': RED}
+    INT_CONF_REF = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': RED}
 
     # Depending on the scenario, IN ORDER OF IMPORTANCE, the traffic light changed
     # The list has to contain only items of the INT_CONF
@@ -1589,89 +1589,153 @@ class TrafficLightManipulator(AtomicBehavior):
     CONFIG_TLM_TRANSLATION = {
         'left': INT_CONF_LFT,
         'right': INT_CONF_RGT,
-        'opposite': INT_CONF_OPP
+        'opposite': INT_CONF_OPP,
     }
 
     def __init__(self, ego_vehicle, subtype, debug=False, name="TrafficLightManipulator"):
         super(TrafficLightManipulator, self).__init__(name)
+        self.prev_time = None
         self.ego_vehicle = ego_vehicle
         self.subtype = subtype
-        self.valid_subtype = True
-        self.debug = debug
+        self.debug = True
+
         self.target_traffic_light = None
-        self.inside_junction = False
+        self.configuration = None
         self.annotations = None
-        self.reset_annotations = None
+        self.prev_junction_state = None
+        self.ego_vehicle_near_intersection = False
+        self.seconds_waited = 0
+        self.current_step = 1
+        self.all_set = False
+
+        self.inside_junction = False
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
 
         new_status = py_trees.common.Status.RUNNING
 
-        # find a suitable target
-        if not self.target_traffic_light:
+        # 1) Set up the intersection
+        if self.current_step == 1:
+
+            # Find a suitable traffic light
             traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
             if not traffic_light:
                 # nothing else to do in this iteration...
                 return new_status
+            self.target_traffic_light = traffic_light
 
-            base_transform = traffic_light.get_transform()
-            area_loc = carla.Location(base_transform.transform(traffic_light.trigger_volume.location))
-            distance_to_traffic_light = area_loc.distance(self.ego_vehicle.get_location())
+            # Get its previous states
+            self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
+            print("Annotations: {}".format(self.annotations))
+
+            # Modify the intersection to the desired state
+            configuration = self.get_traffic_light_configuration(self.subtype, self.annotations)
+            if configuration is None:
+                self.current_step = 0  # End the behavior
+                return new_status
+            self.configuration = configuration
+            print("Configuration: {}".format(configuration))
 
             if self.debug:
-                print("[{}] distance={}".format(traffic_light.id, distance_to_traffic_light))
+                print("--- We are going to affect the following intersection")
+                loc = self.target_traffic_light.get_location()
+                CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
+                                                                size=0.5, color=carla.Color(255, 255, 0),
+                                                                life_time=50000)
 
-            if distance_to_traffic_light < self.MAX_DISTANCE_TRAFFIC_LIGHT:
-                self.target_traffic_light = traffic_light
-                if self.debug:
-                    print("--- We are going to affect the following intersection")
-                    loc = self.target_traffic_light.get_location()
-                    CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
-                                                                   size=0.5, color=carla.Color(255, 255, 0),
-                                                                   life_time=50000)
-                self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
-        else:
-            if not self.reset_annotations and self.valid_subtype:
-                # the light has not been manipulated yet
-                configuration = self.get_traffic_light_configuration(self.subtype, self.annotations)
+            self.prev_junction_state = CarlaDataProvider.update_light_states(
+                self.target_traffic_light,
+                self.annotations,
+                self.INT_CONF_REF,
+                freeze=True)
+            print("First manipulation is DONE")
+            self.current_step += 1
+        
+        # 2) Wait until actor is near the intersection to manipulate the traffic lights again
+        elif self.current_step == 2:
 
-                if configuration is None:
-                    # No available config, move to the next step
-                    self.valid_subtype = False
-                    return new_status
+            tl_location = CarlaDataProvider.get_trafficlight_trigger_location(self.target_traffic_light)
+            ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+            distance = ego_location.distance(tl_location)
+            if distance < self.TRIGGER_DISTANCE:
+                print("Ego vehicle at an intersection")
 
-                choice = self.CONFIG_TLM_TRANSLATION[configuration]
+                choice = self.CONFIG_TLM_TRANSLATION[self.configuration]
+                print("Chose: {}".format(choice))
 
-                self.reset_annotations = CarlaDataProvider.update_light_states(
+                _ = CarlaDataProvider.update_light_states(
                     self.target_traffic_light,
                     self.annotations,
                     choice,
                     freeze=True)
-
+                self.current_step += 1
+            elif distance > 20:
+                self.current_step += 0
             else:
-                # the traffic light has been manipulated, wait until the vehicle finsihes the intersection
-                ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
-                ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+                if self.debug:
+                    print("Distance until traffic light changes: {}".format(distance))
 
-                # Wait for the ego_vehicle to enter a junction
-                if not self.inside_junction and ego_waypoint.is_junction:
-                    self.inside_junction = True
+        # 3) Wait some seconds before changing the lights
+        elif self.current_step == 3:
+            if self.seconds_waited < self.MIN_SECONDS_WAITED:
+                print("Waited seconds: {}".format(self.seconds_waited))
 
-                # And to leave it
-                if self.inside_junction and not ego_waypoint.is_junction:
-                    if self.debug:
-                        print("--- Returning the intersection to its previous state")
-                    self.inside_junction = False
+                if self.prev_time is None:
+                    self.prev_time = GameTime.get_time()
+                timestamp = GameTime.get_time()
 
-                    if self.reset_annotations:
-                        CarlaDataProvider.reset_lights(self.reset_annotations)
-                        self.target_traffic_light = None
-                        self.reset_annotations = None
-                        self.annotations = None
-                    new_status = py_trees.common.Status.SUCCESS
+                self.seconds_waited += (timestamp - self.prev_time)
+                self.prev_time = timestamp
+            else:
+                _ = CarlaDataProvider.update_light_states(
+                    self.target_traffic_light,
+                    self.annotations,
+                    self.INT_CONF_REF,
+                    freeze=True)
+                print("Last manipulation is DONE")
+                self.current_step += 1
+
+        # 4) All done, wait until after the junction to reset everything
+        elif self.current_step == 4:
+            ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+            ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+
+            # Wait for the ego vehicle to enter a junction
+            if not self.inside_junction and ego_waypoint.is_junction:
+                self.inside_junction = True
+
+            # And to leave it
+            if self.inside_junction and not ego_waypoint.is_junction:
+                self.current_step += 1
+
+        # At the end (or if something failed), reset to the previous state
+        else:
+            if self.prev_junction_state:
+                CarlaDataProvider.reset_lights(self.prev_junction_state)
+                if self.debug:
+                    print("--- Returning the intersection to its previous state")
+            self.variable_cleanup()
+            new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+    def variable_cleanup(self):
+        """
+        Resets all variables to the intial state
+        """
+        self.target_traffic_light = None
+        self.configuration = None
+        self.annotations = None
+        self.prev_junction_state = None
+        self.ego_vehicle_near_intersection = False
+        self.seconds_waited = 0
+        self.all_set = False
+        self.prev_time = None
+        self.current_step = 1
+        self.inside_junction = False
+
+
 
     def get_traffic_light_configuration(self, subtype, annotations):
         """
@@ -1689,7 +1753,7 @@ class TrafficLightManipulator(AtomicBehavior):
             while possible_configurations:
                 # Chose the first one and delete it
                 configuration = possible_configurations[0]
-                possible_configurations.remove(configuration)
+                possible_configurations = possible_configurations[1:]
                 if configuration in annotations:
                     if annotations[configuration]:
                         # Found a valid configuration
@@ -1698,7 +1762,8 @@ class TrafficLightManipulator(AtomicBehavior):
                         # The traffic light doesn't exist, get another one
                         configuration = None
                 else:
-                    print("Wrong name")
+                    if self.debug:
+                        print("This configuration name is wrong")
                     configuration = None
 
             if configuration is None and self.debug:
