@@ -53,7 +53,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.story = self.storyboard.find("Story")
         self.init = self.storyboard.find("Init")
 
-        self.logger = logging.getLogger("CatalogMessages")
+        self.logger = logging.getLogger("OpenScenarioConfiguration")
 
         self._parse_openscenario_configuration()
 
@@ -315,8 +315,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             if private_action.attrib.get('object', None) == actor_name:
                 if actor_found:
                     # pylint: disable=line-too-long
-                    print(
-                        "Warning: The actor '{}' was already assigned an initial position. Overwriting pose!".format(actor_name))
+                    self.logger.warning("Warning: The actor '%s' was already assigned an initial position. Overwriting pose!", actor_name)
                     # pylint: enable=line-too-long
                 actor_found = True
                 for position in private_action.iter('Position'):
@@ -326,7 +325,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         actor_transform = transform
 
         if not actor_found:
-            print("Warning: The actor '{}' was not assigned an initial position. Using (0,0,0)".format(actor_name))
+            # pylint: disable=line-too-long
+            self.logger.warning("Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)", actor_name)
+            # pylint: enable=line-too-long
 
         return actor_transform
 
@@ -340,9 +341,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for private_action in self.init.iter("Private"):
             if private_action.attrib.get('object', None) == actor_name:
                 if actor_found:
-                    print(
-                        """Warning: The actor '{}' was already assigned an initial position.
-                        Overwriting pose!""".format(actor_name))
+                    # pylint: disable=line-too-long
+                    self.logger.warning("Warning: The actor '%s' was already assigned an initial position. Overwriting pose!", actor_name)
+                    # pylint: enable=line-too-long
                 actor_found = True
 
                 for longitudinal_action in private_action.iter('Longitudinal'):
