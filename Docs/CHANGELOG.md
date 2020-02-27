@@ -1,20 +1,30 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.7](#carla-scenariorunner-097)
 * [CARLA ScenarioRunner 0.9.6](#carla-scenariorunner-096)
 * [CARLA ScenarioRunner 0.9.5.1](#carla-scenariorunner-0951)
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+
+
+## CARLA ScenarioRunner 0.9.7
+**This is the _first_ release to work with CARLA 0.9.7 (not the patch versions 0.9.7.x)**
 ### :rocket: New Features
-* Added example scenario for lane change
-* Added cut-in example scenario
-* New Features:
+* Challenge routes can be directly executed with the ScenarioRunner using the --route option
+* Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
+* New scenarios:
+    - Added example scenario for lane change
+    - Added cut-in example scenario
+* Scenario updates:
     - Scenarios 7 to 10 are now visible when running routes (instead of being triggered in the background). Their
-    methodology has remained unchanged
+      methodology has remained unchanged
+* Scenario atomics:
     - Added new OutsideRouteLanesTest atomic criter that encompasses both SidewalkTest and WrongLaneTest, returning
-    the percentage of route that has been traveled outside the lane.
-    - InRouteTest is now more forgiving. The max distance has been increased, but staying above the previous one will eventually also cause failure
+      the percentage of route that has been traveled outside the lane.
+    - InRouteTest is now more forgiving. The max distance has been increased, but staying above the previous one will eventually 
+      also cause failure
     - Changed SidewalkTest atomic criteria to also track other type of out of lane conditions
     - SidewalkTest and WrongLaneTest atomic criterias now track the amount of meters traversed
     - CollisionTest atomic criteria now correctly ignores multiple micro-collisions with the same object
@@ -23,13 +33,10 @@
     - Added get_transform() method for CarlaDataProvider
     - Added support for weather conditions
     - Added basic version check to ensure usage of correct CARLA version
-    - Routes can be executed with the ScenarioRunner
-    - Agents can be used with the ScenarioRunner (currently only for route-based scenarios)
-    - Challenge can be executed with the ScenarioRunner
     - WaypointFollower atomic can handle pedestrians
+    - Extensions in WaypointFollower atomic for consecutive WaypointFollowers (one WF cancels the previous one)
 * Extended OpenScenario support:
     - Added support for UserDefinedActions (e.g. to run additional scripts)
-    - Extensions in WaypointFollower atomic for consecutive WaypointFollowers
     - Added init speed behavior for vehicles
     - Added support for relative velocities
     - Extended convert_position_to_transform with RelativeWorld, RelativeObject and RelativeLane osc_positions
