@@ -217,8 +217,8 @@ class CarlaDataProvider(object):
         ref_waypoint = CarlaDataProvider.get_map().get_waypoint(ref_location)
         ref_yaw = ref_waypoint.transform.rotation.yaw
 
-        ref_yaw = traffic_light.get_transform().rotation.yaw
         group_tl = traffic_light.get_group_traffic_lights()
+
         for target_tl in group_tl:
             if traffic_light.id == target_tl.id:
                 dict_annotations['ref'].append(target_tl)
@@ -227,6 +227,7 @@ class CarlaDataProvider(object):
                 target_location = CarlaDataProvider.get_trafficlight_trigger_location(target_tl)
                 target_waypoint = CarlaDataProvider.get_map().get_waypoint(target_location)
                 target_yaw = target_waypoint.transform.rotation.yaw
+
                 diff = (target_yaw - ref_yaw) % 360
 
                 if diff > 330:
@@ -262,7 +263,7 @@ class CarlaDataProvider(object):
         point = rotate_point(carla.Vector3D(0, 0, area_ext.z), base_rot)
         point_location = area_loc + carla.Location(x=point.x, y=point.y)
 
-        return point_location
+        return carla.Location(point_location.x, point_location.y, point_location.z)
 
     @staticmethod
     def update_light_states(ego_light, annotations, states, freeze=False, timeout=1000000000):
