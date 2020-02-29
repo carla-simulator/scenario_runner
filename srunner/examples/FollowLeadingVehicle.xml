@@ -2,7 +2,7 @@
 <scenarios>
     <scenario name="FollowLeadingVehicle_1" type="FollowLeadingVehicle" town="Town01">
         <ego_vehicle x="107" y="133" z="0.5" yaw="0" model="vehicle.lincoln.mkz2017" />
-        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+        <weather cloudiness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
     </scenario>
     <scenario name="FollowLeadingVehicleWithObstacle_1" type="FollowLeadingVehicleWithObstacle" town="Town01">
         <ego_vehicle x="107" y="133.5" z="0.5" yaw="0" model="vehicle.lincoln.mkz2017" />
