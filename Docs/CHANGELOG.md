@@ -7,12 +7,18 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* Added "--timeout" command line parameter to set a user-defined timeout value
+* OpenSCENARIO support:
+    - Add initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
 ### :bug: Bug Fixes
 * Fixed #471: Handling of weather parameter (cloudyness -> cloudiness adaption)
 * Fixed #472: Spawning issue of pedestrians in OpenSCENARIO
 * Fixed #374: Usage of evaluation critieria with multiple ego vehicles in OpenSCENARIO
-* Fixed #459: Add initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
 * Fixed wrong StandStill behavior which return SUCCESS immediatly on a standing actor
+### :ghost: Maintenance
+* Added watchdog to ScenarioManager to handle timeouts and CARLA crashes
+* Added timeout for CARLA tick() calls to avoid blocking CARLA server calls
 
 
 ## CARLA ScenarioRunner 0.9.7
