@@ -7,6 +7,9 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* OpenSCENARIO support:
+    - Added support for position with Lane information  (roadId and laneId)
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
@@ -14,7 +17,7 @@
 * Scenario updates:
     - Changed traffic light behavior of scenarios 7, 8 and 9. The new sequence is meant to greatly improve the chances of the ego vehicle having to interact at junctions.
 * OpenSCENARIO support:
-    - Add initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
+    - Added initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
 ### :bug: Bug Fixes
 * Fixed #471: Handling of weather parameter (cloudyness -> cloudiness adaption)
 * Fixed #472: Spawning issue of pedestrians in OpenSCENARIO
