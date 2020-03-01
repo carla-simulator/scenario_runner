@@ -153,6 +153,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world = self.client.get_world()
             CarlaDataProvider.set_world(world)
             world.wait_for_tick()
+        else:
+            CarlaDataProvider.set_world(world)
 
     def _set_carla_weather(self):
         """

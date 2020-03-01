@@ -182,8 +182,7 @@ class OpenScenarioParser(object):
 
                 wp = wp.next(ds)[-1]
 
-                # offset
-                # Verschiebung von Mittelpunkt
+                # Adapt transform according to offset
                 h = math.radians(wp.transform.rotation.yaw)
                 x_offset = math.sin(h) * offset
                 y_offset = math.cos(h) * offset
@@ -204,7 +203,37 @@ class OpenScenarioParser(object):
         elif position.find('RelativeRoad') is not None:
             raise NotImplementedError("RelativeRoad positions are not yet supported")
         elif position.find('Lane') is not None:
-            raise NotImplementedError("Lane positions are not yet supported")
+            lane_pos = position.find('Lane')
+            road_id = int(lane_pos.attrib.get('roadId', 0))
+            lane_id = int(lane_pos.attrib.get('laneId', 0))
+            offset = float(lane_pos.attrib.get('offset', 0))
+            s = float(lane_pos.attrib.get('s', 0))
+            is_absolute = True
+            waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, lane_id, s)
+            if waypoint is None:
+                raise AttributeError("Lane position cannot be found")
+
+            transform = waypoint.transform
+            if lane_pos.find('Orientation') is not None:
+                orientation = rel_pos.find('Orientation')
+                dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
+                dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
+                droll = math.degrees(float(orientation.attrib.get('r', 0)))
+
+                if not OpenScenarioParser.use_carla_coordinate_system:
+                    dyaw = dyaw * (-1.0)
+
+                transform.rotation.yaw = transform.rotation.yaw + dyaw
+                transform.rotation.pitch = transform.rotation.pitch + dpitch
+                transform.rotation.roll = transform.rotation.roll + droll
+
+            if offset != 0:
+                forward_vector = transform.rotation.get_forward_vector()
+                orthogonal_vector = carla.Vector3D(x=-forward_vector.y, y=forward_vector.x, z=forward_vector.z)
+                transform.location.x = transform.location.x + offset * orthogonal_vector.x
+                transform.location.y = transform.location.y + offset * orthogonal_vector.y
+
+            return transform
         elif position.find('Route') is not None:
             raise NotImplementedError("Route positions are not yet supported")
         else:
