@@ -748,6 +748,8 @@ class OnSidewalkTest(Criterion):
             self._wrong_outside_lane_distance = 0
             self.list_traffic_events.append(outsidelane_event)
 
+        super(OnSidewalkTest, self).terminate(new_status)
+
     def _set_event_message(self, event, location, distance):
         """
         Sets the message of the event
@@ -1106,6 +1108,8 @@ class WrongLaneTest(Criterion):
             self._wrong_distance = 0
             self._in_lane = True
             self.list_traffic_events.append(wrong_way_event)
+
+        super(WrongLaneTest, self).terminate(new_status)
 
     def _set_event_message(self, event, location, distance, road_id, lane_id):
         """
