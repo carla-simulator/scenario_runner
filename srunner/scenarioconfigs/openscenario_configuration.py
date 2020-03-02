@@ -67,6 +67,16 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         xsd = xmlschema.XMLSchema(xsd_file)
         xsd.validate(self.xml_tree)
 
+    def _validate_openscenario_catalog_configuration(self, catalog_xml_tree):
+        """
+        Validate the given OpenSCENARIO catalog config against the 0.9.1 XSD
+
+        Note: This will throw if the catalog config is not valid. But this is fine here.
+        """
+        xsd_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../openscenario/OpenSCENARIO_Catalog.xsd")
+        xsd = xmlschema.XMLSchema(xsd_file)
+        xsd.validate(catalog_xml_tree)
+
     def _parse_openscenario_configuration(self):
         """
         Parse the given OpenSCENARIO config file, set and validate parameters
@@ -104,6 +114,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 self.logger.warning("The %s path for the %s Catalog is invalid", catalog_path, catalog_type)
             else:
                 xml_tree = ET.parse(catalog_path)
+                self._validate_openscenario_catalog_configuration(xml_tree)
                 catalog = xml_tree.find("Catalog")
                 catalog_name = catalog.attrib.get("name")
                 self.catalogs[catalog_name] = {}
