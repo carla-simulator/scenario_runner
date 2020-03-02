@@ -11,6 +11,7 @@
 * Fixed #471: Handling of weather parameter (cloudyness -> cloudiness adaption)
 * Fixed #472: Spawning issue of pedestrians in OpenSCENARIO
 * Fixed #374: Usage of evaluation critieria with multiple ego vehicles in OpenSCENARIO
+* Fixed #459: Add initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
 
 
 ## CARLA ScenarioRunner 0.9.7

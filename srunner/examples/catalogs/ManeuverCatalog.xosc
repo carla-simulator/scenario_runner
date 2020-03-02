@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<OpenSCENARIO>
+    <FileHeader revMajor="0" revMinor="9" date="2020-02-21" description="CARLA:ManeuverCatalog" author="Anja Sheppard" />
+    <Catalog name="ManeuverCatalog">
+        <Maneuver name="Autopilot">
+            <Event name="StartAutopilot" priority="overwrite">
+                <Action name="StartAutopilot">
+                    <Private>
+                        <Autonomous activate="true" domain="both" />
+                    </Private>
+                </Action>
+                <StartConditions>
+                    <ConditionGroup>
+                        <Condition name="StartCondition" delay="0" edge="rising">
+                            <ByValue>
+                                <SimulationTime value="0" rule="greater_than" />
+                            </ByValue>
+                        </Condition>
+                    </ConditionGroup>
+                </StartConditions>
+            </Event>
+            <Event name="StopAutopilot" priority="overwrite">
+                <Action name="StopAutopilot">
+                    <Private>
+                        <Autonomous activate="false" domain="both" />
+                    </Private>
+                </Action>
+                <StartConditions>
+                    <ConditionGroup>
+                        <Condition name="StartCondition" delay="0" edge="rising">
+                            <ByValue>
+                                <SimulationTime value="20" rule="greater_than" />
+                            </ByValue>
+                        </Condition>
+                    </ConditionGroup>
+                </StartConditions>
+            </Event>
+        </Maneuver>
+    </Catalog>
+</OpenSCENARIO>
+
+

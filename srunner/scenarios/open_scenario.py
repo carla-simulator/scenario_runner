@@ -9,6 +9,7 @@
 Basic scenario class using the OpenSCENARIO definition
 """
 
+import itertools
 import py_trees
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SetOSCInitSpeed
@@ -145,6 +146,12 @@ class StoryElementStatusToBlackboard(Decorator):
 def get_xml_path(tree, node):
     """
     Extract the full path of a node within an XML tree
+
+    Note: Catalogs are pulled from a separate file so the XML tree is split.
+          This means that in order to get the XML path, it must be done in 2 steps.
+          Some places in this python script do that by concatenating the results
+          of 2 get_xml_path calls with another ">".
+          Example: "Behavior>AutopilotSequence" + ">" + "StartAutopilot>StartAutopilot>StartAutopilot"
     """
 
     path = ""
@@ -237,9 +244,16 @@ class OpenScenario(BasicScenario):
                                     actor_ids.append(k)
                                     break
 
+                   # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
+                    catalog_maneuver_list = []
+                    for catalog_reference in sequence.iter("CatalogReference"):
+                        catalog_maneuver = self.config.catalogs[catalog_reference.attrib.get(
+                            "catalogName")][catalog_reference.attrib.get("entryName")]
+                        catalog_maneuver_list.append(catalog_maneuver)
+                    all_maneuvers = itertools.chain(iter(catalog_maneuver_list), sequence.iter("Maneuver"))
                     single_sequence_iteration = py_trees.composites.Parallel(
                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence_behavior.name)
-                    for maneuver in sequence.iter("Maneuver"):
+                    for maneuver in all_maneuvers:  # Iterates through both CatalogReferences and Maneuvers
                         maneuver_parallel = py_trees.composites.Parallel(
                             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
                             name="Maneuver " + maneuver.attrib.get('name'))
@@ -255,14 +269,17 @@ class OpenScenario(BasicScenario):
                                             child, joint_actor_list[actor_id])
                                         maneuver_behavior = StoryElementStatusToBlackboard(
                                             maneuver_behavior, "ACTION", child.attrib.get('name'))
+
                                         parallel_actions.add_child(
-                                            oneshot_behavior(variable_name=get_xml_path(self.config.story, child),
+                                            oneshot_behavior(variable_name=# See note in get_xml_path
+                                                             get_xml_path(self.config.story, sequence) + '>' + \
+                                                             get_xml_path(maneuver, child),
                                                              behaviour=maneuver_behavior))
 
                                 if child.tag == "StartConditions":
                                     # There is always one StartConditions block per Event
                                     parallel_condition_groups = self._create_condition_container(
-                                        child, "Parallel Condition Groups")
+                                        child, "Parallel Condition Groups", sequence, maneuver)
                                     event_sequence.add_child(
                                         parallel_condition_groups)
 
@@ -270,12 +287,14 @@ class OpenScenario(BasicScenario):
                                 parallel_actions, "EVENT", event.attrib.get('name'))
                             event_sequence.add_child(parallel_actions)
                             maneuver_parallel.add_child(
-                                oneshot_behavior(variable_name=get_xml_path(self.config.story, event),
+                                oneshot_behavior(variable_name=get_xml_path(self.config.story, sequence) + '>' +
+                                                 get_xml_path(maneuver, event),  # See get_xml_path
                                                  behaviour=event_sequence))
                         maneuver_parallel = StoryElementStatusToBlackboard(
                             maneuver_parallel, "MANEUVER", maneuver.attrib.get('name'))
                         single_sequence_iteration.add_child(
-                            oneshot_behavior(variable_name=get_xml_path(self.config.story, maneuver),
+                            oneshot_behavior(variable_name=get_xml_path(self.config.story, sequence) + '>' +
+                                             get_xml_path(maneuver, maneuver),  # See get_xml_path
                                              behaviour=maneuver_parallel))
 
                     # OpenSCENARIO refers to Sequences as Scenes in this instance
@@ -332,7 +351,8 @@ class OpenScenario(BasicScenario):
 
         return behavior
 
-    def _create_condition_container(self, node, name='Conditions Group', success_on_all=True):
+    def _create_condition_container(self, node, name='Conditions Group', sequence=None,
+                                    maneuver=None, success_on_all=True):
         """
         This is a generic function to handle conditions utilising ConditionGroups
         Each ConditionGroup is represented as a Sequence of Conditions
@@ -352,8 +372,12 @@ class OpenScenario(BasicScenario):
             for condition in condition_group.iter("Condition"):
                 criterion = OpenScenarioParser.convert_condition_to_atomic(
                     condition, self.other_actors + self.ego_vehicles)
-                criterion = oneshot_behavior(variable_name=get_xml_path(
-                    self.config.story, condition), behaviour=criterion)
+                if sequence is not None and maneuver is not None:
+                    xml_path = get_xml_path(self.config.story, sequence) + '>' + \
+                        get_xml_path(maneuver, condition)  # See note in get_xml_path
+                else:
+                    xml_path = get_xml_path(self.config.story, condition)
+                criterion = oneshot_behavior(variable_name=xml_path, behaviour=criterion)
                 condition_group_sequence.add_child(criterion)
 
             if condition_group_sequence.children:
