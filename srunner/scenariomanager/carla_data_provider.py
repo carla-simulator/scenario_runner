@@ -780,21 +780,9 @@ class CarlaActorPool(object):
         """
         Cleanup the actor pool, i.e. remove and destroy all actors
         """
-
-        DestroyActor = carla.command.DestroyActor       # pylint: disable=invalid-name
-        batch = []
-
         for actor_id in CarlaActorPool._carla_actor_pool.copy():
-            batch.append(DestroyActor(CarlaActorPool._carla_actor_pool[actor_id]))
-
-        if CarlaActorPool._client:
-            try:
-                CarlaActorPool._client.apply_batch_sync(batch)
-            except RuntimeError as e:
-                if "time-out" in str(e):
-                    pass
-                else:
-                    raise e
+            CarlaActorPool._carla_actor_pool[actor_id].destroy()
+            CarlaActorPool._carla_actor_pool.pop(actor_id)
 
         CarlaActorPool._carla_actor_pool = dict()
         CarlaActorPool._world = None

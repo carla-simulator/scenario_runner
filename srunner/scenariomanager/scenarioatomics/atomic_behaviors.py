@@ -1579,7 +1579,7 @@ class TrafficLightManipulator(AtomicBehavior):
     RESET_TIME = 6 # Time waited before resetting all the junction (seconds)
 
     # Experimental values
-    TRIGGER_DISTANCE = 16 # Distance that makes all vehicles in the lane enter the junction (meters)
+    TRIGGER_DISTANCE = 10 # Distance that makes all vehicles in the lane enter the junction (meters)
     DIST_TO_WAITING_TIME = 0.04 # Used to wait longer at larger intersections (s/m)
 
     INT_CONF_OPP1 = {'ego': RED, 'ref': RED, 'left': RED, 'right': RED, 'opposite': GREEN}

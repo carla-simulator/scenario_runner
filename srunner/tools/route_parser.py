@@ -90,9 +90,10 @@ class RouteParser(object):
             dx = trigger['x'] - new_trigger['x']
             dy = trigger['y'] - new_trigger['y']
             distance = math.sqrt(dx * dx + dy * dy)
-            dyaw = trigger['yaw'] - new_trigger['yaw']
-            dist_angle = math.sqrt(dyaw * dyaw)
-            if distance < (TRIGGER_THRESHOLD * 2) and dist_angle < TRIGGER_ANGLE_THRESHOLD:
+
+            dyaw = (trigger['yaw'] - new_trigger['yaw']) % 360
+            if distance < (TRIGGER_THRESHOLD * 2) \
+                and (dyaw < TRIGGER_ANGLE_THRESHOLD or dyaw > (360 - TRIGGER_ANGLE_THRESHOLD)):
                 return trigger_id
 
         return None
@@ -121,13 +122,12 @@ class RouteParser(object):
             dx = float(waypoint1['x']) - wtransform.location.x
             dy = float(waypoint1['y']) - wtransform.location.y
             dz = float(waypoint1['z']) - wtransform.location.z
-            dist_position = math.sqrt(dx * dx + dy * dy + dz * dz)
+            dpos = math.sqrt(dx * dx + dy * dy + dz * dz)
 
-            dyaw = float(waypoint1['yaw'] % 360) - (wtransform.rotation.yaw % 360)
+            dyaw = (float(waypoint1['yaw']) - wtransform.rotation.yaw) % 360
 
-            dist_angle = math.sqrt(dyaw * dyaw)
-
-            return dist_position < TRIGGER_THRESHOLD and dist_angle < TRIGGER_ANGLE_THRESHOLD
+            return dpos < TRIGGER_THRESHOLD \
+                and (dyaw < TRIGGER_ANGLE_THRESHOLD or dyaw > (360 - TRIGGER_ANGLE_THRESHOLD))
 
         match_position = 0
         # TODO this function can be optimized to run on Log(N) time
@@ -146,6 +146,7 @@ class RouteParser(object):
         :param match_position: the matching position for the scenarion
         :param trajectory: the route trajectory the ego is following
         :return: tag representing this subtype
+
         Also used to check which are not viable (Such as an scenario
         that triggers when turning but the route doesnt')
         WARNING: These tags are used at:
@@ -154,13 +155,25 @@ class RouteParser(object):
         and changes to these tags will affect them
         """
 
+        def check_this_waypoint(tuple_wp_turn):
+            """
+            Decides whether or not the waypoint will define the scenario behavior
+            """
+            if RoadOption.LANEFOLLOW == tuple_wp_turn[1]:
+                return False
+            elif RoadOption.CHANGELANELEFT == tuple_wp_turn[1]:
+                return False
+            elif RoadOption.CHANGELANERIGHT == tuple_wp_turn[1]:
+                return False
+            return True
+
         # Unused tag for the rest of scenarios,
         # can't be None as they are still valid scenarios
-        subtype = 'undetermined'
+        subtype = 'valid'
 
         if scenario == 'Scenario4':
             for tuple_wp_turn in trajectory[match_position:]:
-                if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                if check_this_waypoint(tuple_wp_turn):
                     if RoadOption.LEFT == tuple_wp_turn[1]:
                         subtype = 'S4left'
                     elif RoadOption.RIGHT == tuple_wp_turn[1]:
@@ -172,7 +185,7 @@ class RouteParser(object):
 
         if scenario == 'Scenario7':
             for tuple_wp_turn in trajectory[match_position:]:
-                if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                if check_this_waypoint(tuple_wp_turn):
                     if RoadOption.LEFT == tuple_wp_turn[1]:
                         subtype = 'S7left'
                     elif RoadOption.RIGHT == tuple_wp_turn[1]:
@@ -186,7 +199,7 @@ class RouteParser(object):
 
         if scenario == 'Scenario8':
             for tuple_wp_turn in trajectory[match_position:]:
-                if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                if check_this_waypoint(tuple_wp_turn):
                     if RoadOption.LEFT == tuple_wp_turn[1]:
                         subtype = 'S8left'
                     else:
@@ -196,7 +209,7 @@ class RouteParser(object):
 
         if scenario == 'Scenario9':
             for tuple_wp_turn in trajectory[match_position:]:
-                if RoadOption.LANEFOLLOW != tuple_wp_turn[1]:
+                if check_this_waypoint(tuple_wp_turn):
                     if RoadOption.RIGHT == tuple_wp_turn[1]:
                         subtype = 'S9right'
                     else:
