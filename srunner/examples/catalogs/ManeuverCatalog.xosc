@@ -3,7 +3,7 @@
 <OpenSCENARIO>
     <FileHeader revMajor="0" revMinor="9" date="2020-02-21" description="CARLA:ManeuverCatalog" author="Anja Sheppard" />
     <Catalog name="ManeuverCatalog">
-        <Maneuver name="StartAutopilot">
+        <Maneuver name="Autopilot">
             <Event name="StartAutopilot" priority="overwrite">
                 <Action name="StartAutopilot">
                     <Private>
@@ -20,8 +20,6 @@
                     </ConditionGroup>
                 </StartConditions>
             </Event>
-        </Maneuver>
-        <Maneuver name="StopAutopilot">
             <Event name="StopAutopilot" priority="overwrite">
                 <Action name="StopAutopilot">
                     <Private>

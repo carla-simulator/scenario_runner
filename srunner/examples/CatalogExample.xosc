@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE vals [
-    <!ENTITY CATALOG_PATH "~/scenario_runner/srunner/examples/catalogs">
+<!ENTITY CATALOG_PATH "/home/user/scenario_runner/srunner/examples/catalogs">
 ]>
 <OpenSCENARIO>
     <FileHeader revMajor="0" revMinor="9" date="2019-06-25" description="CARLA:PedestrianCrossing" author="" />
@@ -41,6 +41,9 @@
         <Object name="ego">
             <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.volkswagen.t2" />
         </Object>
+        <Object name="vehicle">
+            <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.tesla.model3" />
+        </Object>
         <Object name="adversary">
             <CatalogReference catalogName="PedestrianCatalog" entryName="Pedestrian1" />
         </Object>
@@ -59,6 +62,13 @@
                 <Private object="ego">
                     <Action>
                         <Position>
+                            <World x="170" y="55" z="0" h="3.14159265359" />
+                        </Position>
+                    </Action>
+                </Private>
+                <Private object="vehicle">
+                    <Action>
+                        <Position>
                             <World x="150" y="55" z="0" h="3.14159265359" />
                         </Position>
                     </Action>
@@ -73,7 +83,7 @@
                 <Private object="barrier1">
                     <Action>
                         <Position>
-                            <World x="100" y="55" z="0" h="1.57079632679"/>
+                            <World x="100" y="58" z="0" h="1.57079632679"/>
                         </Position>
                     </Action>
                 </Private>
@@ -83,10 +93,9 @@
             <Act name="Behavior">
                 <Sequence name="AutopilotSequence" numberOfExecutions="1">
                     <Actors>
-                        <Entity name="ego" />
+                        <Entity name="vehicle" />
                     </Actors>
-                    <CatalogReference catalogName="ManeuverCatalog" entryName="StartAutopilot" />
-                    <CatalogReference catalogName="ManeuverCatalog" entryName="StopAutopilot" />
+                    <CatalogReference catalogName="ManeuverCatalog" entryName="Autopilot" />
                 </Sequence>
                 <Sequence name="PedestrianCrossingSequence" numberOfExecutions="1">
                     <Actors>
@@ -239,14 +248,9 @@
                     <End>
                         <ConditionGroup>
                             <Condition name="EndCondition" delay="0" edge="rising">
-                                <ByEntity>
-                                    <TriggeringEntities rule="any">
-                                        <Entity name="ego" />
-                                    </TriggeringEntities>
-                                    <EntityCondition>
-                                        <TraveledDistance value="500.0" />
-                                    </EntityCondition>
-                                </ByEntity>
+                                <ByValue>
+                                    <SimulationTime value="20.0" rule="greater_than" />
+                                </ByValue>
                             </Condition>
                         </ConditionGroup>
                     </End>
