@@ -368,7 +368,6 @@ class ScenarioRunner(object):
             fog_distance=config.weather.fog_distance,
             wetness=config.weather.wetness
         )
-
         self.world.set_weather(weather)
 
         # Set the appropriate road friction
