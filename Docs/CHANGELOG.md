@@ -7,6 +7,10 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :bug: Bug Fixes
+* Fixed #472: Spawning issue of pedestrians in OpenSCENARIO
+### :ghost: Maintenance
+* Added watchdog to ScenarioManager to handle timeouts and CARLA crashes
 
 
 ## CARLA ScenarioRunner 0.9.7

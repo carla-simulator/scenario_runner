@@ -608,8 +608,10 @@ class CarlaActorPool(object):
             if 'physics' in actor.args and actor.args['physics'] == "off":
                 command = SpawnActor(blueprint, _spawn_point).then(
                     ApplyTransform(FutureActor, actor.transform)).then(PhysicsCommand(FutureActor, False))
-            else:
+            elif actor.category == 'misc':
                 command = SpawnActor(blueprint, _spawn_point).then(PhysicsCommand(FutureActor, True))
+            else:
+                command = SpawnActor(blueprint, _spawn_point)
             batch.append(command)
 
         actors = CarlaActorPool.handle_actor_batch(batch)
@@ -778,9 +780,21 @@ class CarlaActorPool(object):
         """
         Cleanup the actor pool, i.e. remove and destroy all actors
         """
+
+        DestroyActor = carla.command.DestroyActor       # pylint: disable=invalid-name
+        batch = []
+
         for actor_id in CarlaActorPool._carla_actor_pool.copy():
-            CarlaActorPool._carla_actor_pool[actor_id].destroy()
-            CarlaActorPool._carla_actor_pool.pop(actor_id)
+            batch.append(DestroyActor(CarlaActorPool._carla_actor_pool[actor_id]))
+
+        if CarlaActorPool._client:
+            try:
+                CarlaActorPool._client.apply_batch_sync(batch)
+            except RuntimeError as e:
+                if "time-out" in str(e):
+                    pass
+                else:
+                    raise e
 
         CarlaActorPool._carla_actor_pool = dict()
         CarlaActorPool._world = None
