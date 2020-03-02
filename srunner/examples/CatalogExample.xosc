@@ -120,12 +120,12 @@
                                     <Condition name="StartCondition" delay="0" edge="rising">
                                         <ByEntity>
                                             <TriggeringEntities rule="any">
-                                                <Entity name="ego" />
+                                                <Entity name="vehicle" />
                                             </TriggeringEntities>
                                             <EntityCondition>
-                                                <ReachPosition tolerance="2.0">
+                                                <ReachPosition tolerance="1.0">
                                                     <Position>
-                                                        <World x="140" y="55" z="0" h="180" />
+                                                        <World x="140" y="55" z="0" />
                                                     </Position>
                                                 </ReachPosition>
                                             </EntityCondition>
@@ -139,7 +139,7 @@
                                 <Private>
                                     <Longitudinal>
                                         <Speed>
-                                            <Dynamics shape="step" rate="0" time="10" />
+                                            <Dynamics shape="step" rate="0" time="5" />
                                             <Target>
                                                 <Absolute value="0.0" />
                                             </Target>
@@ -185,7 +185,7 @@
                                     <Condition name="StartCondition" delay="0" edge="rising">
                                         <ByEntity>
                                             <TriggeringEntities rule="any">
-                                                <Entity name="ego" />
+                                                <Entity name="vehicle" />
                                             </TriggeringEntities>
                                             <EntityCondition>
                                                 <StandStill duration="0.1" />
