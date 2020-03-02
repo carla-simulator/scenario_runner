@@ -7,10 +7,15 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* Scenario updates:
+    - Changed traffic light behavior of scenarios 7, 8 and 9. The new sequence is meant to greatly improve the chances of
+    the ego vehicle having to interact at junctions.
 ### :bug: Bug Fixes
 * Fixed #471: Handling of weather parameter (cloudyness -> cloudiness adaption)
 * Fixed #472: Spawning issue of pedestrians in OpenSCENARIO
 * Fixed #374: Usage of evaluation critieria with multiple ego vehicles in OpenSCENARIO
+* Fixed scenario bug causing junction related scenarios (4, 7, 8 and 9) to not spawn due to lane changes.
 
 
 ## CARLA ScenarioRunner 0.9.7
