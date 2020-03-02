@@ -224,29 +224,32 @@ class RouteScenario(BasicScenario):
         - TrafficlightScenario for controlling/manipulating traffic lights
         - Other scenarios that occur along the route
         """
-        # build the master scenario based on the route and the target.
+        self.list_scenarios = []
+
+        # Build master scenario, which handles the criterias
         self.master_scenario = self._build_master_scenario(world,
                                                            ego_vehicle,
                                                            self.route,
                                                            config.town,
                                                            timeout=self.timeout,
                                                            debug_mode=False)
+        self.list_scenarios.append(self.master_scenario)
 
-        self.background_scenario = self._build_background_scenario(world,
-                                                                   ego_vehicle,
-                                                                   config.town,
-                                                                   timeout=self.timeout,
-                                                                   debug_mode=False)
-
-        self.list_scenarios = [self.master_scenario, self.background_scenario]
-
-        # build the instance based on the parsed definitions.
+        # Build all the scenarios triggered throughout the route
         self.list_scenarios += self._build_scenario_instances(world,
                                                               ego_vehicle,
                                                               self.sampled_scenarios_definitions,
                                                               config.town,
                                                               timeout=self.timeout,
                                                               debug_mode=debug_mode)
+
+        # Build the background traffic
+        self.background_scenario = self._build_background_scenario(world,
+                                                                   ego_vehicle,
+                                                                   config.town,
+                                                                   timeout=self.timeout,
+                                                                   debug_mode=False)
+        self.list_scenarios.append(self.background_scenario)
 
     def _estimate_route_timeout(self):
         """
@@ -398,7 +401,8 @@ class RouteScenario(BasicScenario):
         return TrafficLightScenario(world, [ego_vehicle], scenario_configuration,
                                     timeout=timeout, debug_mode=debug_mode)
 
-    def _build_scenario_instances(self, world, ego_vehicle, scenario_definitions, town, timeout=300, debug_mode=False):
+def _build_scenario_instances(self, world, ego_vehicle, scenario_definitions, town,
+                              scenarios_per_tick=5, timeout=300, debug_mode=False):
         """
         Based on the parsed route and possible scenarios, build all the scenario classes.
         """
@@ -413,6 +417,7 @@ class RouteScenario(BasicScenario):
                 world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
                                         color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
 
+        scenario_number = 1
         for definition in scenario_definitions:
             # Get the class possibilities for this scenario number
             scenario_class = NUMBER_CLASS_TRANSLATION[definition['name']]
@@ -436,6 +441,15 @@ class RouteScenario(BasicScenario):
             try:
                 scenario_instance = scenario_class(world, [ego_vehicle], scenario_configuration,
                                                    criteria_enable=False, timeout=timeout)
+                # Do a tick every once in a while to avoid spawning everything at the same time
+                if scenario_number % scenarios_per_tick == 0:
+                    sync_mode = world.get_settings().synchronous_mode
+                    if sync_mode:
+                        world.tick()
+                    else:
+                        world.wait_for_tick()
+
+                scenario_number += 1
             except Exception as e:      # pylint: disable=broad-except
                 if debug_mode:
                     traceback.print_exc()
