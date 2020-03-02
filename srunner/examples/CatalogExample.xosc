@@ -1,30 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE vals [
-<!ENTITY CATALOG_PATH "/home/user/scenario_runner/srunner/examples/catalogs">
-]>
+
 <OpenSCENARIO>
-    <FileHeader revMajor="0" revMinor="9" date="2019-06-25" description="CARLA:PedestrianCrossing" author="" />
+    <FileHeader revMajor="0" revMinor="9" date="2020-01-01" description="CARLA:PedestrianCrossing" author="" />
     <Catalogs>
         <VehicleCatalog>
-            <Directory path="&CATALOG_PATH;/VehicleCatalog.xosc" />
+            <Directory path="./srunner/examples/catalogs/VehicleCatalog.xosc" />
         </VehicleCatalog>
         <DriverCatalog>
             <Directory path="Catalogs/DriverCatalogs" />
         </DriverCatalog>
         <PedestrianCatalog>
-            <Directory path="&CATALOG_PATH;/PedestrianCatalog.xosc" />
+            <Directory path="./srunner/examples/catalogs/PedestrianCatalog.xosc" />
         </PedestrianCatalog>
         <PedestrianControllerCatalog>
             <Directory path="Catalogs/PedestrianControllerCatalogs" />
         </PedestrianControllerCatalog>
         <MiscObjectCatalog>
-            <Directory path="&CATALOG_PATH;/MiscObjectCatalog.xosc" />
+            <Directory path="./srunner/examples/catalogs/MiscObjectCatalog.xosc" />
         </MiscObjectCatalog>
         <EnvironmentCatalog>
-            <Directory path="&CATALOG_PATH;/EnvironmentCatalog.xosc" />
+            <Directory path="./srunner/examples/catalogs/EnvironmentCatalog.xosc" />
         </EnvironmentCatalog>
         <ManeuverCatalog>
-            <Directory path="&CATALOG_PATH;/ManeuverCatalog.xosc" />
+            <Directory path="./srunner/examples/catalogs/ManeuverCatalog.xosc" />
         </ManeuverCatalog>
         <TrajectoryCatalog>
             <Directory path="Catalogs/TrajectoryCatalog" />
