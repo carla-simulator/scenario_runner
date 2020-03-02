@@ -512,15 +512,13 @@ class CarlaActorPool(object):
 
         actors = []
 
-        sync_mode = CarlaActorPool._world.get_settings().synchronous_mode
-
         if CarlaActorPool._client and batch is not None:
-            responses = CarlaActorPool._client.apply_batch_sync(batch, sync_mode)
+            responses = CarlaActorPool._client.apply_batch_sync(batch)
         else:
             return None
 
         # wait for the actors to be spawned properly before we do anything
-        if sync_mode:
+        if CarlaActorPool._world.get_settings().synchronous_mode:
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
@@ -629,21 +627,6 @@ class CarlaActorPool(object):
         FutureActor = carla.command.FutureActor     # pylint: disable=invalid-name
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
-        # TODO: Change
-        # Get vehicle by model
-        blueprints = blueprint_library.filter(model)
-
-        # Remove bikes
-        blueprints = [x for x in blueprints if not x.id == 'vehicle.diamondback.century']
-        blueprints = [x for x in blueprints if not x.id == 'vehicle.gazelle.omafiets']
-        blueprints = [x for x in blueprints if not x.id == 'vehicle.bh.crossbike']
-        # And "unsafe" vehicles
-        blueprints = [x for x in blueprints if not x.id.endswith('isseta')]
-        blueprints = [x for x in blueprints if not x.id.endswith('cybertruck')]
-        blueprints = [x for x in blueprints if not x.id.endswith('carlacola')]
-        blueprints = [x for x in blueprints if not x.id.endswith('t2')]
-        # And lincoln.mkz2017 to avoid confusions when debugging
-        blueprints = [x for x in blueprints if not x.id == 'vehicle.lincoln.mkz2017']
 
         if not hero:
             hero_actor = CarlaActorPool.get_hero_actor()
@@ -652,7 +635,7 @@ class CarlaActorPool(object):
         batch = []
         for _ in range(amount):
             # Get vehicle by model
-            blueprint = random.choice(blueprints)
+            blueprint = random.choice(blueprint_library.filter(model))
             # is it a pedestrian? -> make it mortal
             if blueprint.has_attribute('is_invincible'):
                 blueprint.set_attribute('is_invincible', 'false')

@@ -1683,12 +1683,12 @@ class TrafficLightManipulator(AtomicBehavior):
                 self.current_step += 1
 
             if self.debug:
-                print("--- Distance until traffic light changes: {}{}{}".format(bcolors.OKGREEN, distance, bcolors.ENDC))
+                print("--- Distance until traffic light changes: {}".format(distance))
 
         # 3) Modify the ego lane to red and the chosen one to green after several seconds
         elif self.current_step == 3:
 
-            if self.passed_enough_time(self.YELLOW_TIME, bcolors.WARNING):
+            if self.passed_enough_time(self.YELLOW_TIME):
                 _ = self.set_intersection_state(self.CONFIG_TLM_TRANSLATION[self.configuration][0])
 
                 self.current_step += 1
@@ -1700,7 +1700,7 @@ class TrafficLightManipulator(AtomicBehavior):
             if self.waiting_time is None:
                 self.waiting_time = self.get_waiting_time(self.annotations, self.configuration)
 
-            if self.passed_enough_time(self.waiting_time, bcolors.FAIL):
+            if self.passed_enough_time(self.waiting_time):
                 _ = self.set_intersection_state(self.CONFIG_TLM_TRANSLATION[self.configuration][1])
 
                 self.current_step += 1
@@ -1740,7 +1740,7 @@ class TrafficLightManipulator(AtomicBehavior):
 
         return new_status
 
-    def passed_enough_time(self, time_limit, color):
+    def passed_enough_time(self, time_limit):
         """
         Returns true or false depending on the time that has passed from the
         first time this function was called
@@ -1754,7 +1754,7 @@ class TrafficLightManipulator(AtomicBehavior):
         self.prev_time = timestamp
 
         if self.debug:
-            print("--- Waited seconds: {}{}{}".format(color, self.seconds_waited, bcolors.ENDC))
+            print("--- Waited seconds: {}".format(self.seconds_waited))
 
         if self.seconds_waited >= time_limit:
             self.seconds_waited = 0
@@ -1841,14 +1841,3 @@ class TrafficLightManipulator(AtomicBehavior):
         self.max_trigger_distance = None
         self.waiting_time = None
         self.inside_junction = False
-
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
