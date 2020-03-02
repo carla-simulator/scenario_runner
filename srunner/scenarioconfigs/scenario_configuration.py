@@ -62,7 +62,7 @@ class ActorConfiguration(ActorConfigurationData):
 
         super(ActorConfiguration, self).__init__(node.attrib.get('model', 'vehicle.*'),
                                                  carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z),
-                                                 carla.Rotation(yaw=yaw)),
+                                                                 carla.Rotation(yaw=yaw)),
                                                  node.attrib.get('rolename', rolename),
                                                  autopilot, random_location, amount)
 
@@ -73,12 +73,15 @@ class WeatherConfiguration(object):
     This class provides basic weather configuration values
     """
 
-    cloudyness = -1
+    cloudiness = -1
     precipitation = -1
     precipitation_deposits = -1
     wind_intensity = -1
     sun_azimuth = -1
     sun_altitude = -1
+    wetness = -1
+    fog_distance = -1
+    fog_density = -1
 
 
 class ScenarioConfiguration(object):

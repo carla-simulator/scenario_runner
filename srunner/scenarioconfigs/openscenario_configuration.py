@@ -171,12 +171,20 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         sun = weather.find("Sun")
         self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
         self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
-        self.weather.cloudyness = 100 - float(sun.attrib.get('intensity', 0)) * 100
-        precepitation = weather.find("Precipitation")
+        self.weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+        fog = weather.find("Fog")
+        self.weather.fog_distance = float(fog.attrib.get('visualRange', 'inf'))
+        if self.weather.fog_distance < 1000:
+            self.weather.fog_density = 100
         self.weather.precipitation = 0
+        self.weather.precipitation_deposits = 0
+        self.weather.wetness = 0
+        self.weather.wind_intensity = 0
+        precepitation = weather.find("Precipitation")
         if precepitation.attrib.get('type') == "rain":
             self.weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
             self.weather.precipitation_deposits = 100  # if it rains, make the road wet
+            self.weather.wetness = self.weather.precipitation
         elif precepitation.attrib.get('type') == "snow":
             raise AttributeError("CARLA does not support snow precipitation")
 
