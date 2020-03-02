@@ -36,7 +36,7 @@
         <SceneGraph filepath="" />
     </RoadNetwork>
     <Entities>
-        <Object name="ego">
+        <Object name="hero">
             <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.volkswagen.t2" />
         </Object>
         <Object name="vehicle">
@@ -57,7 +57,7 @@
                         <CatalogReference catalogName="EnvironmentCatalog" entryName="ClearNoon" />
                     </SetEnvironment>
                 </Global>
-                <Private object="ego">
+                <Private object="hero">
                     <Action>
                         <Position>
                             <World x="170" y="55" z="0" h="3.14159265359" />
