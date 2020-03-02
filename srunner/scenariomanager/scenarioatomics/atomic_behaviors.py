@@ -1574,13 +1574,13 @@ class TrafficLightManipulator(AtomicBehavior):
     GREEN = carla.TrafficLightState.Green
 
     # Time constants
-    RED_TIME = 1.5 # Minimum time the ego vehicle waits in red (seconds)
-    YELLOW_TIME = 2 # Time spent at yellow state (seconds)
-    RESET_TIME = 6 # Time waited before resetting all the junction (seconds)
+    RED_TIME = 1.5  # Minimum time the ego vehicle waits in red (seconds)
+    YELLOW_TIME = 2  # Time spent at yellow state (seconds)
+    RESET_TIME = 6  # Time waited before resetting all the junction (seconds)
 
     # Experimental values
-    TRIGGER_DISTANCE = 10 # Distance that makes all vehicles in the lane enter the junction (meters)
-    DIST_TO_WAITING_TIME = 0.04 # Used to wait longer at larger intersections (s/m)
+    TRIGGER_DISTANCE = 10  # Distance that makes all vehicles in the lane enter the junction (meters)
+    DIST_TO_WAITING_TIME = 0.04  # Used to wait longer at larger intersections (s/m)
 
     INT_CONF_OPP1 = {'ego': RED, 'ref': RED, 'left': RED, 'right': RED, 'opposite': GREEN}
     INT_CONF_OPP2 = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
@@ -1768,10 +1768,10 @@ class TrafficLightManipulator(AtomicBehavior):
         Changes the intersection to the desired state
         """
         prev_state = CarlaDataProvider.update_light_states(
-                self.traffic_light,
-                self.annotations,
-                choice,
-                freeze=True)
+            self.traffic_light,
+            self.annotations,
+            choice,
+            freeze=True)
 
         return prev_state
 

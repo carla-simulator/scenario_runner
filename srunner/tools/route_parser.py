@@ -93,7 +93,7 @@ class RouteParser(object):
 
             dyaw = (trigger['yaw'] - new_trigger['yaw']) % 360
             if distance < (TRIGGER_THRESHOLD * 2) \
-                and (dyaw < TRIGGER_ANGLE_THRESHOLD or dyaw > (360 - TRIGGER_ANGLE_THRESHOLD)):
+                    and (dyaw < TRIGGER_ANGLE_THRESHOLD or dyaw > (360 - TRIGGER_ANGLE_THRESHOLD)):
                 return trigger_id
 
         return None
