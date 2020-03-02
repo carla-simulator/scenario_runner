@@ -358,14 +358,16 @@ class ScenarioRunner(object):
 
         # Set the appropriate weather conditions
         weather = carla.WeatherParameters(
-            cloudyness=config.weather.cloudyness,
+            cloudiness=config.weather.cloudiness,
             precipitation=config.weather.precipitation,
             precipitation_deposits=config.weather.precipitation_deposits,
             wind_intensity=config.weather.wind_intensity,
             sun_azimuth_angle=config.weather.sun_azimuth,
-            sun_altitude_angle=config.weather.sun_altitude
+            sun_altitude_angle=config.weather.sun_altitude,
+            fog_density=config.weather.fog_density,
+            fog_distance=config.weather.fog_distance,
+            wetness=config.weather.wetness
         )
-
         self.world.set_weather(weather)
 
         # Set the appropriate road friction

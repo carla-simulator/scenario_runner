@@ -369,11 +369,12 @@ class OpenScenarioParser(object):
                     raise AttributeError(
                         "The condition {} cannot be mapped to a criterion atomic".format(condition_name))
 
+                atomic = py_trees.composites.Parallel("Evaluation Criteria for multiple ego vehicles")
                 for triggered_actor in actor_list:
                     if arg_name != '':
-                        atomic = criterion_instance(triggered_actor, arg_value)
+                        atomic.add_child(criterion_instance(triggered_actor, arg_value))
                     else:
-                        atomic = criterion_instance(triggered_actor)
+                        atomic.add_child(criterion_instance(triggered_actor))
             elif value_condition.find('SimulationTime') is not None:
                 simtime_condition = value_condition.find('SimulationTime')
                 value = float(simtime_condition.attrib.get('value'))
