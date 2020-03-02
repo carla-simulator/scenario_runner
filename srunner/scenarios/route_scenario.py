@@ -402,7 +402,7 @@ class RouteScenario(BasicScenario):
                                     timeout=timeout, debug_mode=debug_mode)
 
     def _build_scenario_instances(self, world, ego_vehicle, scenario_definitions, town,
-                              scenarios_per_tick=5, timeout=300, debug_mode=False):
+                                  scenarios_per_tick=5, timeout=300, debug_mode=False):
         """
         Based on the parsed route and possible scenarios, build all the scenario classes.
         """
