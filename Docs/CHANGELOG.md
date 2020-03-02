@@ -9,8 +9,7 @@
 ## Latest Changes
 ### :rocket: New Features
 * Scenario updates:
-    - Changed traffic light behavior of scenarios 7, 8 and 9. The new sequence is meant to greatly improve the chances of
-    the ego vehicle having to interact at junctions.
+    - Changed traffic light behavior of scenarios 7, 8 and 9. The new sequence is meant to greatly improve the chances of the ego vehicle having to interact at junctions.
 ### :bug: Bug Fixes
 * Fixed #471: Handling of weather parameter (cloudyness -> cloudiness adaption)
 * Fixed #472: Spawning issue of pedestrians in OpenSCENARIO
