@@ -242,7 +242,7 @@ class CarlaDataProvider(object):
         return dict_annotations
 
     @staticmethod
-    def get_trafficlight_trigger_location(traffic_light):
+    def get_trafficlight_trigger_location(traffic_light):    # pylint: disable=invalid-name
         """
         Calculates the yaw of the waypoint that represents the trigger volume of the traffic light
         """
