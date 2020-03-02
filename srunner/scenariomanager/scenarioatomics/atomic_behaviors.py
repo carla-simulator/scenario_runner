@@ -1565,7 +1565,7 @@ class TrafficLightManipulator(AtomicBehavior):
 
     Important parameters:
     - ego_vehicle: CARLA actor that controls this behavior
-    - subtype: strign that gathers information of the route and scenario number
+    - subtype: string that gathers information of the route and scenario number
       (check SUBTYPE_CONFIG_TRANSLATION below)
     """
 
@@ -1578,7 +1578,7 @@ class TrafficLightManipulator(AtomicBehavior):
     YELLOW_TIME = 2 # Time spent at yellow state (seconds)
     RESET_TIME = 6 # Time waited before resetting all the junction (seconds)
 
-    # Experimental values for a good behavior
+    # Experimental values
     TRIGGER_DISTANCE = 16 # Distance that makes all vehicles in the lane enter the junction (meters)
     DIST_TO_WAITING_TIME = 0.04 # Used to wait longer at larger intersections (s/m)
 
@@ -1613,20 +1613,18 @@ class TrafficLightManipulator(AtomicBehavior):
         self.ego_vehicle = ego_vehicle
         self.subtype = subtype
         self.current_step = 1
-
         self.debug = True
 
-        self.target_traffic_light = None
+        self.traffic_light = None
         self.annotations = None
         self.configuration = None
         self.prev_junction_state = None
-
         self.junction_location = None
         self.seconds_waited = 0
         self.prev_time = None
-        
         self.max_trigger_distance = None
         self.waiting_time = None
+        self.inside_junction = False
 
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -1634,17 +1632,17 @@ class TrafficLightManipulator(AtomicBehavior):
 
         new_status = py_trees.common.Status.RUNNING
 
-        # Set up the parameters
+        # 1) Set up the parameters
         if self.current_step == 1:
 
             # Traffic light affecting the ego vehicle
-            self.target_traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
-            if not self.target_traffic_light:
+            self.traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
+            if not self.traffic_light:
                 # nothing else to do in this iteration...
                 return new_status
 
             # "Topology" of the intersection
-            self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
+            self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.traffic_light)
 
             # Which traffic light will be modified (apart from the ego lane)
             self.configuration = self.get_traffic_light_configuration(self.subtype, self.annotations)
@@ -1659,7 +1657,7 @@ class TrafficLightManipulator(AtomicBehavior):
             if self.debug:
                 print("--- All set up")
 
-        # Modify the ego lane to yellow when closeby
+        # 2) Modify the ego lane to yellow when closeby
         elif self.current_step == 2:
 
             ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
@@ -1674,7 +1672,7 @@ class TrafficLightManipulator(AtomicBehavior):
 
             distance = ego_location.distance(self.junction_location)
 
-            # Behavior failure check
+            # Failure check
             if self.max_trigger_distance is None:
                 self.max_trigger_distance = distance + 1
             if distance > self.max_trigger_distance:
@@ -1687,7 +1685,7 @@ class TrafficLightManipulator(AtomicBehavior):
             if self.debug:
                 print("--- Distance until traffic light changes: {}{}{}".format(bcolors.OKGREEN, distance, bcolors.ENDC))
 
-        # Modify the ego lane to red and the chosen one to green after several seconds
+        # 3) Modify the ego lane to red and the chosen one to green after several seconds
         elif self.current_step == 3:
 
             if self.passed_enough_time(self.YELLOW_TIME, bcolors.WARNING):
@@ -1695,7 +1693,7 @@ class TrafficLightManipulator(AtomicBehavior):
 
                 self.current_step += 1
 
-        # Wait a bit to let vehicles enter the intersection, then set the ego lane to green
+        # 4) Wait a bit to let vehicles enter the intersection, then set the ego lane to green
         elif self.current_step == 4:
 
             # Get the time in red, dependent on the intersection dimensions
@@ -1707,12 +1705,30 @@ class TrafficLightManipulator(AtomicBehavior):
 
                 self.current_step += 1
 
-        # Wait a while
+        # 5) Wait for the end of the intersection
         elif self.current_step == 5:
-            if self.passed_enough_time(self.RESET_TIME, bcolors.OKBLUE):
-                self.current_step += 1
+            # the traffic light has been manipulated, wait until the vehicle finsihes the intersection
+            ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+            ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
-        # At the end (or if something failed), reset to the previous state
+            if not self.inside_junction:
+                if ego_waypoint.is_junction:
+                    # Wait for the ego_vehicle to enter a junction
+                    self.inside_junction = True
+                else:
+                    if self.debug:
+                        print("--- Waiting to ENTER a junction")
+
+            else:
+                if ego_waypoint.is_junction:
+                    if self.debug:
+                        print("--- Waiting to EXIT a junction")
+                else:
+                    # And to leave it
+                    self.inside_junction = False
+                    self.current_step += 1
+
+        # 6) At the end (or if something failed), reset to the previous state
         else:
             if self.prev_junction_state:
                 CarlaDataProvider.reset_lights(self.prev_junction_state)
@@ -1752,7 +1768,7 @@ class TrafficLightManipulator(AtomicBehavior):
         Changes the intersection to the desired state
         """
         prev_state = CarlaDataProvider.update_light_states(
-                self.target_traffic_light,
+                self.traffic_light,
                 self.annotations,
                 choice,
                 freeze=True)
@@ -1817,13 +1833,14 @@ class TrafficLightManipulator(AtomicBehavior):
         Resets all variables to the intial state
         """
         self.current_step = 1
-        self.target_traffic_light = None
+        self.traffic_light = None
         self.annotations = None
         self.configuration = None
         self.prev_junction_state = None
         self.junction_location = None
         self.max_trigger_distance = None
         self.waiting_time = None
+        self.inside_junction = False
 
 
 class bcolors:

@@ -568,6 +568,7 @@ class InTriggerDistanceToLocationAlongRoute(AtomicCondition):
 
             actor_distance, _ = get_distance_along_route(self._route, current_location)
 
+            # If closer than self._distance and hasn't passed the trigger point
             if (self._location_distance < actor_distance + self._distance and
                 actor_distance < self._location_distance) or \
                     self._location_distance < 1.0:
