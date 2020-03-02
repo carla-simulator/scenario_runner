@@ -27,7 +27,7 @@ Parameters can be used according to the _OSCParameterDeclaration_. Therefore, th
 Catalogs in OpenSCENARIO are a mean to import predefined information, for example about vehicle configurations. This allows, for example, to share certain setups or configurations among multiple scenarios.
 <img src="img/OSC_catalogs.png" width="300">
 
-Currently Catalogs are *NOT* supported.
+Currently only Vehicle, Pedestrian, Environment, MiscObject, and Maneuver Catalogs are supported. You must set the `CATALOG_PATH` variable at the top of the `CatalogExample.xosc` file in order for it to work. This must be an absolute path.
 
 ### RoadNetwork
 The RoadNetwork points to the _Logic_ (OpenDRIVE) and _SceneGraph_ (OpenSceneGraph) files that the scenario makes use of. Currently, our implementation does not use OpenSceneGraph information, and hence this flag is not parsed. For the Logic of the RoadNetwork, either the name of the CARLA town, e.g. Town01 can be provided or the fully qualified path (e.g. /x/y/Town01.xodr).
@@ -89,6 +89,15 @@ Please take a look into the provided example scenarios, for further details on t
 
 ## Overview of available features of OpenSCENARIO v0.9:
 - [ ] Catalogs
+    * [x] Vehicle
+    * [ ] Driver (no planned support)
+    * [x] Pedestrian
+    * [ ] PedestrianController (no planned support)
+    * [x] MiscObject
+    * [x] Environment
+    * [x] Maneuver
+    * [ ] Trajectory
+    * [ ] Route (WIP)
 - [x] Use of parameter (only global parameters are supported)
 - [ ] RoadNetwork:
     * [x] Logics (OpenDrive): Specifying the OpenDrive file is supported

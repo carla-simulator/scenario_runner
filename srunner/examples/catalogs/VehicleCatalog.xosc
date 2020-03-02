@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<OpenSCENARIO>
+    <FileHeader revMajor="0" revMinor="9" date="2020-02-17" description="CARLA:VehicleCatalog" author="Anja Sheppard" />
+    <Catalog name="VehicleCatalog">
+        <Vehicle name="vehicle.volkswagen.t2" category="car">
+            <ParameterDeclaration />
+            <Performance maxSpeed="69.444" maxDeceleration="10.0" mass="1800.0" />
+            <BoundingBox>
+                <Center x="1.5" y="0.0" z="0.9" />
+                <Dimension width="2.1" length="4.5" height="1.8" />
+            </BoundingBox>
+            <Axles>
+                <Front maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3" />
+                <Rear maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3" />
+            </Axles>
+            <Properties>
+                <Property name="type" value="ego_vehicle" />
+            </Properties>
+        </Vehicle>
+        <Vehicle name="vehicle.tesla.model3" category="car">
+            <ParameterDeclaration />
+            <Performance maxSpeed="69.444" maxDeceleration="10.0" mass="1800.0" />
+            <BoundingBox>
+                <Center x="1.5" y="0.0" z="0.9" />
+                <Dimension width="2.1" length="4.5" height="1.8" />
+            </BoundingBox>
+            <Axles>
+                <Front maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3" />
+                <Rear maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3" />
+            </Axles>
+            <Properties />
+        </Vehicle>
+    </Catalog>
+</OpenSCENARIO>

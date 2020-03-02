@@ -62,7 +62,7 @@ class ActorConfiguration(ActorConfigurationData):
 
         super(ActorConfiguration, self).__init__(node.attrib.get('model', 'vehicle.*'),
                                                  carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z),
-                                                 carla.Rotation(yaw=yaw)),
+                                                                 carla.Rotation(yaw=yaw)),
                                                  node.attrib.get('rolename', rolename),
                                                  autopilot, random_location, amount)
 
