@@ -229,8 +229,8 @@ class StandStill(AtomicCondition):
 
         velocity = CarlaDataProvider.get_velocity(self._actor)
 
-        if velocity < EPSILON:
-            new_status = py_trees.common.Status.SUCCESS
+        if velocity > EPSILON:
+            self._start_time = GameTime.get_time()
 
         if GameTime.get_time() - self._start_time > self._duration:
             new_status = py_trees.common.Status.SUCCESS
