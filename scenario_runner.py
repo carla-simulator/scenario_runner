@@ -102,8 +102,8 @@ class ScenarioRunner(object):
         self.client.set_timeout(self.client_timeout)
 
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.6'):
-            raise ImportError("CARLA version 0.9.6 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.7'):
+            raise ImportError("CARLA version 0.9.7 or newer required. CARLA version found: {}".format(dist))
 
         # Load additional scenario definitions, if there are any
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -363,9 +363,11 @@ class ScenarioRunner(object):
             precipitation_deposits=config.weather.precipitation_deposits,
             wind_intensity=config.weather.wind_intensity,
             sun_azimuth_angle=config.weather.sun_azimuth,
-            sun_altitude_angle=config.weather.sun_altitude
+            sun_altitude_angle=config.weather.sun_altitude,
+            fog_density=config.weather.fog_density,
+            fog_distance=config.weather.fog_distance,
+            wetness=config.weather.wetness
         )
-
         self.world.set_weather(weather)
 
         # Set the appropriate road friction
@@ -615,6 +617,7 @@ def main():
             scenario_runner.destroy()
             del scenario_runner
     return not result
+
 
 if __name__ == "__main__":
     sys.exit(main())

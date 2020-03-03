@@ -574,8 +574,10 @@ class CarlaActorPool(object):
             if 'physics' in actor.args and actor.args['physics'] == "off":
                 command = SpawnActor(blueprint, _spawn_point).then(
                     ApplyTransform(FutureActor, actor.transform)).then(PhysicsCommand(FutureActor, False))
-            else:
+            elif actor.category == 'misc':
                 command = SpawnActor(blueprint, _spawn_point).then(PhysicsCommand(FutureActor, True))
+            else:
+                command = SpawnActor(blueprint, _spawn_point)
             batch.append(command)
 
         actors = CarlaActorPool.handle_actor_batch(batch)
