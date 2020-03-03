@@ -48,7 +48,8 @@ class BackgroundActivity(BasicScenario):
                                                                  actor.transform,
                                                                  hero=False,
                                                                  autopilot=actor.autopilot,
-                                                                 random_location=actor.random_location)
+                                                                 random_location=actor.random_location,
+                                                                 safe=True)
             if new_actors is None:
                 raise Exception("Error: Unable to add actor {} at {}".format(actor.model, actor.transform))
 
