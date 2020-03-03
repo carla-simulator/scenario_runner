@@ -478,13 +478,15 @@ class CarlaActorPool(object):
 
         actors = []
 
+        sync_mode = CarlaActorPool._world.get_settings().synchronous_mode
+
         if CarlaActorPool._client and batch is not None:
-            responses = CarlaActorPool._client.apply_batch_sync(batch)
+            responses = CarlaActorPool._client.apply_batch_sync(batch, sync_mode)
         else:
             return None
 
         # wait for the actors to be spawned properly before we do anything
-        if CarlaActorPool._world.get_settings().synchronous_mode:
+        if sync_mode:
             CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()

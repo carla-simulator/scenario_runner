@@ -1035,14 +1035,14 @@ class ChallengeEvaluator(object):
             settings = self.world.get_settings()
             settings.synchronous_mode = False
             settings.no_rendering_mode = False
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = None
             self.world.apply_settings(settings)
         else:
             world = client.get_world()
             settings = world.get_settings()
             settings.synchronous_mode = False
             settings.no_rendering_mode = False
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = None
             world.apply_settings(settings)
             world = None
 
