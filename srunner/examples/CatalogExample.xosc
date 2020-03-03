@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE vals [
+    <!ENTITY CATALOG_PATH "./srunner/examples/catalogs">
+]>
+
+<OpenSCENARIO>
+    <FileHeader revMajor="0" revMinor="9" date="2020-01-01" description="CARLA:PedestrianCrossing" author="" />
+    <Catalogs>
+        <VehicleCatalog>
+            <Directory path="&CATALOG_PATH;/VehicleCatalog.xosc" />
+        </VehicleCatalog>
+        <DriverCatalog>
+            <Directory path="Catalogs/DriverCatalogs" />
+        </DriverCatalog>
+        <PedestrianCatalog>
+            <Directory path="&CATALOG_PATH;/PedestrianCatalog.xosc" />
+        </PedestrianCatalog>
+        <PedestrianControllerCatalog>
+            <Directory path="Catalogs/PedestrianControllerCatalogs" />
+        </PedestrianControllerCatalog>
+        <MiscObjectCatalog>
+            <Directory path="&CATALOG_PATH;/MiscObjectCatalog.xosc" />
+        </MiscObjectCatalog>
+        <EnvironmentCatalog>
+            <Directory path="&CATALOG_PATH;/EnvironmentCatalog.xosc" />
+        </EnvironmentCatalog>
+        <ManeuverCatalog>
+            <Directory path="&CATALOG_PATH;/ManeuverCatalog.xosc" />
+        </ManeuverCatalog>
+        <TrajectoryCatalog>
+            <Directory path="Catalogs/TrajectoryCatalog" />
+        </TrajectoryCatalog>
+        <RouteCatalog>
+            <Directory path="Catalogs/RoutingCatalog" />
+        </RouteCatalog>
+    </Catalogs>
+    <RoadNetwork>
+        <Logics filepath="Town01" />
+        <SceneGraph filepath="" />
+    </RoadNetwork>
+    <Entities>
+        <Object name="hero">
+            <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.volkswagen.t2" />
+        </Object>
+        <Object name="vehicle">
+            <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.tesla.model3" />
+        </Object>
+        <Object name="adversary">
+            <CatalogReference catalogName="PedestrianCatalog" entryName="Pedestrian1" />
+        </Object>
+        <Object name="barrier1">
+            <CatalogReference catalogName="MiscObjectCatalog" entryName="Barrier1" />
+        </Object>
+    </Entities>
+    <Storyboard>
+        <Init>
+            <Actions>
+                <Global>
+                    <SetEnvironment>
+                        <CatalogReference catalogName="EnvironmentCatalog" entryName="ClearNoon" />
+                    </SetEnvironment>
+                </Global>
+                <Private object="hero">
+                    <Action>
+                        <Position>
+                            <World x="170" y="55" z="0" h="3.14159265359" />
+                        </Position>
+                    </Action>
+                </Private>
+                <Private object="vehicle">
+                    <Action>
+                        <Position>
+                            <World x="150" y="55" z="0" h="3.14159265359" />
+                        </Position>
+                    </Action>
+                </Private>
+                <Private object="adversary">
+                    <Action>
+                        <Position>
+                            <World x="110" y="52" z="0.3" h="1.57079632679" />
+                        </Position>
+                    </Action>
+                </Private>
+                <Private object="barrier1">
+                    <Action>
+                        <Position>
+                            <World x="100" y="58" z="0" h="1.57079632679"/>
+                        </Position>
+                    </Action>
+                </Private>
+            </Actions>
+        </Init>
+        <Story name="MyStory">
+            <Act name="Behavior">
+                <Sequence name="AutopilotSequence" numberOfExecutions="1">
+                    <Actors>
+                        <Entity name="vehicle" />
+                    </Actors>
+                    <CatalogReference catalogName="ManeuverCatalog" entryName="Autopilot" />
+                </Sequence>
+                <Sequence name="PedestrianCrossingSequence" numberOfExecutions="1">
+                    <Actors>
+                        <Entity name="adversary"/>
+                    </Actors>
+                    <Maneuver name="PedestrianCrossingManeuver">
+                        <Event name="PedestrianStartsWalking" priority="overwrite">
+                            <Action name="PedestrianStartsWalking">
+                                <Private>
+                                    <Longitudinal>
+                                        <Speed>
+                                            <Dynamics shape="step" rate="0" distance="3" />
+                                            <Target>
+                                                <Absolute value="10.0" />
+                                            </Target>
+                                        </Speed>
+                                    </Longitudinal>
+                                </Private>
+                            </Action>
+                            <StartConditions>
+                                <ConditionGroup>
+                                    <Condition name="StartCondition" delay="0" edge="rising">
+                                        <ByEntity>
+                                            <TriggeringEntities rule="any">
+                                                <Entity name="vehicle" />
+                                            </TriggeringEntities>
+                                            <EntityCondition>
+                                                <ReachPosition tolerance="1.0">
+                                                    <Position>
+                                                        <World x="140" y="55" z="0" />
+                                                    </Position>
+                                                </ReachPosition>
+                                            </EntityCondition>
+                                        </ByEntity>
+                                    </Condition>
+                                </ConditionGroup>
+                            </StartConditions>
+                        </Event>
+                        <Event name="PedestrianStopsAndWaits" priority="overwrite">
+                            <Action name="PedestrianStopsAndWaits">
+                                <Private>
+                                    <Longitudinal>
+                                        <Speed>
+                                            <Dynamics shape="step" rate="0" time="5" />
+                                            <Target>
+                                                <Absolute value="0.0" />
+                                            </Target>
+                                        </Speed>
+                                    </Longitudinal>
+                                </Private>
+                            </Action>
+                            <StartConditions>
+                                <ConditionGroup>
+                                    <Condition name="StartCondition" delay="0" edge="rising">
+                                        <ByEntity>
+                                            <TriggeringEntities rule="any">
+                                                <Entity name="adversary" />
+                                            </TriggeringEntities>
+                                            <EntityCondition>
+                                                <StandStill duration="1" />
+                                            </EntityCondition>
+                                        </ByEntity>
+                                    </Condition>
+                                    <Condition name="AfterPedestrianWalks" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="PedestrianStartsWalking" rule="any"/>
+                                        </ByState>
+                                    </Condition>
+                                </ConditionGroup>
+                            </StartConditions>
+                        </Event>
+                        <Event name="PedestrianWalksAway" priority="overwrite">
+                            <Action name="PedestrianStartsWalkingAway">
+                                <Private>
+                                    <Longitudinal>
+                                        <Speed>
+                                            <Dynamics shape="step" rate="0" distance="6.5" />
+                                            <Target>
+                                                <Absolute value="2.0" />
+                                            </Target>
+                                        </Speed>
+                                    </Longitudinal>
+                                </Private>
+                            </Action>
+                            <StartConditions>
+                                <ConditionGroup>
+                                    <Condition name="StartCondition" delay="0" edge="rising">
+                                        <ByEntity>
+                                            <TriggeringEntities rule="any">
+                                                <Entity name="vehicle" />
+                                            </TriggeringEntities>
+                                            <EntityCondition>
+                                                <StandStill duration="0.1" />
+                                            </EntityCondition>
+                                        </ByEntity>
+                                    </Condition>
+                                    <Condition name="AfterPedestrianStopsAndWaits" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="PedestrianStopsAndWaits" rule="any"/>
+                                        </ByState>
+                                    </Condition>
+                                </ConditionGroup>
+                            </StartConditions>
+                        </Event>
+                        <Event name="PedestrianWaits" priority="overwrite">
+                            <Action name="PedestrianWaits">
+                                <Private>
+                                    <Longitudinal>
+                                        <Speed>
+                                            <Dynamics shape="step" rate="0" time="10" />
+                                            <Target>
+                                                <Absolute value="0.0" />
+                                            </Target>
+                                        </Speed>
+                                    </Longitudinal>
+                                </Private>
+                            </Action>
+                            <StartConditions>
+                                <ConditionGroup>
+                                    <Condition name="StartCondition" delay="0" edge="rising">
+                                        <ByEntity>
+                                            <TriggeringEntities rule="any">
+                                                <Entity name="adversary" />
+                                            </TriggeringEntities>
+                                            <EntityCondition>
+                                                <StandStill duration="0.1" />
+                                            </EntityCondition>
+                                        </ByEntity>
+                                    </Condition>
+                                    <Condition name="AfterPedestrianStartsWalking" delay="0" edge="rising">
+                                        <ByState>
+                                            <AfterTermination type="action" name="PedestrianStartsWalkingAway" rule="any"/>
+                                        </ByState>
+                                    </Condition>
+                                </ConditionGroup>
+                            </StartConditions>
+                        </Event>
+                    </Maneuver>
+                </Sequence>
+                <Conditions>
+                    <Start>
+                        <ConditionGroup>
+                            <Condition name="OverallStartCondition" delay="0" edge="rising">
+                                <ByValue>
+                                    <SimulationTime value="0" rule="greater_than" />
+                                </ByValue>
+                            </Condition>
+                        </ConditionGroup>
+                    </Start>
+                    <End>
+                        <ConditionGroup>
+                            <Condition name="EndCondition" delay="0" edge="rising">
+                                <ByValue>
+                                    <SimulationTime value="20.0" rule="greater_than" />
+                                </ByValue>
+                            </Condition>
+                        </ConditionGroup>
+                    </End>
+                </Conditions>
+            </Act>
+        </Story>
+        <EndConditions>
+            <ConditionGroup>
+                <Condition name="criteria_CollisionTest" delay="0" edge="rising">
+                    <ByValue>
+                        <Parameter name="" value="" rule="less_than" />
+                    </ByValue>
+                </Condition>
+            </ConditionGroup>
+        </EndConditions>
+    </Storyboard>
+</OpenSCENARIO>
+

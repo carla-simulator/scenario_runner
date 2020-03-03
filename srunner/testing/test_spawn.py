@@ -76,6 +76,7 @@ class TestSpawn(unittest.TestCase):
 
 
                     challenge.world.wait_for_tick()
+
                     if 'other_actors' in event:
                         if 'left' in event['other_actors']:
                             for other_waypoint in event['other_actors']['left']:
@@ -94,6 +95,7 @@ class TestSpawn(unittest.TestCase):
                                     traceback.print_exc()
                                     list_failed.append((waypoint, town_name))
                                 challenge.world.wait_for_tick()
+
                                 print ("Spawn right", other_waypoint)
                         if 'front' in event['other_actors']:
                             for other_waypoint in event['other_actors']['front']:
@@ -103,6 +105,7 @@ class TestSpawn(unittest.TestCase):
                                     traceback.print_exc()
                                     list_failed.append((waypoint, town_name))
                                 challenge.world.wait_for_tick()
+
                                 print ("Spawn front", other_waypoint)
 
 
