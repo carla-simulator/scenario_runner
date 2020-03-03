@@ -637,8 +637,7 @@ class CarlaActorPool(object):
         return actor_list
 
     @staticmethod
-    def request_new_batch_actors(model, amount, spawn_point, hero=False, autopilot=False,
-                                 random_location=False):
+    def request_new_batch_actors(model, amount, spawn_point, hero=False, autopilot=False, random_location=False):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
