@@ -1851,12 +1851,15 @@ class ScenarioTriggerer(AtomicBehavior):
 
     WINDOWS_SIZE = 5
 
-    def __init__(self, actor, route, blackboard_list, distance, name="ScenarioTriggerer"):
+    def __init__(self, actor, route, blackboard_list, distance, debug=False, name="ScenarioTriggerer"):
         """
         Setup class members
         """
         super(ScenarioTriggerer, self).__init__(name)
+        self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
+        self.debug = debug
+
         self._actor = actor
         self._route = route
         self._distance = distance
@@ -1867,11 +1870,15 @@ class ScenarioTriggerer(AtomicBehavior):
         self._waypoints, _ = zip(*self._route)
 
         # Create all the black board varaibles and set them to false
+        for black_var_name, _ in self._blackboard_list:
+            # Initializes the blackboard variable
+            blackv = py_trees.blackboard.Blackboard()
+            _ = blackv.set(black_var_name, False)
+
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
 
-        world = CarlaDataProvider.get_world()
 
         location = CarlaDataProvider.get_location(self._actor)
         if location is None:
@@ -1887,29 +1894,34 @@ class ScenarioTriggerer(AtomicBehavior):
             ref_waypoint = self._waypoints[index]
             ref_location = ref_waypoint.location
 
-            world.debug.draw_line(ref_location, location, thickness=0.2, color=carla.Color(0, 0, 0), life_time=0.1)
-
             distance = math.sqrt(((location.x - ref_location.x) ** 2) + ((location.y - ref_location.y) ** 2))
             if distance <= shortest_distance:
                 closest_index = index
                 shortest_distance = distance
 
+        if closest_index == -1 or shortest_distance == float('inf'):
+            return new_status
+
         # Update the ego position at the route
         self._current_index = closest_index
 
-        # Use the closest route point when calculating the distance to the scenarios
         route_location = self._waypoints[closest_index].location
 
+        # Check which scenarios can be triggered
         blackboard = py_trees.blackboard.Blackboard()
-        for blackv_name, scen_location in self._blackboard_list:
+        for black_var_name, scen_location in self._blackboard_list:
 
-            world.debug.draw_point(scen_location, size=0.2, life_time=0, color=carla.Color(0, 0, 0))
-            blackv_value = blackboard.get(blackv_name)
-            if not blackv_value and route_location.distance(scen_location) < self._distance:
-                _ = blackboard.set(blackv_name, True)
+            value = blackboard.get(black_var_name)
+            if not value and route_location.distance(scen_location) < self._distance:
+                _ = blackboard.set(black_var_name, True)
 
-                world.debug.draw_line(ref_location, location, thickness=0.2, color=carla.Color(0, 0, 0), life_time=0.1)
-                world.debug.draw_point(scen_location + carla.Location(z=4), size=0.5, life_time=0.5, color=carla.Color(255, 255, 0))
-                input()
+                if self.debug:
+                    self._world.debug.draw_point(
+                        scen_location + carla.Location(z=4),
+                        size=0.5,
+                        life_time=0.5,
+                        color=carla.Color(255, 255, 0)
+                    )
+                    print("{} set to True".format(black_var_name))
 
         return new_status

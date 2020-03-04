@@ -817,11 +817,11 @@ class WaitForBlackboardVariable(AtomicCondition):
     Used to avoid returning FAILURE if the blackboard comparison fails
     """
 
-    def __init__(self, black_var_name, black_var_value=False, debug=False, name="WaitForBlackboardVariable"):
+    def __init__(self, variable_name, variable_value=False, debug=False, name="WaitForBlackboardVariable"):
         super(WaitForBlackboardVariable, self).__init__(name)
         self.debug = True
-        self.black_var_name = black_var_name
-        self.black_var_value = black_var_value
+        self.variable_name = variable_name
+        self.variable_value = variable_value
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
@@ -829,10 +829,10 @@ class WaitForBlackboardVariable(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         blackv = py_trees.blackboard.Blackboard()
-        value = blackv.get(self.black_var_name)
-        if value == self.black_var_value:
+        value = blackv.get(self.variable_name)
+        if value == self.variable_value:
             if self.debug:
-                print("Blackboard variable {} set to True".format(self.black_var_name))
+                print("Blackboard variable {} set to True".format(self.variable_name))
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
