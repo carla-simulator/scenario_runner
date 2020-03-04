@@ -1613,7 +1613,7 @@ class TrafficLightManipulator(AtomicBehavior):
         self.ego_vehicle = ego_vehicle
         self.subtype = subtype
         self.current_step = 1
-        self.debug = True
+        self.debug = debug
 
         self.traffic_light = None
         self.annotations = None
