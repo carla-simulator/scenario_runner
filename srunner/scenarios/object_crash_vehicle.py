@@ -47,7 +47,7 @@ class StationaryObjectCrossing(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self.reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
         # ego vehicle parameters
         self._ego_vehicle_distance_driven = 40
 
@@ -68,8 +68,8 @@ class StationaryObjectCrossing(BasicScenario):
         Custom initialization
         """
         _start_distance = 40
-        lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance_from_wp(self._reference_waypoint, _start_distance)
+        lane_width = self.reference_waypoint.lane_width
+        location, _ = get_location_in_distance_from_wp(self.reference_waypoint, _start_distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.4, "k": 0.2}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
@@ -148,7 +148,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         self._wmap = CarlaDataProvider.get_map()
 
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self.reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
         # ego vehicle parameters
         self._ego_vehicle_distance_driven = 40
         # other vehicle parameters
@@ -161,6 +161,7 @@ class DynamicObjectCrossing(BasicScenario):
         self.transform = None
         self.transform2 = None
         self.timeout = timeout
+        self.config = config
         self._trigger_location = config.trigger_points[0].location
         # Total Number of attempts to relocate a vehicle before spawning
         self._number_of_attempts = 20
@@ -219,8 +220,8 @@ class DynamicObjectCrossing(BasicScenario):
         """
         # static object transform
         shift = 0.9
-        x_ego = self._reference_waypoint.transform.location.x
-        y_ego = self._reference_waypoint.transform.location.y
+        x_ego = self.reference_waypoint.transform.location.x
+        y_ego = self.reference_waypoint.transform.location.y
         x_cycle = transform.location.x
         y_cycle = transform.location.y
         x_static = x_ego + shift * (x_cycle - x_ego)
@@ -243,7 +244,7 @@ class DynamicObjectCrossing(BasicScenario):
         # cyclist transform
         _start_distance = 10
         # We start by getting and waypoint in the closest sidewalk.
-        waypoint = self._reference_waypoint
+        waypoint = self.reference_waypoint
         while True:
             wp_next = waypoint.get_right_lane()
             self._num_lane_changes += 1
@@ -302,7 +303,7 @@ class DynamicObjectCrossing(BasicScenario):
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="OccludedObjectCrossing")
-        lane_width = self._reference_waypoint.lane_width
+        lane_width = self.reference_waypoint.lane_width
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
         # leaf nodes
         if self._ego_route is not None:

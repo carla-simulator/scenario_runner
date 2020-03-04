@@ -82,7 +82,7 @@ class VehicleTurningRight(BasicScenario):
         # other vehicle parameters
         self._other_actor_target_velocity = 10
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self.reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
         self._trigger_location = config.trigger_points[0].location
         self._other_actor_transform = None
         self._num_lane_changes = 0
@@ -107,7 +107,7 @@ class VehicleTurningRight(BasicScenario):
         Custom initialization
         """
 
-        waypoint = self._reference_waypoint
+        waypoint = self.reference_waypoint
         waypoint = generate_target_waypoint(waypoint, 1)
         _start_distance = 8
         while True:
@@ -163,7 +163,7 @@ class VehicleTurningRight(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionRightTurn")
 
-        lane_width = self._reference_waypoint.lane_width
+        lane_width = self.reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
         if self._ego_route is not None:
@@ -238,7 +238,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         self._other_actor_target_velocity = 10
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self.reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
         self._trigger_location = config.trigger_points[0].location
         self._other_actor_transform = None
         self._num_lane_changes = 0
@@ -262,7 +262,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         Custom initialization
         """
-        waypoint = self._reference_waypoint
+        waypoint = self.reference_waypoint
         waypoint = generate_target_waypoint(waypoint, -1)
         _start_distance = 8
         while True:
@@ -316,7 +316,7 @@ class VehicleTurningLeft(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionLeftTurn")
 
-        lane_width = self._reference_waypoint.lane_width
+        lane_width = self.reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
         if self._ego_route is not None:
             trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
@@ -399,12 +399,13 @@ class VehicleTurningRoute(BasicScenario):
         # other vehicle parameters
         self._other_actor_target_velocity = 10
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self.reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
         self._trigger_location = config.trigger_points[0].location
         self._other_actor_transform = None
         self._num_lane_changes = 0
         # Timeout of scenario in seconds
         self.timeout = timeout
+        self.config = config
         # Total Number of attempts to relocate a vehicle before spawning
         self._number_of_attempts = 6
         # Number of attempts made so far
@@ -424,7 +425,7 @@ class VehicleTurningRoute(BasicScenario):
         Custom initialization
         """
 
-        waypoint = self._reference_waypoint
+        waypoint = self.reference_waypoint
         direction = self.SUBTYPE_INDEX_TRANSLATION[config.subtype]
         waypoint = generate_target_waypoint(waypoint, direction)
         _start_distance = 8
@@ -481,7 +482,7 @@ class VehicleTurningRoute(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionRightTurn")
 
-        lane_width = self._reference_waypoint.lane_width
+        lane_width = self.reference_waypoint.lane_width
         lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
 
         if self._ego_route is not None:
