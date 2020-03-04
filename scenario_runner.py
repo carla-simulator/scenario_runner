@@ -75,7 +75,7 @@ class ScenarioRunner(object):
     ego_vehicles = []
 
     # Tunable parameters
-    client_timeout = 30.0  # in seconds
+    client_timeout = 10.0  # in seconds
     wait_for_world = 20.0  # in seconds
     frame_rate = 20.0      # in Hz
 
@@ -94,6 +94,9 @@ class ScenarioRunner(object):
         Setup ScenarioManager
         """
         self._args = args
+
+        if args.timeout:
+            self.client_timeout = float(args.timeout)
 
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
@@ -120,7 +123,7 @@ class ScenarioRunner(object):
             self.module_agent = importlib.import_module(module_name)
 
         # Create the ScenarioManager
-        self.manager = ScenarioManager(self._args.debug, self._args.challenge)
+        self.manager = ScenarioManager(self._args.debug, self._args.challenge, self._args.timeout)
 
         # Create signal handler for SIGINT
         self._shutdown_requested = False
@@ -151,6 +154,8 @@ class ScenarioRunner(object):
         if self.manager:
             self.manager.stop_scenario()
             self._cleanup()
+            if not self.manager.get_running_status():
+                raise RuntimeError("Timeout occured during scenario execution")
 
     def _within_available_time(self):
         """
@@ -235,7 +240,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
-        CarlaDataProvider.get_world().tick()
+        CarlaDataProvider.perform_carla_tick()
 
     def _analyze_scenario(self, config):
         """
@@ -297,7 +302,7 @@ class ScenarioRunner(object):
 
         # Wait for the world to be ready
         if self.world.get_settings().synchronous_mode:
-            self.world.tick()
+            CarlaDataProvider.perform_carla_tick()
         else:
             self.world.wait_for_tick()
 
@@ -401,6 +406,7 @@ class ScenarioRunner(object):
             self._cleanup()
             ChallengeStatisticsManager.record_fatal_error(e)
             sys.exit(-1)
+
         except Exception as e:              # pylint: disable=broad-except
             traceback.print_exc()
             if self._args.challenge:
@@ -573,6 +579,8 @@ def main():
     parser.add_argument('--challenge', action="store_true", help='Run in challenge mode')
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
+    parser.add_argument('--timeout', default="2.0",
+                        help='Set the CARLA client timeout value in seconds')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     arguments = parser.parse_args()
     # pylint: enable=line-too-long
@@ -610,6 +618,7 @@ def main():
     try:
         scenario_runner = ScenarioRunner(arguments)
         result = scenario_runner.run()
+
     finally:
         if arguments.challenge:
             ChallengeStatisticsManager.report_challenge_statistics('results.json', arguments.debug)
