@@ -1841,3 +1841,34 @@ class TrafficLightManipulator(AtomicBehavior):
         self.max_trigger_distance = None
         self.waiting_time = None
         self.inside_junction = False
+
+
+class ScenarioTriggerer(AtomicBehavior):
+
+    """
+    Creates
+    """
+
+    def __init__(self, actor, route, distance, blackboard_names, name="ScenarioTriggerer"):
+        """
+        Setup class members
+        """
+        super(ScenarioTriggerer, self).__init__(name)
+        self._map = CarlaDataProvider.get_map()
+        self._actor = actor
+        self._route = route
+        self._distance = distance
+        self._blackv_names = blackboard_names
+
+        # Create all the black board varaibles and set them to false
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        # check if they are close enough, then set the blackboard variable
+        if GameTime.get_time() > 2:
+            for blackv_name in self._blackv_names:
+                blackv = py_trees.blackboard.Blackboard()
+                _ = blackv.set(blackv_name, True)
+
+        return new_status
