@@ -117,7 +117,7 @@ class AgentWrapper(object):
         while not self._agent.all_sensors_ready():
             if debug_mode:
                 print(" waiting for one data reading from sensors...")
-            CarlaDataProvider.get_world().tick()
+            CarlaDataProvider.perform_carla_tick()
 
     def _validate_sensor_configuration(self):
         """
