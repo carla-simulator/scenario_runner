@@ -1866,7 +1866,8 @@ class ScenarioTriggerer(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         # check if they are close enough, then set the blackboard variable
-        if GameTime.get_time() > 2:
+        if GameTime.get_time() > 5.0:
+
             for blackv_name in self._blackv_names:
                 blackv = py_trees.blackboard.Blackboard()
                 _ = blackv.set(blackv_name, True)

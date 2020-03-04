@@ -808,3 +808,31 @@ class WaitEndIntersection(AtomicCondition):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+
+class WaitForBlackboardVariable(AtomicCondition):
+
+    """
+    Atomic behavior that keeps running until the blackboard variable is set to the corresponding value.
+    Used to avoid returning FAILURE if the blackboard comparison fails
+    """
+
+    def __init__(self, black_var_name, black_var_value=False, debug=False, name="WaitForBlackboardVariable"):
+        super(WaitForBlackboardVariable, self).__init__(name)
+        self.debug = True
+        self.black_var_name = black_var_name
+        self.black_var_value = black_var_value
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+
+        new_status = py_trees.common.Status.RUNNING
+
+        blackv = py_trees.blackboard.Blackboard()
+        value = blackv.get(self.black_var_name)
+        if value == self.black_var_value:
+            if self.debug:
+                print("Blackboard variable {} set to True".format(self.black_var_name))
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
