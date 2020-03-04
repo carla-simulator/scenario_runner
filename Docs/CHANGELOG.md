@@ -8,6 +8,8 @@
 
 ## Latest Changes
 ### :rocket: New Features
+* Scenario updates:
+    - Changed traffic light behavior of scenarios 7, 8 and 9. The new sequence is meant to greatly improve the chances of the ego vehicle having to interact at junctions.
 * Added "--timeout" command line parameter to set a user-defined timeout value
 * OpenSCENARIO support:
     - Add initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
@@ -15,7 +17,9 @@
 * Fixed #471: Handling of weather parameter (cloudyness -> cloudiness adaption)
 * Fixed #472: Spawning issue of pedestrians in OpenSCENARIO
 * Fixed #374: Usage of evaluation critieria with multiple ego vehicles in OpenSCENARIO
+* Fixed #459: Add initial support for Catalogs (Vehicle, Pedestrian, Environment, Maneuver, and and MiscObject types only)
 * Fixed wrong StandStill behavior which return SUCCESS immediatly on a standing actor
+* Fixed scenario bug causing junction related scenarios (4, 7, 8 and 9) to not spawn due to lane changes.
 ### :ghost: Maintenance
 * Added watchdog to ScenarioManager to handle timeouts and CARLA crashes
 * Added timeout for CARLA tick() calls to avoid blocking CARLA server calls

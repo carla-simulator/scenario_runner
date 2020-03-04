@@ -1559,22 +1559,38 @@ class ActorSink(AtomicBehavior):
 class TrafficLightManipulator(AtomicBehavior):
 
     """
-    Atomic behavior that manipulates traffic lights around the ego_vehicle
-    This scenario stops when blackboard.get('master_scenario_command') == scenarios_stop_request
+    Atomic behavior that manipulates traffic lights around the ego_vehicle to trigger scenarios 7 to 10.
+    This is done by setting 2 of the traffic light at the intersection to green (with some complex precomputation
+    to set everything up).
 
     Important parameters:
     - ego_vehicle: CARLA actor that controls this behavior
-
-    This behavior stops when blackboard.get('master_scenario_command') == scenarios_stop_request
+    - subtype: string that gathers information of the route and scenario number
+      (check SUBTYPE_CONFIG_TRANSLATION below)
     """
 
-    MAX_DISTANCE_TRAFFIC_LIGHT = 15
     RED = carla.TrafficLightState.Red
+    YELLOW = carla.TrafficLightState.Yellow
     GREEN = carla.TrafficLightState.Green
 
-    INT_CONF_OPP = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
-    INT_CONF_LFT = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
-    INT_CONF_RGT = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
+    # Time constants
+    RED_TIME = 1.5  # Minimum time the ego vehicle waits in red (seconds)
+    YELLOW_TIME = 2  # Time spent at yellow state (seconds)
+    RESET_TIME = 6  # Time waited before resetting all the junction (seconds)
+
+    # Experimental values
+    TRIGGER_DISTANCE = 10  # Distance that makes all vehicles in the lane enter the junction (meters)
+    DIST_TO_WAITING_TIME = 0.04  # Used to wait longer at larger intersections (s/m)
+
+    INT_CONF_OPP1 = {'ego': RED, 'ref': RED, 'left': RED, 'right': RED, 'opposite': GREEN}
+    INT_CONF_OPP2 = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': GREEN}
+    INT_CONF_LFT1 = {'ego': RED, 'ref': RED, 'left': GREEN, 'right': RED, 'opposite': RED}
+    INT_CONF_LFT2 = {'ego': GREEN, 'ref': GREEN, 'left': GREEN, 'right': RED, 'opposite': RED}
+    INT_CONF_RGT1 = {'ego': RED, 'ref': RED, 'left': RED, 'right': GREEN, 'opposite': RED}
+    INT_CONF_RGT2 = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': GREEN, 'opposite': RED}
+
+    INT_CONF_REF1 = {'ego': GREEN, 'ref': GREEN, 'left': RED, 'right': RED, 'opposite': RED}
+    INT_CONF_REF2 = {'ego': YELLOW, 'ref': YELLOW, 'left': RED, 'right': RED, 'opposite': RED}
 
     # Depending on the scenario, IN ORDER OF IMPORTANCE, the traffic light changed
     # The list has to contain only items of the INT_CONF
@@ -1587,91 +1603,193 @@ class TrafficLightManipulator(AtomicBehavior):
     }
 
     CONFIG_TLM_TRANSLATION = {
-        'left': INT_CONF_LFT,
-        'right': INT_CONF_RGT,
-        'opposite': INT_CONF_OPP
+        'left': [INT_CONF_LFT1, INT_CONF_LFT2],
+        'right': [INT_CONF_RGT1, INT_CONF_RGT2],
+        'opposite': [INT_CONF_OPP1, INT_CONF_OPP2]
     }
 
     def __init__(self, ego_vehicle, subtype, debug=False, name="TrafficLightManipulator"):
         super(TrafficLightManipulator, self).__init__(name)
         self.ego_vehicle = ego_vehicle
         self.subtype = subtype
-        self.valid_subtype = True
+        self.current_step = 1
         self.debug = debug
-        self.target_traffic_light = None
-        self.inside_junction = False
+
+        self.traffic_light = None
         self.annotations = None
-        self.reset_annotations = None
+        self.configuration = None
+        self.prev_junction_state = None
+        self.junction_location = None
+        self.seconds_waited = 0
+        self.prev_time = None
+        self.max_trigger_distance = None
+        self.waiting_time = None
+        self.inside_junction = False
+
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
 
         new_status = py_trees.common.Status.RUNNING
 
-        # find a suitable target
-        if not self.target_traffic_light:
-            traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
-            if not traffic_light:
+        # 1) Set up the parameters
+        if self.current_step == 1:
+
+            # Traffic light affecting the ego vehicle
+            self.traffic_light = CarlaDataProvider.get_next_traffic_light(self.ego_vehicle, use_cached_location=False)
+            if not self.traffic_light:
                 # nothing else to do in this iteration...
                 return new_status
 
-            base_transform = traffic_light.get_transform()
-            area_loc = carla.Location(base_transform.transform(traffic_light.trigger_volume.location))
-            distance_to_traffic_light = area_loc.distance(self.ego_vehicle.get_location())
+            # "Topology" of the intersection
+            self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.traffic_light)
+
+            # Which traffic light will be modified (apart from the ego lane)
+            self.configuration = self.get_traffic_light_configuration(self.subtype, self.annotations)
+            if self.configuration is None:
+                self.current_step = 0  # End the behavior
+                return new_status
+
+            # Modify the intersection. Store the previous state
+            self.prev_junction_state = self.set_intersection_state(self.INT_CONF_REF1)
+
+            self.current_step += 1
+            if self.debug:
+                print("--- All set up")
+
+        # 2) Modify the ego lane to yellow when closeby
+        elif self.current_step == 2:
+
+            ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+
+            if self.junction_location is None:
+                ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+                junction_waypoint = ego_waypoint.next(0.5)[0]
+                while not junction_waypoint.is_junction:
+                    next_wp = junction_waypoint.next(0.5)[0]
+                    junction_waypoint = next_wp
+                self.junction_location = junction_waypoint.transform.location
+
+            distance = ego_location.distance(self.junction_location)
+
+            # Failure check
+            if self.max_trigger_distance is None:
+                self.max_trigger_distance = distance + 1
+            if distance > self.max_trigger_distance:
+                self.current_step = 0
+
+            elif distance < self.TRIGGER_DISTANCE:
+                _ = self.set_intersection_state(self.INT_CONF_REF2)
+                self.current_step += 1
 
             if self.debug:
-                print("[{}] distance={}".format(traffic_light.id, distance_to_traffic_light))
+                print("--- Distance until traffic light changes: {}".format(distance))
 
-            if distance_to_traffic_light < self.MAX_DISTANCE_TRAFFIC_LIGHT:
-                self.target_traffic_light = traffic_light
-                if self.debug:
-                    print("--- We are going to affect the following intersection")
-                    loc = self.target_traffic_light.get_location()
-                    CarlaDataProvider.get_world().debug.draw_point(loc + carla.Location(z=1.0),
-                                                                   size=0.5, color=carla.Color(255, 255, 0),
-                                                                   life_time=50000)
-                self.annotations = CarlaDataProvider.annotate_trafficlight_in_group(self.target_traffic_light)
-        else:
-            if not self.reset_annotations and self.valid_subtype:
-                # the light has not been manipulated yet
-                configuration = self.get_traffic_light_configuration(self.subtype, self.annotations)
+        # 3) Modify the ego lane to red and the chosen one to green after several seconds
+        elif self.current_step == 3:
 
-                if configuration is None:
-                    # No available config, move to the next step
-                    self.valid_subtype = False
-                    return new_status
+            if self.passed_enough_time(self.YELLOW_TIME):
+                _ = self.set_intersection_state(self.CONFIG_TLM_TRANSLATION[self.configuration][0])
 
-                choice = self.CONFIG_TLM_TRANSLATION[configuration]
+                self.current_step += 1
 
-                self.reset_annotations = CarlaDataProvider.update_light_states(
-                    self.target_traffic_light,
-                    self.annotations,
-                    choice,
-                    freeze=True)
+        # 4) Wait a bit to let vehicles enter the intersection, then set the ego lane to green
+        elif self.current_step == 4:
+
+            # Get the time in red, dependent on the intersection dimensions
+            if self.waiting_time is None:
+                self.waiting_time = self.get_waiting_time(self.annotations, self.configuration)
+
+            if self.passed_enough_time(self.waiting_time):
+                _ = self.set_intersection_state(self.CONFIG_TLM_TRANSLATION[self.configuration][1])
+
+                self.current_step += 1
+
+        # 5) Wait for the end of the intersection
+        elif self.current_step == 5:
+            # the traffic light has been manipulated, wait until the vehicle finsihes the intersection
+            ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
+            ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+
+            if not self.inside_junction:
+                if ego_waypoint.is_junction:
+                    # Wait for the ego_vehicle to enter a junction
+                    self.inside_junction = True
+                else:
+                    if self.debug:
+                        print("--- Waiting to ENTER a junction")
 
             else:
-                # the traffic light has been manipulated, wait until the vehicle finsihes the intersection
-                ego_location = CarlaDataProvider.get_location(self.ego_vehicle)
-                ego_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
-
-                # Wait for the ego_vehicle to enter a junction
-                if not self.inside_junction and ego_waypoint.is_junction:
-                    self.inside_junction = True
-
-                # And to leave it
-                if self.inside_junction and not ego_waypoint.is_junction:
+                if ego_waypoint.is_junction:
                     if self.debug:
-                        print("--- Returning the intersection to its previous state")
+                        print("--- Waiting to EXIT a junction")
+                else:
+                    # And to leave it
                     self.inside_junction = False
+                    self.current_step += 1
 
-                    if self.reset_annotations:
-                        CarlaDataProvider.reset_lights(self.reset_annotations)
-                        self.target_traffic_light = None
-                        self.reset_annotations = None
-                        self.annotations = None
-                    new_status = py_trees.common.Status.SUCCESS
+        # 6) At the end (or if something failed), reset to the previous state
+        else:
+            if self.prev_junction_state:
+                CarlaDataProvider.reset_lights(self.prev_junction_state)
+                if self.debug:
+                    print("--- Returning the intersection to its previous state")
+
+            self.variable_cleanup()
+            new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+    def passed_enough_time(self, time_limit):
+        """
+        Returns true or false depending on the time that has passed from the
+        first time this function was called
+        """
+        # Start the timer
+        if self.prev_time is None:
+            self.prev_time = GameTime.get_time()
+
+        timestamp = GameTime.get_time()
+        self.seconds_waited += (timestamp - self.prev_time)
+        self.prev_time = timestamp
+
+        if self.debug:
+            print("--- Waited seconds: {}".format(self.seconds_waited))
+
+        if self.seconds_waited >= time_limit:
+            self.seconds_waited = 0
+            self.prev_time = None
+
+            return True
+        return False
+
+    def set_intersection_state(self, choice):
+        """
+        Changes the intersection to the desired state
+        """
+        prev_state = CarlaDataProvider.update_light_states(
+            self.traffic_light,
+            self.annotations,
+            choice,
+            freeze=True)
+
+        return prev_state
+
+    def get_waiting_time(self, annotation, direction):
+        """
+        Calculates the time the ego traffic light will remain red
+        to let vehicles enter the junction
+        """
+
+        tl = annotation[direction][0]
+        ego_tl = annotation["ref"][0]
+
+        tl_location = CarlaDataProvider.get_trafficlight_trigger_location(tl)
+        ego_tl_location = CarlaDataProvider.get_trafficlight_trigger_location(ego_tl)
+
+        distance = ego_tl_location.distance(tl_location)
+
+        return self.RED_TIME + distance * self.DIST_TO_WAITING_TIME
 
     def get_traffic_light_configuration(self, subtype, annotations):
         """
@@ -1689,7 +1807,7 @@ class TrafficLightManipulator(AtomicBehavior):
             while possible_configurations:
                 # Chose the first one and delete it
                 configuration = possible_configurations[0]
-                possible_configurations.remove(configuration)
+                possible_configurations = possible_configurations[1:]
                 if configuration in annotations:
                     if annotations[configuration]:
                         # Found a valid configuration
@@ -1698,7 +1816,8 @@ class TrafficLightManipulator(AtomicBehavior):
                         # The traffic light doesn't exist, get another one
                         configuration = None
                 else:
-                    print("Wrong name")
+                    if self.debug:
+                        print("This configuration name is wrong")
                     configuration = None
 
             if configuration is None and self.debug:
@@ -1708,3 +1827,17 @@ class TrafficLightManipulator(AtomicBehavior):
                 print("This subtype is unknown")
 
         return configuration
+
+    def variable_cleanup(self):
+        """
+        Resets all variables to the intial state
+        """
+        self.current_step = 1
+        self.traffic_light = None
+        self.annotations = None
+        self.configuration = None
+        self.prev_junction_state = None
+        self.junction_location = None
+        self.max_trigger_distance = None
+        self.waiting_time = None
+        self.inside_junction = False
