@@ -579,7 +579,7 @@ def main():
     parser.add_argument('--challenge', action="store_true", help='Run in challenge mode')
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
-    parser.add_argument('--timeout', default="2.0",
+    parser.add_argument('--timeout', default="10.0",
                         help='Set the CARLA client timeout value in seconds')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     arguments = parser.parse_args()
