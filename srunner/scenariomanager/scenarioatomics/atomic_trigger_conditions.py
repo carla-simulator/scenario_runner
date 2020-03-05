@@ -819,7 +819,7 @@ class WaitForBlackboardVariable(AtomicCondition):
 
     def __init__(self, variable_name, variable_value=False, debug=False, name="WaitForBlackboardVariable"):
         super(WaitForBlackboardVariable, self).__init__(name)
-        self.debug = True
+        self.debug = debug
         self.variable_name = variable_name
         self.variable_value = variable_value
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))

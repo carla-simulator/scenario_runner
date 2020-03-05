@@ -1922,6 +1922,5 @@ class ScenarioTriggerer(AtomicBehavior):
                         life_time=0.5,
                         color=carla.Color(255, 255, 0)
                     )
-                    print("{} set to True".format(black_var_name))
 
         return new_status
