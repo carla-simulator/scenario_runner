@@ -27,6 +27,8 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData, ActorConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitForBlackboardVariable
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenarios.background_activity import BackgroundActivity
@@ -131,6 +133,38 @@ def compare_scenarios(scenario_choice, existent_scenario):
                 return True
 
     return False
+
+def add_scenario_trigger_condition(behaviour, name, var_name, check_value, repeat_scenarios=True):
+    """
+    Adds a couple of blackboard statement to the scenario to ensure its correct trigger
+    Parameters:
+    - name: String to be dispalyed when debugging
+    - var_name: name of the blackboard variable
+    - check_value: value to be checked. If set to False, this behaviour is ignored,
+      and only the InTriggerDistanceToLocationAlongRoute is used
+    - repeat_scenarios: Decides wether or not finished scenarios are triggered again if passing nearby a second time
+    """
+
+    subtree_root = py_trees.composites.Sequence(name=name)
+    check_flag = WaitForBlackboardVariable(
+        name="Wait for blackboard variable: {} ".format(var_name),
+        variable_name=var_name,
+        variable_value=check_value
+    )
+    if repeat_scenarios:
+        set_value = bool(not check_value)
+    else:
+        set_value = bool(check_value)
+
+    set_flag = py_trees.blackboard.SetBlackboardVariable(
+        name="Reset blackboard variable: {} ".format(var_name),
+        variable_name=var_name,
+        variable_value=set_value
+    )
+
+    subtree_root.add_children([check_flag, behaviour, set_flag])
+
+    return subtree_root
 
 
 class RouteScenario(BasicScenario):
@@ -501,6 +535,7 @@ class RouteScenario(BasicScenario):
         """
         Basic behavior do nothing, i.e. Idle
         """
+        SCENARIO_TRIGGER_DISTANCE = 1.5  # Max trigger distance between route and scenario
 
         behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -509,17 +544,39 @@ class RouteScenario(BasicScenario):
         subbehavior = py_trees.composites.Parallel(name="Behavior",
                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
+        blackboard_list = []  # List mapping the blackboard variable to the scenario location
+        scenario_behaviors = []
+
         for i in range(len(self.list_scenarios)):
             scenario = self.list_scenarios[i]
-            if scenario.scenario.behavior is not None and scenario.scenario.behavior.name != "MasterScenario":
+            if scenario.scenario.behavior is not None \
+                    and scenario.scenario.behavior.name not in ("MasterScenario", "BackgroundActivity"):
                 name = "{} - {}".format(i, scenario.scenario.behavior.name)
-                oneshot_idiom = oneshot_behavior(
+                var_name = "Scenario_route_number_{}".format(i)
+
+                # and makes the scenarios check for it
+                scenario_behavior = add_scenario_trigger_condition(
+                    behaviour=scenario.scenario.behavior,
                     name=name,
-                    variable_name=name,
-                    behaviour=scenario.scenario.behavior)
+                    var_name=var_name,
+                    check_value=True,
+                    repeat_scenarios=True
+                )
+                scenario_location = scenario.reference_waypoint.transform.location
 
-                subbehavior.add_child(oneshot_idiom)
+                scenario_behaviors.append(scenario_behavior)
+                blackboard_list.append([var_name, scenario_location])
 
+        scenario_triggerer = ScenarioTriggerer(
+            self.ego_vehicles[0],
+            self.route,
+            blackboard_list,
+            SCENARIO_TRIGGER_DISTANCE
+        )
+
+        subbehavior.add_child(scenario_triggerer) # make ScenarioTriggerer the first thing to be checked
+        subbehavior.add_children(scenario_behaviors)
+        subbehavior.add_child(Idle()) # The behaviours cannot make the scenario stop
         behavior.add_child(subbehavior)
 
         return behavior
