@@ -62,16 +62,17 @@ class BasicScenario(object):
             criteria = self._create_test_criteria()
 
         # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
-        behavior_seq = py_trees.composites.Sequence()
-        trigger_behavior = self._setup_scenario_trigger(config)
-        if trigger_behavior:
-            behavior_seq.add_child(trigger_behavior)
+        # behavior_seq = py_trees.composites.Sequence()
+        # trigger_behavior = self._setup_scenario_trigger(config)
+        # if trigger_behavior:
+        #     behavior_seq.add_child(trigger_behavior)
 
-        if behavior is not None:
-            behavior_seq.add_child(behavior)
-            behavior_seq.name = behavior.name
+        # if behavior is not None:
+        #     behavior_seq.add_child(behavior)
+        #     behavior_seq.name = behavior.name
 
-        self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
+        # self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
+        self.scenario = Scenario(behavior, criteria, self.name, self.timeout, self.terminate_on_failure)
 
     def _initialize_actors(self, config):
         """
@@ -86,30 +87,30 @@ class BasicScenario(object):
         for new_actor in new_actors:
             self.other_actors.append(new_actor)
 
-    def _setup_scenario_trigger(self, config):
-        """
-        This function creates a trigger maneuver, that has to be finished before the real scenario starts.
-        This implementation focuses on the first available ego vehicle.
+    # def _setup_scenario_trigger(self, config):
+    #     """
+    #     This function creates a trigger maneuver, that has to be finished before the real scenario starts.
+    #     This implementation focuses on the first available ego vehicle.
 
-        The function can be overloaded by a user implementation inside the user-defined scenario class.
-        """
-        start_location = None
-        if config.trigger_points and config.trigger_points[0]:
-            start_location = config.trigger_points[0].location     # start location of the scenario
+    #     The function can be overloaded by a user implementation inside the user-defined scenario class.
+    #     """
+    #     start_location = None
+    #     if config.trigger_points and config.trigger_points[0]:
+    #         start_location = config.trigger_points[0].location     # start location of the scenario
 
-        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+    #     ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
 
-        if start_location:
-            if ego_vehicle_route:
-                return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
-                                                                        ego_vehicle_route,
-                                                                        start_location,
-                                                                        5)
-            return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
-                                                        2.0,
-                                                        start_location)
+    #     if start_location:
+    #         if ego_vehicle_route:
+    #             return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+    #                                                                     ego_vehicle_route,
+    #                                                                     start_location,
+    #                                                                     5)
+    #         return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
+    #                                                     2.0,
+    #                                                     start_location)
 
-        return None
+    #     return None
 
     def _create_behavior(self):
         """
