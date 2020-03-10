@@ -244,7 +244,6 @@ class DynamicObjectCrossing(BasicScenario):
         """
         Custom initialization
         """
-        world = CarlaDataProvider.get_world()
         # cyclist transform
         _start_distance = 12
         # We start by getting and waypoint in the closest sidewalk.
@@ -259,11 +258,6 @@ class DynamicObjectCrossing(BasicScenario):
                 if wp_next.lane_width > 2:
                     _start_distance += 1.5
                     waypoint = wp_next
-                    world.debug.draw_point(waypoint.transform.location+carla.Location(z=3),
-                        size=0.4,
-                        color=carla.Color(0, 0, 0),
-                        life_time=10000
-                    )
                 break
             else:
                 _start_distance += 1.5
