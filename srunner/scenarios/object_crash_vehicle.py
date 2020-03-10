@@ -263,9 +263,6 @@ class DynamicObjectCrossing(BasicScenario):
                 _start_distance += 1.5
                 waypoint = wp_next
 
-        # There are some false-negatives for Parkings, which are considered Shoulders
-        # They can be differentiated because they are adjacent to a Sidewalk and are as wide as a normal lane
-
         while True:  # We keep trying to spawn avoiding props
 
             try:
