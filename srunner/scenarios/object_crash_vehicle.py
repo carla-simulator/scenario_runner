@@ -321,12 +321,14 @@ class DynamicObjectCrossing(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="OccludedObjectCrossing")
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
+
+        dist_to_trigger = 12 + self._num_lane_changes
         # leaf nodes
         if self._ego_route is not None:
             start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
                                                                     self._ego_route,
                                                                     self.transform.location,
-                                                                    15)
+                                                                    dist_to_trigger)
         else:
             start_condition = InTimeToArrivalToVehicle(self.other_actors[0],
                                                        self.ego_vehicles[0],
