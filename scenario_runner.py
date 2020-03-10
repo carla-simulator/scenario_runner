@@ -105,8 +105,8 @@ class ScenarioRunner(object):
         self.client.set_timeout(self.client_timeout)
 
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.7'):
-            raise ImportError("CARLA version 0.9.7 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.8'):
+            raise ImportError("CARLA version 0.9.8 or newer required. CARLA version found: {}".format(dist))
 
         # Load additional scenario definitions, if there are any
         # If something goes wrong an exception will be thrown by importlib (ok here)
