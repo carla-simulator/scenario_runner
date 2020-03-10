@@ -105,8 +105,8 @@ class ScenarioRunner(object):
         self.client.set_timeout(self.client_timeout)
 
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.7'):
-            raise ImportError("CARLA version 0.9.7 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.8'):
+            raise ImportError("CARLA version 0.9.8 or newer required. CARLA version found: {}".format(dist))
 
         # Load additional scenario definitions, if there are any
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -579,7 +579,7 @@ def main():
     parser.add_argument('--challenge', action="store_true", help='Run in challenge mode')
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
-    parser.add_argument('--timeout', default="2.0",
+    parser.add_argument('--timeout', default="10.0",
                         help='Set the CARLA client timeout value in seconds')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
     arguments = parser.parse_args()
