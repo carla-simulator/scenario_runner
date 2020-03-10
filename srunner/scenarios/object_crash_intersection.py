@@ -26,35 +26,29 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                DriveDistance)
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import generate_target_waypoint
+from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
 
-def get_opponent_transform(_start_distance, waypoint, trigger_location):
+def get_opponent_transform(added_dist, waypoint, trigger_location, offset_dist):
     """
     Calculate the transform of the adversary
     """
 
+    world = CarlaDataProvider.get_world()
     offset = {"orientation": 270, "position": 90, "k": 1.0}
-    _wp = waypoint.next(_start_distance)
+    _wp = waypoint.next(added_dist)
     if _wp:
         _wp = _wp[-1]
     else:
         raise RuntimeError("Cannot get next waypoint !")
-
-    if waypoint.lane_type == carla.LaneType.Shoulder:
-        lane_width = 1.75
-    elif waypoint.lane_type == carla.LaneType.Sidewalk:
-        lane_width = 1.75
-    else:
-        lane_width = 3.75
 
     location = _wp.transform.location
     orientation_yaw = _wp.transform.rotation.yaw + offset["orientation"]
     position_yaw = _wp.transform.rotation.yaw + offset["position"]
 
     offset_location = carla.Location(
-        offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
-        offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
+        offset['k'] * offset_dist * math.cos(math.radians(position_yaw)),
+        offset['k'] * offset_dist * math.sin(math.radians(position_yaw)))
     location += offset_location
     location.z = trigger_location.z
     transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
@@ -108,12 +102,16 @@ class VehicleTurningRight(BasicScenario):
         """
 
         waypoint = generate_target_waypoint(self._reference_waypoint, 1)
-        _start_distance = 8
+
+        start_distance = 8
+        waypoint = waypoint.next(start_distance)[0]
+        added_dist = 1
+
         while True:
             wp_next = waypoint.get_right_lane()
             self._num_lane_changes += 1
             if wp_next is not None:
-                _start_distance += 1
+                added_dist += 1
                 waypoint = wp_next
                 if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
                     break
@@ -121,9 +119,20 @@ class VehicleTurningRight(BasicScenario):
             else:
                 break
 
+        # Depending on the lane type, the offsets are different
+        if waypoint.lane_type == carla.LaneType.Sidewalk \
+                or (waypoint.lane_type == carla.LaneType.Shoulder and waypoint.lane_width < 2): # Not Parking lanes
+            offset_dist = 1.75
+        else:
+            self._num_lane_changes += 1
+            added_dist += 1
+            offset_dist = 3.5
+
+
         while True:
             try:
-                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint, self._trigger_location)
+                self._other_actor_transform = get_opponent_transform(added_dist, waypoint,
+                                                                     self._trigger_location, offset_dist)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
@@ -132,7 +141,7 @@ class VehicleTurningRight(BasicScenario):
             except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
                 print("Base transform is blocking objects ", self._other_actor_transform)
-                _start_distance += 0.2
+                added_dist += 0.5
                 self._spawn_attempted += 1
                 if self._spawn_attempted >= self._number_of_attempts:
                     raise r
@@ -160,18 +169,24 @@ class VehicleTurningRight(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionRightTurn")
 
         lane_width = self._reference_waypoint.lane_width
-        lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
+        dist_to_travel = lane_width + (1.10 * lane_width * self._num_lane_changes)
+
+        bycicle_start_dist = 13 + dist_to_travel
 
         if self._ego_route is not None:
-            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
-                                                                     self._other_actor_transform.location, 20)
+            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+                                                                     self._ego_route,
+                                                                     self._other_actor_transform.location,
+                                                                     bycicle_start_dist)
         else:
-            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 20)
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0],
+                                                          self.ego_vehicles[0],
+                                                          bycicle_start_dist)
 
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
+        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * dist_to_travel)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
+        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * dist_to_travel)
         end_condition = TimeOut(5)
 
         # non leaf nodes
@@ -260,21 +275,36 @@ class VehicleTurningLeft(BasicScenario):
         """
 
         waypoint = generate_target_waypoint(self._reference_waypoint, -1)
-        _start_distance = 8
+
+        start_distance = 8
+        waypoint = waypoint.next(start_distance)[0]
+        added_dist = 1
+
         while True:
             wp_next = waypoint.get_right_lane()
             self._num_lane_changes += 1
             if wp_next is not None:
-                _start_distance += 1
+                start_distance += 1
                 waypoint = wp_next
                 if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
                     break
 
             else:
                 break
+
+        # Depending on the lane type, the offsets are different
+        if waypoint.lane_type == carla.LaneType.Sidewalk \
+                or (waypoint.lane_type == carla.LaneType.Shoulder and waypoint.lane_width < 2): # Not Parking lanes
+            offset_dist = 1.75
+        else:
+            self._num_lane_changes += 1
+            added_dist += 1
+            offset_dist = 3.5
+
         while True:
             try:
-                self._other_actor_transform = get_opponent_transform(_start_distance, waypoint, self._trigger_location)
+                self._other_actor_transform = get_opponent_transform(start_distance, waypoint,
+                                                                     self._trigger_location, offset_dist)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
@@ -283,7 +313,7 @@ class VehicleTurningLeft(BasicScenario):
             except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
                 print(" Base transform is blocking objects ", self._other_actor_transform)
-                _start_distance += 0.2
+                start_distance += 0.5
                 self._spawn_attempted += 1
                 if self._spawn_attempted >= self._number_of_attempts:
                     raise r
@@ -310,17 +340,24 @@ class VehicleTurningLeft(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionLeftTurn")
 
         lane_width = self._reference_waypoint.lane_width
-        lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
+        dist_to_travel = lane_width + (1.10 * lane_width * self._num_lane_changes)
+
+        bycicle_start_dist = 13 + dist_to_travel
+
         if self._ego_route is not None:
-            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
-                                                                     self._other_actor_transform.location, 20)
+            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+                                                                     self._ego_route,
+                                                                     self._other_actor_transform.location,
+                                                                     bycicle_start_dist)
         else:
-            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 25)
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0],
+                                                          self.ego_vehicles[0],
+                                                          bycicle_start_dist + 5)
 
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
+        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * dist_to_travel)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
+        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * dist_to_travel)
         end_condition = TimeOut(5)
         # non leaf nodes
         scenario_sequence = py_trees.composites.Sequence()
@@ -417,13 +454,12 @@ class VehicleTurningRoute(BasicScenario):
         Custom initialization
         """
 
-        direction = self.SUBTYPE_INDEX_TRANSLATION[config.subtype]
-        waypoint = generate_target_waypoint(self._reference_waypoint, direction)
+        waypoint = generate_target_waypoint_in_route(self._reference_waypoint, self._ego_route)
 
-        start_distance = 7
+        start_distance = 8
         waypoint = waypoint.next(start_distance)[0]
+        added_dist = 1
 
-        added_dist = 1 # Cannot be 0, as wp.next(0) is None
         while True:
             wp_next = waypoint.get_right_lane()
             self._num_lane_changes += 1
@@ -436,9 +472,19 @@ class VehicleTurningRoute(BasicScenario):
             else:
                 break
 
+        # Depending on the lane type, the offsets are different
+        if waypoint.lane_type == carla.LaneType.Sidewalk \
+                or (waypoint.lane_type == carla.LaneType.Shoulder and waypoint.lane_width < 2): # Not Parking lanes
+            offset_dist = 1.75
+        else:
+            self._num_lane_changes += 1
+            added_dist += 1
+            offset_dist = 3.5
+
         while True:
             try:
-                self._other_actor_transform = get_opponent_transform(added_dist, waypoint, self._trigger_location)
+                self._other_actor_transform = get_opponent_transform(added_dist, waypoint,
+                                                                     self._trigger_location, offset_dist)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
@@ -446,7 +492,7 @@ class VehicleTurningRoute(BasicScenario):
                 break
             except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
-                print("Base transform is blocking objects ", self._other_actor_transform)
+                print(" Base transform is blocking objects ", self._other_actor_transform)
                 added_dist += 0.5
                 self._spawn_attempted += 1
                 if self._spawn_attempted >= self._number_of_attempts:
@@ -471,23 +517,35 @@ class VehicleTurningRoute(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
+        world=CarlaDataProvider.get_world()
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionRightTurn")
 
         lane_width = self._reference_waypoint.lane_width
-        lane_width = lane_width + (1.10 * lane_width * self._num_lane_changes)
+        dist_to_travel = lane_width + (1.10 * lane_width * self._num_lane_changes)
+        world.debug.draw_string(self._reference_waypoint.transform.location + carla.Location(z=2),
+            str(dist_to_travel),
+            False,
+            color=carla.Color(0, 0, 0),
+            life_time=10000
+        )
+        bycicle_start_dist = 13 + dist_to_travel
 
         if self._ego_route is not None:
-            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0], self._ego_route,
-                                                                     self._other_actor_transform.location, 20)
+            trigger_distance = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+                                                                     self._ego_route,
+                                                                     self._other_actor_transform.location,
+                                                                     bycicle_start_dist)
         else:
-            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0], self.ego_vehicles[0], 20)
+            trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0],
+                                                          self.ego_vehicles[0],
+                                                          bycicle_start_dist)
 
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * lane_width)
+        actor_traverse = DriveDistance(self.other_actors[0], 0.30 * dist_to_travel)
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
-        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * lane_width)
+        post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * dist_to_travel)
         end_condition = TimeOut(5)
 
         # non leaf nodes
