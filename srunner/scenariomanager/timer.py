@@ -71,11 +71,11 @@ class SimulationTimeCondition(py_trees.behaviour.Behaviour):
     It uses the CARLA game time, not the system time which is used by
     the py_trees timer.
 
-    Returns, if the provided success_rule (greater_than, less_than, equal_to)
+    Returns, if the provided success_rule (greaterThan, lessThan, equalTo)
     was successfully evaluated
     """
 
-    def __init__(self, timeout, success_rule="greater_than", name="SimulationTimeCondition"):
+    def __init__(self, timeout, success_rule="greaterThan", name="SimulationTimeCondition"):
         """
         Setup timeout
         """
@@ -84,9 +84,9 @@ class SimulationTimeCondition(py_trees.behaviour.Behaviour):
         self._timeout_value = timeout
         self._start_time = 0.0
         self._success_rule = success_rule
-        self._ops = {"greater_than": (lambda x, y: x > y),
-                     "equal_to": (lambda x, y: x == y),
-                     "less_than": (lambda x, y: x < y)}
+        self._ops = {"greaterThan": (lambda x, y: x > y),
+                     "equalTo": (lambda x, y: x == y),
+                     "lessThan": (lambda x, y: x < y)}
 
     def initialise(self):
         """
