@@ -350,8 +350,8 @@ def generate_target_waypoint_in_route(waypoint, route):
 
     # Get the route location
     shortest_distance = float('inf')
-    for index in range(len(route)):
-        wp = route[index][0]
+    for index, route_pos in enumerate(route):
+        wp = route_pos[0]
         trigger_location = waypoint.transform.location
 
         distance = math.sqrt(((trigger_location.x - wp.x) ** 2) + ((trigger_location.y - wp.y) ** 2))

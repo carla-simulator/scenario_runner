@@ -80,6 +80,7 @@ def get_right_driving_lane(waypoint):
 
     return waypoint, lane_changes
 
+
 def is_lane_a_parking(waypoint):
     """
     This function filters false negative Shoulder which are in reality Parking lanes.
