@@ -18,6 +18,49 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 from srunner.scenariomanager.scenario_manager import Scenario
 
 
+def add_scenario_trigger_condition(var_name, check_value, repeat_scenarios=False):
+    """
+    Adds a trigger condition to the scenarios. This is done via a blackboard statement.
+
+    Parameters:
+    - var_name: name of the blackboard variable
+    - check_value: value of the blackboard variable to be checked
+    """
+    wait_for_value = check_value
+    init_value = not check_value
+
+    if repeat_scenarios:
+        check_name = "Scenario ready"
+    else:
+        check_name = "Scenario ready and not done before"
+
+    check_flag = conditions.WaitForBlackboardVariable(
+        name=check_name,
+        variable_name=var_name,
+        variable_value=wait_for_value,
+        var_init_value=init_value
+    )
+
+    return check_flag
+
+def add_scenario_end_condition(var_name, check_value):
+    """
+    Adds an end condition to the scenarios.
+
+    Parameters:
+    - var_name: name of the blackboard variable
+    - check_value: value of the blackboard variable to be checked
+    """
+    set_value = not check_value
+    set_flag = py_trees.blackboard.SetBlackboardVariable(
+        name="Reset blackboard variable: {} ".format(var_name),
+        variable_name=var_name,
+        variable_value=set_value
+    )
+
+    return set_flag
+
+
 class BasicScenario(object):
 
     """
@@ -71,6 +114,10 @@ class BasicScenario(object):
             behavior_seq.add_child(behavior)
             behavior_seq.name = behavior.name
 
+        end_behavior = self._setup_scenario_end(config)
+        if end_behavior:
+            behavior_seq.add_child(end_behavior)
+
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
 
     def _initialize_actors(self, config):
@@ -101,13 +148,35 @@ class BasicScenario(object):
 
         if start_location:
             if ego_vehicle_route:
-                return None
+                if config.route_var_name is None:
+                    return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+                                                                            ego_vehicle_route,
+                                                                            start_location,
+                                                                            5)
+                else:
+                    return add_scenario_trigger_condition(config.route_var_name, True)
 
             return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
                                                         2.0,
                                                         start_location)
 
         return None
+
+    def _setup_scenario_end(self, config):
+        """
+        This function creates a trigger maneuver, that has to be finished before the real scenario starts.
+        This implementation focuses on the first available ego vehicle.
+
+        The function can be overloaded by a user implementation inside the user-defined scenario class.
+        """
+        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+
+        if ego_vehicle_route:
+            if config.route_var_name is not None:
+                return add_scenario_end_condition(var_name=config.route_var_name, check_value=True)
+
+        return None
+
 
     def _create_behavior(self):
         """

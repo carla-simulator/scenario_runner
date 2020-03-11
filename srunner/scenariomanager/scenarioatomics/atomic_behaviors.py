@@ -1854,19 +1854,22 @@ class ScenarioTriggerer(AtomicBehavior):
 
     WINDOWS_SIZE = 5
 
-    def __init__(self, actor, route, blackboard_list, distance, debug=False, name="ScenarioTriggerer"):
+    def __init__(self, actor, route, blackboard_list, distance,
+                 repeat_scenarios=False, debug=False, name="ScenarioTriggerer"):
         """
         Setup class members
         """
         super(ScenarioTriggerer, self).__init__(name)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
+        self._repeat = repeat_scenarios
         self._debug = debug
 
         self._actor = actor
         self._route = route
         self._distance = distance
         self._blackboard_list = blackboard_list
+        self._triggered_scenarios = [] # List of already done scenarios
 
         self._current_index = 0
         self._route_length = len(self._route)
@@ -1906,9 +1909,20 @@ class ScenarioTriggerer(AtomicBehavior):
         blackboard = py_trees.blackboard.Blackboard()
         for black_var_name, scen_location in self._blackboard_list:
 
+            # Close enough
+            scen_distance = route_location.distance(scen_location)
+            condition1 = bool(scen_distance < self._distance)
+
+            # Not being currently done
             value = blackboard.get(black_var_name)
-            if not value and route_location.distance(scen_location) < self._distance:
+            condition2 = bool(not value)
+
+            # Already done, if needed
+            condition3 = bool(self._repeat or black_var_name not in self._triggered_scenarios)
+
+            if condition1 and condition2 and condition3:
                 _ = blackboard.set(black_var_name, True)
+                self._triggered_scenarios.append(black_var_name)
 
                 if self._debug:
                     self._world.debug.draw_point(

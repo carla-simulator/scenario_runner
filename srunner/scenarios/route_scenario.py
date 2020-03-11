@@ -135,31 +135,6 @@ def compare_scenarios(scenario_choice, existent_scenario):
     return False
 
 
-def add_scenario_trigger_condition(behaviour, name, var_name, check_value):
-    """
-    Adds a trigger condition to the scenarios. This is done via a blackboard statement.
-
-    Parameters:
-    - name: String to be displayed when debugging
-    - var_name: name of the blackboard variable
-    - check_value: value of the blackboard variable to be checked
-    """
-    wait_for_value = check_value
-    init_value = bool(not check_value)
-
-    subtree_root = py_trees.composites.Sequence(name=name)
-    check_flag = WaitForBlackboardVariable(
-        name="WaitForBlackboardVariable: {} ".format(var_name),
-        variable_name=var_name,
-        variable_value=wait_for_value,
-        var_init_value=init_value
-    )
-
-    subtree_root.add_children([check_flag, behaviour])
-
-    return subtree_root
-
-
 class RouteScenario(BasicScenario):
 
     """
@@ -175,6 +150,7 @@ class RouteScenario(BasicScenario):
         self.route = None
         self.target = None
         self.sampled_scenarios_definitions = None
+        self.blackboard_list = [] # List mapping the blackboard variable to the scenario location
 
         self._update_route(world, config, debug_mode)
 
@@ -404,9 +380,9 @@ class RouteScenario(BasicScenario):
         elif town_name == 'Town06' or town_name == 'Town07':
             amount = 150
         elif town_name == 'Town08':
-            amount = 180
+            amount = 18
         elif town_name == 'Town09':
-            amount = 350
+            amount = 35
         else:
             amount = 1
 
@@ -444,8 +420,7 @@ class RouteScenario(BasicScenario):
                 world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
                                         color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
 
-        scenario_number = 1
-        for definition in scenario_definitions:
+        for scenario_number, definition in enumerate(scenario_definitions):
             # Get the class possibilities for this scenario number
             scenario_class = NUMBER_CLASS_TRANSLATION[definition['name']]
 
@@ -465,6 +440,9 @@ class RouteScenario(BasicScenario):
             scenario_configuration.ego_vehicles = [ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                           ego_vehicle.get_transform(),
                                                                           'hero')]
+            route_var_name = "ScenarioRouteNumber{}".format(scenario_number + 1)
+            scenario_configuration.route_var_name = route_var_name
+
             try:
                 scenario_instance = scenario_class(world, [ego_vehicle], scenario_configuration,
                                                    criteria_enable=False, timeout=timeout)
@@ -475,6 +453,8 @@ class RouteScenario(BasicScenario):
                         CarlaDataProvider.perform_carla_tick()
                     else:
                         world.wait_for_tick()
+
+                self.blackboard_list.append([route_var_name, egoactor_trigger_position.location])
 
                 scenario_number += 1
             except Exception as e:      # pylint: disable=broad-except
@@ -537,42 +517,22 @@ class RouteScenario(BasicScenario):
         subbehavior = py_trees.composites.Parallel(name="Behavior",
                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
-        blackboard_list = []  # List mapping the blackboard variable to the scenario location
+        # blackboard_list = []  # List mapping the blackboard variable to the scenario location
         scenario_behaviors = []
 
         for i in range(len(self.list_scenarios)):
             scenario = self.list_scenarios[i]
             if scenario.scenario.behavior is not None \
-                    and scenario.scenario.behavior.name not in ("MasterScenario", "BackgroundActivity"):
+                    and scenario.scenario.behavior.name != "MasterScenario":
+                scenario_behaviors.append(scenario.scenario.behavior)
 
-                # Add trigger for the scenarios (Part 1/2)
-                trigger_var_name = "Scenario_route_number_{}".format(i)
-
-                scenario_behavior = add_scenario_trigger_condition(
-                    behaviour=scenario.scenario.behavior,
-                    name=scenario.scenario.behavior.name,
-                    var_name=trigger_var_name,
-                    check_value=True,
-                )
-
-                # And oneshot behavior
-                oneshot_name = "{} - {}".format(i, scenario.scenario.behavior.name)
-                oneshot_idiom = oneshot_behavior(
-                    name=oneshot_name,
-                    variable_name=oneshot_name,
-                    behaviour=scenario_behavior)
-
-                # Save the scenarios to a list
-                scenario_behaviors.append(oneshot_idiom)
-                scenario_location = scenario.reference_waypoint.transform.location
-                blackboard_list.append([trigger_var_name, scenario_location])
-
-        # Add trigger for the scenarios (Part 2/2)
+        # Add behavior that manages the scenarios trigger conditions
         scenario_triggerer = ScenarioTriggerer(
             self.ego_vehicles[0],
             self.route,
-            blackboard_list,
-            scenario_trigger_distance
+            self.blackboard_list,
+            scenario_trigger_distance,
+            repeat_scenarios=False
         )
 
         subbehavior.add_child(scenario_triggerer)  # make ScenarioTriggerer the first thing to be checked
