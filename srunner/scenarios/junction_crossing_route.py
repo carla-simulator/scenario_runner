@@ -47,8 +47,6 @@ class SignalJunctionCrossingRoute(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
         self.subtype = config.subtype
-        self._wmap = CarlaDataProvider.get_map()
-        self.reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
 
         super(SignalJunctionCrossingRoute, self).__init__("SignalJunctionCrossingRoute",
                                                           ego_vehicles,
@@ -139,8 +137,6 @@ class NoSignalJunctionCrossingRoute(BasicScenario):
         """
         # Timeout of scenario in seconds
         self.timeout = timeout
-        self._wmap = CarlaDataProvider.get_map()
-        self.reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
 
         super(NoSignalJunctionCrossingRoute, self).__init__("NoSignalJunctionCrossingRoute",
                                                             ego_vehicles,

@@ -18,7 +18,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 from srunner.scenariomanager.scenario_manager import Scenario
 
 
-def add_scenario_trigger_condition(var_name, check_value, repeat_scenarios=False):
+def add_route_scenario_trigger_condition(var_name, check_value, repeat_scenarios=False):
     """
     Adds a trigger condition to the scenarios. This is done via a blackboard statement.
 
@@ -43,7 +43,7 @@ def add_scenario_trigger_condition(var_name, check_value, repeat_scenarios=False
 
     return check_flag
 
-def add_scenario_end_condition(var_name, check_value):
+def add_route_scenario_end_condition(var_name, check_value):
     """
     Adds an end condition to the scenarios.
 
@@ -154,7 +154,7 @@ class BasicScenario(object):
                                                                             start_location,
                                                                             5)
                 else:
-                    return add_scenario_trigger_condition(config.route_var_name, True)
+                    return add_route_scenario_trigger_condition(config.route_var_name, True)
 
             return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
                                                         2.0,
@@ -173,7 +173,7 @@ class BasicScenario(object):
 
         if ego_vehicle_route:
             if config.route_var_name is not None:
-                return add_scenario_end_condition(var_name=config.route_var_name, check_value=True)
+                return add_route_scenario_end_condition(var_name=config.route_var_name, check_value=True)
 
         return None
 
