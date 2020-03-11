@@ -814,25 +814,32 @@ class WaitForBlackboardVariable(AtomicCondition):
 
     """
     Atomic behavior that keeps running until the blackboard variable is set to the corresponding value.
-    Used to avoid returning FAILURE if the blackboard comparison fails
+    Used to avoid returning FAILURE if the blackboard comparison fails.
+
+    It also initially sets the variable to a given value, if given
     """
 
-    def __init__(self, variable_name, variable_value=False, debug=False, name="WaitForBlackboardVariable"):
+    def __init__(self, variable_name, variable_value, var_init_value=None,
+                 debug=False, name="WaitForBlackboardVariable"):
         super(WaitForBlackboardVariable, self).__init__(name)
-        self.debug = debug
-        self.variable_name = variable_name
-        self.variable_value = variable_value
+        self._debug = debug
+        self._variable_name = variable_name
+        self._variable_value = variable_value
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        if var_init_value is not None:
+            blackboard = py_trees.blackboard.Blackboard()
+            _ = blackboard.set(variable_name, var_init_value)
 
     def update(self):
 
         new_status = py_trees.common.Status.RUNNING
 
         blackv = py_trees.blackboard.Blackboard()
-        value = blackv.get(self.variable_name)
-        if value == self.variable_value:
-            if self.debug:
-                print("Blackboard variable {} set to True".format(self.variable_name))
+        value = blackv.get(self._variable_name)
+        if value == self._variable_value:
+            if self._debug:
+                print("Blackboard variable {} set to True".format(self._variable_name))
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status

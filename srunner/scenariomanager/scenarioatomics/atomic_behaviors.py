@@ -1846,7 +1846,10 @@ class TrafficLightManipulator(AtomicBehavior):
 class ScenarioTriggerer(AtomicBehavior):
 
     """
-    Creates
+    Handles the triggering of the scenarios that are part of a route.
+
+    Initializes a list of blackboard variables to False, and only sets them to True when
+    the ego vehicle is very close to the scenarios
     """
 
     WINDOWS_SIZE = 5
@@ -1858,7 +1861,7 @@ class ScenarioTriggerer(AtomicBehavior):
         super(ScenarioTriggerer, self).__init__(name)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
-        self.debug = debug
+        self._debug = True
 
         self._actor = actor
         self._route = route
@@ -1869,16 +1872,8 @@ class ScenarioTriggerer(AtomicBehavior):
         self._route_length = len(self._route)
         self._waypoints, _ = zip(*self._route)
 
-        # Create all the black board varaibles and set them to false
-        for black_var_name, _ in self._blackboard_list:
-            # Initializes the blackboard variable
-            blackv = py_trees.blackboard.Blackboard()
-            _ = blackv.set(black_var_name, False)
-
-
     def update(self):
         new_status = py_trees.common.Status.RUNNING
-
 
         location = CarlaDataProvider.get_location(self._actor)
         if location is None:
@@ -1894,10 +1889,10 @@ class ScenarioTriggerer(AtomicBehavior):
             ref_waypoint = self._waypoints[index]
             ref_location = ref_waypoint.location
 
-            distance = math.sqrt(((location.x - ref_location.x) ** 2) + ((location.y - ref_location.y) ** 2))
-            if distance <= shortest_distance:
+            dist_to_route = ref_location.distance(location)
+            if dist_to_route <= shortest_distance:
                 closest_index = index
-                shortest_distance = distance
+                shortest_distance = dist_to_route
 
         if closest_index == -1 or shortest_distance == float('inf'):
             return new_status
@@ -1915,12 +1910,19 @@ class ScenarioTriggerer(AtomicBehavior):
             if not value and route_location.distance(scen_location) < self._distance:
                 _ = blackboard.set(black_var_name, True)
 
-                if self.debug:
+                if self._debug:
                     self._world.debug.draw_point(
                         scen_location + carla.Location(z=4),
                         size=0.5,
                         life_time=0.5,
                         color=carla.Color(255, 255, 0)
+                    )
+                    self._world.debug.draw_string(
+                        scen_location + carla.Location(z=5),
+                        str(black_var_name),
+                        False,
+                        color=carla.Color(0, 0, 0),
+                        life_time=1000
                     )
 
         return new_status

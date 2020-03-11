@@ -134,35 +134,27 @@ def compare_scenarios(scenario_choice, existent_scenario):
 
     return False
 
-def add_scenario_trigger_condition(behaviour, name, var_name, check_value, repeat_scenarios=True):
+def add_scenario_trigger_condition(behaviour, name, var_name, check_value):
     """
-    Adds a couple of blackboard statement to the scenario to ensure its correct trigger
+    Adds a trigger condition to the scenarios. This is done via a blackboard statement.
+
     Parameters:
-    - name: String to be dispalyed when debugging
+    - name: String to be displayed when debugging
     - var_name: name of the blackboard variable
-    - check_value: value to be checked. If set to False, this behaviour is ignored,
-      and only the InTriggerDistanceToLocationAlongRoute is used
-    - repeat_scenarios: Decides wether or not finished scenarios are triggered again if passing nearby a second time
+    - check_value: value of the blackboard variable to be checked
     """
+    wait_for_value = check_value
+    init_value = bool(not check_value)
 
     subtree_root = py_trees.composites.Sequence(name=name)
     check_flag = WaitForBlackboardVariable(
-        name="Wait for blackboard variable: {} ".format(var_name),
+        name="WaitForBlackboardVariable: {} ".format(var_name),
         variable_name=var_name,
-        variable_value=check_value
-    )
-    if repeat_scenarios:
-        set_value = bool(not check_value)
-    else:
-        set_value = bool(check_value)
-
-    set_flag = py_trees.blackboard.SetBlackboardVariable(
-        name="Reset blackboard variable: {} ".format(var_name),
-        variable_name=var_name,
-        variable_value=set_value
+        variable_value=wait_for_value,
+        var_init_value=init_value
     )
 
-    subtree_root.add_children([check_flag, behaviour, set_flag])
+    subtree_root.add_children([check_flag, behaviour])
 
     return subtree_root
 
@@ -551,22 +543,30 @@ class RouteScenario(BasicScenario):
             scenario = self.list_scenarios[i]
             if scenario.scenario.behavior is not None \
                     and scenario.scenario.behavior.name not in ("MasterScenario", "BackgroundActivity"):
-                name = "{} - {}".format(i, scenario.scenario.behavior.name)
-                var_name = "Scenario_route_number_{}".format(i)
 
-                # and makes the scenarios check for it
+                # Add trigger for the scenarios (Part 1/2)
+                trigger_var_name = "Scenario_route_number_{}".format(i)
+
                 scenario_behavior = add_scenario_trigger_condition(
                     behaviour=scenario.scenario.behavior,
-                    name=name,
-                    var_name=var_name,
+                    name=scenario.scenario.behavior.name,
+                    var_name=trigger_var_name,
                     check_value=True,
-                    repeat_scenarios=True
                 )
+
+                # And oneshot behavior
+                oneshot_name = "{} - {}".format(i, scenario.scenario.behavior.name)
+                oneshot_idiom = oneshot_behavior(
+                    name=oneshot_name,
+                    variable_name=oneshot_name,
+                    behaviour=scenario_behavior)
+
+                # Save the scenarios to a list
+                scenario_behaviors.append(oneshot_idiom)
                 scenario_location = scenario.reference_waypoint.transform.location
+                blackboard_list.append([trigger_var_name, scenario_location])
 
-                scenario_behaviors.append(scenario_behavior)
-                blackboard_list.append([var_name, scenario_location])
-
+        # Add trigger for the scenarios (Part 2/2)
         scenario_triggerer = ScenarioTriggerer(
             self.ego_vehicles[0],
             self.route,
@@ -576,7 +576,7 @@ class RouteScenario(BasicScenario):
 
         subbehavior.add_child(scenario_triggerer) # make ScenarioTriggerer the first thing to be checked
         subbehavior.add_children(scenario_behaviors)
-        subbehavior.add_child(Idle()) # The behaviours cannot make the scenario stop
+        subbehavior.add_child(Idle()) # The behaviours cannot make the route scenario stop
         behavior.add_child(subbehavior)
 
         return behavior
