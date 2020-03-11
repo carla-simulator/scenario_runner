@@ -1861,7 +1861,7 @@ class ScenarioTriggerer(AtomicBehavior):
         super(ScenarioTriggerer, self).__init__(name)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
-        self._debug = True
+        self._debug = debug
 
         self._actor = actor
         self._route = route
