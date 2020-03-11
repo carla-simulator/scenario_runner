@@ -9,7 +9,9 @@
 ## Latest Changes
 ### :rocket: New Features
 * OpenSCENARIO support:
-    - Added support for position with Lane information  (roadId and laneId)
+    - Support for OpenSCENARIO 1.0 (a converter for old scenarios is available)
+    - Added support for position with Lane information (roadId and laneId)
+    - Added support to use a non-CARLA OpenDRIVE map (instead of CARLA towns)
     - Added support for TimeOfDay tag
 * Scenario updates:
     - Scenarios that are part of RouteScenario have had their triggering condition modified. This will only activate when a certain parameter is set, and if not, the old trigger condition will still be applied.
