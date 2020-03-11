@@ -28,7 +28,6 @@ from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitForBlackboardVariable
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenarios.background_activity import BackgroundActivity
