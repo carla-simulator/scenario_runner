@@ -29,12 +29,12 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
 
-def get_opponent_transform(added_dist, waypoint, trigger_location, offset_dist):
+def get_opponent_transform(added_dist, waypoint, trigger_location):
     """
     Calculate the transform of the adversary
     """
+    lane_width = waypoint.lane_width
 
-    world = CarlaDataProvider.get_world()
     offset = {"orientation": 270, "position": 90, "k": 1.0}
     _wp = waypoint.next(added_dist)
     if _wp:
@@ -47,13 +47,59 @@ def get_opponent_transform(added_dist, waypoint, trigger_location, offset_dist):
     position_yaw = _wp.transform.rotation.yaw + offset["position"]
 
     offset_location = carla.Location(
-        offset['k'] * offset_dist * math.cos(math.radians(position_yaw)),
-        offset['k'] * offset_dist * math.sin(math.radians(position_yaw)))
+        offset['k'] * lane_width * math.cos(math.radians(position_yaw)),
+        offset['k'] * lane_width * math.sin(math.radians(position_yaw)))
     location += offset_location
     location.z = trigger_location.z
     transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
 
     return transform
+
+
+def get_right_driving_lane(waypoint):
+    """
+    Gets the driving / parking lane that is most to the right of the waypoint
+    as well as the number of lane changes done
+    """
+    lane_changes = 0
+
+    while True:
+        wp_next = waypoint.get_right_lane()
+        lane_changes += 1
+
+        if wp_next is None or wp_next.lane_type == carla.LaneType.Sidewalk:
+            break
+        elif wp_next.lane_type == carla.LaneType.Shoulder:
+            # Filter Parkings considered as Shoulders
+            if is_lane_a_parking(wp_next):
+                lane_changes += 1
+                waypoint = wp_next
+            break
+        else:
+            waypoint = wp_next
+
+    return waypoint, lane_changes
+
+def is_lane_a_parking(waypoint):
+    """
+    This function filters false negative Shoulder which are in reality Parking lanes.
+    These are differentiated from the others because, similar to the driving lanes,
+    they have, on the right, a small Shoulder followed by a Sidewalk.
+    """
+
+    # Parking are wide lanes
+    if waypoint.lane_width > 2:
+        wp_next = waypoint.get_right_lane()
+
+        # That are next to a mini-Shoulder
+        if wp_next is not None and wp_next.lane_type == carla.LaneType.Shoulder:
+            wp_next_next = wp_next.get_right_lane()
+
+            # Followed by a Sidewalk
+            if wp_next_next is not None and wp_next_next.lane_type == carla.LaneType.Sidewalk:
+                return True
+
+    return False
 
 
 class VehicleTurningRight(BasicScenario):
@@ -101,50 +147,37 @@ class VehicleTurningRight(BasicScenario):
         Custom initialization
         """
 
+        # Get the waypoint right after the junction
         waypoint = generate_target_waypoint(self._reference_waypoint, 1)
 
+        # Move a certain distance to the front
         start_distance = 8
         waypoint = waypoint.next(start_distance)[0]
-        added_dist = 1
+
+        # Get the last driving lane to the right
+        waypoint, self._num_lane_changes = get_right_driving_lane(waypoint)
+        # And for synchrony purposes, move to the front a bit
+        added_dist = self._num_lane_changes
 
         while True:
-            wp_next = waypoint.get_right_lane()
-            self._num_lane_changes += 1
-            if wp_next is not None:
-                added_dist += 1
-                waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
-                    break
 
-            else:
-                break
-
-        # Depending on the lane type, the offsets are different
-        if waypoint.lane_type == carla.LaneType.Sidewalk \
-                or (waypoint.lane_type == carla.LaneType.Shoulder and waypoint.lane_width < 2): # Not Parking lanes
-            offset_dist = 1.75
-        else:
-            self._num_lane_changes += 1
-            added_dist += 1
-            offset_dist = 3.5
-
-
-        while True:
+            # Try to spawn the actor
             try:
-                self._other_actor_transform = get_opponent_transform(added_dist, waypoint,
-                                                                     self._trigger_location, offset_dist)
+                self._other_actor_transform = get_opponent_transform(added_dist, waypoint, self._trigger_location)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
-
                 break
+
+            # Move the spawning point a bit and try again
             except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
-                print("Base transform is blocking objects ", self._other_actor_transform)
+                print(" Base transform is blocking objects ", self._other_actor_transform)
                 added_dist += 0.5
                 self._spawn_attempted += 1
                 if self._spawn_attempted >= self._number_of_attempts:
                     raise r
+
         # Set the transform to -500 z after we are able to spawn it
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
@@ -274,50 +307,38 @@ class VehicleTurningLeft(BasicScenario):
         Custom initialization
         """
 
+        # Get the waypoint right after the junction
         waypoint = generate_target_waypoint(self._reference_waypoint, -1)
 
+        # Move a certain distance to the front
         start_distance = 8
         waypoint = waypoint.next(start_distance)[0]
-        added_dist = 1
+
+        # Get the last driving lane to the right
+        waypoint, self._num_lane_changes = get_right_driving_lane(waypoint)
+        # And for synchrony purposes, move to the front a bit
+        added_dist = self._num_lane_changes
 
         while True:
-            wp_next = waypoint.get_right_lane()
-            self._num_lane_changes += 1
-            if wp_next is not None:
-                start_distance += 1
-                waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
-                    break
 
-            else:
-                break
-
-        # Depending on the lane type, the offsets are different
-        if waypoint.lane_type == carla.LaneType.Sidewalk \
-                or (waypoint.lane_type == carla.LaneType.Shoulder and waypoint.lane_width < 2): # Not Parking lanes
-            offset_dist = 1.75
-        else:
-            self._num_lane_changes += 1
-            added_dist += 1
-            offset_dist = 3.5
-
-        while True:
+            # Try to spawn the actor
             try:
-                self._other_actor_transform = get_opponent_transform(start_distance, waypoint,
-                                                                     self._trigger_location, offset_dist)
+                self._other_actor_transform = get_opponent_transform(added_dist, waypoint, self._trigger_location)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
-
                 break
+
+            # Move the spawning point a bit and try again
             except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
                 print(" Base transform is blocking objects ", self._other_actor_transform)
-                start_distance += 0.5
+                added_dist += 0.5
                 self._spawn_attempted += 1
                 if self._spawn_attempted >= self._number_of_attempts:
                     raise r
-            # Set the transform to -500 z after we are able to spawn it
+
+        # Set the transform to -500 z after we are able to spawn it
         actor_transform = carla.Transform(
             carla.Location(self._other_actor_transform.location.x,
                            self._other_actor_transform.location.y,
@@ -352,7 +373,7 @@ class VehicleTurningLeft(BasicScenario):
         else:
             trigger_distance = InTriggerDistanceToVehicle(self.other_actors[0],
                                                           self.ego_vehicles[0],
-                                                          bycicle_start_dist + 5)
+                                                          bycicle_start_dist)
 
         actor_velocity = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         actor_traverse = DriveDistance(self.other_actors[0], 0.30 * dist_to_travel)
@@ -416,11 +437,6 @@ class VehicleTurningRoute(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    SUBTYPE_INDEX_TRANSLATION = {
-        "S4left": -1,
-        "S4right": 1
-    }
-
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
@@ -454,42 +470,29 @@ class VehicleTurningRoute(BasicScenario):
         Custom initialization
         """
 
+        # Get the waypoint right after the junction
         waypoint = generate_target_waypoint_in_route(self._reference_waypoint, self._ego_route)
 
+        # Move a certain distance to the front
         start_distance = 8
         waypoint = waypoint.next(start_distance)[0]
-        added_dist = 1
+
+        # Get the last driving lane to the right
+        waypoint, self._num_lane_changes = get_right_driving_lane(waypoint)
+        # And for synchrony purposes, move to the front a bit
+        added_dist = self._num_lane_changes
 
         while True:
-            wp_next = waypoint.get_right_lane()
-            self._num_lane_changes += 1
-            if wp_next is not None:
-                added_dist += 1
-                waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Shoulder or waypoint.lane_type == carla.LaneType.Sidewalk:
-                    break
 
-            else:
-                break
-
-        # Depending on the lane type, the offsets are different
-        if waypoint.lane_type == carla.LaneType.Sidewalk \
-                or (waypoint.lane_type == carla.LaneType.Shoulder and waypoint.lane_width < 2): # Not Parking lanes
-            offset_dist = 1.75
-        else:
-            self._num_lane_changes += 1
-            added_dist += 1
-            offset_dist = 3.5
-
-        while True:
+            # Try to spawn the actor
             try:
-                self._other_actor_transform = get_opponent_transform(added_dist, waypoint,
-                                                                     self._trigger_location, offset_dist)
+                self._other_actor_transform = get_opponent_transform(added_dist, waypoint, self._trigger_location)
                 first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
-
                 break
+
+            # Move the spawning point a bit and try again
             except RuntimeError as r:
                 # In the case there is an object just move a little bit and retry
                 print(" Base transform is blocking objects ", self._other_actor_transform)
@@ -517,19 +520,12 @@ class VehicleTurningRoute(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
-        world=CarlaDataProvider.get_world()
 
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionRightTurn")
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionTurn")
 
         lane_width = self._reference_waypoint.lane_width
         dist_to_travel = lane_width + (1.10 * lane_width * self._num_lane_changes)
-        world.debug.draw_string(self._reference_waypoint.transform.location + carla.Location(z=2),
-            str(dist_to_travel),
-            False,
-            color=carla.Color(0, 0, 0),
-            life_time=10000
-        )
         bycicle_start_dist = 13 + dist_to_travel
 
         if self._ego_route is not None:
