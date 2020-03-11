@@ -134,6 +134,7 @@ def compare_scenarios(scenario_choice, existent_scenario):
 
     return False
 
+
 def add_scenario_trigger_condition(behaviour, name, var_name, check_value):
     """
     Adds a trigger condition to the scenarios. This is done via a blackboard statement.
@@ -527,7 +528,7 @@ class RouteScenario(BasicScenario):
         """
         Basic behavior do nothing, i.e. Idle
         """
-        SCENARIO_TRIGGER_DISTANCE = 1.5  # Max trigger distance between route and scenario
+        scenario_trigger_distance = 1.5  # Max trigger distance between route and scenario
 
         behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -571,12 +572,12 @@ class RouteScenario(BasicScenario):
             self.ego_vehicles[0],
             self.route,
             blackboard_list,
-            SCENARIO_TRIGGER_DISTANCE
+            scenario_trigger_distance
         )
 
-        subbehavior.add_child(scenario_triggerer) # make ScenarioTriggerer the first thing to be checked
+        subbehavior.add_child(scenario_triggerer)  # make ScenarioTriggerer the first thing to be checked
         subbehavior.add_children(scenario_behaviors)
-        subbehavior.add_child(Idle()) # The behaviours cannot make the route scenario stop
+        subbehavior.add_child(Idle())  # The behaviours cannot make the route scenario stop
         behavior.add_child(subbehavior)
 
         return behavior

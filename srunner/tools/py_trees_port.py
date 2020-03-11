@@ -13,7 +13,6 @@ version 0.8.x
 """
 
 import py_trees
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitForBlackboardVariable
 
 
 class Decorator(py_trees.behaviour.Behaviour):
