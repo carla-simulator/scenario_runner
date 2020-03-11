@@ -149,7 +149,7 @@ class BasicScenario(object):
 
         if start_location:
             if ego_vehicle_route:
-                if config.route_var_name is None:
+                if config.route_var_name is None:  # pylint: disable=no-else-return
                     return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
                                                                             ego_vehicle_route,
                                                                             start_location,
