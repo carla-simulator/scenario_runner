@@ -19,7 +19,8 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
-                                                                      KeepVelocity)
+                                                                      KeepVelocity,
+                                                                      HandBrakeVehicle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocationAlongRoute,
                                                                                InTriggerDistanceToVehicle,
@@ -109,8 +110,7 @@ class VehicleTurningRight(BasicScenario):
     This class holds everything required for a simple object crash
     with prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
-    a cyclist after taking a right turn.
-    (Traffic Scenario 4)
+    a cyclist after taking a right turn. (Traffic Scenario 4)
 
     This is a single ego vehicle scenario
     """
@@ -120,7 +120,7 @@ class VehicleTurningRight(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        # other vehicle parameters
+
         self._other_actor_target_velocity = 10
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
@@ -225,27 +225,32 @@ class VehicleTurningRight(BasicScenario):
 
         # non leaf nodes
         scenario_sequence = py_trees.composites.Sequence()
+
         actor_ego_sync = py_trees.composites.Parallel(
             "Synchronization of actor and ego vehicle",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         after_timer_actor = py_trees.composites.Parallel(
-            "After timout actor will cross the remaining lane_width",
+            "After timeout actor will cross the remaining lane_width",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building the tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform,
                                                          name='TransformSetterTS4'))
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
         scenario_sequence.add_child(trigger_distance)
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
         scenario_sequence.add_child(actor_ego_sync)
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
         scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+
         actor_ego_sync.add_child(actor_velocity)
         actor_ego_sync.add_child(actor_traverse)
 
         after_timer_actor.add_child(post_timer_velocity_actor)
         after_timer_actor.add_child(post_timer_traverse_actor)
+
         return root
 
     def _create_test_criteria(self):
@@ -255,6 +260,7 @@ class VehicleTurningRight(BasicScenario):
         """
         criteria = []
         collision_criterion = CollisionTest(self.ego_vehicles[0])
+
         criteria.append(collision_criterion)
         return criteria
 
@@ -271,7 +277,7 @@ class VehicleTurningLeft(BasicScenario):
     This class holds everything required for a simple object crash
     with prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
-    a cyclist after taking a left turn. Scenario 4
+    a cyclist after taking a left turn. (Traffic Scenario 4)
 
     This is a single ego vehicle scenario
     """
@@ -281,6 +287,7 @@ class VehicleTurningLeft(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
+
         self._other_actor_target_velocity = 10
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
@@ -358,6 +365,7 @@ class VehicleTurningLeft(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
+
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionLeftTurn")
 
@@ -381,6 +389,7 @@ class VehicleTurningLeft(BasicScenario):
         post_timer_velocity_actor = KeepVelocity(self.other_actors[0], self._other_actor_target_velocity)
         post_timer_traverse_actor = DriveDistance(self.other_actors[0], 0.70 * dist_to_travel)
         end_condition = TimeOut(5)
+
         # non leaf nodes
         scenario_sequence = py_trees.composites.Sequence()
 
@@ -388,14 +397,16 @@ class VehicleTurningLeft(BasicScenario):
             "Synchronization of actor and ego vehicle",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         after_timer_actor = py_trees.composites.Parallel(
-            "After timout actor will cross the remaining lane_width",
+            "After timeout actor will cross the remaining lane_width",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building the tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform,
                                                          name='TransformSetterTS4'))
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
         scenario_sequence.add_child(trigger_distance)
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
         scenario_sequence.add_child(actor_ego_sync)
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
@@ -406,6 +417,7 @@ class VehicleTurningLeft(BasicScenario):
 
         after_timer_actor.add_child(post_timer_velocity_actor)
         after_timer_actor.add_child(post_timer_traverse_actor)
+
         return root
 
     def _create_test_criteria(self):
@@ -432,8 +444,8 @@ class VehicleTurningRoute(BasicScenario):
     This class holds everything required for a simple object crash
     with prior vehicle action involving a vehicle and a cyclist.
     The ego vehicle is passing through a road and encounters
-    a cyclist after taking a right turn.
-    (Traffic Scenario 4)
+    a cyclist after taking a turn. This is the version used when the ego vehicle
+    is following a given route. (Traffic Scenario 4)
 
     This is a single ego vehicle scenario
     """
@@ -443,7 +455,7 @@ class VehicleTurningRoute(BasicScenario):
         """
         Setup all relevant parameters and create scenario
         """
-        # other vehicle parameters
+
         self._other_actor_target_velocity = 10
         self._wmap = CarlaDataProvider.get_map()
         self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
@@ -517,16 +529,17 @@ class VehicleTurningRoute(BasicScenario):
         After invoking this scenario, cyclist will wait for the user
         controlled vehicle to enter the in the trigger distance region,
         the cyclist starts crossing the road once the condition meets,
-        ego vehicle has to avoid the crash after a right turn, but
+        ego vehicle has to avoid the crash after a turn, but
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
 
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionTurn")
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="IntersectionRouteTurn")
 
         lane_width = self._reference_waypoint.lane_width
         dist_to_travel = lane_width + (1.10 * lane_width * self._num_lane_changes)
+
         bycicle_start_dist = 13 + dist_to_travel
 
         if self._ego_route is not None:
@@ -547,27 +560,32 @@ class VehicleTurningRoute(BasicScenario):
 
         # non leaf nodes
         scenario_sequence = py_trees.composites.Sequence()
+
         actor_ego_sync = py_trees.composites.Parallel(
             "Synchronization of actor and ego vehicle",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         after_timer_actor = py_trees.composites.Parallel(
-            "After timout actor will cross the remaining lane_width",
+            "After timeout actor will cross the remaining lane_width",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # building the tree
         root.add_child(scenario_sequence)
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform,
                                                          name='TransformSetterTS4'))
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
         scenario_sequence.add_child(trigger_distance)
+        scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
         scenario_sequence.add_child(actor_ego_sync)
         scenario_sequence.add_child(after_timer_actor)
         scenario_sequence.add_child(end_condition)
         scenario_sequence.add_child(ActorDestroy(self.other_actors[0]))
+
         actor_ego_sync.add_child(actor_velocity)
         actor_ego_sync.add_child(actor_traverse)
 
         after_timer_actor.add_child(post_timer_velocity_actor)
         after_timer_actor.add_child(post_timer_traverse_actor)
+
         return root
 
     def _create_test_criteria(self):
@@ -577,6 +595,7 @@ class VehicleTurningRoute(BasicScenario):
         """
         criteria = []
         collision_criterion = CollisionTest(self.ego_vehicles[0])
+
         criteria.append(collision_criterion)
         return criteria
 
