@@ -15,7 +15,6 @@ import py_trees
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficLightManipulator
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, DrivenDistanceTest, MaxVelocityTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario

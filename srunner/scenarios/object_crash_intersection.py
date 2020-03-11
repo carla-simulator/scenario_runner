@@ -405,7 +405,6 @@ class VehicleTurningRoute(BasicScenario):
         self._num_lane_changes = 0
         # Timeout of scenario in seconds
         self.timeout = timeout
-        self.config = config
         # Total Number of attempts to relocate a vehicle before spawning
         self._number_of_attempts = 6
         # Number of attempts made so far

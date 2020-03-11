@@ -161,7 +161,6 @@ class DynamicObjectCrossing(BasicScenario):
         self.transform = None
         self.transform2 = None
         self.timeout = timeout
-        self.config = config
         self._trigger_location = config.trigger_points[0].location
         # Total Number of attempts to relocate a vehicle before spawning
         self._number_of_attempts = 20

@@ -1869,7 +1869,7 @@ class ScenarioTriggerer(AtomicBehavior):
         self._route = route
         self._distance = distance
         self._blackboard_list = blackboard_list
-        self._triggered_scenarios = [] # List of already done scenarios
+        self._triggered_scenarios = []  # List of already done scenarios
 
         self._current_index = 0
         self._route_length = len(self._route)

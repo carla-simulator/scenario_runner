@@ -150,7 +150,7 @@ class RouteScenario(BasicScenario):
         self.route = None
         self.target = None
         self.sampled_scenarios_definitions = None
-        self.blackboard_list = [] # List mapping the blackboard variable to the scenario location
+        self.blackboard_list = []  # List mapping the blackboard variable to the scenario location
 
         self._update_route(world, config, debug_mode)
 
@@ -380,9 +380,9 @@ class RouteScenario(BasicScenario):
         elif town_name == 'Town06' or town_name == 'Town07':
             amount = 150
         elif town_name == 'Town08':
-            amount = 18
+            amount = 180
         elif town_name == 'Town09':
-            amount = 35
+            amount = 350
         else:
             amount = 1
 
@@ -517,13 +517,9 @@ class RouteScenario(BasicScenario):
         subbehavior = py_trees.composites.Parallel(name="Behavior",
                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
-        # blackboard_list = []  # List mapping the blackboard variable to the scenario location
         scenario_behaviors = []
-
-        for i in range(len(self.list_scenarios)):
-            scenario = self.list_scenarios[i]
-            if scenario.scenario.behavior is not None \
-                    and scenario.scenario.behavior.name != "MasterScenario":
+        for scenario in self.list_scenarios:
+            if scenario.scenario.behavior is not None and scenario.scenario.behavior.name != "MasterScenario":
                 scenario_behaviors.append(scenario.scenario.behavior)
 
         # Add behavior that manages the scenarios trigger conditions

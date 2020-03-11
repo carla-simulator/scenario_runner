@@ -43,6 +43,7 @@ def add_route_scenario_trigger_condition(var_name, check_value, repeat_scenarios
 
     return check_flag
 
+
 def add_route_scenario_end_condition(var_name, check_value):
     """
     Adds an end condition to the scenarios.
@@ -176,7 +177,6 @@ class BasicScenario(object):
                 return add_route_scenario_end_condition(var_name=config.route_var_name, check_value=True)
 
         return None
-
 
     def _create_behavior(self):
         """
