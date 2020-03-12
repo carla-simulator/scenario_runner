@@ -153,6 +153,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world = self.client.get_world()
             CarlaDataProvider.set_world(world)
             world.wait_for_tick()
+        else:
+            CarlaDataProvider.set_world(world)
 
     def _set_carla_weather(self):
         """
@@ -188,6 +190,14 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             self.weather.wetness = self.weather.precipitation
         elif precepitation.attrib.get('type') == "snow":
             raise AttributeError("CARLA does not support snow precipitation")
+
+        time_of_day = environment.find("TimeOfDay")
+        time = time_of_day.find("Time")  # 22-4: night; 4-6: sunrise; 6-20: day; 20-22: sunset
+        if int(time.attrib.get('hour')) >= 22 or int(time.attrib.get('hour')) <= 4:
+            self.weather.sun_altitude = -90
+        elif int(time.attrib.get('hour')) >= 20 and int(time.attrib.get('hour')) < 22 or \
+                int(time.attrib.get('hour')) <= 6 and int(time.attrib.get('hour')) > 4:
+            self.weather.sun_altitude = 10
 
     def _set_carla_friction(self):
         """

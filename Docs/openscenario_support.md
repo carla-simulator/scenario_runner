@@ -123,7 +123,7 @@ Please take a look into the provided example scenarios, for further details on t
        * [ ] AquirePosition
     * [x] Command (Support for command 'Idle')
     * [x] Script (The script file has to be fully qualified and contain the interpreter as well as arguments: Example: python /path/to/script.py --arg1)
-    * [ ] SetEnvironment (Weather is supported)
+    * [x] SetEnvironment
     * [ ] Entity
     * [ ] Parameter
     * [ ] Traffic

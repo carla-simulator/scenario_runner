@@ -57,7 +57,7 @@
             <Actions>
                 <Global>
                     <SetEnvironment>
-                        <CatalogReference catalogName="EnvironmentCatalog" entryName="ClearNoon" />
+                        <CatalogReference catalogName="EnvironmentCatalog" entryName="ClearMidnight" />
                     </SetEnvironment>
                 </Global>
                 <Private object="hero">
