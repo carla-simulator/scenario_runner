@@ -8,8 +8,6 @@
 Scenario spawning elements to make the town dynamic and interesting
 """
 
-import py_trees
-
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 from srunner.scenarios.basic_scenario import BasicScenario
 
