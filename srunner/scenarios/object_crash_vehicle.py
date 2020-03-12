@@ -180,12 +180,15 @@ class DynamicObjectCrossing(BasicScenario):
 
         lane_width = waypoint.lane_width
 
-        location, _ = get_location_in_distance_from_wp(waypoint, _start_distance)
-        waypoint = self._wmap.get_waypoint(location)
-        if self._adversary_type:
-            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
+        # Patches false junctions
+        if self._reference_waypoint.is_junction:
+            stop_at_junction = False
         else:
-            offset = {"orientation": 270, "position": 90, "z": 0.6, "k": -0.1}
+            stop_at_junction = True
+
+        location, _ = get_location_in_distance_from_wp(waypoint, _start_distance, stop_at_junction)
+        waypoint = self._wmap.get_waypoint(location)
+        offset = {"orientation": 270, "position": 90, "z": 0.6, "k": 1.0}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
         orientation_yaw = waypoint.transform.rotation.yaw + offset['orientation']
         offset_location = carla.Location(
@@ -212,7 +215,7 @@ class DynamicObjectCrossing(BasicScenario):
 
         return adversary
 
-    def _spawn_blocker(self, transform):
+    def _spawn_blocker(self, transform, orientation_yaw):
         """
         Spawn the blocker prop that blocks the vision from the egovehicle of the jaywalker
         :return:
@@ -229,7 +232,8 @@ class DynamicObjectCrossing(BasicScenario):
         spawn_point_wp = self.ego_vehicles[0].get_world().get_map().get_waypoint(transform.location)
 
         self.transform2 = carla.Transform(carla.Location(x_static, y_static,
-                                                         spawn_point_wp.transform.location.z + 0.3))
+                                                         spawn_point_wp.transform.location.z + 0.3),
+                                          carla.Rotation(yaw=orientation_yaw + 180))
 
         static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
         static.set_simulate_physics(enabled=False)
@@ -241,19 +245,23 @@ class DynamicObjectCrossing(BasicScenario):
         Custom initialization
         """
         # cyclist transform
-        _start_distance = 10
+        _start_distance = 12
         # We start by getting and waypoint in the closest sidewalk.
         waypoint = self._reference_waypoint
         while True:
             wp_next = waypoint.get_right_lane()
             self._num_lane_changes += 1
-            if wp_next is not None:
-                _start_distance += 2
-                waypoint = wp_next
-                if waypoint.lane_type == carla.LaneType.Sidewalk:
-                    break
-            else:
+            if wp_next is None or wp_next.lane_type == carla.LaneType.Sidewalk:
                 break
+            elif wp_next.lane_type == carla.LaneType.Shoulder:
+                # Filter Parkings considered as Shoulders
+                if wp_next.lane_width > 2:
+                    _start_distance += 1.5
+                    waypoint = wp_next
+                break
+            else:
+                _start_distance += 1.5
+                waypoint = wp_next
 
         while True:  # We keep trying to spawn avoiding props
 
@@ -261,7 +269,7 @@ class DynamicObjectCrossing(BasicScenario):
                 self.transform, orientation_yaw = self._calculate_base_transform(_start_distance, waypoint)
                 first_vehicle = self._spawn_adversary(self.transform, orientation_yaw)
 
-                blocker = self._spawn_blocker(self.transform)
+                blocker = self._spawn_blocker(self.transform, orientation_yaw)
 
                 break
             except RuntimeError as r:
@@ -304,12 +312,14 @@ class DynamicObjectCrossing(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="OccludedObjectCrossing")
         lane_width = self._reference_waypoint.lane_width
         lane_width = lane_width + (1.25 * lane_width * self._num_lane_changes)
+
+        dist_to_trigger = 12 + self._num_lane_changes
         # leaf nodes
         if self._ego_route is not None:
             start_condition = InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
                                                                     self._ego_route,
                                                                     self.transform.location,
-                                                                    15)
+                                                                    dist_to_trigger)
         else:
             start_condition = InTimeToArrivalToVehicle(self.other_actors[0],
                                                        self.ego_vehicles[0],

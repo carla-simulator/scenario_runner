@@ -186,7 +186,7 @@ def get_location_in_distance(actor, distance):
     return waypoint.transform.location, traveled_distance
 
 
-def get_location_in_distance_from_wp(waypoint, distance):
+def get_location_in_distance_from_wp(waypoint, distance, stop_at_junction=True):
     """
     Obtain a location in a given distance from the current actor's location.
     Note: Search is stopped on first intersection.
@@ -194,7 +194,7 @@ def get_location_in_distance_from_wp(waypoint, distance):
     @return obtained location and the traveled distance
     """
     traveled_distance = 0
-    while not waypoint.is_intersection and traveled_distance < distance:
+    while not (waypoint.is_intersection and stop_at_junction) and traveled_distance < distance:
         wp_next = waypoint.next(1.0)
         if wp_next:
             waypoint_new = wp_next[-1]
