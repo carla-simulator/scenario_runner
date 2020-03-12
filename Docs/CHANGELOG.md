@@ -10,6 +10,7 @@
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Added support for position with Lane information  (roadId and laneId)
+    - Added support for TimeOfDay tag
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
