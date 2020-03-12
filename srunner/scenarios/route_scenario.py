@@ -34,6 +34,7 @@ from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.tools.route_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory, clean_route
+from srunner.tools.py_trees_port import oneshot_behavior
 
 from srunner.scenarios.control_loss import ControlLoss
 from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
@@ -148,7 +149,6 @@ class RouteScenario(BasicScenario):
         self.route = None
         self.target = None
         self.sampled_scenarios_definitions = None
-        self.blackboard_list = []  # List mapping the blackboard variable to the scenario location
 
         self._update_route(world, config, debug_mode)
 
@@ -378,9 +378,9 @@ class RouteScenario(BasicScenario):
         elif town_name == 'Town06' or town_name == 'Town07':
             amount = 150
         elif town_name == 'Town08':
-            amount = 180
+            amount = 18
         elif town_name == 'Town09':
-            amount = 350
+            amount = 35
         else:
             amount = 1
 
@@ -438,7 +438,7 @@ class RouteScenario(BasicScenario):
             scenario_configuration.ego_vehicles = [ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                           ego_vehicle.get_transform(),
                                                                           'hero')]
-            route_var_name = "ScenarioRouteNumber{}".format(scenario_number + 1)
+            route_var_name = "ScenarioRouteNumber{}".format(scenario_number)
             scenario_configuration.route_var_name = route_var_name
 
             try:
@@ -451,8 +451,6 @@ class RouteScenario(BasicScenario):
                         CarlaDataProvider.perform_carla_tick()
                     else:
                         world.wait_for_tick()
-
-                self.blackboard_list.append([route_var_name, egoactor_trigger_position.location])
 
                 scenario_number += 1
             except Exception as e:      # pylint: disable=broad-except
@@ -516,15 +514,28 @@ class RouteScenario(BasicScenario):
                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
         scenario_behaviors = []
-        for scenario in self.list_scenarios:
-            if scenario.scenario.behavior is not None and scenario.scenario.behavior.name != "MasterScenario":
-                scenario_behaviors.append(scenario.scenario.behavior)
+        blackboard_list = []
+
+        for i, scenario in enumerate(self.list_scenarios):
+            if scenario.scenario.behavior is not None \
+                    and scenario.scenario.behavior.name not in ("MasterScenario", "Sequence"):
+                route_var_name = scenario.config.route_var_name
+                if route_var_name is not None:
+                    scenario_behaviors.append(scenario.scenario.behavior)
+                    blackboard_list.append([scenario.config.route_var_name,
+                                            scenario.config.trigger_points[0].location])
+                else:
+                    name = "{} - {}".format(i, scenario.scenario.behavior.name)
+                    oneshot_idiom = oneshot_behavior(name,
+                                                     behaviour=scenario.scenario.behavior,
+                                                     name=name)
+                    scenario_behaviors.append(oneshot_idiom)
 
         # Add behavior that manages the scenarios trigger conditions
         scenario_triggerer = ScenarioTriggerer(
             self.ego_vehicles[0],
             self.route,
-            self.blackboard_list,
+            blackboard_list,
             scenario_trigger_distance,
             repeat_scenarios=False
         )

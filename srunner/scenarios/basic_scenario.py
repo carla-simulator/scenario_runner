@@ -18,7 +18,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 from srunner.scenariomanager.scenario_manager import Scenario
 
 
-def add_route_scenario_trigger_condition(var_name, check_value, repeat_scenarios=False):
+def add_route_scenario_trigger_condition(var_name, check_value):
     """
     Adds a trigger condition to the scenarios. This is done via a blackboard statement.
 
@@ -29,10 +29,7 @@ def add_route_scenario_trigger_condition(var_name, check_value, repeat_scenarios
     wait_for_value = check_value
     init_value = not check_value
 
-    if repeat_scenarios:
-        check_name = "Scenario ready"
-    else:
-        check_name = "Scenario ready and not done before"
+    check_name = "WaitForBlackboardVariable: {}".format(var_name)
 
     check_flag = conditions.WaitForBlackboardVariable(
         name=check_name,
@@ -54,7 +51,7 @@ def add_route_scenario_end_condition(var_name, check_value):
     """
     set_value = not check_value
     set_flag = py_trees.blackboard.SetBlackboardVariable(
-        name="Reset blackboard variable: {} ".format(var_name),
+        name="Reset Blackboard Variable: {} ".format(var_name),
         variable_name=var_name,
         variable_value=set_value
     )
@@ -86,6 +83,7 @@ class BasicScenario(object):
 
         self.ego_vehicles = ego_vehicles
         self.name = name
+        self.config = config
         self.terminate_on_failure = terminate_on_failure
 
         # Initializing adversarial actors
@@ -165,8 +163,8 @@ class BasicScenario(object):
 
     def _setup_scenario_end(self, config):
         """
-        This function creates a trigger maneuver, that has to be finished before the real scenario starts.
-        This implementation focuses on the first available ego vehicle.
+        This function adds and additional behavior to the scenario, which is triggered
+        after it has ended.
 
         The function can be overloaded by a user implementation inside the user-defined scenario class.
         """
