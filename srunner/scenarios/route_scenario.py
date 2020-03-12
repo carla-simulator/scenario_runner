@@ -378,9 +378,9 @@ class RouteScenario(BasicScenario):
         elif town_name == 'Town06' or town_name == 'Town07':
             amount = 150
         elif town_name == 'Town08':
-            amount = 18
+            amount = 180
         elif town_name == 'Town09':
-            amount = 35
+            amount = 350
         else:
             amount = 1
 
