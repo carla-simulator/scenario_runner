@@ -18,47 +18,6 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDat
 from srunner.scenariomanager.scenario_manager import Scenario
 
 
-def add_route_scenario_trigger_condition(var_name, check_value):
-    """
-    Adds a trigger condition to the scenarios. This is done via a blackboard statement.
-
-    Parameters:
-    - var_name: name of the blackboard variable
-    - check_value: value of the blackboard variable to be checked
-    """
-    wait_for_value = check_value
-    init_value = not check_value
-
-    check_name = "WaitForBlackboardVariable: {}".format(var_name)
-
-    check_flag = conditions.WaitForBlackboardVariable(
-        name=check_name,
-        variable_name=var_name,
-        variable_value=wait_for_value,
-        var_init_value=init_value
-    )
-
-    return check_flag
-
-
-def add_route_scenario_end_condition(var_name, check_value):
-    """
-    Adds an end condition to the scenarios.
-
-    Parameters:
-    - var_name: name of the blackboard variable
-    - check_value: value of the blackboard variable to be checked
-    """
-    set_value = not check_value
-    set_flag = py_trees.blackboard.SetBlackboardVariable(
-        name="Reset Blackboard Variable: {} ".format(var_name),
-        variable_name=var_name,
-        variable_value=set_value
-    )
-
-    return set_flag
-
-
 class BasicScenario(object):
 
     """
@@ -153,7 +112,11 @@ class BasicScenario(object):
                                                                             start_location,
                                                                             5)
                 else:
-                    return add_route_scenario_trigger_condition(config.route_var_name, True)
+                    check_name = "WaitForBlackboardVariable: {}".format(config.route_var_name)
+                    return conditions.WaitForBlackboardVariable(name=check_name,
+                                                                variable_name=config.route_var_name,
+                                                                variable_value=True,
+                                                                var_init_value=False)
 
             return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
                                                         2.0,
@@ -172,8 +135,10 @@ class BasicScenario(object):
 
         if ego_vehicle_route:
             if config.route_var_name is not None:
-                return add_route_scenario_end_condition(var_name=config.route_var_name, check_value=True)
-
+                set_name = "Reset Blackboard Variable: {} ".format(config.route_var_name)
+                return py_trees.blackboard.SetBlackboardVariable(name=set_name,
+                                                                 variable_name=config.route_var_name,
+                                                                 variable_value=False)
         return None
 
     def _create_behavior(self):
