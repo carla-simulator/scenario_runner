@@ -354,10 +354,10 @@ def generate_target_waypoint_in_route(waypoint, route):
         wp = route_pos[0]
         trigger_location = waypoint.transform.location
 
-        distance = math.sqrt(((trigger_location.x - wp.x) ** 2) + ((trigger_location.y - wp.y) ** 2))
-        if distance <= shortest_distance:
+        dist_to_route = trigger_location.distance(wp)
+        if dist_to_route <= shortest_distance:
             closest_index = index
-            shortest_distance = distance
+            shortest_distance = dist_to_route
 
     route_location = route[closest_index][0]
     index = closest_index
