@@ -15,6 +15,18 @@
             </Weather>
             <RoadCondition frictionScale="1.0" />
         </Environment>
+        <Environment name="ClearMidnight">
+            <TimeOfDay animation="false">
+                <Time hour="0" min="0" sec="0.0" />
+                <Date day="0" month="0" year="2020" />
+            </TimeOfDay>
+            <Weather cloudState="free">
+                <Sun intensity="1.0" azimuth="0.0" elevation="1.5" />
+                <Fog visualRange="10000.0" />
+                <Precipitation type="dry" intensity="0.0" />
+            </Weather>
+            <RoadCondition frictionScale="1.0" />
+        </Environment>
     </Catalog>
 </OpenSCENARIO>
 

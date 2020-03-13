@@ -10,8 +10,12 @@
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Added support for position with Lane information  (roadId and laneId)
+    - Added support for TimeOfDay tag
 * Scenario updates:
     - Scenarios that are part of RouteScenario have had their triggering condition modified. This will only activate when a certain parameter is set, and if not, the old trigger condition will still be applied.
+
+### :bug: Bug Fixes
+* Fixed spawning bugs for scenario DynamicObjectCrossing when it was part of a route
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
