@@ -154,7 +154,7 @@ class ScenarioRunner(object):
         if self.manager:
             self.manager.stop_scenario()
 
-            if self._args.agent:
+            if self._args.agent and self.manager.get_running_status():
                 settings = self.world.get_settings()
                 settings.synchronous_mode = False
                 settings.fixed_delta_seconds = None
