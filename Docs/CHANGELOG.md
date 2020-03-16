@@ -13,6 +13,7 @@
     - Added support for TimeOfDay tag
 * Scenario updates:
     - Scenarios that are part of RouteScenario have had their triggering condition modified. This will only activate when a certain parameter is set, and if not, the old trigger condition will still be applied.
+* The message shown after ending a route now contains information about the used criterias
 
 ### :bug: Bug Fixes
 * Fixed spawning bugs for scenario DynamicObjectCrossing when it is part of a route
