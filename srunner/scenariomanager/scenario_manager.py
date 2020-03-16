@@ -287,8 +287,8 @@ class ScenarioManager(object):
             print("> ")
             print("> Score: ")
             print("> - Route Completed [{}]:      {}%".format(route_symbol, route_completed))
-            print("> - Collisions [{}]:           {} times".format(collision_symbol, collisions))
             print("> - Outside route lanes [{}]:  {}%".format(outside_symbol, outside_route_lanes))
+            print("> - Collisions [{}]:           {} times".format(collision_symbol, collisions))
             print("> - Red lights run [{}]:       {} times".format(red_light_symbol, red_light))
             print("> - Stop signs run [{}]:       {} times\n".format(stop_symbol, stop_signs))
 
