@@ -153,13 +153,6 @@ class ScenarioRunner(object):
         self._shutdown_requested = True
         if self.manager:
             self.manager.stop_scenario()
-
-            if self._args.agent and self.manager.get_running_status():
-                settings = self.world.get_settings()
-                settings.synchronous_mode = False
-                settings.fixed_delta_seconds = None
-                self.world.apply_settings(settings)
-
             self._cleanup()
             if not self.manager.get_running_status():
                 raise RuntimeError("Timeout occured during scenario execution")
@@ -194,6 +187,10 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
+        settings = self.world.get_settings()
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        self.world.apply_settings(settings)
 
         self.client.stop_recorder()
         self.manager.cleanup()
@@ -411,12 +408,6 @@ class ScenarioRunner(object):
 
             # Remove all actors
             scenario.remove_all_actors()
-
-            if self._args.agent:
-                settings = self.world.get_settings()
-                settings.synchronous_mode = False
-                settings.fixed_delta_seconds = None
-                self.world.apply_settings(settings)
 
             result = True
         except SensorConfigurationInvalid as e:
