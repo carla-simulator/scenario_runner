@@ -106,3 +106,4 @@ class ScenarioConfiguration(object):
     weather = WeatherConfiguration()
     friction = None
     subtype = None
+    route_var_name = None

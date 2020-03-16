@@ -42,6 +42,7 @@ class BasicScenario(object):
 
         self.ego_vehicles = ego_vehicles
         self.name = name
+        self.config = config
         self.terminate_on_failure = terminate_on_failure
 
         # Initializing adversarial actors
@@ -70,6 +71,10 @@ class BasicScenario(object):
         if behavior is not None:
             behavior_seq.add_child(behavior)
             behavior_seq.name = behavior.name
+
+        end_behavior = self._setup_scenario_end(config)
+        if end_behavior:
+            behavior_seq.add_child(end_behavior)
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
 
@@ -101,14 +106,39 @@ class BasicScenario(object):
 
         if start_location:
             if ego_vehicle_route:
-                return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
-                                                                        ego_vehicle_route,
-                                                                        start_location,
-                                                                        5)
+                if config.route_var_name is None:  # pylint: disable=no-else-return
+                    return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
+                                                                            ego_vehicle_route,
+                                                                            start_location,
+                                                                            5)
+                else:
+                    check_name = "WaitForBlackboardVariable: {}".format(config.route_var_name)
+                    return conditions.WaitForBlackboardVariable(name=check_name,
+                                                                variable_name=config.route_var_name,
+                                                                variable_value=True,
+                                                                var_init_value=False)
+
             return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
                                                         2.0,
                                                         start_location)
 
+        return None
+
+    def _setup_scenario_end(self, config):
+        """
+        This function adds and additional behavior to the scenario, which is triggered
+        after it has ended.
+
+        The function can be overloaded by a user implementation inside the user-defined scenario class.
+        """
+        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+
+        if ego_vehicle_route:
+            if config.route_var_name is not None:
+                set_name = "Reset Blackboard Variable: {} ".format(config.route_var_name)
+                return py_trees.blackboard.SetBlackboardVariable(name=set_name,
+                                                                 variable_name=config.route_var_name,
+                                                                 variable_value=False)
         return None
 
     def _create_behavior(self):

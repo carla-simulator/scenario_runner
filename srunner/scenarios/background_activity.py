@@ -8,10 +8,7 @@
 Scenario spawning elements to make the town dynamic and interesting
 """
 
-import py_trees
-
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficJamChecker
 from srunner.scenarios.basic_scenario import BasicScenario
 
 
@@ -59,13 +56,7 @@ class BackgroundActivity(BasicScenario):
         """
         Basic behavior do nothing, i.e. Idle
         """
-
-        # Build behavior tree
-        sequence = py_trees.composites.Sequence("BackgroundActivity")
-        check_jam = TrafficJamChecker(debug=self.debug)
-        sequence.add_child(check_jam)
-
-        return sequence
+        pass
 
     def _create_test_criteria(self):
         """

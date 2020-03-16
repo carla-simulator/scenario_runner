@@ -1841,3 +1841,102 @@ class TrafficLightManipulator(AtomicBehavior):
         self.max_trigger_distance = None
         self.waiting_time = None
         self.inside_junction = False
+
+
+class ScenarioTriggerer(AtomicBehavior):
+
+    """
+    Handles the triggering of the scenarios that are part of a route.
+
+    Initializes a list of blackboard variables to False, and only sets them to True when
+    the ego vehicle is very close to the scenarios
+    """
+
+    WINDOWS_SIZE = 5
+
+    def __init__(self, actor, route, blackboard_list, distance,
+                 repeat_scenarios=False, debug=False, name="ScenarioTriggerer"):
+        """
+        Setup class members
+        """
+        super(ScenarioTriggerer, self).__init__(name)
+        self._world = CarlaDataProvider.get_world()
+        self._map = CarlaDataProvider.get_map()
+        self._repeat = repeat_scenarios
+        self._debug = debug
+
+        self._actor = actor
+        self._route = route
+        self._distance = distance
+        self._blackboard_list = blackboard_list
+        self._triggered_scenarios = []  # List of already done scenarios
+
+        self._current_index = 0
+        self._route_length = len(self._route)
+        self._waypoints, _ = zip(*self._route)
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self._actor)
+        if location is None:
+            return new_status
+
+        lower_bound = self._current_index
+        upper_bound = min(self._current_index + self.WINDOWS_SIZE + 1, self._route_length)
+
+        shortest_distance = float('inf')
+        closest_index = -1
+
+        for index in range(lower_bound, upper_bound):
+            ref_waypoint = self._waypoints[index]
+            ref_location = ref_waypoint.location
+
+            dist_to_route = ref_location.distance(location)
+            if dist_to_route <= shortest_distance:
+                closest_index = index
+                shortest_distance = dist_to_route
+
+        if closest_index == -1 or shortest_distance == float('inf'):
+            return new_status
+
+        # Update the ego position at the route
+        self._current_index = closest_index
+
+        route_location = self._waypoints[closest_index].location
+
+        # Check which scenarios can be triggered
+        blackboard = py_trees.blackboard.Blackboard()
+        for black_var_name, scen_location in self._blackboard_list:
+
+            # Close enough
+            scen_distance = route_location.distance(scen_location)
+            condition1 = bool(scen_distance < self._distance)
+
+            # Not being currently done
+            value = blackboard.get(black_var_name)
+            condition2 = bool(not value)
+
+            # Already done, if needed
+            condition3 = bool(self._repeat or black_var_name not in self._triggered_scenarios)
+
+            if condition1 and condition2 and condition3:
+                _ = blackboard.set(black_var_name, True)
+                self._triggered_scenarios.append(black_var_name)
+
+                if self._debug:
+                    self._world.debug.draw_point(
+                        scen_location + carla.Location(z=4),
+                        size=0.5,
+                        life_time=0.5,
+                        color=carla.Color(255, 255, 0)
+                    )
+                    self._world.debug.draw_string(
+                        scen_location + carla.Location(z=5),
+                        str(black_var_name),
+                        False,
+                        color=carla.Color(0, 0, 0),
+                        life_time=1000
+                    )
+
+        return new_status

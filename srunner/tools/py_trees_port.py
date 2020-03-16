@@ -108,6 +108,12 @@ def oneshot_behavior(variable_name, behaviour, name=None):
         name = behaviour.name
 
     subtree_root = py_trees.composites.Selector(name=name)
+
+    # Initialize the variables
+    blackboard = py_trees.blackboard.Blackboard()
+    _ = blackboard.set(variable_name, False)
+
+    # Wait until the scenario has ended
     check_flag = py_trees.blackboard.CheckBlackboardVariable(
         name=variable_name + " Done?",
         variable_name=variable_name,

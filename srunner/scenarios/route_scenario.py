@@ -27,6 +27,7 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData, ActorConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenarios.background_activity import BackgroundActivity
@@ -417,8 +418,7 @@ class RouteScenario(BasicScenario):
                 world.debug.draw_string(loc, str(scenario['name']), draw_shadow=False,
                                         color=carla.Color(0, 0, 255), life_time=100000, persistent_lines=True)
 
-        scenario_number = 1
-        for definition in scenario_definitions:
+        for scenario_number, definition in enumerate(scenario_definitions):
             # Get the class possibilities for this scenario number
             scenario_class = NUMBER_CLASS_TRANSLATION[definition['name']]
 
@@ -438,6 +438,9 @@ class RouteScenario(BasicScenario):
             scenario_configuration.ego_vehicles = [ActorConfigurationData('vehicle.lincoln.mkz2017',
                                                                           ego_vehicle.get_transform(),
                                                                           'hero')]
+            route_var_name = "ScenarioRouteNumber{}".format(scenario_number)
+            scenario_configuration.route_var_name = route_var_name
+
             try:
                 scenario_instance = scenario_class(world, [ego_vehicle], scenario_configuration,
                                                    criteria_enable=False, timeout=timeout)
@@ -501,6 +504,7 @@ class RouteScenario(BasicScenario):
         """
         Basic behavior do nothing, i.e. Idle
         """
+        scenario_trigger_distance = 1.5  # Max trigger distance between route and scenario
 
         behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -509,17 +513,36 @@ class RouteScenario(BasicScenario):
         subbehavior = py_trees.composites.Parallel(name="Behavior",
                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
-        for i in range(len(self.list_scenarios)):
-            scenario = self.list_scenarios[i]
-            if scenario.scenario.behavior is not None and scenario.scenario.behavior.name != "MasterScenario":
-                name = "{} - {}".format(i, scenario.scenario.behavior.name)
-                oneshot_idiom = oneshot_behavior(
-                    name=name,
-                    variable_name=name,
-                    behaviour=scenario.scenario.behavior)
+        scenario_behaviors = []
+        blackboard_list = []
 
-                subbehavior.add_child(oneshot_idiom)
+        for i, scenario in enumerate(self.list_scenarios):
+            if scenario.scenario.behavior is not None \
+                    and scenario.scenario.behavior.name not in ("MasterScenario", "Sequence"):
+                route_var_name = scenario.config.route_var_name
+                if route_var_name is not None:
+                    scenario_behaviors.append(scenario.scenario.behavior)
+                    blackboard_list.append([scenario.config.route_var_name,
+                                            scenario.config.trigger_points[0].location])
+                else:
+                    name = "{} - {}".format(i, scenario.scenario.behavior.name)
+                    oneshot_idiom = oneshot_behavior(name,
+                                                     behaviour=scenario.scenario.behavior,
+                                                     name=name)
+                    scenario_behaviors.append(oneshot_idiom)
 
+        # Add behavior that manages the scenarios trigger conditions
+        scenario_triggerer = ScenarioTriggerer(
+            self.ego_vehicles[0],
+            self.route,
+            blackboard_list,
+            scenario_trigger_distance,
+            repeat_scenarios=False
+        )
+
+        subbehavior.add_child(scenario_triggerer)  # make ScenarioTriggerer the first thing to be checked
+        subbehavior.add_children(scenario_behaviors)
+        subbehavior.add_child(Idle())  # The behaviours cannot make the route scenario stop
         behavior.add_child(subbehavior)
 
         return behavior
