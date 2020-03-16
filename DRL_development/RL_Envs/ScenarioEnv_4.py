@@ -45,8 +45,12 @@ from srunner.challenge.utils.route_manipulation import interpolate_trajectory, c
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenariomanager.traffic_events import TrafficEventType
 
+# ==================================================
 # replace your agent module here
 from DRL_development.DRL_Agents.safe_RL import Beta_DQN_Agent
+
+# algorithm module
+from DRL_Agents.safe_RL import DQN_controllers
 
 PENALTY_COLLISION_STATIC = 6
 PENALTY_COLLISION_VEHICLE = 6
@@ -481,12 +485,14 @@ class ScenarioTrainer(object):
         # self.agent_instance.set_global_plan(self.gps_route, self.route)
 
         # creat RLagent
-        self.agent_instance = RLAgent(self.config)
+        self.agent_instance = Beta_DQN_Agent(self.config)
         self.agent_instance.set_global_plan(self.gps_route, self.route)
 
         if self.agent_algorithm is None:
-            self.agent_algorithm = DQNAlgorithm(self.agent_instance.get_state_shape(),
+            self.agent_algorithm = DQN_controllers(self.agent_instance.get_state_shape(),
                                                 self.agent_instance.get_action_shape())
+
+        # connect algorithm to agent instance
         self.agent_instance.set_algorithm(self.agent_algorithm)
 
         elevate_transform = self.route[0][0]

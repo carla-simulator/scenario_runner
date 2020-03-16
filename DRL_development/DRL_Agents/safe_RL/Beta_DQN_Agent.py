@@ -31,16 +31,16 @@ from srunner.challenge.envs.sensor_interface import SensorInterface
 from srunner.scenariomanager.timer import GameTime
 from srunner.challenge.utils.route_manipulation import downsample_route
 from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
+from DRL_development import util
 
+# check if gpu is avaliable
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 class Beta_DQN_Agent(AutonomousAgent):
     """
         Tihs is a beta-pessimistic DQN agent for Track4 CARLA challenge.
 
     """
-
     def __init__(self, path_to_conf_file):
 
         #  RL agent net
@@ -56,15 +56,17 @@ class Beta_DQN_Agent(AutonomousAgent):
 
         self.state_shape = (3, 300, 200)
 
+        # set ego vehicle
+        self.ego_vehicle = None
 
-        #
+        # initialize RL element
         self.state = None
         self.next_state = None
         self.reward = None
 
         # initialize DRL controller
         # todo: get module using module path and name
-        self.controller = DQN_controller()
+        # self.controller = DQN_controller()
 
 
 
@@ -72,6 +74,13 @@ class Beta_DQN_Agent(AutonomousAgent):
         # agent's initialization
         self.setup(path_to_conf_file)
         self.generate_action_space()
+
+    def setup_ego_vehicle(self, vehicle):
+        """
+            API to pass ego vehicle from training env to agent.
+        """
+        self.ego_vehicle = vehicle
+
 
     def set_action_space(self, lon_dim=3, lat_dim=9):
         """
@@ -160,6 +169,10 @@ class Beta_DQN_Agent(AutonomousAgent):
 
         return control
 
+    # set algorithm module as a attribute
+    def set_algorithm(self, algorithm):
+        self.algorithm = algorithm
+
     def destroy(self):
         """
         Destroy (clean-up) the agent
@@ -200,9 +213,40 @@ class Beta_DQN_Agent(AutonomousAgent):
     def get_action_shape(self):
         return self.action_shape
 
-    def set_algorithm(self, algorithm):
-        self.algorithm = algorithm
+    # original get reward
+    def get_reward(self, reward):
+        self.reward = reward
 
+    # get reward
+    def get_reward()
+        """
+            Get reward according to current status
+        """
+        lat_offset
+
+
+    # package this method to util
+    @staticmethod 
+    def calculate_distance(vehicle_location, last_waypoint, next_waypoint):
+        """
+            todo: check the input type
+            waypoint as location type
+
+        """
+        E = np.array[vehicle_location.x, vehicle_location.y]
+        A = np.array[last_waypoint.x, last_waypoint.y]
+        B = np.array[next_waypoint.x, next_waypoint.y]
+
+        Vector_AE = E - A
+        Vector_AB = B - A
+
+        temp = Vector_AE.dot(Vector_AB)/Vector_AB.dot(Vector_AB)
+        temp = temp*Vector_AB
+ 
+        distance = norm(Vector_A - temp)
+    
+
+    # modified 
     def get_state(self):
         sensor_data = self.sensor_interface.get_data()
         # process image
@@ -225,5 +269,27 @@ class Beta_DQN_Agent(AutonomousAgent):
             self.algorithm.store_transition(transition)
             self.state = self.next_state
 
-    def get_reward(self, reward):
-        self.reward = reward
+        # ==================================================
+        # how to get the 
+        
+        # set a ref speed for normalization
+        # km/h
+        self.V_ref = 10
+
+        local_coord_frame = 
+
+        current_waypoint = 
+
+        next_waypoint = 
+
+        # ego vehicle velocity under local coordinate frame
+        V_lat = 
+        V_lon = 
+
+        # calculate latral offset respect to route
+        lat_offset = 
+        lat_diversion_angle
+        lat_
+        
+        
+

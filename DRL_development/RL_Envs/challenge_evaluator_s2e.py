@@ -34,7 +34,7 @@ from srunner.challenge.utils.route_manipulation import interpolate_trajectory, c
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenariomanager.traffic_events import TrafficEventType
 
-from
+
 from srunner.challenge.autoagents.RLagent import RLAgent
 from srunner.challenge.algorithm.dqn import DQNAlgorithm
 
