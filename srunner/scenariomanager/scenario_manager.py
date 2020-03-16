@@ -231,8 +231,66 @@ class ScenarioManager(object):
             self.start_system_time
         self.scenario_duration_game = end_game_time - start_game_time
 
-        if self.scenario_tree.status == py_trees.common.Status.FAILURE:
-            print("ScenarioManager: Terminated due to failure")
+        self._console_message()
+
+    def _console_message(self):
+        """
+        Message that will be displayed via console
+        """
+        def get_symbol(value, desired_value, high=True):
+            """
+            Returns a tick or a cross depending on the values
+            """
+            tick = '\033[92m'+u'\u2713'+'\033[0m'
+            cross = '\033[91m'+'X'+'\033[0m'
+
+            multiplier = 1 if high else -1
+
+            if multiplier*value >= desired_value:
+                symbol = tick
+            else:
+                symbol = cross
+
+            return symbol
+
+        blackv = py_trees.blackboard.Blackboard()
+
+        route_completed = 100 if blackv.get("RouteCompletion") > 99 else blackv.get("RouteCompletion")
+        route_symbol = get_symbol(route_completed, 100, True)
+
+        collisions = blackv.get("Collision")
+        collision_symbol = get_symbol(collisions, 0, False)
+
+        outside_route_lanes = float(blackv.get("OutsideRouteLanes"))
+        outside_symbol = get_symbol(outside_route_lanes, 0, False)
+
+        red_light = blackv.get("RunningRedLight")
+        red_light_symbol = get_symbol(red_light, 0, False)
+
+        stop_signs = blackv.get("RunningStop")
+        stop_symbol = get_symbol(stop_signs, 0, False)
+
+        in_route = blackv.get("InRoute")
+
+        if self.scenario_tree.status == py_trees.common.Status.SUCCESS:
+            message = "> SUCCESS: Congratulations, route finished! "
+        elif self.scenario_tree.status == py_trees.common.Status.FAILURE:
+            if in_route:
+                message = "> FAILED: The actor timed out "
+            else:
+                message = "> FAILED: The actor deviated from the route"
+        elif self.scenario_tree.status == py_trees.common.Status.RUNNING:
+            print("\n> Something happened during the simulation. Was it manually shutdown?\n")
+
+        if self.scenario_tree.status != py_trees.common.Status.RUNNING:
+            print("\n" + message)
+            print("> ")
+            print("> Score: ")
+            print("> - Route Completed [{}]:      {}%".format(route_symbol, route_completed))
+            print("> - Collisions [{}]:           {} times".format(collision_symbol, collisions))
+            print("> - Outside route lanes [{}]:  {}%".format(outside_symbol, outside_route_lanes))
+            print("> - Red lights run [{}]:       {} times".format(red_light_symbol, red_light))
+            print("> - Stop signs run [{}]:       {} times\n".format(stop_symbol, stop_signs))
 
     def _tick_scenario(self, timestamp):
         """
