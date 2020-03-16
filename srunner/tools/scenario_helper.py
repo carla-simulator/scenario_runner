@@ -324,33 +324,59 @@ def generate_target_waypoint(waypoint, turn=0):
     sampling_radius = 1
     reached_junction = False
     wp_list = []
-    threshold = math.radians(0.1)
     while True:
 
         wp_choice = waypoint.next(sampling_radius)
         #   Choose path at intersection
-        if len(wp_choice) > 1:
+        if not reached_junction and (len(wp_choice) > 1 or wp_choice[0].is_junction):
             reached_junction = True
             waypoint = choose_at_junction(waypoint, wp_choice, turn)
         else:
             waypoint = wp_choice[0]
         wp_list.append(waypoint)
         #   End condition for the behavior
-        if turn != 0 and reached_junction and len(wp_list) >= 3:
-            v_1 = vector(
-                wp_list[-2].transform.location,
-                wp_list[-1].transform.location)
-            v_2 = vector(
-                wp_list[-3].transform.location,
-                wp_list[-2].transform.location)
-            vec_dots = np.dot(v_1, v_2)
-            cos_wp = vec_dots / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2)))
-            angle_wp = math.acos(min(1.0, cos_wp))  # COS can't be larger than 1, it can happen due to float imprecision
-            if angle_wp < threshold:
-                break
-        elif reached_junction and not wp_list[-1].is_intersection:
+        if reached_junction and not wp_list[-1].is_junction:
             break
     return wp_list[-1]
+
+
+def generate_target_waypoint_in_route(waypoint, route):
+    """
+    This method follow waypoints to a junction
+    @returns a waypoint list according to turn input
+    """
+    wmap = CarlaDataProvider.get_map()
+    reached_junction = False
+
+    # Get the route location
+    shortest_distance = float('inf')
+    for index, route_pos in enumerate(route):
+        wp = route_pos[0]
+        trigger_location = waypoint.transform.location
+
+        dist_to_route = trigger_location.distance(wp)
+        if dist_to_route <= shortest_distance:
+            closest_index = index
+            shortest_distance = dist_to_route
+
+    route_location = route[closest_index][0]
+    index = closest_index
+
+    while True:
+        # Get the next route location
+        index = min(index + 1, len(route))
+        route_location = route[index][0]
+        road_option = route[index][1]
+
+        # Enter the junction
+        if not reached_junction and (road_option in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
+            reached_junction = True
+
+        # End condition for the behavior, at the end of the junction
+        if reached_junction and (road_option not in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
+            break
+
+    return wmap.get_waypoint(route_location)
 
 
 def choose_at_junction(current_waypoint, next_choices, direction=0):
