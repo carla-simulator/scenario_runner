@@ -187,10 +187,11 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
-        settings = self.world.get_settings()
-        settings.synchronous_mode = False
-        settings.fixed_delta_seconds = None
-        self.world.apply_settings(settings)
+        if self._args.agent and self.manager.get_running_status():
+            settings = self.world.get_settings()
+            settings.synchronous_mode = False
+            settings.fixed_delta_seconds = None
+            self.world.apply_settings(settings)
 
         self.client.stop_recorder()
         self.manager.cleanup()
