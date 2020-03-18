@@ -316,6 +316,7 @@ class CollisionTest(Criterion):
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
         self.registered_collisions = []
         self.last_walker_id = None
+        self.actual_value = 0
 
     def update(self):
         """
@@ -353,6 +354,10 @@ class CollisionTest(Criterion):
         if self._collision_sensor is not None:
             self._collision_sensor.destroy()
         self._collision_sensor = None
+
+        # Blackboard variable
+        blackv = py_trees.blackboard.Blackboard()
+        _ = blackv.set("Collision", self.actual_value)
         super(CollisionTest, self).terminate(new_status)
 
     @staticmethod
@@ -368,7 +373,6 @@ class CollisionTest(Criterion):
         actor_type = None
 
         self.test_status = "FAILURE"
-        self.actual_value += 1
 
         actor_location = CarlaDataProvider.get_location(self.actor)
 
@@ -381,7 +385,6 @@ class CollisionTest(Criterion):
 
             # Ignore the current one if close to a previous one
             if distance <= self.MIN_AREA_OF_COLLISION:
-                self.actual_value -= 1
                 registered = True
                 if 'walker' in event.other_actor.type_id \
                         or event.other_actor.type_id in self.BIKES_BLUEPRINTS:
@@ -391,12 +394,12 @@ class CollisionTest(Criterion):
 
             # As walkers and bikes can be moved around, they might go out of the collision radius
             elif 'walker' in event.other_actor.type_id and self.last_walker_id == event.other_actor.id:
-                self.actual_value -= 1
                 registered = True
                 break
 
         # Register it if needed
         if not registered:
+            self.actual_value += 1
 
             if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
                     and 'sidewalk' not in event.other_actor.type_id:
@@ -947,14 +950,18 @@ class OutsideRouteLanesTest(Criterion):
 
         if self._wrong_distance > 0:
 
-            percentage = round(self._wrong_distance / self._total_distance * 100, 2)
+            percentage = self._wrong_distance / self._total_distance * 100
+
+            # Blackboard variable
+            blackv = py_trees.blackboard.Blackboard()
+            _ = blackv.set("OutsideRouteLanes", round(percentage, 2))
 
             outside_lane = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION)
             outside_lane.set_message(
                 "Agent went outside its route lanes for about {} meters "
                 "({}% of the completed route)".format(
                     round(self._wrong_distance, 3),
-                    percentage))
+                    round(percentage, 2)))
 
             outside_lane.set_dict({
                 'distance': self._wrong_distance,
@@ -963,6 +970,10 @@ class OutsideRouteLanesTest(Criterion):
 
             self._wrong_distance = 0
             self.list_traffic_events.append(outside_lane)
+        else:
+            # Blackboard variable
+            blackv = py_trees.blackboard.Blackboard()
+            _ = blackv.set("OutsideRouteLanes", 0)
 
 
 class WrongLaneTest(Criterion):
@@ -1235,6 +1246,10 @@ class InRouteTest(Criterion):
             self._accum_meters.append(d + accum)
             prev_wp = wp
 
+        # Blackboard variable
+        blackv = py_trees.blackboard.Blackboard()
+        _ = blackv.set("InRoute", True)
+
     def update(self):
         """
         Check if the actor location is within trigger region
@@ -1287,6 +1302,10 @@ class InRouteTest(Criterion):
                 self._current_index = closest_index
 
             if off_route:
+                # Blackboard variable
+                blackv = py_trees.blackboard.Blackboard()
+                _ = blackv.set("InRoute", False)
+
                 route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION)
                 route_deviation_event.set_message(
                     "Agent deviated from the route at (x={}, y={}, z={})".format(
@@ -1397,14 +1416,16 @@ class RouteCompletionTest(Criterion):
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
-        self.actual_value = self._percentage_route_completed
-
         return new_status
 
     def terminate(self, new_status):
         """
         Set test status to failure if not successful and terminate
         """
+        # Blackboard variable
+        blackv = py_trees.blackboard.Blackboard()
+        _ = blackv.set("RouteCompletion", round(self._percentage_route_completed, 2))
+
         if self.test_status == "INIT":
             self.test_status = "FAILURE"
         super(RouteCompletionTest, self).terminate(new_status)
@@ -1432,6 +1453,7 @@ class RunningRedLightTest(Criterion):
         self._map = CarlaDataProvider.get_map()
         self._list_traffic_lights = []
         self._last_red_light_id = None
+        self.actual_value = 0
         self.debug = False
 
         all_actors = self._world.get_actors()
@@ -1595,6 +1617,14 @@ class RunningRedLightTest(Criterion):
 
         return area_loc, wps
 
+    def terminate(self, new_status):
+        """
+        If there is currently an event running, it is registered
+        """
+        # Blackboard variable
+        blackv = py_trees.blackboard.Blackboard()
+        _ = blackv.set("RunningRedLight", self.actual_value)
+
 
 class RunningStopTest(Criterion):
 
@@ -1621,6 +1651,7 @@ class RunningStopTest(Criterion):
         self._target_stop_sign = None
         self._stop_completed = False
         self._affected_by_stop = False
+        self.actual_value = 0
 
         all_actors = self._world.get_actors()
         for _actor in all_actors:
@@ -1735,6 +1766,7 @@ class RunningStopTest(Criterion):
                 # is the vehicle out of the influence of this stop sign now?
                 if not self._stop_completed and self._affected_by_stop:
                     # did we stop?
+                    self.actual_value += 1
                     self.test_status = "FAILURE"
                     stop_location = self._target_stop_sign.get_transform().location
                     running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION)
@@ -1763,3 +1795,11 @@ class RunningStopTest(Criterion):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+    def terminate(self, new_status):
+        """
+        If there is currently an event running, it is registered
+        """
+        # Blackboard variable
+        blackv = py_trees.blackboard.Blackboard()
+        _ = blackv.set("RunningStop", self.actual_value)
