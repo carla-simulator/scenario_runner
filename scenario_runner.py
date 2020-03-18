@@ -187,7 +187,9 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
-        if self._args.agent and self.manager.get_running_status():
+        if self.world is not None and self.manager is not None \
+                and self._args.agent and self.manager.get_running_status():
+            # Reset to asynchronous mode
             settings = self.world.get_settings()
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = None

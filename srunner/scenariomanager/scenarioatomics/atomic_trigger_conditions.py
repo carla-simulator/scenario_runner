@@ -730,7 +730,6 @@ class InTimeToArrivalToVehicleSideLane(InTimeToArrivalToLocation):
             actor, time, other_side_location, comparison_operator, name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-
     def update(self):
         """
         Check if the ego vehicle can arrive at other actor within time
