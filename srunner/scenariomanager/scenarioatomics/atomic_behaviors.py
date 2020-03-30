@@ -1203,16 +1203,16 @@ class WaypointFollower(AtomicBehavior):
 
 
 class WaitUntilInFront(AtomicBehavior):
+
     """
     Behavior that support the creation of cut ins. It waits until the actor has passed another actor
 
     Parameters:
     - actor: the one getting in front of the other actor
     - other_actor: the reference vehicle that the actor will have to get in front of
-    - factor: How much in front the actor will have to get:
-        · 0: They are right next to each other
-        · 1: The front of the other_actor and the back of the actor are right next to each other
-        · Interval: (0, inf)
+    - factor: How much in front the actor will have to get (from 0 to infinity):
+        0: They are right next to each other
+        1: The front of the other_actor and the back of the actor are right next to each other
     """
 
     def __init__(self, actor, other_actor, factor=1, check_distance=True, name="WaitUntilInFront"):
@@ -1399,7 +1399,6 @@ class SetOSCInitSpeed(WaypointFollower):
             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
         return new_status
-
 
 
 class SetInitSpeed(AtomicBehavior):
