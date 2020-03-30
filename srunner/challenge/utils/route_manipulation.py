@@ -32,7 +32,7 @@ def _location_to_gps(lat_ref, lon_ref, location):
     mx = scale * lon_ref * math.pi * EARTH_RADIUS_EQUA / 180.0
     my = scale * EARTH_RADIUS_EQUA * math.log(math.tan((90.0 + lat_ref) * math.pi / 360.0))
     mx += location.x
-    my += location.y
+    my -= location.y
 
     lon = mx * 180.0 / (math.pi * EARTH_RADIUS_EQUA * scale)
     lat = 360.0 * math.atan(math.exp(my / (EARTH_RADIUS_EQUA * scale))) / math.pi - 90.0

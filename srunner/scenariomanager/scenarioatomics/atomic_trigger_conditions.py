@@ -22,6 +22,7 @@ from __future__ import print_function
 
 import operator
 import py_trees
+import carla
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -690,6 +691,82 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         return new_status
 
 
+class InTimeToArrivalToVehicleSideLane(AtomicCondition):
+
+    """
+    This class contains a check if a actor arrives within a given time
+    at another actor's side lane.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - name: Name of the condition
+    - time: The behavior is successful, if TTA is less than _time_ in seconds
+    - cut_in_lane: the lane from where the other_actor will do the cut in
+    - other_actor: Reference actor used in this behavior
+
+    The condition terminates with SUCCESS, when the actor can reach the other vehicle within the given time
+    """
+
+    _max_time_to_arrival = float('inf')  # time to arrival in seconds
+
+    def __init__(self, actor, other_actor, time, cut_in_lane,
+                 comparison_operator=operator.lt, name="InTimeToArrivalToVehicleSideLane"):
+        """
+        Setup parameters
+        """
+        super(InTimeToArrivalToVehicleSideLane, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._other_actor = other_actor
+        self._actor = actor
+        self._time = time
+        self._cut_in_lane = cut_in_lane
+        self._comparison_operator = comparison_operator
+
+        self._world = CarlaDataProvider.get_world()
+        self._map = CarlaDataProvider.get_map(self._world)
+
+    def update(self):
+        """
+        Check if the ego vehicle can arrive at other actor within time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self._actor)
+        other_location = CarlaDataProvider.get_location(self._other_actor)
+        other_waypoint = self._map.get_waypoint(other_location)
+
+        if self._cut_in_lane == 'right':
+            other_side_waypoint = other_waypoint.get_left_lane()
+        elif self._cut_in_lane == 'left':
+            other_side_waypoint = other_waypoint.get_right_lane()
+        else:
+            raise Exception("cut_in_lane must be either 'left' or 'right'")
+        if other_side_waypoint is None:
+            return new_status
+
+        target_location = other_side_waypoint.transform.location
+
+        if current_location is None or target_location is None:
+            return new_status
+
+        distance = calculate_distance(current_location, target_location)
+        current_velocity = CarlaDataProvider.get_velocity(self._actor)
+        other_velocity = CarlaDataProvider.get_velocity(self._other_actor)
+
+        # if velocity is too small, simply use a large time to arrival
+        time_to_arrival = self._max_time_to_arrival
+
+        if current_velocity > other_velocity:
+            time_to_arrival = 2 * distance / (current_velocity - other_velocity)
+
+        if self._comparison_operator(time_to_arrival, self._time):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class DriveDistance(AtomicCondition):
 
     """
@@ -728,6 +805,48 @@ class DriveDistance(AtomicCondition):
         self._location = new_location
 
         if self._distance > self._target_distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+
+class AtRightestLane(AtomicCondition):
+
+    """
+    This class contains an atomic behavior to check if the actor is at the rightest driving lane.
+
+    Important parameters:
+    - actor: CARLA actor to execute the condition
+
+    The condition terminates with SUCCESS, when the actor enters the rightest lane
+    """
+
+    def __init__(self, actor, name="AtRightestLane"):
+        """
+        Setup parameters
+        """
+        super(AtRightestLane, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._map = CarlaDataProvider.get_map()
+
+    def update(self):
+        """
+        Check actor waypoints
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self._actor)
+        waypoint = self._map.get_waypoint(location)
+        if waypoint is None:
+            return new_status
+        right_waypoint = waypoint.get_right_lane()
+        if right_waypoint is None:
+            return new_status
+        lane_type = right_waypoint.lane_type
+
+        if lane_type != carla.LaneType.Driving:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))

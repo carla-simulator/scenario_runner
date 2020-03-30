@@ -295,12 +295,6 @@ class CollisionTest(Criterion):
     MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
 
-    BIKES_BLUEPRINTS = [
-        'vehicle.diamondback.century',
-        'vehicle.gazelle.omafiets',
-        'vehicle.bh.crossbike'
-    ]
-
     def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
         """
         Construction with sensor setup
@@ -315,7 +309,7 @@ class CollisionTest(Criterion):
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
         self.registered_collisions = []
-        self.last_walker_id = None
+        self.last_id = None
         self.actual_value = 0
 
     def update(self):
@@ -376,26 +370,24 @@ class CollisionTest(Criterion):
 
         actor_location = CarlaDataProvider.get_location(self.actor)
 
-        # Loops through all the previous registered collisions
-        for collision_location in self.registered_collisions:
+        # Ignore the current one if it is the same id as before
+        if self.last_id == event.other_actor.id:
+            registered = True
+        else:
+            # Loops through all the previous registered collisions
+            for collision_location in self.registered_collisions:
 
-            # Get the distance to the collision point
-            distance_vector = actor_location - collision_location
-            distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+                # Get the distance to the collision point
+                distance_vector = actor_location - collision_location
+                distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
 
-            # Ignore the current one if close to a previous one
-            if distance <= self.MIN_AREA_OF_COLLISION:
-                registered = True
-                if 'walker' in event.other_actor.type_id \
-                        or event.other_actor.type_id in self.BIKES_BLUEPRINTS:
-                    # Register the id if it's a walker (or bike)
-                    self.last_walker_id = event.other_actor.id
-                break
+                # Ignore the current one if close to a previous one
+                if distance <= self.MIN_AREA_OF_COLLISION:
+                    registered = True
+                    self.last_id = event.other_actor.id
+                    break
 
-            # As walkers and bikes can be moved around, they might go out of the collision radius
-            elif 'walker' in event.other_actor.type_id and self.last_walker_id == event.other_actor.id:
-                registered = True
-                break
+
 
         # Register it if needed
         if not registered:

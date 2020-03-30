@@ -432,6 +432,13 @@ class CarlaActorPool(object):
         CarlaActorPool._client = client
 
     @staticmethod
+    def get_client():
+        """
+        Get the CARLA client
+        """
+        return CarlaActorPool._client
+
+    @staticmethod
     def set_world(world):
         """
         Set the CARLA world
@@ -636,28 +643,36 @@ class CarlaActorPool(object):
         return actors
 
     @staticmethod
-    def setup_batch_actors(model, amount, spawn_point, hero=False, autopilot=False, random_location=False):
+    def setup_batch_actors(model, amount, spawn_points, hero=False, autopilot=False, random_location=False):
         """
         Function to setup a batch of actors with the most relevant parameters,
         incl. spawn point and vehicle model.
         """
-        SpawnActor = carla.command.SpawnActor       # pylint: disable=invalid-name
-        SetAutopilot = carla.command.SetAutopilot   # pylint: disable=invalid-name
-        FutureActor = carla.command.FutureActor     # pylint: disable=invalid-name
+        SpawnActor = carla.command.SpawnActor      # pylint: disable=invalid-name
+        SetAutopilot = carla.command.SetAutopilot  # pylint: disable=invalid-name
+        FutureActor = carla.command.FutureActor    # pylint: disable=invalid-name
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
+
+        blueprints = blueprint_library.filter(model)
+        blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
 
         if not hero:
             hero_actor = CarlaActorPool.get_hero_actor()
         else:
             hero_actor = None
         batch = []
-        for _ in range(amount):
+
+        for i in range(amount):
             # Get vehicle by model
-            blueprint = random.choice(blueprint_library.filter(model))
+            blueprint = random.choice(blueprints)
             # is it a pedestrian? -> make it mortal
             if blueprint.has_attribute('is_invincible'):
                 blueprint.set_attribute('is_invincible', 'false')
+
+            if blueprint.has_attribute('color'):
+                color = random.choice(blueprint.get_attribute('color').recommended_values)
+                blueprint.set_attribute('color', color)
 
             if hero:
                 blueprint.set_attribute('role_name', 'hero')
@@ -679,6 +694,12 @@ class CarlaActorPool(object):
                 else:
                     spawn_point = CarlaActorPool._spawn_points[CarlaActorPool._spawn_index]
                     CarlaActorPool._spawn_index += 1
+            else:
+                try:
+                    spawn_point = spawn_points[i]
+                except IndexError:
+                    print("The amount of spawn points is lower than the amount of vehicles spawned")
+                    break
 
             if spawn_point:
                 batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
@@ -688,12 +709,12 @@ class CarlaActorPool(object):
         return actor_list
 
     @staticmethod
-    def request_new_batch_actors(model, amount, spawn_point, hero=False, autopilot=False, random_location=False):
+    def request_new_batch_actors(model, amount, spawn_points, hero=False, autopilot=False, random_location=False):
         """
         This method tries to create a new actor. If this was
         successful, the new actor is returned, None otherwise.
         """
-        actors = CarlaActorPool.setup_batch_actors(model, amount, spawn_point, hero, autopilot, random_location)
+        actors = CarlaActorPool.setup_batch_actors(model, amount, spawn_points, hero, autopilot, random_location)
 
         if actors is None:
             return None
