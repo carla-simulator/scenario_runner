@@ -384,7 +384,6 @@ class CollisionTest(Criterion):
                 # Ignore the current one if close to a previous one
                 if distance <= self.MIN_AREA_OF_COLLISION:
                     registered = True
-                    self.last_id = event.other_actor.id
                     break
 
 
@@ -392,6 +391,7 @@ class CollisionTest(Criterion):
         # Register it if needed
         if not registered:
             self.actual_value += 1
+            self.last_id = event.other_actor.id
 
             if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
                     and 'sidewalk' not in event.other_actor.type_id:
@@ -401,7 +401,6 @@ class CollisionTest(Criterion):
                 actor_type = TrafficEventType.COLLISION_VEHICLE
 
             elif 'walker' in event.other_actor.type_id:
-                self.last_walker_id = event.other_actor.id
                 actor_type = TrafficEventType.COLLISION_PEDESTRIAN
 
             collision_event = TrafficEvent(event_type=actor_type)
