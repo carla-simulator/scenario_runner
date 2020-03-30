@@ -15,10 +15,18 @@
     - Added support for TimeOfDay tag
 * Scenario updates:
     - Scenarios that are part of RouteScenario have had their triggering condition modified. This will only activate when a certain parameter is set, and if not, the old trigger condition will still be applied.
+* Atomics:
+    - ChangeAutopilot now calls a TM instance, and allows to change its parameters
+    - Added WaitUntilInFront behavior and InTimeToArrivalToVehicleSideLane trigger condition, useful for cut ins
+    - Added now trigger condition, AtRightestLane, which checks if the actor is at the rightmost driving lane
+* Setting up actors in batch now also randomizes their colors
 
 ### :bug: Bug Fixes
 * Fixed spawning bugs for scenario DynamicObjectCrossing when it is part of a route
 * Fixed spawning bugs for scenarios VehicleTurningRight, VehicleTurningLeft when they are part of a route
+* Fixed bug causing the GPS coordinates given to the agents to be wrongly calculated
+* Fixed bug when setting up actors in batch causing to ignore the spawn points given.
+* Fixed bug where CollisionTest was counting as multiple hits collisions that displaced the actor for a long distance.
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
