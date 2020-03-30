@@ -761,6 +761,83 @@ class InTimeToArrivalToVehicleSideLane(AtomicCondition):
         return new_status
 
 
+class WaitUntilInFront(AtomicCondition):
+
+    """
+    Behavior that support the creation of cut ins. It waits until the actor has passed another actor
+
+    Parameters:
+    - actor: the one getting in front of the other actor
+    - other_actor: the reference vehicle that the actor will have to get in front of
+    - factor: How much in front the actor will have to get (from 0 to infinity):
+        0: They are right next to each other
+        1: The front of the other_actor and the back of the actor are right next to each other
+    """
+
+    def __init__(self, actor, other_actor, factor=1, check_distance=True, name="WaitUntilInFront"):
+        """
+        Init
+        """
+        super(WaitUntilInFront, self).__init__(name)
+        self._actor = actor
+        self._other_actor = other_actor
+        self._distance = 10
+        self._factor = max(EPSILON, factor)  # Must be > 0
+        self._check_distance = check_distance
+
+        self._world = CarlaDataProvider.get_world()
+        self._map = CarlaDataProvider.get_map(self._world)
+
+        actor_extent = self._actor.bounding_box.extent.x
+        other_extent = self._other_actor.bounding_box.extent.x
+        self._length = self._factor * (actor_extent + other_extent)
+
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Checks if the two actors meet the requirements
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        in_front = False
+        close_by = False
+
+        # Location of our actor
+        actor_location = CarlaDataProvider.get_location(self._actor)
+        if actor_location is None:
+            return new_status
+
+        # Waypoint in front of the other actor
+        other_location = CarlaDataProvider.get_location(self._other_actor)
+        other_waypoint = self._map.get_waypoint(other_location)
+        if other_waypoint is None:
+            return new_status
+        other_next_waypoints = other_waypoint.next(self._length)
+        if other_next_waypoints is None:
+            return new_status
+        other_next_waypoint = other_next_waypoints[0]
+
+        # Wait for the vehicle to be in front
+        other_dir = other_next_waypoint.transform.get_forward_vector()
+        act_other_dir = actor_location - other_next_waypoint.transform.location
+        dot_ve_wp = other_dir.x * act_other_dir.x + other_dir.y * act_other_dir.y + other_dir.z * act_other_dir.z
+
+        if dot_ve_wp > 0.0:
+            in_front = True
+
+        # Wait for it to be close-by
+        if not self._check_distance:
+            close_by = True
+        elif actor_location.distance(other_next_waypoint.transform.location) < self._distance:
+            close_by = True
+
+        if in_front and close_by:
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
 class DriveDistance(AtomicCondition):
 
     """
@@ -805,7 +882,7 @@ class DriveDistance(AtomicCondition):
         return new_status
 
 
-class AtRightestLane(AtomicCondition):
+class AtRightmostLane(AtomicCondition):
 
     """
     This class contains an atomic behavior to check if the actor is at the rightest driving lane.
@@ -816,11 +893,11 @@ class AtRightestLane(AtomicCondition):
     The condition terminates with SUCCESS, when the actor enters the rightest lane
     """
 
-    def __init__(self, actor, name="AtRightestLane"):
+    def __init__(self, actor, name="AtRightmostLane"):
         """
         Setup parameters
         """
-        super(AtRightestLane, self).__init__(name)
+        super(AtRightmostLane, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._map = CarlaDataProvider.get_map()
