@@ -285,7 +285,7 @@ class RouteScenario(BasicScenario):
             elif w[1] == RoadOption.STRAIGHT:  # Gray
                 color = carla.Color(128, 128, 128)
             else:  # LANEFOLLOW
-                color = carla.Color(0, 255, 0) # Green
+                color = carla.Color(0, 255, 0)  # Green
                 size = 0.1
 
             world.debug.draw_point(wp, size=size, color=color, life_time=persistency)

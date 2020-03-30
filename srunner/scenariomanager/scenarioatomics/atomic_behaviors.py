@@ -585,7 +585,7 @@ class ChangeAutoPilot(AtomicBehavior):
                 self._tm.force_lane_change(self._actor, force_lane_change)
 
             if "ignore_vehicles_percentage" in self._parameters:
-                ignore_vehicles  = self._parameters["ignore_vehicles_percentage"]
+                ignore_vehicles = self._parameters["ignore_vehicles_percentage"]
                 self._tm.ignore_vehicles_percentage(self._actor, ignore_vehicles)
 
         new_status = py_trees.common.Status.SUCCESS
@@ -1223,7 +1223,7 @@ class WaitUntilInFront(AtomicBehavior):
         self._actor = actor
         self._other_actor = other_actor
         self._distance = 10
-        self._factor = max(EPSILON, factor) # Must be > 0
+        self._factor = max(EPSILON, factor)  # Must be > 0
         self._check_distance = check_distance
 
         self._world = CarlaDataProvider.get_world()

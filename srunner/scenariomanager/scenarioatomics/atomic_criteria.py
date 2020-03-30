@@ -386,8 +386,6 @@ class CollisionTest(Criterion):
                     registered = True
                     break
 
-
-
         # Register it if needed
         if not registered:
             self.actual_value += 1
