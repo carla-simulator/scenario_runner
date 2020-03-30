@@ -654,9 +654,6 @@ class CarlaActorPool(object):
 
         blueprint_library = CarlaActorPool._world.get_blueprint_library()
 
-        blueprints = blueprint_library.filter(model)
-        blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
-
         if not hero:
             hero_actor = CarlaActorPool.get_hero_actor()
         else:
@@ -665,7 +662,7 @@ class CarlaActorPool(object):
 
         for i in range(amount):
             # Get vehicle by model
-            blueprint = random.choice(blueprints)
+            blueprint = random.choice(blueprint_library.filter(model))
             # is it a pedestrian? -> make it mortal
             if blueprint.has_attribute('is_invincible'):
                 blueprint.set_attribute('is_invincible', 'false')
