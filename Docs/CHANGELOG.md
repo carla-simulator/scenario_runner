@@ -18,7 +18,7 @@
 * Atomics:
     - ChangeAutopilot now calls a TM instance, and allows to change its parameters
     - Added WaitUntilInFront behavior and InTimeToArrivalToVehicleSideLane trigger condition, useful for cut ins
-    - Added now trigger condition, AtRightestLane, which checks if the actor is at the rightmost driving lane
+    - Added new trigger condition, AtRightestLane, which checks if the actor is at the rightmost driving lane
 * Setting up actors in batch now also randomizes their colors
 
 ### :bug: Bug Fixes
