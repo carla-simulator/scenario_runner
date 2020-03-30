@@ -126,10 +126,8 @@ class StoryElementStatusToBlackboard(Decorator):
                     for child
                     in terminating_ancestor.children
                     if child.status == py_trees.common.Status.SUCCESS]
-                if "EndConditions" in successful_children:
+                if "StopTrigger" in successful_children:
                     rules.append("END")
-                if "CancelConditions" in successful_children:
-                    rules.append("CANCEL")
 
         # END is the default status unless we have a more detailed one
         rules = rules or ["END"]
@@ -230,19 +228,22 @@ class OpenScenario(BasicScenario):
             parallel_sequences = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
 
-            for sequence in act.iter("Sequence"):
+            for sequence in act.iter("ManeuverGroup"):
                 sequence_behavior = py_trees.composites.Sequence(name=sequence.attrib.get('name'))
-                repetitions = sequence.attrib.get('numberOfExecutions', 1)
+                repetitions = sequence.attrib.get('maximumExecutionCount', 1)
 
                 for _ in range(int(repetitions)):
 
                     actor_ids = []
                     for actor in sequence.iter("Actors"):
-                        for entity in actor.iter("Entity"):
+                        for entity in actor.iter("EntityRef"):
                             for k, _ in enumerate(joint_actor_list):
-                                if entity.attrib.get('name', None) == joint_actor_list[k].attributes['role_name']:
+                                if entity.attrib.get('entityRef', None) == joint_actor_list[k].attributes['role_name']:
                                     actor_ids.append(k)
                                     break
+
+                    if not actor_ids:
+                        raise AttributeError("No actors for maneuvers found")
 
                    # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
                     catalog_maneuver_list = []
@@ -271,12 +272,12 @@ class OpenScenario(BasicScenario):
                                             maneuver_behavior, "ACTION", child.attrib.get('name'))
 
                                         parallel_actions.add_child(
-                                            oneshot_behavior(variable_name=# See note in get_xml_path
+                                            oneshot_behavior(variable_name=  # See note in get_xml_path
                                                              get_xml_path(self.config.story, sequence) + '>' + \
                                                              get_xml_path(maneuver, child),
                                                              behaviour=maneuver_behavior))
 
-                                if child.tag == "StartConditions":
+                                if child.tag == "StartTrigger":
                                     # There is always one StartConditions block per Event
                                     parallel_condition_groups = self._create_condition_container(
                                         child, "Parallel Condition Groups", sequence, maneuver)
@@ -315,20 +316,19 @@ class OpenScenario(BasicScenario):
                     parallel_sequences, "ACT", act.attrib.get('name'))
                 parallel_behavior.add_child(parallel_sequences)
 
-            for conditions in act.iter("Conditions"):
-                for start_condition in conditions.iter("Start"):
+            start_triggers = act.find("StartTrigger")
+            if list(start_triggers) is not None:
+                for start_condition in start_triggers:
                     parallel_start_criteria = self._create_condition_container(start_condition, "StartConditions")
                     if parallel_start_criteria.children:
                         start_conditions.add_child(parallel_start_criteria)
-                for end_condition in conditions.iter("End"):
-                    parallel_end_criteria = self._create_condition_container(end_condition, "EndConditions")
+            end_triggers = act.find("StopTrigger")
+            if end_triggers is not None and list(end_triggers) is not None:
+                for end_condition in end_triggers:
+                    parallel_end_criteria = self._create_condition_container(
+                        end_condition, "EndConditions", success_on_all=False)
                     if parallel_end_criteria.children:
                         parallel_behavior.add_child(parallel_end_criteria)
-                for cancel_condition in conditions.iter("Cancel"):
-                    parallel_cancel_criteria = self._create_condition_container(
-                        cancel_condition, "CancelConditions", success_on_all=False)
-                    if parallel_cancel_criteria.children:
-                        parallel_behavior.add_child(parallel_cancel_criteria)
 
             if start_conditions.children:
                 act_sequence.add_child(start_conditions)
@@ -394,16 +394,14 @@ class OpenScenario(BasicScenario):
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         criteria = []
-        for endcondition in self.config.storyboard.iter("EndConditions"):
+        for endcondition in self.config.storyboard.iter("StopTrigger"):
             for condition in endcondition.iter("Condition"):
                 if condition.attrib.get('name').startswith('criteria_'):
                     condition.set('name', condition.attrib.get('name')[9:])
                     criteria.append(condition)
 
         for condition in criteria:
-
-            criterion = OpenScenarioParser.convert_condition_to_atomic(
-                condition, self.ego_vehicles)
+            criterion = OpenScenarioParser.convert_condition_to_atomic(condition, self.ego_vehicles)
             parallel_criteria.add_child(criterion)
 
         return parallel_criteria

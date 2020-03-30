@@ -286,7 +286,7 @@ class OSCStartEndCondition(AtomicCondition):
     Important parameters:
     - element_name: The story element's name attribute
     - element_type: The element type [act,scene,maneuver,event,action]
-    - rule: One or more of [START, END, CANCEL]
+    - rule: Either START or END
 
     The condition terminates with SUCCESS, when the named story element starts
     """
@@ -316,17 +316,11 @@ class OSCStartEndCondition(AtomicCondition):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if self._rule == "ANY":
-            rules = ["END", "CANCEL"]
-        else:
-            rules = [self._rule]
-
-        for rule in rules:
-            if new_status == py_trees.common.Status.RUNNING:
-                blackboard_variable_name = "({}){}-{}".format(self._element_type, self._element_name, rule)
-                element_start_time = self._blackboard.get(blackboard_variable_name)
-                if element_start_time and element_start_time >= self._start_time:
-                    new_status = py_trees.common.Status.SUCCESS
+        if new_status == py_trees.common.Status.RUNNING:
+            blackboard_variable_name = "({}){}-{}".format(self._element_type, self._element_name, self._rule)
+            element_start_time = self._blackboard.get(blackboard_variable_name)
+            if element_start_time and element_start_time >= self._start_time:
+                new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
