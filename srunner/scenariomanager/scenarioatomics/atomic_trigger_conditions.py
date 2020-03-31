@@ -685,11 +685,11 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         return new_status
 
 
-class InTimeToArrivalToVehicleSideLane(AtomicCondition):
+class InTimeToArrivalToVehicleSideLane(InTimeToArrivalToLocation):
 
     """
     This class contains a check if a actor arrives within a given time
-    at another actor's side lane.
+    at another actor's side lane. Inherits from InTimeToArrivalToLocation
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
@@ -703,21 +703,33 @@ class InTimeToArrivalToVehicleSideLane(AtomicCondition):
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, actor, other_actor, time, cut_in_lane,
+    def __init__(self, actor, other_actor, time, side_lane,
                  comparison_operator=operator.lt, name="InTimeToArrivalToVehicleSideLane"):
         """
         Setup parameters
         """
-        super(InTimeToArrivalToVehicleSideLane, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._other_actor = other_actor
-        self._actor = actor
-        self._time = time
-        self._cut_in_lane = cut_in_lane
-        self._comparison_operator = comparison_operator
+        self._side_lane = side_lane
 
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map(self._world)
+
+        other_location = other_actor.get_transform().location
+        other_waypoint = self._map.get_waypoint(other_location)
+
+        if self._side_lane == 'right':
+            other_side_waypoint = other_waypoint.get_left_lane()
+        elif self._side_lane == 'left':
+            other_side_waypoint = other_waypoint.get_right_lane()
+        else:
+            raise Exception("cut_in_lane must be either 'left' or 'right'")
+
+        other_side_location = other_side_waypoint.transform.location
+
+        super(InTimeToArrivalToVehicleSideLane, self).__init__(
+            actor, time, other_side_location, comparison_operator, name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
 
     def update(self):
         """
@@ -725,38 +737,24 @@ class InTimeToArrivalToVehicleSideLane(AtomicCondition):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        current_location = CarlaDataProvider.get_location(self._actor)
         other_location = CarlaDataProvider.get_location(self._other_actor)
         other_waypoint = self._map.get_waypoint(other_location)
 
-        if self._cut_in_lane == 'right':
+        if self._side_lane == 'right':
             other_side_waypoint = other_waypoint.get_left_lane()
-        elif self._cut_in_lane == 'left':
+        elif self._side_lane == 'left':
             other_side_waypoint = other_waypoint.get_right_lane()
         else:
             raise Exception("cut_in_lane must be either 'left' or 'right'")
         if other_side_waypoint is None:
             return new_status
 
-        target_location = other_side_waypoint.transform.location
+        self._target_location = other_side_waypoint.transform.location
 
-        if current_location is None or target_location is None:
+        if self._target_location is None:
             return new_status
 
-        distance = calculate_distance(current_location, target_location)
-        current_velocity = CarlaDataProvider.get_velocity(self._actor)
-        other_velocity = CarlaDataProvider.get_velocity(self._other_actor)
-
-        # if velocity is too small, simply use a large time to arrival
-        time_to_arrival = self._max_time_to_arrival
-
-        if current_velocity > other_velocity:
-            time_to_arrival = 2 * distance / (current_velocity - other_velocity)
-
-        if self._comparison_operator(time_to_arrival, self._time):
-            new_status = py_trees.common.Status.SUCCESS
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        new_status = super(InTimeToArrivalToVehicleSideLane, self).update()
 
         return new_status
 

@@ -1328,14 +1328,8 @@ class SetOSCInitSpeed(WaypointFollower):
 class SetInitSpeed(AtomicBehavior):
 
     """
-    This class contains an atomic behavior to set the init_speed of an actor.
-
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - init_speed: initial actor speed when scenario starts, in m/s
-
-    Termination of behavior with blackboard variable which is set in
-    super(classname, self).initialise() of all other behavioral atomics.
+    This class contains an atomic behavior to set the init_speed of an actor,
+    succeding immeditely after initializing
     """
 
     def __init__(self, actor, init_speed=10, name='SetInitSpeed'):
@@ -1360,12 +1354,10 @@ class SetInitSpeed(AtomicBehavior):
 
     def update(self):
         """
-        Run local planner and calculate a new velocity if the deviation from target_speed
-        is greater than 3m/s. Check whether the SetInitSpeed behavior should terminate by
-        checking the corresponding blackboard variable.
+        Nothing to update, end the behavior
         """
 
-        return py_trees.common.Status.RUNNING
+        return py_trees.common.Status.SUCCESS
 
 
 class HandBrakeVehicle(AtomicBehavior):
