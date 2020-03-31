@@ -538,23 +538,55 @@ class ChangeAutoPilot(AtomicBehavior):
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - activate: True (=enable autopilot) or False (=disable autopilot)
+    - lane_change: Traffic Manager parameter. True (=enable lane changes) or False (=disable lane changes)
+    - distance_between_vehicles: Traffic Manager parameter
+    - max_speed: Traffic Manager parameter. Max speed of the actor. This will only work for road segments
+                 with the same speed limit as the first one
 
     The behavior terminates after changing the autopilot state
     """
 
-    def __init__(self, actor, activate, name="ChangeAutoPilot"):
+    def __init__(self, actor, activate, parameters=None, name="ChangeAutoPilot"):
         """
         Setup parameters
         """
         super(ChangeAutoPilot, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._activate = activate
+        self._tm = CarlaActorPool.get_client().get_trafficmanager()
+        self._parameters = parameters
 
     def update(self):
         """
         De/activate autopilot
         """
         self._actor.set_autopilot(self._activate)
+
+        if self._parameters is not None:
+            if "auto_lane_change" in self._parameters:
+                lane_change = self._parameters["auto_lane_change"]
+                self._tm.auto_lane_change(self._actor, lane_change)
+
+            if "max_speed" in self._parameters:
+                max_speed = self._parameters["max_speed"]
+                max_road_speed = self._actor.get_speed_limit()
+                if max_road_speed is not None:
+                    percentage = (max_road_speed - max_speed) / max_road_speed * 100.0
+                    self._tm.vehicle_percentage_speed_difference(self._actor, percentage)
+                else:
+                    print("ChangeAutopilot: Unable to find the vehicle's speed limit")
+
+            if "distance_between_vehicles" in self._parameters:
+                dist_vehicles = self._parameters["distance_between_vehicles"]
+                self._tm.distance_to_leading_vehicle(self._actor, dist_vehicles)
+
+            if "force_lane_change" in self._parameters:
+                force_lane_change = self._parameters["force_lane_change"]
+                self._tm.force_lane_change(self._actor, force_lane_change)
+
+            if "ignore_vehicles_percentage" in self._parameters:
+                ignore_vehicles = self._parameters["ignore_vehicles_percentage"]
+                self._tm.ignore_vehicles_percentage(self._actor, ignore_vehicles)
 
         new_status = py_trees.common.Status.SUCCESS
 
@@ -1023,12 +1055,11 @@ class WaypointFollower(AtomicBehavior):
         """
         Delayed one-time initialization
 
-        Checks if a another WaypointFollower behavior is already running for this actor.
+        Checks if another WaypointFollower behavior is already running for this actor.
         If this is the case, a termination signal is sent to the running behavior.
         """
         super(WaypointFollower, self).initialise()
         self._unique_id = int(round(time.time() * 1e9))
-
         try:
             # check whether WF for this actor is already running and add new WF to running_WF list
             check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
@@ -1230,7 +1261,7 @@ class LaneChange(WaypointFollower):
             # driving on new lane
             distance = current_position_actor.transform.location.distance(self._pos_before_lane_change)
 
-            if distance > 50:
+            if distance > self._distance_other_lane:
                 # long enough distance on new lane --> SUCCESS
                 status = py_trees.common.Status.SUCCESS
         else:
@@ -1292,6 +1323,41 @@ class SetOSCInitSpeed(WaypointFollower):
             self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
 
         return new_status
+
+
+class SetInitSpeed(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to set the init_speed of an actor,
+    succeding immeditely after initializing
+    """
+
+    def __init__(self, actor, init_speed=10, name='SetInitSpeed'):
+
+        self._init_speed = init_speed
+        self._terminate = None
+        self._actor = actor
+
+        super(SetInitSpeed, self).__init__(name, actor)
+
+    def initialise(self):
+        """
+        Initialize it's speed
+        """
+
+        transform = self._actor.get_transform()
+        yaw = transform.rotation.yaw * (math.pi / 180)
+
+        vx = math.cos(yaw) * self._init_speed
+        vy = math.sin(yaw) * self._init_speed
+        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+
+    def update(self):
+        """
+        Nothing to update, end the behavior
+        """
+
+        return py_trees.common.Status.SUCCESS
 
 
 class HandBrakeVehicle(AtomicBehavior):

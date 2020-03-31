@@ -93,7 +93,6 @@ class NpcAgent(AutonomousAgent):
                 self._route_assigned = True
 
         else:
-            print("[Timestamp: {}]".format(timestamp))
             control = self._agent.run_step()
 
         return control
