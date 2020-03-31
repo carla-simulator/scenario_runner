@@ -187,6 +187,13 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
+        if self.world is not None and self.manager is not None \
+                and self._args.agent and self.manager.get_running_status():
+            # Reset to asynchronous mode
+            settings = self.world.get_settings()
+            settings.synchronous_mode = False
+            settings.fixed_delta_seconds = None
+            self.world.apply_settings(settings)
 
         self.client.stop_recorder()
         self.manager.cleanup()
@@ -404,6 +411,7 @@ class ScenarioRunner(object):
 
             # Remove all actors
             scenario.remove_all_actors()
+
             result = True
         except SensorConfigurationInvalid as e:
             self._cleanup()

@@ -27,6 +27,7 @@
 * Fixed bug causing the GPS coordinates given to the agents to be wrongly calculated
 * Fixed bug when setting up actors in batch causing to ignore the spawn points given.
 * Fixed bug where CollisionTest was counting as multiple hits collisions that displaced the actor for a long distance.
+* Fixed bug causing the simulation to end after running in synchronous mode
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
