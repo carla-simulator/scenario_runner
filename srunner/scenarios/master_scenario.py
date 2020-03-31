@@ -30,8 +30,9 @@ class MasterScenario(BasicScenario):
     category = "Master"
     radius = 10.0           # meters
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=300):
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False,
+                 criteria_enable=True,
+                 timeout=300, terminate_on_collision=False):
         """
         Setup all relevant parameters and create scenario
         """
@@ -40,6 +41,9 @@ class MasterScenario(BasicScenario):
         self.route = None
         # Timeout of scenario in seconds
         self.timeout = timeout
+        # The master scenario might terminate when there is any collision
+        self.terminate_on_collision = terminate_on_collision
+
 
         if hasattr(self.config, 'target'):
             self.target = self.config.target
@@ -77,7 +81,8 @@ class MasterScenario(BasicScenario):
         else:
             route = self.route
 
-        collision_criterion = CollisionTest(self.ego_vehicles[0], terminate_on_failure=False)
+        collision_criterion = CollisionTest(self.ego_vehicles[0],
+                                            terminate_on_failure=self.terminate_on_collision)
 
         route_criterion = InRouteTest(self.ego_vehicles[0],
                                       radius=30.0,

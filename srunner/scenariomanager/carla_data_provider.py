@@ -684,7 +684,6 @@ class CarlaActorPool(object):
         walkers_present = CarlaActorPool._world.get_actors(controllers_ids)
 
         # This function set how often pedestrians cross
-        print (" SETTING A CROSS FACTOR OF ", cross_factor)
         CarlaActorPool._world.set_pedestrians_cross_factor(cross_factor)
 
         for i in range(0, len(walkers_present)):
