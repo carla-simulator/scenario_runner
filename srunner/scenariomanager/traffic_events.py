@@ -29,6 +29,7 @@ class TrafficEventType(Enum):
     STOP_INFRACTION = 10
     OUTSIDE_LANE_INFRACTION = 11
     OUTSIDE_ROUTE_LANES_INFRACTION = 12
+    VEHICLE_BLOCKED = 13
 
 
 class TrafficEvent(object):
