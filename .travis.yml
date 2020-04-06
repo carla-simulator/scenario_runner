@@ -26,7 +26,7 @@ matrix:
         - autopep8 srunner/tools/*.py --in-place --max-line-length=120
         - autopep8 srunner/scenarioconfigs/*.py --in-place --max-line-length=120
         - autopep8 scenario_runner.py --in-place --max-line-length=120
-        - autopep8 srunner/challenge/autoagents/*.py --in-place --max-line-length=120
+        - autopep8 srunner/autoagents/*.py --in-place --max-line-length=120
         - autopep8 srunner/challenge/challenge_statistics_manager.py --in-place --max-line-length=120
         - git diff --quiet HEAD --; if [ ! $? -eq 0 ]; then echo "Code is not autopep8 compliant. Please run code_check_and_formatting.sh"; git diff HEAD --; exit 1; fi
       after_failure:
@@ -48,14 +48,14 @@ matrix:
         - pylint --rcfile=.pylintrc --disable=I srunner/tools
         - pylint --rcfile=.pylintrc --disable=I srunner/scenarioconfigs
         - pylint --rcfile=.pylintrc --disable=I scenario_runner.py
-        - pylint --rcfile=.pylintrc --disable=I srunner/challenge/autoagents
+        - pylint --rcfile=.pylintrc --disable=I srunner/autoagents
         - pylint --rcfile=.pylintrc --disable=I srunner/challenge/challenge_statistics_manager.py
         - score=`pylint --rcfile=.pylintrc --disable=I srunner/scenariomanager | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
         - score=`pylint --rcfile=.pylintrc --disable=I srunner/scenarios | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
         - score=`pylint --rcfile=.pylintrc --disable=I srunner/tools | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
         - score=`pylint --rcfile=.pylintrc --disable=I srunner/scenarioconfigs | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
         - score=`pylint --rcfile=.pylintrc --disable=I scenario_runner.py | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
-        - score=`pylint --rcfile=.pylintrc --disable=I srunner/challenge/autoagents | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        - score=`pylint --rcfile=.pylintrc --disable=I srunner/autoagents | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
         - score=`pylint --rcfile=.pylintrc --disable=I srunner/challenge/challenge_statistics_manager.py | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
         - if [ $static_code_quality_passed -eq 0 ]; then echo "Code is not pylint compliant. Please run code_check_and_formatting.sh"; exit 1; fi
       after_failure:

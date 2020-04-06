@@ -28,7 +28,7 @@ except ImportError:
 
 import carla
 
-from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
+from srunner.autoagents.autonomous_agent import AutonomousAgent, Track
 
 
 class HumanInterface(object):

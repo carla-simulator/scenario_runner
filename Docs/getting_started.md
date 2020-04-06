@@ -102,9 +102,9 @@ python scenario_runner.py /scenario_runner/srunner/challenge/routes_debug.xml /s
 If no route id is provided, all routes within the given file will be executed.
 
 For route-based scenarios, it is also possible to use an autonomous agent to control the ego vehicle.
-Several examples are provided in srunner/challenge/autoagents/. To make use of such an agent, run:
+Several examples are provided in srunner/autoagents/. To make use of such an agent, run:
 ```
-python scenario_runner.py /scenario_runner/srunner/challenge/routes_debug.xml /scenario_runner/srunner/challenge/all_towns_traffic_scenarios1_3_4.json 0 --agent /scenario_runner/srunner/challenge/autoagents/human_agent.py
+python scenario_runner.py /scenario_runner/srunner/challenge/routes_debug.xml /scenario_runner/srunner/challenge/all_towns_traffic_scenarios1_3_4.json 0 --agent /scenario_runner/srunner/autoagents/human_agent.py
 ```
 For more information about agents, please have a look into the [agent documentation](agent_evaluation.md)
 

@@ -11,7 +11,7 @@ from __future__ import print_function
 
 import carla
 
-from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
+from srunner.autoagents.autonomous_agent import AutonomousAgent, Track
 
 
 class DummyAgent(AutonomousAgent):

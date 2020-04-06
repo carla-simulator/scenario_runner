@@ -2,7 +2,7 @@
 
 To have your agent evaluated by the challenge evaluation system
 you must define an Agent class that inherits the
-[AutonomousAgent](../srunner/challenge/autoagents/autonomous_agent.py) base class. In addition, you need to setup your environment as described in [the Challenge evaluator tutorial](challenge_evaluation.md).
+[AutonomousAgent](../srunner/autoagents/autonomous_agent.py) base class. In addition, you need to setup your environment as described in [the Challenge evaluator tutorial](challenge_evaluation.md).
 
 On your agent class there are three main functions to be overwritten
 that need to be defined in order to set your agent to run.

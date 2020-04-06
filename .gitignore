@@ -3,8 +3,8 @@ srunner/challenge/*.pyc
 srunner/challenge/__pycache__/
 srunner/challenge/envs/*.pyc
 srunner/challenge/envs/__pycache__/
-srunner/challenge/autoagents/*.pyc
-srunner/challenge/autoagents/__pycache__/
+srunner/autoagents/*.pyc
+srunner/autoagents/__pycache__/
 srunner/scenariomanager/*.pyc
 srunner/scenariomanager/__pycache__/
 srunner/scenarios/*.pyc

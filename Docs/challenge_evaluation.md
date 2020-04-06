@@ -35,7 +35,7 @@ In general, both Python 2 and Python 3 are supported. In the following, we just 
 
 You can run the challenge evaluation as follows:
 ```
-python srunner/challenge/challenge_evaluator_routes.py --scenarios=${ROOT_SCENARIO_RUNNER}/srunner/challenge/all_towns_traffic_scenarios1_3_4.json --agent=${ROOT_SCENARIO_RUNNER}/srunner/challenge/autoagents/DummyAgent.py
+python srunner/challenge/challenge_evaluator_routes.py --scenarios=${ROOT_SCENARIO_RUNNER}/srunner/challenge/all_towns_traffic_scenarios1_3_4.json --agent=${ROOT_SCENARIO_RUNNER}/srunner/autoagents/DummyAgent.py
 ```
 
 After running the evaluator, you should see the CARLA simulator being started

@@ -16,7 +16,7 @@ import time
 
 import py_trees
 
-from srunner.challenge.autoagents.agent_wrapper import AgentWrapper
+from srunner.autoagents.agent_wrapper import AgentWrapper
 from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
 from srunner.scenariomanager.result_writer import ResultOutputProvider

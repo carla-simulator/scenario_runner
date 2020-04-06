@@ -37,7 +37,7 @@ from agents.navigation.local_planner import RoadOption
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.envs.scene_layout_sensors import SceneLayoutReader, ObjectFinder
 from srunner.challenge.envs.sensor_interface import CallBack, CANBusSensor, HDMapReader
-from srunner.challenge.autoagents.autonomous_agent import Track
+from srunner.autoagents.autonomous_agent import Track
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
 from srunner.scenarios.control_loss import ControlLoss

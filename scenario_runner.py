@@ -30,7 +30,7 @@ import pkg_resources
 
 import carla
 
-from srunner.challenge.autoagents.agent_wrapper import SensorConfigurationInvalid
+from srunner.autoagents.agent_wrapper import SensorConfigurationInvalid
 from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
