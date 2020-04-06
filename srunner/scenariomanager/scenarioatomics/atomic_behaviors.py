@@ -1020,8 +1020,8 @@ class WaypointFollower(AtomicBehavior):
             Blackboard variable name, if additional actors should be created on-the-fly. Defaults to None.
         _avoid_collision (bool): Enable/Disable(=default) collision avoidance for vehicles/bikes. Defaults to False.
         _actor_dict: Dictonary of all actors, and their corresponding plans (e.g. {actor: plan}).
-        _local_planner_list: List of local planners used for the actors. Either "Walker" for pedestrians,
-            or a carla.agent.navigation.LocalPlanner for other actors.
+        _local_planner_dict: Dictonary of all actors, and their corresponding local planners.
+            Either "Walker" for pedestrians, or a carla.agent.navigation.LocalPlanner for other actors.
         _args_lateral_dict: Parameters for the PID of the used carla.agent.navigation.LocalPlanner.
         _unique_id: Unique ID of the behavior based on timestamp in nanoseconds.
 
@@ -1042,7 +1042,8 @@ class WaypointFollower(AtomicBehavior):
         self._actor_dict = {}
         self._actor_dict[actor] = None
         self._target_speed = target_speed
-        self._local_planner_list = []
+        self._local_planner_dict = {}
+        self._local_planner_dict[actor] = None
         self._plan = plan
         self._blackboard_queue_name = blackboard_queue_name
         if blackboard_queue_name is not None:
@@ -1089,7 +1090,7 @@ class WaypointFollower(AtomicBehavior):
             self._target_speed = self._target_speed
 
         if isinstance(actor, carla.Walker):
-            self._local_planner_list.append("Walker")
+            self._local_planner_dict[actor] = "Walker"
             if self._plan is not None:
                 if isinstance(self._plan[0], carla.Location):
                     self._actor_dict[actor] = self._plan
@@ -1113,7 +1114,7 @@ class WaypointFollower(AtomicBehavior):
                 else:
                     local_planner.set_global_plan(self._plan)
 
-            self._local_planner_list.append(local_planner)
+            self._local_planner_dict[actor] = local_planner
             self._actor_dict[actor] = self._plan
 
     def update(self):
@@ -1149,7 +1150,8 @@ class WaypointFollower(AtomicBehavior):
                     self._apply_local_planner(actor)
 
         success = True
-        for actor, local_planner in zip(self._actor_dict, self._local_planner_list):
+        for actor in self._local_planner_dict:
+            local_planner = self._local_planner_dict[actor] if actor else None
             if actor is not None and actor.is_alive and local_planner is not None:
                 # Check if the actor is a vehicle/bike
                 if not isinstance(actor, carla.Walker):
@@ -1189,15 +1191,16 @@ class WaypointFollower(AtomicBehavior):
         On termination of this behavior,
         the controls should be set back to 0.
         """
-        for actor, local_planner in zip(self._actor_dict, self._local_planner_list):
+        for actor in self._local_planner_dict:
             if actor is not None and actor.is_alive:
                 control, _ = get_actor_control(actor)
                 actor.apply_control(control)
+                local_planner = self._local_planner_dict[actor]
                 if local_planner is not None and local_planner != "Walker":
                     local_planner.reset_vehicle()
                     local_planner = None
 
-        self._local_planner_list = []
+        self._local_planner_dict = {}
         self._actor_dict = {}
         super(WaypointFollower, self).terminate(new_status)
 

@@ -29,6 +29,7 @@
 * Fixed bug when setting up actors in batch causing to ignore the spawn points given.
 * Fixed bug where CollisionTest was counting as multiple hits collisions that displaced the actor for a long distance.
 * Fixed bug causing the simulation to end after running in synchronous mode
+* Fixed bug when using the WaypointFollower atomic to create new LocalPlanners for on-the-fly created actors (#502)
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
