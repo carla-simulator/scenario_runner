@@ -456,17 +456,17 @@ class ScenarioRunner(object):
             scenario_runner_root = os.getenv('ROOT_SCENARIO_RUNNER', "./")
 
             if phase == 'dev':
-                routes = '{}/srunner/challenge/routes_devtest.xml'.format(scenario_runner_root)
+                routes = '{}/srunner/routes_devtest.xml'.format(scenario_runner_root)
                 repetitions = 1
             elif phase == 'validation':
-                routes = '{}/srunner/challenge/routes_testprep.xml'.format(scenario_runner_root)
+                routes = '{}/srunner/routes_testprep.xml'.format(scenario_runner_root)
                 repetitions = 3
             elif phase == 'test':
-                routes = '{}/srunner/challenge/routes_testchallenge.xml'.format(scenario_runner_root)
+                routes = '{}/srunner/routes_testchallenge.xml'.format(scenario_runner_root)
                 repetitions = 3
             else:
                 # debug mode
-                routes = '{}/srunner/challenge/routes_debug.xml'.format(scenario_runner_root)
+                routes = '{}/srunner/routes_debug.xml'.format(scenario_runner_root)
                 repetitions = 1
 
         if self._args.route:
