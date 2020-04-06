@@ -84,62 +84,48 @@ def _get_latlon_ref(world):
     return lat_ref, lon_ref
 
 
-def clean_route(route):
-    """
-    Create a clean route with turn directions
-    """
-    curves_start_end = []
-    inside = False
-    start = -1
-    current_curve = RoadOption.LANEFOLLOW
-    index = 0
-    while index < len(route):
-
-        command = route[index][1]
-        if command != RoadOption.LANEFOLLOW and not inside:
-            inside = True
-            start = index
-            current_curve = command
-
-        if command != current_curve and inside:
-            inside = False
-            # End now is the index.
-            curves_start_end.append([start, index, current_curve])
-            if start == -1:
-                raise ValueError("End of curve without start")
-
-            start = -1
-        else:
-            index += 1
-
-    return curves_start_end
-
-
 def downsample_route(route, sample_factor):
     """
     Downsample the route by some factor.
     :param route: the trajectory , has to contain the waypoints and the road options
-    :param sample_factor: the downsampling factor
+    :param sample_factor: Maximum distance between samples
     :return: returns the ids of the final route that can
     """
-    route_size = len(route)
 
-    turn_positions_and_labels = clean_route(route)
     ids_to_sample = []
+    prev_option = None
+    dist = 0
 
-    lane_follow_set = set(range(0, route_size))
+    for i, point in enumerate(route):
+        curr_option = point[1]
 
-    # we take all the positions that are actually non lane follow and downsample by the factor, sample_factor
-    for start, end, _ in turn_positions_and_labels:
-        initial_condition_range = [x for x in range(start, end)]
+        # Lane changing
+        if curr_option in (RoadOption.CHANGELANELEFT, RoadOption.CHANGELANERIGHT):
+            ids_to_sample.append(i)
+            dist = 0
 
-        lane_follow_set = lane_follow_set - set(initial_condition_range)
-        # now we resample the turn points
-        ids_to_sample += initial_condition_range[::sample_factor]
+        # When road option changes
+        elif prev_option != curr_option and prev_option not in (RoadOption.CHANGELANELEFT, RoadOption.CHANGELANERIGHT):
+            ids_to_sample.append(i)
+            dist = 0
 
-    # We take all the lane following segments and reduce them
-    ids_to_sample += list(lane_follow_set)[::sample_factor]
-    ids_to_sample = sorted(ids_to_sample)
+        # After a certain max distance
+        elif dist > sample_factor:
+            ids_to_sample.append(i)
+            dist = 0
+
+        # At the end
+        elif i == len(route) - 1:
+            ids_to_sample.append(i)
+            dist = 0
+
+        # Compute the distance traveled
+        else:
+            curr_location = point[0].location
+            prev_location = route[i-1][0].location
+            dist += curr_location.distance(prev_location)
+
+        prev_option = curr_option
 
     return ids_to_sample
 
