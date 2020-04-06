@@ -1,7 +1,7 @@
 import unittest
 import os
 
-import srunner.challenge.utils.route_configuration_parser as parser
+from srunner.tools.route_parser import RouteParser
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator, convert_json_to_transform
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
@@ -9,7 +9,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
-from srunner.challenge.utils.route_manipulation import interpolate_trajectory
+from srunner.tools.route_manipulation import interpolate_trajectory
 
 import traceback
 import carla
@@ -51,7 +51,7 @@ class TestRouteSpawn(unittest.TestCase):
         challenge = ChallengeEvaluator(args)
 
         filename = os.path.join(self.root_route_file_position, 'routes_training.xml')
-        list_route_descriptions = parser.parse_routes_file(filename)
+        list_route_descriptions = RouteParser.parse_routes_file(filename)
 
         # Which type of file is expected ????
 

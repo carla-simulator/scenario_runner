@@ -1,13 +1,13 @@
 import unittest
 import os
 
-import srunner.challenge.utils.route_configuration_parser as parser
+from srunner.tools.route_parser import RouteParser
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.challenge.utils.route_manipulation import interpolate_trajectory
+from srunner.tools.route_manipulation import interpolate_trajectory
 import carla
 
 
@@ -43,12 +43,12 @@ class TestRouteGenerator(unittest.TestCase):
         challenge = ChallengeEvaluator(args)
 
         filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios.json')
-        world_annotations = parser.parse_annotations_file(filename)
+        world_annotations = RouteParser.parse_annotations_file(filename)
         # retrieve routes
         # Which type of file is expected ????
 
         filename = os.path.join(self.root_route_file_position, 'routes_training.xml')
-        list_route_descriptions = parser.parse_routes_file(filename)
+        list_route_descriptions = RouteParser.parse_routes_file(filename)
 
         # For each of the routes to be evaluated.
         for route_description in list_route_descriptions:
@@ -68,7 +68,7 @@ class TestRouteGenerator(unittest.TestCase):
             gps_route, route_description['trajectory'] = interpolate_trajectory(challenge.world,
                                                                                 route_description['trajectory'])
 
-            potential_scenarios_definitions, existent_triggers = parser.scan_route_for_scenarios(route_description,
+            potential_scenarios_definitions, existent_triggers = RouteParser.scan_route_for_scenarios(route_description,
                                                                                                  world_annotations)
 
             for trigger_id, possible_scenarios in potential_scenarios_definitions.items():

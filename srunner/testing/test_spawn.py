@@ -1,7 +1,7 @@
 import unittest
 import os
 
-import srunner.challenge.utils.route_configuration_parser as parser
+from srunner.tools.route_parser import RouteParser
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator, convert_json_to_transform
 
 from srunner.scenariomanager.carla_data_provider import CarlaActorPool
@@ -45,7 +45,7 @@ class TestSpawn(unittest.TestCase):
         challenge = ChallengeEvaluator(args)
 
         filename = os.path.join(self.root_route_file_position, 'all_towns_traffic_scenarios.json')
-        world_annotations = parser.parse_annotations_file(filename)
+        world_annotations = RouteParser.parse_annotations_file(filename)
         # retrieve routes
         # Which type of file is expected ????
 
