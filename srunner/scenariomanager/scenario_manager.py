@@ -17,7 +17,6 @@ import time
 import py_trees
 
 from srunner.autoagents.agent_wrapper import AgentWrapper
-from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
@@ -126,7 +125,7 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, debug_mode=False, challenge_mode=False, timeout=2.0):
+    def __init__(self, debug_mode=False, timeout=2.0):
         """
         Init requires scenario as input
         """
@@ -137,7 +136,6 @@ class ScenarioManager(object):
         self.other_actors = None
 
         self._debug_mode = debug_mode
-        self._challenge_mode = challenge_mode
         self._agent = None
         self._running = False
         self._timestamp_last_run = 0.0
@@ -181,7 +179,7 @@ class ScenarioManager(object):
         Load a new scenario
         """
         self._reset()
-        self._agent = AgentWrapper(agent, self._challenge_mode) if agent else None
+        self._agent = AgentWrapper(agent) if agent else None
         self.scenario_class = scenario
         self.scenario = scenario.scenario
         self.scenario_tree = self.scenario.scenario_tree
@@ -192,9 +190,6 @@ class ScenarioManager(object):
         CarlaDataProvider.register_actors(self.other_actors)
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
-
-        if self._challenge_mode:
-            ChallengeStatisticsManager.next_scenario(self.scenario)
 
         if self._agent is not None:
             self._agent.setup_sensors(self.ego_vehicles[0], self._debug_mode)
@@ -272,9 +267,6 @@ class ScenarioManager(object):
             if self.scenario_tree.status != py_trees.common.Status.RUNNING:
                 self._running = False
 
-            if self._challenge_mode:
-                ChallengeStatisticsManager.compute_current_statistics()
-
             if self._agent is not None:
                 self.ego_vehicles[0].apply_control(ego_action)
 
@@ -323,8 +315,5 @@ class ScenarioManager(object):
 
         output = ResultOutputProvider(self, result, stdout, filename, junit)
         output.write()
-
-        if self._challenge_mode:
-            ChallengeStatisticsManager.record_scenario_statistics()
 
         return failure or timeout

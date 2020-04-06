@@ -30,8 +30,6 @@ import pkg_resources
 
 import carla
 
-from srunner.autoagents.agent_wrapper import SensorConfigurationInvalid
-from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
@@ -123,7 +121,7 @@ class ScenarioRunner(object):
             self.module_agent = importlib.import_module(module_name)
 
         # Create the ScenarioManager
-        self.manager = ScenarioManager(self._args.debug, self._args.challenge, self._args.timeout)
+        self.manager = ScenarioManager(self._args.debug, self._args.timeout)
 
         # Create signal handler for SIGINT
         self._shutdown_requested = False
@@ -156,16 +154,6 @@ class ScenarioRunner(object):
             self._cleanup()
             if not self.manager.get_running_status():
                 raise RuntimeError("Timeout occured during scenario execution")
-
-    def _within_available_time(self):
-        """
-        Check if the elapsed runtime is within the remaining user time budget
-        Only relevant when running in challenge mode
-        """
-        current_time = datetime.now()
-        elapsed_seconds = (current_time - self._start_wall_time).seconds
-
-        return elapsed_seconds < os.getenv('CHALLENGE_TIME_AVAILABLE', '1080000')
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -399,15 +387,9 @@ class ScenarioRunner(object):
             scenario.remove_all_actors()
 
             result = True
-        except SensorConfigurationInvalid as e:
-            self._cleanup()
-            ChallengeStatisticsManager.record_fatal_error(e)
-            sys.exit(-1)
 
         except Exception as e:              # pylint: disable=broad-except
             traceback.print_exc()
-            if self._args.challenge:
-                ChallengeStatisticsManager.set_error_message(traceback.format_exc())
             print(e)
             result = False
 
@@ -441,33 +423,12 @@ class ScenarioRunner(object):
             self._cleanup()
         return result
 
-    def _run_challenge(self):
+    def _run_route(self):
         """
-        Run the challenge mode
+        Run the route scenario
         """
         result = False
-        phase_codename = os.getenv('CHALLENGE_PHASE_CODENAME', 'dev_track_3')
-        phase = phase_codename.split("_")[0]
-
         repetitions = self._args.repetitions
-
-        if self._args.challenge:
-            weather_profiles = CarlaDataProvider.find_weather_presets()
-            scenario_runner_root = os.getenv('ROOT_SCENARIO_RUNNER', "./")
-
-            if phase == 'dev':
-                routes = '{}/srunner/routes_devtest.xml'.format(scenario_runner_root)
-                repetitions = 1
-            elif phase == 'validation':
-                routes = '{}/srunner/routes_testprep.xml'.format(scenario_runner_root)
-                repetitions = 3
-            elif phase == 'test':
-                routes = '{}/srunner/routes_testchallenge.xml'.format(scenario_runner_root)
-                repetitions = 3
-            else:
-                # debug mode
-                routes = '{}/srunner/routes_debug.xml'.format(scenario_runner_root)
-                repetitions = 1
 
         if self._args.route:
             routes = self._args.route[0]
@@ -480,29 +441,13 @@ class ScenarioRunner(object):
         route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
         # find and filter potential scenarios for each of the evaluated routes
         # For each of the routes and corresponding possible scenarios to be evaluated.
-        if self._args.challenge:
-            n_routes = len(route_descriptions_list) * repetitions
-            ChallengeStatisticsManager.set_number_of_scenarios(n_routes)
 
         for _, route_description in enumerate(route_descriptions_list):
             for repetition in range(repetitions):
 
-                if self._args.challenge and not self._within_available_time():
-                    error_message = 'Not enough simulation time available to continue'
-                    print(error_message)
-                    ChallengeStatisticsManager.record_fatal_error(error_message)
-                    self._cleanup()
-                    return False
-
                 config = RouteScenarioConfiguration(route_description, scenario_file)
-
-                if self._args.challenge:
-                    profile = weather_profiles[repetition % len(weather_profiles)]
-                    config.weather = profile[0]
-                    config.weather.sun_azimuth_angle = -1
-                    config.weather.sun_altitude_angle = -1
-
                 result = self._load_and_run_scenario(config)
+
                 self._cleanup()
         return result
 
@@ -529,8 +474,8 @@ class ScenarioRunner(object):
         result = True
         if self._args.openscenario:
             result = self._run_openscenario()
-        elif self._args.route or self._args.challenge:
-            result = self._run_challenge()
+        elif self._args.route:
+            result = self._run_route()
         else:
             result = self._run_scenarios()
 
@@ -573,7 +518,6 @@ def main():
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument(
         '--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
-    parser.add_argument('--challenge', action="store_true", help='Run in challenge mode')
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
     parser.add_argument('--timeout', default="10.0",
@@ -602,11 +546,6 @@ def main():
         parser.print_help(sys.stdout)
         return 1
 
-    if arguments.challenge and (arguments.openscenario or arguments.scenario):
-        print("The challenge mode can only be used with route-based scenarios'\n\n")
-        parser.print_help(sys.stdout)
-        return 1
-
     if arguments.route:
         arguments.reloadWorld = True
 
@@ -617,8 +556,6 @@ def main():
         result = scenario_runner.run()
 
     finally:
-        if arguments.challenge:
-            ChallengeStatisticsManager.report_challenge_statistics('results.json', arguments.debug)
         if scenario_runner is not None:
             scenario_runner.destroy()
             del scenario_runner
