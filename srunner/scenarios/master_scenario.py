@@ -17,7 +17,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
                                                                      RouteCompletionTest,
                                                                      OutsideRouteLanesTest,
                                                                      RunningRedLightTest,
-                                                                     RunningStopTest)
+                                                                     RunningStopTest,
+                                                                     ActorSpeedAboveThresholdTest)
 from srunner.scenarios.basic_scenario import BasicScenario
 
 
@@ -93,6 +94,11 @@ class MasterScenario(BasicScenario):
 
         stop_criterion = RunningStopTest(self.ego_vehicles[0])
 
+        blocked_criterion = ActorSpeedAboveThresholdTest(self.ego_vehicles[0],
+                                                         speed_threshold=0.1,
+                                                         below_threshold_max_time=90.0,
+                                                         terminate_on_failure=True)
+
         parallel_criteria = py_trees.composites.Parallel("group_criteria",
                                                          policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -102,6 +108,7 @@ class MasterScenario(BasicScenario):
         parallel_criteria.add_child(outsidelane_criterion)
         parallel_criteria.add_child(red_light_criterion)
         parallel_criteria.add_child(stop_criterion)
+        parallel_criteria.add_child(blocked_criterion)
 
         return parallel_criteria
 
