@@ -34,7 +34,7 @@ from srunner.challenge.autoagents.agent_wrapper import SensorConfigurationInvali
 from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
@@ -199,7 +199,6 @@ class ScenarioRunner(object):
         self.manager.cleanup()
 
         CarlaDataProvider.cleanup()
-        CarlaActorPool.cleanup()
 
         for i, _ in enumerate(self.ego_vehicles):
             if self.ego_vehicles[i]:
@@ -220,7 +219,7 @@ class ScenarioRunner(object):
 
         if not self._args.waitForEgo:
             for vehicle in ego_vehicles:
-                self.ego_vehicles.append(CarlaActorPool.setup_actor(vehicle.model,
+                self.ego_vehicles.append(CarlaDataProvider.setup_actor(vehicle.model,
                                                                     vehicle.transform,
                                                                     vehicle.rolename,
                                                                     True,
@@ -247,7 +246,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
-        CarlaDataProvider.perform_carla_tick()
+        CarlaDataProvider.get_world().tick()
 
     def _analyze_scenario(self, config):
         """
@@ -274,7 +273,7 @@ class ScenarioRunner(object):
 
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """
-        Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
+        Load a new CARLA world and provide data to CarlaDataProvider
         """
 
         if self._args.reloadWorld:
@@ -297,8 +296,7 @@ class ScenarioRunner(object):
                             break
 
         self.world = self.client.get_world()
-        CarlaActorPool.set_client(self.client)
-        CarlaActorPool.set_world(self.world)
+        CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
 
         settings = self.world.get_settings()
@@ -312,7 +310,7 @@ class ScenarioRunner(object):
 
         # Wait for the world to be ready
         if self.world.get_settings().synchronous_mode:
-            CarlaDataProvider.perform_carla_tick()
+            self.world.tick()
         else:
             self.world.wait_for_tick()
 

@@ -18,7 +18,7 @@ import py_trees
 
 from srunner.challenge.autoagents.agent_wrapper import AgentWrapper
 from srunner.challenge.challenge_statistics_manager import ChallengeStatisticsManager
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime, TimeOut
 from srunner.scenariomanager.watchdog import Watchdog
@@ -174,7 +174,6 @@ class ScenarioManager(object):
             self._agent = None
 
         CarlaDataProvider.cleanup()
-        CarlaActorPool.cleanup()
 
     def load_scenario(self, scenario, agent=None):
         """
@@ -279,7 +278,7 @@ class ScenarioManager(object):
                 self.ego_vehicles[0].apply_control(ego_action)
 
         if self._agent and self._running and self._watchdog.get_status():
-            CarlaDataProvider.perform_carla_tick(self._timeout)
+            CarlaDataProvider.get_world().tick()
 
     def get_running_status(self):
         """

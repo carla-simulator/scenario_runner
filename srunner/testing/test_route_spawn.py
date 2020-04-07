@@ -4,7 +4,7 @@ import os
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator, convert_json_to_transform
 
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
@@ -60,7 +60,7 @@ class TestRouteSpawn(unittest.TestCase):
             challenge.world = client.load_world(route_description['town_name'])
 
             # Set the actor pool so the scenarios can prepare themselves when needed
-            CarlaActorPool.set_world(challenge.world)
+            CarlaDataProvider.set_world(challenge.world)
 
             CarlaDataProvider.set_world(challenge.world)
             # find and filter potential scenarios

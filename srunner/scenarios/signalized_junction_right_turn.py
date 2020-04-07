@@ -18,7 +18,7 @@ import py_trees
 import carla
 from agents.navigation.local_planner import RoadOption
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       StopVehicle,
@@ -85,7 +85,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
                            config.other_actors[0].transform.location.y,
                            config.other_actors[0].transform.location.z - 500),
             config.other_actors[0].transform.rotation)
-        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+        first_vehicle = CarlaDataProvider.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
         first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
 

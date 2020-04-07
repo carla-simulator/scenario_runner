@@ -4,7 +4,7 @@ import os
 import srunner.challenge.utils.route_configuration_parser as parser
 from srunner.challenge.challenge_evaluator_routes import ChallengeEvaluator, convert_json_to_transform
 
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
@@ -56,7 +56,7 @@ class TestSpawn(unittest.TestCase):
             if town_name == 'Town06':
                 continue
             challenge.world = client.load_world(town_name)
-            CarlaActorPool.set_world(challenge.world)
+            CarlaDataProvider.set_world(challenge.world)
             CarlaDataProvider.set_world(challenge.world)
             print ("Town Name ", town_name)
 

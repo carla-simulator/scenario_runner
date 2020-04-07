@@ -16,7 +16,7 @@ import random
 import py_trees
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeNoiseParameters, ActorTransformSetter
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
@@ -98,9 +98,9 @@ class ControlLoss(BasicScenario):
                                                               self.third_loc_prev.y,
                                                               self.third_loc_prev.z))
 
-        first_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.first_transform)
-        second_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.sec_transform)
-        third_debris = CarlaActorPool.request_new_actor('static.prop.dirtdebris01', self.third_transform)
+        first_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.first_transform)
+        second_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.sec_transform)
+        third_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.third_transform)
 
         first_debris.set_transform(self.first_transform)
         second_debris.set_transform(self.sec_transform)

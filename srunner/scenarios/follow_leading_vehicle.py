@@ -22,7 +22,7 @@ import py_trees
 
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       KeepVelocity,
@@ -100,7 +100,7 @@ class FollowLeadingVehicle(BasicScenario):
                            self._other_actor_transform.location.y,
                            self._other_actor_transform.location.z - 500),
             self._other_actor_transform.rotation)
-        first_vehicle = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
+        first_vehicle = CarlaDataProvider.request_new_actor('vehicle.nissan.patrol', first_vehicle_transform)
         first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
 
@@ -237,8 +237,8 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             carla.Rotation(second_actor_waypoint.transform.rotation.pitch, yaw_1,
                            second_actor_waypoint.transform.rotation.roll))
 
-        first_actor = CarlaActorPool.request_new_actor('vehicle.nissan.patrol', first_actor_transform)
-        second_actor = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+        first_actor = CarlaDataProvider.request_new_actor('vehicle.nissan.patrol', first_actor_transform)
+        second_actor = CarlaDataProvider.request_new_actor('vehicle.diamondback.century',
                                                         second_actor_transform)
 
         first_actor.set_simulate_physics(enabled=False)

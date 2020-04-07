@@ -16,7 +16,7 @@ import py_trees
 
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       KeepVelocity,
@@ -165,7 +165,7 @@ class VehicleTurningRight(BasicScenario):
             # Try to spawn the actor
             try:
                 self._other_actor_transform = get_opponent_transform(added_dist, waypoint, self._trigger_location)
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                first_vehicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
                 break
@@ -332,7 +332,7 @@ class VehicleTurningLeft(BasicScenario):
             # Try to spawn the actor
             try:
                 self._other_actor_transform = get_opponent_transform(added_dist, waypoint, self._trigger_location)
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                first_vehicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
                 break
@@ -500,7 +500,7 @@ class VehicleTurningRoute(BasicScenario):
             # Try to spawn the actor
             try:
                 self._other_actor_transform = get_opponent_transform(added_dist, waypoint, self._trigger_location)
-                first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century',
+                first_vehicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century',
                                                                  self._other_actor_transform)
                 first_vehicle.set_simulate_physics(enabled=False)
                 break

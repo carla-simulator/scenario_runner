@@ -8,7 +8,7 @@
 Scenario spawning elements to make the town dynamic and interesting
 """
 
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenarios.basic_scenario import BasicScenario
 
 
@@ -40,7 +40,7 @@ class BackgroundActivity(BasicScenario):
 
     def _initialize_actors(self, config):
         for actor in config.other_actors:
-            new_actors = CarlaActorPool.request_new_batch_actors(actor.model,
+            new_actors = CarlaDataProvider.request_new_batch_actors(actor.model,
                                                                  actor.amount,
                                                                  actor.transform,
                                                                  hero=False,
