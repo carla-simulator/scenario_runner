@@ -19,6 +19,7 @@
     - ChangeAutopilot now calls a TM instance, and allows to change its parameters
     - Added WaitUntilInFront behavior and InTimeToArrivalToVehicleSideLane trigger condition, useful for cut ins
     - Added new trigger condition, AtRightestLane, which checks if the actor is at the rightmost driving lane
+    - Added new criteria, ActorSpeedAboveThresholdTest, useful to check if the ego vehicle has been standing still for long periods of time.
 * Setting up actors in batch now also randomizes their colors
 
 ### :bug: Bug Fixes

@@ -421,6 +421,7 @@ class CollisionTest(Criterion):
 
 
 class ActorSpeedAboveThresholdTest(Criterion):
+
     """
     This test will fail if the actor has had its linear velocity lower than a specific value for
     a specific amount of time
@@ -478,8 +479,9 @@ class ActorSpeedAboveThresholdTest(Criterion):
         """
 
         event.set_message('Agent got blocked at (x={}, y={}, z={})'.format(round(location.x, 3),
-                                                                               round(location.y, 3),
-                                                                               round(location.z, 3)))
+                                                                           round(location.y, 3),
+                                                                           round(location.z, 3)))
+
     @staticmethod
     def _set_event_dict(event, location):
         """
@@ -489,7 +491,7 @@ class ActorSpeedAboveThresholdTest(Criterion):
             'x': location.x,
             'y': location.y,
             'z': location.z,
-          })
+        })
 
 
 class KeepLaneTest(Criterion):
