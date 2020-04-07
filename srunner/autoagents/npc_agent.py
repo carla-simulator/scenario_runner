@@ -12,7 +12,7 @@ from __future__ import print_function
 import carla
 from agents.navigation.basic_agent import BasicAgent
 
-from srunner.autoagents.autonomous_agent import AutonomousAgent, Track
+from srunner.autoagents.autonomous_agent import AutonomousAgent
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
@@ -29,7 +29,6 @@ class NpcAgent(AutonomousAgent):
         """
         Setup the agent parameters
         """
-        self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
         self._route_assigned = False
         self._agent = None

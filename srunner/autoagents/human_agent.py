@@ -28,7 +28,7 @@ except ImportError:
 
 import carla
 
-from srunner.autoagents.autonomous_agent import AutonomousAgent, Track
+from srunner.autoagents.autonomous_agent import AutonomousAgent
 
 
 class HumanInterface(object):
@@ -101,7 +101,6 @@ class HumanAgent(AutonomousAgent):
         """
         Setup the agent parameters
         """
-        self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
         self.agent_engaged = False
         self.current_control = carla.VehicleControl()

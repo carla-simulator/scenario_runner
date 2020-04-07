@@ -16,7 +16,6 @@ import os
 import carla
 
 from srunner.autoagents.sensor_interface import CallBack
-from srunner.autoagents.autonomous_agent import Track
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 

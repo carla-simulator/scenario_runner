@@ -18,17 +18,6 @@ from srunner.scenariomanager.timer import GameTime
 from srunner.tools.route_manipulation import downsample_route
 
 
-class Track(Enum):
-
-    """
-    This enum represents the different tracks of the CARLA AD challenge.
-    """
-    ALL_SENSORS = 1
-    CAMERAS = 2
-    ALL_SENSORS_HDMAP_WAYPOINTS = 3
-    SCENE_LAYOUT = 4
-
-
 class AutonomousAgent(object):
 
     """
@@ -36,7 +25,6 @@ class AutonomousAgent(object):
     """
 
     def __init__(self, path_to_conf_file):
-        self.track = Track.CAMERAS
         #  current global plans to reach a destination
         self._global_plan = None
         self._global_plan_world_coord = None
@@ -50,10 +38,6 @@ class AutonomousAgent(object):
     def setup(self, path_to_conf_file):
         """
         Initialize everything needed by your agent and set the track attribute to the right type:
-            Track.ALL_SENSORS : LIDAR, cameras, GPS and speed sensor allowed
-            Track.CAMERAS : Only cameras and GPS allowed
-            Track.ALL_SENSORS_HDMAP_WAYPOINTS : All sensors and HD Map and waypoints allowed
-            Track.SCENE_LAYOUT : No sensors allowed, the agent receives a high-level representation of the scene.
         """
         pass
 
@@ -127,14 +111,7 @@ class AutonomousAgent(object):
         Set the plan (route) for the agent
         """
 
-        if self.track == Track.CAMERAS or self.track == Track.ALL_SENSORS:
-            ds_ids = downsample_route(global_plan_world_coord, 32)
-
-            self._global_plan_world_coord = [(global_plan_world_coord[x][0], global_plan_world_coord[x][1])
-                                             for x in ds_ids]
-            self._global_plan = [global_plan_gps[x] for x in ds_ids]
-
-        else:   # No downsampling is performed
-
-            self._global_plan = global_plan_gps
-            self._global_plan_world_coord = global_plan_world_coord
+        ds_ids = downsample_route(global_plan_world_coord, 32)
+        self._global_plan_world_coord = [(global_plan_world_coord[x][0], global_plan_world_coord[x][1])
+                                            for x in ds_ids]
+        self._global_plan = [global_plan_gps[x] for x in ds_ids]

@@ -11,7 +11,7 @@ from __future__ import print_function
 
 import carla
 
-from srunner.autoagents.autonomous_agent import AutonomousAgent, Track
+from srunner.autoagents.autonomous_agent import AutonomousAgent
 
 
 class DummyAgent(AutonomousAgent):
@@ -24,7 +24,6 @@ class DummyAgent(AutonomousAgent):
         """
         Setup the agent parameters
         """
-        self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
     def sensors(self):
         """
