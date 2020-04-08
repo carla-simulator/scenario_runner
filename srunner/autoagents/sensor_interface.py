@@ -3,6 +3,10 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
+"""
+This file containts CallBack class and SensorInterface, responsible of
+handling the use of sensors for the agents
+"""
 
 import copy
 import logging
@@ -12,6 +16,9 @@ import carla
 
 
 class CallBack(object):
+    """
+    Class the sensors listen to in order to receive their data each frame 
+    """
 
     def __init__(self, tag, sensor, data_provider):
         """
@@ -65,6 +72,9 @@ class CallBack(object):
 
 
 class SensorInterface(object):
+    """
+    Class that contains all sensor data
+    """
 
     def __init__(self):
         """
