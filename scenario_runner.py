@@ -513,7 +513,7 @@ class ScenarioRunner(object):
                 if self._args.challenge:
                     profile = weather_profiles[repetition % len(weather_profiles)]
                     config.weather = profile[0]
-                    config.weather.sun_azimuth = -1
+                    config.weather.sun_azimuth_angle = -1
                     config.weather.sun_altitude = -1
 
                 result = self._load_and_run_scenario(config)

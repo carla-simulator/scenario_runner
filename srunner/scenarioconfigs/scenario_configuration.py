@@ -77,8 +77,8 @@ class WeatherConfiguration(object):
     precipitation = -1
     precipitation_deposits = -1
     wind_intensity = -1
-    sun_azimuth = -1
-    sun_altitude = -1
+    sun_azimuth_angle = -1
+    sun_altitude_angle = -1
     wetness = -1
     fog_distance = -1
     fog_density = -1

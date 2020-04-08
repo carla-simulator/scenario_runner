@@ -21,8 +21,7 @@
     - Added new trigger condition, AtRightestLane, which checks if the actor is at the rightmost driving lane
     - Added new criteria, ActorSpeedAboveThresholdTest, useful to check if the ego vehicle has been standing still for long periods of time.
 * Setting up actors in batch now also randomizes their colors
-* When running routes, the weather parameters can now be changed at will. To do so, go to the .xml file describing the route and add the weather attribute as a child of the route, along with the desired parameters values (e.g. 
-`<weather cloudiness="50"/>`) By default the weather is now a sunny midday.
+* When running routes, the weather parameters can now be changed at will. To do so, go to the .xml file describing the route and add the weather attribute as a child of the route, along with the desired parameters values (for an example, check the first route at srunner/challenge/routes_training.xml). By default the weather is now a sunny midday.
 
 ### :bug: Bug Fixes
 * Fixed spawning bugs for scenario DynamicObjectCrossing when it is part of a route

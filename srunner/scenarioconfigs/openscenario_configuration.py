@@ -191,8 +191,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         weather = environment.find("Weather")
         sun = weather.find("Sun")
-        self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
-        self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
+        self.weather.sun_azimuth_angle = math.degrees(float(sun.attrib.get('azimuth', 0)))
+        self.weather.sun_altitude_angle = math.degrees(float(sun.attrib.get('elevation', 0)))
         self.weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
         fog = weather.find("Fog")
         self.weather.fog_distance = float(fog.attrib.get('visualRange', 'inf'))
@@ -215,10 +215,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
 
         if dtime.hour >= 22 or dtime.hour <= 4:
-            self.weather.sun_altitude = -90
+            self.weather.sun_altitude_angle = -90
         elif dtime.hour >= 20 and dtime.hour < 22 or \
                 dtime.hour <= 6 and dtime.hour > 4:
-            self.weather.sun_altitude = 10
+            self.weather.sun_altitude_angle = 10
 
     def _set_carla_friction(self):
         """
