@@ -88,18 +88,18 @@ class RouteParser(object):
         route_weather = route.find("weather")
         if route_weather is None:
 
-            weather = carla.WeatherParameters(sun_altitude_angle = 70)
+            weather = carla.WeatherParameters(sun_altitude_angle=70)
 
         else:
             weather = carla.WeatherParameters()
             for weather_attrib in route.iter("weather"):
 
                 if 'cloudiness' in weather_attrib.attrib:
-                    weather.cloudiness = float(weather_attrib.attrib['cloudiness']) 
+                    weather.cloudiness = float(weather_attrib.attrib['cloudiness'])
                 if 'precipitation' in weather_attrib.attrib:
                     weather.precipitation = float(weather_attrib.attrib['precipitation'])
                 if 'precipitation_deposits' in weather_attrib.attrib:
-                    weather.precipitation_deposits =float(weather_attrib.attrib['precipitation_deposits'])
+                    weather.precipitation_deposits = float(weather_attrib.attrib['precipitation_deposits'])
                 if 'wind_intensity' in weather_attrib.attrib:
                     weather.wind_intensity = float(weather_attrib.attrib['wind_intensity'])
                 if 'sun_azimuth_angle' in weather_attrib.attrib:
