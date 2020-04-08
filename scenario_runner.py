@@ -443,7 +443,7 @@ class ScenarioRunner(object):
         # For each of the routes and corresponding possible scenarios to be evaluated.
 
         for _, route_description in enumerate(route_descriptions_list):
-            for repetition in range(repetitions):
+            for _ in range(repetitions):
 
                 config = RouteScenarioConfiguration(route_description, scenario_file)
                 result = self._load_and_run_scenario(config)
