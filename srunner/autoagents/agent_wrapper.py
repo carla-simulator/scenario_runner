@@ -71,7 +71,7 @@ class AgentWrapper(object):
                                                  yaw=sensor_spec['yaw'])
             elif sensor_spec['type'].startswith('sensor.other.gnss'):
                 sensor_location = carla.Location(x=sensor_spec['x'], y=sensor_spec['y'],
-                                                    z=sensor_spec['z'])
+                                                 z=sensor_spec['z'])
                 sensor_rotation = carla.Rotation()
 
             # create sensor

@@ -16,8 +16,9 @@ import carla
 
 
 class CallBack(object):
+
     """
-    Class the sensors listen to in order to receive their data each frame 
+    Class the sensors listen to in order to receive their data each frame
     """
 
     def __init__(self, tag, sensor, data_provider):
@@ -72,6 +73,7 @@ class CallBack(object):
 
 
 class SensorInterface(object):
+
     """
     Class that contains all sensor data
     """
