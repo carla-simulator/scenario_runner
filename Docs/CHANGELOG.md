@@ -22,6 +22,9 @@
     - Added new criteria, ActorSpeedAboveThresholdTest, useful to check if the ego vehicle has been standing still for long periods of time.
 * Setting up actors in batch now also randomizes their colors
 * When running routes, the weather parameters can now be changed at will. To do so, go to the .xml file describing the route and add the weather attribute as a child of the route, along with the desired parameters values (for an example, check the first route at srunner/challenge/routes_training.xml). By default the weather is now a sunny midday.
+* **Important** All challenge related content has been removed. This functionality has been improved and is now part of the [Leaderboard](https://github.com/carla-simulator/leaderboard). As a consequence:
+    - The path to the autoagents has changed from .../challenge/autoagents to .../autoagents
+    - The path to the route and scenario descriptions has changed from .../challenge to .../data
 
 ### :bug: Bug Fixes
 * Fixed spawning bugs for scenario DynamicObjectCrossing when it is part of a route
