@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+
+
 import copy
 import logging
 import numpy as np
