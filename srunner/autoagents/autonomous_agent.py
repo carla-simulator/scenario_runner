@@ -9,8 +9,6 @@ This module provides the base class for all autonomous agents
 
 from __future__ import print_function
 
-from enum import Enum
-
 import carla
 
 from srunner.autoagents.sensor_interface import SensorInterface
@@ -113,5 +111,5 @@ class AutonomousAgent(object):
 
         ds_ids = downsample_route(global_plan_world_coord, 32)
         self._global_plan_world_coord = [(global_plan_world_coord[x][0], global_plan_world_coord[x][1])
-                                            for x in ds_ids]
+                                         for x in ds_ids]
         self._global_plan = [global_plan_gps[x] for x in ds_ids]

@@ -122,7 +122,7 @@ def downsample_route(route, sample_factor):
         # Compute the distance traveled
         else:
             curr_location = point[0].location
-            prev_location = route[i-1][0].location
+            prev_location = route[i - 1][0].location
             dist += curr_location.distance(prev_location)
 
         prev_option = curr_option
