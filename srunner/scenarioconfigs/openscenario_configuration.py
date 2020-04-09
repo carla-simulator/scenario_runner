@@ -22,7 +22,7 @@ import xmlschema
 import carla
 
 # pylint: disable=line-too-long
-from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration, WeatherConfiguration
+from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
 from srunner.tools.openscenario_parser import OpenScenarioParser
@@ -48,7 +48,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.other_actors = []
         self.ego_vehicles = []
         self.trigger_points = []
-        self.weather = WeatherConfiguration()
+        self.weather = carla.WeatherParameters()
 
         self.storyboard = self.xml_tree.find("Storyboard")
         self.story = self.storyboard.find("Story")

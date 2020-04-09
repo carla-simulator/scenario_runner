@@ -67,23 +67,6 @@ class ActorConfiguration(ActorConfigurationData):
                                                  autopilot, random_location, amount)
 
 
-class WeatherConfiguration(object):
-
-    """
-    This class provides basic weather configuration values
-    """
-
-    cloudiness = -1
-    precipitation = -1
-    precipitation_deposits = -1
-    wind_intensity = -1
-    sun_azimuth_angle = -1
-    sun_altitude_angle = -1
-    wetness = -1
-    fog_distance = -1
-    fog_density = -1
-
-
 class ScenarioConfiguration(object):
 
     """
@@ -103,7 +86,7 @@ class ScenarioConfiguration(object):
     target = None
     route = None
     agent = None
-    weather = WeatherConfiguration()
+    weather = carla.WeatherParameters()
     friction = None
     subtype = None
     route_var_name = None
