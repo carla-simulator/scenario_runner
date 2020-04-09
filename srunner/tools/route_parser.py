@@ -46,7 +46,7 @@ class RouteParser(object):
     @staticmethod
     def parse_routes_file(route_filename, single_route=None):
         """
-        Returns a list of route elements that is where the challenge is going to happen.
+        Returns a list of route elements.
         :param route_filename: the path to a set of routes.
         :param single_route: If set, only this route shall be returned
         :return:  List of dicts containing the waypoints, id and town of the routes

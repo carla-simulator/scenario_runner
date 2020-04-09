@@ -517,7 +517,7 @@ def main():
     parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument(
-        '--route', help='Run a route as a scenario, similar to the CARLA AD challenge (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
+        '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
     parser.add_argument('--timeout', default="10.0",

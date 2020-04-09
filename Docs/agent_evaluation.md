@@ -1,5 +1,7 @@
 #### Setting up your agent for evaluation
 
+## Important: This information is outdated and the challenge files have been removed. This feature has now been moved to the [Leaderboard](https://github.com/carla-simulator/leaderboard). However, it can still be used with the route argument of scenario_runner.py, instead of the challenge_evaluator.py
+
 To have your agent evaluated by the challenge evaluation system
 you must define an Agent class that inherits the
 [AutonomousAgent](../srunner/autoagents/autonomous_agent.py) base class. In addition, you need to setup your environment as described in [the Challenge evaluator tutorial](challenge_evaluation.md).
