@@ -71,5 +71,6 @@ class RouteScenarioConfiguration(ScenarioConfiguration):
         self.name = "RouteScenario_{}".format(route_description['id'])
         self.town = route_description['town_name']
         self.route_description = route_description
+        self.weather = route_description['weather']
 
         self.scenario_file = scenario_file

@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes>
    <route id="0" map="Town01">
+      <weather 
+         cloudiness="0"
+         precipitation="0"
+         precipitation_deposits="0"
+         wind_intensity="0"
+         sun_azimuth_angle="0"
+         sun_altitude_angle="70"
+         fog_density="0"
+         fog_distance="0"
+         wetness="0"
+      />
       <waypoint pitch="360.0" roll="0.0" x="338.7027893066406" y="226.75003051757812" yaw="269.9790954589844" z="0.0" />
       <waypoint pitch="360.0" roll="0.0" x="321.98931884765625" y="194.67242431640625" yaw="179.83230590820312" z="0.0" />
       <waypoint pitch="360.0" roll="0.0" x="283.6903991699219" y="194.78451538085938" yaw="179.83230590820312" z="0.0" />
