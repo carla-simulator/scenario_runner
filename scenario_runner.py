@@ -187,13 +187,13 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
-        if self.world is not None and self.manager is not None \
-                and self._args.agent and self.manager.get_running_status():
-            # Reset to asynchronous mode
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            settings.fixed_delta_seconds = None
-            self.world.apply_settings(settings)
+        if self.manager is not None and self.manager.get_running_status(): # Simulation still running?
+            if self.world is not None and self.world.get_settings().synchronous_mode:  # In synchronous mode?
+                # Reset to asynchronous
+                settings = self.world.get_settings()
+                settings.synchronous_mode = False
+                settings.fixed_delta_seconds = None
+                self.world.apply_settings(settings)
 
         self.client.stop_recorder()
         self.manager.cleanup()
@@ -247,7 +247,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
-        CarlaDataProvider.perform_carla_tick()
+        CarlaDataProvider.get_world().tick()
 
     def _analyze_scenario(self, config):
         """
@@ -301,18 +301,15 @@ class ScenarioRunner(object):
         CarlaActorPool.set_world(self.world)
         CarlaDataProvider.set_world(self.world)
 
-        settings = self.world.get_settings()
-        settings.fixed_delta_seconds = 1.0 / self.frame_rate
-        self.world.apply_settings(settings)
-
-        if self._args.agent:
+        if self._args.sync:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
+            settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
 
         # Wait for the world to be ready
-        if self.world.get_settings().synchronous_mode:
-            CarlaDataProvider.perform_carla_tick()
+        if CarlaDataProvider.is_sync_mode():
+            self.world.tick()
         else:
             self.world.wait_for_tick()
 
@@ -554,6 +551,8 @@ def main():
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
+    parser.add_argument('--sync', action='store_true',
+                        help='Forces the simulation to run synchronously')
     parser.add_argument('--debug', action="store_true", help='Run with debug output')
     parser.add_argument('--output', action="store_true", help='Provide results on stdout')
     parser.add_argument('--file', action="store_true", help='Write results into a txt file')
@@ -612,6 +611,9 @@ def main():
 
     if arguments.route:
         arguments.reloadWorld = True
+
+    if arguments.agent:
+        arguments.sync = True
 
     scenario_runner = None
     result = True

@@ -54,7 +54,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _traffic_light_map = dict()
     _map = None
     _world = None
-    _sync_flag = False
     _ego_vehicle_route = None
 
     @staticmethod
@@ -88,22 +87,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         for actor in actors:
             CarlaDataProvider.register_actor(actor)
-
-    @staticmethod
-    def perform_carla_tick(timeout=5.0):
-        """
-        Send tick() command to CARLA and wait for at
-        most timeout seconds to let tick() return
-
-        Note: This is a workaround as CARLA tick() has no
-              timeout functionality
-        """
-        t = Thread(target=CarlaDataProvider._world.tick)
-        t.daemon = True
-        t.start()
-        t.join(float(timeout))
-        if t.is_alive():
-            raise RuntimeError("Timeout of CARLA tick command")
 
     @staticmethod
     def on_carla_tick():
@@ -194,7 +177,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         @return true if syncronuous mode is used
         """
-        return CarlaDataProvider._sync_flag
+        if CarlaDataProvider._world is not None:
+            return CarlaDataProvider._world.get_settings().synchronous_mode
+        raise Exception("Unable to find the world")
 
     @staticmethod
     def set_world(world):
@@ -203,7 +188,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         CarlaDataProvider._world = world
         settings = world.get_settings()
-        CarlaDataProvider._sync_flag = settings.synchronous_mode
         CarlaDataProvider._map = CarlaDataProvider._world.get_map()
 
     @staticmethod
@@ -402,7 +386,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._traffic_light_map.clear()
         CarlaDataProvider._map = None
         CarlaDataProvider._world = None
-        CarlaDataProvider._sync_flag = False
         CarlaDataProvider._ego_vehicle_route = None
 
 
@@ -536,7 +519,7 @@ class CarlaActorPool(object):
 
         actors = []
 
-        sync_mode = CarlaActorPool._world.get_settings().synchronous_mode
+        sync_mode = CarlaDataProvider.is_sync_mode()
 
         if CarlaActorPool._client and batch is not None:
             responses = CarlaActorPool._client.apply_batch_sync(batch, sync_mode)
@@ -545,7 +528,7 @@ class CarlaActorPool(object):
 
         # wait for the actors to be spawned properly before we do anything
         if sync_mode:
-            CarlaDataProvider.perform_carla_tick()
+            CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
 
@@ -596,8 +579,8 @@ class CarlaActorPool(object):
             else:
                 pass
         # wait for the actor to be spawned properly before we do anything
-        if CarlaActorPool._world.get_settings().synchronous_mode:
-            CarlaDataProvider.perform_carla_tick()
+        if CarlaDataProvider.is_sync_mode():
+            CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
 

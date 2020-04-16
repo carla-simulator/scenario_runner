@@ -445,9 +445,8 @@ class RouteScenario(BasicScenario):
                                                    criteria_enable=False, timeout=timeout)
                 # Do a tick every once in a while to avoid spawning everything at the same time
                 if scenario_number % scenarios_per_tick == 0:
-                    sync_mode = world.get_settings().synchronous_mode
-                    if sync_mode:
-                        CarlaDataProvider.perform_carla_tick()
+                    if CarlaDataProvider.is_sync_mode():
+                        world.tick()
                     else:
                         world.wait_for_tick()
 

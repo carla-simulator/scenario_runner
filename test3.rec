@@ -1,0 +1,4746 @@
+{
+    "records": [
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69915
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69915
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69916
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69917
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69917
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69917
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69918
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69918
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69919
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69919
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69920
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69920
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69921
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69921
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69922
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69922
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69923
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69923
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69924
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69924
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69925
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69925
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69926
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69926
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69927
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69927
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 69928
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69928
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69929
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69929
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69930
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69930
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69931
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69931
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69932
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69933
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69933
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69934
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69934
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69935
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69935
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69936
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69936
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69936
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69937
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69937
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69938
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69938
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69939
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69939
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69940
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69940
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69941
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69941
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69942
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69942
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69943
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69943
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69943
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69944
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69945
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69945
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69946
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69946
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69947
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69947
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69948
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69948
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69949
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69949
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69950
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69950
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69951
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69951
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69952
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69952
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69953
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69953
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69954
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69954
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69954
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69955
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69956
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69956
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69956
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69957
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69957
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69958
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69958
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69959
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69959
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69960
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69960
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69961
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69961
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69962
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69962
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69963
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69963
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69964
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69964
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69965
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69965
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69966
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69966
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69967
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69967
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69968
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69968
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69969
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69969
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69970
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69970
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69971
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69971
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69972
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69972
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69973
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69973
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69973
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69974
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69974
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69975
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69975
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69976
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69976
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69977
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69977
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69978
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69978
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69979
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69979
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69980
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69980
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69981
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69981
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69982
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69982
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69983
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69984
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69984
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69984
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69985
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69985
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69986
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69986
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69987
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69987
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69988
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69988
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69989
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69989
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69990
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69990
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69991
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69991
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69992
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69992
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69993
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69993
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69994
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69994
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69995
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69995
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69996
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69996
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69997
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69997
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69998
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69998
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69999
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 69999
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70000
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70000
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70001
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70001
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70002
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70002
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70003
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70003
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70004
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70004
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70004
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70005
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70006
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70006
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70006
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70007
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70007
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70008
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70008
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70009
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70009
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70010
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70010
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70011
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70011
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70012
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70012
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70013
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70013
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70014
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70014
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70015
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70015
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70016
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70016
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70017
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70017
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70018
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70018
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70019
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70019
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70020
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70020
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70021
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70021
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70022
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70022
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70023
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70023
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70024
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70024
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70025
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70025
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70026
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70026
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70027
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70027
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70028
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70028
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70029
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70029
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70030
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70030
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70031
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70031
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70032
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70032
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70033
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70033
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70034
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70034
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70035
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70035
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70035
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70036
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70036
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70037
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70037
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70038
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70038
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70039
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70039
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70040
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70040
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70041
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70041
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70042
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70042
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70043
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70043
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70044
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70044
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70045
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70045
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70046
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70046
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70047
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70047
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70048
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70048
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70048
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70049
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70049
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70050
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70050
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70051
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70051
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70052
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70052
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70053
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70053
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70054
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70054
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70055
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70055
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70056
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70056
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70057
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70057
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70057
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70058
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70058
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70059
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70059
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70060
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70060
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70061
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70061
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70062
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70062
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70063
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70063
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70064
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70064
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70065
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70065
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70066
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70066
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70067
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70067
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70068
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70068
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70069
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70069
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70070
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70070
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70071
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70071
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70072
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70072
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70073
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70073
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70074
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70074
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70075
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70075
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70076
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70076
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70077
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70077
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70078
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70078
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70079
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70079
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70080
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70080
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70081
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70081
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70082
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70082
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70083
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70083
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70084
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70084
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70085
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70085
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70086
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70086
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70087
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70087
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70088
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70088
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70089
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70089
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70091
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70091
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70092
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70092
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70093
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70093
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70094
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70094
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70094
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70095
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70095
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70096
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70096
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70097
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70097
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70097
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70098
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70098
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70098
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70099
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70099
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70100
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70100
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70101
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70101
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70102
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70102
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70103
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70103
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 1.0
+            },
+            "timestamp": 70103
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70104
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70104
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70106
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70106
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70107
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70107
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70108
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70108
+        },
+        {
+            "control": {
+                "brake": 0.0,
+                "gear": 0,
+                "hand_brake": false,
+                "manual_gear_shift": false,
+                "reverse": false,
+                "steer": 0.0,
+                "throttle": 0.0
+            },
+            "timestamp": 70109
+        }
+    ],
+    "time_step": null,
+    "vehicle": "vehicle.lincoln.mkz2017"
+}

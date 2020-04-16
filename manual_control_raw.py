@@ -140,6 +140,7 @@ class World(object):
         self.controller = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
+        self.recording_enabled = False
 
     def restart(self):
         cam_index = self.camera_manager._index
@@ -232,13 +233,10 @@ class PlaybackControl(object):
 
 
 class KeyboardControl(object):
-    def __init__(self, world, start_in_autopilot, clock, client, log=None):
+    def __init__(self, world, start_in_autopilot, log=None):
         self._autopilot_enabled = start_in_autopilot
         self._control = carla.VehicleControl()
         self._steer_cache = 0.0
-        self._world = world
-        self._clock = clock
-        self._client = client
 
         self._log = log
         time_step = world.world.get_settings().fixed_delta_seconds
@@ -248,8 +246,7 @@ class KeyboardControl(object):
         world.vehicle.set_autopilot(self._autopilot_enabled)
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
 
-    def parse_events(self, timestamp=None):
-        world = self._world
+    def parse_events(self, client, world, clock):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return True
@@ -276,32 +273,27 @@ class KeyboardControl(object):
                     world.camera_manager.toggle_recording()
                 elif event.key == K_q:
                     self._control.reverse = not self._control.reverse
-                elif event.key == K_p:
+                elif event.key == K_p and not pygame.key.get_mods() & KMOD_CTRL:
                     self._autopilot_enabled = not self._autopilot_enabled
                     world.vehicle.set_autopilot(self._autopilot_enabled)
-                    world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
         if not self._autopilot_enabled:
-            if self._log:
-                self._parse_keys(pygame.key.get_pressed(), timestamp.delta_seconds * 1000)
-            else:
-                self._parse_keys(pygame.key.get_pressed(), self._clock.get_time())
+            self._parse_keys(pygame.key.get_pressed(), clock.get_time())
             world.vehicle.apply_control(self._control)
 
             if self._log:
-                self._record_control(timestamp)
+                self._record_control(world)
 
-    def _record_control(self, timestamp):
+    def _record_control(self, world):
         if self._log_data:
             new_record = {'control': {'throttle': self._control.throttle,
                                       'steer': self._control.steer,
                                       'brake': self._control.brake,
                                       'hand_brake': self._control.hand_brake,
-                                      'r
-                                      everse': self._control.reverse,
+                                      'reverse': self._control.reverse,
                                       'manual_gear_shift': self._control.manual_gear_shift,
                                       'gear': self._control.gear
                                       },
-                          'timestamp': timestamp.frame
+                          'timestamp': world.world.get_snapshot().timestamp.frame
                          }
 
             self._log_data['records'].append(new_record)
@@ -402,7 +394,7 @@ class HUD(object):
             self._info_text += ['Nearby vehicles:']
             distance = lambda l: math.sqrt((l.x - t.location.x)**2 + (l.y - t.location.y)**2 + (l.z - t.location.z)**2)
             vehicles = [(distance(x.get_location()), x) for x in vehicles if x.id != world.vehicle.id]
-            for d, vehicle in sorted(vehicles):
+            for d, vehicle in sorted(vehicles, key=lambda vehicles: vehicles[0]):
                 if d > 200.0:
                     break
                 vehicle_type = get_actor_display_name(vehicle, truncate=22)
@@ -701,36 +693,50 @@ def game_loop(args):
         world = World(sim_world, hud)
 
         clock = pygame.time.Clock()
+        # if args.playback:
+        #     controller = PlaybackControl(world, args.playback)
+        # else:
+        controller = KeyboardControl(world, args.autopilot, args.log)
+
+        # if args.log or args.playback:
+        #     parser_int = sim_world.on_tick(controller.parse_events)
+        #     while True:
+        #         clock.tick_busy_loop(60)
+        #         if not world.tick(clock):
+        #             return
+        #         world.render(display)
+        #         pygame.display.flip()
+
+        # else:
+        if args.log:
+            client.start_recorder(args.log)
+            world.hud.notification("Recorder is ON")
+
         if args.playback:
-            controller = PlaybackControl(world, args.playback)
-        else:
-            controller = KeyboardControl(world, args.autopilot, clock, client, args.log)
+            client.replay_file(args.playback, 0, 0, 0)
 
-        if args.log or args.playback:
-            parser_int = sim_world.on_tick(controller.parse_events)
-            while True:
-                clock.tick_busy_loop(60)
-                if not world.tick(clock):
+        while True:
+            clock.tick_busy_loop(60)
+            if args.playback:
+                pass
+            else:
+                if controller.parse_events(client, world, clock):
                     return
-                world.render(display)
-                pygame.display.flip()
-
-        else:
-            while True:
-                clock.tick_busy_loop(60)
-                if controller.parse_events():
-                    return
-                if not world.tick(clock):
-                    return
-                world.render(display)
-                pygame.display.flip()
+            if not world.tick(clock):
+                return
+            world.render(display)
+            pygame.display.flip()
 
     finally:
-        if args.log or args.playback:
-            sim_world.remove_on_tick(parser_int)
+        
+        if args.log:
+            client.stop_recorder()
+            world.hud.notification("Recorder is OFF")
 
         if world is not None:
             world.destroy()
+
+
 
         pygame.quit()
 
