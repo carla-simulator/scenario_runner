@@ -31,6 +31,7 @@
 * Fixed bug where CollisionTest was counting as multiple hits collisions that displaced the actor for a long distance.
 * Fixed bug causing the simulation to end after running in synchronous mode
 * Fixed bug when using the WaypointFollower atomic to create new LocalPlanners for on-the-fly created actors (#502)
+* Fixed bug causing the scenarios to run faster than real time.
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
