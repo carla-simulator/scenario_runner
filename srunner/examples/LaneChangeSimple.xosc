@@ -167,16 +167,6 @@
         </ManeuverGroup>
         <StartTrigger>
           <ConditionGroup>
-            <Condition name="StandStillCondition" delay="0" conditionEdge="rising">
-              <ByEntityCondition>
-                <TriggeringEntities triggeringEntitiesRule="any">
-                  <EntityRef entityRef="hero"/>
-                </TriggeringEntities>
-                <EntityCondition>
-                  <StandStillCondition duration="10.0"/>
-                </EntityCondition>
-              </ByEntityCondition>
-            </Condition>
             <Condition name="OverallStartCondition" delay="0" conditionEdge="rising">
               <ByEntityCondition>
                 <TriggeringEntities triggeringEntitiesRule="any">
