@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="Test" type="Test" town="OpenDriveMap">
+        <ego_vehicle x="-101.20" y="136.30" z="0" yaw="-1" model="vehicle.lincoln.mkz2017" />
+        <other_actor x="-101.20" y="132.80" z="0" yaw="-1"/>
+        <weather cloudiness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+</scenarios>

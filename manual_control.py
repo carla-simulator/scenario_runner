@@ -244,11 +244,9 @@ class PlaybackControl(object):
         if self._index < len(self._control_list):
 
             self._world.vehicle.apply_control(self._control_list[self._index])
-            # print('[{}] -- GOTTEN:  {}'.format(self._index, self._world.vehicle.get_control()))
-            # print('[{}] -- APPLIED: {}'.format(self._index, self._control_list[self._index]))
-            # print('[{}] -- APPLIED: -- {}'.format(self._index, self._transform_list[self._index]))
-            # print('[{}] -- GOTTEN: -- {}'.format(self._index, self._world.vehicle.get_transform()))
-            
+            print('[{}] -- GOTTEN:  {}'.format(self._index, self._world.vehicle.get_control()))
+            print('[{}] -- GOTTEN: -- {}'.format(self._index, self._world.vehicle.get_transform()))
+
             if self._index % 243 == 0:
                 t = self._world.vehicle.get_transform()
                 print("{}, {}, {}".format(t.location.x,t.location.y,t.rotation.yaw))
