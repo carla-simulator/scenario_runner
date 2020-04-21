@@ -18,14 +18,14 @@ To enable your stack within challenge mode, the following steps need to be taken
 
 Derive from RosAgent and implement the sensors() method.
 
-    from srunner.challenge.autoagents.ros_agent import RosAgent
+    from srunner.autoagents.ros_agent import RosAgent
 
     class MyRosAgent(RosAgent):
 
         def sensors(self):
             return [ <sensor-definition> ]
 
-As an example for the sensor definition, see [HumanAgent.py](../srunner/challenge/autoagents/HumanAgent.py).
+As an example for the sensor definition, see [HumanAgent.py](../srunner/autoagents/HumanAgent.py).
 
 
 ### Define Startup
