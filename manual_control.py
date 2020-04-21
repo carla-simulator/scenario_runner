@@ -196,8 +196,11 @@ class World(object):
 class PlaybackControl(object):
     def __init__(self, world, playback=None):
         self._control_list = []
-        self._timestamps = []
-        self._control_idx = 0
+        self._timestamp_list = []
+        self._velocity_list = []
+        self._angular_velocity_list = []
+        self._transform_list = []
+        self._index = 0
         self._world = world
         control_records = None
 
@@ -219,16 +222,39 @@ class PlaybackControl(object):
                                                manual_gear_shift=entry['control']['manual_gear_shift'],
                                                gear=entry['control']['gear'])
                 self._control_list.append(control)
-                self._timestamps.append(entry['timestamp'])
+                transform = carla.Transform(
+                    carla.Location(entry['transform']['x'],
+                                   entry['transform']['y'],
+                                   entry['transform']['z']),
+                    carla.Rotation(entry['transform']['pitch'],
+                                   entry['transform']['yaw'],
+                                   entry['transform']['roll']))
+                self._transform_list.append(transform)
+                velocity = carla.Vector3D(entry['velocity']['x'],
+                                          entry['velocity']['y'],
+                                          entry['velocity']['z'])
+                self._velocity_list.append(velocity)
+                angular_velocity = carla.Vector3D(entry['angular_velocity']['x'],
+                                                  entry['angular_velocity']['y'],
+                                                  entry['angular_velocity']['z'])
+                self._angular_velocity_list.append(angular_velocity)
+                self._timestamp_list.append([entry['timestamp']['elapsed'], entry['timestamp']['delta']])
 
     def parse_events(self, timestamp):
-        if self._control_idx < len(self._control_list):
-            print('[{}] -- {} -- {}'.format(self._control_idx, str(self._timestamps[self._control_idx]), timestamp.frame))
-            self._world.vehicle.apply_control(self._control_list[self._control_idx])
-            self._control_idx += 1
+        if self._index < len(self._control_list):
+
+            self._world.vehicle.apply_control(self._control_list[self._index])
+            # print('[{}] -- GOTTEN:  {}'.format(self._index, self._world.vehicle.get_control()))
+            # print('[{}] -- APPLIED: {}'.format(self._index, self._control_list[self._index]))
+            # print('[{}] -- APPLIED: -- {}'.format(self._index, self._transform_list[self._index]))
+            # print('[{}] -- GOTTEN: -- {}'.format(self._index, self._world.vehicle.get_transform()))
+            
+            if self._index % 243 == 0:
+                t = self._world.vehicle.get_transform()
+                print("{}, {}, {}".format(t.location.x,t.location.y,t.rotation.yaw))
+            self._index += 1
         else:
-            control = carla.VehicleControl()
-            world.vehicle.apply_control(control)
+            print("JSON file as no more entries")
 
 
 class KeyboardControl(object):
@@ -237,8 +263,10 @@ class KeyboardControl(object):
         self._control = carla.VehicleControl()
         self._steer_cache = 0.0
         self._world = world
+        self._vehicle = world.vehicle
         self._clock = clock
         self._client = client
+        self._index = 0
 
         self._log = log
         time_step = world.world.get_settings().fixed_delta_seconds
@@ -286,22 +314,43 @@ class KeyboardControl(object):
             else:
                 self._parse_keys(pygame.key.get_pressed(), self._clock.get_time())
             world.vehicle.apply_control(self._control)
+            self._index += 1
 
             if self._log:
                 self._record_control(timestamp)
 
     def _record_control(self, timestamp):
         if self._log_data:
+            transform = self._vehicle.get_transform()
+            velocity = self._vehicle.get_velocity()
+            angular_velocity = self._vehicle.get_angular_velocity()
             new_record = {'control': {'throttle': self._control.throttle,
                                       'steer': self._control.steer,
                                       'brake': self._control.brake,
                                       'hand_brake': self._control.hand_brake,
-                                      'r
-                                      everse': self._control.reverse,
+                                      'reverse': self._control.reverse,
                                       'manual_gear_shift': self._control.manual_gear_shift,
                                       'gear': self._control.gear
                                       },
-                          'timestamp': timestamp.frame
+                          'timestamp': {'frame': timestamp.frame,
+                                        'elapsed': timestamp.elapsed_seconds,
+                                        'delta': timestamp.delta_seconds
+                                        },
+                          'transform': {'x': transform.location.x,
+                                        'y': transform.location.y,
+                                        'z': transform.location.z,
+                                        'roll': transform.rotation.roll,
+                                        'pitch': transform.rotation.pitch,
+                                        'yaw': transform.rotation.yaw
+                                        },
+                          'velocity': {'x': velocity.x,
+                                       'y': velocity.y,
+                                       'z': velocity.z
+                                       },
+                          'angular_velocity': {'x': angular_velocity.x,
+                                               'y': angular_velocity.y,
+                                               'z': angular_velocity.z
+                                               }
                          }
 
             self._log_data['records'].append(new_record)
@@ -402,7 +451,7 @@ class HUD(object):
             self._info_text += ['Nearby vehicles:']
             distance = lambda l: math.sqrt((l.x - t.location.x)**2 + (l.y - t.location.y)**2 + (l.z - t.location.z)**2)
             vehicles = [(distance(x.get_location()), x) for x in vehicles if x.id != world.vehicle.id]
-            for d, vehicle in sorted(vehicles):
+            for d, vehicle in sorted(vehicles, key=lambda vehicles: vehicles[0]):
                 if d > 200.0:
                     break
                 vehicle_type = get_actor_display_name(vehicle, truncate=22)
