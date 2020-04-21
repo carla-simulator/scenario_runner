@@ -9,6 +9,8 @@
 Basic scenario class using the OpenSCENARIO definition
 """
 
+from __future__ import print_function
+
 import itertools
 import py_trees
 
@@ -243,7 +245,7 @@ class OpenScenario(BasicScenario):
                                     break
 
                     if not actor_ids:
-                        raise AttributeError("No actors for maneuvers found")
+                        print("Warning: Maneuvergroup does not use reference actors!")
 
                    # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
                     catalog_maneuver_list = []

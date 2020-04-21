@@ -163,6 +163,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         # workaround for relative positions during init
         world = self.client.get_world()
         if world is None or world.get_map().name != self.town:
+            self.logger.warning("Wrong OpenDRIVE map in use. Forcing reload of CARLA world")
             if ".xodr" in self.town:
                 with open(self.town) as od_file:
                     data = od_file.read()
@@ -423,4 +424,4 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             raise AttributeError("CARLA level not defined")
 
         if not self.ego_vehicles:
-            raise AttributeError("No ego vehicles defined in scenario")
+            self.logger.warning("No ego vehicles defined in scenario")
