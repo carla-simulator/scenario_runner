@@ -39,7 +39,6 @@ class BasicScenario(object):
         # Check if the CARLA server uses the correct map
         self._town = config.town
         self._check_town()
-        self.world = world
 
         self.ego_vehicles = ego_vehicles
         self.name = name
@@ -49,9 +48,9 @@ class BasicScenario(object):
         # Initializing adversarial actors
         self._initialize_actors(config)
         if CarlaDataProvider.is_sync_mode():
-            self.world.tick()
+            world.tick()
         else:
-            self.world.wait_for_tick()
+            world.wait_for_tick()
 
         # Setup scenario
         if debug_mode:
@@ -185,8 +184,3 @@ class BasicScenario(object):
                     CarlaActorPool.remove_actor_by_id(self.other_actors[i].id)
                 self.other_actors[i] = None
         self.other_actors = []
-
-        # if CarlaDataProvider.is_sync_mode():
-        #     self.world.tick()
-        # else:
-        #     self.world.wait_for_tick()

@@ -48,7 +48,6 @@ from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLe
 from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
 from srunner.scenarios.change_lane import ChangeLane
 from srunner.scenarios.cut_in import CutIn
-from srunner.scenarios.test import Test
 # pylint: enable=unused-import
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
@@ -176,13 +175,15 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
-        if self.manager is not None and self.manager.get_running_status(): # Simulation still running?
-            if self.world is not None and self.world.get_settings().synchronous_mode:  # In synchronous mode?
-                # Reset to asynchronous
-                settings = self.world.get_settings()
-                settings.synchronous_mode = False
-                settings.fixed_delta_seconds = None
-                self.world.apply_settings(settings)
+        # Simulation still running and in synchronous mode?
+        if self.manager is not None and self.manager.get_running_status() \
+                and self.world is not None and self.world.get_settings().synchronous_mode:
+
+            # Reset to asynchronous mode
+            settings = self.world.get_settings()
+            settings.synchronous_mode = False
+            settings.fixed_delta_seconds = None
+            self.world.apply_settings(settings)
 
         self.client.stop_recorder()
         self.manager.cleanup()
@@ -286,15 +287,16 @@ class ScenarioRunner(object):
                             break
 
         self.world = self.client.get_world()
-        CarlaActorPool.set_client(self.client)
-        CarlaActorPool.set_world(self.world)
-        CarlaDataProvider.set_world(self.world)
 
         if self._args.sync:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
+
+        CarlaActorPool.set_client(self.client)
+        CarlaActorPool.set_world(self.world)
+        CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
         if CarlaDataProvider.is_sync_mode():

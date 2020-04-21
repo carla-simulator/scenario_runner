@@ -54,6 +54,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _traffic_light_map = dict()
     _map = None
     _world = None
+    _sync_flag = False
     _ego_vehicle_route = None
 
     @staticmethod
@@ -104,6 +105,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         for actor in CarlaDataProvider._actor_transform_map:
             if actor is not None and actor.is_alive:
                 CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
+
+        world = CarlaDataProvider._world
+        if world is None:
+            print("WARNING: CarlaDataProvider couldn't find the world")
+        else:
+            CarlaDataProvider._sync_flag = world.get_settings().synchronous_mode
 
     @staticmethod
     def get_velocity(actor):
@@ -177,9 +184,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         @return true if syncronuous mode is used
         """
-        if CarlaDataProvider._world is not None:
-            return CarlaDataProvider._world.get_settings().synchronous_mode
-        raise Exception("Unable to find the world")
+        return CarlaDataProvider._sync_flag
 
     @staticmethod
     def set_world(world):
@@ -188,6 +193,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         CarlaDataProvider._world = world
         settings = world.get_settings()
+        CarlaDataProvider._sync_flag = settings.synchronous_mode
         CarlaDataProvider._map = CarlaDataProvider._world.get_map()
 
     @staticmethod
@@ -386,6 +392,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._traffic_light_map.clear()
         CarlaDataProvider._map = None
         CarlaDataProvider._world = None
+        CarlaDataProvider._sync_flag = False
         CarlaDataProvider._ego_vehicle_route = None
 
 
