@@ -203,6 +203,7 @@ class PlaybackControl(object):
         self._index = 0
         self._world = world
         self._client = client
+        self._vehicle_id = world.vehicle.id
         self._frame = None
         control_records = None
 
@@ -243,25 +244,28 @@ class PlaybackControl(object):
                 self._timestamp_list.append([entry['timestamp']['elapsed'], entry['timestamp']['delta']])
 
     def parse_events(self, timestamp):
-        elapsed_1 = self._client.get_world().get_snapshot().timestamp.elapsed_seconds
-        # print(elapsed_1)
-        if self._frame is None:
-            self._frame = timestamp.frame
+
+        # frame_1 = self._client.get_world().get_snapshot().timestamp.elapsed_seconds
+
+        # if self._frame is None:
+        #     self._frame = timestamp.frame
+
         if self._index < len(self._control_list):
 
-            self._world.vehicle.apply_control(self._control_list[self._index])
-            print('[{}] -- GOTTEN:  {}'.format(timestamp.frame - self._frame, self._world.vehicle.get_control()))
-            print('[{}] -- APPLIED:  {}'.format(timestamp.frame - self._frame, self._control_list[self._index]))
+            # print("{} start".format(timestamp.frame - self._frame))
+            self._client.apply_batch_sync([
+                carla.command.ApplyVehicleControl(self._vehicle_id, self._control_list[self._index])])
+            # print("{} end".format(timestamp.frame - self._frame))
 
-            if self._index == len(self._control_list) - 3:
-                t = self._world.vehicle.get_transform()
-                print("{}, {}, {}".format(t.location.x,t.location.y,t.rotation.yaw))
+            # self._world.vehicle.apply_control(self._control_list[self._index])
+
             self._index += 1
         else:
             print("JSON file as no more entries")
-        elapsed_2 = self._client.get_world().get_snapshot().timestamp.elapsed_seconds
-        if elapsed_1 != elapsed_2:
-            print("WARNING: Started and ended and different frames")
+
+        # frame_2 = self._client.get_world().get_snapshot().timestamp.elapsed_seconds
+        # if frame_2 != frame_1:
+        #     print("WARNING: Timestamp {} started and ended in different frames {}".format(timestamp.frame - self._frame, frame_2 - frame_1))
 
 
 class KeyboardControl(object):

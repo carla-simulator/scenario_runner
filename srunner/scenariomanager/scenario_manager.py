@@ -147,6 +147,8 @@ class ScenarioManager(object):
         self.start_system_time = None
         self.end_system_time = None
 
+        self._ego = None
+
     def _reset(self):
         """
         Reset all parameters
@@ -272,6 +274,14 @@ class ScenarioManager(object):
 
         if CarlaDataProvider.is_sync_mode() and self._running and self._watchdog.get_status():
             CarlaDataProvider.get_world().tick()
+            if self._ego is None:
+                possible_vehicles = CarlaDataProvider.get_world().get_actors().filter('vehicle.*')
+                for vehicle in possible_vehicles:
+                    if vehicle.attributes['role_name'] == "hero":
+                        self._ego = vehicle
+
+            # print(CarlaDataProvider.get_transform(self._ego))
+            print(self._ego.get_control())
             # time.sleep(0.05)
             # print("Next tick at {}".format(CarlaDataProvider.get_world().get_snapshot().timestamp.elapsed_seconds))
 
