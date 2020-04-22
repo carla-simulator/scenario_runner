@@ -541,7 +541,7 @@ def main():
         parser.print_help(sys.stdout)
         return 1
 
-    if (arguments.route and arguments.openscenario) or (arguments.route and arguments.scenario):
+    if arguments.route and (arguments.openscenario or arguments.scenario):
         print("The route mode cannot be used together with a scenario (incl. OpenSCENARIO)'\n\n")
         parser.print_help(sys.stdout)
         return 1

@@ -202,6 +202,7 @@ class PlaybackControl(object):
         self._transform_list = []
         self._index = 0
         self._world = world
+        self._frame = None
         control_records = None
 
         if playback:
@@ -241,13 +242,15 @@ class PlaybackControl(object):
                 self._timestamp_list.append([entry['timestamp']['elapsed'], entry['timestamp']['delta']])
 
     def parse_events(self, timestamp):
+        if self._frame is None:
+            self._frame = timestamp.frame
         if self._index < len(self._control_list):
 
             self._world.vehicle.apply_control(self._control_list[self._index])
-            print('[{}] -- GOTTEN:  {}'.format(self._index, self._world.vehicle.get_control()))
-            print('[{}] -- GOTTEN: -- {}'.format(self._index, self._world.vehicle.get_transform()))
+            print('[{}] -- GOTTEN:  {}'.format(timestamp.frame - self._frame, self._world.vehicle.get_control()))
+            print('[{}] -- APPLIED:  {}'.format(timestamp.frame - self._frame, self._control_list[self._index]))
 
-            if self._index % 243 == 0:
+            if self._index == len(self._control_list) - 3:
                 t = self._world.vehicle.get_transform()
                 print("{}, {}, {}".format(t.location.x,t.location.y,t.rotation.yaw))
             self._index += 1
@@ -754,6 +757,7 @@ def game_loop(args):
             controller = KeyboardControl(world, args.autopilot, clock, client, args.log)
 
         if args.log or args.playback:
+            print(world.vehicle.get_transform())
             parser_int = sim_world.on_tick(controller.parse_events)
             while True:
                 clock.tick_busy_loop(60)

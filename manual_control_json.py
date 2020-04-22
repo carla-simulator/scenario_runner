@@ -1045,11 +1045,11 @@ def game_loop(args):
         carla_world.apply_settings(settings)
 
         t = carla.Transform()
-        t.location.x = 235.309662
-        t.location.y = -5.085508
-        t.location.z = 0.03529
+        t.location.x = 239.309662
+        t.location.y = -70.085508
+        t.location.z = 8.33529
         t.rotation.pitch = 0.0
-        t.rotation.yaw = 90.144211
+        t.rotation.yaw = -90.144211
         t.rotation.roll = 0.0
         world.player.set_transform(t)
 
@@ -1063,101 +1063,103 @@ def game_loop(args):
         while True:
             clock.tick_busy_loop(60)
                 
-            # if (totalSteps < 30*1):
-            #     control.throttle = 1
-            #     control.brake = 0
-            #     control.steer = 0.5
-            #     control.hand_brake = False
-            # elif (totalSteps >= 30*1 and totalSteps < 30*2):
-            #     control.throttle = 0
-            #     control.brake = 0
-            #     control.steer = -0.5
-            #     control.hand_brake = False
-            # elif (totalSteps >= 30*2 and totalSteps < 30*3):
-            #     control.throttle = 1
-            #     control.brake = 0
-            #     control.steer = 0.3
-            #     control.hand_brake = False
-            # elif (totalSteps >= 30*3 and totalSteps < 30*4):
-            #     control.throttle = 0
-            #     control.brake = 0
-            #     control.steer = -0.2
-            #     control.hand_brake = False
-            # elif (totalSteps >= 30*4 and totalSteps < 30*5):
-            #     control.throttle = 1
-            #     control.brake = 0
-            #     control.steer = 0.2
-            #     control.hand_brake = False
-            # elif (totalSteps >= 30*5 and totalSteps < 30*6):
-            #     control.throttle = 0
-            #     control.brake = 0
-            #     control.steer = 0.7
-            #     control.hand_brake = False
-            # elif (totalSteps >= 30*6 and totalSteps < 30*7):
-            #     control.throttle = 1
-            #     control.brake = 0
-            #     control.steer = 0.1
-            #     control.hand_brake = False
-            # elif (totalSteps >= 30*7 and totalSteps < 30*8):
-            #     control.throttle = 0
-            #     control.brake = 0
-            #     control.steer = 0.1
-            #     control.hand_brake = False
-            # else:
-            #     control.throttle = 0
-            #     control.brake = 0
-            #     control.steer = 0.0
-            #     control.hand_brake = False
-                 
             if (totalSteps < 30*1):
-                velocity.x = 0
-                velocity.y = 2
-                angular_velocity.z = 0
+                control.throttle = 1
+                control.brake = 0
+                control.steer = 0.5
+                control.hand_brake = False
             elif (totalSteps >= 30*1 and totalSteps < 30*2):
-                velocity.x = 0
-                velocity.y = 5
-                angular_velocity.z = 5
+                control.throttle = 0
+                control.brake = 0
+                control.steer = -0.5
+                control.hand_brake = False
             elif (totalSteps >= 30*2 and totalSteps < 30*3):
-                velocity.x = 0
-                velocity.y = 5
-                angular_velocity.z = -10
+                control.throttle = 1
+                control.brake = 0
+                control.steer = 0.3
+                control.hand_brake = False
             elif (totalSteps >= 30*3 and totalSteps < 30*4):
-                velocity.x = 0
-                velocity.y = 7
-                angular_velocity.z = 8
+                control.throttle = 0
+                control.brake = 0
+                control.steer = -0.2
+                control.hand_brake = False
             elif (totalSteps >= 30*4 and totalSteps < 30*5):
-                velocity.x = 0
-                velocity.y = 9
-                angular_velocity.z = 2
+                control.throttle = 1
+                control.brake = 0
+                control.steer = 0.2
+                control.hand_brake = False
             elif (totalSteps >= 30*5 and totalSteps < 30*6):
-                velocity.x = 0
-                velocity.y = 12
-                angular_velocity.z = 6
+                control.throttle = 0
+                control.brake = 0
+                control.steer = 0.7
+                control.hand_brake = False
             elif (totalSteps >= 30*6 and totalSteps < 30*7):
-                velocity.x = 0
-                velocity.y = 10
-                angular_velocity.z = -5
+                control.throttle = 1
+                control.brake = 0
+                control.steer = 0.1
+                control.hand_brake = False
             elif (totalSteps >= 30*7 and totalSteps < 30*8):
-                velocity.x = 0
-                velocity.y = 3
-                angular_velocity.z = 10
+                control.throttle = 0
+                control.brake = 0
+                control.steer = 0.1
+                control.hand_brake = False
             else:
-                velocity.x = 0
-                velocity.y = 0
-                angular_velocity.z = 0
+                control.throttle = 0
+                control.brake = 0
+                control.steer = 0.0
+                control.hand_brake = False
 
-            # world.player.apply_control(control)
-            # control_get = world.player.get_control()
+            world.player.apply_control(control)
+            control_get = world.player.get_control()
             # print("[{}] -- Applied control: {}".format(frame - frame_ori, control))
             # print("[{}] -- Gotten control :  {}".format(frame - frame_ori, control_get))
+                 
+            # if (totalSteps < 30*1):
+            #     velocity.x = 0
+            #     velocity.y = 2
+            #     angular_velocity.z = 0
+            # elif (totalSteps >= 30*1 and totalSteps < 30*2):
+            #     velocity.x = 0
+            #     velocity.y = 5
+            #     angular_velocity.z = 5
+            # elif (totalSteps >= 30*2 and totalSteps < 30*3):
+            #     velocity.x = 0
+            #     velocity.y = 5
+            #     angular_velocity.z = -10
+            # elif (totalSteps >= 30*3 and totalSteps < 30*4):
+            #     velocity.x = 0
+            #     velocity.y = 7
+            #     angular_velocity.z = 8
+            # elif (totalSteps >= 30*4 and totalSteps < 30*5):
+            #     velocity.x = 0
+            #     velocity.y = 9
+            #     angular_velocity.z = 2
+            # elif (totalSteps >= 30*5 and totalSteps < 30*6):
+            #     velocity.x = 0
+            #     velocity.y = 12
+            #     angular_velocity.z = 6
+            # elif (totalSteps >= 30*6 and totalSteps < 30*7):
+            #     velocity.x = 0
+            #     velocity.y = 10
+            #     angular_velocity.z = -5
+            # elif (totalSteps >= 30*7 and totalSteps < 30*8):
+            #     velocity.x = 0
+            #     velocity.y = 3
+            #     angular_velocity.z = 10
+            # else:
+            #     velocity.x = 0
+            #     velocity.y = 0
+            #     angular_velocity.z = 0
 
-            world.player.set_velocity(velocity)
-            world.player.set_angular_velocity(angular_velocity)
-            vel_get = world.player.get_velocity()
-            vel_ang_get = world.player.get_angular_velocity()
-            print("[{}] -- Gotten velocity :  {}".format(frame - frame_ori, vel_ang_get))
-            print("[{}] -- Applied velocity: {}".format(frame - frame_ori, angular_velocity))
+            # world.player.set_velocity(velocity)
+            # world.player.set_angular_velocity(angular_velocity)
+            # vel_get = world.player.get_velocity()
+            # vel_ang_get = world.player.get_angular_velocity()
+            # print("[{}] -- Gotten velocity :  {}".format(frame - frame_ori, vel_ang_get))
+            # print("[{}] -- Applied velocity: {}".format(frame - frame_ori, angular_velocity))
 
+
+            print("[{}] -- Transform: {}".format(frame - frame_ori, world.player.get_transform()))
             frame_prev = frame
             frame = carla_world.tick()
             if (frame != frame_prev + 1):

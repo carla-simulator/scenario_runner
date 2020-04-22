@@ -48,7 +48,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._target_vel = 6.9
         self._brake_value = 0.5
-        self._ego_distance = 110
+        self._ego_distance = 40
         self._traffic_light = None
         self._other_actor_transform = None
         self._blackboard_queue_name = 'SignalizedJunctionLeftTurn/actor_flow_queue'
