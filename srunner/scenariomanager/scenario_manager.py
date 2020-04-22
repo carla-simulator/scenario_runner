@@ -272,7 +272,8 @@ class ScenarioManager(object):
 
         if CarlaDataProvider.is_sync_mode() and self._running and self._watchdog.get_status():
             CarlaDataProvider.get_world().tick()
-            print("Next frame starting")
+            # time.sleep(0.05)
+            # print("Next tick at {}".format(CarlaDataProvider.get_world().get_snapshot().timestamp.elapsed_seconds))
 
     def get_running_status(self):
         """

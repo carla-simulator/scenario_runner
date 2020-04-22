@@ -194,7 +194,7 @@ class World(object):
 # ==============================================================================
 
 class PlaybackControl(object):
-    def __init__(self, world, playback=None):
+    def __init__(self, world, client, playback=None):
         self._control_list = []
         self._timestamp_list = []
         self._velocity_list = []
@@ -202,6 +202,7 @@ class PlaybackControl(object):
         self._transform_list = []
         self._index = 0
         self._world = world
+        self._client = client
         self._frame = None
         control_records = None
 
@@ -242,6 +243,8 @@ class PlaybackControl(object):
                 self._timestamp_list.append([entry['timestamp']['elapsed'], entry['timestamp']['delta']])
 
     def parse_events(self, timestamp):
+        elapsed_1 = self._client.get_world().get_snapshot().timestamp.elapsed_seconds
+        # print(elapsed_1)
         if self._frame is None:
             self._frame = timestamp.frame
         if self._index < len(self._control_list):
@@ -256,17 +259,19 @@ class PlaybackControl(object):
             self._index += 1
         else:
             print("JSON file as no more entries")
+        elapsed_2 = self._client.get_world().get_snapshot().timestamp.elapsed_seconds
+        if elapsed_1 != elapsed_2:
+            print("WARNING: Started and ended and different frames")
 
 
 class KeyboardControl(object):
-    def __init__(self, world, start_in_autopilot, clock, client, log=None):
+    def __init__(self, world, start_in_autopilot, clock, log=None):
         self._autopilot_enabled = start_in_autopilot
         self._control = carla.VehicleControl()
         self._steer_cache = 0.0
         self._world = world
         self._vehicle = world.vehicle
         self._clock = clock
-        self._client = client
         self._index = 0
 
         self._log = log
@@ -752,9 +757,9 @@ def game_loop(args):
 
         clock = pygame.time.Clock()
         if args.playback:
-            controller = PlaybackControl(world, args.playback)
+            controller = PlaybackControl(world, client, args.playback)
         else:
-            controller = KeyboardControl(world, args.autopilot, clock, client, args.log)
+            controller = KeyboardControl(world, args.autopilot, clock, args.log)
 
         if args.log or args.playback:
             print(world.vehicle.get_transform())
