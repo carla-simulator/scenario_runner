@@ -46,7 +46,7 @@ class RouteParser(object):
     @staticmethod
     def parse_routes_file(route_filename, single_route=None):
         """
-        Returns a list of route elements that is where the challenge is going to happen.
+        Returns a list of route elements.
         :param route_filename: the path to a set of routes.
         :param single_route: If set, only this route shall be returned
         :return:  List of dicts containing the waypoints, id and town of the routes
@@ -57,6 +57,7 @@ class RouteParser(object):
         for route in tree.iter("route"):
             route_town = route.attrib['map']
             route_id = route.attrib['id']
+            route_weather = RouteParser.parse_weather(route)
             if single_route and route_id != single_route:
                 continue
 
@@ -71,10 +72,48 @@ class RouteParser(object):
             list_route_descriptions.append({
                 'id': route_id,
                 'town_name': route_town,
-                'trajectory': waypoint_list
+                'trajectory': waypoint_list,
+                'weather': route_weather
             })
 
         return list_route_descriptions
+
+    @staticmethod
+    def parse_weather(route):
+        """
+        Returns a carla.WeatherParameters with the corresponding weather for that route. If the route
+        has no weather attribute, the default one is triggered.
+        """
+
+        route_weather = route.find("weather")
+        if route_weather is None:
+
+            weather = carla.WeatherParameters(sun_altitude_angle=70)
+
+        else:
+            weather = carla.WeatherParameters()
+            for weather_attrib in route.iter("weather"):
+
+                if 'cloudiness' in weather_attrib.attrib:
+                    weather.cloudiness = float(weather_attrib.attrib['cloudiness'])
+                if 'precipitation' in weather_attrib.attrib:
+                    weather.precipitation = float(weather_attrib.attrib['precipitation'])
+                if 'precipitation_deposits' in weather_attrib.attrib:
+                    weather.precipitation_deposits = float(weather_attrib.attrib['precipitation_deposits'])
+                if 'wind_intensity' in weather_attrib.attrib:
+                    weather.wind_intensity = float(weather_attrib.attrib['wind_intensity'])
+                if 'sun_azimuth_angle' in weather_attrib.attrib:
+                    weather.sun_azimuth_angle = float(weather_attrib.attrib['sun_azimuth_angle'])
+                if 'sun_altitude_angle' in weather_attrib.attrib:
+                    weather.sun_altitude_angle = float(weather_attrib.attrib['sun_altitude_angle'])
+                if 'wetness' in weather_attrib.attrib:
+                    weather.wetness = float(weather_attrib.attrib['wetness'])
+                if 'fog_distance' in weather_attrib.attrib:
+                    weather.fog_distance = float(weather_attrib.attrib['fog_distance'])
+                if 'fog_density' in weather_attrib.attrib:
+                    weather.fog_density = float(weather_attrib.attrib['fog_density'])
+
+        return weather
 
     @staticmethod
     def check_trigger_position(new_trigger, existing_triggers):

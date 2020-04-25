@@ -22,7 +22,7 @@ import xmlschema
 import carla
 
 # pylint: disable=line-too-long
-from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration, WeatherConfiguration
+from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
 from srunner.tools.openscenario_parser import OpenScenarioParser
@@ -48,7 +48,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.other_actors = []
         self.ego_vehicles = []
         self.trigger_points = []
-        self.weather = WeatherConfiguration()
+        self.weather = carla.WeatherParameters()
 
         self.storyboard = self.xml_tree.find("Storyboard")
         self.story = self.storyboard.find("Story")
@@ -163,6 +163,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         # workaround for relative positions during init
         world = self.client.get_world()
         if world is None or world.get_map().name != self.town:
+            self.logger.warning("Wrong OpenDRIVE map in use. Forcing reload of CARLA world")
             if ".xodr" in self.town:
                 with open(self.town) as od_file:
                     data = od_file.read()
@@ -191,8 +192,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         weather = environment.find("Weather")
         sun = weather.find("Sun")
-        self.weather.sun_azimuth = math.degrees(float(sun.attrib.get('azimuth', 0)))
-        self.weather.sun_altitude = math.degrees(float(sun.attrib.get('elevation', 0)))
+        self.weather.sun_azimuth_angle = math.degrees(float(sun.attrib.get('azimuth', 0)))
+        self.weather.sun_altitude_angle = math.degrees(float(sun.attrib.get('elevation', 0)))
         self.weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
         fog = weather.find("Fog")
         self.weather.fog_distance = float(fog.attrib.get('visualRange', 'inf'))
@@ -215,10 +216,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
 
         if dtime.hour >= 22 or dtime.hour <= 4:
-            self.weather.sun_altitude = -90
+            self.weather.sun_altitude_angle = -90
         elif dtime.hour >= 20 and dtime.hour < 22 or \
                 dtime.hour <= 6 and dtime.hour > 4:
-            self.weather.sun_altitude = 10
+            self.weather.sun_altitude_angle = 10
 
     def _set_carla_friction(self):
         """
@@ -423,4 +424,4 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             raise AttributeError("CARLA level not defined")
 
         if not self.ego_vehicles:
-            raise AttributeError("No ego vehicles defined in scenario")
+            self.logger.warning("No ego vehicles defined in scenario")

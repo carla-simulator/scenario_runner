@@ -13,6 +13,7 @@
     - Added support for position with Lane information (roadId and laneId)
     - Added support to use a non-CARLA OpenDRIVE map (instead of CARLA towns)
     - Added support for TimeOfDay tag
+    - Added support for scenarios with no actors
 * Scenario updates:
     - Scenarios that are part of RouteScenario have had their triggering condition modified. This will only activate when a certain parameter is set, and if not, the old trigger condition will still be applied.
 * Atomics:
@@ -21,6 +22,10 @@
     - Added new trigger condition, AtRightestLane, which checks if the actor is at the rightmost driving lane
     - Added new criteria, ActorSpeedAboveThresholdTest, useful to check if the ego vehicle has been standing still for long periods of time.
 * Setting up actors in batch now also randomizes their colors
+* When running routes, the weather parameters of each route can now be changed at will. Check the first route at srunner/data/routes_training.xml to see the correct format to do so. By default the weather is now a sunny midday.
+* **Important** All challenge related content has been removed. This functionality has been improved and is now part of the [Leaderboard](https://github.com/carla-simulator/leaderboard). As a consequence:
+    - The path to the autoagents has changed from .../challenge/autoagents to .../autoagents
+    - The path to the route and scenario descriptions has changed from .../challenge to .../data
 
 ### :bug: Bug Fixes
 * Fixed spawning bugs for scenario DynamicObjectCrossing when it is part of a route
@@ -30,6 +35,7 @@
 * Fixed bug where CollisionTest was counting as multiple hits collisions that displaced the actor for a long distance.
 * Fixed bug causing the simulation to end after running in synchronous mode
 * Fixed bug when using the WaypointFollower atomic to create new LocalPlanners for on-the-fly created actors (#502)
+* Fixed bug causing the scenarios to run faster than real time.
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
