@@ -193,64 +193,6 @@ class World(object):
 # -- KeyboardControl -----------------------------------------------------------
 # ==============================================================================
 
-class PlaybackControl(object):
-    def __init__(self, world, client, playback=None):
-        self._control_list = []
-        self._timestamp_list = []
-        self._velocity_list = []
-        self._angular_velocity_list = []
-        self._transform_list = []
-        self._index = 0
-        self._world = world
-        self._client = client
-        self._vehicle = world.vehicle
-
-        # Form of communication between manual control and SR
-        # print(type(actor_blueprint))
-        self._light_state = self._vehicle.get_light_state()
-
-        control_records = None
-
-        if playback:
-            with open(playback) as fd:
-                try:
-                    control_records = json.load(fd)
-                except json.JSONDecodeError:
-                    pass
-
-        if control_records and control_records['records']:
-            # transform strs into VehicleControl commands
-            for entry in control_records['records']:
-                control = carla.VehicleControl(throttle=entry['control']['throttle'],
-                                               steer=entry['control']['steer'],
-                                               brake=entry['control']['brake'],
-                                               hand_brake=entry['control']['hand_brake'],
-                                               reverse=entry['control']['reverse'],
-                                               manual_gear_shift=entry['control']['manual_gear_shift'],
-                                               gear=entry['control']['gear'])
-                self._control_list.append(control)
-
-    def parse_events(self, timestamp):
-
-        self._vehicle.set_light_state(carla.VehicleLightState.Position)
-
-        if self._index < len(self._control_list):
-
-            self._client.apply_batch_sync(
-                [carla.command.ApplyVehicleControl(self._vehicle.id, self._control_list[self._index])]
-            )
-            # self._world.vehicle.apply_control(self._control_list[self._index])
-
-            print("[{}] -- {}".format(timestamp.frame, self._vehicle.get_control()))
-            self._index += 1
-        else:
-
-            print("JSON file as no more entries")
-
-        # time.sleep(0.5)
-        self._vehicle.set_light_state(self._light_state)
-
-
 
 class KeyboardControl(object):
     def __init__(self, world, start_in_autopilot, clock, log=None):
@@ -260,7 +202,6 @@ class KeyboardControl(object):
         self._world = world
         self._vehicle = world.vehicle
         self._clock = clock
-        self._index = 0
 
         self._log = log
         time_step = world.world.get_settings().fixed_delta_seconds
@@ -309,16 +250,12 @@ class KeyboardControl(object):
             else:
                 self._parse_keys(pygame.key.get_pressed(), self._clock.get_time())
             world.vehicle.apply_control(self._control)
-            self._index += 1
 
             if self._log:
                 self._record_control(timestamp)
 
     def _record_control(self, timestamp):
         if self._log_data:
-            transform = self._vehicle.get_transform()
-            velocity = self._vehicle.get_velocity()
-            angular_velocity = self._vehicle.get_angular_velocity()
             new_record = {'control': {'throttle': self._control.throttle,
                                       'steer': self._control.steer,
                                       'brake': self._control.brake,
@@ -326,28 +263,7 @@ class KeyboardControl(object):
                                       'reverse': self._control.reverse,
                                       'manual_gear_shift': self._control.manual_gear_shift,
                                       'gear': self._control.gear
-                                      },
-                          'timestamp': {'frame': timestamp.frame,
-                                        'elapsed': timestamp.elapsed_seconds,
-                                        'delta': timestamp.delta_seconds
-                                        },
-                          'transform': {'x': transform.location.x,
-                                        'y': transform.location.y,
-                                        'z': transform.location.z,
-                                        'roll': transform.rotation.roll,
-                                        'pitch': transform.rotation.pitch,
-                                        'yaw': transform.rotation.yaw
-                                        },
-                          'velocity': {'x': velocity.x,
-                                       'y': velocity.y,
-                                       'z': velocity.z
-                                       },
-                          'angular_velocity': {'x': angular_velocity.x,
-                                               'y': angular_velocity.y,
-                                               'z': angular_velocity.z
-                                               }
-                         }
-
+                                      }}
             self._log_data['records'].append(new_record)
 
     def _parse_keys(self, keys, milliseconds):
@@ -745,30 +661,27 @@ def game_loop(args):
         world = World(sim_world, hud)
 
         clock = pygame.time.Clock()
-        if args.playback:
-            controller = PlaybackControl(world, client, args.playback)
-        else:
-            controller = KeyboardControl(world, args.autopilot, clock, args.log)
+        controller = KeyboardControl(world, args.autopilot, clock, args.log)
 
-        if args.log or args.playback:
-            print(world.vehicle.get_transform())
-            parser_int = sim_world.on_tick(controller.parse_events)
-            while True:
-                clock.tick_busy_loop(60)
-                if not world.tick(clock):
-                    return
-                world.render(display)
-                pygame.display.flip()
+        # if args.log:
+        parser_int = sim_world.on_tick(controller.parse_events)
+        while True:
+            clock.tick_busy_loop(60)
+            if not world.tick(clock):
+                return
+            world.render(display)
+            pygame.display.flip()
 
-        else:
-            while True:
-                clock.tick_busy_loop(60)
-                if controller.parse_events():
-                    return
-                if not world.tick(clock):
-                    return
-                world.render(display)
-                pygame.display.flip()
+        # else:
+        #     while True:
+        #         clock.tick_busy_loop(60)
+        #         if not args.playback:
+        #             if controller.parse_events():
+        #                 return
+        #         if not world.tick(clock):
+        #             return
+        #         world.render(display)
+        #         pygame.display.flip()
 
     finally:
         if args.log or args.playback:

@@ -13,6 +13,8 @@ These must not be modified and are for reference only!
 from __future__ import print_function
 import sys
 import time
+import json
+import carla
 
 import py_trees
 
@@ -125,7 +127,7 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, debug_mode=False, timeout=2.0):
+    def __init__(self, client, debug_mode=False, timeout=2.0, log=None, playback=None):
         """
         Init requires scenario as input
         """
@@ -147,7 +149,9 @@ class ScenarioManager(object):
         self.start_system_time = None
         self.end_system_time = None
 
-        self._ego = None
+        # self._log = log
+        # self._playback = playback
+        # self._client = client
 
     def _reset(self):
         """
@@ -204,6 +208,27 @@ class ScenarioManager(object):
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
 
+        self._light_state = self.ego_vehicles[0].get_light_state()
+
+        # if self._playback:
+        #     time_step, vehicle_name = self.read_json()
+
+        #     # Check if the time step matches the playback one
+        #     settings = self.world.get_settings()
+        #     current_time_step = settings.fixed_delta_seconds
+
+        #     if time step != current_time_step:
+        #         print("WARNING: Time steps are different, switching from {} to {}".format())
+        #         settings.fixed_delta_seconds = time_step
+        #         self.world.apply_settings(settings)
+
+        # if self._log:
+        #     settings = self.world.get_settings()
+        #     vehicle_name = self.ego_vehicles[0].type_id
+        #     self._log_data = {'records': [], 'vehicle': vehicle_name, 'time_step': settings.fixed_delta_seconds}
+        #     self._delay = 0
+        #     self._index = 0
+
         self._watchdog.start()
         self._running = True
 
@@ -219,6 +244,10 @@ class ScenarioManager(object):
 
         self._watchdog.stop()
 
+        # if self._log:
+        #     with open(self._log, 'w') as fd:
+        #         json.dump(self._log_data, fd, indent=4, sort_keys=True)
+
         self.cleanup()
 
         self.end_system_time = time.time()
@@ -230,6 +259,59 @@ class ScenarioManager(object):
 
         if self.scenario_tree.status == py_trees.common.Status.FAILURE:
             print("ScenarioManager: Terminated due to failure")
+
+    # def read_json(self):
+        
+    #     self._control_list = []
+    #     self._index = 0
+    #     control_records = None
+    #     time_step = None
+    #     vehicle_name = None
+
+    #     if self._playback:
+    #         with open(self._playback) as fd:
+    #             try:
+    #                 control_records = json.load(fd)
+    #             except json.JSONDecodeError:
+    #                 pass
+
+    #     if control_records and control_records['records']:
+    #         # transform strs into VehicleControl commands
+    #         for entry in control_records['records']:
+    #             control = carla.VehicleControl(throttle=entry['control']['throttle'],
+    #                                            steer=entry['control']['steer'],
+    #                                            brake=entry['control']['brake'],
+    #                                            hand_brake=entry['control']['hand_brake'],
+    #                                            reverse=entry['control']['reverse'],
+    #                                            manual_gear_shift=entry['control']['manual_gear_shift'],
+    #                                            gear=entry['control']['gear'])
+    #             self._control_list.append(control)
+    #     if control_records and control_records['time_step']:
+    #         time_step = control_records['time_step']
+    #     if control_records and control_records['vehicle']:
+    #         vehicle_name = control_records['vehicle']
+        
+    #     return time_step, vehicle_name
+
+    # def write_json(self, control=None):
+
+    #     if control is None:
+    #         control = self.ego_vehicles[0].get_control()
+    #         # As this is the one applied 1 (currently 2) frames behind, delay it
+    #         if self._delay < 2:
+    #             self._delay += 1
+    #             return
+
+    #     new_record = {'control':
+    #                     {'throttle': control.throttle,
+    #                     'steer': control.steer,
+    #                     'brake': control.brake,
+    #                     'hand_brake': control.hand_brake,
+    #                     'reverse': control.reverse,
+    #                     'manual_gear_shift': control.manual_gear_shift,
+    #                     'gear': control.gear
+    #                     }}
+    #     self._log_data['records'].append(new_record)
 
     def _tick_scenario(self, timestamp):
         """
@@ -269,21 +351,39 @@ class ScenarioManager(object):
             if self.scenario_tree.status != py_trees.common.Status.RUNNING:
                 self._running = False
 
+            # Tick the agent
+            # if self._playback:
+            #     if self._index < len(self._control_list):
+            #         self._client.apply_batch_sync(
+            #             [carla.command.ApplyVehicleControl(self.ego_vehicles[0].id, self._control_list[self._index])]
+            #         )
+            #         self._index += 1
+            #     else:
+            #         print("JSON file has no more entries")
             if self._agent is not None:
-                self.ego_vehicles[0].apply_control(ego_action)
+                self._client.apply_batch_sync(
+                    [carla.command.ApplyVehicleControl(self.ego_vehicles[0].id, ego_action)]
+                )
+
+            # Add the agent control
+            # if self._log:
+            #     if self._agent:
+            #         self.write_json(ego_action)
+            #     else:
+            #         self.write_json()
 
         if CarlaDataProvider.is_sync_mode() and self._running and self._watchdog.get_status():
+            while True:
+                light_state = self.ego_vehicles[0].get_light_state()
+                time.sleep(1)
+                if light_state != self._light_state:
+                    print("Waiting for manual control")
+                    time.sleep(0.05)
+                else:
+                    break
             CarlaDataProvider.get_world().tick()
-            if self._ego is None:
-                possible_vehicles = CarlaDataProvider.get_world().get_actors().filter('vehicle.*')
-                for vehicle in possible_vehicles:
-                    if vehicle.attributes['role_name'] == "hero":
-                        self._ego = vehicle
-
-            # print(CarlaDataProvider.get_transform(self._ego))
-            print(self._ego.get_control())
-            # time.sleep(0.05)
-            # print("Next tick at {}".format(CarlaDataProvider.get_world().get_snapshot().timestamp.elapsed_seconds))
+            print("{} -- {}".format(self.ego_vehicles[0].get_transform(), CarlaDataProvider.get_world().get_snapshot().timestamp.frame))
+            # self.ego_vehicles[0].set_light_state(carla.VehicleLightState.Position)
 
     def get_running_status(self):
         """
