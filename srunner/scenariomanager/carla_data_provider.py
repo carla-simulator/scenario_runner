@@ -52,15 +52,15 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _actor_location_map = dict()
     _actor_transform_map = dict()
     _traffic_light_map = dict()
-    _map = None
-    _world = None
-    _sync_flag = False
-    _ego_vehicle_route = None
-    _client = None
     _carla_actor_pool = dict()
+    _client = None
+    _world = None
+    _map = None
+    _sync_flag = False
     _spawn_points = None
     _spawn_index = 0
     _blueprint_library = None
+    _ego_vehicle_route = None
 
 
     @staticmethod
@@ -197,6 +197,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._map = CarlaDataProvider._world.get_map()
         CarlaDataProvider._blueprint_library = world.get_blueprint_library()
         CarlaDataProvider.generate_spawn_points()
+        CarlaDataProvider.prepare_map()
 
     @staticmethod
     def get_world():
@@ -336,8 +337,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the next relevant traffic light for the provided actor
         """
-
-        CarlaDataProvider.prepare_map()
 
         if not use_cached_location:
             location = actor.get_transform().location
@@ -778,7 +777,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     pass
                 else:
                     raise e
-
 
         CarlaDataProvider._actor_velocity_map.clear()
         CarlaDataProvider._actor_location_map.clear()
