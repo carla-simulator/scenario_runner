@@ -60,6 +60,9 @@ class ScenarioConfigurationParser(object):
                 new_config.weather.wind_intensity = float(weather.attrib.get("wind_intensity", 0.35))
                 new_config.weather.sun_azimuth_angle = float(weather.attrib.get("sun_azimuth_angle", 0.0))
                 new_config.weather.sun_altitude_angle = float(weather.attrib.get("sun_altitude_angle", 15.0))
+                new_config.weather.fog_density = float(weather.attrib.get("fog_density", 0.0))
+                new_config.weather.fog_distance = float(weather.attrib.get("fog_distance", 0.0))
+                new_config.weather.wetness = float(weather.attrib.get("wetness", 0.0))
 
             for ego_vehicle in scenario.iter("ego_vehicle"):
                 new_config.ego_vehicles.append(ActorConfiguration(ego_vehicle, 'hero'))
