@@ -98,9 +98,9 @@ class ControlLoss(BasicScenario):
                                                               self.third_loc_prev.y,
                                                               self.third_loc_prev.z))
 
-        first_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.first_transform)
-        second_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.sec_transform)
-        third_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.third_transform)
+        first_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.first_transform, 'prop')
+        second_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.sec_transform, 'prop')
+        third_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.third_transform, 'prop')
 
         first_debris.set_transform(self.first_transform)
         second_debris.set_transform(self.sec_transform)

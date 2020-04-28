@@ -31,7 +31,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, Scena
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenarios.background_activity import BackgroundActivity
-from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.tools.route_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory
 from srunner.tools.py_trees_port import oneshot_behavior
@@ -210,9 +209,8 @@ class RouteScenario(BasicScenario):
         elevate_transform.location.z += 0.5
 
         ego_vehicle = CarlaDataProvider.request_new_actor('vehicle.lincoln.mkz2017',
-                                                       elevate_transform,
-                                                       rolename='hero',
-                                                       hero=True)
+                                                          elevate_transform,
+                                                          rolename='hero')
 
         return ego_vehicle
 
@@ -365,41 +363,8 @@ class RouteScenario(BasicScenario):
         scenario_configuration.route = None
         scenario_configuration.town = town_name
 
-        model = 'vehicle.*'
-        transform = carla.Transform()
-
-        if town_name == 'Town01' or town_name == 'Town02':
-            amount = 120
-        elif town_name == 'Town03' or town_name == 'Town05':
-            amount = 120
-        elif town_name == 'Town04':
-            amount = 200
-        elif town_name == 'Town06' or town_name == 'Town07':
-            amount = 150
-        elif town_name == 'Town08':
-            amount = 180
-        elif town_name == 'Town09':
-            amount = 350
-        else:
-            amount = 0
-
-        actor_configuration_instance = ActorConfigurationData(
-            model, transform, rolename='background', autopilot=True, random=True, amount=amount)
-        scenario_configuration.other_actors = [actor_configuration_instance]
-
         return BackgroundActivity(world, [ego_vehicle], scenario_configuration,
                                   timeout=timeout, debug_mode=debug_mode)
-
-    def _build_trafficlight_scenario(self, world, ego_vehicle, town_name, timeout=300, debug_mode=False):
-        """
-        Create scenario for traffic light manipulation
-        """
-        scenario_configuration = ScenarioConfiguration()
-        scenario_configuration.route = None
-        scenario_configuration.town = town_name
-
-        return TrafficLightScenario(world, [ego_vehicle], scenario_configuration,
-                                    timeout=timeout, debug_mode=debug_mode)
 
     def _build_scenario_instances(self, world, ego_vehicle, scenario_definitions, town,
                                   scenarios_per_tick=5, timeout=300, debug_mode=False):

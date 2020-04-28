@@ -210,7 +210,6 @@ class ScenarioRunner(object):
                 self.ego_vehicles.append(CarlaDataProvider.request_new_actor(vehicle.model,
                                                                              vehicle.transform,
                                                                              vehicle.rolename,
-                                                                             True,
                                                                              color=vehicle.color,
                                                                              actor_category=vehicle.category))
         else:

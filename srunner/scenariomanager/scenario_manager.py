@@ -13,6 +13,7 @@ These must not be modified and are for reference only!
 from __future__ import print_function
 import sys
 import time
+import carla
 
 import py_trees
 
@@ -268,6 +269,21 @@ class ScenarioManager(object):
 
             if self._agent is not None:
                 self.ego_vehicles[0].apply_control(ego_action)
+
+        # world = CarlaDataProvider.get_world()
+        # for actor in self.other_actors:
+        #     location = actor.get_location()
+        #     if "role_name" in actor.attributes:
+        #         world.debug.draw_string(location+carla.Location(z=2),str(actor.attributes["role_name"]),life_time=0.2)
+        #     else:
+        #         print("no rolename")
+
+        # for actor in self.ego_vehicles:
+        #     location = actor.get_location()
+        #     if "role_name" in actor.attributes:
+        #         world.debug.draw_string(location+carla.Location(z=2),str(actor.attributes["role_name"]),life_time=0.2)
+        #     else:
+        #         print("no rolename")
 
         if self._agent and self._running and self._watchdog.get_status():
             CarlaDataProvider.get_world().tick()

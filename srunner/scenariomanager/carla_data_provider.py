@@ -408,8 +408,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def create_blueprint(model, rolename='scenario', color=None, actor_category="car"):
         """
-        Function to setup the most relevant actor parameters,
-        incl. spawn point and vehicle model.
+        Function to setup the blueprint of an actor given its model and other relevant parameters
         """
 
         _actor_blueprint_categories = {
@@ -464,7 +463,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             blueprint.set_attribute('is_invincible', 'false')
 
         # Set the rolename
-        if blueprint.has_attribute('is_invincible'):
+        if blueprint.has_attribute('role_name'):
             blueprint.set_attribute('role_name', rolename)
 
         return blueprint
@@ -472,10 +471,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def handle_actor_batch(batch):
         """
-        Forward a CARLA command batch to spawn actors to CARLA, and gather the responses
-
-        ret
-        urns list of actors on success, none otherwise
+        Forward a CARLA command batch to spawn actors to CARLA, and gather the responses.
+        Returns list of actors on success, none otherwise
         """
 
         actors = []
@@ -506,13 +503,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actors
 
     @staticmethod
-    def setup_actor(model, spawn_point, rolename='scenario', autopilot=False,
-                    random_location=False, color=None, actor_category="car"):
+    def request_new_actor(model, spawn_point, rolename='scenario', autopilot=False,
+                          random_location=False, color=None, actor_category="car"):
         """
-        Function to setup the most relevant actor parameters,
-        incl. spawn point and vehicle model.
+        This method tries to create a new actor, returning it if successful (None otherwise).
         """
-
         blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category)
 
         if random_location:
@@ -546,12 +541,19 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         else:
             CarlaDataProvider._world.wait_for_tick()
 
+        if actor is None:
+            return None
+
+        CarlaDataProvider._carla_actor_pool[actor.id] = actor
         return actor
 
     @staticmethod
-    def setup_actors(actor_list):
+    def request_new_actors(actor_list):
         """
-        Function to setup a complete list of actors
+        This method tries to series of actor in batch. If this was successful, the new actors are returned, None otherwise.
+
+        param:
+        - actor_list: list of ActorConfigurationData
         """
 
         SpawnActor = carla.command.SpawnActor               # pylint: disable=invalid-name
@@ -569,10 +571,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             # Get the blueprint
             blueprint = CarlaDataProvider.create_blueprint(actor.model, actor.rolename, actor.color, actor.category)
-
-            if blueprint.has_attribute('color'):
-                color = random.choice(blueprint.get_attribute('color').recommended_values)
-                blueprint.set_attribute('color', color)
 
             # Get the spawn point
             transform = actor.transform
@@ -607,21 +605,29 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         actors = CarlaDataProvider.handle_actor_batch(batch)
 
+        if actors is None:
+            return None
+
         for actor in actors:
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
         return actors
 
     @staticmethod
-    def setup_batch_actors(model, amount, spawn_points, hero=False, autopilot=False, random_location=False):
+    def request_new_batch_actors(model, amount, spawn_points, hero=False, autopilot=False, random_location=False, rolename='scenario'):
         """
-        Function to setup a batch of actors with the most relevant parameters,
-        incl. spawn point and vehicle model.
+        Simplified version of "request_new_actors". This method also create several actors in batch.
+        
+        Instead of needing a list of ActorConfigurationData, an "amount" parameter is used. This makes actor
+        spawning easier but reduces the amount of configurability.
+        
+        Some parameters are the same for all actors (rolename, autopilot and random location) while others are randomized (color)
         """
+
         SpawnActor = carla.command.SpawnActor      # pylint: disable=invalid-name
         SetAutopilot = carla.command.SetAutopilot  # pylint: disable=invalid-name
         FutureActor = carla.command.FutureActor    # pylint: disable=invalid-name
 
-        blueprint_library = CarlaDataProvider._world.get_blueprint_library()
+        CarlaDataProvider.generate_spawn_points()
 
         if not hero:
             hero_actor = CarlaDataProvider.get_hero_actor()
@@ -631,12 +637,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         for i in range(amount):
             # Get vehicle by model
-            blueprint = create_blueprint(model)
-
-            if hero:
-                blueprint.set_attribute('role_name', 'hero')
-            else:
-                blueprint.set_attribute('role_name', 'scenario')
+            blueprint = CarlaDataProvider.create_blueprint(model, rolename)
 
             if random_location:
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
@@ -661,17 +662,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if spawn_point:
                 batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
 
-        actor_list = CarlaDataProvider.handle_actor_batch(batch)
-
-        return actor_list
-
-    @staticmethod
-    def request_new_batch_actors(model, amount, spawn_points, hero=False, autopilot=False, random_location=False):
-        """
-        This method tries to create a new actor. If this was
-        successful, the new actor is returned, None otherwise.
-        """
-        actors = CarlaDataProvider.setup_batch_actors(model, amount, spawn_points, hero, autopilot, random_location)
+        actors = CarlaDataProvider.handle_actor_batch(batch)
 
         if actors is None:
             return None
@@ -680,36 +671,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
         return actors
 
-    @staticmethod
-    def request_new_actor(model, spawn_point, rolename='scenario', hero=False, autopilot=False,
-                          random_location=False, color=None, actor_category="car"):
-        """
-        This method tries to create a new actor. If this was
-        successful, the new actor is returned, None otherwise.
-        """
-        actor = CarlaDataProvider.setup_actor(
-            model, spawn_point, rolename, hero, autopilot, random_location, color, actor_category)
-
-        if actor is None:
-            return None
-
-        CarlaDataProvider._carla_actor_pool[actor.id] = actor
-        return actor
-
-    @staticmethod
-    def request_new_actors(actor_list):
-        """
-        This method tries to create a list of new actors. If this was
-        successful, the new actors are returned, None otherwise.
-        """
-        actors = CarlaDataProvider.setup_actors(actor_list)
-
-        if actors is None:
-            return None
-
-        for actor in actors:
-            CarlaDataProvider._carla_actor_pool[actor.id] = actor
-        return actors
 
     @staticmethod
     def get_actors():
