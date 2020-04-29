@@ -271,7 +271,7 @@ class ScenarioManager(object):
                 self.ego_vehicles[0].apply_control(ego_action)
 
         if self._agent and self._running and self._watchdog.get_status():
-            CarlaDataProvider.perform_carla_tick(self._timeout)
+            CarlaDataProvider.get_world().tick()
 
     def get_running_status(self):
         """

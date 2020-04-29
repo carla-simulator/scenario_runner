@@ -447,7 +447,7 @@ class RouteScenario(BasicScenario):
                 if scenario_number % scenarios_per_tick == 0:
                     sync_mode = world.get_settings().synchronous_mode
                     if sync_mode:
-                        CarlaDataProvider.perform_carla_tick()
+                        world.tick()
                     else:
                         world.wait_for_tick()
 

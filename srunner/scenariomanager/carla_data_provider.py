@@ -15,7 +15,6 @@ from __future__ import print_function
 import math
 import random
 import re
-from threading import Thread
 from six import iteritems
 
 import carla
@@ -88,22 +87,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         for actor in actors:
             CarlaDataProvider.register_actor(actor)
-
-    @staticmethod
-    def perform_carla_tick(timeout=5.0):
-        """
-        Send tick() command to CARLA and wait for at
-        most timeout seconds to let tick() return
-
-        Note: This is a workaround as CARLA tick() has no
-              timeout functionality
-        """
-        t = Thread(target=CarlaDataProvider._world.tick)
-        t.daemon = True
-        t.start()
-        t.join(float(timeout))
-        if t.is_alive():
-            raise RuntimeError("Timeout of CARLA tick command")
 
     @staticmethod
     def on_carla_tick():
@@ -545,7 +528,7 @@ class CarlaActorPool(object):
 
         # wait for the actors to be spawned properly before we do anything
         if sync_mode:
-            CarlaDataProvider.perform_carla_tick()
+            CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
 
@@ -597,7 +580,7 @@ class CarlaActorPool(object):
                 pass
         # wait for the actor to be spawned properly before we do anything
         if CarlaActorPool._world.get_settings().synchronous_mode:
-            CarlaDataProvider.perform_carla_tick()
+            CarlaActorPool._world.tick()
         else:
             CarlaActorPool._world.wait_for_tick()
 
