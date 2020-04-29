@@ -1,2 +1,6 @@
 include requirements.txt
 recursive-include srunner/data *
+recursive-include srunner/openscenario *
+recursive-include srunner/utilities *
+recursive-include srunner/examples *
+

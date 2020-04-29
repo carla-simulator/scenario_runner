@@ -2,7 +2,7 @@
 
 import setuptools
 
-from os import path, system
+from os import path, system, chdir
 from setuptools.command.install import install 
 from setuptools import setup, find_packages 
 from sys import platform
@@ -46,7 +46,7 @@ setuptools.setup(
     # - main modules -
     py_modules=["manual_control", "no_rendering_mode", "scenario_runner"],
     # - packages -
-    packages=setuptools.find_packages("."),
+    packages=setuptools.find_packages(),
     # - extra data
     include_package_data=True,
     # - requirements 
