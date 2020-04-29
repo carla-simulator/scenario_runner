@@ -283,14 +283,16 @@ class ScenarioRunner(object):
                             break
 
         self.world = self.client.get_world()
-        CarlaDataProvider.set_client(self.client)
-        CarlaDataProvider.set_world(self.world)
 
         if self._args.agent:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
+
+        CarlaDataProvider.set_client(self.client)
+        CarlaDataProvider.set_world(self.world)
+        CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
         if self.world.get_settings().synchronous_mode:
