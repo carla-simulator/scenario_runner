@@ -24,7 +24,7 @@ import carla
 from agents.navigation.local_planner import RoadOption
 
 # pylint: disable=line-too-long
-from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData, ActorConfiguration
+from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
@@ -73,7 +73,7 @@ def convert_json_to_transform(actor_dict):
 
 def convert_json_to_actor(actor_dict):
     """
-    Convert a JSON string to an ActorConfiguration dictionary
+    Convert a JSON string to an ActorConfigurationData dictionary
     """
     node = ET.Element('waypoint')
     node.set('x', actor_dict['x'])
@@ -81,7 +81,7 @@ def convert_json_to_actor(actor_dict):
     node.set('z', actor_dict['z'])
     node.set('yaw', actor_dict['yaw'])
 
-    return ActorConfiguration(node, rolename='simulation')
+    return ActorConfigurationData.parse_from_node(node, 'simulation')
 
 
 def convert_transform_to_location(transform_vec):
