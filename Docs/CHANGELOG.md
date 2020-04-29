@@ -1,5 +1,7 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.9](#carla-scenariorunner-099)
+* [CARLA ScenarioRunner 0.9.8](#carla-scenariorunner-098)
 * [CARLA ScenarioRunner 0.9.7](#carla-scenariorunner-097)
 * [CARLA ScenarioRunner 0.9.6](#carla-scenariorunner-096)
 * [CARLA ScenarioRunner 0.9.5.1](#carla-scenariorunner-0951)
@@ -7,6 +9,9 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+
+
+## CARLA ScenarioRunner 0.9.9
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Support for OpenSCENARIO 1.0 (a converter for old scenarios is available)
@@ -23,11 +28,9 @@
     - Added new criteria, ActorSpeedAboveThresholdTest, useful to check if the ego vehicle has been standing still for long periods of time.
 * Setting up actors in batch now also randomizes their colors
 * When running routes, the weather parameters of each route can now be changed at will. Check the first route at srunner/data/routes_training.xml to see the correct format to do so. By default the weather is now a sunny midday.
-* Removed perform_carla_tick() function at CarlaDataProvider, which was a workaround for world.tick()
 * **Important** All challenge related content has been removed. This functionality has been improved and is now part of the [Leaderboard](https://github.com/carla-simulator/leaderboard). As a consequence:
     - The path to the autoagents has changed from .../challenge/autoagents to .../autoagents
     - The path to the route and scenario descriptions has changed from .../challenge to .../data
-
 ### :bug: Bug Fixes
 * Fixed spawning bugs for scenario DynamicObjectCrossing when it is part of a route
 * Fixed spawning bugs for scenarios VehicleTurningRight, VehicleTurningLeft when they are part of a route
@@ -37,6 +40,9 @@
 * Fixed bug causing the simulation to end after running in synchronous mode
 * Fixed bug when using the WaypointFollower atomic to create new LocalPlanners for on-the-fly created actors (#502)
 * Fixed bug causing the scenarios to run faster than real time.
+### :ghost: Maintenance
+* Removed perform_carla_tick() function at CarlaDataProvider, which was a workaround for world.tick()
+
 
 ## CARLA ScenarioRunner 0.9.8
 ### :rocket: New Features
