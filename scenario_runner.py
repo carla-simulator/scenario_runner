@@ -292,7 +292,6 @@ class ScenarioRunner(object):
 
         CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
-        CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
         if self.world.get_settings().synchronous_mode:
