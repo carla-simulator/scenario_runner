@@ -15,7 +15,6 @@ from __future__ import print_function
 import math
 import random
 import re
-from threading import Thread
 from six import iteritems
 
 import carla
@@ -43,7 +42,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     Potential additions:
     - Acceleration
-
 
     In addition it provides access to the map and the transform of all traffic lights
     """
@@ -173,9 +171,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Set the world and world settings
         """
         CarlaDataProvider._world = world
-        settings = world.get_settings()
-        CarlaDataProvider._sync_flag = settings.synchronous_mode
-        CarlaDataProvider._map = CarlaDataProvider._world.get_map()
+        CarlaDataProvider._sync_flag = world.get_settings().synchronous_mode
+        CarlaDataProvider._map = world.get_map()
         CarlaDataProvider._blueprint_library = world.get_blueprint_library()
         CarlaDataProvider.generate_spawn_points()
         CarlaDataProvider.prepare_map()
@@ -550,7 +547,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def request_new_actors(actor_list):
         """
-        This method tries to series of actor in batch. If this was successful, the new actors are returned, None otherwise.
+        This method tries to series of actor in batch. If this was successful,
+        the new actors are returned, None otherwise.
 
         param:
         - actor_list: list of ActorConfigurationData
@@ -575,9 +573,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             # Get the spawn point
             transform = actor.transform
             if actor.random_location:
-                if transform is not None:
-                    print("Ignoring the transform of actor as random location is active")
-
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
                     print("No more spawn points to use")
                     break
@@ -586,10 +581,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     CarlaDataProvider._spawn_index += 1
 
             else:
-                if transform is None:
-                    print("Unable to set up actor, random location is deactivated and no transform was given")
-                    continue
-
                 _spawn_point = transform
 
             # Get the command
@@ -613,14 +604,16 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actors
 
     @staticmethod
-    def request_new_batch_actors(model, amount, spawn_points, hero=False, autopilot=False, random_location=False, rolename='scenario'):
+    def request_new_batch_actors(model, amount, spawn_points, autopilot=False,
+                                 random_location=False, rolename='scenario'):
         """
         Simplified version of "request_new_actors". This method also create several actors in batch.
-        
-        Instead of needing a list of ActorConfigurationData, an "amount" parameter is used. This makes actor
-        spawning easier but reduces the amount of configurability.
-        
-        Some parameters are the same for all actors (rolename, autopilot and random location) while others are randomized (color)
+
+        Instead of needing a list of ActorConfigurationData, an "amount" parameter is used.
+        This makes actor spawning easier but reduces the amount of configurability.
+
+        Some parameters are the same for all actors (rolename, autopilot and random location)
+        while others are randomized (color)
         """
 
         SpawnActor = carla.command.SpawnActor      # pylint: disable=invalid-name
@@ -629,10 +622,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         CarlaDataProvider.generate_spawn_points()
 
-        if not hero:
-            hero_actor = CarlaDataProvider.get_hero_actor()
-        else:
-            hero_actor = None
         batch = []
 
         for i in range(amount):
@@ -641,14 +630,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             if random_location:
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
-                    print("No more spawn points to use")
+                    print("No more spawn points to use. Spawned {} actors out of {}".format(i + 1, amount))
                     break
-                elif hero_actor is not None:
-                    spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
-                    CarlaDataProvider._spawn_index += 1
-                    # if the spawn point is to close to hero we just ignore this position
-                    if hero_actor.get_transform().location.distance(spawn_point.location) < 8.0:
-                        spawn_point = None
                 else:
                     spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
                     CarlaDataProvider._spawn_index += 1
@@ -670,7 +653,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         for actor in actors:
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
         return actors
-
 
     @staticmethod
     def get_actors():

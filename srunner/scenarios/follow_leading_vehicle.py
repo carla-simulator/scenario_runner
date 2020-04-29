@@ -237,9 +237,10 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             carla.Rotation(second_actor_waypoint.transform.rotation.pitch, yaw_1,
                            second_actor_waypoint.transform.rotation.roll))
 
-        first_actor = CarlaDataProvider.request_new_actor('vehicle.nissan.patrol', first_actor_transform)
-        second_actor = CarlaDataProvider.request_new_actor('vehicle.diamondback.century',
-                                                        second_actor_transform)
+        first_actor = CarlaDataProvider.request_new_actor(
+            'vehicle.nissan.patrol', first_actor_transform)
+        second_actor = CarlaDataProvider.request_new_actor(
+            'vehicle.diamondback.century', second_actor_transform)
 
         first_actor.set_simulate_physics(enabled=False)
         second_actor.set_simulate_physics(enabled=False)

@@ -1483,7 +1483,8 @@ class ActorSource(AtomicBehavior):
 
             if not spawn_point_blocked:
                 try:
-                    new_actor = CarlaDataProvider.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
+                    new_actor = CarlaDataProvider.request_new_actor(
+                        np.random.choice(self._actor_types), self._spawn_point)
                     self._actor_limit -= 1
                     self._queue.put(new_actor)
                 except:                             # pylint: disable=bare-except

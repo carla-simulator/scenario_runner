@@ -24,14 +24,14 @@ class BackgroundActivity(BasicScenario):
 
     town_amount = {
         'Town01': 120,
-        'Town02': 120,
+        'Town02': 100,
         'Town03': 120,
         'Town04': 200,
         'Town05': 120,
         'Town06': 150,
-        'Town07': 150,
+        'Town07': 110,
         'Town08': 180,
-        'Town09': 350,
+        'Town09': 300,
         'Town10': 120,
     }
 
@@ -69,8 +69,6 @@ class BackgroundActivity(BasicScenario):
 
         if new_actors is None:
             raise Exception("Error: Unable to add the background activity, all spawn points were occupied")
-        elif len(new_actors) < amount:
-            print("Warning: Spawning {} out of the desired {} for the background activity".format(len(new_actors), amount))
 
         for _actor in new_actors:
             self.other_actors.append(_actor)
