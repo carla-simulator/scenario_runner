@@ -15,7 +15,6 @@ from __future__ import print_function
 import math
 import random
 import re
-from threading import Thread
 from six import iteritems
 
 import carla
