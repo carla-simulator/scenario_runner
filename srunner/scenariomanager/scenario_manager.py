@@ -129,7 +129,7 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, debug_mode=False, timeout=2.0, log=None, playback=None):
+    def __init__(self, debug_mode=False, timeout=2.0):
         """
         Init requires scenario as input
         """
@@ -231,8 +231,6 @@ class ScenarioManager(object):
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
 
-        self._light_state = self.ego_vehicles[0].get_light_state()
-
         self._watchdog.start()
         self._running = True
 
@@ -309,7 +307,6 @@ class ScenarioManager(object):
             else:
                 while not self._continue:
                     time.sleep(0.05)
-                    print("Waiting")
                 self._continue = False
                 CarlaDataProvider.get_world().tick()
 

@@ -202,18 +202,24 @@ class PlaybackControl(object):
         self._vehicle = world.vehicle
         self._socket = manualsocket
 
-        control_records = None
+        records = None
 
         if playback:
             with open(playback) as fd:
                 try:
-                    control_records = json.load(fd)
+                    records = json.load(fd)
                 except json.JSONDecodeError:
                     pass
 
-        if control_records and control_records['records']:
+        if records and records['records']:
+
+            # Check the simulation is correctly set up
+            vehicle_type = records['vehicle']
+            time_step = records['time_step']
+            self.check_simulation_setup(vehicle_type, time_step)
+
             # transform strs into VehicleControl commands
-            for entry in control_records['records']:
+            for entry in records['records']:
                 control = carla.VehicleControl(throttle=entry['control']['throttle'],
                                                steer=entry['control']['steer'],
                                                brake=entry['control']['brake'],
@@ -222,6 +228,26 @@ class PlaybackControl(object):
                                                manual_gear_shift=entry['control']['manual_gear_shift'],
                                                gear=entry['control']['gear'])
                 self._control_list.append(control)
+
+    def check_simulation_setup(self, vehicle_type, time_step):
+
+        # Check the vehicle
+        if self._world.vehicle.type_id != vehicle_type:
+            raise Exception("ERROR. Logged vehicle type is {}, but {} is being used".format(
+                vehicle_type, self._world.vehicle.type_id))
+
+        # Check the synchrony
+        sim_settings = self._world.world.get_settings()
+        if not sim_settings.synchronous_mode:
+            print("WARNING: Simulation is running asynchronously, setting it to synchronous")
+            sim_settings.synchronous_mode = True
+
+        # Check the time step
+        if sim_settings.fixed_delta_seconds != time_step:
+            print("WARNING: Logged time step ({}s) differs from the current one ({}s). Changing to the logged one".format(
+                sim_settings.fixed_delta_seconds,time_step))
+            sim_settings.fixed_delta_seconds = time_step
+        self._world.world.apply_settings(sim_settings)
 
     def parse_events(self, timestamp=None):
 
@@ -299,8 +325,7 @@ class KeyboardControl(object):
             if self._log:
                 self._record_control(timestamp)
 
-        # time.sleep(2)
-        print("{} -- {}".format(self._index, self._vehicle.get_transform()))
+        print("{} -- {}".format(self._index - 1, self._vehicle.get_transform()))
         self._socket.send(bytes("Done", "utf-8"))
 
 
@@ -317,10 +342,6 @@ class KeyboardControl(object):
                                       'manual_gear_shift': self._control.manual_gear_shift,
                                       'gear': self._control.gear
                                       },
-                          'timestamp': {'frame': timestamp.frame,
-                                        'elapsed': timestamp.elapsed_seconds,
-                                        'delta': timestamp.delta_seconds
-                                        },
                           'transform': {'x': transform.location.x,
                                         'y': transform.location.y,
                                         'z': transform.location.z,
@@ -736,15 +757,21 @@ def game_loop(args):
 
         clock = pygame.time.Clock()
 
-        manualsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        manualsocket.settimeout(2)
-        manualsocket.connect((socket.gethostname(), 3000))
-
+        # Setup the control of the ego vehicle
         if args.playback:
+            manualsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            manualsocket.connect((socket.gethostname(), 3000))
             controller = PlaybackControl(world, args.playback, manualsocket)
-        else:
+
+        elif args.log:
+            manualsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            manualsocket.connect((socket.gethostname(), 3000))
             controller = KeyboardControl(world, args.autopilot, clock, args.log, manualsocket)
 
+        else:
+            controller = KeyboardControl(world, args.autopilot, clock)
+
+        # Main loop
         if args.log or args.playback:
             parser_int = sim_world.on_tick(controller.parse_events)
             manualsocket.send(bytes("Ready", "utf-8"))
@@ -768,10 +795,9 @@ def game_loop(args):
 
     finally:
 
-        manualsocket.close()
-
         if args.log or args.playback:
             sim_world.remove_on_tick(parser_int)
+            manualsocket.close()
 
         if world is not None:
             world.destroy()
