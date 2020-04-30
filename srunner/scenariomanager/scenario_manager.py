@@ -129,7 +129,7 @@ class ScenarioManager(object):
     5. Cleanup with manager.stop_scenario()
     """
 
-    def __init__(self, client, debug_mode=False, timeout=2.0, log=None, playback=None):
+    def __init__(self, debug_mode=False, timeout=2.0, log=None, playback=None):
         """
         Init requires scenario as input
         """

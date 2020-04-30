@@ -121,7 +121,7 @@ class ScenarioRunner(object):
             self.module_agent = importlib.import_module(module_name)
 
         # Create the ScenarioManager
-        self.manager = ScenarioManager(self.client, self._args.debug, self._args.timeout, self._args.log, self._args.playback, )
+        self.manager = ScenarioManager(self._args.debug, self._args.timeout)
 
         # Create signal handler for SIGINT
         self._shutdown_requested = False
@@ -525,8 +525,6 @@ def main():
         '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
     parser.add_argument('--record', action="store_true",
                         help='Use CARLA recording feature to create a recording of the scenario')
-    parser.add_argument('-l', '--log', type=str, help='Filename to log the ego vehicle controls')
-    parser.add_argument('-p', '--playback', type=str, help='Log filename to replay a json file with the ego vehicle controls')
     parser.add_argument('--timeout', default="10.0",
                         help='Set the CARLA client timeout value in seconds')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
@@ -554,15 +552,10 @@ def main():
         parser.print_help(sys.stdout)
         return 1
 
-    # if arguments.playback and arguments.agent:
-    #     print("Agents cannot be used while playback is enabled")
-    #     parser.print_help(sys.stdout)
-    #     return 1
-
     if arguments.route:
         arguments.reloadWorld = True
 
-    if arguments.agent or arguments.log or arguments.playback:
+    if arguments.agent:
         arguments.sync = True
 
     scenario_runner = None
