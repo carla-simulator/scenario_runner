@@ -53,6 +53,7 @@ import math
 import re
 import time
 import weakref
+import socket
 
 from srunner.scenariomanager.timer import GameTime
 
@@ -194,20 +195,12 @@ class World(object):
 # ==============================================================================
 
 class PlaybackControl(object):
-    def __init__(self, world, client, playback=None):
+    def __init__(self, world, playback, manualsocket):
         self._control_list = []
-        self._timestamp_list = []
-        self._velocity_list = []
-        self._angular_velocity_list = []
-        self._transform_list = []
         self._index = 0
         self._world = world
-        self._client = client
         self._vehicle = world.vehicle
-
-        # Form of communication between manual control and SR
-        # print(type(actor_blueprint))
-        self._light_state = self._vehicle.get_light_state()
+        self._socket = manualsocket
 
         control_records = None
 
@@ -230,30 +223,20 @@ class PlaybackControl(object):
                                                gear=entry['control']['gear'])
                 self._control_list.append(control)
 
-    def parse_events(self, timestamp):
-
-        self._vehicle.set_light_state(carla.VehicleLightState.Position)
+    def parse_events(self, timestamp=None):
 
         if self._index < len(self._control_list):
-
-            self._client.apply_batch_sync(
-                [carla.command.ApplyVehicleControl(self._vehicle.id, self._control_list[self._index])]
-            )
-            # self._world.vehicle.apply_control(self._control_list[self._index])
-
-            print("[{}] -- {}".format(timestamp.frame, self._vehicle.get_control()))
+            self._world.vehicle.apply_control(self._control_list[self._index])
             self._index += 1
         else:
-
             print("JSON file as no more entries")
 
-        # time.sleep(0.5)
-        self._vehicle.set_light_state(self._light_state)
-
+        print("{} -- {}".format(self._index - 1, self._vehicle.get_transform()))
+        self._socket.send(bytes("Done", "utf-8"))
 
 
 class KeyboardControl(object):
-    def __init__(self, world, start_in_autopilot, clock, log=None):
+    def __init__(self, world, start_in_autopilot, clock, log=None, manualsocket=None):
         self._autopilot_enabled = start_in_autopilot
         self._control = carla.VehicleControl()
         self._steer_cache = 0.0
@@ -266,6 +249,8 @@ class KeyboardControl(object):
         time_step = world.world.get_settings().fixed_delta_seconds
         ego_name = world.vehicle_name
         self._log_data = {'records': [], 'vehicle': ego_name, 'time_step': time_step}
+
+        self._socket = manualsocket
 
         world.vehicle.set_autopilot(self._autopilot_enabled)
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
@@ -313,6 +298,11 @@ class KeyboardControl(object):
 
             if self._log:
                 self._record_control(timestamp)
+
+        # time.sleep(2)
+        print("{} -- {}".format(self._index, self._vehicle.get_transform()))
+        self._socket.send(bytes("Done", "utf-8"))
+
 
     def _record_control(self, timestamp):
         if self._log_data:
@@ -745,14 +735,20 @@ def game_loop(args):
         world = World(sim_world, hud)
 
         clock = pygame.time.Clock()
+
+        manualsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        manualsocket.settimeout(2)
+        manualsocket.connect((socket.gethostname(), 3000))
+
         if args.playback:
-            controller = PlaybackControl(world, client, args.playback)
+            controller = PlaybackControl(world, args.playback, manualsocket)
         else:
-            controller = KeyboardControl(world, args.autopilot, clock, args.log)
+            controller = KeyboardControl(world, args.autopilot, clock, args.log, manualsocket)
 
         if args.log or args.playback:
-            print(world.vehicle.get_transform())
             parser_int = sim_world.on_tick(controller.parse_events)
+            manualsocket.send(bytes("Ready", "utf-8"))
+            sim_world.tick()  # Activates controller.parse_events once to avoid getting stuck
             while True:
                 clock.tick_busy_loop(60)
                 if not world.tick(clock):
@@ -771,6 +767,9 @@ def game_loop(args):
                 pygame.display.flip()
 
     finally:
+
+        manualsocket.close()
+
         if args.log or args.playback:
             sim_world.remove_on_tick(parser_int)
 
