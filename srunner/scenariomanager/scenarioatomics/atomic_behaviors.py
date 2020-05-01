@@ -163,6 +163,90 @@ class RunScript(AtomicBehavior):
         return new_status
 
 
+class UpdateWeather(AtomicBehavior):
+
+    """
+    Atomic to write a new weather configuration into the blackboard.
+    Used in combination with WeatherBehavior() to have a continuous weather simulation.
+
+    The behavior immediately terminates with SUCCESS after updating the blackboard.
+
+    Args:
+        weather (srunner.scenariomanager.weather_sim.Weather): New weather settings.
+        name (string): Name of the behavior.
+            Defaults to 'UpdateWeather'.
+
+    Attributes:
+        _weather (srunner.scenariomanager.weather_sim.Weather): Weather settings.
+    """
+
+    def __init__(self, weather, name="UpdateWeather"):
+        """
+        Setup parameters
+        """
+        super(UpdateWeather, self).__init__(name)
+        self._weather = weather
+
+    def update(self):
+        """
+        Write weather into blackboard and exit with success
+
+        returns:
+            SUCCESS
+        """
+        py_trees.blackboard.Blackboard().set("CarlaWeather", self._weather, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class UpdateRoadFriction(AtomicBehavior):
+
+    """
+    Atomic to update the road friction in CARLA.
+
+    The behavior immediately terminates with SUCCESS after updating the friction.
+
+    Args:
+        friction (float): New friction coefficient.
+        name (string): Name of the behavior.
+            Defaults to 'UpdateRoadFriction'.
+
+    Attributes:
+        _friction (float): Friction coefficient.
+    """
+
+    def __init__(self, friction, name="UpdateRoadFriction"):
+        """
+        Setup parameters
+        """
+        super(UpdateRoadFriction, self).__init__(name)
+        self._friction = friction
+
+    def update(self):
+        """
+        Update road friction. Spawns new friction blueprint and removes the old one, if existing.
+
+        returns:
+            SUCCESS
+        """
+
+        for actor in CarlaDataProvider.get_world().get_actors().filter('static.trigger.friction'):
+            actor.destroy()
+
+        friction_bp = CarlaDataProvider.get_world().get_blueprint_library().find('static.trigger.friction')
+        extent = carla.Location(1000000.0, 1000000.0, 1000000.0)
+        friction_bp.set_attribute('friction', str(self._friction))
+        friction_bp.set_attribute('extent_x', str(extent.x))
+        friction_bp.set_attribute('extent_y', str(extent.y))
+        friction_bp.set_attribute('extent_z', str(extent.z))
+
+        # Spawn Trigger Friction
+        transform = carla.Transform()
+        transform.location = carla.Location(-10000.0, -10000.0, 0.0)
+        CarlaDataProvider.get_world().spawn_actor(friction_bp, transform)
+
+        return py_trees.common.Status.SUCCESS
+
+
 class ActorTransformSetterToOSCPosition(AtomicBehavior):
 
     """

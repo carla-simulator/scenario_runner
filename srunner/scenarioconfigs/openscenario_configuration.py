@@ -11,9 +11,7 @@ This module provides the key configuration parameters for a scenario based on Op
 
 from __future__ import print_function
 
-import datetime
 import logging
-import math
 import os
 import xml.etree.ElementTree as ET
 
@@ -88,8 +86,6 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._set_scenario_name()
         self._set_carla_town()
         self._set_actor_information()
-        self._set_carla_weather()
-        self._set_carla_friction()
 
         self._validate_result()
 
@@ -175,60 +171,6 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world.wait_for_tick()
         else:
             CarlaDataProvider.set_world(world)
-
-    def _set_carla_weather(self):
-        """
-        Extract weather information from OpenSCENARIO config
-        """
-
-        set_environment = next(self.init.iter("EnvironmentAction"))
-
-        if sum(1 for _ in set_environment.iter("Weather")) != 0:
-            environment = set_environment.find("Environment")
-        elif set_environment.find("CatalogReference") is not None:
-            catalog_reference = set_environment.find("CatalogReference")
-            environment = self.catalogs[catalog_reference.attrib.get(
-                "catalogName")][catalog_reference.attrib.get("entryName")]
-
-        weather = environment.find("Weather")
-        sun = weather.find("Sun")
-        self.weather.sun_azimuth_angle = math.degrees(float(sun.attrib.get('azimuth', 0)))
-        self.weather.sun_altitude_angle = math.degrees(float(sun.attrib.get('elevation', 0)))
-        self.weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
-        fog = weather.find("Fog")
-        self.weather.fog_distance = float(fog.attrib.get('visualRange', 'inf'))
-        if self.weather.fog_distance < 1000:
-            self.weather.fog_density = 100
-        self.weather.precipitation = 0
-        self.weather.precipitation_deposits = 0
-        self.weather.wetness = 0
-        self.weather.wind_intensity = 0
-        precepitation = weather.find("Precipitation")
-        if precepitation.attrib.get('precipitationType') == "rain":
-            self.weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
-            self.weather.precipitation_deposits = 100  # if it rains, make the road wet
-            self.weather.wetness = self.weather.precipitation
-        elif precepitation.attrib.get('type') == "snow":
-            raise AttributeError("CARLA does not support snow precipitation")
-
-        time_of_day = environment.find("TimeOfDay")
-        time = time_of_day.attrib.get("dateTime")  # 22-4: night; 4-6: sunrise; 6-20: day; 20-22: sunset
-        dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
-
-        if dtime.hour >= 22 or dtime.hour <= 4:
-            self.weather.sun_altitude_angle = -90
-        elif dtime.hour >= 20 and dtime.hour < 22 or \
-                dtime.hour <= 6 and dtime.hour > 4:
-            self.weather.sun_altitude_angle = 10
-
-    def _set_carla_friction(self):
-        """
-        Extract road friction information from OpenSCENARIO config
-        """
-
-        road_condition = self.init.iter("RoadCondition")
-        for condition in road_condition:
-            self.friction = float(condition.attrib.get('frictionScaleFactor'))
 
     def _set_global_parameters(self):
         """

@@ -10,11 +10,17 @@
 
 ## Latest Changes
 ### :rocket: New Features
+* Enable weather animation during scenario execution (requires ephem pip package)
 * OpenSCENARIO support:
     - Added initial speed support for pedestrians for OpenSCENARIO
+    - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
+    - Extended FollowLeadingVehicle example to illustrate weather changes
+* Atomics:
+    - WeatherBehavior to simulate weather over time
+    - UpdateWeather to update weather to a new setting, e.g. sun to rain
+    - UpdateRoadFriction to update the road friction while running
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
-
 
 
 ## CARLA ScenarioRunner 0.9.9
