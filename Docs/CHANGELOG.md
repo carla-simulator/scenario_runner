@@ -9,8 +9,12 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* OpenSCENARIO support:
+    - Added initial speed support for pedestrians for OpenSCENARIO
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
+
 
 
 ## CARLA ScenarioRunner 0.9.9
