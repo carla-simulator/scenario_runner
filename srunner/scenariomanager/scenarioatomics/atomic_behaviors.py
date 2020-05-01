@@ -1168,18 +1168,24 @@ class WaypointFollower(AtomicBehavior):
                 # The walker is sent to the next waypoint in its plan
                 else:
                     actor_location = CarlaDataProvider.get_location(actor)
+                    success = False
                     if self._actor_dict[actor]:
-                        success = False
                         location = self._actor_dict[actor][0]
                         direction = location - actor_location
                         direction_norm = math.sqrt(direction.x**2 + direction.y**2)
-                        if direction_norm > 1.0:
-                            control = actor.get_control()
-                            control.speed = self._target_speed
-                            control.direction = direction / direction_norm
-                            actor.apply_control(control)
-                        else:
+                        control = actor.get_control()
+                        control.speed = self._target_speed
+                        control.direction = direction / direction_norm
+                        actor.apply_control(control)
+                        if direction_norm < 1.0:
                             self._actor_dict[actor] = self._actor_dict[actor][1:]
+                            if self._actor_dict[actor] is None:
+                                success = True
+                    else:
+                        control = actor.get_control()
+                        control.speed = self._target_speed
+                        control.direction = CarlaDataProvider.get_transform(actor).rotation.get_forward_vector()
+                        actor.apply_control(control)
 
         if success:
             new_status = py_trees.common.Status.SUCCESS
