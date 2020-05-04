@@ -222,8 +222,6 @@ class ScenarioManager(object):
             serversocket.close()
 
         except socket.timeout:
-            if self._wait_for_manual:
-                clientsocket.close()
             serversocket.close()
 
     def run_scenario(self):

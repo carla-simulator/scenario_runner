@@ -792,6 +792,11 @@ def game_loop(args):
                 world.render(display)
                 pygame.display.flip()
 
+    except socket.timeout:
+        print("The socket of the controller has timed out")
+    except Exception as e:
+        print(e)
+
     finally:
 
         if checks_passed:
