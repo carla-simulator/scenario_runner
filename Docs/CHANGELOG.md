@@ -9,6 +9,8 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :bug: Bug Fixes
+* Fixed initial speed of vehicles using OpenSCENARIO
 
 
 ## CARLA ScenarioRunner 0.9.9
