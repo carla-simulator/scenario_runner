@@ -9,6 +9,8 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* Added a logging functionality to the manual control that allows to write the ego vehicle's commands to a .json file. This file can also be used to playback the ego actions via the manual control.
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
 
