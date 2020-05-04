@@ -393,11 +393,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_found = False
 
         for private_action in self.init.iter("Private"):
-            if private_action.attrib.get('object', None) == actor_name:
+            if private_action.attrib.get('entityRef', None) == actor_name:
                 if actor_found:
                     # pylint: disable=line-too-long
                     self.logger.warning(
-                        "Warning: The actor '%s' was already assigned an initial position. Overwriting pose!", actor_name)
+                        "Warning: The actor '%s' was already assigned an initial speed. Overwriting inital speed!", actor_name)
                     # pylint: enable=line-too-long
                 actor_found = True
 
