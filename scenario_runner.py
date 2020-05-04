@@ -121,7 +121,7 @@ class ScenarioRunner(object):
             self.module_agent = importlib.import_module(module_name)
 
         # Create the ScenarioManager
-        self.manager = ScenarioManager(self._args.debug, self._args.timeout)
+        self.manager = ScenarioManager(self._args.debug, self._args.timeout, self._args.scenario)
 
         # Create signal handler for SIGINT
         self._shutdown_requested = False
