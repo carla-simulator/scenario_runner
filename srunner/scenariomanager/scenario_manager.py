@@ -13,11 +13,8 @@ These must not be modified and are for reference only!
 from __future__ import print_function
 import sys
 import time
-import json
-import carla
 import socket
 import threading
-
 import py_trees
 
 from srunner.autoagents.agent_wrapper import AgentWrapper
@@ -206,14 +203,14 @@ class ScenarioManager(object):
         """
         Handles the socket to listen for manual_control
         """
-        try: 
+        try:
             serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             serversocket.settimeout(float(self.scenario.timeout))
             serversocket.bind((socket.gethostname(), 3000))
             serversocket.listen(1)
 
             # Check if manual_control is activated and wait for it to be ready
-            clientsocket, address = serversocket.accept()
+            clientsocket, _ = serversocket.accept()
             self._wait_for_manual = True
 
             while self._running:
@@ -221,18 +218,13 @@ class ScenarioManager(object):
                 if msg_enconded == b'Done':
                     self._continue = True
 
-            clientsocket.shutdown(socket.SHUT_RDWR)
             clientsocket.close()
-            serversocket.shutdown(socket.SHUT_RDWR)
             serversocket.close()
 
         except socket.timeout:
             if self._wait_for_manual:
-                clientsocket.shutdown(socket.SHUT_RDWR)
                 clientsocket.close()
-            serversocket.shutdown(socket.SHUT_RDWR)
             serversocket.close()
-            pass
 
     def run_scenario(self):
         """
