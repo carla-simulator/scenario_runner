@@ -9,6 +9,14 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* **Very important** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
+    - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
+    - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
+* The BackgroundActivity functionality has been unchanged but some tweaks have been made, fixing a previous patch. As a result, the *amount* parameter at *ActorConfigurationData* has been removed.
+* The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
+
+
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
 
