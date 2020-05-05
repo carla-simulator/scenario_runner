@@ -224,9 +224,9 @@ class ScenarioManager(object):
                 except OSError:
                     pass
 
-            # This stops the tick to the simulator until manual control is "Done" 
+            # This stops the tick to the simulator until manual control is "Done"
             while self._running:
-                msg_enconded = clientsocket.recv(10)
+                msg_enconded = clientsocket.recv(10)    # pylint: disable=no-member
                 if msg_enconded == b'Done':
                     self._continue = True
 
@@ -235,7 +235,7 @@ class ScenarioManager(object):
             self._socket.close()
 
         except socket.timeout:
-            serversocket.close()
+            self._socket.close()
 
         except OSError:
             pass
@@ -253,7 +253,7 @@ class ScenarioManager(object):
 
         # Create a socket to listen to the manual_control
         if self._scenario_mode:
-            thread = threading.Thread(target=self.socket_manager).start()
+            _ = threading.Thread(target=self.socket_manager).start()
 
         while self._running:
             timestamp = None
