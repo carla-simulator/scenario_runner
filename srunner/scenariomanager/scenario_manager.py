@@ -148,9 +148,11 @@ class ScenarioManager(object):
         self.start_system_time = None
         self.end_system_time = None
 
+        # Socket variables
         self._scenario_mode = True if scenario is not None else False
-        self._continue = True  # forces SR main loop to wait
+        self._socket = None
         self._wait_for_manual = False  # flag that activates when manual_control starts to run
+        self._continue = True  # forces SR main loop to wait
 
     def _reset(self):
         """
@@ -204,25 +206,39 @@ class ScenarioManager(object):
         Handles the socket to listen for manual_control
         """
         try:
-            serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            serversocket.settimeout(float(self.scenario.timeout))
-            serversocket.bind((socket.gethostname(), 3000))
-            serversocket.listen(1)
+            # Creates the listener
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.settimeout(float(1.0))
+            self._socket.bind((socket.gethostname(), 3000))
+            self._socket.listen(1)
 
-            # Check if manual_control is activated and wait for it to be ready
-            clientsocket, _ = serversocket.accept()
-            self._wait_for_manual = True
+            # Check if manual_control is activated and wait for it to be ready.
+            # To avoid accept() from blocking, use a loop and a low timeout
+            while self._running:
+                try:
+                    clientsocket, _ = self._socket.accept()
+                    self._wait_for_manual = True
+                    break
+                except socket.timeout:
+                    pass
+                except OSError:
+                    pass
 
+            # This stops the tick to the simulator until manual control is "Done" 
             while self._running:
                 msg_enconded = clientsocket.recv(10)
                 if msg_enconded == b'Done':
                     self._continue = True
 
-            clientsocket.close()
-            serversocket.close()
+            if self._wait_for_manual:
+                clientsocket.close()
+            self._socket.close()
 
         except socket.timeout:
             serversocket.close()
+
+        except OSError:
+            pass
 
     def run_scenario(self):
         """
@@ -237,7 +253,7 @@ class ScenarioManager(object):
 
         # Create a socket to listen to the manual_control
         if self._scenario_mode:
-            self._thread = threading.Thread(target=self.socket_manager).start()
+            thread = threading.Thread(target=self.socket_manager).start()
 
         while self._running:
             timestamp = None
