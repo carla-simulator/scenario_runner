@@ -11,8 +11,12 @@
 ## Latest Changes
 ### :rocket: New Features
 * Added a logging functionality to the manual control that allows to write the ego vehicle's commands to a .json file. This file can also be used to playback the ego actions via the manual control.
+* Added a socket to scenario_runner to ensure a deterministic behavior for agents outside routes. Check *game_loop* at *manual_control.py* to see how to use it.
+* OpenSCENARIO support:
+    - Added initial speed support for pedestrians for OpenSCENARIO
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
+
 
 
 ## CARLA ScenarioRunner 0.9.9

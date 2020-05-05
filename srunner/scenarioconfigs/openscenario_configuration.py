@@ -326,7 +326,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         model = pedestrian.attrib.get('model', "walker.*")
 
-        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="pedestrian", args=args)
+        speed = self._get_actor_speed(rolename)
+        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, speed, category="pedestrian", args=args)
         new_actor.transform = self._get_actor_transform(rolename)
 
         self.other_actors.append(new_actor)
