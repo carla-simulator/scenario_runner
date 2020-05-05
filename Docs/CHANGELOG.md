@@ -12,11 +12,17 @@
 ### :rocket: New Features
 * Added a logging functionality to the manual control that allows to write the ego vehicle's commands to a .json file. This file can also be used to playback the ego actions via the manual control.
 * Added a socket to scenario_runner to ensure a deterministic behavior for agents outside routes. Check *game_loop* at *manual_control.py* to see how to use it.
+* Enable weather animation during scenario execution (requires ephem pip package)
 * OpenSCENARIO support:
     - Added initial speed support for pedestrians for OpenSCENARIO
+    - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
+    - Extended FollowLeadingVehicle example to illustrate weather changes
+* Atomics:
+    - WeatherBehavior to simulate weather over time
+    - UpdateWeather to update weather to a new setting, e.g. sun to rain
+    - UpdateRoadFriction to update the road friction while running
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
-
 
 
 ## CARLA ScenarioRunner 0.9.9
