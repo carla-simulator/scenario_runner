@@ -19,6 +19,7 @@ import py_trees
 from srunner.autoagents.agent_wrapper import AgentWrapper
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
+from srunner.scenariomanager.weather_sim import WeatherBehavior
 from srunner.scenariomanager.timer import GameTime, TimeOut
 from srunner.scenariomanager.watchdog import Watchdog
 
@@ -64,6 +65,7 @@ class Scenario(object):
         if behavior is not None:
             self.scenario_tree.add_child(self.behavior)
         self.scenario_tree.add_child(self.timeout_node)
+        self.scenario_tree.add_child(WeatherBehavior())
         if criteria is not None:
             self.scenario_tree.add_child(self.criteria_tree)
         self.scenario_tree.setup(timeout=1)
