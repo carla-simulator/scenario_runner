@@ -13,6 +13,8 @@ from __future__ import print_function
 
 import py_trees
 
+import carla
+
 import srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as conditions
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import Scenario
@@ -44,6 +46,8 @@ class BasicScenario(object):
         self.name = name
         self.config = config
         self.terminate_on_failure = terminate_on_failure
+
+        self._initialize_environment(world)
 
         # Initializing adversarial actors
         self._initialize_actors(config)
@@ -77,6 +81,29 @@ class BasicScenario(object):
             behavior_seq.add_child(end_behavior)
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
+
+    def _initialize_environment(self, world):
+        """
+        Default initialization of weather and road friction.
+        Override this method in child class to provide custom initialization.
+        """
+
+        # Set the appropriate weather conditions
+        world.set_weather(self.config.weather)
+
+        # Set the appropriate road friction
+        if self.config.friction is not None:
+            friction_bp = world.get_blueprint_library().find('static.trigger.friction')
+            extent = carla.Location(1000000.0, 1000000.0, 1000000.0)
+            friction_bp.set_attribute('friction', str(self.config.friction))
+            friction_bp.set_attribute('extent_x', str(extent.x))
+            friction_bp.set_attribute('extent_y', str(extent.y))
+            friction_bp.set_attribute('extent_z', str(extent.z))
+
+            # Spawn Trigger Friction
+            transform = carla.Transform()
+            transform.location = carla.Location(-10000.0, -10000.0, 0.0)
+            world.spawn_actor(friction_bp, transform)
 
     def _initialize_actors(self, config):
         """

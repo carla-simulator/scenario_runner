@@ -15,8 +15,15 @@
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
 * The BackgroundActivity functionality has been unchanged but some tweaks have been made, fixing a previous patch. As a result, the *amount* parameter at *ActorConfigurationData* has been removed.
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
-
-
+* Enable weather animation during scenario execution (requires ephem pip package)
+* OpenSCENARIO support:
+    - Added initial speed support for pedestrians for OpenSCENARIO
+    - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
+    - Extended FollowLeadingVehicle example to illustrate weather changes
+* Atomics:
+    - WeatherBehavior to simulate weather over time
+    - UpdateWeather to update weather to a new setting, e.g. sun to rain
+    - UpdateRoadFriction to update the road friction while running
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
 
