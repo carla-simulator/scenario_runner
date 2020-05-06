@@ -47,7 +47,7 @@ class BasicScenario(object):
 
         # Initializing adversarial actors
         self._initialize_actors(config)
-        if world.get_settings().synchronous_mode:
+        if CarlaDataProvider.is_sync_mode():
             world.tick()
         else:
             world.wait_for_tick()

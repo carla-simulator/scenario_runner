@@ -109,6 +109,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if actor is not None and actor.is_alive:
                 CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
 
+        world = CarlaDataProvider._world
+        if world is None:
+            print("WARNING: CarlaDataProvider couldn't find the world")
+        else:
+            CarlaDataProvider._sync_flag = world.get_settings().synchronous_mode
+
     @staticmethod
     def get_velocity(actor):
         """
@@ -474,7 +480,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         actors = []
 
-        sync_mode = CarlaDataProvider._world.get_settings().synchronous_mode
+        sync_mode = CarlaDataProvider.is_sync_mode()
 
         if CarlaDataProvider._client and batch is not None:
             responses = CarlaDataProvider._client.apply_batch_sync(batch, sync_mode)
@@ -533,7 +539,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 pass
 
         # wait for the actor to be spawned properly before we do anything
-        if CarlaDataProvider._world.get_settings().synchronous_mode:
+        if CarlaDataProvider.is_sync_mode():
             CarlaDataProvider._world.tick()
         else:
             CarlaDataProvider._world.wait_for_tick()
