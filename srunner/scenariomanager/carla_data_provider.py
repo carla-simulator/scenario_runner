@@ -587,7 +587,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     CarlaDataProvider._spawn_index += 1
 
             else:
-                _spawn_point = transform
+                _spawn_point = carla.Transform()
+                _spawn_point.rotation = transform.rotation
+                _spawn_point.location.x = transform.location.x
+                _spawn_point.location.y = transform.location.y
+                _spawn_point.location.z = transform.location.z + 0.2
 
             # Get the command
             command = SpawnActor(blueprint, _spawn_point)
@@ -602,7 +606,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         actors = CarlaDataProvider.handle_actor_batch(batch)
 
-        if actors is None:
+        if not actors:
             return None
 
         for actor in actors:
