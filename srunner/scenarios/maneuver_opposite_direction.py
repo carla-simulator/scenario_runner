@@ -17,7 +17,7 @@ import math
 import py_trees
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       ActorSource,
@@ -94,11 +94,11 @@ class ManeuverOppositeDirection(BasicScenario):
                 0.50 * second_prop_waypoint.lane_width * math.sin(math.radians(position_yaw)))
             second_prop_transform = carla.Transform(
                 second_prop_waypoint.transform.location + offset_location, first_actor_transform.rotation)
-            second_prop_actor = CarlaActorPool.request_new_actor(first_actor_model, second_prop_transform)
+            second_prop_actor = CarlaDataProvider.request_new_actor(first_actor_model, second_prop_transform)
             second_prop_actor.set_simulate_physics(True)
-        first_actor = CarlaActorPool.request_new_actor(first_actor_model, first_actor_transform)
+        first_actor = CarlaDataProvider.request_new_actor(first_actor_model, first_actor_transform)
         first_actor.set_simulate_physics(True)
-        second_actor = CarlaActorPool.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
+        second_actor = CarlaDataProvider.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
 
         self.other_actors.append(first_actor)
         self.other_actors.append(second_actor)

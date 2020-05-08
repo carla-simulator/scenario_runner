@@ -17,7 +17,7 @@ import py_trees
 import carla
 from agents.navigation.local_planner import RoadOption
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       WaypointFollower,
@@ -106,7 +106,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                            config.other_actors[0].transform.location.y,
                            config.other_actors[0].transform.location.z),
             config.other_actors[0].transform.rotation)
-        first_vehicle = CarlaActorPool.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
+        first_vehicle = CarlaDataProvider.request_new_actor(config.other_actors[0].model, first_vehicle_transform)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):

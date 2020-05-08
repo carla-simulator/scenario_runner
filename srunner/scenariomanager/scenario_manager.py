@@ -17,7 +17,7 @@ import time
 import py_trees
 
 from srunner.autoagents.agent_wrapper import AgentWrapper
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.weather_sim import WeatherBehavior
 from srunner.scenariomanager.timer import GameTime, TimeOut
@@ -174,7 +174,6 @@ class ScenarioManager(object):
             self._agent = None
 
         CarlaDataProvider.cleanup()
-        CarlaActorPool.cleanup()
 
     def load_scenario(self, scenario, agent=None):
         """

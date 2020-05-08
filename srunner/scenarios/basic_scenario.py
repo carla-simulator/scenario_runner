@@ -16,7 +16,7 @@ import py_trees
 import carla
 
 import srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as conditions
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import Scenario
 
 
@@ -51,7 +51,7 @@ class BasicScenario(object):
 
         # Initializing adversarial actors
         self._initialize_actors(config)
-        if world.get_settings().synchronous_mode:
+        if CarlaDataProvider.is_sync_mode():
             world.tick()
         else:
             world.wait_for_tick()
@@ -111,8 +111,8 @@ class BasicScenario(object):
         Override this method in child class to provide custom initialization.
         """
 
-        new_actors = CarlaActorPool.request_new_actors(config.other_actors)
-        if new_actors is None:
+        new_actors = CarlaDataProvider.request_new_actors(config.other_actors)
+        if not new_actors:
             raise Exception("Error: Unable to add actors")
 
         for new_actor in new_actors:
@@ -207,7 +207,7 @@ class BasicScenario(object):
         """
         for i, _ in enumerate(self.other_actors):
             if self.other_actors[i] is not None:
-                if CarlaActorPool.actor_id_exists(self.other_actors[i].id):
-                    CarlaActorPool.remove_actor_by_id(self.other_actors[i].id)
+                if CarlaDataProvider.actor_id_exists(self.other_actors[i].id):
+                    CarlaDataProvider.remove_actor_by_id(self.other_actors[i].id)
                 self.other_actors[i] = None
         self.other_actors = []

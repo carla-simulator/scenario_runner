@@ -260,13 +260,15 @@ class OpenScenario(BasicScenario):
                     actor_ids = []
                     for actor in sequence.iter("Actors"):
                         for entity in actor.iter("EntityRef"):
+                            entity_name = entity.attrib.get('entityRef', None)
                             for k, _ in enumerate(joint_actor_list):
-                                if entity.attrib.get('entityRef', None) == joint_actor_list[k].attributes['role_name']:
+                                if joint_actor_list[k] and entity_name == joint_actor_list[k].attributes['role_name']:
                                     actor_ids.append(k)
                                     break
 
                     if not actor_ids:
-                        print("Warning: Maneuvergroup does not use reference actors!")
+                        print("Warning: Maneuvergroup {} does not use reference actors!".format(
+                            sequence.attrib.get('name')))
                         actor_ids.append(len(joint_actor_list) - 1)
 
                    # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
@@ -295,7 +297,7 @@ class OpenScenario(BasicScenario):
                                         maneuver_behavior = StoryElementStatusToBlackboard(
                                             maneuver_behavior, "ACTION", child.attrib.get('name'))
                                         parallel_actions.add_child(
-                                            oneshot_behavior(variable_name=# See note in get_xml_path
+                                            oneshot_behavior(variable_name=  # See note in get_xml_path
                                                              get_xml_path(self.config.story, sequence) + '>' + \
                                                              get_xml_path(maneuver, child),
                                                              behaviour=maneuver_behavior))

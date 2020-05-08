@@ -31,7 +31,7 @@ import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
 
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
@@ -637,7 +637,7 @@ class ChangeAutoPilot(AtomicBehavior):
         super(ChangeAutoPilot, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._activate = activate
-        self._tm = CarlaActorPool.get_client().get_trafficmanager()
+        self._tm = CarlaDataProvider.get_client().get_trafficmanager()
         self._parameters = parameters
 
     def update(self):
@@ -927,112 +927,6 @@ class BasicAgentBehavior(AtomicBehavior):
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
         super(BasicAgentBehavior, self).terminate(new_status)
-
-
-class TrafficJamChecker(AtomicBehavior):
-
-    """
-    Atomic behavior that performs the following actions:
-       1. Instantiates a set of vehicles managed by a server autopilot
-       2. Check for possible traffic jams
-       3. Destroy the NPC actors (in autopilot mode) involved in the traffic jam
-
-    This behavior stops when blackboard.get('master_scenario_command') == scenarios_stop_request
-    """
-
-    SOFT_NUMBER_BLOCKS = 10  # 10 seconds
-    HARD_NUMBER_BLOCKS = 30  # 30 seconds
-
-    MINIMUM_DISTANCE = 5.0  # meters
-
-    def __init__(self, debug=False, name="TrafficJamChecker"):
-        super(TrafficJamChecker, self).__init__(name)
-        self.debug = debug
-        self.blackboard = Blackboard()
-        self.world = CarlaDataProvider.get_world()
-        self.map = CarlaDataProvider.get_map()
-        self.list_intersection_waypoints = []
-
-        # remove initial collisions during setup
-        list_actors = list(CarlaActorPool.get_actors())
-        for _, actor in list_actors:
-            if actor.attributes['role_name'] == 'autopilot':
-                if detect_lane_obstacle(actor, margin=0.2):
-                    CarlaActorPool.remove_actor_by_id(actor.id)
-
-        # prepare a table to check for stalled vehicles during the execution of the scenario
-        self.table_blocked_actors = {}
-        current_game_time = GameTime.get_time()
-        for actor_id, actor in CarlaActorPool.get_actors():
-            if actor.attributes['role_name'] == 'autopilot':
-                actor.set_autopilot(True)
-                self.table_blocked_actors[actor_id] = {'location': actor.get_location(),
-                                                       'time': current_game_time
-                                                       }
-
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-
-    def update(self):
-        master_scenario_command = self.blackboard.get('master_scenario_command')
-        if master_scenario_command and master_scenario_command == 'scenarios_stop_request':
-            new_status = py_trees.common.Status.SUCCESS
-            return new_status
-        else:
-            new_status = py_trees.common.Status.RUNNING
-
-        current_game_time = GameTime.get_time()
-
-        list_actors_to_destroy = []
-        for actor_id, actor in CarlaActorPool.get_actors():
-            if actor.attributes['role_name'] == 'autopilot':
-                block_info = self.table_blocked_actors[actor_id]
-                current_location = actor.get_location()
-                distance = current_location.distance(block_info['location'])
-
-                # if vehicle is moving we reset the current time
-                if distance >= self.MINIMUM_DISTANCE:
-                    self.table_blocked_actors[actor_id]['location'] = current_location
-                    self.table_blocked_actors[actor_id]['time'] = current_game_time
-
-                # if the vehicle is on a trigger box than it should have the time reset
-                if actor.is_at_traffic_light():
-                    self.table_blocked_actors[actor_id]['location'] = current_location
-                    self.table_blocked_actors[actor_id]['time'] = current_game_time
-                    if self.debug:
-                        self.world.debug.draw_point(current_location,
-                                                    size=1.3,
-                                                    color=carla.Color(0, 255, 0),
-                                                    life_time=5)
-
-                # if vehicle has been static for a long time we get rid of it
-                if (current_game_time - self.table_blocked_actors[actor_id]['time']) > self.HARD_NUMBER_BLOCKS:
-                    list_actors_to_destroy.append(actor_id)
-
-                    if self.debug:
-                        self.world.debug.draw_point(current_location,
-                                                    size=1.3,
-                                                    color=carla.Color(255, 0, 0),
-                                                    life_time=5)
-
-                # if the vehicle has been static for a short period of time...
-                elif (current_game_time - self.table_blocked_actors[actor_id]['time']) > self.SOFT_NUMBER_BLOCKS:
-                    # check if this vehicle is at an intersection
-                    current_waypoint = self.map.get_waypoint(current_location)
-
-                    # is it blocked at an intersection? Then we need to get rid of it!
-                    if current_waypoint.is_intersection:
-                        if self.debug:
-                            self.world.debug.draw_point(current_location,
-                                                        size=1.3,
-                                                        color=carla.Color(0, 0, 255),
-                                                        life_time=5)
-                        list_actors_to_destroy.append(actor_id)
-
-        for actor_id in list_actors_to_destroy:
-            CarlaActorPool.remove_actor_by_id(actor_id)
-            self.table_blocked_actors[actor_id] = None
-
-        return new_status
 
 
 class Idle(AtomicBehavior):
@@ -1515,7 +1409,7 @@ class ActorDestroy(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         if self._actor:
-            CarlaActorPool.remove_actor_by_id(self._actor.id)
+            CarlaDataProvider.remove_actor_by_id(self._actor.id)
             self._actor = None
             new_status = py_trees.common.Status.SUCCESS
 
@@ -1679,7 +1573,8 @@ class ActorSource(AtomicBehavior):
 
             if not spawn_point_blocked:
                 try:
-                    new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
+                    new_actor = CarlaDataProvider.request_new_actor(
+                        np.random.choice(self._actor_types), self._spawn_point)
                     self._actor_limit -= 1
                     self._queue.put(new_actor)
                 except:                             # pylint: disable=bare-except
@@ -1711,7 +1606,7 @@ class ActorSink(AtomicBehavior):
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
-        CarlaActorPool.remove_actors_in_surrounding(self._sink_location, self._threshold)
+        CarlaDataProvider.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
 
 
