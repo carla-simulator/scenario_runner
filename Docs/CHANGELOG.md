@@ -26,6 +26,7 @@
     - UpdateRoadFriction to update the road friction while running
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
+* Fixed bug causing an exception when calling BasicScenario's *_initialize_actors* with no other_actors.
 
 
 ## CARLA ScenarioRunner 0.9.9
