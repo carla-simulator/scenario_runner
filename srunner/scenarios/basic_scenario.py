@@ -110,7 +110,7 @@ class BasicScenario(object):
         Default initialization of other actors.
         Override this method in child class to provide custom initialization.
         """
-        if len(config.other_actors) > 0:
+        if config.other_actors:
             new_actors = CarlaDataProvider.request_new_actors(config.other_actors)
             if not new_actors:
                 raise Exception("Error: Unable to add actors")
