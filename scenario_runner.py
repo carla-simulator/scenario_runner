@@ -168,7 +168,7 @@ class ScenarioRunner(object):
         """
         # Simulation still running and in synchronous mode?
         if self.manager is not None and self.manager.get_running_status() \
-                and self.world is not None and self.world.get_settings().synchronous_mode:
+                and self.world is not None and self._args.sync:
             # Reset to asynchronous mode
             settings = self.world.get_settings()
             settings.synchronous_mode = False
@@ -225,7 +225,10 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
 
         # sync state
-        CarlaDataProvider.get_world().tick()
+        if CarlaDataProvider.is_sync_mode():
+            self.world.tick()
+        else:
+            self.world.wait_for_tick()
 
     def _analyze_scenario(self, config):
         """

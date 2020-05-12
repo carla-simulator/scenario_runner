@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="1" revMinor="0" date="2020-03-24" description="CARLA:PedestrianCrossing" author=""/>
+  <FileHeader revMajor="1" revMinor="0" date="2020-03-24T12:00:00" description="CARLA:PedestrianCrossing" author=""/>
   <CatalogLocations>
     <VehicleCatalog>
       <Directory path="./srunner/examples/catalogs/VehicleCatalog.xosc"/>
@@ -51,6 +51,25 @@
                 <WorldPosition x="170" y="55" z="0" h="3.14159265359"/>
               </Position>
             </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <ControllerAction>
+              <AssignControllerAction>
+                <Controller name="HeroAgent">
+                  <Properties>
+                    <Property name="module" value="external_control"/>
+                  </Properties>
+                </Controller>
+              </AssignControllerAction>
+              <OverrideControllerValueAction>
+                <Throttle value="0" active="false"/>
+                <Brake value="0" active="false"/>
+                <Clutch value="0" active="false"/>
+                <ParkingBrake value="0" active="false"/>
+                <SteeringWheel value="0" active="false"/>
+                <Gear number="0" active="false"/>
+              </OverrideControllerValueAction>
+            </ControllerAction>
           </PrivateAction>
         </Private>
         <Private entityRef="vehicle">

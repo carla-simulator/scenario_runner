@@ -19,10 +19,12 @@
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
 * Enable weather animation during scenario execution (requires ephem pip package)
 * OpenSCENARIO support:
+    - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller.
     - Added initial speed support for pedestrians for OpenSCENARIO
     - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
-    - Extended FollowLeadingVehicle example to illustrate weather changes
+    - Created example scenarios to illustrate usage of controllers and weather changes
 * Atomics:
+    - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time
     - UpdateWeather to update weather to a new setting, e.g. sun to rain
     - UpdateRoadFriction to update the road friction while running
