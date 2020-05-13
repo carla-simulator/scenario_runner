@@ -15,6 +15,7 @@ and finally triggers the scenario execution.
 
 from __future__ import print_function
 
+import glob
 import traceback
 import argparse
 from argparse import RawTextHelpFormatter
@@ -36,18 +37,18 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
-from srunner.scenarios.control_loss import ControlLoss
-from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle, FollowLeadingVehicleWithObstacle
-from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
-from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
-from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
-from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing, DynamicObjectCrossing
-from srunner.scenarios.opposite_vehicle_taking_priority import OppositeVehicleRunningRedLight
-from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
-from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLeftTurn
-from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
-from srunner.scenarios.change_lane import ChangeLane
-from srunner.scenarios.cut_in import CutIn
+# from srunner.scenarios.control_loss import ControlLoss
+# from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle, FollowLeadingVehicleWithObstacle
+# from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
+# from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
+# from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
+# from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing, DynamicObjectCrossing
+# from srunner.scenarios.opposite_vehicle_taking_priority import OppositeVehicleRunningRedLight
+# from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
+# from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLeftTurn
+# from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
+# from srunner.scenarios.change_lane import ChangeLane
+# from srunner.scenarios.cut_in import CutIn
 # pylint: enable=unused-import
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
@@ -160,12 +161,27 @@ class ScenarioRunner(object):
         Get scenario class by scenario name
         If scenario is not supported or not found, exit script
         """
+        
+        scenarios_list = glob.glob("{}/srunner/scenarios/*.py".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
+        for scenarios in scenarios_list:
 
-        if scenario in globals():
-            return globals()[scenario]
+            module_name = os.path.basename(scenarios).split('.')[0]
+            sys.path.insert(0, os.path.dirname(scenarios))
+            scenario_module = importlib.import_module(module_name)
 
-        for member in inspect.getmembers(self.additional_scenario_module):
-            if scenario in member and inspect.isclass(member[1]):
+            for member in inspect.getmembers(scenario_module, inspect.isclass):
+                if scenario in member:
+                    return member[1]
+
+        # if scenario in globals():
+        #     return globals()[scenario]
+
+        module_name = os.path.basename(self._args.additionalScenario).split('.')[0]
+        sys.path.insert(0, os.path.dirname(self._args.additionalScenario))
+        additional_scenario_module = importlib.import_module(module_name)
+
+        for member in inspect.getmembers(additional_scenario_module, inspect.isclass):
+            if scenario in member:
                 return member[1]
 
         print("Scenario '{}' not supported ... Exiting".format(scenario))
