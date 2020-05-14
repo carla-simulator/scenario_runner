@@ -35,21 +35,6 @@ from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfi
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
-# pylint: disable=unused-import
-# For the following includes the pylint check is disabled, as these are accessed via globals()
-# from srunner.scenarios.control_loss import ControlLoss
-# from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle, FollowLeadingVehicleWithObstacle
-# from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
-# from srunner.scenarios.no_signal_junction_crossing import NoSignalJunctionCrossing
-# from srunner.scenarios.object_crash_intersection import VehicleTurningRight, VehicleTurningLeft
-# from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing, DynamicObjectCrossing
-# from srunner.scenarios.opposite_vehicle_taking_priority import OppositeVehicleRunningRedLight
-# from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
-# from srunner.scenarios.signalized_junction_left_turn import SignalizedJunctionLeftTurn
-# from srunner.scenarios.signalized_junction_right_turn import SignalizedJunctionRightTurn
-# from srunner.scenarios.change_lane import ChangeLane
-# from srunner.scenarios.cut_in import CutIn
-# pylint: enable=unused-import
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_config_parser import ScenarioConfigurationParser
@@ -107,13 +92,6 @@ class ScenarioRunner(object):
         if LooseVersion(dist.version) < LooseVersion('0.9.8'):
             raise ImportError("CARLA version 0.9.8 or newer required. CARLA version found: {}".format(dist))
 
-        # Load additional scenario definitions, if there are any
-        # If something goes wrong an exception will be thrown by importlib (ok here)
-        if self._args.additionalScenario != '':
-            module_name = os.path.basename(args.additionalScenario).split('.')[0]
-            sys.path.insert(0, os.path.dirname(args.additionalScenario))
-            self.additional_scenario_module = importlib.import_module(module_name)
-
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
         if self._args.agent is not None:
@@ -161,28 +139,22 @@ class ScenarioRunner(object):
         Get scenario class by scenario name
         If scenario is not supported or not found, exit script
         """
-        
+
+        # Path of all scenario at "srunner/scenarios" folder + the path of the additional scenario argument
         scenarios_list = glob.glob("{}/srunner/scenarios/*.py".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
+        scenarios_list.append(self._args.additionalScenario)
+
         for scenarios in scenarios_list:
 
+            # Get their module
             module_name = os.path.basename(scenarios).split('.')[0]
             sys.path.insert(0, os.path.dirname(scenarios))
             scenario_module = importlib.import_module(module_name)
 
+            # And their members of type class
             for member in inspect.getmembers(scenario_module, inspect.isclass):
                 if scenario in member:
                     return member[1]
-
-        # if scenario in globals():
-        #     return globals()[scenario]
-
-        module_name = os.path.basename(self._args.additionalScenario).split('.')[0]
-        sys.path.insert(0, os.path.dirname(self._args.additionalScenario))
-        additional_scenario_module = importlib.import_module(module_name)
-
-        for member in inspect.getmembers(additional_scenario_module, inspect.isclass):
-            if scenario in member:
-                return member[1]
 
         print("Scenario '{}' not supported ... Exiting".format(scenario))
         sys.exit(-1)
