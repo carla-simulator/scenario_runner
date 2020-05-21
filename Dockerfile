@@ -33,12 +33,12 @@ env CARLA_RELEASE ""
 
 # Extract and install python API and resources from CARLA
 
-run export DEFAULT_CARLA_HOST=$(cat /app/scenario_runner/CARLA_VER|grep HOST|sed 's/HOST\s*=\s*//g') \
+run export DEFAULT_CARLA_HOST=$("cat /app/scenario_runner/CARLA_VER|grep HOST|sed 's/HOST\s*=\s*//g'") \
 &&  export CARLA_HOST=${CARLA_HOST:-$DEFAULT_CARLA_HOST} \
-&&  DEFAULT_CARLA_RELEASE=$(cat /app/scenario_runner/CARLA_VER|grep RELEASE|sed 's/RELEASE\s*=\s*//g') \
+&&  DEFAULT_CARLA_RELEASE=$("cat /app/scenario_runner/CARLA_VER|grep RELEASE|sed 's/RELEASE\s*=\s*//g'") \
 &&  export CARLA_RELEASE=${CARLA_RELEASE:-$DEFAULT_CARLA_RELEASE} \
 &&  echo $CARLA_HOST/$CARLA_RELEASE.tar.gz \
-&&  wget -qO- $CARLA_HOST/$CARLA_RELEASE.tar.gz | tar -xzv PythonAPI/carla -C / \
+&&  wget -qO- "$CARLA_HOST/$CARLA_RELEASE.tar.gz" | tar -xzv PythonAPI/carla -C / \
 &&  mv /PythonAPI/carla /app/ \
 &&  python3 -m easy_install --no-find-links --no-deps $(find /app/carla/ -iname "*py3.*.egg" )
 
