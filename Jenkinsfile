@@ -73,10 +73,11 @@ pipeline
                         stage('prebuild SR docker image')
                         {
                             //checkout scm
-                            sh 'docker build -t jenkins/scenario_runner .'
-                            sh "docker tag jenkins/scenario_runner ${ECR_REPOSITORY}:${COMMIT}"
+                            sh "docker build -t jenkins/scenario_runner:${COMMIT} ."
+                            sh "docker tag jenkins/scenario_runner:${COMMIT} ${ECR_REPOSITORY}:${COMMIT}"
                             sh '$(aws ecr get-login | sed \'s/ -e none//g\' )' 
                             sh "docker push ${ECR_REPOSITORY}"
+			    sh "docker image rmi -f $(docker image rmi -f $(docker images -q ${ECR_REPOSITORY}:${COMMIT}"
                         }
                     }
                 }
@@ -116,10 +117,11 @@ pipeline
                                             if ( CONCURRENCY == false )
                                             {
                                                 //checkout scm
-                                                sh 'docker build -t jenkins/scenario_runner .'
-                                                sh "docker tag jenkins/scenario_runner ${ECR_REPOSITORY}:${COMMIT}"
-                                                sh '$(aws ecr get-login | sed \'s/ -e none//g\' )' 
+                                                sh "docker build -t jenkins/scenario_runner:${COMMIT} ."
+                                                sh "docker tag jenkins/scenario_runner:${COMMIT} ${ECR_REPOSITORY}:${COMMIT}"
+                                                sh '$(aws ecr get-login | sed \'s/ -e none//g\' )'
                                                 sh "docker push ${ECR_REPOSITORY}"
+                                                sh "docker image rmi -f $(docker image rmi -f $(docker images -q ${ECR_REPOSITORY}:${COMMIT}"
                                             }
                                             else
                                             {
