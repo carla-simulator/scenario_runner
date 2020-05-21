@@ -32,7 +32,7 @@ import carla
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
@@ -175,8 +175,9 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
-        if self.world is not None and self.manager is not None \
-                and self._args.agent and self.manager.get_running_status():
+        # Simulation still running and in synchronous mode?
+        if self.manager is not None and self.manager.get_running_status() \
+                and self.world is not None and self.world.get_settings().synchronous_mode:
             # Reset to asynchronous mode
             settings = self.world.get_settings()
             settings.synchronous_mode = False
@@ -187,7 +188,6 @@ class ScenarioRunner(object):
         self.manager.cleanup()
 
         CarlaDataProvider.cleanup()
-        CarlaActorPool.cleanup()
 
         for i, _ in enumerate(self.ego_vehicles):
             if self.ego_vehicles[i]:
@@ -208,12 +208,11 @@ class ScenarioRunner(object):
 
         if not self._args.waitForEgo:
             for vehicle in ego_vehicles:
-                self.ego_vehicles.append(CarlaActorPool.setup_actor(vehicle.model,
-                                                                    vehicle.transform,
-                                                                    vehicle.rolename,
-                                                                    True,
-                                                                    color=vehicle.color,
-                                                                    actor_category=vehicle.category))
+                self.ego_vehicles.append(CarlaDataProvider.request_new_actor(vehicle.model,
+                                                                             vehicle.transform,
+                                                                             vehicle.rolename,
+                                                                             color=vehicle.color,
+                                                                             actor_category=vehicle.category))
         else:
             ego_vehicle_missing = True
             while ego_vehicle_missing:
@@ -262,7 +261,7 @@ class ScenarioRunner(object):
 
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """
-        Load a new CARLA world and provide data to CarlaActorPool and CarlaDataProvider
+        Load a new CARLA world and provide data to CarlaDataProvider
         """
 
         if self._args.reloadWorld:
@@ -286,22 +285,20 @@ class ScenarioRunner(object):
 
         self.world = self.client.get_world()
 
-        if self._args.agent:
+        if self._args.sync:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
 
-        CarlaActorPool.set_client(self.client)
-        CarlaActorPool.set_world(self.world)
+        CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
-        if self.world.get_settings().synchronous_mode:
+        if CarlaDataProvider.is_sync_mode():
             self.world.tick()
         else:
             self.world.wait_for_tick()
-
         if CarlaDataProvider.get_map().name != town and CarlaDataProvider.get_map().name != "OpenDriveMap":
             print("The CARLA server uses the wrong map: {}".format(CarlaDataProvider.get_map().name))
             print("This scenario requires to use map: {}".format(town))
@@ -356,23 +353,6 @@ class ScenarioRunner(object):
             print(exception)
             self._cleanup()
             return False
-
-        # Set the appropriate weather conditions
-        self.world.set_weather(config.weather)
-
-        # Set the appropriate road friction
-        if config.friction is not None:
-            friction_bp = self.world.get_blueprint_library().find('static.trigger.friction')
-            extent = carla.Location(1000000.0, 1000000.0, 1000000.0)
-            friction_bp.set_attribute('friction', str(config.friction))
-            friction_bp.set_attribute('extent_x', str(extent.x))
-            friction_bp.set_attribute('extent_y', str(extent.y))
-            friction_bp.set_attribute('extent_z', str(extent.z))
-
-            # Spawn Trigger Friction
-            transform = carla.Transform()
-            transform.location = carla.Location(-10000.0, -10000.0, 0.0)
-            self.world.spawn_actor(friction_bp, transform)
 
         try:
             # Load scenario and run it
@@ -497,6 +477,8 @@ def main():
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
+    parser.add_argument('--sync', action='store_true',
+                        help='Forces the simulation to run synchronously')
     parser.add_argument('--debug', action="store_true", help='Run with debug output')
     parser.add_argument('--output', action="store_true", help='Provide results on stdout')
     parser.add_argument('--file', action="store_true", help='Write results into a txt file')
@@ -524,6 +506,7 @@ def main():
     parser.add_argument('--timeout', default="10.0",
                         help='Set the CARLA client timeout value in seconds')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))
+
     arguments = parser.parse_args()
     # pylint: enable=line-too-long
 
@@ -537,7 +520,7 @@ def main():
         parser.print_help(sys.stdout)
         return 1
 
-    if (arguments.route and arguments.openscenario) or (arguments.route and arguments.scenario):
+    if arguments.route and (arguments.openscenario or arguments.scenario):
         print("The route mode cannot be used together with a scenario (incl. OpenSCENARIO)'\n\n")
         parser.print_help(sys.stdout)
         return 1
@@ -549,6 +532,9 @@ def main():
 
     if arguments.route:
         arguments.reloadWorld = True
+
+    if arguments.agent:
+        arguments.sync = True
 
     scenario_runner = None
     result = True

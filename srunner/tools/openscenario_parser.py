@@ -10,6 +10,7 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 """
 
 from distutils.util import strtobool
+import datetime
 import math
 import operator
 
@@ -17,6 +18,7 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.weather_sim import Weather
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLightStateSetter,
                                                                       ActorTransformSetterToOSCPosition,
                                                                       AccelerateToVelocity,
@@ -25,6 +27,9 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       LaneChange,
                                                                       RunScript,
                                                                       SetRelativeOSCVelocity,
+                                                                      UpdateWeather,
+                                                                      UpdateRoadFriction,
+                                                                      Idle,
                                                                       WaypointFollower)
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
@@ -50,6 +55,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                StandStill,
                                                                                OSCStartEndCondition)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
+from srunner.tools.py_trees_port import oneshot_behavior
 
 
 class OpenScenarioParser(object):
@@ -73,6 +79,81 @@ class OpenScenarioParser(object):
         the scenario does not use CARLA coordinates, but instead right-hand coordinates.
         """
         OpenScenarioParser.use_carla_coordinate_system = True
+
+    @staticmethod
+    def get_friction_from_env_action(xml_tree, catalogs):
+        """
+        Extract the CARLA road friction coefficient from an OSC EnvironmentAction
+
+        Args:
+            xml_tree: Containing the EnvironmentAction,
+                or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the EnvironmentAction
+
+        returns:
+           friction (float)
+        """
+        set_environment = next(xml_tree.iter("EnvironmentAction"))
+
+        friction = 1.0
+
+        road_condition = set_environment.iter("RoadCondition")
+        for condition in road_condition:
+            friction = condition.attrib.get('frictionScaleFactor')
+
+        return friction
+
+    @staticmethod
+    def get_weather_from_env_action(xml_tree, catalogs):
+        """
+        Extract the CARLA weather parameters from an OSC EnvironmentAction
+
+        Args:
+            xml_tree: Containing the EnvironmentAction,
+                or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the EnvironmentAction
+
+        returns:
+           Weather (srunner.scenariomanager.weather_sim.Weather)
+        """
+        set_environment = next(xml_tree.iter("EnvironmentAction"))
+
+        if sum(1 for _ in set_environment.iter("Weather")) != 0:
+            environment = set_environment.find("Environment")
+        elif set_environment.find("CatalogReference") is not None:
+            catalog_reference = set_environment.find("CatalogReference")
+            environment = catalogs[catalog_reference.attrib.get(
+                "catalogName")][catalog_reference.attrib.get("entryName")]
+
+        weather = environment.find("Weather")
+        sun = weather.find("Sun")
+
+        carla_weather = carla.WeatherParameters()
+        carla_weather.sun_azimuth_angle = math.degrees(float(sun.attrib.get('azimuth', 0)))
+        carla_weather.sun_altitude_angle = math.degrees(float(sun.attrib.get('elevation', 0)))
+        carla_weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+        fog = weather.find("Fog")
+        carla_weather.fog_distance = float(fog.attrib.get('visualRange', 'inf'))
+        if carla_weather.fog_distance < 1000:
+            carla_weather.fog_density = 100
+        carla_weather.precipitation = 0
+        carla_weather.precipitation_deposits = 0
+        carla_weather.wetness = 0
+        carla_weather.wind_intensity = 0
+        precepitation = weather.find("Precipitation")
+        if precepitation.attrib.get('precipitationType') == "rain":
+            carla_weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
+            carla_weather.precipitation_deposits = 100  # if it rains, make the road wet
+            carla_weather.wetness = carla_weather.precipitation
+        elif precepitation.attrib.get('type') == "snow":
+            raise AttributeError("CARLA does not support snow precipitation")
+
+        time_of_day = environment.find("TimeOfDay")
+        weather_animation = strtobool(time_of_day.attrib.get("animation"))
+        time = time_of_day.attrib.get("dateTime")
+        dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
+
+        return Weather(carla_weather, dtime, weather_animation)
 
     @staticmethod
     def convert_position_to_transform(position, actor_list=None):
@@ -426,7 +507,7 @@ class OpenScenarioParser(object):
         return new_atomic
 
     @staticmethod
-    def convert_maneuver_to_atomic(action, actor):
+    def convert_maneuver_to_atomic(action, actor, catalogs):
         """
         Convert an OpenSCENARIO maneuver action into a Behavior atomic
 
@@ -462,6 +543,22 @@ class OpenScenarioParser(object):
                         traffic_light_id, traffic_light_state, name=maneuver_name + "_" + str(traffic_light_id))
                 else:
                     raise NotImplementedError("TrafficLights can only be influenced via TrafficSignalStateAction")
+            elif global_action.find('EnvironmentAction') is not None:
+                weather_behavior = UpdateWeather(
+                    OpenScenarioParser.get_weather_from_env_action(global_action, catalogs))
+                friction_behavior = UpdateRoadFriction(
+                    OpenScenarioParser.get_friction_from_env_action(global_action, catalogs))
+
+                env_behavior = py_trees.composites.Parallel(
+                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=maneuver_name)
+
+                env_behavior.add_child(
+                    oneshot_behavior(variable_name=maneuver_name + ">WeatherUpdate", behaviour=weather_behavior))
+                env_behavior.add_child(
+                    oneshot_behavior(variable_name=maneuver_name + ">FrictionUpdate", behaviour=friction_behavior))
+
+                return env_behavior
+
             else:
                 raise NotImplementedError("Global actions are not yet supported")
         elif action.find('UserDefinedAction') is not None:
@@ -590,6 +687,9 @@ class OpenScenarioParser(object):
                 raise AttributeError("Unknown private action")
 
         else:
-            raise AttributeError("Unknown action: {}".format(maneuver_name))
+            if action:
+                raise AttributeError("Unknown action: {}".format(maneuver_name))
+            else:
+                return Idle(duration=0, name=maneuver_name)
 
         return atomic

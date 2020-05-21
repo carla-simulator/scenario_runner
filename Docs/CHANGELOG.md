@@ -9,8 +9,25 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* **Very important:** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
+    - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
+    - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
+* The BackgroundActivity functionality has been unchanged but some tweaks have been made, fixing a previous patch. As a result, the *amount* parameter at *ActorConfigurationData* has been removed.
+* The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
+* Enable weather animation during scenario execution (requires ephem pip package)
+* OpenSCENARIO support:
+    - Added initial speed support for pedestrians for OpenSCENARIO
+    - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
+    - Extended FollowLeadingVehicle example to illustrate weather changes
+* Atomics:
+    - WeatherBehavior to simulate weather over time
+    - UpdateWeather to update weather to a new setting, e.g. sun to rain
+    - UpdateRoadFriction to update the road friction while running
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
+* Fixed bug causing an exception when calling BasicScenario's *_initialize_actors* with no other_actors.
+* Fixed bug causing the route to be downsampled (introduced by mistake at 0.9.9)
 
 
 ## CARLA ScenarioRunner 0.9.9

@@ -13,7 +13,7 @@ import glob
 import os
 import xml.etree.ElementTree as ET
 
-from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfiguration
+from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration, TargetConfiguration
 
 
@@ -60,9 +60,13 @@ class ScenarioConfigurationParser(object):
                 new_config.weather.wind_intensity = float(weather.attrib.get("wind_intensity", 0.35))
                 new_config.weather.sun_azimuth_angle = float(weather.attrib.get("sun_azimuth_angle", 0.0))
                 new_config.weather.sun_altitude_angle = float(weather.attrib.get("sun_altitude_angle", 15.0))
+                new_config.weather.fog_density = float(weather.attrib.get("fog_density", 0.0))
+                new_config.weather.fog_distance = float(weather.attrib.get("fog_distance", 0.0))
+                new_config.weather.wetness = float(weather.attrib.get("wetness", 0.0))
 
             for ego_vehicle in scenario.iter("ego_vehicle"):
-                new_config.ego_vehicles.append(ActorConfiguration(ego_vehicle, 'hero'))
+
+                new_config.ego_vehicles.append(ActorConfigurationData.parse_from_node(ego_vehicle, 'hero'))
                 new_config.trigger_points.append(new_config.ego_vehicles[-1].transform)
 
             for target in scenario.iter("target"):
@@ -74,7 +78,7 @@ class ScenarioConfigurationParser(object):
                 new_config.route = route_conf
 
             for other_actor in scenario.iter("other_actor"):
-                new_config.other_actors.append(ActorConfiguration(other_actor, 'scenario'))
+                new_config.other_actors.append(ActorConfigurationData.parse_from_node(other_actor, 'scenario'))
 
             if single_scenario_only:
                 if new_config.name == scenario_name:

@@ -24,14 +24,13 @@ import carla
 from agents.navigation.local_planner import RoadOption
 
 # pylint: disable=line-too-long
-from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData, ActorConfiguration
+from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 # pylint: enable=line-too-long
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.master_scenario import MasterScenario
 from srunner.scenarios.background_activity import BackgroundActivity
-from srunner.scenarios.trafficlight_scenario import TrafficLightScenario
 from srunner.tools.route_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory
 from srunner.tools.py_trees_port import oneshot_behavior
@@ -44,10 +43,7 @@ from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
 from srunner.scenarios.maneuver_opposite_direction import ManeuverOppositeDirection
 from srunner.scenarios.junction_crossing_route import SignalJunctionCrossingRoute, NoSignalJunctionCrossingRoute
 
-
-MAX_ALLOWED_RADIUS_SENSOR = 5.0
 SECONDS_GIVEN_PER_METERS = 0.4
-MAX_CONNECTION_ATTEMPTS = 5
 
 NUMBER_CLASS_TRANSLATION = {
     "Scenario1": ControlLoss,
@@ -74,7 +70,7 @@ def convert_json_to_transform(actor_dict):
 
 def convert_json_to_actor(actor_dict):
     """
-    Convert a JSON string to an ActorConfiguration dictionary
+    Convert a JSON string to an ActorConfigurationData dictionary
     """
     node = ET.Element('waypoint')
     node.set('x', actor_dict['x'])
@@ -82,7 +78,7 @@ def convert_json_to_actor(actor_dict):
     node.set('z', actor_dict['z'])
     node.set('yaw', actor_dict['yaw'])
 
-    return ActorConfiguration(node, rolename='simulation')
+    return ActorConfigurationData.parse_from_node(node, 'simulation')
 
 
 def convert_transform_to_location(transform_vec):
@@ -209,10 +205,9 @@ class RouteScenario(BasicScenario):
         elevate_transform = self.route[0][0]
         elevate_transform.location.z += 0.5
 
-        ego_vehicle = CarlaActorPool.request_new_actor('vehicle.lincoln.mkz2017',
-                                                       elevate_transform,
-                                                       rolename='hero',
-                                                       hero=True)
+        ego_vehicle = CarlaDataProvider.request_new_actor('vehicle.lincoln.mkz2017',
+                                                          elevate_transform,
+                                                          rolename='hero')
 
         return ego_vehicle
 
@@ -365,41 +360,8 @@ class RouteScenario(BasicScenario):
         scenario_configuration.route = None
         scenario_configuration.town = town_name
 
-        model = 'vehicle.*'
-        transform = carla.Transform()
-
-        if town_name == 'Town01' or town_name == 'Town02':
-            amount = 120
-        elif town_name == 'Town03' or town_name == 'Town05':
-            amount = 120
-        elif town_name == 'Town04':
-            amount = 200
-        elif town_name == 'Town06' or town_name == 'Town07':
-            amount = 150
-        elif town_name == 'Town08':
-            amount = 180
-        elif town_name == 'Town09':
-            amount = 350
-        else:
-            amount = 0
-
-        actor_configuration_instance = ActorConfigurationData(
-            model, transform, rolename='background', autopilot=True, random=True, amount=amount)
-        scenario_configuration.other_actors = [actor_configuration_instance]
-
         return BackgroundActivity(world, [ego_vehicle], scenario_configuration,
                                   timeout=timeout, debug_mode=debug_mode)
-
-    def _build_trafficlight_scenario(self, world, ego_vehicle, town_name, timeout=300, debug_mode=False):
-        """
-        Create scenario for traffic light manipulation
-        """
-        scenario_configuration = ScenarioConfiguration()
-        scenario_configuration.route = None
-        scenario_configuration.town = town_name
-
-        return TrafficLightScenario(world, [ego_vehicle], scenario_configuration,
-                                    timeout=timeout, debug_mode=debug_mode)
 
     def _build_scenario_instances(self, world, ego_vehicle, scenario_definitions, town,
                                   scenarios_per_tick=5, timeout=300, debug_mode=False):
@@ -445,8 +407,7 @@ class RouteScenario(BasicScenario):
                                                    criteria_enable=False, timeout=timeout)
                 # Do a tick every once in a while to avoid spawning everything at the same time
                 if scenario_number % scenarios_per_tick == 0:
-                    sync_mode = world.get_settings().synchronous_mode
-                    if sync_mode:
+                    if CarlaDataProvider.is_sync_mode():
                         world.tick()
                     else:
                         world.wait_for_tick()
