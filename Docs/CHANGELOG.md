@@ -10,6 +10,7 @@
 
 ## Latest Changes
 ### :rocket: New Features
+* Add Jenkins CI pipelines.
 * **Very important:** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
     - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
