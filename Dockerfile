@@ -36,7 +36,7 @@ env CARLA_RELEASE ""
 
 run DEFAULT_CARLA_HOST="$(grep -P '^\s*HOST\s*=\s*' /app/scenario_runner/CARLA_VER | sed 's/HOST\s*=\s*//g')" \
 &&  CARLA_HOST="${CARLA_HOST:-$DEFAULT_CARLA_HOST}" \
-&&  DEFAULT_CARLA_RELEASE="$(grep -P '^\*RELEASE\*=\s*'  /app/scenario_runner/CARLA_VER | sed 's/RELEASE\s*=\s*//g')" \
+&&  DEFAULT_CARLA_RELEASE="$(grep -P '^\s*RELEASE\s*=\s*' /app/scenario_runner/CARLA_VER | sed 's/RELEASE\s*=\s*//g')" \
 &&  CARLA_RELEASE="${CARLA_RELEASE:-$DEFAULT_CARLA_RELEASE}" \
 &&  echo "$CARLA_HOST/$CARLA_RELEASE.tar.gz" \
 &&  wget -qO- "$CARLA_HOST/$CARLA_RELEASE.tar.gz" | tar -xzv PythonAPI/carla -C / \
