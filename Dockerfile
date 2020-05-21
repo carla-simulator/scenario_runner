@@ -34,7 +34,6 @@ env CARLA_RELEASE ""
 
 # Extract and install python API and resources from CARLA
 
-grep -P "^\s*HOST\s*=\s*" CARLA_VER |sed 's/HOST\s*=\s*//g'
 run export DEFAULT_CARLA_HOST="$(grep -P \"^\s*HOST\s*=\*\" /app/scenario_runner/CARLA_VER | sed 's/HOST\s*=\s*//g')" \
 &&  export CARLA_HOST=${CARLA_HOST:-$DEFAULT_CARLA_HOST} \
 &&  DEFAULT_CARLA_RELEASE="$(grep -P \"^\*RELEASE\*=\*\"  /app/scenario_runner/CARLA_VER | sed 's/RELEASE\s*=\s*//g')" \
