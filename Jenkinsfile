@@ -77,7 +77,7 @@ pipeline
                             sh "docker tag jenkins/scenario_runner:${COMMIT} ${ECR_REPOSITORY}:${COMMIT}"
                             sh '$(aws ecr get-login | sed \'s/ -e none//g\' )' 
                             sh "docker push ${ECR_REPOSITORY}"
-			    sh "docker image rmi -f \"$(docker images -q ${ECR_REPOSITORY}:${COMMIT})\""
+			    sh "docker image rmi -f \"\$(docker images -q ${ECR_REPOSITORY}:${COMMIT})\""
                         }
                     }
                 }
@@ -121,7 +121,7 @@ pipeline
                                                 sh "docker tag jenkins/scenario_runner:${COMMIT} ${ECR_REPOSITORY}:${COMMIT}"
                                                 sh '$(aws ecr get-login | sed \'s/ -e none//g\' )'
                                                 sh "docker push ${ECR_REPOSITORY}"
-						sh "docker image rmi -f \"$(docker images -q ${ECR_REPOSITORY}:${COMMIT})\""
+						sh "docker image rmi -f \"\$(docker images -q ${ECR_REPOSITORY}:${COMMIT})\""
                                             }
                                             else
                                             {
