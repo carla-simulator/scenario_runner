@@ -178,7 +178,6 @@ pipeline
                             deleteDir()
                         }
                 }
-                deleteDir()
             }
         }
     }
