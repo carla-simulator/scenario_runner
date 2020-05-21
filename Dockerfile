@@ -41,7 +41,7 @@ run export DEFAULT_CARLA_HOST="$(sed -e 's/^\s*HOST\s*=\s*//;t;d' /app/scenario_
     echo "$CARLA_HOST/$CARLA_RELEASE.tar.gz" && \
     wget -qO- "$CARLA_HOST/$CARLA_RELEASE.tar.gz" | tar -xzv PythonAPI/carla -C / && \
     mv /PythonAPI/carla /app/ && \
-    python3 -m easy_install --no-find-links --no-deps $(find /app/carla/ -iname "*py3.*.egg" )
+    python3 -m easy_install --no-find-links --no-deps $("find /app/carla/ -iname \"*py3.*.eggi\" )
 
 
 # Setup working environment
