@@ -1,12 +1,12 @@
 from ubuntu:18.04
 
 # Install base libs
-run apt-get update && apt-get install --no-install-recommends -y \
-    libpng16-16 libtiff5 libjpeg8 build-essential wget git python3.6 python3.6-dev python3-pip 
+run apt-get update && apt-get install --no-install-recommends -y libpng16-16=1.6.34 \
+libtiff5=4.0.9 libjpeg8=8c build-essential=12 wget=1.19.4 git=1:2.17.1 python3.6=3.6.9 python3.6-dev=3.6.9 python3-pip=9.0.1 
 
 # Install python requirements
-run pip3 install --user setuptools wheel && pip3 install py_trees==0.8.3 networkx==2.2 pygame==1.9.6 \
-    six==1.14.0 numpy==1.18.4 psutil shapely xmlschema ephem==3.7.6.0 \
+run pip3 install --user setuptools==46.3.0 wheel==0.34.2 && pip3 install py_trees==0.8.3 networkx==2.2 pygame==1.9.6 \
+    six==1.14.0 numpy==1.18.4 psutil==5.7.0 shapely==1.7.0 xmlschema==1.1.3 ephem==3.7.6.0 \
 && mkdir -p /app/scenario_runner
 
 # Install scenario_runner 
