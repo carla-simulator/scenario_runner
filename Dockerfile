@@ -34,8 +34,8 @@ env CARLA_RELEASE ""
 
 # Extract and install python API and resources from CARLA
 
-run DEFAULT_CARLA_HOST="$(sed -e 's/^\s*HOST\s*=\s*//;t;d' /app/scenario_runner/CARLA_VER)" \
-&&  CARLA_HOST="${CARLA_HOST:-$DEFAULT_CARLA_HOST}" \
+run DEFAULT_CARLA_HOST="$(sed -e 's/^\s*HOST\s*=\s*//;t;d' /app/scenario_runner/CARLA_VER)" 
+run CARLA_HOST="${CARLA_HOST:-$DEFAULT_CARLA_HOST}" \
 &&  DEFAULT_CARLA_RELEASE="$(sed -e 's/^\s*RELEASE\s*=\s*//;t;d' /app/scenario_runner/CARLA_VER)" \
 &&  CARLA_RELEASE="${CARLA_RELEASE:-$DEFAULT_CARLA_RELEASE}" \
 &&  echo "$CARLA_HOST/$CARLA_RELEASE.tar.gz" \
