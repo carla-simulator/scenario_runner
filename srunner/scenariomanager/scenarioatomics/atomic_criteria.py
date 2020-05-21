@@ -1038,6 +1038,8 @@ class OutsideRouteLanesTest(Criterion):
             blackv = py_trees.blackboard.Blackboard()
             _ = blackv.set("OutsideRouteLanes", 0)
 
+        super(OutsideRouteLanesTest, self).terminate(new_status)
+
 
 class WrongLaneTest(Criterion):
 
@@ -1689,6 +1691,8 @@ class RunningRedLightTest(Criterion):
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RunningRedLight", self.actual_value)
 
+        super(RunningRedLightTest, self).terminate(new_status)
+
 
 class RunningStopTest(Criterion):
 
@@ -1867,3 +1871,5 @@ class RunningStopTest(Criterion):
         # Blackboard variable
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RunningStop", self.actual_value)
+
+        super(RunningStopTest, self).terminate(new_status)
