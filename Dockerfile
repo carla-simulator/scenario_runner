@@ -34,11 +34,11 @@ env CARLA_RELEASE ""
 
 # Extract and install python API and resources from CARLA
 
-run DEFAULT_CARLA_HOST="$(sed -e 's/^\s*HOST\s*=\s*//;t;d' /app/scenario_runner/CARLA_VER)" 
-run CARLA_HOST="${CARLA_HOST:-$DEFAULT_CARLA_HOST}" \
-&&  DEFAULT_CARLA_RELEASE="$(sed -e 's/^\s*RELEASE\s*=\s*//;t;d' /app/scenario_runner/CARLA_VER)" \
-&&  CARLA_RELEASE="${CARLA_RELEASE:-$DEFAULT_CARLA_RELEASE}" \
-&&  echo "$CARLA_HOST/$CARLA_RELEASE.tar.gz" \
+run export DEFAULT_CARLA_HOST="$(sed -e 's/^\s*HOST\s*=\s*//;t;d' /app/scenario_runner/CARLA_VER)" 
+run export CARLA_HOST="${CARLA_HOST:-$DEFAULT_CARLA_HOST}" 
+run export DEFAULT_CARLA_RELEASE="$(sed -e 's/^\s*RELEASE\s*=\s*//;t;d' /app/scenario_runner/CARLA_VER)"
+run export CARLA_RELEASE="${CARLA_RELEASE:-$DEFAULT_CARLA_RELEASE}" 
+run  echo "$CARLA_HOST/$CARLA_RELEASE.tar.gz" \
 &&  wget -qO- "$CARLA_HOST/$CARLA_RELEASE.tar.gz" | tar -xzv PythonAPI/carla -C / \
 &&  mv /PythonAPI/carla /app/ \
 &&  python3 -m easy_install --no-find-links --no-deps $(find /app/carla/ -iname "*py3.*.egg" )
