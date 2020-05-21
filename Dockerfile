@@ -3,7 +3,8 @@ from ubuntu:18.04
 # Install base libs
 run apt-get update && apt-get install --no-install-recommends -y libpng16-16=1.6.34-1ubuntu0.18.04.2 \
 libtiff5=4.0.9-5ubuntu0.3 libjpeg8=8c-2ubuntu8 build-essential=12.4ubuntu1 wget=1.19.4-1ubuntu2.2 git=1:2.17.1-1ubuntu0.7 \
- python3.6=3.6.9-1~18.04ubuntu1 python3.6-dev=3.6.9-1~18.04ubuntu1 python3-pip=9.0.1-2.3~ubuntu1.18.04.1 
+ python3.6=3.6.9-1~18.04ubuntu1 python3.6-dev=3.6.9-1~18.04ubuntu1 python3-pip=9.0.1-2.3~ubuntu1.18.04.1 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Install python requirements
 run pip3 install --user setuptools==46.3.0 wheel==0.34.2 && pip3 install py_trees==0.8.3 networkx==2.2 pygame==1.9.6 \
@@ -33,9 +34,9 @@ env CARLA_RELEASE ""
 
 # Extract and install python API and resources from CARLA
 
-run export DEFAULT_CARLA_HOST=$("cat /app/scenario_runner/CARLA_VER|grep HOST|sed 's/HOST\s*=\s*//g'") \
+run export DEFAULT_CARLA_HOST="$(cat /app/scenario_runner/CARLA_VER|grep HOST|sed 's/HOST\s*=\s*//g')" \
 &&  export CARLA_HOST=${CARLA_HOST:-$DEFAULT_CARLA_HOST} \
-&&  DEFAULT_CARLA_RELEASE=$("cat /app/scenario_runner/CARLA_VER|grep RELEASE|sed 's/RELEASE\s*=\s*//g'") \
+&&  DEFAULT_CARLA_RELEASE="$(cat /app/scenario_runner/CARLA_VER|grep RELEASE|sed 's/RELEASE\s*=\s*//g')" \
 &&  export CARLA_RELEASE=${CARLA_RELEASE:-$DEFAULT_CARLA_RELEASE} \
 &&  echo $CARLA_HOST/$CARLA_RELEASE.tar.gz \
 &&  wget -qO- "$CARLA_HOST/$CARLA_RELEASE.tar.gz" | tar -xzv PythonAPI/carla -C / \
