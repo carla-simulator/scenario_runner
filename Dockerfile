@@ -1,8 +1,9 @@
 from ubuntu:18.04
 
 # Install base libs
-run apt-get update && apt-get install --no-install-recommends -y libpng16-16=1.6.34 \
-libtiff5=4.0.9 libjpeg8=8c build-essential=12 wget=1.19.4 git=1:2.17.1 python3.6=3.6.9 python3.6-dev=3.6.9 python3-pip=9.0.1 
+run apt-get update && apt-get install --no-install-recommends -y libpng16-16=1.6.34-1ubuntu0.18.04.2 \
+libtiff5=4.0.9-5ubuntu0.3 libjpeg8=8c-2ubuntu8 build-essential=12.4ubuntu1 wget=1.19.4-1ubuntu2.2 git=1:2.17.1-1ubuntu0.7 \
+ python3.6=3.6.9-1~18.04ubuntu1 python3.6-dev=3.6.9-1~18.04ubuntu1 python3-pip=9.0.1-2.3~ubuntu1.18.04.1 
 
 # Install python requirements
 run pip3 install --user setuptools==46.3.0 wheel==0.34.2 && pip3 install py_trees==0.8.3 networkx==2.2 pygame==1.9.6 \
@@ -10,7 +11,7 @@ run pip3 install --user setuptools==46.3.0 wheel==0.34.2 && pip3 install py_tree
 && mkdir -p /app/scenario_runner
 
 # Install scenario_runner 
-add . /app/scenario_runner
+copy . /app/scenario_runner
 
 # setup environment :
 # 
