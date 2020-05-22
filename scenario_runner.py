@@ -51,7 +51,7 @@ from srunner.scenarios.cut_in import CutIn
 # pylint: enable=unused-import
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
-from srunner.tools.scenario_config_parser import ScenarioConfigurationParser
+from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
