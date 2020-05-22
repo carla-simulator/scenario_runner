@@ -407,7 +407,6 @@ class ScenarioRunner(object):
         Run the route scenario
         """
         result = False
-        repetitions = self._args.repetitions
 
         if self._args.route:
             routes = self._args.route[0]
@@ -420,7 +419,7 @@ class ScenarioRunner(object):
         route_configurations = RouteParser.parse_routes_file(routes, scenario_file, single_route)
 
         for config in route_configurations:
-            for _ in range(repetitions):
+            for _ in range(self._args.repetitions):
                 result = self._load_and_run_scenario(config)
 
                 self._cleanup()
@@ -438,8 +437,10 @@ class ScenarioRunner(object):
             return False
 
         config = OpenScenarioConfiguration(self._args.openscenario, self.client)
-        result = self._load_and_run_scenario(config)
-        self._cleanup()
+
+        for _ in range(self._args.repetitions):
+            result = self._load_and_run_scenario(config)
+            self._cleanup()
         return result
 
     def run(self):
