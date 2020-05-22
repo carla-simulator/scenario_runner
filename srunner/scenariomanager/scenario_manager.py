@@ -6,8 +6,8 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-This module provides the Scenario and ScenarioManager implementations.
-These must not be modified and are for reference only!
+This module provides the ScenarioManager implementation.
+It must not be modified and is for reference only!
 """
 
 from __future__ import print_function
@@ -19,94 +19,8 @@ import py_trees
 from srunner.autoagents.agent_wrapper import AgentWrapper
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
-from srunner.scenariomanager.weather_sim import WeatherBehavior
-from srunner.scenariomanager.timer import GameTime, TimeOut
+from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.watchdog import Watchdog
-
-
-class Scenario(object):
-
-    """
-    Basic scenario class. This class holds the behavior_tree describing the
-    scenario and the test criteria.
-
-    The user must not modify this class.
-
-    Important parameters:
-    - behavior: User defined scenario with py_tree
-    - criteria_list: List of user defined test criteria with py_tree
-    - timeout (default = 60s): Timeout of the scenario in seconds
-    - terminate_on_failure: Terminate scenario on first failure
-    """
-
-    def __init__(self, behavior, criteria, name, timeout=60, terminate_on_failure=False):
-        self.behavior = behavior
-        self.test_criteria = criteria
-        self.timeout = timeout
-        self.name = name
-
-        if self.test_criteria is not None and not isinstance(self.test_criteria, py_trees.composites.Parallel):
-            # list of nodes
-            for criterion in self.test_criteria:
-                criterion.terminate_on_failure = terminate_on_failure
-
-            # Create py_tree for test criteria
-            self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-            self.criteria_tree.add_children(self.test_criteria)
-            self.criteria_tree.setup(timeout=1)
-        else:
-            self.criteria_tree = criteria
-
-        # Create node for timeout
-        self.timeout_node = TimeOut(self.timeout, name="TimeOut")
-
-        # Create overall py_tree
-        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        if behavior is not None:
-            self.scenario_tree.add_child(self.behavior)
-        self.scenario_tree.add_child(self.timeout_node)
-        self.scenario_tree.add_child(WeatherBehavior())
-        if criteria is not None:
-            self.scenario_tree.add_child(self.criteria_tree)
-        self.scenario_tree.setup(timeout=1)
-
-    def _extract_nodes_from_tree(self, tree):  # pylint: disable=no-self-use
-        """
-        Returns the list of all nodes from the given tree
-        """
-        node_list = [tree]
-        more_nodes_exist = True
-        while more_nodes_exist:
-            more_nodes_exist = False
-            for node in node_list:
-                if node.children:
-                    node_list.remove(node)
-                    more_nodes_exist = True
-                    for child in node.children:
-                        node_list.append(child)
-
-        if len(node_list) == 1 and isinstance(node_list[0], py_trees.composites.Parallel):
-            return []
-
-        return node_list
-
-    def get_criteria(self):
-        """
-        Return the list of test criteria (all leave nodes)
-        """
-        criteria_list = self._extract_nodes_from_tree(self.criteria_tree)
-        return criteria_list
-
-    def terminate(self):
-        """
-        This function sets the status of all leaves in the scenario tree to INVALID
-        """
-        # Get list of all nodes in the tree
-        node_list = self._extract_nodes_from_tree(self.scenario_tree)
-
-        # Set status to INVALID
-        for node in node_list:
-            node.terminate(py_trees.common.Status.INVALID)
 
 
 class ScenarioManager(object):
@@ -120,16 +34,17 @@ class ScenarioManager(object):
     To use the ScenarioManager:
     1. Create an object via manager = ScenarioManager()
     2. Load a scenario via manager.load_scenario()
-    3. Trigger the execution of the scenario manager.execute()
+    3. Trigger the execution of the scenario manager.run_scenario()
        This function is designed to explicitly control start and end of
        the scenario execution
-    4. Trigger a result evaluation with manager.analyze()
-    5. Cleanup with manager.stop_scenario()
+    4. Trigger a result evaluation with manager.analyze_scenario()
+    5. If needed, cleanup with manager.stop_scenario() 
     """
 
     def __init__(self, debug_mode=False, timeout=2.0):
         """
-        Init requires scenario as input
+        Setups up the parameters, which will be filled at load_scenario()
+
         """
         self.scenario = None
         self.scenario_tree = None
@@ -232,14 +147,8 @@ class ScenarioManager(object):
 
     def _tick_scenario(self, timestamp):
         """
-        Run next tick of scenario
-        This function is a callback for world.on_tick()
-
-        Important:
-        - It has to be ensured that the scenario has not yet completed/failed
-          and that the time moved forward.
-        - A thread lock should be used to avoid that the scenario tick is performed
-          multiple times in parallel.
+        Run next tick of scenario and the agent.
+        If running synchornously, it also handles the ticking of the world.
         """
 
         if self._timestamp_last_run < timestamp.elapsed_seconds and self._running:
