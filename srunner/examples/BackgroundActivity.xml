@@ -5,7 +5,6 @@
 
 	<scenario name="BackgroundActivity_1" type="BackgroundActivity" town="Town04">
 		<ego_vehicle x="404.1000061035156" y="-16.0" z="1.0" yaw="-80.0" model="vehicle.lincoln.mkz2017"/>
-		<target x="-394.1000061035156" y="30.799999237060547" z="1.0" />
 		<route>
 			<waypoint  x="404.7657775878906" y="-20.59994888305664" z="0.0" connection="RoadOption.LANEFOLLOW"/>
 			<waypoint  x="404.98284912109375" y="-22.913633346557617" z="0.0" connection="RoadOption.LANEFOLLOW"/>

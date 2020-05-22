@@ -419,14 +419,10 @@ class ScenarioRunner(object):
                 single_route = self._args.route[2]
 
         # retrieve routes
-        route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
-        # find and filter potential scenarios for each of the evaluated routes
-        # For each of the routes and corresponding possible scenarios to be evaluated.
+        route_configurations = RouteParser.parse_routes_file(routes, scenario_file, single_route)
 
-        for _, route_description in enumerate(route_descriptions_list):
+        for config in route_configurations:
             for _ in range(repetitions):
-
-                config = RouteScenarioConfiguration(route_description, scenario_file)
                 result = self._load_and_run_scenario(config)
 
                 self._cleanup()

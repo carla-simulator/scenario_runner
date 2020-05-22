@@ -38,9 +38,6 @@ class BasicScenario(object):
 
         self.criteria_list = []  # List of evaluation criteria
         self.scenario = None
-        # Check if the CARLA server uses the correct map
-        self._town = config.town
-        self._check_town()
 
         self.ego_vehicles = ego_vehicles
         self.name = name
@@ -184,12 +181,6 @@ class BasicScenario(object):
         raise NotImplementedError(
             "This function is re-implemented by all scenarios"
             "If this error becomes visible the class hierarchy is somehow broken")
-
-    def _check_town(self):
-        if CarlaDataProvider.get_map().name != self._town and CarlaDataProvider.get_map().name != "OpenDriveMap":
-            print("The CARLA server uses the wrong map: {}".format(CarlaDataProvider.get_map().name))
-            print("This scenario requires to use map: {}".format(self._town))
-            raise Exception("The CARLA server uses the wrong map!")
 
     def change_control(self, control):  # pylint: disable=no-self-use
         """

@@ -51,7 +51,7 @@ class Scenario(object):
                 criterion.terminate_on_failure = terminate_on_failure
 
             # Create py_tree for test criteria
-            self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria")
+            self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
             self.criteria_tree.add_children(self.test_criteria)
             self.criteria_tree.setup(timeout=1)
         else:

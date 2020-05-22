@@ -2,7 +2,6 @@
 <scenarios>
 	<scenario name="Challenge_Basic_00" type="MasterScenario" town="Town01">
 		<ego_vehicle x="191.10000610351562" y="55.79999923706055" z="1.0" yaw="180.0" model="vehicle.lincoln.mkz2017"/>
-		<target x="-2.5" y="221.6999969482422" z="0.0" />
 		<route>
 			<waypoint  x="187.1006317138672" y="55.254920959472656" z="0.0" connection="RoadOption.LANEFOLLOW"/>
 			<waypoint  x="185.1006317138672" y="55.25258255004883" z="0.0" connection="RoadOption.LANEFOLLOW"/>
@@ -240,7 +239,6 @@
 
 	<scenario name="Challenge_Basic_01" type="MasterScenario" town="Town02">
 		<ego_vehicle x="21.899999618530273" y="187.89999389648438" z="1.0" yaw="180.0" model="vehicle.lincoln.mkz2017"/>
-		<target x="136.60000610351562" y="213.10000610351562" z="1.0" />
 		<route>
 			<waypoint  x="17.900259017944336" y="188.2209930419922" z="0.0" connection="RoadOption.LANEFOLLOW"/>
 			<waypoint  x="15.900259971618652" y="188.2226104736328" z="0.0" connection="RoadOption.LANEFOLLOW"/>
@@ -445,7 +443,6 @@
 
 	<scenario name="Challenge_Basic_03" type="MasterScenario" town="Town04">
 		<ego_vehicle x="404.1000061035156" y="-16.0" z="1.0" yaw="-80.0" model="vehicle.lincoln.mkz2017"/>
-		<target x="-394.1000061035156" y="30.799999237060547" z="1.0" />
 		<route>
 			<waypoint  x="404.7657775878906" y="-20.59994888305664" z="0.0" connection="RoadOption.LANEFOLLOW"/>
 			<waypoint  x="404.98284912109375" y="-22.913633346557617" z="0.0" connection="RoadOption.LANEFOLLOW"/>
@@ -1616,7 +1613,6 @@
 
 	<scenario name="Challenge_Basic_04" type="MasterScenario" town="Town05">
 		<ego_vehicle x="-32.0" y="2.5999999046325684" z="1.0" yaw="0.0" model="vehicle.lincoln.mkz2017"/>
-		<target x="-240.60000610351562" y="-83.0" z="1.0" />
 		<route>
 			<waypoint  x="-27.99994659423828" y="2.6174802780151367" z="0.0" connection="RoadOption.LANEFOLLOW"/>
 			<waypoint  x="-25.999954223632812" y="2.612612009048462" z="0.0" connection="RoadOption.LANEFOLLOW"/>

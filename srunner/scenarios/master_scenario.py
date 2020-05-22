@@ -38,15 +38,10 @@ class MasterScenario(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self.config = config
-        self.target = None
         self.route = None
         # Timeout of scenario in seconds
         self.timeout = timeout
 
-        if hasattr(self.config, 'target'):
-            self.target = self.config.target
-        else:
-            raise ValueError("Master scenario must have a target")
         if hasattr(self.config, 'route'):
             self.route = self.config.route
         else:

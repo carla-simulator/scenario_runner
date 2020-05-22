@@ -177,7 +177,6 @@ class OpenScenario(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self.config = config
-        self.target = None
         self.route = None
         self.config_file = config_file
         # Timeout of scenario in seconds
