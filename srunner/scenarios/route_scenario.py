@@ -11,7 +11,6 @@ This module provides Challenge routes as standalone scenarios
 
 from __future__ import print_function
 
-import copy
 import math
 import traceback
 import xml.etree.ElementTree as ET
@@ -29,7 +28,6 @@ from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.tools.route_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory
 from srunner.tools.py_trees_port import oneshot_behavior
@@ -453,8 +451,6 @@ class RouteScenario(BasicScenario):
                                                      behaviour=scenario.scenario.behavior,
                                                      name=name)
                     scenario_behaviors.append(oneshot_idiom)
-            elif scenario.scenario.behavior.name in ("Sequence"):
-                print("Hi")
 
         # Add behavior that manages the scenarios trigger conditions
         scenario_triggerer = ScenarioTriggerer(

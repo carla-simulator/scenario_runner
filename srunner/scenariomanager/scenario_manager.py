@@ -38,7 +38,7 @@ class ScenarioManager(object):
        This function is designed to explicitly control start and end of
        the scenario execution
     4. Trigger a result evaluation with manager.analyze_scenario()
-    5. If needed, cleanup with manager.stop_scenario() 
+    5. If needed, cleanup with manager.stop_scenario()
     """
 
     def __init__(self, debug_mode=False, timeout=2.0):

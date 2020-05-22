@@ -31,7 +31,6 @@ import pkg_resources
 import carla
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
-from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 # pylint: disable=unused-import
@@ -392,7 +391,7 @@ class ScenarioRunner(object):
             return result
 
         scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(scenario_config_file,
-                                                                                            self._args.scenario)
+                                                                                           self._args.scenario)
 
         # Execute each configuration
         for config in scenario_configurations:

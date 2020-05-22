@@ -39,6 +39,7 @@ class RouteConfiguration(object):
 
             self.data.append((carla.Location(x, y, z), connection))
 
+
 class RouteScenarioConfiguration(ScenarioConfiguration):
 
     """
