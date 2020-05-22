@@ -62,7 +62,7 @@ class RouteParser(object):
                 continue
 
             new_config = RouteScenarioConfiguration()
-            new_config.town = route.attrib['map']
+            new_config.town = route.attrib['town']
             new_config.name = "RouteScenario_{}".format(route_id)
             new_config.weather = RouteParser.parse_weather(route)
             new_config.scenario_file = scenario_file
