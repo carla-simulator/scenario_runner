@@ -26,6 +26,7 @@
     - WeatherBehavior to simulate weather over time
     - UpdateWeather to update weather to a new setting, e.g. sun to rain
     - UpdateRoadFriction to update the road friction while running
+* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
 * Fixed bug causing an exception when calling BasicScenario's *_initialize_actors* with no other_actors.
