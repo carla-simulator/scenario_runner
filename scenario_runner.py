@@ -439,6 +439,7 @@ class ScenarioRunner(object):
 
         result = self._load_and_run_scenario(config)
         self._cleanup()
+        return result
 
     def run(self):
         """
