@@ -53,7 +53,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                InTimeToArrivalToVehicle,
                                                                                DriveDistance,
                                                                                StandStill,
-                                                                               OSCStartEndCondition)
+                                                                               OSCStartEndCondition,
+                                                                               TriggerAcceleration)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 
@@ -388,7 +389,12 @@ class OpenScenarioParser(object):
                         atomic = InTimeToArrivalToVehicle(
                             trigger_actor, triggered_actor, condition_value, condition_operator)
                 elif entity_condition.find('AccelerationCondition') is not None:
-                    raise NotImplementedError("Acceleration conditions are not yet supported")
+                    accel_condition = entity_condition.find('AccelerationCondition')
+                    condition_value = float(accel_condition.attrib.get('value'))
+                    condition_rule = accel_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+                    atomic = TriggerAcceleration(
+                            trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('StandStillCondition') is not None:
                     ss_condition = entity_condition.find('StandStillCondition')
                     duration = float(ss_condition.attrib.get('duration'))

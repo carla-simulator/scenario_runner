@@ -23,6 +23,7 @@ from __future__ import print_function
 import operator
 import py_trees
 import carla
+import math
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -271,6 +272,51 @@ class TriggerVelocity(AtomicCondition):
 
         delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
         if delta_velocity < EPSILON:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class TriggerAcceleration(AtomicCondition):
+
+    """
+    This class contains the trigger acceleration (condition) of a scenario
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - name: Name of the condition
+    - target_acceleration: Acceleration reference (in m/s^2) on which the success is dependent
+    - comparison_operator: 
+
+
+    The condition terminates with SUCCESS, when the actor reached the target_velocity
+    """
+
+    def __init__(self, actor, target_acceleration, comparison_operator=operator.gt, name="TriggerAcceleration"):
+        """
+        Setup trigger acceleration
+        """
+        super(TriggerAcceleration, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._target_acceleration = target_acceleration
+        self._comparison_operator = comparison_operator
+
+    def update(self):
+        """
+        Check if the actor has the trigger acceleration
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        acceleration = self._actor.get_acceleration()
+        linear_accel = math.sqrt(math.pow(acceleration.x,2) +
+                                 math.pow(acceleration.y,2) +
+                                 math.pow(acceleration.z,2))
+        print("HI -- {}".format(linear_accel))
+
+        if self._comparison_operator(linear_accel, self._target_acceleration):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
