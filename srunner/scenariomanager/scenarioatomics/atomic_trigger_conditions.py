@@ -278,8 +278,6 @@ class RelativeVelocityToOtherActor(AtomicCondition):
 
         relative_speed = curr_speed - other_speed
 
-        print(relative_speed)
-
         if self._comparison_operator(relative_speed, self._relative_speed):
             new_status = py_trees.common.Status.SUCCESS
 

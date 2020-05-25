@@ -21,7 +21,7 @@
     - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Added support for RelativeSpeedCondition
-    - Added support for AccelerateCondition
+    - Added support for AccelerationCondition
 * Atomics:
     - WeatherBehavior to simulate weather over time
     - UpdateWeather to update weather to a new setting, e.g. sun to rain
