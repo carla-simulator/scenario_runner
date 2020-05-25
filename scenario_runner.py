@@ -144,11 +144,11 @@ class ScenarioRunner(object):
         scenarios_list = glob.glob("{}/srunner/scenarios/*.py".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
         scenarios_list.append(self._args.additionalScenario)
 
-        for scenarios in scenarios_list:
+        for scenario_file in scenarios_list:
 
             # Get their module
-            module_name = os.path.basename(scenarios).split('.')[0]
-            sys.path.insert(0, os.path.dirname(scenarios))
+            module_name = os.path.basename(scenario_file).split('.')[0]
+            sys.path.insert(0, os.path.dirname(scenario_file))
             scenario_module = importlib.import_module(module_name)
 
             # And their members of type class
@@ -156,8 +156,8 @@ class ScenarioRunner(object):
                 if scenario in member:
                     return member[1]
 
-        # Remove unused Python paths
-        sys.path.pop(0)
+            # Remove unused Python paths
+            sys.path.pop(0)
 
         print("Scenario '{}' not supported ... Exiting".format(scenario))
         sys.exit(-1)
