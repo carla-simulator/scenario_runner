@@ -242,6 +242,52 @@ class StandStill(AtomicCondition):
         return new_status
 
 
+class RelativeVelocityToOtherActor(AtomicCondition):
+
+    """
+    This class contains a condition that compares velocities between two actors
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - name: Name of the condition
+    - duration: Duration of the behavior in seconds
+
+    The condition terminates with SUCCESS, when the actor does not move
+    """
+
+    def __init__(self, actor, other_actor, speed, comparison_operator=operator.gt,
+                 name="RelativeVelocityToOtherActor"):
+        """
+        Setup actor
+        """
+        super(RelativeVelocityToOtherActor, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._other_actor = other_actor
+        self._relative_speed = speed
+        self._comparison_operator = comparison_operator
+
+    def update(self):
+        """
+        Check if the _actor stands still (v=0)
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        curr_speed = CarlaDataProvider.get_velocity(self._actor)
+        other_speed = CarlaDataProvider.get_velocity(self._other_actor)
+
+        relative_speed = curr_speed - other_speed
+
+        print(relative_speed)
+
+        if self._comparison_operator(relative_speed, self._relative_speed):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class TriggerVelocity(AtomicCondition):
 
     """
@@ -314,7 +360,6 @@ class TriggerAcceleration(AtomicCondition):
         linear_accel = math.sqrt(math.pow(acceleration.x,2) +
                                  math.pow(acceleration.y,2) +
                                  math.pow(acceleration.z,2))
-        print("HI -- {}".format(linear_accel))
 
         if self._comparison_operator(linear_accel, self._target_acceleration):
             new_status = py_trees.common.Status.SUCCESS
