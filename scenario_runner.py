@@ -156,6 +156,9 @@ class ScenarioRunner(object):
                 if scenario in member:
                     return member[1]
 
+        # Remove unused Python paths
+        sys.path.pop(0)
+
         print("Scenario '{}' not supported ... Exiting".format(scenario))
         sys.exit(-1)
 
