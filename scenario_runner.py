@@ -437,10 +437,8 @@ class ScenarioRunner(object):
 
         config = OpenScenarioConfiguration(self._args.openscenario, self.client)
 
-        for _ in range(self._args.repetitions):
-            result = self._load_and_run_scenario(config)
-            self._cleanup()
-        return result
+        result = self._load_and_run_scenario(config)
+        self._cleanup()
 
     def run(self):
         """
