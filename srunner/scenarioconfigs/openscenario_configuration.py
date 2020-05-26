@@ -36,6 +36,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
     def __init__(self, filename, client):
 
         self.xml_tree = ET.parse(filename)
+        self._filename = filename
 
         self._set_global_parameters()
         self._validate_openscenario_configuration()
@@ -53,7 +54,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.init = self.storyboard.find("Init")
 
         logging.basicConfig()
-        self.logger = logging.getLogger("OpenScenarioConfiguration")
+        self.logger = logging.getLogger("[SR:OpenScenarioConfiguration]")
 
         self._parse_openscenario_configuration()
 
@@ -120,9 +121,12 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             if catalog is None:
                 continue
 
-            catalog_path = catalog.find("Directory").attrib.get('path')
+            catalog_path = catalog.find("Directory").attrib.get('path') + "/" + catalog_type + "Catalog.xosc"
+            if not os.path.isabs(catalog_path) and "xosc" in self._filename:
+                catalog_path = os.path.dirname(os.path.abspath(self._filename)) + "/" + catalog_path
+
             if not os.path.isfile(catalog_path):
-                self.logger.warning("The %s path for the %s Catalog is invalid", catalog_path, catalog_type)
+                self.logger.warning(" The %s path for the %s Catalog is invalid", catalog_path, catalog_type)
             else:
                 xml_tree = ET.parse(catalog_path)
                 self._validate_openscenario_catalog_configuration(xml_tree)
@@ -153,13 +157,15 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             self.town = logic.attrib.get('filepath', None)
 
         if self.town is not None and ".xodr" in self.town:
+            if not os.path.isabs(self.town):
+                self.town = os.path.dirname(os.path.abspath(self._filename)) + "/" + self.town
             if not os.path.exists(self.town):
-                raise AttributeError("The provided RoadNetwork does not exist")
+                raise AttributeError("The provided RoadNetwork '{}' does not exist".format(self.town))
 
         # workaround for relative positions during init
         world = self.client.get_world()
         if world is None or world.get_map().name != self.town:
-            self.logger.warning("Wrong OpenDRIVE map in use. Forcing reload of CARLA world")
+            self.logger.warning(" Wrong OpenDRIVE map in use. Forcing reload of CARLA world")
             if ".xodr" in self.town:
                 with open(self.town) as od_file:
                     data = od_file.read()
@@ -189,6 +195,12 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             value = parameter.attrib.get('value')
 
             global_parameters[name] = value
+
+        for node in self.xml_tree.find('RoadNetwork').iter():
+            for key in node.attrib:
+                for param in global_parameters:
+                    if node.attrib[key] == param:
+                        node.attrib[key] = global_parameters[param]
 
         for node in self.xml_tree.find('Entities').iter():
             for key in node.attrib:
@@ -227,7 +239,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     elif entry.tag == "MiscObject":
                         self._extract_misc_information(entry, rolename, entry, args)
                     else:
-                        self.logger.error("A CatalogReference specifies a reference that is not an Entity. Skipping...")
+                        self.logger.error(
+                            " A CatalogReference specifies a reference that is not an Entity. Skipping...")
 
                 for vehicle in obj.iter("Vehicle"):
                     self._extract_vehicle_information(obj, rolename, vehicle, args)
@@ -311,7 +324,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 if actor_found:
                     # pylint: disable=line-too-long
                     self.logger.warning(
-                        "Warning: The actor '%s' was already assigned an initial position. Overwriting pose!", actor_name)
+                        " Warning: The actor '%s' was already assigned an initial position. Overwriting pose!", actor_name)
                     # pylint: enable=line-too-long
                 actor_found = True
                 for position in private_action.iter('Position'):
@@ -323,7 +336,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         if not actor_found:
             # pylint: disable=line-too-long
             self.logger.warning(
-                "Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)", actor_name)
+                " Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)", actor_name)
             # pylint: enable=line-too-long
 
         return actor_transform
@@ -340,7 +353,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 if actor_found:
                     # pylint: disable=line-too-long
                     self.logger.warning(
-                        "Warning: The actor '%s' was already assigned an initial speed. Overwriting inital speed!", actor_name)
+                        " Warning: The actor '%s' was already assigned an initial speed. Overwriting inital speed!", actor_name)
                     # pylint: enable=line-too-long
                 actor_found = True
 
@@ -367,4 +380,4 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             raise AttributeError("CARLA level not defined")
 
         if not self.ego_vehicles:
-            self.logger.warning("No ego vehicles defined in scenario")
+            self.logger.warning(" No ego vehicles defined in scenario")
