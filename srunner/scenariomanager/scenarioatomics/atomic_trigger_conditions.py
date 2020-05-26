@@ -21,9 +21,9 @@ base class
 from __future__ import print_function
 
 import operator
+import math
 import py_trees
 import carla
-import math
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -332,8 +332,7 @@ class TriggerAcceleration(AtomicCondition):
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - target_acceleration: Acceleration reference (in m/s^2) on which the success is dependent
-    - comparison_operator: 
-
+    - comparison_operator: determines the success condition of the behavior (greater / less / equal than)
 
     The condition terminates with SUCCESS, when the actor reached the target_velocity
     """
@@ -355,9 +354,9 @@ class TriggerAcceleration(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         acceleration = self._actor.get_acceleration()
-        linear_accel = math.sqrt(math.pow(acceleration.x,2) +
-                                 math.pow(acceleration.y,2) +
-                                 math.pow(acceleration.z,2))
+        linear_accel = math.sqrt(math.pow(acceleration.x, 2) +
+                                 math.pow(acceleration.y, 2) +
+                                 math.pow(acceleration.z, 2))
 
         if self._comparison_operator(linear_accel, self._target_acceleration):
             new_status = py_trees.common.Status.SUCCESS
