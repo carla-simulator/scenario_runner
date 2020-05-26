@@ -24,6 +24,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       AccelerateToVelocity,
                                                                       RunScript,
                                                                       ChangeWeather,
+                                                                      ChangeAutoPilot,
                                                                       ChangeRoadFriction,
                                                                       ChangeActorTargetSpeed,
                                                                       ChangeActorControl,
@@ -216,7 +217,7 @@ class OpenScenarioParser(object):
                 'RelativeObjectPosition') or position.find('RelativeLanePosition')
 
             # get relative object and relative position
-            obj = rel_pos.attrib.get('object')
+            obj = rel_pos.attrib.get('entityRef')
             obj_actor = None
             actor_transform = None
 
@@ -237,6 +238,9 @@ class OpenScenarioParser(object):
 
             # calculate orientation h, p, r
             is_absolute = False
+            dyaw = 0
+            dpitch = 0
+            droll = 0
             if rel_pos.find('Orientation') is not None:
                 orientation = rel_pos.find('Orientation')
                 is_absolute = (orientation.attrib.get('type') == "absolute")
@@ -279,7 +283,7 @@ class OpenScenarioParser(object):
             elif position.find('RelativeLanePosition') is not None:
                 dlane = float(rel_pos.attrib.get('dLane'))
                 ds = float(rel_pos.attrib.get('ds'))
-                offset = float(rel_pos.attrib.get('offset'))
+                offset = float(rel_pos.attrib.get('offset', 0.0))
 
                 carla_map = CarlaDataProvider.get_map()
                 relative_waypoint = carla_map.get_waypoint(actor_transform.location)
@@ -293,7 +297,11 @@ class OpenScenarioParser(object):
                 if wp is None:
                     raise AttributeError("Object '{}' position with dLane={} is not valid".format(obj, dlane))
 
-                wp = wp.next(ds)[-1]
+                if ds < 0:
+                    ds = (-1.0) * ds
+                    wp = wp.previous(ds)[-1]
+                else:
+                    wp = wp.next(ds)[-1]
 
                 # Adapt transform according to offset
                 h = math.radians(wp.transform.rotation.yaw)
@@ -618,12 +626,6 @@ class OpenScenarioParser(object):
                     if long_maneuver.find("SpeedActionTarget").find("AbsoluteTargetSpeed") is not None:
                         target_speed = float(long_maneuver.find("SpeedActionTarget").find(
                             "AbsoluteTargetSpeed").attrib.get('value', 0))
-                        # atomic = KeepVelocity(actor,
-                        #                      target_speed,
-                        #                      distance=distance,
-                        #                      duration=duration,
-                        #                      name=maneuver_name)
-
                         atomic = ChangeActorTargetSpeed(
                             actor, target_speed, distance=distance, duration=duration, name=maneuver_name)
 
@@ -682,7 +684,9 @@ class OpenScenarioParser(object):
             elif private_action.find('SynchronizeAction') is not None:
                 raise NotImplementedError("Synchronization actions are not yet supported")
             elif private_action.find('ActivateControllerAction') is not None:
-                raise NotImplementedError("ActivateControllerAction actions are not yet supported")
+                private_action = private_action.find('ActivateControllerAction')
+                activate = strtobool(private_action.attrib.get('longitudinal'))
+                atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
                 controller_action = private_action.find('ControllerAction')
                 module, args = OpenScenarioParser.get_controller(controller_action, catalogs)

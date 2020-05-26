@@ -3,19 +3,19 @@
   <FileHeader revMajor="1" revMinor="0" date="2020-03-24T12:00:00" description="CARLA:PedestrianCrossing" author=""/>
   <CatalogLocations>
     <VehicleCatalog>
-      <Directory path="./srunner/examples/catalogs/VehicleCatalog.xosc"/>
+      <Directory path="catalogs"/>
     </VehicleCatalog>
     <PedestrianCatalog>
-      <Directory path="./srunner/examples/catalogs/PedestrianCatalog.xosc"/>
+      <Directory path="catalogs"/>
     </PedestrianCatalog>
     <MiscObjectCatalog>
-      <Directory path="./srunner/examples/catalogs/MiscObjectCatalog.xosc"/>
+      <Directory path="catalogs"/>
     </MiscObjectCatalog>
     <EnvironmentCatalog>
-      <Directory path="./srunner/examples/catalogs/EnvironmentCatalog.xosc"/>
+      <Directory path="catalogs"/>
     </EnvironmentCatalog>
     <ManeuverCatalog>
-      <Directory path="./srunner/examples/catalogs/ManeuverCatalog.xosc"/>
+      <Directory path="catalogs"/>
     </ManeuverCatalog>
   </CatalogLocations>
   <RoadNetwork>

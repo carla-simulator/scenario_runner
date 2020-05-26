@@ -221,10 +221,6 @@ class OpenScenario(BasicScenario):
 
                     controller_atomic = None
 
-                    # print("we are here",actions)
-                    # for child in actions:
-                    #    print({x.tag for x in actions.findall(child.tag+"/*")})
-
                     for private in self.config.init.iter("Private"):
                         if private.attrib.get('entityRef', None) == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
