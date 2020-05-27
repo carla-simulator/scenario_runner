@@ -18,11 +18,12 @@ import threading
 import py_trees
 
 from srunner.autoagents.agent_wrapper import AgentWrapper
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.weather_sim import WeatherBehavior
 from srunner.scenariomanager.timer import GameTime, TimeOut
 from srunner.scenariomanager.watchdog import Watchdog
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import UpdateAllActorControls
 
 
 class Scenario(object):
@@ -67,6 +68,8 @@ class Scenario(object):
             self.scenario_tree.add_child(self.behavior)
         self.scenario_tree.add_child(self.timeout_node)
         self.scenario_tree.add_child(WeatherBehavior())
+        self.scenario_tree.add_child(UpdateAllActorControls())
+
         if criteria is not None:
             self.scenario_tree.add_child(self.criteria_tree)
         self.scenario_tree.setup(timeout=1)
@@ -181,7 +184,6 @@ class ScenarioManager(object):
             self._agent = None
 
         CarlaDataProvider.cleanup()
-        CarlaActorPool.cleanup()
 
     def load_scenario(self, scenario, agent=None):
         """

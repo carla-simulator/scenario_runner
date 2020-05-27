@@ -14,7 +14,7 @@ import math
 import py_trees
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider, CarlaActorPool
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       AccelerateToVelocity,
@@ -80,7 +80,7 @@ class StationaryObjectCrossing(BasicScenario):
         location += offset_location
         location.z += offset['z']
         self.transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        static = CarlaActorPool.request_new_actor('static.prop.container', self.transform)
+        static = CarlaDataProvider.request_new_actor('static.prop.container', self.transform)
         static.set_simulate_physics(True)
         self.other_actors.append(static)
 
@@ -205,11 +205,11 @@ class DynamicObjectCrossing(BasicScenario):
         if self._adversary_type is False:
             self._walker_yaw = orientation_yaw
             self._other_actor_target_velocity = 3 + (0.4 * self._num_lane_changes)
-            walker = CarlaActorPool.request_new_actor('walker.*', transform)
+            walker = CarlaDataProvider.request_new_actor('walker.*', transform)
             adversary = walker
         else:
             self._other_actor_target_velocity = self._other_actor_target_velocity * self._num_lane_changes
-            first_vehicle = CarlaActorPool.request_new_actor('vehicle.diamondback.century', transform)
+            first_vehicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century', transform)
             first_vehicle.set_simulate_physics(enabled=False)
             adversary = first_vehicle
 
@@ -235,7 +235,7 @@ class DynamicObjectCrossing(BasicScenario):
                                                          spawn_point_wp.transform.location.z + 0.3),
                                           carla.Rotation(yaw=orientation_yaw + 180))
 
-        static = CarlaActorPool.request_new_actor('static.prop.vendingmachine', self.transform2)
+        static = CarlaDataProvider.request_new_actor('static.prop.vendingmachine', self.transform2)
         static.set_simulate_physics(enabled=False)
 
         return static

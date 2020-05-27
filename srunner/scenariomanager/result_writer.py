@@ -85,9 +85,9 @@ class ResultOutputProvider(object):
         self.logger.info("\n")
         # pylint: disable=line-too-long
         self.logger.info(
-            "                Actor             |            Criterion           |   Result    | Actual Value | Expected Value ")
+            "              Actor              |               Criterion             |   Result    | Actual Value | Expected Value ")
         self.logger.info(
-            "-----------------------------------------------------------------------------------------------------------------")
+            "----------------------------------------------------------------------------------------------------------------------")
         # pylint: enable=line-too-long
 
         for criterion in self._data.scenario.get_criteria():
@@ -97,7 +97,7 @@ class ResultOutputProvider(object):
             else:
                 name_string += " (Req.)"
 
-            self.logger.info("%24s (id=%3d) | %30s | %11s | %12.2f | %12.2f ",
+            self.logger.info("%22s (id=%3d) | %35s | %11s | %12.2f | %14.2f ",
                              criterion.actor.type_id[8:],
                              criterion.actor.id,
                              name_string,
@@ -109,7 +109,7 @@ class ResultOutputProvider(object):
 
         # Handle timeout separately
         # pylint: disable=line-too-long
-        self.logger.info("%33s | %30s | %11s | %12.2f | %12.2f ",
+        self.logger.info("%32s | %35s | %11s | %12.2f | %14.2f ",
                          "",
                          "Duration",
                          "SUCCESS" if self._data.scenario_duration_game < self._data.scenario.timeout else "FAILURE",

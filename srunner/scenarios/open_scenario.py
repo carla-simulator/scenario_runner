@@ -14,7 +14,8 @@ from __future__ import print_function
 import itertools
 import py_trees
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SetOSCInitSpeed, UpdateWeather, UpdateRoadFriction
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorControl, ChangeActorTargetSpeed
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import OpenScenarioParser
@@ -199,9 +200,9 @@ class OpenScenario(BasicScenario):
         env_behavior = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="EnvironmentBehavior")
 
-        weather_update = UpdateWeather(
+        weather_update = ChangeWeather(
             OpenScenarioParser.get_weather_from_env_action(self.config.init, self.config.catalogs))
-        road_friction = UpdateRoadFriction(
+        road_friction = ChangeRoadFriction(
             OpenScenarioParser.get_friction_from_env_action(self.config.init, self.config.catalogs))
         env_behavior.add_child(oneshot_behavior(variable_name="InitialWeather", behaviour=weather_update))
         env_behavior.add_child(oneshot_behavior(variable_name="InitRoadFriction", behaviour=road_friction))
@@ -210,20 +211,35 @@ class OpenScenario(BasicScenario):
 
     def _create_init_behavior(self):
 
-        init_behavior = None
+        init_behavior = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="InitBehaviour")
 
-        # set initial speed
-        for actor in self.config.other_actors:
-            if actor.speed > 0:
-                rolename = actor.rolename
-                init_speed = actor.speed
+        for actor in self.config.other_actors + self.config.ego_vehicles:
+            for carla_actor in self.other_actors + self.ego_vehicles:
+                if 'role_name' in carla_actor.attributes and carla_actor.attributes['role_name'] == actor.rolename:
+                    actor_init_behavior = py_trees.composites.Sequence(name="InitActor{}".format(actor.rolename))
 
-                for carla_actor in self.other_actors:
-                    if 'role_name' in carla_actor.attributes and carla_actor.attributes['role_name'] == rolename:
-                        init_behavior = py_trees.composites.Parallel(
-                            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="InitBehaviour")
-                        set_init_speed = SetOSCInitSpeed(carla_actor, init_speed)
-                        init_behavior.add_child(set_init_speed)
+                    controller_atomic = None
+
+                    for private in self.config.init.iter("Private"):
+                        if private.attrib.get('entityRef', None) == actor.rolename:
+                            for private_action in private.iter("PrivateAction"):
+                                for controller_action in private_action.iter('ControllerAction'):
+                                    module, args = OpenScenarioParser.get_controller(
+                                        controller_action, self.config.catalogs)
+                                    controller_atomic = ChangeActorControl(
+                                        carla_actor, control_py_module=module, args=args)
+
+                    if controller_atomic is None:
+                        controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
+
+                    actor_init_behavior.add_child(controller_atomic)
+
+                    if actor.speed > 0:
+                        actor_init_behavior.add_child(ChangeActorTargetSpeed(carla_actor, actor.speed, init_speed=True))
+
+                    init_behavior.add_child(actor_init_behavior)
+                    break
 
         return init_behavior
 
@@ -260,13 +276,15 @@ class OpenScenario(BasicScenario):
                     actor_ids = []
                     for actor in sequence.iter("Actors"):
                         for entity in actor.iter("EntityRef"):
+                            entity_name = entity.attrib.get('entityRef', None)
                             for k, _ in enumerate(joint_actor_list):
-                                if entity.attrib.get('entityRef', None) == joint_actor_list[k].attributes['role_name']:
+                                if joint_actor_list[k] and entity_name == joint_actor_list[k].attributes['role_name']:
                                     actor_ids.append(k)
                                     break
 
                     if not actor_ids:
-                        print("Warning: Maneuvergroup does not use reference actors!")
+                        print("Warning: Maneuvergroup {} does not use reference actors!".format(
+                            sequence.attrib.get('name')))
                         actor_ids.append(len(joint_actor_list) - 1)
 
                    # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
@@ -367,13 +385,11 @@ class OpenScenario(BasicScenario):
 
         env_behavior = self._create_environment_behavior()
         if env_behavior is not None:
-            behavior.add_child(oneshot_behavior(variable_name=get_xml_path(
-                self.config.init, self.config.init), behaviour=env_behavior))
+            behavior.add_child(oneshot_behavior(variable_name="InitialEnvironmentSettings", behaviour=env_behavior))
 
         init_behavior = self._create_init_behavior()
         if init_behavior is not None:
-            behavior.add_child(oneshot_behavior(variable_name=get_xml_path(
-                self.config.story, self.config.story), behaviour=init_behavior))
+            behavior.add_child(oneshot_behavior(variable_name="InitialActorSettings", behaviour=init_behavior))
 
         behavior.add_child(story_behavior)
 

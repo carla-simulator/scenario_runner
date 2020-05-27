@@ -1038,6 +1038,8 @@ class OutsideRouteLanesTest(Criterion):
             blackv = py_trees.blackboard.Blackboard()
             _ = blackv.set("OutsideRouteLanes", 0)
 
+        super(OutsideRouteLanesTest, self).terminate(new_status)
+
 
 class WrongLaneTest(Criterion):
 
@@ -1296,6 +1298,7 @@ class InRouteTest(Criterion):
         self._route_length = len(self._route)
         self._current_index = 0
         self._out_route_distance = 0
+        self._in_safe_route = True
 
         self._accum_meters = []
         prev_wp = self._waypoints[0]
@@ -1348,7 +1351,7 @@ class InRouteTest(Criterion):
             # Check if the actor is out of route
             if shortest_distance < self._offroad_max:
                 off_route = False
-                in_safe_route = bool(shortest_distance < self._offroad_min)
+                self._in_safe_route = bool(shortest_distance < self._offroad_min)
 
             # If actor advanced a step, record the distance
             if self._current_index != closest_index:
@@ -1356,7 +1359,7 @@ class InRouteTest(Criterion):
                 new_dist = self._accum_meters[closest_index] - self._accum_meters[self._current_index]
 
                 # If too far from the route, add it and check if its value
-                if not in_safe_route:
+                if not self._in_safe_route:
                     self._out_route_distance += new_dist
                     out_route_percentage = 100 * self._out_route_distance / self._accum_meters[-1]
                     if out_route_percentage > self.MAX_ROUTE_PERCENTAGE:
@@ -1688,6 +1691,8 @@ class RunningRedLightTest(Criterion):
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RunningRedLight", self.actual_value)
 
+        super(RunningRedLightTest, self).terminate(new_status)
+
 
 class RunningStopTest(Criterion):
 
@@ -1866,3 +1871,5 @@ class RunningStopTest(Criterion):
         # Blackboard variable
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RunningStop", self.actual_value)
+
+        super(RunningStopTest, self).terminate(new_status)
