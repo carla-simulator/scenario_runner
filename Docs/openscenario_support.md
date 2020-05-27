@@ -234,16 +234,6 @@ contains of submodules, which are not listed, the support status applies to all 
 <td>&#10060;</td>
 <td></td>
 <tr>
-<td><code>ActivateControllerAction</code></td>
-<td>&#10060;</td>
-<td>&#9989;</td>
-<td>Can be used to activate/deactive the CARLA autopilot</td>
-<tr>
-<td><code>ControllerAction</code></td>
-<td>&#9989;</td>
-<td>&#9989;</td>
-<td>AssignControllerAction is supported, but a Python module has to be provided for the controller implementation, and in OverrideControllerValueAction all values need to be 'False'</td>
-<tr>
 <td><code>TeleportAction</code></td>
 <td>&#9989;</td>
 <td>&#9989;</td>
