@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="1" revMinor="0" date="2020-03-24" description="CARLA:PedestrianCrossing" author=""/>
-  <ParameterDeclarations />
-  <CatalogLocations />
+  <FileHeader revMajor="1" revMinor="0" date="2020-03-24T12:00:00" description="CARLA:PedestrianCrossing" author=""/>
+  <ParameterDeclarations/>
+  <CatalogLocations/>
   <RoadNetwork>
     <LogicFile filepath="Town01"/>
     <SceneGraphFile filepath=""/>
@@ -61,6 +61,25 @@
                 <WorldPosition x="150" y="55" z="0" h="3.14159265359"/>
               </Position>
             </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <ControllerAction>
+              <AssignControllerAction>
+                <Controller name="HeroAgent">
+                  <Properties>
+                    <Property name="module" value="external_control"/>
+                  </Properties>
+                </Controller>
+              </AssignControllerAction>
+              <OverrideControllerValueAction>
+                <Throttle value="0" active="false"/>
+                <Brake value="0" active="false"/>
+                <Clutch value="0" active="false"/>
+                <ParkingBrake value="0" active="false"/>
+                <SteeringWheel value="0" active="false"/>
+                <Gear number="0" active="false"/>
+              </OverrideControllerValueAction>
+            </ControllerAction>
           </PrivateAction>
         </Private>
         <Private entityRef="adversary">
@@ -128,16 +147,6 @@
               </Action>
               <StartTrigger>
                 <ConditionGroup>
-                  <Condition name="StartCondition" delay="0" conditionEdge="rising">
-                    <ByEntityCondition>
-                      <TriggeringEntities triggeringEntitiesRule="any">
-                        <EntityRef entityRef="adversary"/>
-                      </TriggeringEntities>
-                      <EntityCondition>
-                        <StandStillCondition duration="1"/>
-                      </EntityCondition>
-                    </ByEntityCondition>
-                  </Condition>
                   <Condition name="AfterPedestrianWalks" delay="0" conditionEdge="rising">
                     <ByValueCondition>
                       <StoryboardElementStateCondition storyboardElementType="action" storyboardElementRef="PedestrianStartsWalking" state="completeState"/>

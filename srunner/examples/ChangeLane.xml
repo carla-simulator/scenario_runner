@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <scenarios>
-    <scenario name="ChangeLane" type="ChangeLane" town="Town04">
+    <scenario name="ChangeLane_1" type="ChangeLane" town="Town04">
         <ego_vehicle x="284.4" y="16.4" z="2.5" yaw="-173" model="vehicle.lincoln.mkz2017" />
 	<!-- spawn actors-->
 	<other_actor x="264.4" y="16.3" z="-500" yaw="-179" model="vehicle.tesla.model3" />
