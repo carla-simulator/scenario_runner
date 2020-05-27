@@ -245,14 +245,16 @@ class StandStill(AtomicCondition):
 class RelativeVelocityToOtherActor(AtomicCondition):
 
     """
-    This class contains a condition that compares velocities between two actors
+    Atomic containing a comparison between an actor's velocity
+    and another actor's one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
 
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - name: Name of the condition
-    - duration: Duration of the behavior in seconds
-
-    The condition terminates with SUCCESS, when the actor does not move
+    Args:
+        actor (carla.Actor): actor from which the velocity is taken
+        other_actor (carla.Actor): The actor with the reference velocity
+        speed (float): Difference of speed between the actors
+        name (string): Name of the condition
+        comparison_operator: Type "operator", used to compare the two velocities
     """
 
     def __init__(self, actor, other_actor, speed, comparison_operator=operator.gt,
@@ -326,15 +328,15 @@ class TriggerVelocity(AtomicCondition):
 class TriggerAcceleration(AtomicCondition):
 
     """
-    This class contains the trigger acceleration (condition) of a scenario
+    Atomic containing a comparison between an actor's acceleration
+    and a reference one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
 
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - name: Name of the condition
-    - target_acceleration: Acceleration reference (in m/s^2) on which the success is dependent
-    - comparison_operator: determines the success condition of the behavior (greater / less / equal than)
-
-    The condition terminates with SUCCESS, when the actor reached the target_velocity
+    Args:
+        actor: CARLA actor to execute the behavior
+        name: Name of the condition
+        target_acceleration: Acceleration reference (in m/s^2) on which the success is dependent
+        comparison_operator: Type "operator", used to compare the two acceleration
     """
 
     def __init__(self, actor, target_acceleration, comparison_operator=operator.gt, name="TriggerAcceleration"):
