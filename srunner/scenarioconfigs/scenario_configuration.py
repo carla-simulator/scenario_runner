@@ -78,7 +78,6 @@ class ScenarioConfiguration(object):
     town = None
     name = None
     type = None
-    target = None
     route = None
     agent = None
     weather = carla.WeatherParameters()

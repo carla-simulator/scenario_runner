@@ -1386,6 +1386,7 @@ class InRouteTest(Criterion):
                 self.list_traffic_events.append(route_deviation_event)
 
                 self.test_status = "FAILURE"
+                self.actual_value += 1
                 new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -1488,6 +1489,7 @@ class RouteCompletionTest(Criterion):
         """
         Set test status to failure if not successful and terminate
         """
+        self.actual_value = self._percentage_route_completed
         # Blackboard variable
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RouteCompletion", round(self._percentage_route_completed, 2))

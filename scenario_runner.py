@@ -32,12 +32,11 @@ import pkg_resources
 import carla
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
-from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
-from srunner.tools.scenario_config_parser import ScenarioConfigurationParser
+from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
@@ -376,23 +375,21 @@ class ScenarioRunner(object):
         Run conventional scenarios (e.g. implemented using the Python API of ScenarioRunner)
         """
         result = False
-        # Setup and run the scenarios for repetition times
-        for _ in range(int(self._args.repetitions)):
 
-            # Load the scenario configurations provided in the config file
-            scenario_configurations = None
-            scenario_config_file = ScenarioConfigurationParser.find_scenario_config(
-                self._args.scenario,
-                self._args.configFile)
-            if scenario_config_file is None:
-                print("Configuration for scenario {} cannot be found!".format(self._args.scenario))
-                continue
+        # Load the scenario configurations provided in the config file
+        scenario_config_file = ScenarioConfigurationParser.find_scenario_config(
+            self._args.scenario,
+            self._args.configFile)
+        if scenario_config_file is None:
+            print("Configuration for scenario {} cannot be found!".format(self._args.scenario))
+            return result
 
-            scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(scenario_config_file,
-                                                                                               self._args.scenario)
+        scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(scenario_config_file,
+                                                                                           self._args.scenario)
 
-            # Execute each configuration
-            for config in scenario_configurations:
+        # Execute each configuration
+        for config in scenario_configurations:
+            for _ in range(self._args.repetitions):
                 result = self._load_and_run_scenario(config)
 
             self._cleanup()
@@ -403,7 +400,6 @@ class ScenarioRunner(object):
         Run the route scenario
         """
         result = False
-        repetitions = self._args.repetitions
 
         if self._args.route:
             routes = self._args.route[0]
@@ -413,14 +409,10 @@ class ScenarioRunner(object):
                 single_route = self._args.route[2]
 
         # retrieve routes
-        route_descriptions_list = RouteParser.parse_routes_file(routes, single_route)
-        # find and filter potential scenarios for each of the evaluated routes
-        # For each of the routes and corresponding possible scenarios to be evaluated.
+        route_configurations = RouteParser.parse_routes_file(routes, scenario_file, single_route)
 
-        for _, route_description in enumerate(route_descriptions_list):
-            for _ in range(repetitions):
-
-                config = RouteScenarioConfiguration(route_description, scenario_file)
+        for config in route_configurations:
+            for _ in range(self._args.repetitions):
                 result = self._load_and_run_scenario(config)
 
                 self._cleanup()
@@ -438,6 +430,7 @@ class ScenarioRunner(object):
             return False
 
         config = OpenScenarioConfiguration(self._args.openscenario, self.client)
+
         result = self._load_and_run_scenario(config)
         self._cleanup()
         return result
@@ -487,7 +480,7 @@ def main():
     parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     parser.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
-    parser.add_argument('--repetitions', default=1, help='Number of scenario executions')
+    parser.add_argument('--repetitions', default=1, type=int, help='Number of scenario executions')
     parser.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
     parser.add_argument(
         '--agent', help="Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.")
