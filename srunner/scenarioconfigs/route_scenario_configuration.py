@@ -40,37 +40,11 @@ class RouteConfiguration(object):
             self.data.append((carla.Location(x, y, z), connection))
 
 
-class TargetConfiguration(object):
-
-    """
-    This class provides the basic configuration for a target location
-    """
-
-    transform = None
-
-    def __init__(self, node):
-        pos_x = float(node.attrib.get('x', 0))
-        pos_y = float(node.attrib.get('y', 0))
-        pos_z = float(node.attrib.get('z', 0))
-
-        self.transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z))
-
-
 class RouteScenarioConfiguration(ScenarioConfiguration):
 
     """
     Basic configuration of a RouteScenario
     """
 
-    def __init__(self, route_description, scenario_file):
-
-        self.other_actors = []
-        self.ego_vehicles = []
-        self.trigger_points = []
-
-        self.name = "RouteScenario_{}".format(route_description['id'])
-        self.town = route_description['town_name']
-        self.route_description = route_description
-        self.weather = route_description['weather']
-
-        self.scenario_file = scenario_file
+    trajectory = None
+    scenario_file = None
