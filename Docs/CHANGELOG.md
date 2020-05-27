@@ -16,7 +16,7 @@
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
     - Renamed the _map_ element at routes to _town_, matching the scenario configuration files
 
-* Routes are now deterministic in regards to the spawning of the background activity and scenarios
+* Routes are now deterministic in regards to the spawning scenarios when more than one are at the same location
 * The BackgroundActivity functionality has been unchanged but some tweaks have been made, fixing a previous patch. As a result, the *amount* parameter at *ActorConfigurationData* has been removed.
 * Remade how ScenarioRunner reads the scenarios files. It now reads all scenarios inside the *srunner/scenarios* folder without needing to import them. Scenarios outside that folder will still need the *--additionalScenario* argument.
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.

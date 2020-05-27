@@ -19,6 +19,7 @@ import srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as cond
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenariomanager.weather_sim import WeatherBehavior
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import UpdateAllActorControls
 
 
 class BasicScenario(object):
@@ -250,6 +251,8 @@ class Scenario(object):
             self.scenario_tree.add_child(self.behavior)
         self.scenario_tree.add_child(self.timeout_node)
         self.scenario_tree.add_child(WeatherBehavior())
+        self.scenario_tree.add_child(UpdateAllActorControls())
+
         if criteria is not None:
             self.scenario_tree.add_child(self.criteria_tree)
         self.scenario_tree.setup(timeout=1)
