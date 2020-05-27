@@ -260,7 +260,7 @@ class RelativeVelocityToOtherActor(AtomicCondition):
     def __init__(self, actor, other_actor, speed, comparison_operator=operator.gt,
                  name="RelativeVelocityToOtherActor"):
         """
-        Setup actor
+        Setup the parameters
         """
         super(RelativeVelocityToOtherActor, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
@@ -271,7 +271,11 @@ class RelativeVelocityToOtherActor(AtomicCondition):
 
     def update(self):
         """
-        Check if the _actor stands still (v=0)
+        Gets the speed of the two actors and compares them according to the comparison operator
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -351,7 +355,11 @@ class TriggerAcceleration(AtomicCondition):
 
     def update(self):
         """
-        Check if the actor has the trigger acceleration
+        Gets the accleration of the actor and compares it with the reference one
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
         """
         new_status = py_trees.common.Status.RUNNING
 
