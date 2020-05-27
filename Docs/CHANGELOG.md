@@ -14,6 +14,9 @@
 * **Very important:** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
     - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
+    - Renamed the _map_ element at routes to _town_, matching the scenario configuration files
+
+* Routes are now deterministic in regards to the spawning scenarios when more than one are at the same location
 * The BackgroundActivity functionality has been unchanged but some tweaks have been made, fixing a previous patch. As a result, the *amount* parameter at *ActorConfigurationData* has been removed.
 * Remade how ScenarioRunner reads the scenarios files. It now reads all scenarios inside the *srunner/scenarios* folder without needing to import them. Scenarios outside that folder will still need the *--additionalScenario* argument.
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
@@ -41,6 +44,7 @@
 * Fixed initial speed of vehicles using OpenSCENARIO
 * Fixed bug causing an exception when calling BasicScenario's *_initialize_actors* with no other_actors.
 * Fixed bug causing the route to be downsampled (introduced by mistake at 0.9.9)
+* Fixed bug causing _output_ argument to not display the correct number with _InRouteTest_ and _RouteCompletionTest_ criterias (the succces and failure was correctly displayed)
 
 
 ## CARLA ScenarioRunner 0.9.9

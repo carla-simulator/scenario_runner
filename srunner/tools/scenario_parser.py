@@ -14,7 +14,7 @@ import os
 import xml.etree.ElementTree as ET
 
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
-from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration, TargetConfiguration
+from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration
 
 
 class ScenarioConfigurationParser(object):
@@ -68,9 +68,6 @@ class ScenarioConfigurationParser(object):
 
                 new_config.ego_vehicles.append(ActorConfigurationData.parse_from_node(ego_vehicle, 'hero'))
                 new_config.trigger_points.append(new_config.ego_vehicles[-1].transform)
-
-            for target in scenario.iter("target"):
-                new_config.target = TargetConfiguration(target)
 
             for route in scenario.iter("route"):
                 route_conf = RouteConfiguration()
