@@ -2,6 +2,7 @@
 
 autopep8 scenario_runner.py --in-place --max-line-length=120
 autopep8 srunner/scenariomanager/*.py --in-place --max-line-length=120
+autopep8 srunner/scenariomanager/actorcontrols/*.py --in-place --max-line-length=120
 autopep8 srunner/scenariomanager/scenarioatomics/*.py --in-place --max-line-length=120
 autopep8 srunner/scenarios/*.py --in-place --max-line-length=120
 autopep8 srunner/autoagents/*.py --in-place --max-line-length=120

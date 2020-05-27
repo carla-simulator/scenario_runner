@@ -112,8 +112,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         world = CarlaDataProvider._world
         if world is None:
             print("WARNING: CarlaDataProvider couldn't find the world")
-        else:
-            CarlaDataProvider._sync_flag = world.get_settings().synchronous_mode
 
     @staticmethod
     def get_velocity(actor):
