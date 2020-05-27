@@ -290,7 +290,7 @@ The following two tables list the support status for each.
 </thead>
 <tbody>
 <td><code>AccelerationCondition</code></td>
-<td>&#10060;</td>
+<td>&#9989;</td>
 <td></td>
 <tr>
 <td><code>CollisionCondition</code></td>
@@ -318,7 +318,7 @@ The following two tables list the support status for each.
 <td></td>
 <tr>
 <td><code>RelativeSpeedCondition</code></td>
-<td>&#10060;</td>
+<td>&#9989;</td>
 <td></td>
 <tr>
 <td><code>SpeedCondition</code></td>
