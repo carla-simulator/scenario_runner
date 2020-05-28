@@ -28,7 +28,7 @@ This tutorial explains how to download and run ScenarioRunner, using a simple ex
       https://github.com/carla-simulator/scenario_runner/releases
    # 3. Extract the content wherever needed. 
 
-   # Update the package: 
+   # Update the release: 
    # 1. Delete previous CARLA and ScenarioRunner versions.
    # 2. Download the latest CARLA release. 
    # 3. Download the matching ScenarioRunner release.
@@ -78,7 +78,7 @@ __2. Download the matching ScenarioRunner release.__ All of the releases are lis
 __3. Extract the content.__ The directory does not matter.  
 
 
-### Update the package
+### Update the release
 
 The packaged version requires no updates. The content is bundled and thus, tied to a specific release of CARLA. Everytime there is a new CARLA release, there will be a matching one for ScenarioRunner. All the releases are listed here:  
 
