@@ -73,7 +73,7 @@ __1. Download a CARLA release.__ Follow the process in the [CARLA quick start](h
 __2. Download the matching ScenarioRunner release.__ All of the releases are listed [here](https://github.com/carla-simulator/scenario_runner/releases).
 
 !!! Important
-    Both versions have to match. If the CARLA release is *0.9.9*, use also ScenarioRunner *0.9.9*. 
+    Both versions have to match. If the CARLA release is *0.9.9*, use also ScenarioRunner *0.9.9*. [Here](https://github.com/carla-simulator/scenario_runner) is a brief list of compatibilities between CARLA and ScenarioRunner.  
 
 __3. Extract the content.__ The directory does not matter.  
 

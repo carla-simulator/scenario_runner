@@ -6,7 +6,7 @@ If you would like to use evaluation criteria for a scenario to evaluate pass/fai
 as StopTriggers (see below). However, not all features for these elements are yet available. If in doubt, please see the
 module documentation in srunner/tools/openscenario_parser.py
 
-An example for a supported scenario based on OpenSCENARIO is available [here](../srunner/examples/FollowLeadingVehicle.xosc)
+An example for a supported scenario based on OpenSCENARIO is available [here](https://github.com/carla-simulator/scenario_runner/blob/master/srunner/examples/FollowLeadingVehicle.xosc)
 
 In addition, it is recommended to take a look into the official documentation available [here](https://releases.asam.net/OpenSCENARIO/1.0.0/Model-Documentation/index.html) and [here](https://releases.asam.net/OpenSCENARIO/1.0.0/ASAM_OpenSCENARIO_BS-1-2_User-Guide_V1-0-0.html#_foreword).
 
@@ -197,12 +197,12 @@ contains of submodules, which are not listed, the support status applies to all 
 <td><code>ActivateControllerAction</code></td>
 <td>&#10060;</td>
 <td>&#9989;</td>
-<td>Only supports the autopilot at the moment</td>
+<td>Can be used to activate/deactive the CARLA autopilot.</td>
 <tr>
 <td><code>ControllerAction</code></td>
-<td>&#10060;</td>
-<td>&#10060;</td>
-<td></td>
+<td>&#9989;</td>
+<td>&#9989;</td>
+<td>AssignControllerAction is supported, but a Python module has to be provided for the controller implementation, and in OverrideControllerValueAction all values need to be <code>False</code>.</td>
 <tr>
 <td><small><code>LateralAction</code></small><br><code>LaneChangeAction</code></td>
 <td>&#10060;</td>
