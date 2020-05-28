@@ -182,7 +182,7 @@ make launch
 ./CarlaUE4.sh
 ```
 
-__2. Start an example scenario.__ Open another terminal and go to the directory where ScenarioRunner is downloaded. For the sake of this test, a the follow leading vehicle scenario will be used. 
+__2. Start an example scenario.__ Open another terminal and go to the directory where ScenarioRunner is downloaded. For the sake of this test, the follow leading vehicle scenario will be used. 
 
 ```sh
 # Inside the ScenarioRunner root directory
@@ -199,12 +199,12 @@ __3. Test the scenario with manual control.__ Open a new terminal and run the `m
 python manual_control.py
 ```
 
-If the `manual_control.py` is not launch after one minute, the ScenarioRunner will close and will have to be launch again.  
+The scenarios have a timeout of one minute approximately, for the agent to be launched.  
 
 !!! Warning
     Run the `manual_control.py` found in the ScenarioRunner package/repository, __not CARLA__. 
 
-__4. Explore other options.__ Run the Scenario Runner with the flag `--help` to explor other command line parameters and some basic descriptions. For example, to avoid automatically (re-)load the CARLA world, skip the command line option `--reloadWorld`.
+__4. Explore other options.__ Run the Scenario Runner with the flag `--help` to explore other command line parameters and some basic descriptions. For example, to avoid automatically (re-)load the CARLA world, skip the command line option `--reloadWorld`.
 
 ```sh
 python scenario_runner.py --help
@@ -212,5 +212,5 @@ python scenario_runner.py --help
 
 ---
 
-Thus concludes the installation process for ScenarioRunner. In case any unexpected error or issue occurs, the [CARLA forum](https://forum.carla.org/c/using-carla/scenario-runner) is open to everybody. There is an _ScenarioRunner_ category to post this kind of problems and doubts. 
+Thus concludes the installation process for ScenarioRunner. In case any unexpected error or issue occurs, the [CARLA forum](https://forum.carla.org/c/using-carla/scenario-runner) is open to everybody. There is an _ScenarioRunner_ category to post problems and doubts regarding this module. 
 
