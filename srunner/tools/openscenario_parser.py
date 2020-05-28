@@ -53,7 +53,9 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                InTimeToArrivalToVehicle,
                                                                                DriveDistance,
                                                                                StandStill,
-                                                                               OSCStartEndCondition)
+                                                                               OSCStartEndCondition,
+                                                                               TriggerAcceleration,
+                                                                               RelativeVelocityToOtherActor)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 
@@ -426,7 +428,12 @@ class OpenScenarioParser(object):
                         atomic = InTimeToArrivalToVehicle(
                             trigger_actor, triggered_actor, condition_value, condition_operator)
                 elif entity_condition.find('AccelerationCondition') is not None:
-                    raise NotImplementedError("Acceleration conditions are not yet supported")
+                    accel_condition = entity_condition.find('AccelerationCondition')
+                    condition_value = float(accel_condition.attrib.get('value'))
+                    condition_rule = accel_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+                    atomic = TriggerAcceleration(
+                        trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('StandStillCondition') is not None:
                     ss_condition = entity_condition.find('StandStillCondition')
                     duration = float(ss_condition.attrib.get('duration'))
@@ -439,7 +446,22 @@ class OpenScenarioParser(object):
                             "Speed condition with the given specification is not yet supported")
                     atomic = AccelerateToVelocity(trigger_actor, value, condition_name)
                 elif entity_condition.find('RelativeSpeedCondition') is not None:
-                    raise NotImplementedError("RelativeSpeed conditions are not yet supported")
+                    relspd_condition = entity_condition.find('RelativeSpeedCondition')
+                    condition_value = float(relspd_condition.attrib.get('value'))
+                    condition_rule = relspd_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+
+                    for actor in actor_list:
+                        if relspd_condition.attrib.get('entityRef', None) == actor.attributes['role_name']:
+                            triggered_actor = actor
+                            break
+
+                    if triggered_actor is None:
+                        raise AttributeError("Cannot find actor '{}' for condition".format(
+                            relspd_condition.attrib.get('entityRef', None)))
+
+                    atomic = RelativeVelocityToOtherActor(
+                        trigger_actor, triggered_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('TraveledDistanceCondition') is not None:
                     distance_condition = entity_condition.find('TraveledDistanceCondition')
                     distance_value = float(distance_condition.attrib.get('value'))

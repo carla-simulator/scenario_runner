@@ -25,6 +25,9 @@
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller.
     - Added initial speed support for pedestrians for OpenSCENARIO
     - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
+    - Extended FollowLeadingVehicle example to illustrate weather changes
+    - Added support for RelativeSpeedCondition
+    - Added support for AccelerationCondition
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
@@ -34,6 +37,8 @@
     - WeatherBehavior to simulate weather over time
     - UpdateWeather to update weather to a new setting, e.g. sun to rain
     - UpdateRoadFriction to update the road friction while running
+    - new RelativeVelocityToOtherActor trigger condition, used to compare velocities of two actors
+    - new TriggerAcceleration trigger condition which compares a reference acceleration with the actor's one.
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO

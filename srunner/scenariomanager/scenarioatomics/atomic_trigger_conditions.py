@@ -21,6 +21,7 @@ base class
 from __future__ import print_function
 
 import operator
+import math
 import py_trees
 import carla
 
@@ -241,6 +242,56 @@ class StandStill(AtomicCondition):
         return new_status
 
 
+class RelativeVelocityToOtherActor(AtomicCondition):
+
+    """
+    Atomic containing a comparison between an actor's velocity
+    and another actor's one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
+
+    Args:
+        actor (carla.Actor): actor from which the velocity is taken
+        other_actor (carla.Actor): The actor with the reference velocity
+        speed (float): Difference of speed between the actors
+        name (string): Name of the condition
+        comparison_operator: Type "operator", used to compare the two velocities
+    """
+
+    def __init__(self, actor, other_actor, speed, comparison_operator=operator.gt,
+                 name="RelativeVelocityToOtherActor"):
+        """
+        Setup the parameters
+        """
+        super(RelativeVelocityToOtherActor, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._other_actor = other_actor
+        self._relative_speed = speed
+        self._comparison_operator = comparison_operator
+
+    def update(self):
+        """
+        Gets the speed of the two actors and compares them according to the comparison operator
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        curr_speed = CarlaDataProvider.get_velocity(self._actor)
+        other_speed = CarlaDataProvider.get_velocity(self._other_actor)
+
+        relative_speed = curr_speed - other_speed
+
+        if self._comparison_operator(relative_speed, self._relative_speed):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class TriggerVelocity(AtomicCondition):
 
     """
@@ -271,6 +322,53 @@ class TriggerVelocity(AtomicCondition):
 
         delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
         if delta_velocity < EPSILON:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class TriggerAcceleration(AtomicCondition):
+
+    """
+    Atomic containing a comparison between an actor's acceleration
+    and a reference one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
+
+    Args:
+        actor: CARLA actor to execute the behavior
+        name: Name of the condition
+        target_acceleration: Acceleration reference (in m/s^2) on which the success is dependent
+        comparison_operator: Type "operator", used to compare the two acceleration
+    """
+
+    def __init__(self, actor, target_acceleration, comparison_operator=operator.gt, name="TriggerAcceleration"):
+        """
+        Setup trigger acceleration
+        """
+        super(TriggerAcceleration, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._target_acceleration = target_acceleration
+        self._comparison_operator = comparison_operator
+
+    def update(self):
+        """
+        Gets the accleration of the actor and compares it with the reference one
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        acceleration = self._actor.get_acceleration()
+        linear_accel = math.sqrt(math.pow(acceleration.x, 2) +
+                                 math.pow(acceleration.y, 2) +
+                                 math.pow(acceleration.z, 2))
+
+        if self._comparison_operator(linear_accel, self._target_acceleration):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
