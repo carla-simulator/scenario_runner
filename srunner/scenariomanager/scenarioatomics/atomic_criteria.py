@@ -615,7 +615,7 @@ class OnSidewalkTest(Criterion):
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
-    def __init__(self, actor, optional=False, name="OnSidewalkTest"):
+    def __init__(self, actor, duration=None, optional=False, terminate_on_failure=False, name="OnSidewalkTest"):
         """
         Construction with sensor setup
         """
@@ -632,6 +632,8 @@ class OnSidewalkTest(Criterion):
         self._wrong_outside_lane_distance = 0
         self._sidewalk_start_location = None
         self._outside_lane_start_location = None
+        self._duration = duration
+        self._time_outside_lanes = 0
 
     def update(self):
         """
@@ -732,6 +734,19 @@ class OnSidewalkTest(Criterion):
 
                 self._onsidewalk_active = False
                 self._outside_lane_active = False
+
+        # Increase the time outside
+        if self._duration is not None:
+            if self._onsidewalk_active or self._outside_lane_active:
+                if self._start_time is None:
+                    self._start_time = GameTime.get_time()
+                else:
+                    self._time_outside_lanes = GameTime.get_time() - self._start_time
+
+            if self._time_outside_lanes > self._duration and self._terminate_on_failure:
+                new_status = py_trees.common.Status.FAILURE
+
+        print(self._time_outside_lanes)
 
         # Update the distances
         distance_vector = CarlaDataProvider.get_location(self._actor) - self._actor_location
