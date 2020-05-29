@@ -296,33 +296,40 @@ class RelativeVelocityToOtherActor(AtomicCondition):
 class TriggerVelocity(AtomicCondition):
 
     """
-    This class contains the trigger velocity (condition) of a scenario
+    Atomic containing a comparison between an actor's speed and a reference one.
+    The behavior returns SUCCESS when the expected comparison (greater than /
+    less than / equal to) is achieved.
 
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - name: Name of the condition
-    - target_velocity: The behavior is successful, if the actor is at least as fast as target_velocity in m/s
-
-    The condition terminates with SUCCESS, when the actor reached the target_velocity
+    Args:
+        actor (carla.Actor): CARLA actor from which the speed will be taken.
+        name (string): Name of the atomic
+        target_velocity (float): velcoity to be compared with the actor's one
+        comparison_operator: Type "operator", used to compare the two velocities
     """
 
-    def __init__(self, actor, target_velocity, name="TriggerVelocity"):
+    def __init__(self, actor, target_velocity, comparison_operator=operator.gt, name="TriggerVelocity"):
         """
-        Setup trigger velocity
+        Setup the atomic parameters
         """
         super(TriggerVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._target_velocity = target_velocity
+        self._comparison_operator = comparison_operator
 
     def update(self):
         """
-        Check if the actor has the trigger velocity
+        Gets the speed of the actor and compares it with the reference one
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
         """
         new_status = py_trees.common.Status.RUNNING
 
-        delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
-        if delta_velocity < EPSILON:
+        actor_speed = CarlaDataProvider.get_velocity(self._actor)
+
+        if self._comparison_operator(actor_speed, self._target_velocity):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
