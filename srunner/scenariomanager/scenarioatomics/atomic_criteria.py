@@ -608,18 +608,23 @@ class ReachedRegionTest(Criterion):
 class OnSidewalkTest(Criterion):
 
     """
-    This class contains an atomic test to detect sidewalk invasions.
+    Atomic containing a test to detect sidewalk invasions of a specific actor. This atomic can
+    fail when actor has spent a specific time outside driving lanes (defined by OpenDRIVE).
 
-    Important parameters:
-    - actor: CARLA actor to be used for this test
-    - optional [optional]: If True, the result is not considered for an overall pass/fail result
+    Args:
+        actor (carla.Actor): CARLA actor to be used for this test
+        duration (float): Time spent at sidewalks before the atomic fails.
+            If terminate_on_failure isn't active, this is ignored.
+        optional (bool): If True, the result is not considered for an overall pass/fail result
+            when using the output argument
+        terminate_on_failure (bool): If True, the atomic will fail when the duration condition has been met.
     """
 
-    def __init__(self, actor, duration=None, optional=False, terminate_on_failure=False, name="OnSidewalkTest"):
+    def __init__(self, actor, duration=0, optional=False, terminate_on_failure=False, name="OnSidewalkTest"):
         """
         Construction with sensor setup
         """
-        super(OnSidewalkTest, self).__init__(name, actor, 0, None, optional)
+        super(OnSidewalkTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         self._actor = actor
@@ -633,15 +638,22 @@ class OnSidewalkTest(Criterion):
         self._sidewalk_start_location = None
         self._outside_lane_start_location = None
         self._duration = duration
+        self._prev_time = None
         self._time_outside_lanes = 0
 
     def update(self):
         """
-        Check lane invasion count
+        First, transforms the actor's current position as well as its four corners to their
+        corresponding waypoints. Depending on their lane type, the actor will be considered to be
+        outside (or inside) driving lanes.
+
+        returns:
+            py_trees.common.Status.FAILURE: when the actor has spent a given duration outside driving lanes
+            py_trees.common.Status.RUNNING: the rest of the time
         """
         new_status = py_trees.common.Status.RUNNING
 
-        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+        if self._terminate_on_failure and self.test_status == "FAILURE":
             new_status = py_trees.common.Status.FAILURE
 
         # Some of the vehicle parameters
@@ -652,7 +664,6 @@ class OnSidewalkTest(Criterion):
         # Case 1) Car center is at a sidewalk
         if current_wp.lane_type == carla.LaneType.Sidewalk:
             if not self._onsidewalk_active:
-                self.test_status = "FAILURE"
                 self._onsidewalk_active = True
                 self._sidewalk_start_location = current_loc
 
@@ -698,7 +709,6 @@ class OnSidewalkTest(Criterion):
                     or bbox_wp[3].lane_type == carla.LaneType.Sidewalk:
 
                 if not self._onsidewalk_active:
-                    self.test_status = "FAILURE"
                     self._onsidewalk_active = True
                     self._sidewalk_start_location = current_loc
 
@@ -709,7 +719,6 @@ class OnSidewalkTest(Criterion):
                 if distance_vehicle_wp >= current_wp.lane_width / 2:
 
                     if not self._outside_lane_active:
-                        self.test_status = "FAILURE"
                         self._outside_lane_active = True
                         self._outside_lane_start_location = current_loc
 
@@ -735,18 +744,19 @@ class OnSidewalkTest(Criterion):
                 self._onsidewalk_active = False
                 self._outside_lane_active = False
 
-        # Increase the time outside
-        if self._duration is not None:
-            if self._onsidewalk_active or self._outside_lane_active:
-                if self._start_time is None:
-                    self._start_time = GameTime.get_time()
-                else:
-                    self._time_outside_lanes = GameTime.get_time() - self._start_time
+        # Counts the time offroad
+        if self._onsidewalk_active or self._outside_lane_active:
+            if self._prev_time is None:
+                self._prev_time = GameTime.get_time()
+            else:
+                curr_time = GameTime.get_time()
+                self._time_outside_lanes += curr_time - self._prev_time
+                self._prev_time = curr_time
+        else:
+            self._prev_time = None
 
-            if self._time_outside_lanes > self._duration and self._terminate_on_failure:
-                new_status = py_trees.common.Status.FAILURE
-
-        print(self._time_outside_lanes)
+        if self._time_outside_lanes > self._duration:
+            self.test_status = "FAILURE"
 
         # Update the distances
         distance_vector = CarlaDataProvider.get_location(self._actor) - self._actor_location

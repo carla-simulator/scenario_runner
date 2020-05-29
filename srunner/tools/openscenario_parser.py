@@ -401,9 +401,10 @@ class OpenScenarioParser(object):
                     atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('OffroadCondition') is not None:
                     off_condition = entity_condition.find('OffroadCondition')
-                    condition_duration = off_condition.attrib.get('duration')
-                    atomic = py_trees.meta.inverter(
-                        OnSidewalkTest(trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name))
+                    condition_duration = float(off_condition.attrib.get('duration'))
+                    atomic_cls = py_trees.meta.inverter(OnSidewalkTest)
+                    atomic = atomic_cls(
+                        trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('TimeHeadwayCondition') is not None:
                     raise NotImplementedError("TimeHeadway conditions are not yet supported")
                 elif entity_condition.find('TimeToCollisionCondition') is not None:
