@@ -55,6 +55,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                OSCStartEndCondition,
                                                                                TriggerAcceleration,
                                                                                RelativeVelocityToOtherActor,
+                                                                               TimeOfDayComparison,
                                                                                TriggerVelocity)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
@@ -81,6 +82,39 @@ class OpenScenarioParser(object):
         the scenario does not use CARLA coordinates, but instead right-hand coordinates.
         """
         OpenScenarioParser.use_carla_coordinate_system = True
+
+    @staticmethod
+    def set_parameters(xml_tree):
+        """
+        Parse the xml_tree, and replace all parameter references
+        with the actual values
+
+        Args:
+            xml_tree: Containing all nodes that should be updated
+
+        returns:
+            updated xml_tree
+        """
+
+        parameter_dict = dict()
+        parameters = xml_tree.find('ParameterDeclarations')
+
+        if parameters is None:
+            return xml_tree
+
+        for parameter in parameters:
+            name = parameter.attrib.get('name')
+            value = parameter.attrib.get('value')
+
+            parameter_dict[name] = value
+
+        for node in xml_tree.iter():
+            for key in node.attrib:
+                for param in parameter_dict:
+                    if node.attrib[key] == param:
+                        node.attrib[key] = parameter_dict[param]
+
+        return xml_tree
 
     @staticmethod
     def get_friction_from_env_action(xml_tree, catalogs):
@@ -215,8 +249,13 @@ class OpenScenarioParser(object):
         elif ((position.find('RelativeWorldPosition') is not None) or
               (position.find('RelativeObjectPosition') is not None) or
               (position.find('RelativeLanePosition') is not None)):
-            rel_pos = position.find('RelativeWorldPosition') or position.find(
-                'RelativeObjectPosition') or position.find('RelativeLanePosition')
+
+            if position.find('RelativeWorldPosition') is not None:
+                rel_pos = position.find('RelativeWorldPosition')
+            if position.find('RelativeObjectPosition') is not None:
+                rel_pos = position.find('RelativeObjectPosition')
+            if position.find('RelativeLanePosition') is not None:
+                rel_pos = position.find('RelativeLanePosition')
 
             # get relative object and relative position
             obj = rel_pos.attrib.get('entityRef')
@@ -537,7 +576,11 @@ class OpenScenarioParser(object):
                 rule = simtime_condition.attrib.get('rule')
                 atomic = SimulationTimeCondition(value, success_rule=rule)
             elif value_condition.find('TimeOfDayCondition') is not None:
-                raise NotImplementedError("ByValue TimeOfDay conditions are not yet supported")
+                tod_condition = value_condition.find('TimeOfDayCondition')
+                condition_date = tod_condition.attrib.get('dateTime')
+                condition_rule = tod_condition.attrib.get('rule')
+                condition_operator = OpenScenarioParser.operators[condition_rule]
+                atomic = TimeOfDayComparison(condition_date, condition_operator, condition_name)
             elif value_condition.find('StoryboardElementStateCondition') is not None:
                 state_condition = value_condition.find('StoryboardElementStateCondition')
                 element_name = state_condition.attrib.get('storyboardElementRef')
@@ -732,6 +775,7 @@ class OpenScenarioParser(object):
                             position = waypoint.find('Position')
                             transform = OpenScenarioParser.convert_position_to_transform(position)
                             waypoints.append(transform)
+                        # @TODO: How to handle relative positions here? This might chance at runtime?!
                         atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                     elif private_action.find('CatalogReference') is not None:
                         raise NotImplementedError("CatalogReference private actions are not yet supported")

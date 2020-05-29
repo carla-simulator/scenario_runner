@@ -72,7 +72,7 @@ This covers all part that are defined outside the OpenSCENARIO Storyboard
 <tr>
 <td><code>ParameterDeclarations</code></td>
 <td>&#9989;</td>
-<td>Parameters can currently only be defined at the beginning (i.e. globally).</td>
+<td></td>
 <tr>
 <td><small><code>RoadNetwork</code></small><br><code>LogicFile</code></td>
 <td>&#9989;</td>
@@ -366,7 +366,7 @@ The following two tables list the support status for each.
 <td>startTransition, stopTransition, endTransition and completeState are currently supported.</td>
 <tr>
 <td><code>TimeOfDayCondition</code></td>
-<td>&#10060;</td>
+<td>&#9989;</td>
 <td></td>
 <tr>
 <td><code>TrafficSignalCondition</code></td>
