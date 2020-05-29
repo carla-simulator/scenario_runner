@@ -422,9 +422,6 @@ class TimeOfDayComparison(AtomicCondition):
         except AttributeError:
             pass
 
-        print("{} -- {}".format(dtime, self._datetime))
-        print(self._comparison_operator(dtime, self._datetime))
-
         if self._comparison_operator(dtime, self._datetime):
             new_status = py_trees.common.Status.SUCCESS
 

@@ -97,6 +97,8 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
     This behavior is always in a running state and must never terminate.
     The user must not add this behavior. It is automatically added by the ScenarioManager.
 
+    This atomic also sets the datetime to blackboard variable, used by TimeOfDayComparison atomic
+
     Args:
         name (string): Name of the behavior.
             Defaults to 'WeatherBehavior'.
@@ -133,7 +135,7 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
             frequency is 1 Hz.
 
         returns:
-            RUNNING
+            py_trees.common.Status.RUNNING
         """
 
         weather = None
