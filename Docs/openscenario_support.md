@@ -72,7 +72,7 @@ This covers all part that are defined outside the OpenSCENARIO Storyboard
 <tr>
 <td><code>ParameterDeclarations</code></td>
 <td>&#9989;</td>
-<td>Parameters can currently only be defined at the beginning (i.e. globally).</td>
+<td></td>
 <tr>
 <td><small><code>RoadNetwork</code></small><br><code>LogicFile</code></td>
 <td>&#9989;</td>

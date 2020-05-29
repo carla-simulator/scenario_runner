@@ -33,6 +33,7 @@
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
     - Fixed handling of relative positions with negative offset
+    - Added support for local ParamaterDeclarations
 * Atomics:
     - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time

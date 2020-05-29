@@ -84,6 +84,39 @@ class OpenScenarioParser(object):
         OpenScenarioParser.use_carla_coordinate_system = True
 
     @staticmethod
+    def set_parameters(xml_tree):
+        """
+        Parse the xml_tree, and replace all parameter references
+        with the actual values
+
+        Args:
+            xml_tree: Containing all nodes that should be updated
+
+        returns:
+            updated xml_tree
+        """
+
+        parameter_dict = dict()
+        parameters = xml_tree.find('ParameterDeclarations')
+
+        if parameters is None:
+            return xml_tree
+
+        for parameter in parameters:
+            name = parameter.attrib.get('name')
+            value = parameter.attrib.get('value')
+
+            parameter_dict[name] = value
+
+        for node in xml_tree.iter():
+            for key in node.attrib:
+                for param in parameter_dict:
+                    if node.attrib[key] == param:
+                        node.attrib[key] = parameter_dict[param]
+
+        return xml_tree
+
+    @staticmethod
     def get_friction_from_env_action(xml_tree, catalogs):
         """
         Extract the CARLA road friction coefficient from an OSC EnvironmentAction
@@ -216,8 +249,13 @@ class OpenScenarioParser(object):
         elif ((position.find('RelativeWorldPosition') is not None) or
               (position.find('RelativeObjectPosition') is not None) or
               (position.find('RelativeLanePosition') is not None)):
-            rel_pos = position.find('RelativeWorldPosition') or position.find(
-                'RelativeObjectPosition') or position.find('RelativeLanePosition')
+
+            if position.find('RelativeWorldPosition') is not None:
+                rel_pos = position.find('RelativeWorldPosition')
+            if position.find('RelativeObjectPosition') is not None:
+                rel_pos = position.find('RelativeObjectPosition')
+            if position.find('RelativeLanePosition') is not None:
+                rel_pos = position.find('RelativeLanePosition')
 
             # get relative object and relative position
             obj = rel_pos.attrib.get('entityRef')
@@ -733,6 +771,7 @@ class OpenScenarioParser(object):
                             position = waypoint.find('Position')
                             transform = OpenScenarioParser.convert_position_to_transform(position)
                             waypoints.append(transform)
+                        # @TODO: How to handle relative positions here? This might chance at runtime?!
                         atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                     elif private_action.find('CatalogReference') is not None:
                         raise NotImplementedError("CatalogReference private actions are not yet supported")
