@@ -55,7 +55,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                StandStill,
                                                                                OSCStartEndCondition,
                                                                                TriggerAcceleration,
-                                                                               RelativeVelocityToOtherActor)
+                                                                               RelativeVelocityToOtherActor,
+                                                                               TimeOfDayComparison)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 
@@ -532,7 +533,11 @@ class OpenScenarioParser(object):
                 rule = simtime_condition.attrib.get('rule')
                 atomic = SimulationTimeCondition(value, success_rule=rule)
             elif value_condition.find('TimeOfDayCondition') is not None:
-                raise NotImplementedError("ByValue TimeOfDay conditions are not yet supported")
+                tod_condition = value_condition.find('TimeOfDayCondition')
+                condition_date = tod_condition.attrib.get('dateTime')
+                condition_rule = tod_condition.attrib.get('rule')
+                condition_operator = OpenScenarioParser.operators[condition_rule]
+                atomic = TimeOfDayComparison(condition_date, condition_operator, condition_name)
             elif value_condition.find('StoryboardElementStateCondition') is not None:
                 state_condition = value_condition.find('StoryboardElementStateCondition')
                 element_name = state_condition.attrib.get('storyboardElementRef')

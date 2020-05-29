@@ -148,6 +148,7 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
             self._weather = weather
             delattr(py_trees.blackboard.Blackboard(), "CarlaWeather")
             CarlaDataProvider.get_world().set_weather(self._weather.carla_weather)
+            py_trees.blackboard.Blackboard().set("Datetime", self._weather._datetime, overwrite=True)
 
         if self._weather and self._weather.animation:
             new_time = GameTime.get_time()
@@ -157,5 +158,7 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
                 self._weather.update(delta_time)
                 self._current_time = new_time
                 CarlaDataProvider.get_world().set_weather(self._weather.carla_weather)
+
+                py_trees.blackboard.Blackboard().set("Datetime", self._weather._datetime, overwrite=True)
 
         return py_trees.common.Status.RUNNING

@@ -21,6 +21,7 @@ base class
 from __future__ import print_function
 
 import operator
+import datetime
 import math
 import py_trees
 import carla
@@ -337,10 +338,10 @@ class TriggerAcceleration(AtomicCondition):
     expected comparison (greater than / less than / equal to) is achieved
 
     Args:
-        actor: CARLA actor to execute the behavior
-        name: Name of the condition
-        target_acceleration: Acceleration reference (in m/s^2) on which the success is dependent
-        comparison_operator: Type "operator", used to compare the two acceleration
+        actor (carla.Actor): CARLA actor to execute the behavior
+        name (str): Name of the condition
+        target_acceleration (float): Acceleration reference (in m/s^2) on which the success is dependent
+        comparison_operator (operator): Type "operator", used to compare the two acceleration
     """
 
     def __init__(self, actor, target_acceleration, comparison_operator=operator.gt, name="TriggerAcceleration"):
@@ -369,6 +370,56 @@ class TriggerAcceleration(AtomicCondition):
                                  math.pow(acceleration.z, 2))
 
         if self._comparison_operator(linear_accel, self._target_acceleration):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class TimeOfDayComparison(AtomicCondition):
+
+    """
+    Atomic containing a comparison between the current time of day of the simulation
+    and a given one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
+
+    Args:
+        datetime (datetime): CARLA actor to execute the behavior
+        name (str): Name of the condition
+        target_acceleration (float): Acceleration reference (in m/s^2) on which the success is dependent
+        comparison_operator (operator): Type "operator", used to compare the two acceleration
+    """
+
+    def __init__(self, dattime, comparison_operator=operator.gt, name="TimeOfDayComparison"):
+        """
+        """
+        super(TimeOfDayComparison, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._datetime = datetime.datetime.strptime(dattime, "%Y-%m-%dT%H:%M:%S")
+        self._comparison_operator = comparison_operator
+
+
+    def update(self):
+        """
+        Gets the time of day of the simulation and compares it with the reference one
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        try:
+            check_dtime = operator.attrgetter("Datetime")
+            dtime = check_dtime(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        print("{} -- {}".format(dtime, self._datetime))
+        print(self._comparison_operator(dtime, self._datetime))
+
+        if self._comparison_operator(dtime, self._datetime):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
