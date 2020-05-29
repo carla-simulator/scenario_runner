@@ -38,7 +38,6 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.xml_tree = ET.parse(filename)
         self._filename = filename
 
-        self._set_global_parameters()
         self._validate_openscenario_configuration()
         self.client = client
 
@@ -56,6 +55,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         logging.basicConfig()
         self.logger = logging.getLogger("[SR:OpenScenarioConfiguration]")
 
+        self._set_parameters()
         self._parse_openscenario_configuration()
 
     def _validate_openscenario_configuration(self):
@@ -178,41 +178,17 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         else:
             CarlaDataProvider.set_world(world)
 
-    def _set_global_parameters(self):
+    def _set_parameters(self):
         """
         Parse the complete scenario definition file, and replace all global parameter references
         with the actual values
         """
 
-        global_parameters = dict()
-        parameters = self.xml_tree.find('ParameterDeclarations')
+        self.xml_tree = OpenScenarioParser.set_parameters(self.xml_tree)
 
-        if parameters is None:
-            return
-
-        for parameter in parameters:
-            name = parameter.attrib.get('name')
-            value = parameter.attrib.get('value')
-
-            global_parameters[name] = value
-
-        for node in self.xml_tree.find('RoadNetwork').iter():
-            for key in node.attrib:
-                for param in global_parameters:
-                    if node.attrib[key] == param:
-                        node.attrib[key] = global_parameters[param]
-
-        for node in self.xml_tree.find('Entities').iter():
-            for key in node.attrib:
-                for param in global_parameters:
-                    if node.attrib[key] == param:
-                        node.attrib[key] = global_parameters[param]
-
-        for node in self.xml_tree.find('Storyboard').iter():
-            for key in node.attrib:
-                for param in global_parameters:
-                    if node.attrib[key] == param:
-                        node.attrib[key] = global_parameters[param]
+        for elem in self.xml_tree.iter():
+            if elem.find('ParameterDeclarations') is not None:
+                elem = OpenScenarioParser.set_parameters(elem)
 
     def _set_actor_information(self):
         """
