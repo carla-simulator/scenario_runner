@@ -29,6 +29,7 @@
     - Added support for RelativeSpeedCondition
     - Added support for AccelerationCondition
     - Added support for TimeOfDayCondition
+    - Added support for OffroadCondition
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
@@ -42,6 +43,7 @@
     - new RelativeVelocityToOtherActor trigger condition, used to compare velocities of two actors
     - new TriggerAcceleration trigger condition which compares a reference acceleration with the actor's one.
     - new TimeOfDayComparison trigger condition, comparing the simulation time (set up by the new weather system) with a given *datetime*.
+    - Added a *duration* argument to OnSidewalkTest criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. This *duration* is 0 by default, so 
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
