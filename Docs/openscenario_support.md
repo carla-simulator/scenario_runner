@@ -366,7 +366,7 @@ The following two tables list the support status for each.
 <td>startTransition, stopTransition, endTransition and completeState are currently supported.</td>
 <tr>
 <td><code>TimeOfDayCondition</code></td>
-<td>&#10060;</td>
+<td>&#9989;</td>
 <td></td>
 <tr>
 <td><code>TrafficSignalCondition</code></td>

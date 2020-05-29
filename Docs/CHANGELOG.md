@@ -28,6 +28,7 @@
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Added support for RelativeSpeedCondition
     - Added support for AccelerationCondition
+    - Added support for TimeOfDayCondition
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
@@ -39,6 +40,7 @@
     - UpdateRoadFriction to update the road friction while running
     - new RelativeVelocityToOtherActor trigger condition, used to compare velocities of two actors
     - new TriggerAcceleration trigger condition which compares a reference acceleration with the actor's one.
+    - new TimeOfDayComparison trigger condition, comparing the simulation time (set up by the new weather system) with a given *datetime*.
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
