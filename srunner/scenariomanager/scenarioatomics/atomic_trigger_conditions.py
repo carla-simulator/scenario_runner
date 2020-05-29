@@ -406,7 +406,6 @@ class TimeOfDayComparison(AtomicCondition):
         self._datetime = datetime.datetime.strptime(dattime, "%Y-%m-%dT%H:%M:%S")
         self._comparison_operator = comparison_operator
 
-
     def update(self):
         """
         Gets the time of day of the simulation and compares it with the reference one
