@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="OpenSCENARIO.xsd">
+  <FileHeader revMajor="1" revMinor="0" date="2020-02-21T10:00:00" description="Traffic Jam example" author="ASAM e.V."/>
+  <ParameterDeclarations/>
+  <CatalogLocations>
+    <VehicleCatalog>
+      <Directory path="Catalogs/Vehicle/VehicleCatalogs"/>
+    </VehicleCatalog>
+    <ControllerCatalog>
+      <Directory path="Catalogs/Controller/ControllerCatalogs"/>
+    </ControllerCatalog>
+  </CatalogLocations>
+  <RoadNetwork>
+    <LogicFile filepath="Databases/SampleDatabase.xodr"/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="Ego">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA3_blue_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A1">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA4_red_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A2">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA4_red_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A3">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA4_red_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A4">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA4_red_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A5">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA4_red_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A6">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA4_red_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="Ego">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="3.6111111111111107e+01"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.6340584937764976e+02" y="3.5079025268554688e+02" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A1">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0000000000000000e+00"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.7038618469238281e+02" y="4.9598831176757812e+02" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A2">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0000000000000000e+00"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.6767727661132812e+02" y="4.9856939697265625e+02" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A3">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0000000000000000e+00"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.6238928222656250e+02" y="5.0160592651367188e+02" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A4">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0000000000000000e+00"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.7032408142089844e+02" y="5.0427667236328125e+02" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A5">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0000000000000000e+00"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.6761517333984375e+02" y="5.0685775756835938e+02" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A6">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0000000000000000e+00"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.6232717895507812e+02" y="5.0989428710937500e+02" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="MyStory">
+      <ParameterDeclarations>
+        <ParameterDeclaration parameterType="string" name="$owner" value="Ego"/>
+      </ParameterDeclarations>
+      <Act name="MyAct">
+        <ManeuverGroup maximumExecutionCount="1" name="MySequence">
+          <Actors selectTriggeringEntities="false"/>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="" delay="0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+    </Story>
+    <StopTrigger/>
+  </Storyboard>
+</OpenSCENARIO>

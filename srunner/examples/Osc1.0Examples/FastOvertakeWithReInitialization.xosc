@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="OpenSCENARIO.xsd">
+  <FileHeader revMajor="1" revMinor="0" date="2020-02-21T10:00:00" description="Fast Overtake with Re-Initialization example" author="ASAM e.V."/>
+  <ParameterDeclarations/>
+  <CatalogLocations>
+    <VehicleCatalog>
+      <Directory path="Catalogs/VehicleCatalogs"/>
+    </VehicleCatalog>
+    <ControllerCatalog>
+      <Directory path="Catalogs/ControllerCatalogs"/>
+    </ControllerCatalog>
+  </CatalogLocations>
+  <RoadNetwork>
+    <LogicFile filepath="Databases/SampleDatabase.xodr"/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="Ego">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA3_blue_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A1">
+      <CatalogReference catalogName="VehicleCatalog" entryName="MAN_TGL_2009_logo5"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A2">
+      <CatalogReference catalogName="VehicleCatalog" entryName="AudiA4_red_147kW"/>
+      <ObjectController>
+        <CatalogReference catalogName="ControllerCatalog" entryName="DefaultDriver"/>
+      </ObjectController>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="Ego">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="3.6111111111111107e+01"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.7025867835714195e+02" y="1.3510666198730469e+03" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A1">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="2.5000000000000000e+01"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.7026368713378906e+02" y="1.4709704895019531e+03" z="0.0000000000000000e+00" h="1.5707963267948966e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A2">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0000000000000000e+00"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.4882865905761719e+02" y="3.1799841308593750e+02" z="0.0000000000000000e+00" h="4.7123889803846897e+00" p="0.0000000000000000e+00" r="0.0000000000000000e+00"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="MyStory">
+      <Act name="MyAct1">
+        <ManeuverGroup maximumExecutionCount="1" name="MySequence1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="A1"/>
+          </Actors>
+          <Maneuver name="MyReduceSpeedManeuver">
+            <Event name="MyReduceSpeedEvent" priority="overwrite">
+              <Action name="MyReduceSpeedAction">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="4.0" dynamicsDimension="time"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="1.6666666666666668e+01"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="MyStartCondition1" delay="0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="A1"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <DistanceCondition value="6.0000000000000000e+01" freespace="false" alongRoute="false" rule="lessThan">
+                          <Position>
+                            <RelativeObjectPosition entityRef="Ego" dx="0.0000000000000000e+00" dy="0.0000000000000000e+00"/>
+                          </Position>
+                        </DistanceCondition>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="" delay="0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+      <Act name="MyAct2">
+        <ManeuverGroup maximumExecutionCount="1" name="MySequence2">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="A2"/>
+          </Actors>
+          <Maneuver name="MySetUpA2Maneuver">
+            <Event name="MySetUpA2Event" priority="overwrite">
+              <Action name="SetUpA2">
+                <PrivateAction>
+                  <TeleportAction>
+                    <Position>
+                      <RelativeLanePosition entityRef="A1" dLane="1" ds="-200">
+                        <Orientation type="absolute" h="1.5707963267948966e+00"/>
+                      </RelativeLanePosition>
+                    </Position>
+                  </TeleportAction>
+                </PrivateAction>
+              </Action>
+              <Action name="SetSpeedA2">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="55.556"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="MyStartCondition1" delay="2.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <StoryboardElementStateCondition storyboardElementType="action" storyboardElementRef="MyReduceSpeedAction" state="startTransition"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="" delay="0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+    </Story>
+    <StopTrigger/>
+  </Storyboard>
+</OpenSCENARIO>

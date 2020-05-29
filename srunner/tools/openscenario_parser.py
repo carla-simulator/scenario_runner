@@ -778,7 +778,16 @@ class OpenScenarioParser(object):
                     else:
                         raise AttributeError("Unknown private FollowRoute action")
                 elif private_action.find('FollowTrajectoryAction') is not None:
-                    raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
+                    private_action = private_action.find('FollowTrajectoryAction')
+                    trajectory_action = private_action.find('Trajectory')
+                    if trajectory_action.find('Shape').find('Polyline') is None:
+                        raise NotImplementedError("Only Polyline trajectories are supported")
+                    polyline = trajectory_action.find('Shape').find('Polyline')
+                    for vertex in polyline.iter('Vertex'):
+                        position = vertex.find('Position')
+                        transform = OpenScenarioParser.convert_position_to_transform(position)
+                        waypoints.append(transform)
+                    atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                 elif private_action.find('AcquirePositionAction') is not None:
                     raise NotImplementedError("Private AcquirePosition actions are not yet supported")
                 else:

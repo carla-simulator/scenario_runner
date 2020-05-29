@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../OpenSCENARIO.xsd">
+  <FileHeader revMajor="1" revMinor="0" date="2020-02-21T10:00:00" description="Synchronize example - Vehicle Catalog" author="ASAM e.V."/>
+	<Catalog name="VehicleCatalog">
+		<Vehicle name="car_white" vehicleCategory="car">
+			<BoundingBox>
+				<Center x="1.4" y="0.0" z="0.9"/>
+				<Dimensions width="2.0" length="5.0" height="1.8"/>
+			</BoundingBox>
+			<Performance maxSpeed="69" maxAcceleration="200" maxDeceleration="30"/>
+			<Axles>
+				<FrontAxle maxSteering="30" wheelDiameter="0.8" trackWidth="1.68" positionX="2.98" positionZ="0.4"/>
+				<RearAxle maxSteering="30" wheelDiameter="0.8" trackWidth="1.68" positionX="0" positionZ="0.4"/>
+			</Axles>
+			<Properties/>
+		</Vehicle>
+		<Vehicle name="car_red" vehicleCategory="car">
+			<BoundingBox>
+				<Center x="1.3" y="0.0" z="0.8"/>
+				<Dimensions width="1.8" length="4.5" height="1.5"/>
+			</BoundingBox>
+			<Performance maxSpeed="70" maxAcceleration="200" maxDeceleration="30"/>
+			<Axles>
+				<FrontAxle maxSteering="30" wheelDiameter="0.8" trackWidth="1.68" positionX="2.98" positionZ="0.4"/>
+				<RearAxle maxSteering="30" wheelDiameter="0.8" trackWidth="1.68" positionX="0" positionZ="0.4"/>
+			</Axles>
+			<Properties/>
+		</Vehicle>
+	</Catalog>
+</OpenSCENARIO>

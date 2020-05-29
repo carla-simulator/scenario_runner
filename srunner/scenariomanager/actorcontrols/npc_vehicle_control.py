@@ -40,15 +40,22 @@ class NpcVehicleControl(BasicControl):
                 'target_speed': self._target_speed * 3.6,
                     'lateral_control_dict': self._args})
 
-        if self._waypoints:
+        if self._waypoints or self._trajectory:
             self._update_plan()
 
     def _update_plan(self):
         """
         Update the plan (waypoint list) of the LocalPlanner
         """
+        waypoints = []
+        if self._waypoints:
+            waypoints = self._waypoints
+        elif self._trajectory:
+            for (_, waypoint) in self._trajectory:
+                waypoints.append(waypoint)
+
         plan = []
-        for transform in self._waypoints:
+        for transform in waypoints:
             waypoint = CarlaDataProvider.get_map().get_waypoint(
                 transform.location, project_to_road=True, lane_type=carla.LaneType.Any)
             plan.append((waypoint, RoadOption.LANEFOLLOW))
@@ -79,12 +86,12 @@ class NpcVehicleControl(BasicControl):
         the initial actor velocity is maintained independent of physics.
         """
         self._reached_goal = False
-        self._local_planner.set_speed(self._target_speed * 3.6)
 
         if self._waypoints_updated:
             self._waypoints_updated = False
             self._update_plan()
 
+        self._local_planner.set_speed(self._target_speed * 3.6)
         control = self._local_planner.run_step(debug=False)
 
         # Check if the actor reached the end of the plan

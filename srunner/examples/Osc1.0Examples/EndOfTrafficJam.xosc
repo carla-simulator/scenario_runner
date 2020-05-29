@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="OpenSCENARIO.xsd">
+  <FileHeader revMajor="1" revMinor="0" date="2020-02-21T10:00:00" description="End of Traffic Jam example" author="ASAM e.V."/>
+  <ParameterDeclarations>
+    <ParameterDeclaration name="$Road_Logics" parameterType="string" value="Databases/AB_RQ31_Crest.xodr"/>
+    <ParameterDeclaration name="$Road_SceneGraph" parameterType="string" value="Databases/AB_RQ31_Crest.opt.osgb"/>
+    <ParameterDeclaration name="$Ego_Speed" parameterType="double" value="27.778"/>
+    <ParameterDeclaration name="$A1_Speed1" parameterType="double" value="22.222"/>
+    <ParameterDeclaration name="$A1_Speed2" parameterType="double" value="19.444"/>
+    <ParameterDeclaration name="$A1_Rate" parameterType="double" value="5.0"/>
+    <ParameterDeclaration name="$A1_EgoRelLonPos" parameterType="double" value="200.0"/>
+    <ParameterDeclaration name="$A1_LaneOffset" parameterType="double" value="0.0"/>
+    <ParameterDeclaration name="$A1_TriggeringDistance" parameterType="double" value="100.0"/>
+    <ParameterDeclaration name="$A2_Speed1" parameterType="double" value="22.222"/>
+    <ParameterDeclaration name="$A2_Speed2" parameterType="double" value="19.444"/>
+    <ParameterDeclaration name="$A2_Rate" parameterType="double" value="5.0"/>
+    <ParameterDeclaration name="$A2_EgoRelLonPos" parameterType="double" value="200.0"/>
+    <ParameterDeclaration name="$A2_LaneOffset" parameterType="double" value="0.0"/>
+    <ParameterDeclaration name="$A2_TriggeringDistance" parameterType="double" value="200.0"/>
+  </ParameterDeclarations>
+   <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="$Road_Logics"/>
+    <SceneGraphFile filepath="$Road_SceneGraph"/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="Ego">
+      <Vehicle name="HAF" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
+        <BoundingBox>
+          <Center x="1.5" y="0.0" z="0.9"/>
+          <Dimensions width="2.1" length="4.5" height="1.8"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+      <ObjectController>
+        <Controller name="HAF_Driver">
+          <Properties>
+            <Property name="weight" value="60.0"/>
+            <Property name="height" value="1.8"/>
+            <Property name="eyeDistance" value="0.065"/>
+            <Property name="age" value="28"/>
+            <Property name="sex" value="female"/>
+          </Properties>
+        </Controller>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A1">
+      <Vehicle name="Default_Car" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
+        <BoundingBox>
+          <Center x="1.4" y="0.0" z="0.8"/>
+          <Dimensions width="2.0" length="4.2" height="1.6"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.5" trackWidth="1.75" positionX="2.8" positionZ="0.25"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.5" trackWidth="1.75" positionX="0.0" positionZ="0.25"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+      <ObjectController>
+        <Controller name="Default_Driver">
+          <Properties>
+            <Property name="weight" value="80.0"/>
+            <Property name="height" value="1.88"/>
+            <Property name="eyeDistance" value="0.07"/>
+            <Property name="age" value="32"/>
+            <Property name="sex" value="male"/>
+          </Properties>
+        </Controller>
+      </ObjectController>
+    </ScenarioObject>
+    <ScenarioObject name="A2">
+      <Vehicle name="Default_Car" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
+        <BoundingBox>
+          <Center x="1.4" y="0.0" z="0.8"/>
+          <Dimensions width="2.0" length="4.2" height="1.6"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.5" trackWidth="1.75" positionX="2.8" positionZ="0.25"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.5" trackWidth="1.75" positionX="0.0" positionZ="0.25"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+      <ObjectController>
+        <Controller name="Default_Driver">
+          <Properties>
+            <Property name="weight" value="80.0"/>
+            <Property name="height" value="1.88"/>
+            <Property name="eyeDistance" value="0.07"/>
+            <Property name="age" value="32"/>
+            <Property name="sex" value="male"/>
+          </Properties>
+        </Controller>
+      </ObjectController>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <GlobalAction>
+          <EnvironmentAction>
+            <Environment name="Environment1">
+              <TimeOfDay animation="false" dateTime="2020-02-21T12:00:00"/>
+              <Weather cloudState="free">
+                <Sun intensity="1.0" azimuth="0.0" elevation="1.571"/>
+                <Fog visualRange="100000.0"/>
+                <Precipitation precipitationType="dry" intensity="0.0"/>
+              </Weather>
+              <RoadCondition frictionScaleFactor="1.0"/>
+            </Environment>
+          </EnvironmentAction>
+        </GlobalAction>
+        <Private entityRef="Ego">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="$Ego_Speed"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <LanePosition roadId="1" laneId="-3" offset="0.0" s="1000.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A1">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="$A1_Speed1"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RelativeLanePosition entityRef="Ego" dLane="1" ds="$A1_EgoRelLonPos" offset="$A1_LaneOffset"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="A2">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="$A2_Speed1"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RelativeLanePosition entityRef="Ego" dLane="0" ds="$A2_EgoRelLonPos" offset="$A2_LaneOffset"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="MyStory">
+      <Act name="Act1">
+        <ManeuverGroup maximumExecutionCount="1" name="Sequence1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="A1"/>
+          </Actors>
+          <Maneuver name="Maneuver1">
+            <Event name="Event1" priority="overwrite">
+              <Action name="Action1">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="$A1_Rate" dynamicsDimension="rate"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="$A1_Speed2"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="StartCondition1" delay="0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="A1"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <TraveledDistanceCondition value="$A1_TriggeringDistance"/>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="" delay="0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+      <Act name="Act2">
+        <ManeuverGroup maximumExecutionCount="1" name="Sequence2">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="A2"/>
+          </Actors>
+          <Maneuver name="Maneuver2">
+            <Event name="Event2" priority="overwrite">
+              <Action name="Action2">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="$A2_Rate" dynamicsDimension="rate"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="$A2_Speed2"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="StartCondition1" delay="0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="A2"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <TraveledDistanceCondition value="$A2_TriggeringDistance"/>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="" delay="0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+    </Story>
+    <StopTrigger/>
+  </Storyboard>
+</OpenSCENARIO>

@@ -33,6 +33,8 @@ class BasicControl(object):
         _waypoints (list of carla.Transform): List of target waypoints the actor
             should travel along. A waypoint here is of type carla.Transform!
             Defaults to [].
+        _trajectory (list of tuples (time,carla.Transform)): Target trajectory the actor
+            should follow. Defaults to [].
         _waypoints_updated (boolean):
             Defaults to False.
         _reached_goal (boolean):
@@ -41,6 +43,7 @@ class BasicControl(object):
 
     _actor = None
     _waypoints = []
+    _trajectory = []
     _waypoints_updated = False
     _target_speed = 0
     _reached_goal = False
@@ -62,14 +65,24 @@ class BasicControl(object):
         self._target_speed = speed
         self._init_speed = False
 
-    def update_waypoints(self, waypoints, start_time=None):
+    def update_waypoints(self, waypoints):
         """
         Update the actor's waypoints
 
         Args:
-            waypoints (List of carla.Transform): List of new waypoints.
+            waypoints (list of carla.Transform): List of new waypoints.
         """
         self._waypoints = waypoints
+        self._waypoints_updated = True
+
+    def update_trajectory(self, trajectory):
+        """
+        Update the actor's trajectory
+
+        Args:
+            trajectory (list of tuples (time,carla.Transform)): New trajectory.
+        """
+        self._trajectory = trajectory
         self._waypoints_updated = True
 
     def set_init_speed(self):
