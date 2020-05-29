@@ -21,7 +21,6 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.weather_sim import Weather
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLightStateSetter,
                                                                       ActorTransformSetterToOSCPosition,
-                                                                      AccelerateToVelocity,
                                                                       RunScript,
                                                                       ChangeWeather,
                                                                       ChangeAutoPilot,
@@ -55,7 +54,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                StandStill,
                                                                                OSCStartEndCondition,
                                                                                TriggerAcceleration,
-                                                                               RelativeVelocityToOtherActor)
+                                                                               RelativeVelocityToOtherActor,
+                                                                               TriggerVelocity)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 
@@ -397,8 +397,8 @@ class OpenScenarioParser(object):
                 if entity_condition.find('EndOfRoadCondition') is not None:
                     raise NotImplementedError("EndOfRoad conditions are not yet supported")
                 elif entity_condition.find('CollisionCondition') is not None:
-                    atomic = py_trees.meta.inverter(
-                        CollisionTest(trigger_actor, terminate_on_failure=True, name=condition_name))
+                    atomic_cls = py_trees.meta.inverter(CollisionTest)
+                    atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('OffroadCondition') is not None:
                     off_condition = entity_condition.find('OffroadCondition')
                     condition_duration = off_condition.attrib.get('duration')
@@ -442,12 +442,13 @@ class OpenScenarioParser(object):
                     duration = float(ss_condition.attrib.get('duration'))
                     atomic = StandStill(trigger_actor, condition_name, duration)
                 elif entity_condition.find('SpeedCondition') is not None:
-                    s_condition = entity_condition.find('SpeedCondition')
-                    value = float(s_condition.attrib.get('value'))
-                    if s_condition.attrib.get('rule') != "greaterThan":
-                        raise NotImplementedError(
-                            "Speed condition with the given specification is not yet supported")
-                    atomic = AccelerateToVelocity(trigger_actor, value, condition_name)
+                    spd_condition = entity_condition.find('SpeedCondition')
+                    condition_value = float(spd_condition.attrib.get('value'))
+                    condition_rule = spd_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+
+                    atomic = TriggerVelocity(
+                        trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('RelativeSpeedCondition') is not None:
                     relspd_condition = entity_condition.find('RelativeSpeedCondition')
                     condition_value = float(relspd_condition.attrib.get('value'))
