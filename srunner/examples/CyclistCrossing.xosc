@@ -236,10 +236,12 @@
                   <Condition name="StartCondition" delay="0" conditionEdge="rising">
                     <ByEntityCondition>
                       <TriggeringEntities triggeringEntitiesRule="any">
-                        <EntityRef entityRef="adversary"/>
+                        <EntityRef entityRef="hero"/>
                       </TriggeringEntities>
                       <EntityCondition>
-                        <StandStillCondition duration="0.1"/>
+                        <CollisionCondition>
+                          <EntityRef entityRef="adversary"/>
+                        </CollisionCondition>
                       </EntityCondition>
                     </ByEntityCondition>
                   </Condition>

@@ -72,6 +72,12 @@ class OpenScenarioParser(object):
         "equalTo": operator.eq
     }
 
+    actor_types = {
+        "pedestrian": "walker.*",
+        "vehicle": "vehicle.*",
+        "miscellaneous": ["static.*", "traffic.*"]
+    }
+
     use_carla_coordinate_system = False
 
     @staticmethod
@@ -436,8 +442,31 @@ class OpenScenarioParser(object):
                 if entity_condition.find('EndOfRoadCondition') is not None:
                     raise NotImplementedError("EndOfRoad conditions are not yet supported")
                 elif entity_condition.find('CollisionCondition') is not None:
+
+                    collision_condition = entity_condition.find('CollisionCondition')
+
+                    print(collision_condition.find('EntityRef'))
+                    print(collision_condition.find('ByType'))
+                    for entity in collision_condition.find('EntityRef'):
+                        print(entity.attrib.get('entityRef', None))
+                        condition_entity = entity
+                        print(condition_entity)
+
+                    # condition_type = float(collision_condition.attrib.get('byType'))
+                    # condition_operator = OpenScenarioParser.actor_types[condition_type]
+
+                    for actor in actor_list:
+                        if condition_entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
+                            triggered_actor = actor
+                            break
+
+                    if triggered_actor is None:
+                        raise AttributeError("Cannot find actor '{}' for condition".format(
+                            condition_entity.attrib.get('entityRef', None)))
+
                     atomic_cls = py_trees.meta.inverter(CollisionTest)
-                    atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
+                    atomic = atomic_cls(trigger_actor, triggered_actor, terminate_on_failure=True, name=condition_name)
+
                 elif entity_condition.find('OffroadCondition') is not None:
                     raise NotImplementedError("Offroad conditions are not yet supported")
                 elif entity_condition.find('TimeHeadwayCondition') is not None:

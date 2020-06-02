@@ -293,14 +293,16 @@ class CollisionTest(Criterion):
     """
 
     MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
-    MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
+    MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area is forgotten
 
-    def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
+    def __init__(self, actor, other_actor=None, other_actor_type=None,
+                 optional=False, name="CheckCollisions", terminate_on_failure=False):
         """
         Construction with sensor setup
         """
         self._actor = actor
-        self.last_walker_id = None
+        self._other_actor = other_actor
+        self._other_actor_type = other_actor_type
         super(CollisionTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -369,6 +371,8 @@ class CollisionTest(Criterion):
         self.test_status = "FAILURE"
 
         actor_location = CarlaDataProvider.get_location(self.actor)
+
+        # if event.other_actor != self._other_actor
 
         # Ignore the current one if it is the same id as before
         if self.last_id == event.other_actor.id:
