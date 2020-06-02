@@ -1,6 +1,6 @@
 # Get ScenarioRunner
 
-This tutorial explains how to download and run ScenarioRunner, using a simple example scenario. ScenarioRunner needs CARLA in order to run, and must match the CARLA version being used. If the CARLA being used is a build from source, download ScenarioRunner from source. If the CARLA being used is a package, download the corresponding version of ScenarioRunner.  
+This tutorial explains how to download ScenarioRunner and run a simple example to test it. ScenarioRunner needs CARLA in order to run, and must match the CARLA version being used. If the CARLA being used is a build from source, download ScenarioRunner from source. If the CARLA being used is a package, download the corresponding version of ScenarioRunner.  
 
 *   __[Installation summary](#installation-summary)__  
 *   __[A. Download a ScenarioRunner release](#a.-download-a-scenariorunner-release)__  
@@ -199,7 +199,7 @@ __3. Test the scenario with manual control.__ Open a new terminal and run the `m
 python manual_control.py
 ```
 
-The scenarios have a timeout of one minute approximately, for the agent to be launched.  
+The scenarios have a timeout of one minute approximately, for the agent to be launched. If the timeout appears, the follow leading vehicle example should be launched again.  
 
 !!! Warning
     Run the `manual_control.py` found in the ScenarioRunner package/repository, __not CARLA__. 
