@@ -4,7 +4,7 @@
 
 To have your agent evaluated by the challenge evaluation system
 you must define an Agent class that inherits the
-[AutonomousAgent](../srunner/autoagents/autonomous_agent.py) base class. In addition, you need to setup your environment as described in [the Challenge evaluator tutorial](challenge_evaluation.md).
+[AutonomousAgent](https://github.com/carla-simulator/scenario_runner/blob/master/srunner/autoagents/autonomous_agent.py) base class. In addition, you need to setup your environment as described in the Challenge evaluator tutorial.
 
 On your agent class there are three main functions to be overwritten
 that need to be defined in order to set your agent to run.
@@ -30,7 +30,7 @@ python srunner/challenge/challenge_evaluator_routes.py  --agent=<path_to_my_agen
 ##### The "sensors" function:
 
 This function is where you set all the sensors required by your agent.
-For instance, on the [dummy agent sample class](../srunner/challenge/agents/DummyAgent.py) the following sensors are defined:
+For instance, on the dummy agent sample class the following sensors are defined:
 
 ```Python
 def sensors(self):
