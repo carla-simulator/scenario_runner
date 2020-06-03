@@ -10,6 +10,8 @@ This module contains the result gatherer and write for CARLA scenarios.
 It shall be used from the ScenarioManager only.
 """
 
+from __future__ import print_function
+
 import time
 from tabulate import tabulate
 
