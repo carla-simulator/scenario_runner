@@ -649,17 +649,21 @@ class OffRoadTest(Criterion):
         new_status = py_trees.common.Status.RUNNING
 
         current_location = CarlaDataProvider.get_location(self._actor)
-        print(current_location)
 
         # Get the waypoint at the current location to see if the actor is offroad
-        drive_waypoint = self._map.get_waypoint(current_location, project_to_road=False)
-        park_waypoint = self._map.get_waypoint(current_location, project_to_road=False, lane_type=carla.LaneType.Parking)
-        if drive_waypoint is None and park_waypoint is None:
-            # if not self._offroad:
-            #     self.actual_value += 1
-            self._offroad = True
-        else:
+        drive_waypoint = self._map.get_waypoint(
+            current_location,
+            project_to_road=False
+        )
+        park_waypoint = self._map.get_waypoint(
+            current_location,
+            project_to_road=False,
+            lane_type=carla.LaneType.Parking
+        )
+        if drive_waypoint or park_waypoint:
             self._offroad = False
+        else:
+            self._offroad = True
 
         # Counts the time offroad
         if self._offroad:
@@ -678,19 +682,9 @@ class OffRoadTest(Criterion):
         if self._terminate_on_failure and self.test_status == "FAILURE":
             new_status = py_trees.common.Status.FAILURE
 
-        print(self._time_offroad)
-
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
-
-    def terminate(self, new_status):
-        """
-        If there is currently an event running, it is registered
-        """
-        # If currently at a sidewalk, register the event
-
-        super(OffRoadTest, self).terminate(new_status)
 
 
 class OnSidewalkTest(Criterion):
@@ -962,7 +956,7 @@ class OutsideRouteLanesTest(Criterion):
 
     """
     Atomic to detect if the vehicle is either on a sidewalk or at a wrong lane. The distance spent outside
-    is computed and it is returned as a percentage of the route distance traveled. 
+    is computed and it is returned as a percentage of the route distance traveled.
 
     Args:
         actor (carla.ACtor): CARLA actor to be used for this test
