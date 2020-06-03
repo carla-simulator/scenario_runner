@@ -605,6 +605,94 @@ class ReachedRegionTest(Criterion):
         return new_status
 
 
+class OffRoadTest(Criterion):
+
+    """
+    Atomic containing a test to detect when an actor deviates from the driving lanes. This atomic can
+    fail when actor has spent a specific time outside driving lanes (defined by OpenDRIVE). Simplified
+    version of OnSidewalkTest, and doesn't relly on waypoints with *Sidewalk* lane types
+
+    Args:
+        actor (carla.Actor): CARLA actor to be used for this test
+        duration (float): Time spent at sidewalks before the atomic fails.
+            If terminate_on_failure isn't active, this is ignored.
+        optional (bool): If True, the result is not considered for an overall pass/fail result
+            when using the output argument
+        terminate_on_failure (bool): If True, the atomic will fail when the duration condition has been met.
+    """
+
+    def __init__(self, actor, duration=0, optional=False, terminate_on_failure=False, name="OffRoadTest"):
+        """
+        Setup of the variables
+        """
+        super(OffRoadTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._actor = actor
+        self._map = CarlaDataProvider.get_map()
+        self._offroad = False
+
+        self._duration = duration
+        self._prev_time = None
+        self._time_offroad = 0
+
+    def update(self):
+        """
+        First, transforms the actor's current position to its corresponding waypoint. This is
+        filtered to only use waypoints of type Driving or Parking. Depending on these results,
+        the actor will be considered to be outside (or inside) driving lanes.
+
+        returns:
+            py_trees.common.Status.FAILURE: when the actor has spent a given duration outside driving lanes
+            py_trees.common.Status.RUNNING: the rest of the time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self._actor)
+        print(current_location)
+
+        # Get the waypoint at the current location to see if the actor is offroad
+        drive_waypoint = self._map.get_waypoint(current_location, project_to_road=False)
+        park_waypoint = self._map.get_waypoint(current_location, project_to_road=False, lane_type=carla.LaneType.Parking)
+        if drive_waypoint is None and park_waypoint is None:
+            # if not self._offroad:
+            #     self.actual_value += 1
+            self._offroad = True
+        else:
+            self._offroad = False
+
+        # Counts the time offroad
+        if self._offroad:
+            if self._prev_time is None:
+                self._prev_time = GameTime.get_time()
+            else:
+                curr_time = GameTime.get_time()
+                self._time_offroad += curr_time - self._prev_time
+                self._prev_time = curr_time
+        else:
+            self._prev_time = None
+
+        if self._time_offroad > self._duration:
+            self.test_status = "FAILURE"
+
+        if self._terminate_on_failure and self.test_status == "FAILURE":
+            new_status = py_trees.common.Status.FAILURE
+
+        print(self._time_offroad)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        If there is currently an event running, it is registered
+        """
+        # If currently at a sidewalk, register the event
+
+        super(OffRoadTest, self).terminate(new_status)
+
+
 class OnSidewalkTest(Criterion):
 
     """
@@ -648,7 +736,8 @@ class OnSidewalkTest(Criterion):
         outside (or inside) driving lanes.
 
         returns:
-            py_trees.common.Status.FAILURE: when the actor has spent a given duration outside driving lanes
+            py_trees.common.Status.FAILURE: when the actor has spent a given duration outside
+                driving lanes and terminate_on_failure is active
             py_trees.common.Status.RUNNING: the rest of the time
         """
         new_status = py_trees.common.Status.RUNNING
@@ -872,13 +961,13 @@ class OnSidewalkTest(Criterion):
 class OutsideRouteLanesTest(Criterion):
 
     """
-    This class contains an atomic test to detect if the vehicle is either on a sidewalk or at a wrong lane.
-    The distance spent outside is computed and it is returned as a percentage to the total distance traveled
+    Atomic to detect if the vehicle is either on a sidewalk or at a wrong lane. The distance spent outside
+    is computed and it is returned as a percentage of the route distance traveled. 
 
-    Important parameters:
-    - actor: CARLA actor to be used for this test
-    - route: series of locations representing the route waypoints
-    - optional [optional]: If True, the result is not considered for an overall pass/fail result
+    Args:
+        actor (carla.ACtor): CARLA actor to be used for this test
+        route (list [carla.Location, connection]): series of locations representing the route waypoints
+        optional (bool): If True, the result is not considered for an overall pass/fail result
     """
 
     ALLOWED_OUT_DISTANCE = 1.3          # At least 0.5, due to the mini-shoulder between lanes and sidewalks
@@ -911,7 +1000,12 @@ class OutsideRouteLanesTest(Criterion):
 
     def update(self):
         """
-        Check lane invasion count
+        Transforms the actor location and its four corners to waypoints. Depending on its types,
+        the actor will be considered to be at driving lanes, sidewalk or offroad.
+
+        returns:
+            py_trees.common.Status.FAILURE: when the actor has left driving and terminate_on_failure is active
+            py_trees.common.Status.RUNNING: the rest of the time
         """
         new_status = py_trees.common.Status.RUNNING
 
