@@ -350,7 +350,7 @@ class ScenarioRunner(object):
         try:
             # Load scenario and run it
             if self._args.record:
-                self.client.start_recorder("{}/{}.log".format(os.getenv('ROOT_SCENARIO_RUNNER', "./"), config.name))
+                self.client.start_recorder("{}/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), config.name))
             self.manager.load_scenario(scenario, self.agent_instance)
             self.manager.run_scenario()
 
