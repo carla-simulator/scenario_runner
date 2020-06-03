@@ -142,14 +142,18 @@ __3. Pull the latest changes from the repository.__
 git pull
 ```
 
-__4. Add environemnt variables and Python paths__ These are necessary for the system to find CARLA, and add the PythonAPI to the Python path.  
+__4. Add environment variables and Python paths__ These are necessary for the system to find CARLA, and add the PythonAPI to the Python path.  
 
 ```sh
 # ${CARLA_ROOT} is the CARLA installation directory
 # <VERSION> is the correct string for the Python version being used
 # In a build from source, the .egg files may be in: ${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI
-export CARLA_ROOT=/path/to/your/carla/installation
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla
+export CARLA_ROOT=/path/to/carla/installation
+export SCENARIO_RUNNER_ROOT=/path/to/scenario/runner/installation
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/agents
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
+export PYTHONPATH=$PYTHONPATH:${SCENARIO_RUNNER}/PythonAPI/carla
 ```
 
 !!! Note
@@ -186,17 +190,17 @@ __2. Start an example scenario.__ Open another terminal and go to the directory 
 
 ```sh
 # Inside the ScenarioRunner root directory
-python scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld
+python3 scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld
 ```
 
 !!! Note
-    If using a Python 3.x version, run the command with `python3`. 
+    If using a Python 2.x version, run the command with `python`. 
 
 __3. Test the scenario with manual control.__ Open a new terminal and run the `manual_control.py`. A new window should pop up, with an ego vehicle in the middle of the street. Move forward and the leading vehicle will appear. 
 
 ```sh
 # Inside the ScenarioRunner root directory
-python manual_control.py
+python3 manual_control.py
 ```
 
 The scenarios have a timeout of one minute approximately, for the agent to be launched. If the timeout appears, the follow leading vehicle example should be launched again.  
@@ -207,7 +211,7 @@ The scenarios have a timeout of one minute approximately, for the agent to be la
 __4. Explore other options.__ Run the Scenario Runner with the flag `--help` to explore other command line parameters and some basic descriptions. For example, to avoid automatically (re-)load the CARLA world, skip the command line option `--reloadWorld`.
 
 ```sh
-python scenario_runner.py --help
+python3 scenario_runner.py --help
 ```
 
   <details>

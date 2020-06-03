@@ -3,16 +3,19 @@
 This page contains a brief introduction to the core concepts in ScenarioRunner and some brief tutorials on how to get started with these.
 
 *   [__Scenarios and agents__](#scenarios-and-agents)
-	*   [Run a simple scenario](#run-a-simple-scenario)  
-	*   [Run a group of scenarios](#run-a-group-of-scenarios)  
-	*   [Run all the scenarios of a scenario class](#run-all-the-scenarios-of-a-scenario-class)  
-	*   [Run an OpenSCENARIO scenario](#run-an-openscenario-scenario)  
+	*   [Scenario files](#component-files)  
+*   [__Run scenarios__](#run-scenarios)
+	*   [Example scenarios](#example-scenarios)  
+	*   [Custom scenarios](#custom-scenarios)  
+	*   [Types of scenarios](#types-of-scenarios)  
+	*   [OpenSCENARIO scenarios](#openscenario-scenarios)  
 *   [__Routes__](#routes)
 	*   [Run a route-based scenario](#run-a-route-based-scenario)  
+*   [Analyze and debug scenarios](#analyze-and-debug-scenarios)  
+	*   [Additional metrics](#additional-metrics)  
 
 !!! Important
     This page refers to CARLA 0.9.5 or later versions.
-
 
 ---
 ## Scenarios and agents
@@ -31,20 +34,27 @@ The following image represents a scenario with two actors: a deer, crossing the 
 ScenarioRunner comes with some example scenarios that can be used to train agents or create new scenario. [Here](list_of_scenarios.md) is a reference of the scenarios provided. Visit [this tutorial](list_of_scenarios.md) to learn how to create new scenarios. 
 
 !!! Important
-    The scenarios are configured for specific CARLA towns. The town loaded in the CARLA server should match one that appears in the configuration file of said scenario.
+    The scenarios are configured for specific CARLA towns. The town loaded in the CARLA server should match one that appears in the configuration file of said scenario. Alternatively, use the flag `--reloadWorld` to change the map automatically. 
 
 
-### Run an example scenario
+### Scenario files
+
+A specific scenario belongs to a certain __type__, which is described by a Python file and named with the generic casuistic it represents. For example, *FollowLeadingVehicle* is a scenario type, and *FollowLeadingVehicle_1* is the name given to a definition of said scenario, with settings that appear in the __configuration file__. 
+
+---
+## Run scenarios
+
+### Example scenarios
 
 To run one of the preexisting scenarios, only a name is needed, which is given via the `--scenario` argument. 
 
 ```sh
-python scenario_runner.py --scenario <ScenarioName>
+python3 scenario_runner.py --scenario <ScenarioName>
 ```
 
 In order to check all the possible scenario names, use:
 ```sh
-python scenario_runner.py --list
+python3 scenario_runner.py --list
 ```
   <details>
     <summary>Example output</summary>
@@ -68,25 +78,62 @@ CARLA:CyclistCrossing (OpenSCENARIO)
   </details>
 <br>
 
-Now let’s run an example scenario, called OpppositeVehicleRunningRedLight011. With this command, the scenario is set up. The scenario will remain in this “set-up state” waiting for the ego vehicle to move, and only then will it become active.
+Once the scenario is set-up, an ego vehicle will be needed to activate it. The manual control script provided can be used to do so. Let's run an example scenario.  
 
-To check its behavior, the manual control can be used, so we run it in another terminal.
+__1. Run a CARLA server:__ This should be done always. ScenarioRunner runs based on a CARLA server.  
+
+__2. Run the scenario:__ For the sake of this tutorial, `OppositeVehicleRunnignRedLight011` is chosen. 
+
+```sh
+# The flag --reloadWorld changes the map automatically to one where the scenario is available.
+python3 scenario_runner.py --scenario OppositeVehicleRunningRedLight_1 --reloadWorld
+```
+!!! Important
+    Run either `python` or `python3` depending on the Python version being used.
+
+__2. Run the agent:__ For example, the manual control script in ScenarioRunner.
+
+```sh
+python3 manual_control.py
+```
+
+!!! Warning
+    Do __not__ use the `manual_control.py` in CARLA. 
 
 ### Run a custom scenario
 
+If additional scenarios have been created, or the examples have been customized, two more arguments are needed. 
 
-If additional scenarios have been created, two more arguments have to given to be able to run them, --additionalScenario with the path to a .py file with the scenario definition, and --configFile with the path to a .xml file with the configuration file, linking the scenario name to scenario file.
+*   __`--additionalScenario`__ — Path to a `.py` file with the scenario definition.  
+*   __`--configFile`__ — Path to a `.xml` file with the configuration file. Links the name of the scenario with the path to the type of scenario, and allows for some additional parameters.  
 
 ```sh
-# <scenario_file> -> .py file with scenario definition
-# <config_file> -> .xml file with configuration
 python scenario_runner.py --scenario <ScenarioName> --additionalScenario <scenario_file> --configFile <config_file>
 ```
 
-This is where the first customization appears. With this configuration file, the same scenario class can be easily run but with different names (name parameter). These allows us to create the same scenario at different locations.
+Here are some customizable parameters that can be defined in the configuration file. 
 
-The following code describes an `.xml` file with three scenarios. They all have the same type, which refers to class name at the scenario file. The town can also be chosen due to the town parameter.  The rest are the positions of the ego vehicle and the other actor of the scenario. Just by giving them different positions, we can rapidly choose where we want the scenario to happen. 
+*   __`town`__ — map where the scenario happens.  
+*   __Actor parameters__ — Change the location of the scenario by moving the actors, and customize other parameters for these.  
+	*   __`x`__, __`y`__, __`z`__  —  location of the actor.  
+	*   __`yaw`__, __`pitch`__, __`roll`__  —  rotation of the actor.  
+	*   __`model`__  —  blueprint of the actor.  
+	*   __`rolename`__  —  Identify the actor with a specific tag.  
+	*   __`autopilot`__  — Enables the autopilot for a vehicle.  
+	*   __`random_location`__  —  If the map has spawning points defined, spawns the actor in one of these at random.  
+*   __Weather parameters__ — Change the ambience and conditions of the scene. These parameters are the same that appear in [carla.WeatherParameters](https://carla.readthedocs.io/en/latest/python_api/#carlaweatherparameters). 
+	*   __`cloudiness`__  —  0 is a clear sky, 100 complete overcast.  
+	*   __`precipitation`__  —   0 is no rain at all, 100 a heavy rain.  
+	*   __`precipitation_deposits`__  —  means no puddles on the road, 100 means roads completely capped by rain.   
+	*   __`wind_intensity`__  —  0 is calm, 100 a strong wind.  
+	*   __`fog_density`__  —  0 is an arbitrary North, 180 its corresponding South.  
+	*   __`fog_distance`__  —  90 is midday, -90 is midnight.  
+	*   __`wetness`__  —  location of the actor.  
+	*   __`sun_azimuth_angle`__  —  Density of the fog, from 0 to 100.  
+	*   __`sun_altitude_angle`__  —  Distance where the fog starts in meters.  
+	*   __`falloff`__  —  Density (specific mass) of the fog, from 0 to infinity.  
 
+The following code describes part of an `.xml` file with three scenarios, that will be used as configuration file. They all have the same type, which refers to class name at the scenario file. The town and location of the actors is changed, creating three different settings for the same scenario definition.  
 ```xml
 <scenario name="OppositeVehicleRunningRedLight011" type="OppositeVehicleRunningRedLight" town="Town01">
    <ego_vehicle x="126.4" y="55.2" z="1" yaw="180" model="vehicle.lincoln.mkz2017" />
@@ -101,15 +148,8 @@ The following code describes an `.xml` file with three scenarios. They all have 
    <other_actor x="-22.5" y="-135" z="0.1" yaw="0" model="vehicle.tesla.model3" />
 </scenario>
 ```
-More parameters can be given to the actors such as:
 
-`rolename`: to identify them with a specific name
-`autopilot`: in case we want them to automatically move around the town
-`random_location`: spawning the actor at one of the map’s spawn point
-
-The weather can also be chosen from this config file. --> ??
-
-From the configuration file, the weather can be chosen. It has the same parameters as the carla.WeatherParameters (https://carla.readthedocs.io/en/latest/python_api/#carlaweatherparameters
+The following code contains another fragment of the configuration file, with a scenario definition where the weather conditions are set by the user.  
 
 ```xml
 <scenario name="FollowLeadingVehicle_1" type="FollowLeadingVehicle" town="Town01">
@@ -118,30 +158,29 @@ From the configuration file, the weather can be chosen. It has the same paramete
 </scenario>
 ```
 
-The scenarios can also be analyzed with the help of some criterias. In the previous video for example, a good criteria would be to check the number of Collisions. This information can be printed through terminal with the --output argument, creating a table with the result of all the criterias used as well as whether or not they failed. This same table can be written into a file with --file argument. The --junit argument transforms this information into a junit-formatted XML that can be read by Jenkins to  evaluate the success of the scenario.
+### Types of scenarios
 
-There is also a debug command (--debug) which allows to print in real time information about the execution of the scenario.
+All the scenarios of a certain type (based on the same python file) can be run in sequence.  
 
-![Debug commandline output picture](img/debug_output.jpg)
-<div style="text-align: right"><i>Debug commandline output</i></div>
+Use the same argument `--scenario` as for simple scenarios, with the addition of the flag: `group:<type_name>`. The following example runs all the scenarios of type `FollowLeadingVehicle` that can be found in ???. 
 
-### Run a group of scenarios
-
-### Run all the scenarios of a scenario class
-
-A sequence of scenarios that belong to the same class can be run similarly to a simple one. Instead of running the ScenarioRunner using a flag 
-
- to running a simple scenario, it is also possible to execute a sequence of scenarios, that belong to the same class, e.g. the "FollowLeadingVehicle" class.
-
-The only difference is, that you start the scenario_runner as follows:
+--> How does this know which configuration file you want to use? 
 
 ```sh
-python scenario_runner.py --scenario group:FollowLeadingVehicle
+python scenario_runner.py --scenario group:FollowLeadingVehicle --reloadWorld
 ```
 
-### Run an OpenSCENARIO scenario
+!!! Warning
+    If `--reloadWorld` is not used, only the scenarios described for the current map will be loaded. This parameter allows changing the map between scenarios.  
 
-To run a scenario based on the OpenSCENARIO format, use the optional argument prepared to do so. OpenSCENARIO format and the support 
+
+> Tienes qeu ejecutar el agente a cada cambio de escenario. 
+> ¿Configuration file srunner/examples? ¿Le puedes pasar una en concreto? 
+> ¿Automatizar el lanzamiento del agente? 
+
+### OpenSCENARIO scenarios
+
+To run a scenario based on the OpenSCENARIO format, use the optional argument `--openscenario` and the path to the `.xosc` file. 
 
 ```sh
 python scenario_runner.py --openscenario <'path/to/xosc-file'>
@@ -152,27 +191,16 @@ The OpenSCENARIO support and the OpenSCENARIO format itself are still work in pr
 ---
 ## Routes
 
+Routes are paths that connect a sequence scenarios in the same town. This allow the user to run multiple scenarios using the same agents and simulations. The scenarios will be triggered when the ego vehicle is nearby the location specified for the scenario.  
+
+> 
+
+Routes also include background activity, such as vehicles or walkers that wander around and bring the map to life, for a more realistic simulation. 
+
+> How to add background activity
+
+
 > Mention to leaderboard being a route? 
-
-Scenarios can also be run inside routes. In this case, the agent is guided throughout the twon, following a specific path. Routes introduce the ability to run multiple scenarios during the same simulation. Therefore, these scenarios now have a trigger position and are activated once the ego vehicle is nearby. 
-
-Therefore, routes have additional benefits when compared to isolated scenarios. Their main disadvantage is that they are harder to set up. 
-
-As it was previously mentioned, agents now have the route given to them, and multiple scenarios can be run. Additionally, routes have background activity incorporated. At the video, that gray vehicle isn’t part of any scenario, but part of the background activity instead. The background activity is predetermined amount of cars that wander automatically wander around the city, bringing it to life and creating a more realistic simulation.
-
-Lastly, we can add more criterias that aren’t related to the execution of any scenario, but to the behavior of the ego vehicle in general. These criterias are defined at MasterScenario (srunner/scenarios/master_scenario.py) and by default, the following criterias are used:
-CollisionTest: checks the collisions between a specific actor and all the other elements in the scene
-InRouteTest: triggers when the vehicle has deviated from the route. If this criteria fails, the simulation is stopped.
-RouteCompletionTest: Tracks the position of the ego vehicle with respect to the route. This criteria is the one that stops the simulation when the ego vehicle completes it.
-OutsideRouteLanesTest: used to know if the ego vehicle has invaded either the sidewalk or lanes of the opposite direction. This is given as a percentage of the route completed. 
-RunningRedLightTest: counts the number of red lights run
-RunningStopTest: counts the number of stops ignored
-ActorSpeedAboveThresholdTest: similar to InRouteTest, this criteria is used to stop the simulation if the ego vehicle hasn’t moved for more than 90 seconds.
-
-With the help of some metrics, we can measure these criterias and create an overall score for the agent. This has been put together in the Leaderboard (https://leaderboard.carla.org/
-), an online web service to evaluate AD stacks.
-
-
 
 ### Run a route-based scenario
 
@@ -185,7 +213,6 @@ The second argument is a .json file with the parameters of the scenarios present
 The third argument is just the route name, and serves as the --scenario argument of the previous example. If left empty, all routes will be run.
 
 Lastly, routes need an agent to pass the route to. This has to be given via the --agent argument. An explanation of how to create agents is done at the end of the presentation.
-
 
 ```xml
 <route id="2" map="Town01">
@@ -242,6 +269,32 @@ If no route id is provided, all routes within the given file will be executed.
 
 
 By doing so, ScenarioRunner will match the scenarios to the route, and they'll activate when the ego vehicle is nearby. However, routes need an autonomous agent to control the ego vehicle. Several examples are provided in srunner/autoagents/. For more information about agents, please have a look into the [agent documentation](agent_evaluation.md)
+
+
+---
+## Analyze and debug scenarios
+
+The scenarios can be analyzed with the help of some criterias, such as number of collisions, and passing/failing conditions can be stated. This information can be printed through terminal with the `--output` argument, creating a table with the result of all the criterias defined. This same table can be written into a file with `--file` argument. The `--junit` argument transforms this information into a junit-formatted XML that can be read by Jenkins to  evaluate the success of the scenario.
+
+There is also a debug command `--debug` which allows to print in real time information about the execution of the scenario.
+
+![Debug commandline output picture](img/debug_output.jpg)
+<div style="text-align: right"><i>Debug commandline output</i></div>
+
+### Evaluation metrics
+
+Lastly, we can add more criterias that aren’t related to the execution of any scenario, but to the behavior of the ego vehicle in general. These criterias are defined at MasterScenario (srunner/scenarios/master_scenario.py) and by default, the following criterias are used:  
+
+*   __`CollisionTest`__ — Checks the collisions between a specific actor and all the other elements in the scene. 
+*   __`InRouteTest`__ *(Needs a route as input)* — Triggers when the vehicle has deviated from the route. If this criteria fails, the simulation is stopped.
+*   __`RouteCompletionTest`__ *(Needs a route as input)* — Tracks the position of the ego vehicle with respect to the route. This criteria is the one that stops the simulation when the ego vehicle completes it.
+*   __`OutsideRouteLanesTest`__ *(Needs a route as input)* — Used to know if the ego vehicle has invaded either the sidewalk or lanes of the opposite direction. This is given as a percentage of the route completed. 
+*   __`RunningRedLightTest`__ — Counts the number of red lights run
+*   __`RunningStopTest`__ — Counts the number of stop signs ignored. 
+*   __`ActorSpeedAboveThresholdTest`__ — Similar to InRouteTest, this criteria is used to stop the simulation if the ego vehicle hasn’t moved for more than 90 seconds.
+
+With the help of some metrics, we can measure these criterias and create an overall score for the agent. This has been put together in the Leaderboard (https://leaderboard.carla.org/
+), an online web service to evaluate AD stacks.
 
 ---
 That is a wrap on the CARLA basics. The next step takes a closer look to the world and the clients connecting to it.  
