@@ -210,6 +210,45 @@ __4. Explore other options.__ Run the Scenario Runner with the flag `--help` to 
 python scenario_runner.py --help
 ```
 
+  <details>
+    <summary>
+    Optional arguments for <code>scenario_runner.py</code>
+    </summary>
+```sh
+  -h, --help            show this help message and exit
+  --host HOST           IP of the host server (default: localhost)
+  --port PORT           TCP port to listen to (default: 2000)
+  --sync                Forces the simulation to run synchronously
+  --debug               Run with debug output
+  --output              Provide results on stdout
+  --file                Write results into a txt file
+  --junit               Write results into a junit file
+  --outputDir OUTPUTDIR
+                        Directory for output files (default: this directory)
+  --waitForEgo          Connect the scenario to an existing ego vehicle
+  --configFile CONFIGFILE
+                        Provide an additional scenario configuration file (*.xml)
+  --additionalScenario ADDITIONALSCENARIO
+                        Provide additional scenario implementations (*.py)
+  --reloadWorld         Reload the CARLA world before starting a scenario (default=True)
+  --scenario SCENARIO   Name of the scenario to be executed. Use the preposition 'group:' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle
+  --randomize           Scenario parameters are randomized
+  --repetitions REPETITIONS
+                        Number of scenario executions
+  --list                List all supported scenarios and exit
+  --agent AGENT         Agent used to execute the scenario (optional). Currently only compatible with route-based scenarios.
+  --agentConfig AGENTCONFIG
+                        Path to Agent configuration file
+  --openscenario OPENSCENARIO
+                        Provide an OpenSCENARIO definition
+  --route ROUTE [ROUTE ...]
+                        Run a route as a scenario (input: (route_file,scenario_file,[number of route]))
+  --record              Use CARLA recording feature to create a recording of the scenario
+  --timeout TIMEOUT     Set the CARLA client timeout value in seconds
+  -v, --version         show version number and exit
+```
+  </details>
+
 ---
 
 Thus concludes the installation process for ScenarioRunner. In case any unexpected error or issue occurs, the [CARLA forum](https://forum.carla.org/c/using-carla/scenario-runner) is open to everybody. There is an _ScenarioRunner_ category to post problems and doubts regarding this module. 
