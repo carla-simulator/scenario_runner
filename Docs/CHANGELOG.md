@@ -43,8 +43,8 @@
     - new RelativeVelocityToOtherActor trigger condition, used to compare velocities of two actors
     - new TriggerAcceleration trigger condition which compares a reference acceleration with the actor's one.
     - new TimeOfDayComparison trigger condition, comparing the simulation time (set up by the new weather system) with a given *datetime*.
-    - Added a *duration* argument to OnSidewalkTest criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. This *duration* is 0 by default, so the behavior is unchanged
-    - Added *OffRoadTest* criteria, simplified version of *OnSidewalkTest*, which doesn't differentiate between sidewalks and offroad.
+    - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. This *duration* is 0 by default, so the behavior is unchanged.
+    - Added new *OffRoadTest* criteria.
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
