@@ -1040,7 +1040,6 @@ class OutsideRouteLanesTest(Criterion):
             blackv = py_trees.blackboard.Blackboard()
             _ = blackv.set("OutsideRouteLanes", 0)
 
-
         super(OutsideRouteLanesTest, self).terminate(new_status)
 
 
@@ -1492,7 +1491,7 @@ class RouteCompletionTest(Criterion):
         """
         Set test status to failure if not successful and terminate
         """
-        self.actual_value = round(self._percentage_route_completed,2)
+        self.actual_value = round(self._percentage_route_completed, 2)
         # Blackboard variable
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RouteCompletion", round(self._percentage_route_completed, 2))

@@ -55,13 +55,13 @@ class ResultOutputProvider(object):
         if self._stdout:
             print(output)
 
-
     def create_output_text(self):
         """
         Creates the output message
         """
         output = "\n"
-        output += " ======= Results of Scenario: {} ---- {} =======\n".format(self._data.scenario_tree.name, self._result)
+        output += " ======= Results of Scenario: {} ---- {} =======\n".format(
+            self._data.scenario_tree.name, self._result)
         end_line_length = len(output) - 3
         output += "\n"
 
@@ -79,12 +79,15 @@ class ResultOutputProvider(object):
         # Simulation part
         output += " > Simulation Information\n"
 
+        system_time = round(self._data.scenario_duration_system, 2)
+        game_time = round(self._data.scenario_duration_game, 2)
+        ratio = round(self._data.scenario_duration_game / self._data.scenario_duration_system, 3)
+
         list_statistics = [["Start Time", "{}".format(self._start_time)]]
         list_statistics.extend([["End Time", "{}".format(self._end_time)]])
-        list_statistics.extend([["Duration (System Time)", "{}s".format(round(self._data.scenario_duration_system, 2))]])
-        list_statistics.extend([["Duration (Game Time)", "{}s".format(round(self._data.scenario_duration_game, 2))]])
-        list_statistics.extend([["Ratio (System Time / Game Time)", "{}s".format(
-            round(self._data.scenario_duration_game / self._data.scenario_duration_system, 3))]])
+        list_statistics.extend([["Duration (System Time)", "{}s".format(system_time)]])
+        list_statistics.extend([["Duration (Game Time)", "{}s".format(game_time)]])
+        list_statistics.extend([["Ratio (System Time / Game Time)", "{}s".format(ratio)]])
 
         output += tabulate(list_statistics, tablefmt='fancy_grid')
         output += "\n\n"
@@ -113,8 +116,8 @@ class ResultOutputProvider(object):
         actor = ""
         criteria = "Timeout (Req.)"
         result = "SUCCESS" if self._data.scenario_duration_game < self._data.scenario.timeout else "FAILURE"
-        actual_value = round(self._data.scenario_duration_game,2)
-        expected_value = round(self._data.scenario.timeout,2)
+        actual_value = round(self._data.scenario_duration_game, 2)
+        expected_value = round(self._data.scenario.timeout, 2)
 
         list_statistics.extend([[actor, criteria, result, actual_value, expected_value]])
 
@@ -123,7 +126,7 @@ class ResultOutputProvider(object):
 
         output += tabulate(list_statistics, tablefmt='fancy_grid')
         output += "\n"
-        output += " " + "="*end_line_length + "\n"
+        output += " " + "=" * end_line_length + "\n"
 
         return output
 
