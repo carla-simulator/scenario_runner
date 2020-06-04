@@ -97,10 +97,7 @@ class ScenarioConfigurationParser(object):
 
                 scenario_configurations.append(new_config)
 
-        if scenario_configurations:
-            return scenario_configurations
-
-        return None
+        return scenario_configurations
 
     @staticmethod
     def get_list_of_scenarios(config_file_name):

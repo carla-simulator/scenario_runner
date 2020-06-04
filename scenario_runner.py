@@ -380,7 +380,7 @@ class ScenarioRunner(object):
         scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(
             self._args.scenario,
             self._args.configFile)
-        if scenario_configurations is None:
+        if not scenario_configurations:
             print("Configuration for scenario {} cannot be found!".format(self._args.scenario))
             return result
 
