@@ -8,7 +8,7 @@ libtiff5=4.0.9-5ubuntu0.3 libjpeg8=8c-2ubuntu8 build-essential=12.4ubuntu1 wget=
 
 # Install python requirements
 run pip3 install --user setuptools==46.3.0 wheel==0.34.2 && pip3 install py_trees==0.8.3 networkx==2.2 pygame==1.9.6 \
-    six==1.14.0 numpy==1.18.4 psutil==5.7.0 shapely==1.7.0 xmlschema==1.1.3 ephem==3.7.6.0 \
+    six==1.14.0 numpy==1.18.4 psutil==5.7.0 shapely==1.7.0 xmlschema==1.1.3 ephem==3.7.6.0 tabulate==0.8.7\
 && mkdir -p /app/scenario_runner
 
 # Install scenario_runner 

@@ -5,3 +5,4 @@ psutil
 xmlschema==1.0.18
 carla
 ephem
+tabulate
