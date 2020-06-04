@@ -195,6 +195,7 @@ class DrivenDistanceTest(Criterion):
         """
         if self.test_status != "SUCCESS":
             self.test_status = "FAILURE"
+        self.actual_value = round(self.actual_value, 2)
         super(DrivenDistanceTest, self).terminate(new_status)
 
 
@@ -295,7 +296,7 @@ class CollisionTest(Criterion):
     MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
 
-    def __init__(self, actor, optional=False, name="CheckCollisions", terminate_on_failure=False):
+    def __init__(self, actor, optional=False, name="CollisionTest", terminate_on_failure=False):
         """
         Construction with sensor setup
         """
@@ -1146,6 +1147,7 @@ class OutsideRouteLanesTest(Criterion):
 
             self._wrong_distance = 0
             self.list_traffic_events.append(outside_lane)
+            self.actual_value = round(percentage, 2)
         else:
             # Blackboard variable
             blackv = py_trees.blackboard.Blackboard()
@@ -1602,7 +1604,7 @@ class RouteCompletionTest(Criterion):
         """
         Set test status to failure if not successful and terminate
         """
-        self.actual_value = self._percentage_route_completed
+        self.actual_value = round(self._percentage_route_completed, 2)
         # Blackboard variable
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RouteCompletion", round(self._percentage_route_completed, 2))
