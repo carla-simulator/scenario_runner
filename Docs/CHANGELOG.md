@@ -54,6 +54,7 @@
 * Fixed bug causing _output_ argument to not display the correct number with _InRouteTest_ and _RouteCompletionTest_ criterias (the succces and failure was correctly displayed)
 * Fixed bug causing OpenSCENARIO's SpeedCondition to not work as intended
 * Fixed bug causing CollisionConditions not to work properly in OpenSCENARIO
+* Fixed bug causing the *group:* functionality to behave incorrectly when moving scenarios around.
 
 
 ## CARLA ScenarioRunner 0.9.9
