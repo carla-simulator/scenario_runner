@@ -296,7 +296,7 @@ The following two tables list the support status for each.
 <td></td>
 <tr>
 <td><code>OffroadCondition</code></td>
-<td>&#10060;</td>
+<td>&#9989;</td>
 <td></td>
 <tr>
 <td><code>ReachPositionCondition</code></td>
