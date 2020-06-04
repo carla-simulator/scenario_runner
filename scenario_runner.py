@@ -140,7 +140,7 @@ class ScenarioRunner(object):
         """
 
         # Path of all scenario at "srunner/scenarios" folder + the path of the additional scenario argument
-        scenarios_list = glob.glob("{}/srunner/scenarios/*.py".format(os.getenv('ROOT_SCENARIO_RUNNER', "./")))
+        scenarios_list = glob.glob("{}/srunner/scenarios/*.py".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
         scenarios_list.append(self._args.additionalScenario)
 
         for scenario_file in scenarios_list:
@@ -234,6 +234,7 @@ class ScenarioRunner(object):
         Provide feedback about success/failure of a scenario
         """
 
+        # Create the filename
         current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
         junit_filename = None
         config_name = config.name
@@ -350,7 +351,7 @@ class ScenarioRunner(object):
         try:
             # Load scenario and run it
             if self._args.record:
-                self.client.start_recorder("{}/{}.log".format(os.getenv('ROOT_SCENARIO_RUNNER', "./"), config.name))
+                self.client.start_recorder("{}/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), config.name))
             self.manager.load_scenario(scenario, self.agent_instance)
             self.manager.run_scenario()
 
@@ -377,15 +378,12 @@ class ScenarioRunner(object):
         result = False
 
         # Load the scenario configurations provided in the config file
-        scenario_config_file = ScenarioConfigurationParser.find_scenario_config(
+        scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(
             self._args.scenario,
             self._args.configFile)
-        if scenario_config_file is None:
+        if not scenario_configurations:
             print("Configuration for scenario {} cannot be found!".format(self._args.scenario))
             return result
-
-        scenario_configurations = ScenarioConfigurationParser.parse_scenario_configuration(scenario_config_file,
-                                                                                           self._args.scenario)
 
         # Execute each configuration
         for config in scenario_configurations:

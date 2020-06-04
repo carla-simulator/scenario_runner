@@ -21,7 +21,6 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.weather_sim import Weather
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLightStateSetter,
                                                                       ActorTransformSetterToOSCPosition,
-                                                                      AccelerateToVelocity,
                                                                       RunScript,
                                                                       ChangeWeather,
                                                                       ChangeAutoPilot,
@@ -45,7 +44,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
                                                                      InRouteTest,
                                                                      RouteCompletionTest,
                                                                      RunningRedLightTest,
-                                                                     RunningStopTest)
+                                                                     RunningStopTest,
+                                                                     OffRoadTest)
 # pylint: enable=unused-import
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
                                                                                InTriggerDistanceToOSCPosition,
@@ -53,7 +53,11 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                InTimeToArrivalToVehicle,
                                                                                DriveDistance,
                                                                                StandStill,
-                                                                               OSCStartEndCondition)
+                                                                               OSCStartEndCondition,
+                                                                               TriggerAcceleration,
+                                                                               RelativeVelocityToOtherActor,
+                                                                               TimeOfDayComparison,
+                                                                               TriggerVelocity)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 
@@ -79,6 +83,39 @@ class OpenScenarioParser(object):
         the scenario does not use CARLA coordinates, but instead right-hand coordinates.
         """
         OpenScenarioParser.use_carla_coordinate_system = True
+
+    @staticmethod
+    def set_parameters(xml_tree):
+        """
+        Parse the xml_tree, and replace all parameter references
+        with the actual values
+
+        Args:
+            xml_tree: Containing all nodes that should be updated
+
+        returns:
+            updated xml_tree
+        """
+
+        parameter_dict = dict()
+        parameters = xml_tree.find('ParameterDeclarations')
+
+        if parameters is None:
+            return xml_tree
+
+        for parameter in parameters:
+            name = parameter.attrib.get('name')
+            value = parameter.attrib.get('value')
+
+            parameter_dict[name] = value
+
+        for node in xml_tree.iter():
+            for key in node.attrib:
+                for param in parameter_dict:
+                    if node.attrib[key] == param:
+                        node.attrib[key] = parameter_dict[param]
+
+        return xml_tree
 
     @staticmethod
     def get_friction_from_env_action(xml_tree, catalogs):
@@ -213,8 +250,13 @@ class OpenScenarioParser(object):
         elif ((position.find('RelativeWorldPosition') is not None) or
               (position.find('RelativeObjectPosition') is not None) or
               (position.find('RelativeLanePosition') is not None)):
-            rel_pos = position.find('RelativeWorldPosition') or position.find(
-                'RelativeObjectPosition') or position.find('RelativeLanePosition')
+
+            if position.find('RelativeWorldPosition') is not None:
+                rel_pos = position.find('RelativeWorldPosition')
+            if position.find('RelativeObjectPosition') is not None:
+                rel_pos = position.find('RelativeObjectPosition')
+            if position.find('RelativeLanePosition') is not None:
+                rel_pos = position.find('RelativeLanePosition')
 
             # get relative object and relative position
             obj = rel_pos.attrib.get('entityRef')
@@ -395,10 +437,14 @@ class OpenScenarioParser(object):
                 if entity_condition.find('EndOfRoadCondition') is not None:
                     raise NotImplementedError("EndOfRoad conditions are not yet supported")
                 elif entity_condition.find('CollisionCondition') is not None:
-                    atomic = py_trees.meta.inverter(
-                        CollisionTest(trigger_actor, terminate_on_failure=True, name=condition_name))
+                    atomic_cls = py_trees.meta.inverter(CollisionTest)
+                    atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('OffroadCondition') is not None:
-                    raise NotImplementedError("Offroad conditions are not yet supported")
+                    off_condition = entity_condition.find('OffroadCondition')
+                    condition_duration = float(off_condition.attrib.get('duration'))
+                    atomic_cls = py_trees.meta.inverter(OffRoadTest)
+                    atomic = atomic_cls(
+                        trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('TimeHeadwayCondition') is not None:
                     raise NotImplementedError("TimeHeadway conditions are not yet supported")
                 elif entity_condition.find('TimeToCollisionCondition') is not None:
@@ -426,20 +472,41 @@ class OpenScenarioParser(object):
                         atomic = InTimeToArrivalToVehicle(
                             trigger_actor, triggered_actor, condition_value, condition_operator)
                 elif entity_condition.find('AccelerationCondition') is not None:
-                    raise NotImplementedError("Acceleration conditions are not yet supported")
+                    accel_condition = entity_condition.find('AccelerationCondition')
+                    condition_value = float(accel_condition.attrib.get('value'))
+                    condition_rule = accel_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+                    atomic = TriggerAcceleration(
+                        trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('StandStillCondition') is not None:
                     ss_condition = entity_condition.find('StandStillCondition')
                     duration = float(ss_condition.attrib.get('duration'))
                     atomic = StandStill(trigger_actor, condition_name, duration)
                 elif entity_condition.find('SpeedCondition') is not None:
-                    s_condition = entity_condition.find('SpeedCondition')
-                    value = float(s_condition.attrib.get('value'))
-                    if s_condition.attrib.get('rule') != "greaterThan":
-                        raise NotImplementedError(
-                            "Speed condition with the given specification is not yet supported")
-                    atomic = AccelerateToVelocity(trigger_actor, value, condition_name)
+                    spd_condition = entity_condition.find('SpeedCondition')
+                    condition_value = float(spd_condition.attrib.get('value'))
+                    condition_rule = spd_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+
+                    atomic = TriggerVelocity(
+                        trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('RelativeSpeedCondition') is not None:
-                    raise NotImplementedError("RelativeSpeed conditions are not yet supported")
+                    relspd_condition = entity_condition.find('RelativeSpeedCondition')
+                    condition_value = float(relspd_condition.attrib.get('value'))
+                    condition_rule = relspd_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+
+                    for actor in actor_list:
+                        if relspd_condition.attrib.get('entityRef', None) == actor.attributes['role_name']:
+                            triggered_actor = actor
+                            break
+
+                    if triggered_actor is None:
+                        raise AttributeError("Cannot find actor '{}' for condition".format(
+                            relspd_condition.attrib.get('entityRef', None)))
+
+                    atomic = RelativeVelocityToOtherActor(
+                        trigger_actor, triggered_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('TraveledDistanceCondition') is not None:
                     distance_condition = entity_condition.find('TraveledDistanceCondition')
                     distance_value = float(distance_condition.attrib.get('value'))
@@ -510,7 +577,11 @@ class OpenScenarioParser(object):
                 rule = simtime_condition.attrib.get('rule')
                 atomic = SimulationTimeCondition(value, success_rule=rule)
             elif value_condition.find('TimeOfDayCondition') is not None:
-                raise NotImplementedError("ByValue TimeOfDay conditions are not yet supported")
+                tod_condition = value_condition.find('TimeOfDayCondition')
+                condition_date = tod_condition.attrib.get('dateTime')
+                condition_rule = tod_condition.attrib.get('rule')
+                condition_operator = OpenScenarioParser.operators[condition_rule]
+                atomic = TimeOfDayComparison(condition_date, condition_operator, condition_name)
             elif value_condition.find('StoryboardElementStateCondition') is not None:
                 state_condition = value_condition.find('StoryboardElementStateCondition')
                 element_name = state_condition.attrib.get('storyboardElementRef')
@@ -705,6 +776,7 @@ class OpenScenarioParser(object):
                             position = waypoint.find('Position')
                             transform = OpenScenarioParser.convert_position_to_transform(position)
                             waypoints.append(transform)
+                        # @TODO: How to handle relative positions here? This might chance at runtime?!
                         atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                     elif private_action.find('CatalogReference') is not None:
                         raise NotImplementedError("CatalogReference private actions are not yet supported")

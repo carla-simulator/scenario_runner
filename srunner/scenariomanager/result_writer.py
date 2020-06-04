@@ -10,8 +10,10 @@ This module contains the result gatherer and write for CARLA scenarios.
 It shall be used from the ScenarioManager only.
 """
 
-import logging
+from __future__ import print_function
+
 import time
+from tabulate import tabulate
 
 
 class ResultOutputProvider(object):
@@ -41,54 +43,61 @@ class ResultOutputProvider(object):
         self._end_time = time.strftime('%Y-%m-%d %H:%M:%S',
                                        time.localtime(self._data.end_system_time))
 
-        self.logger = logging.getLogger("ResultProvider")
-        self.logger.setLevel(logging.INFO)
-        self.logger.propagate = False
-
     def write(self):
         """
         Public write function
         """
-        if self._stdout:
-            channel = logging.StreamHandler()
-            self.logger.addHandler(channel)
-        if self._filename is not None:
-            filehandle = logging.FileHandler(self._filename)
-            self.logger.addHandler(filehandle)
         if self._junit is not None:
             self._write_to_junit()
 
-        if self._stdout or (self._filename is not None):
-            self._write_to_logger()
-            self.logger.handlers = []
+        output = self.create_output_text()
+        if self._filename is not None:
+            with open(self._filename, 'w') as fd:
+                fd.write(output)
+        if self._stdout:
+            print(output)
 
-    def _write_to_logger(self):
+    def create_output_text(self):
         """
-        Writing to logger automatically writes to all handlers in parallel,
-        i.e. stdout and file are both captured with this function
+        Creates the output message
         """
-        self.logger.info("\n")
-        self.logger.info("Scenario: %s --- Result: %s",
-                         self._data.scenario_tree.name, self._result)
-        self.logger.info("Start time: %s", (self._start_time))
-        self.logger.info("End time: %s", (self._end_time))
-        self.logger.info("Duration: System Time %5.2fs --- Game Time %5.2fs",
-                         self._data.scenario_duration_system,
-                         self._data.scenario_duration_game)
+        output = "\n"
+        output += " ======= Results of Scenario: {} ---- {} =======\n".format(
+            self._data.scenario_tree.name, self._result)
+        end_line_length = len(output) - 3
+        output += "\n"
+
+        # Lis of all the actors
+        output += " > Ego vehicles:\n"
         for ego_vehicle in self._data.ego_vehicles:
-            self.logger.info("Ego vehicle:  %s", ego_vehicle)
+            output += "{}; ".format(ego_vehicle)
+        output += "\n\n"
 
-        actor_string = ""
+        output += " > Other actors:\n"
         for actor in self._data.other_actors:
-            actor_string += "{}; ".format(actor)
-        self.logger.info("Other actors: %s", actor_string)
-        self.logger.info("\n")
-        # pylint: disable=line-too-long
-        self.logger.info(
-            "              Actor              |               Criterion             |   Result    | Actual Value | Expected Value ")
-        self.logger.info(
-            "----------------------------------------------------------------------------------------------------------------------")
-        # pylint: enable=line-too-long
+            output += "{}; ".format(actor)
+        output += "\n\n"
+
+        # Simulation part
+        output += " > Simulation Information\n"
+
+        system_time = round(self._data.scenario_duration_system, 2)
+        game_time = round(self._data.scenario_duration_game, 2)
+        ratio = round(self._data.scenario_duration_game / self._data.scenario_duration_system, 3)
+
+        list_statistics = [["Start Time", "{}".format(self._start_time)]]
+        list_statistics.extend([["End Time", "{}".format(self._end_time)]])
+        list_statistics.extend([["Duration (System Time)", "{}s".format(system_time)]])
+        list_statistics.extend([["Duration (Game Time)", "{}s".format(game_time)]])
+        list_statistics.extend([["Ratio (System Time / Game Time)", "{}s".format(ratio)]])
+
+        output += tabulate(list_statistics, tablefmt='fancy_grid')
+        output += "\n\n"
+
+        # Criteria part
+        output += " > Criteria Information\n"
+        header = ['Actor', 'Criterion', 'Result', 'Actual Value', 'Expected Value']
+        list_statistics = [header]
 
         for criterion in self._data.scenario.get_criteria():
             name_string = criterion.name
@@ -97,27 +106,31 @@ class ResultOutputProvider(object):
             else:
                 name_string += " (Req.)"
 
-            self.logger.info("%22s (id=%3d) | %35s | %11s | %12.2f | %14.2f ",
-                             criterion.actor.type_id[8:],
-                             criterion.actor.id,
-                             name_string,
-                             # pylint: disable=line-too-long
-                             "FAILURE" if criterion.test_status == "RUNNING" else criterion.test_status,
-                             # pylint: enable=line-too-long
-                             criterion.actual_value,
-                             criterion.expected_value_success)
+            actor = "{} (id={})".format(criterion.actor.type_id[8:], criterion.actor.id)
+            criteria = name_string
+            result = "FAILURE" if criterion.test_status == "RUNNING" else criterion.test_status
+            actual_value = criterion.actual_value
+            expected_value = criterion.expected_value_success
 
-        # Handle timeout separately
-        # pylint: disable=line-too-long
-        self.logger.info("%32s | %35s | %11s | %12.2f | %14.2f ",
-                         "",
-                         "Duration",
-                         "SUCCESS" if self._data.scenario_duration_game < self._data.scenario.timeout else "FAILURE",
-                         self._data.scenario_duration_game,
-                         self._data.scenario.timeout)
-        # pylint: enable=line-too-long
+            list_statistics.extend([[actor, criteria, result, actual_value, expected_value]])
 
-        self.logger.info("\n")
+        # Timeout
+        actor = ""
+        criteria = "Timeout (Req.)"
+        result = "SUCCESS" if self._data.scenario_duration_game < self._data.scenario.timeout else "FAILURE"
+        actual_value = round(self._data.scenario_duration_game, 2)
+        expected_value = round(self._data.scenario.timeout, 2)
+
+        list_statistics.extend([[actor, criteria, result, actual_value, expected_value]])
+
+        # Global and final output message
+        list_statistics.extend([['', 'GLOBAL RESULT', self._result, '', '']])
+
+        output += tabulate(list_statistics, tablefmt='fancy_grid')
+        output += "\n"
+        output += " " + "=" * end_line_length + "\n"
+
+        return output
 
     def _write_to_junit(self):
         """

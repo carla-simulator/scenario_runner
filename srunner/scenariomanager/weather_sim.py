@@ -45,7 +45,7 @@ class Weather(object):
         _sun (ephem.Sun): The sun as astronomic entity.
         _observer_location (ephem.Observer): Holds the geographical position (lat/lon/altitude)
             for which the sun position is obtained.
-        _datetime (datetime): Date and time in UTC (required for animation only).
+        datetime (datetime): Date and time in UTC (required for animation only).
     """
 
     def __init__(self, carla_weather, dtime=None, animation=False):
@@ -62,9 +62,9 @@ class Weather(object):
         self._observer_location.lat = str(geo_location.latitude)
 
         #@TODO This requires the time to be in UTC to be accurate
-        self._datetime = dtime
-        if self._datetime:
-            self._observer_location.date = self._datetime
+        self.datetime = dtime
+        if self.datetime:
+            self._observer_location.date = self.datetime
 
         self.update()
 
@@ -72,16 +72,16 @@ class Weather(object):
         """
         If the weather animation is true, the new sun position is calculated w.r.t delta_time
 
-        Nothing happens if animation or _datetime are None.
+        Nothing happens if animation or datetime are None.
 
         Args:
-            delta_time (float): Time passed since self._datetime [seconds].
+            delta_time (float): Time passed since self.datetime [seconds].
         """
-        if not self.animation or not self._datetime:
+        if not self.animation or not self.datetime:
             return
 
-        self._datetime = self._datetime + datetime.timedelta(seconds=delta_time)
-        self._observer_location.date = self._datetime
+        self.datetime = self.datetime + datetime.timedelta(seconds=delta_time)
+        self._observer_location.date = self.datetime
 
         self._sun.compute(self._observer_location)
         self.carla_weather.sun_altitude_angle = math.degrees(self._sun.alt)
@@ -96,6 +96,8 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
 
     This behavior is always in a running state and must never terminate.
     The user must not add this behavior. It is automatically added by the ScenarioManager.
+
+    This atomic also sets the datetime to blackboard variable, used by TimeOfDayComparison atomic
 
     Args:
         name (string): Name of the behavior.
@@ -133,7 +135,7 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
             frequency is 1 Hz.
 
         returns:
-            RUNNING
+            py_trees.common.Status.RUNNING
         """
 
         weather = None
@@ -148,6 +150,7 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
             self._weather = weather
             delattr(py_trees.blackboard.Blackboard(), "CarlaWeather")
             CarlaDataProvider.get_world().set_weather(self._weather.carla_weather)
+            py_trees.blackboard.Blackboard().set("Datetime", self._weather.datetime, overwrite=True)
 
         if self._weather and self._weather.animation:
             new_time = GameTime.get_time()
@@ -157,5 +160,7 @@ class WeatherBehavior(py_trees.behaviour.Behaviour):
                 self._weather.update(delta_time)
                 self._current_time = new_time
                 CarlaDataProvider.get_world().set_weather(self._weather.carla_weather)
+
+                py_trees.blackboard.Blackboard().set("Datetime", self._weather.datetime, overwrite=True)
 
         return py_trees.common.Status.RUNNING

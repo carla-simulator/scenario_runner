@@ -18,6 +18,7 @@
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
     - Renamed the _map_ element at routes to _town_, matching the scenario configuration files
 
+* Improved the visual display of the information from the *output* and *file* arguments.
 * Routes are now deterministic in regards to the spawning scenarios when more than one are at the same location
 * The BackgroundActivity functionality has been unchanged but some tweaks have been made, fixing a previous patch. As a result, the *amount* parameter at *ActorConfigurationData* has been removed.
 * Remade how ScenarioRunner reads the scenarios files. It now reads all scenarios inside the *srunner/scenarios* folder without needing to import them. Scenarios outside that folder will still need the *--additionalScenario* argument.
@@ -27,21 +28,35 @@
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller.
     - Added initial speed support for pedestrians for OpenSCENARIO
     - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
+    - Extended FollowLeadingVehicle example to illustrate weather changes
+    - Added support for RelativeSpeedCondition
+    - Added support for AccelerationCondition
+    - Added support for TimeOfDayCondition
+    - Added support for OffroadCondition
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
     - Fixed handling of relative positions with negative offset
+    - Added support for local ParamaterDeclarations
 * Atomics:
     - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time
     - UpdateWeather to update weather to a new setting, e.g. sun to rain
     - UpdateRoadFriction to update the road friction while running
+    - new RelativeVelocityToOtherActor trigger condition, used to compare velocities of two actors
+    - new TriggerAcceleration trigger condition which compares a reference acceleration with the actor's one.
+    - new TimeOfDayComparison trigger condition, comparing the simulation time (set up by the new weather system) with a given *datetime*.
+    - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. This *duration* is 0 by default, so the behavior is unchanged.
+    - Added new *OffRoadTest* criteria.
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes
 * Fixed initial speed of vehicles using OpenSCENARIO
 * Fixed bug causing an exception when calling BasicScenario's *_initialize_actors* with no other_actors.
 * Fixed bug causing the route to be downsampled (introduced by mistake at 0.9.9)
 * Fixed bug causing _output_ argument to not display the correct number with _InRouteTest_ and _RouteCompletionTest_ criterias (the succces and failure was correctly displayed)
+* Fixed bug causing OpenSCENARIO's SpeedCondition to not work as intended
+* Fixed bug causing CollisionConditions not to work properly in OpenSCENARIO
+* Fixed bug causing the *group:* functionality to behave incorrectly when moving scenarios around.
 
 
 ## CARLA ScenarioRunner 0.9.9
