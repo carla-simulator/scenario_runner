@@ -1,7 +1,5 @@
 import carla
 import os
-import pprint
-import json
 
 
 def parse_actor(info):
@@ -71,58 +69,6 @@ def parse_velocity(transform, prev_transform, frame_time, prev_frame_time):
     return velocity
 
 
-class Metrics(object):
-    """
-    Support class for the users to easily create their own metrics.
-    The user should only modify the create_metrics function, returning
-    "something in particular"
-    """
-
-    def __init__(self, log_location, criterias, open_drive=None):
-        """
-        Initialization of the metrics class.
-
-        Args:
-            log_location (str): name of the log file
-        """
-        self.pp = pprint.PrettyPrinter(indent=4)
-
-        recorder_info = client.show_recorder_file_info(log_location, True)
-        log = Log(recorder_info, criterias, open_drive)
-
-        metrics = self.create_metrics(log)
-
-        self.write_to_terminal(metrics)
-
-        self.write_to_json(metrics)
-
-    def create_metrics(self, metrics):
-        """
-        Implementation of the metrics
-        """
-        ego_id = metrics.get_ego_vehicle_id()
-        metrics.get_vehicle_speed(ego_id)
-
-        return metrics
-
-    def write_to_terminal(self, metrics):
-        """
-        Print the metrics table through the terminal
-        """
-        # self.pp.pprint(metrics.states)
-        # self.pp.pprint(metrics.actors)
-
-
-    def write_to_json(self, metrics):
-        """
-        Writes the metrics into a json file
-        """
-
-        with open('data.json', 'w') as fp:
-            json.dump(metrics.states, fp, sort_keys=True, indent=4)
-            json.dump(metrics.actors, fp, sort_keys=True, indent=4)
-
-
 class Log(object):
     """
     Utility class to query the metrics log.
@@ -146,15 +92,12 @@ class Log(object):
         "4": carla.TrafficLightState.Unknown,
     }
 
-    def __init__(self, location, criterias, open_drive):
+    def __init__(self, log_string, criteria):
         """
         Initializes the log class and parses it to extract the disctionaries
         """
-        self._location = location
-        log_string = client.show_recorder_file_info(location, True)
         self.parse_log(log_string)
-        self.criterias = criterias
-        self.open_drive = open_drive
+        self.criteria = criteria
 
     def parse_log(self, log_string):
         """
@@ -313,50 +256,100 @@ class Log(object):
         """
         Returns a carla.Location with an actor's location at a given frame
         """
-        pass
+        transform = self.states[frame][actor_id]["transform"]
+        location = carla.Location(
+            transform["x"],
+            transform["y"],
+            transform["z"],
+        )
+
+        return location
+
+    def get_all_actor_locations(self, actor_id):
+        """
+        Returns a carla.Location list with all the actor's location of a given actor
+        througout the entire simulation
+        """
+        locations = []
+
+        for frame in self.states:
+
+            location = self.get_actor_location(actor_id, frame)
+
+        return locations
 
     def get_actor_transform(self, actor_id, frame):
         """
         Returns a carla.Transform with an actor's transform at a given frame
         """
-        pass
+        transform = self.states[frame][actor_id]["transform"]
+        location = carla.Location(
+            transform["x"],
+            transform["y"],
+            transform["z"],
+        )
+        rotation = carla.Rotation(
+            transform["pitch"],
+            transform["yaw"],
+            transform["roll"],
+        )
+
+        return carla.Transform(location,rotation)
+
+    def get_all_actor_transforms(self, actor_id):
+        """
+        Returns a carla.Location with an actor's location at a given frame
+        """
+        transform = []
+
+        for frame in self.states:
+
+            location = self.get_actor_transform(actor_id, frame)
+
+        return transform
 
     def get_vehicle_control(self, actor_id, frame):
         """
         Returns a carla.VehicleControl with an actor's control at a given frame
         """
-        pass
+        control_info = self.states[frame][actor_id]["control"]
+        control = carla.VehicleControl(
+            control_info["throttle"],
+            control_info["steer"],
+            control_info["brake"],
+            control_info["hand_brake"],
+            control_info["reverse"],
+            False,
+            control_info["gear"],
+        )
+
+        return location
 
     def get_walker_velocity(self, actor_id, frame):
         """
         Returns a float with a walker's speed at a given frame
         """
-        pass
+        return self.states[frame][actor_id]["control"]["speed"]
 
-    def get_vehicle_speed(self, actor_id):
+    def get_vehicle_speed(self, actor_id, frame):
         """
         Returns a float with an actor's speed at a given frame
         """
-        for frame in self.states:
-            velocity = frame[str(actor_id)]["velocity"]
-            print("x: {} -- y: {} -- z: {}".format(velocity["x"], velocity["y"], velocity["z"]))
 
-        pass
+        velocity_info = self.states[frame][actor_id]["velocity"]
+        velocity = carla.Vector3D(
+            velocity_info["x"],
+            velocity_info["y"],
+            velocity_info["z"]
+        )
+        return velocity
 
     def get_ego_vehicle_id(self):
         """
-        Returns an int with an actor's speed at a given frame
+        Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
         """
         for actor_id in self.actors:
             if "role_name" in self.actors[actor_id] and self.actors[actor_id]["role_name"] == "hero":
                 return actor_id
 
         return None
-
-
-
-client = carla.Client('127.0.0.1', 2000)
-
-location = "{}/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), 'Frozen')
-
-log = Metrics(location, None)

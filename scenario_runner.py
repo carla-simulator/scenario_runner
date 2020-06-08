@@ -28,6 +28,7 @@ import signal
 import sys
 import time
 import pkg_resources
+import json
 
 import carla
 
@@ -38,7 +39,6 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
-from log_tests import Metrics
 
 # Version of scenario_runner
 VERSION = 0.6
@@ -253,6 +253,36 @@ class ScenarioRunner(object):
             if not (self._args.output or filename or junit_filename):
                 print("Please run with --output for further information")
 
+    def _record_criteria(self, criteria, name):
+        """
+        Filter the JSON serializable attributes of the criterias and
+        dumps them into a file. This will be used by the metrics manager,
+        in case the user wants specific information about the criterias.
+        """
+        file_name = name + "_criteria.json"
+
+        with open('temp.json', 'w') as fp:
+            
+            criteria_dict = {}
+            for criterion in criteria:
+
+                criterion_dict = criterion.__dict__
+                criteria_dict[criterion.name] = {}
+
+                for key in criterion_dict:
+                    if key != "name":
+                        try:
+                            key_dict = {key: criterion_dict[key]}
+                            json.dump(key_dict, fp, sort_keys=False, indent=4)
+                            criteria_dict[criterion.name].update(key_dict)
+                        except TypeError:
+                            pass
+        
+        with open(file_name, 'w') as fp:
+            json.dump(criteria_dict, fp, sort_keys=False, indent=4)
+        
+        os.remove('temp.json')
+
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """
         Load a new CARLA world and provide data to CarlaDataProvider
@@ -350,22 +380,21 @@ class ScenarioRunner(object):
 
         try:
             # Load scenario and run it
-            recorder_name = "{}/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), config.name)
-            # if self._args.record:
-            self.client.start_recorder(recorder_name)
+            recorder_name = "{}/srunner/metrics/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), config.name)
+            print(recorder_name)
+            if self._args.record:
+                self.client.start_recorder(recorder_name)
             self.manager.load_scenario(scenario, self.agent_instance)
             self.manager.run_scenario()
 
             # Provide outputs if required
             self._analyze_scenario(config)
 
-            # Remove all actors and stop recorder
+            # Remove all actors, stop the recorder and save all criterias (if needed)
             scenario.remove_all_actors()
-            self.client.stop_recorder()
-
-            # Start the metrics
-            info = self.client.show_recorder_file_info(recorder_name, True)
-            Metrics(info, self.manager.scenario.get_criteria(), None)
+            if self._args.record:
+                self.client.stop_recorder()
+                self._record_criteria(self.manager.scenario.get_criteria(), config.name)
 
             result = True
 
