@@ -38,6 +38,7 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
+from log_tests import Metrics
 
 # Version of scenario_runner
 VERSION = 0.6
@@ -174,7 +175,6 @@ class ScenarioRunner(object):
             settings.fixed_delta_seconds = None
             self.world.apply_settings(settings)
 
-        self.client.stop_recorder()
         self.manager.cleanup()
 
         CarlaDataProvider.cleanup()
@@ -350,16 +350,22 @@ class ScenarioRunner(object):
 
         try:
             # Load scenario and run it
-            if self._args.record:
-                self.client.start_recorder("{}/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), config.name))
+            recorder_name = "{}/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), config.name)
+            # if self._args.record:
+            self.client.start_recorder(recorder_name)
             self.manager.load_scenario(scenario, self.agent_instance)
             self.manager.run_scenario()
 
             # Provide outputs if required
             self._analyze_scenario(config)
 
-            # Remove all actors
+            # Remove all actors and stop recorder
             scenario.remove_all_actors()
+            self.client.stop_recorder()
+
+            # Start the metrics
+            info = self.client.show_recorder_file_info(recorder_name, True)
+            Metrics(info, self.manager.scenario.get_criteria(), None)
 
             result = True
 
