@@ -259,8 +259,9 @@ class ScenarioRunner(object):
         dumps them into a file. This will be used by the metrics manager,
         in case the user wants specific information about the criterias.
         """
-        file_name = name + "_criteria.json"
+        file_name = name[:-4] + "_criteria.json"
 
+        # Filter the attributes that aren't JSON serializable
         with open('temp.json', 'w') as fp:
             
             criteria_dict = {}
@@ -277,11 +278,13 @@ class ScenarioRunner(object):
                             criteria_dict[criterion.name].update(key_dict)
                         except TypeError:
                             pass
-        
+
+        os.remove('temp.json')
+
+        # Save the criteria dictionary into a .json file
         with open(file_name, 'w') as fp:
             json.dump(criteria_dict, fp, sort_keys=False, indent=4)
         
-        os.remove('temp.json')
 
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """
@@ -379,10 +382,12 @@ class ScenarioRunner(object):
             return False
 
         try:
-            # Load scenario and run it
-            recorder_name = "{}/srunner/metrics/{}.log".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), config.name)
             if self._args.record:
+                recorder_name = "{}/{}/{}.log".format(
+                    os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.record, config.name)
                 self.client.start_recorder(recorder_name)
+
+            # Load scenario and run it
             self.manager.load_scenario(scenario, self.agent_instance)
             self.manager.run_scenario()
 
@@ -393,7 +398,7 @@ class ScenarioRunner(object):
             scenario.remove_all_actors()
             if self._args.record:
                 self.client.stop_recorder()
-                self._record_criteria(self.manager.scenario.get_criteria(), config.name)
+                self._record_criteria(self.manager.scenario.get_criteria(), recorder_name)
 
             result = True
 
@@ -520,8 +525,8 @@ def main():
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument(
         '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[number of route]))', nargs='+', type=str)
-    parser.add_argument('--record', action="store_true",
-                        help='Use CARLA recording feature to create a recording of the scenario')
+    parser.add_argument('--record', type=str, default='',
+                        help='Use CARLA recording feature to create a recording of the scenario, as well as save to file all the information about the criterias used. The files will be saved at the given path, which is relative to the SCENARIO_RUNNER_ROOT')
     parser.add_argument('--timeout', default="10.0",
                         help='Set the CARLA client timeout value in seconds')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(VERSION))

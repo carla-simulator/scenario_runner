@@ -256,34 +256,41 @@ class MetricsLog(object):
         """
         Returns a carla.Location with an actor's location at a given frame
         """
-        transform = self.states[frame][actor_id]["transform"]
-        location = carla.Location(
-            transform["x"],
-            transform["y"],
-            transform["z"],
-        )
+        actor_id = str(actor_id)
 
-        return location
+        frame_state = self.states[frame]
+        if actor_id in frame_state:
+            transform = frame_state[actor_id]["transform"]
+            location = carla.Location(
+                transform["x"],
+                transform["y"],
+                transform["z"],
+            )
 
-    def get_all_actor_locations(self, actor_id):
-        """
-        Returns a carla.Location list with all the actor's location of a given actor
-        througout the entire simulation
-        """
-        locations = []
+            return location
 
-        for i, frame in enumerate(self.states):
+        return None
 
-            if actor_id in frame:
-                transform = frame[actor_id]["transform"]
-                location = carla.Location(
-                    transform["x"],
-                    transform["y"],
-                    transform["z"],
-                )
-                locations.append([i, location])
+    # def get_all_actor_locations(self, actor_id):
+    #     """
+    #     Returns a carla.Location list with all the actor's location of a given actor
+    #     througout the entire simulation
+    #     """
+    #     actor_id = str(actor_id)
+    #     locations = []
 
-        return locations
+    #     for i, frame in enumerate(self.states):
+
+    #         if actor_id in frame:
+    #             transform = frame[actor_id]["transform"]
+    #             location = carla.Location(
+    #                 transform["x"],
+    #                 transform["y"],
+    #                 transform["z"],
+    #             )
+    #             locations.append({i: location})
+
+    #     return locations
 
     def get_actor_transform(self, actor_id, frame):
         """
@@ -303,18 +310,18 @@ class MetricsLog(object):
 
         return carla.Transform(location,rotation)
 
-    def get_all_actor_transforms(self, actor_id):
-        """
-        Returns a carla.Location with an actor's location at a given frame
-        """
-        transforms = []
+    # def get_all_actor_transforms(self, actor_id):
+    #     """
+    #     Returns a carla.Location with an actor's location at a given frame
+    #     """
+    #     transforms = []
 
-        for frame in self.states:
+    #     for frame in self.states:
 
-            transform = self.get_actor_transform(actor_id, frame)
-            transforms.append([frame, transform])
+    #         transform = self.get_actor_transform(actor_id, frame)
+    #         transforms.append([frame, transform])
 
-        return transforms
+    #     return transforms
 
     def get_vehicle_control(self, actor_id, frame):
         """
@@ -352,7 +359,7 @@ class MetricsLog(object):
         )
         return velocity
 
-    def get_vehicle_id_with_role_name(self, rolename):
+    def get_actor_id_with_role_name(self, rolename):
         """
         Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
         """
@@ -366,3 +373,10 @@ class MetricsLog(object):
         """
 
         return self.criteria[name]
+
+    def get_simulation_frame_count(self):
+        """
+        Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
+        """
+
+        return len(self.states)

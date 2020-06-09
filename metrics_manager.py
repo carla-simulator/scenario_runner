@@ -1,6 +1,5 @@
 import carla
 import os
-import glob
 import sys
 import argparse
 import importlib
@@ -37,6 +36,7 @@ class MetricsManager(object):
 
         # Run the metric class
         metric = self._metric_class(recorder_info, criteria_info, self._args.log)
+        metric._create_metrics
 
     def get_metric_class(self, metric_file):
         """

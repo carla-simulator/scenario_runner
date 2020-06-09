@@ -11,6 +11,11 @@ class BasicMetric(object):
     "something in particular"
     """
 
+    _metrics_to_plot = False
+    _metrics_to_json = True
+    _metrics_to_terminal = True
+    _metrics_to_file = False
+
     def __init__(self, recorder_info, criteria_info, log_path):
         """
         Initialization of the metrics class.
@@ -19,15 +24,16 @@ class BasicMetric(object):
             log_location (str): name of the log file
         """
         self._log_path = log_path
-        self._file_name = "srunner/metrics/" + self._log_path.split("/")[-1][:-4] + "_metrics.json"
+        self._file_name = "srunner/metrics/data/" + self._log_path.split("/")[-1][:-4] + "_metrics.json"
 
-        self._metrics_log = MetricsLog(recorder_info, criteria_info)
+        metrics_log = MetricsLog(recorder_info, criteria_info)
+        metrics = self._create_metrics(metrics_log)
 
-        metrics = self._create_metrics(self._metrics_log)
+        if self._metrics_to_terminal:
+            self._write_to_terminal(metrics)
 
-        # self._write_to_terminal(metrics)
-
-        self._write_to_json(metrics)
+        if self._metrics_to_json:
+            self._write_to_json(metrics)
 
     def _create_metrics(self, metrics_log):
         """
@@ -53,6 +59,7 @@ class BasicMetric(object):
         """
         Print the metrics table through the terminal
         """
+        print("HEllo")
         pass
 
 
@@ -60,6 +67,9 @@ class BasicMetric(object):
         """
         Writes the metrics into a json file
         """
-
-        with open(self._file_name, 'w') as fp:
-            json.dump(metrics, fp, sort_keys=True, indent=4)
+        print("HIIII")
+        # with open(self._file_name, 'w') as fp:
+        #     # json.dump(metrics.states, fp, sort_keys=True, indent=4)
+        #     # json.dump(metrics.actors, fp, sort_keys=True, indent=4)
+        #     json.dump(metrics, fp, sort_keys=True, indent=4)
+        pass
