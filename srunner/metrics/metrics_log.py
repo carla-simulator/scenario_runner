@@ -69,7 +69,7 @@ def parse_velocity(transform, prev_transform, frame_time, prev_frame_time):
     return velocity
 
 
-class Log(object):
+class MetricsLog(object):
     """
     Utility class to query the metrics log.
     
@@ -272,9 +272,16 @@ class Log(object):
         """
         locations = []
 
-        for frame in self.states:
+        for i, frame in enumerate(self.states):
 
-            location = self.get_actor_location(actor_id, frame)
+            if actor_id in frame:
+                transform = frame[actor_id]["transform"]
+                location = carla.Location(
+                    transform["x"],
+                    transform["y"],
+                    transform["z"],
+                )
+                locations.append([i, location])
 
         return locations
 
@@ -300,13 +307,14 @@ class Log(object):
         """
         Returns a carla.Location with an actor's location at a given frame
         """
-        transform = []
+        transforms = []
 
         for frame in self.states:
 
-            location = self.get_actor_transform(actor_id, frame)
+            transform = self.get_actor_transform(actor_id, frame)
+            transforms.append([frame, transform])
 
-        return transform
+        return transforms
 
     def get_vehicle_control(self, actor_id, frame):
         """
@@ -344,12 +352,17 @@ class Log(object):
         )
         return velocity
 
-    def get_ego_vehicle_id(self):
+    def get_vehicle_id_with_role_name(self, rolename):
         """
         Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
         """
         for actor_id in self.actors:
-            if "role_name" in self.actors[actor_id] and self.actors[actor_id]["role_name"] == "hero":
+            if "role_name" in self.actors[actor_id] and self.actors[actor_id]["role_name"] == rolename:
                 return actor_id
 
-        return None
+    def get_criteria(self, name):
+        """
+        Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
+        """
+
+        return self.criteria[name]

@@ -1,7 +1,7 @@
 import pprint
 import json
 
-from srunner.metrics.logging import Log
+from srunner.metrics.metrics_log import MetricsLog
 
 
 class BasicMetric(object):
@@ -18,19 +18,32 @@ class BasicMetric(object):
         Args:
             log_location (str): name of the log file
         """
-        self.log_path = log_path
+        self._log_path = log_path
+        self._file_name = "srunner/metrics/" + self._log_path.split("/")[-1][:-4] + "_metrics.json"
 
-        log = Log(recorder_info, criteria_info)
+        self._metrics_log = MetricsLog(recorder_info, criteria_info)
 
-        metrics = self._create_metrics(log)
+        metrics = self._create_metrics(self._metrics_log)
 
         # self._write_to_terminal(metrics)
 
         self._write_to_json(metrics)
 
-    def _create_metrics(self, metrics):
+    def _create_metrics(self, metrics_log):
         """
-        Pure virtual function to setup the metrics by the user
+        Pure virtual function to setup the metrics by the user.
+        
+        Args:
+            metrics_log (srunner.metrics.metrics_log.MetricsLog): has all the
+                information regarding a specific simulation. This is taken from
+                parsing the CARLA recorder into variables
+
+        metrics_log consits of three attributes:
+            - states: list of dictionaries. Each dictionary contains all the information
+                of the simulation at a specific frame.
+            - actors: dictionary of (ID - actor info) regarding the actors part of the simulation
+            - criteria: dictionary with all the criterias and its attributes, read from a .json file.
+                This file is automatically created by ScenarioRunner if the recorder is on
         """
         raise NotImplementedError(
             "This function should be re-implemented by all metrics"
@@ -47,8 +60,6 @@ class BasicMetric(object):
         """
         Writes the metrics into a json file
         """
-        file_name = "srunner/metrics/" + self.log_path.split("/")[-1][:-4] + "_metrics.json"
 
-        with open(file_name, 'w') as fp:
-            json.dump(metrics.states, fp, sort_keys=True, indent=4)
-            json.dump(metrics.actors, fp, sort_keys=True, indent=4)
+        with open(self._file_name, 'w') as fp:
+            json.dump(metrics, fp, sort_keys=True, indent=4)
