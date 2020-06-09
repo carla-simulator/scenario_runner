@@ -13,7 +13,7 @@ class TestMetrics(BasicMetric):
     The user should only modify the create_metrics function, returning
     "something in particular"
     """
-    def __init__(self, recorder_info, criteria_info, log_path):
+    def __init__(self, recorder, criteria):
         """
         Initializes the class. Here, the user can select which output
         option will be used. If activated:
@@ -30,7 +30,7 @@ class TestMetrics(BasicMetric):
         self._metrics_to_terminal = True
         self._metrics_to_file = False
 
-        super(TestMetrics, self).__init__(recorder_info, criteria_info, log_path)
+        super(TestMetrics, self).__init__(recorder, criteria)
 
     def _create_metrics(self, metrics_log):
         """
@@ -70,7 +70,7 @@ class TestMetrics(BasicMetric):
         collision_criteria = metrics_log.get_criteria("CollisionTest")
         number_of_hits = collision_criteria["actual_value"]
 
-        return None
+        return number_of_hits
 
     def _write_to_json(self, metrics):
         """

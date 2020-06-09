@@ -8,6 +8,9 @@ import json
 from argparse import RawTextHelpFormatter
 
 
+from srunner.metrics.metrics_parser import MetricsParser
+
+
 class MetricsManager(object):
     """
     Main class of the metrics module. Handles the parsing and execution of
@@ -25,20 +28,21 @@ class MetricsManager(object):
         self.client.set_timeout(self._args.timeout)
 
         # Read the metric argument to get the metric class
-        self._metric_class = self.get_metric_class(self._args.metric)
+        self._metric_class = self._get_metric_class(self._args.metric)
 
         # Get the log information. Here to avoid passing the client instance
-        log_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.log)
-        recorder_info = self.client.show_recorder_file_info(log_file, True)
+        recorder_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.log)
+        recorder_info = self.client.show_recorder_file_info(recorder_file, True)
+        recorder_parsed = MetricsParser.parse_recorder_info(recorder_info)
 
         with open(self._args.criteria) as criteria_file:
-            criteria_info = json.load(criteria_file)
+            criteria_dict = json.load(criteria_file)
 
         # Run the metric class
-        metric = self._metric_class(recorder_info, criteria_info, self._args.log)
+        metric = self._metric_class(recorder_parsed, criteria_dict)
         metric._create_metrics
 
-    def get_metric_class(self, metric_file):
+    def _get_metric_class(self, metric_file):
         """
         Function to extract the metrics class from the path given by the metrics
         argument. Returns the first class found that is a child of BasicMetric
@@ -57,7 +61,6 @@ class MetricsManager(object):
 
         print("No class was found that was a child of BasicMetric ... Exiting")
         sys.exit(-1)
-
 
 def main():
     """

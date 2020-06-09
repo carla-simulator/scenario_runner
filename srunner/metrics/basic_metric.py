@@ -16,17 +16,17 @@ class BasicMetric(object):
     _metrics_to_terminal = True
     _metrics_to_file = False
 
-    def __init__(self, recorder_info, criteria_info, log_path):
+    def __init__(self, recorder, criteria):
         """
         Initialization of the metrics class.
 
         Args:
             log_location (str): name of the log file
         """
-        self._log_path = log_path
-        self._file_name = "srunner/metrics/data/" + self._log_path.split("/")[-1][:-4] + "_metrics.json"
+        # self._log_path = log_path
+        # self._file_name = "srunner/metrics/data/" + self._log_path.split("/")[-1][:-4] + "_metrics.json"
 
-        metrics_log = MetricsLog(recorder_info, criteria_info)
+        metrics_log = MetricsLog(recorder, criteria)
         metrics = self._create_metrics(metrics_log)
 
         if self._metrics_to_terminal:
