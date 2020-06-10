@@ -138,7 +138,7 @@ class FollowLeadingVehicle(BasicScenario):
                                                         self.ego_vehicles[0],
                                                         distance=20,
                                                         name="FinalDistance")
-        endcondition_part2 = StandStill(self.ego_vehicles[0], name="StandStill")
+        endcondition_part2 = StandStill(self.ego_vehicles[0], name="StandStill", duration=1)
         endcondition.add_child(endcondition_part1)
         endcondition.add_child(endcondition_part2)
 
@@ -285,7 +285,7 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
                                                         self.ego_vehicles[0],
                                                         distance=20,
                                                         name="FinalDistance")
-        endcondition_part2 = StandStill(self.ego_vehicles[0], name="FinalSpeed")
+        endcondition_part2 = StandStill(self.ego_vehicles[0], name="FinalSpeed", duration=1)
         endcondition.add_child(endcondition_part1)
         endcondition.add_child(endcondition_part2)
 
