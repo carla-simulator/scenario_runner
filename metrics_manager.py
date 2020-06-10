@@ -40,7 +40,6 @@ class MetricsManager(object):
 
         # Run the metric class
         metric = self._metric_class(recorder_parsed, criteria_dict)
-        metric._create_metrics
 
     def _get_metric_class(self, metric_file):
         """

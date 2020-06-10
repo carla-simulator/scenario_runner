@@ -1,45 +1,60 @@
+import carla
+
 def parse_actor(info):
 
     actor = {
         "type_id": info[2],
-        "location": {
-            "x": float(info[5][1:-1]) / 100,
-            "y": float(info[6][:-1]) / 100,
-            "z": float(info[7][:-1]) / 100,
-        }
+        "location": carla.Location(
+            float(info[5][1:-1]) / 100,
+            float(info[6][:-1]) / 100,
+            float(info[7][:-1]) / 100
+        )
     }
     
     return actor
 
 def parse_transform(info):
 
-    transform = {
-        "x": float(info[3][1:-1]) / 100,
-        "y": float(info[4][:-1]) / 100,
-        "z": float(info[5][:-1]) / 100,
-        "roll": float(info[7][1:-1]),
-        "pitch": float(info[8][:-1]),
-        "yaw": float(info[9][:-1]),
-    }
+    transform = carla.Transform(
+        carla.Location(
+            float(info[3][1:-1]) / 100,
+            float(info[4][:-1]) / 100,
+            float(info[5][:-1]) / 100,
+        ),
+        carla.Rotation(
+            float(info[8][:-1]),   # pitch
+            float(info[9][:-1]),   # yaw
+            float(info[7][1:-1])   # roll
+        )
+    )
 
     return transform
 
 def parse_control(info):
 
-    control = {
-        "throttle": float(info[6]),          # throttle
-        "steer": float(info[4]),             # steer
-        "brake": float(info[8]),             # brake
-        "hand_brake": bool(int(info[10])),    # hand_brake
-        "reverse": int(info[12]) < 0,         # reverse
-        "gear": int(info[12]),                # gear
-    }
+    control = carla.VehicleControl(
+        float(info[6]),         # throttle
+        float(info[4]),         # steer
+        float(info[8]),         # brake
+        bool(int(info[10])),    # hand_brake
+        int(info[12]) < 0,      # reverse
+        int(info[12]),          # gear
+    )
+
     return control
 
 def parse_traffic_light(info):
 
+    number_to_state = {
+        "0": carla.TrafficLightState.Red,
+        "1": carla.TrafficLightState.Yellow,
+        "2": carla.TrafficLightState.Green,
+        "3": carla.TrafficLightState.Off,
+        "4": carla.TrafficLightState.Unknown,
+    }
+
     traffic_light = {
-        "state": info[3],
+        "state": number_to_state[info[3]],
         "frozen": bool(int(info[5])),
         "elapsed_time": float(info[7]),
     }
@@ -48,19 +63,18 @@ def parse_traffic_light(info):
 
 def parse_velocity(transform, prev_transform, frame_time, prev_frame_time):
 
-    if prev_transform is None:
-        velocity = {
-        "x": 0,
-        "y": 0,
-        "z": 0
-        }
+    if transform is None or prev_transform is None :
+        velocity = None
     else:
         delta_time = frame_time - prev_frame_time
-        velocity = {
-            "x": (transform["x"] - prev_transform["x"]) / delta_time,
-            "y": (transform["y"] - prev_transform["y"]) / delta_time,
-            "z": (transform["z"] - prev_transform["z"]) / delta_time
-        }
+        location = transform.location
+        prev_location = prev_transform.location
+
+        velocity = carla.Vector3D(
+            (location.x - prev_location.x) / delta_time,
+            (location.y - prev_location.y) / delta_time,
+            (location.z - prev_location.z) / delta_time
+        )
 
     return velocity
 
@@ -94,7 +108,7 @@ class MetricsParser(object):
 
             # Get the frame information
             frame_info = frame_list[0].split(" ")
-            frame_number = int(frame_info[1])
+            frame_number = frame_info[1]
             frame_time = float(frame_info[3])
 
             frame_state["elapsed_time"] =  frame_time
@@ -111,7 +125,7 @@ class MetricsParser(object):
                     elements = frame_row.split(" ")
 
                     # Save them to the dictionary
-                    actor_id = int(elements[1][:-1])
+                    actor_id = elements[1][:-1]
                     actor = parse_actor(elements)
                     actors[actor_id] = actor
                     actors[actor_id]["created"] = frame_number
@@ -134,7 +148,7 @@ class MetricsParser(object):
                 elements = frame_row.split(" ")
 
                 # Save them to the dictionary
-                actor_id = int(elements[1])
+                actor_id = elements[1]
                 actors[actor_id]["destroyed"] = frame_number
 
                 # Advance one row
@@ -158,7 +172,7 @@ class MetricsParser(object):
                     frame_state[transform_id] = {"transform": transform}
 
                     # Get the velocity
-                    prev_frame = frame_number - 1
+                    prev_frame = int(frame_number) - 1
                     if prev_frame > 0:
                         prev_transform = states[-1][transform_id]["transform"]
                         prev_frame_time = states[-1]["elapsed_time"]
