@@ -32,14 +32,14 @@ class MetricsManager(object):
 
         # Get the log information. Here to avoid passing the client instance
         recorder_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.log)
-        recorder_info = self.client.show_recorder_file_info(recorder_file, True)
-        recorder_parsed = MetricsParser.parse_recorder_info(recorder_info)
+        recorder_str = self.client.show_recorder_file_info(recorder_file, True)
+        recorder_info = MetricsParser.parse_recorder_info(recorder_str)
 
         with open(self._args.criteria) as criteria_file:
             criteria_dict = json.load(criteria_file)
 
         # Run the metric class
-        metric = self._metric_class(recorder_parsed, criteria_dict)
+        metric = self._metric_class(recorder_info, criteria_dict)
 
     def _get_metric_class(self, metric_file):
         """

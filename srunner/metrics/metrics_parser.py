@@ -1,4 +1,5 @@
 import carla
+import pprint
 
 def parse_actor(info):
 
@@ -64,7 +65,7 @@ def parse_traffic_light(info):
 def parse_velocity(transform, prev_transform, frame_time, prev_frame_time):
 
     if transform is None or prev_transform is None :
-        velocity = None
+        velocity = carla.Vector3D(0, 0, 0)
     else:
         delta_time = frame_time - prev_frame_time
         location = transform.location
@@ -80,62 +81,96 @@ def parse_velocity(transform, prev_transform, frame_time, prev_frame_time):
 
 
 class MetricsParser(object):
+    """
+    Support class to the MetricsManager to parse the CARLA recorder
+    into readable information
+    """
 
     @staticmethod
-    def parse_recorder_info(recorder_file):
+    def parse_recorder_info(recorder_info):
         """
-        Parsing the recorder into readable information.
-        
-            - self.actors: a dictionary of ID's with all the information
-                related to the actors of the simulation.
-            - self.states: a dictionary of frame dictionaries with the
-                information of the simulation at that frame
+        Parses recorder_info into readable information.
+
+        Args:
+            recorder_info (str): string taken from the
+                client.show_recorder_file_info() function.
         """
-        actors = {}
-        states = []
+        pp = pprint.PrettyPrinter(indent=4)
+
+        actors_info = {}
+        simulation_info = []
 
         # Divide it into frames
-        recorder_list = recorder_file.split("Frame")
-        recorder_list = recorder_list[1:-2]
+        recorder_list = recorder_info.split("Frame")
+        header = recorder_list[0].split("\n")
+        sim_map = header[1][5:]
+        sim_date = header[2][6:]
+
+        annex = recorder_list[-1].split("\n")
+        sim_frames = int(annex[0][3:])
+        sim_duration = float(annex[1][10:-8])
+
+        simulation_info.append({
+            "map": sim_map,
+            "date:": sim_date,
+            "total_frames": sim_frames,
+            "duration": sim_duration
+        })
+
+        recorder_list = recorder_list[1:-1]
 
         for frame in recorder_list:
 
-            # Variable to store all the information about the frame
-            frame_state = {}
-
-            # Split the frame into lines
+            # Divide the frame in lines
             frame_list = frame.split("\n")
 
-            # Get the frame information
+            # Get the general frame information
             frame_info = frame_list[0].split(" ")
             frame_number = int(frame_info[1])
             frame_time = float(frame_info[3])
-
-            frame_state["elapsed_time"] =  frame_time
+            
+            # Variable to store all the information about the frame
+            frame_state = {
+                "elapsed_time": frame_time,
+                "collisions": {},
+                "actors": {}
+            }
 
             # Loop through all the other rows.
             i = 1
             frame_row = frame_list[i]
 
-            while frame_row.startswith(' Create') or frame_row.startswith('  '):
+            while frame_row.startswith(' Collision'):
+                # Get the elements of the row
+                frame_row = frame_row[1:]
+                elements = frame_row.split(" ")
+                collision_id = int(elements[4])
+                other_id = int(elements[4])
+                frame_state["collisions"].update({collision_id: other_id})
 
+                # Advance one row
+                i += 1
+                frame_row = frame_list[i]
+
+            while frame_row.startswith(' Create') or frame_row.startswith('  '):
+                
                 if frame_row.startswith(' Create'):
                     # Get the elements of the row
                     frame_row = frame_row[1:]
                     elements = frame_row.split(" ")
 
                     # Save them to the dictionary
-                    actor_id = elements[1][:-1]
+                    actor_id = int(elements[1][:-1])
                     actor = parse_actor(elements)
-                    actors[actor_id] = actor
-                    actors[actor_id]["created"] = frame_number
+                    actors_info.update({actor_id: actor})
+                    actors_info[actor_id].update({"created": frame_number})
                 else:
                     # Get the elements of the row
                     frame_row = frame_row[2:]
                     attributes = frame_row.split(' = ')
 
                     # Save them to the dictionary
-                    actors[actor_id][attributes[0]] = attributes[1]
+                    actors_info[actor_id].update({attributes[0]: attributes[1]})
 
                 # Advance one row
                 i += 1
@@ -148,8 +183,8 @@ class MetricsParser(object):
                 elements = frame_row.split(" ")
 
                 # Save them to the dictionary
-                actor_id = elements[1]
-                actors[actor_id]["destroyed"] = frame_number
+                actor_id = int(elements[1])
+                actors_info[actor_id].update({"destroyed": frame_number})
 
                 # Advance one row
                 i += 1
@@ -167,20 +202,20 @@ class MetricsParser(object):
                     elements = frame_row.split(" ")
 
                     # Save them to the dictionary
-                    transform_id = elements[1]
+                    transform_id = int(elements[1])
                     transform = parse_transform(elements)
-                    frame_state[transform_id] = {"transform": transform}
+                    frame_state["actors"].update({transform_id: {"transform": transform}})
 
                     # Get the velocity
                     prev_frame = frame_number - 1
                     if prev_frame > 0:
-                        prev_transform = states[-1][transform_id]["transform"]
-                        prev_frame_time = states[-1]["elapsed_time"]
+                        prev_transform = simulation_info[prev_frame]["actors"][transform_id]["transform"]
+                        prev_frame_time = simulation_info[prev_frame]["elapsed_time"]
                     else:
                         prev_transform = None
                         prev_frame_time = None
                     velocity = parse_velocity(transform, prev_transform, frame_time, prev_frame_time)
-                    frame_state[transform_id]["velocity"] = velocity
+                    frame_state["actors"][transform_id].update({"velocity": velocity})
 
                 # Advance one row
                 i += 1
@@ -194,9 +229,9 @@ class MetricsParser(object):
                     elements = frame_row.split(" ")
 
                     # Save them to the dictionary
-                    traffic_light_id = elements[1]
+                    traffic_light_id = int(elements[1])
                     traffic_light = parse_traffic_light(elements)
-                    frame_state[traffic_light_id] = traffic_light
+                    frame_state["actors"][traffic_light_id] = traffic_light
 
                 # Advance one row
                 i += 1
@@ -210,9 +245,9 @@ class MetricsParser(object):
                     elements = frame_row.split(" ")
 
                     # Save them to the dictionary
-                    control_id = elements[2][:-1]
+                    control_id = int(elements[2][:-1])
                     control = parse_control(elements)
-                    frame_state[control_id]["control"] = control
+                    frame_state["actors"][control_id]["control"] = control
 
                 # Advance one row
                 i += 1
@@ -226,13 +261,13 @@ class MetricsParser(object):
                     elements = frame_row.split(" ")
 
                     # Save them to the dictionary
-                    walker_id = elements[2][:-1]
-                    frame_state[walker_id]["speed"] = elements[4]
+                    walker_id = int(elements[2][:-1])
+                    frame_state["actors"][walker_id]["speed"] = elements[4]
 
                 # Advance one row
                 i += 1
                 frame_row = frame_list[i]
 
-            states.append(frame_state)
-        
-        return [actors, states]
+            simulation_info.append(frame_state)
+
+        return [actors_info, simulation_info]

@@ -7,14 +7,15 @@ from srunner.metrics.metrics_log import MetricsLog
 from srunner.metrics.basic_metric import BasicMetric
 
 
-class ExampleMetrics(BasicMetric):
+class FollowLeadingVehicleMetrics(BasicMetric):
     """
-    Example class containing a metric to show the user how one might be created.
-    This example is meant to be used with the recorded information from a
-    FollowLeadingVehicle scenario
+    Class containing a metric of the FollowLeadingVehicle scenario.
+
+    This is just an example to show the user how one might be created, but
+    many more can be achieved
     """
 
-    def __init__(self, recorder, criteria):
+    def __init__(self, recorder, criteria=None):
         """
         Initialization of the metric class. Must always call the BasicMetric __init__
 
@@ -25,7 +26,7 @@ class ExampleMetrics(BasicMetric):
                 information regarding the criterias used 
         """
 
-        super(ExampleMetrics, self).__init__(recorder, criteria)
+        super(FollowLeadingVehicleMetrics, self).__init__(recorder, criteria)
 
     def _create_metrics(self, metrics_log):
         """
@@ -43,8 +44,8 @@ class ExampleMetrics(BasicMetric):
 
         ##### Example 1: Get the distance between two vehicles and plot it #####
 
-        hero_id = metrics_log.get_actor_id_with_role_name("hero")
-        adversary_id = metrics_log.get_actor_id_with_role_name("scenario")
+        hero_id = metrics_log.get_actor_ids_with_role_name("hero")[0]
+        adversary_id = metrics_log.get_actor_ids_with_role_name("scenario")[0]
 
         distances_list = []
         frames_list = []
@@ -71,6 +72,12 @@ class ExampleMetrics(BasicMetric):
 
         ##### Example 2: Get the amount of collision using the CollisionTest criteria #####
 
-        collision_criteria = metrics_log.get_criteria("CollisionTest")
+        collision_criteria = metrics_log.get_criterion("CollisionTest")
         number_of_hits = collision_criteria["actual_value"]
+        print("-- The ego vehicles has had a total of {} collisions --".format(number_of_hits))
+
+        ##### Example 2.1: Or using the collisions utility of the recorder #####
+
+        collisions = metrics_log.get_collisions(hero_id)
+        number_of_hits = len(collisions)
         print("-- The ego vehicles has had a total of {} collisions --".format(number_of_hits))

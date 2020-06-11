@@ -3,78 +3,57 @@ import carla
 
 class MetricsLog(object):
     """
-    Utility class to query the metrics log.
-    
-    The information of the log should be accesed through the functions,
-    but the dictionaries are public in case the users wants to use them.
-
-    It consists of three attributes:
-        - states ([dict{frame ID: info}]): Each dictionary contains
-            information of a specific frame.
-        - actors (dict{actor ID: actor info}): Dictionary with information
-            about the actors at the simulation
-        - criteria (dict{criteria name: criteria info}): Dictionary with all
-            the criterias and its attributes.
-
-    The states dictionary has the following information:
-        - transform: (vehicles and walkers)
-
-        - velocity: (vehicles)
-        - control: (vehicles)
-
-        - speed: (walkers)
-
-        - state: (traffic lights)
-        - frozen: (traffic lights)
-        - elapsed_time: (traffic lights)
-
-    The actors dictionary has the following information:
-        - type_id: 
-        - carla.ActorAttribute: this hugely vary and some examples are:
-            · role_name
-            · number_of_wheels:
-            · is_invincible:
-            · color:
+    Utility class to query the metrics log. The information of
+    the log must be accesed through the functions:
     """
 
     def __init__(self, recorder, criteria):
         """
         Initializes the log class and parses it to extract the disctionaries
         """
-        self._actors = recorder[0]
-        self._states = recorder[1]
+        self._actors_info = recorder[0]
+        self._simulation_info = recorder[1][1:]
+        self._general_info = recorder[1][0]
         self._criteria = criteria
 
-    def get_actor_state(self, actor_id, frame, attribute):
+    def get_actor_state(self, actor_id, frame, variable):
         """
-        Searched the states dictionary at a specific for the attribute of
-        actor_id and returns the results. Returns None if the dictionary
-        doesn't have the actor_id or if the attribute is missing.
+        Given an actor id, returns the specific variable of that actor at a given frame.
+        Returns None if the log doesn't have the actor_id or if the attribute is missing.
+        The variable can be one of the follwoing:
+            - transform: (for vehicles and walkers)
+            - velocity: (for vehicles)
+            - control: (for vehicles)
+            - speed: (for walkers)
+            - state: (for traffic lights)
+            - frozen: (for traffic lights)
+            - elapsed_time: (for traffic lights)
 
         Args:
-            actor_id (str): Id of the actor to be checked
-            frame: (int): frame number of the dictionary
+            actor_id (int): Id of the actor to be checked
+            frame: (int): frame number of the simulation
             attribute (str): name of the actor's attribute to be returned
+
         """
-        frame_state = self._states[frame]
+        frame_state = self._simulation_info[frame]["actors"]
         if actor_id in frame_state:
 
-            if attribute not in frame_state[actor_id]:
-                print("WARNING: Can't find {} for actor with ID {}".format(attribute, actor_id))
+            if variable not in frame_state[actor_id]:
+                print("WARNING: Can't find {} for actor with ID {}".format(variable, actor_id))
                 return None
         
-            attribute_info = frame_state[actor_id][attribute]
-            return attribute_info
+            variable_info = frame_state[actor_id][variable]
+            return variable_info
         return None
     
-    def get_all_actor_states(self, actor_id, attribute, ini_frame=None, end_frame=None):
+    def get_all_actor_states(self, actor_id, variable, ini_frame=None, end_frame=None):
         """
-        Searches the states dictionary for all the attributes during the interval between
-        ini_frame and end_frame. Returns a list with the attributes at each frame. Some of these
-        might be None, if the attribute hasn't been found.
+        Given an actor id, returns a list of the specific variable of that actor during
+        a frame interval. This function uses get_actor_state, so some of elements might
+        be None.
 
         Args:
-            actor_id (srt): ID of the actor
+            actor_id (int): ID of the actor
             attribute: name of the actor's attribute to be returned
             ini_frame (int): First frame checked. By default, 0 
             end_frame (int): Last frame checked. By default, max number of frames.
@@ -82,65 +61,96 @@ class MetricsLog(object):
         if ini_frame is None:
             ini_frame = 0
         if end_frame is None:
-            end_frame = len(self._states) - 1
+            end_frame = len(self._simulation_info) - 1
 
-        attributes_list = []
+        variable_list = []
 
         for frame_number in range(ini_frame, end_frame + 1):
 
-            attribute_info = self.get_actor_state(actor_id, frame_number, attribute)
-            attributes_list.append(attribute_info)
+            variable_info = self.get_actor_state(actor_id, frame_number, variable)
+            variable_list.append(variable_info)
 
-        return attributes_list
+        return variable_list
+
+    def get_collisions(self, actor_id):
+        """
+        Returns a dictionary containing the frames at which the actor collided
+        and the id of the other actor (dict{frame number - other actor ID})
+
+        Args:
+            actor_id (int): ID of the actor
+        """
+        collisions = {}
+
+        for i, frame_state in enumerate(self._simulation_info):
+            if actor_id in frame_state["collisions"]:
+                collisions.update({i: frame_state["collisions"][actor_id]})
+        return collisions
 
     def get_ego_vehicle_id(self):
         """
-        Returns a string with the id of the ego vehicle.
+        Returns an int with the id of the ego vehicle.
         """
         return get_actor_id_with_role_name("hero")
 
-    def get_actor_id_with_role_name(self, rolename):
+    def get_actor_ids_with_role_name(self, rolename):
         """
-        Returns a string with the actor's id of the one with a specific rolename
+        Returns an int with the actor's id of the one with a specific rolename
         Useful for identifying special actors such as the ego vehicle
-        """
-        for actor_id in self._actors:
 
-            actor_info = self._actors[actor_id]
+        Args:
+            role_name (str): string with the desired rolename to filter the actors
+        """
+        actor_list = []
+
+        for actor_id in self._actors_info:
+
+            actor_info = self._actors_info[actor_id]
             if "role_name" in actor_info and actor_info["role_name"] == rolename:
-                return actor_id
+                actor_list.append(actor_id)
 
-        return None
+        return actor_list
         
-    def get_actor_id_with_type_id(self, type_id):
+    def get_actor_ids_with_type_id(self, type_id):
         """
-        Returns a string with the actor's id of the one with a specific type_id
-        """
-        for actor_id in self._actors:
+        Returns an int with the actor's id of the one with a specific type_id
 
-            actor_info = self._actors[actor_id]
+        Args:
+            type_id (str): string with the desired type id to filter the actors
+        """
+        actor_list = []
+
+        for actor_id in self._actors_info:
+
+            actor_info = self._actors_info[actor_id]
             if "type_id" in actor_info and actor_info["type_id"] == rolename:
-                return actor_id
+                actor_list.append(actor_id)
 
-        return None
+        return actor_list
     
     def get_actor_attributes(self, actor_id):
         """
-        Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
+        Returns all the blueprint attributes of an actor
+
+        Args:
+            actor_id (int): Id of the actor from which the information will be returned
         """
-        if actor_id in self._actors:
-            return self._actors[actor_id]
+        if actor_id in self._actors_info:
+            return self._actors_info[actor_id]
 
         return None
 
     def get_actor_alive_frames(self, actor_id):
         """
         Returns a tuple with the first and last frame an actor was alive.
+
+        Args:
+            actor_id (int): Id of the actor from which the information will be returned
         """
 
-        if actor_id in self._actors:
+        if actor_id in self._actors_info:
 
-            actor_info = self._actors[actor_id]
+            actor_info = self._actors_info[actor_id]
             first_frame = actor_info ["created"]
             if "destroyed" in actor_info:
                 last_frame = actor_info ["destroyed"]
@@ -151,9 +161,12 @@ class MetricsLog(object):
         
         return None, None
 
-    def get_criteria(self, name):
+    def get_criterion(self, name):
         """
-        Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
+        Returns a dictionary with the attributes of the criterion.
+
+        Args:
+            name (str): name of the criterion
         """
         if name in self._criteria:
             return self._criteria[name]
@@ -162,7 +175,7 @@ class MetricsLog(object):
 
     def get_total_frame_count(self):
         """
-        Returns an int with the actor id of the ego vehicle. This is done by checking the "hero" rolename
+        Returns an int with the total amount of frames the simulation lasted
         """
 
-        return len(self._states)
+        return self._general_info["total_frames"]
