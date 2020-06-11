@@ -45,24 +45,6 @@ class MetricsLog(object):
         self._states = recorder[1]
         self._criteria = criteria
 
-    def get_states_attribute(self):
-        """
-        returns the _states attribute
-        """
-        return self._states
-
-    def get_actors_attribute(self):
-        """
-        returns the _actors attribute
-        """
-        return self._actors
-
-    def get_criteria_attribute(self):
-        """
-        returns the _criteria attribute
-        """
-        return self._criteria
-
     def get_actor_state(self, actor_id, frame, attribute):
         """
         Searched the states dictionary at a specific for the attribute of
