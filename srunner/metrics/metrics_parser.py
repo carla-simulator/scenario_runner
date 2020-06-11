@@ -108,7 +108,7 @@ class MetricsParser(object):
 
             # Get the frame information
             frame_info = frame_list[0].split(" ")
-            frame_number = frame_info[1]
+            frame_number = int(frame_info[1])
             frame_time = float(frame_info[3])
 
             frame_state["elapsed_time"] =  frame_time
@@ -172,7 +172,7 @@ class MetricsParser(object):
                     frame_state[transform_id] = {"transform": transform}
 
                     # Get the velocity
-                    prev_frame = int(frame_number) - 1
+                    prev_frame = frame_number - 1
                     if prev_frame > 0:
                         prev_transform = states[-1][transform_id]["transform"]
                         prev_frame_time = states[-1]["elapsed_time"]

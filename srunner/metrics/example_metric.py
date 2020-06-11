@@ -16,7 +16,7 @@ class ExampleMetrics(BasicMetric):
 
     def __init__(self, recorder, criteria):
         """
-        Initialization of the metrics class.
+        Initialization of the metric class. Must always call the BasicMetric __init__
 
         Args:
             recorder (dict): dictionary with all the information
@@ -29,15 +29,16 @@ class ExampleMetrics(BasicMetric):
 
     def _create_metrics(self, metrics_log):
         """
-        Implementation of the metric.
+        Implementation of the metric. Here the user is meant to freely calculate the
+        wanted metrics
         
         Args:
             metrics_log (srunner.metrics.metrics_log.MetricsLog): class with all the 
-                information passed through the MetricsManager. this information has been
-                parsed and some function have been added for easy access
+                information passed through the MetricsManager. This information has been
+                parsed and some functions have been added for easy access
 
         Here we have two metrics. The first one plots the distance between the two vehicles
-        and the second one, prints the amount of collisions using the criterias
+        and the second one, prints the amount of collisions using the criteria
         """
 
         ##### Example 1: Get the distance between two vehicles and plot it #####
@@ -51,16 +52,17 @@ class ExampleMetrics(BasicMetric):
 
         for frame in range(0, num_frames):
 
-            hero_location = metrics_log.get_actor_location(hero_id, frame)
-            adversary_location = metrics_log.get_actor_location(adversary_id, frame)
+            hero_transform = metrics_log.get_actor_state(hero_id, frame, "transform")
+            adversary_transform = metrics_log.get_actor_state(adversary_id, frame, "transform")
 
-            if hero_location and adversary_location and adversary_location.z > -10:
-                distance_vec = hero_location - adversary_location
+            if hero_transform and adversary_transform and adversary_transform.location.z > -10:
+                distance_vec = hero_transform.location - adversary_transform.location
                 distance = math.sqrt(
                     distance_vec.x * distance_vec.x + 
                     distance_vec.y * distance_vec.y + 
                     distance_vec.z * distance_vec.z
                 )
+
                 distances_list.append(distance)
                 frames_list.append(frame)
 
@@ -71,4 +73,4 @@ class ExampleMetrics(BasicMetric):
 
         collision_criteria = metrics_log.get_criteria("CollisionTest")
         number_of_hits = collision_criteria["actual_value"]
-        print("The ego vehicles has had a total of {} collisions".format(number_of_hits))
+        print("-- The ego vehicles has had a total of {} collisions --".format(number_of_hits))
