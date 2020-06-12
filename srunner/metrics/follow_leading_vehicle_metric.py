@@ -44,29 +44,44 @@ class FollowLeadingVehicleMetrics(BasicMetric):
 
         ##### Example 1: Get the distance between two vehicles and plot it #####
 
+        # Get their ID's
         hero_id = metrics_log.get_actor_ids_with_role_name("hero")[0]
-        adversary_id = metrics_log.get_actor_ids_with_role_name("scenario")[0]
+        adve_id = metrics_log.get_actor_ids_with_role_name("scenario")[0]
 
         distances_list = []
         frames_list = []
-        num_frames = metrics_log.get_total_frame_count()
 
-        for frame in range(0, num_frames):
+        # Get the frames both actors were alive
+        start_hero, end_hero = metrics_log.get_actor_alive_frames(hero_id)
+        start_adve, end_adve = metrics_log.get_actor_alive_frames(adve_id)
+        start = max(start_hero, start_adve)
+        end = min(end_hero, end_adve)
 
-            hero_transform = metrics_log.get_actor_state(hero_id, frame, "transform")
-            adversary_transform = metrics_log.get_actor_state(adversary_id, frame, "transform")
+        # Get the list of transforms
+        hero_transform_list = metrics_log.get_all_actor_states(hero_id, "transform", start, end)
+        adve_transform_list = metrics_log.get_all_actor_states(adve_id, "transform", start, end)
 
-            if hero_transform and adversary_transform and adversary_transform.location.z > -10:
-                distance_vec = hero_transform.location - adversary_transform.location
-                distance = math.sqrt(
-                    distance_vec.x * distance_vec.x + 
-                    distance_vec.y * distance_vec.y + 
-                    distance_vec.z * distance_vec.z
-                )
+        # Get the distance between the two
+        for i in range(start, end):
 
-                distances_list.append(distance)
-                frames_list.append(frame)
+            hero_location = hero_transform_list[i - 1].location  # Frames start at 1! Indexes should be one less
+            adve_location = adve_transform_list[i - 1].location  # Frames start at 1! Indexes should be one less
 
+            # Filter some points for a better graph
+            if adve_location.z < -10:
+                continue
+
+            distance_vec = hero_location - adve_location
+            distance = math.sqrt(
+                distance_vec.x * distance_vec.x + 
+                distance_vec.y * distance_vec.y + 
+                distance_vec.z * distance_vec.z
+            )
+
+            distances_list.append(distance)
+            frames_list.append(i)
+
+        # Plot the results
         plt.plot(frames_list, distances_list)
         plt.show()
 

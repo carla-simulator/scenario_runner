@@ -16,7 +16,7 @@ class MetricsLog(object):
         self._general_info = recorder[1][0]
         self._criteria = criteria
 
-    def get_actor_state(self, actor_id, frame, variable):
+    def get_actor_state(self, actor_id, frame, state):
         """
         Given an actor id, returns the specific variable of that actor at a given frame.
         Returns None if the log doesn't have the actor_id or if the attribute is missing.
@@ -33,20 +33,20 @@ class MetricsLog(object):
             actor_id (int): Id of the actor to be checked
             frame: (int): frame number of the simulation
             attribute (str): name of the actor's attribute to be returned
-
         """
-        frame_state = self._simulation_info[frame]["actors"]
+
+        frame_state = self._simulation_info[frame - 1]["actors"]
         if actor_id in frame_state:
 
-            if variable not in frame_state[actor_id]:
-                print("WARNING: Can't find {} for actor with ID {}".format(variable, actor_id))
+            if state not in frame_state[actor_id]:
+                print("WARNING: Can't find {} for actor with ID {}".format(state, actor_id))
                 return None
         
-            variable_info = frame_state[actor_id][variable]
-            return variable_info
+            state_info = frame_state[actor_id][state]
+            return state_info
         return None
     
-    def get_all_actor_states(self, actor_id, variable, ini_frame=None, end_frame=None):
+    def get_all_actor_states(self, actor_id, state, ini_frame=None, end_frame=None):
         """
         Given an actor id, returns a list of the specific variable of that actor during
         a frame interval. This function uses get_actor_state, so some of elements might
@@ -61,16 +61,16 @@ class MetricsLog(object):
         if ini_frame is None:
             ini_frame = 0
         if end_frame is None:
-            end_frame = len(self._simulation_info) - 1
+            end_frame = self.get_total_frame_count()
 
-        variable_list = []
+        state_list = []
 
         for frame_number in range(ini_frame, end_frame + 1):
 
-            variable_info = self.get_actor_state(actor_id, frame_number, variable)
-            variable_list.append(variable_info)
+            state_info = self.get_actor_state(actor_id, frame_number, state)
+            state_list.append(state_info)
 
-        return variable_list
+        return state_list
 
     def get_collisions(self, actor_id):
         """
@@ -153,7 +153,7 @@ class MetricsLog(object):
             actor_info = self._actors_info[actor_id]
             first_frame = actor_info ["created"]
             if "destroyed" in actor_info:
-                last_frame = actor_info ["destroyed"]
+                last_frame = actor_info["destroyed"] - 1
             else:
                 last_frame = self.get_total_frame_count()
 

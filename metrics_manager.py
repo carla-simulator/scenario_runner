@@ -53,12 +53,12 @@ class MetricsManager(object):
 
         # And their members of type class
         for member in inspect.getmembers(metric_module, inspect.isclass):
-            # Get the first one with paren BasicMetrics
+            # Get the first one with parent BasicMetrics
             member_parent = member[1].__bases__[0]
             if 'BasicMetric' in str(member_parent):
                 return member[1]
 
-        print("No class was found that was a child of BasicMetric ... Exiting")
+        print("No child class of BasicMetric was found ... Exiting")
         sys.exit(-1)
 
 def main():

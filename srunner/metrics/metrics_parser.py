@@ -1,5 +1,4 @@
 import carla
-import pprint
 
 def parse_actor(info):
 
@@ -95,7 +94,6 @@ class MetricsParser(object):
             recorder_info (str): string taken from the
                 client.show_recorder_file_info() function.
         """
-        pp = pprint.PrettyPrinter(indent=4)
 
         actors_info = {}
         simulation_info = []
@@ -116,7 +114,6 @@ class MetricsParser(object):
             "total_frames": sim_frames,
             "duration": sim_duration
         })
-
         recorder_list = recorder_list[1:-1]
 
         for frame in recorder_list:
