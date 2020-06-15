@@ -56,6 +56,8 @@
 * Fixed bug causing OpenSCENARIO's SpeedCondition to not work as intended
 * Fixed bug causing CollisionConditions not to work properly in OpenSCENARIO
 * Fixed bug causing the *group:* functionality to behave incorrectly when moving scenarios around.
+* Fixed bug causing FollowLeadingVehicle and FollowLeadingVehicleWithObstacle scenarios to not properly end
+* Fixed bug causing CollisionTest to ignore multiple collisions with scene objects
 
 
 ## CARLA ScenarioRunner 0.9.9

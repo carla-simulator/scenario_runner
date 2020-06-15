@@ -301,7 +301,6 @@ class CollisionTest(Criterion):
         Construction with sensor setup
         """
         self._actor = actor
-        self.last_walker_id = None
         super(CollisionTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -390,7 +389,8 @@ class CollisionTest(Criterion):
         # Register it if needed
         if not registered:
             self.actual_value += 1
-            self.last_id = event.other_actor.id
+            if event.other_actor.id != 0:  # Number 0: static objects -> ignore it
+                self.last_id = event.other_actor.id
 
             if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
                     and 'sidewalk' not in event.other_actor.type_id:
