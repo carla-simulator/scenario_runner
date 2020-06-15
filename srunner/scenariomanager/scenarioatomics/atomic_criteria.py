@@ -389,7 +389,7 @@ class CollisionTest(Criterion):
         # Register it if needed
         if not registered:
             self.actual_value += 1
-            if event.other_actor.id != 0: # Number 0: static objects -> ignore it
+            if event.other_actor.id != 0:  # Number 0: static objects -> ignore it
                 self.last_id = event.other_actor.id
 
             if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
