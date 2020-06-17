@@ -1,18 +1,14 @@
-import pprint
-import json
 import math
 import matplotlib.pyplot as plt
 
-from srunner.metrics.metrics_log import MetricsLog
+import carla
+
 from srunner.metrics.basic_metric import BasicMetric
 
 
 class ControlLossMetric(BasicMetric):
     """
-    Class containing a metric of the FollowLeadingVehicle scenario.
-
-    This is just an example to show the user how one might be created, but
-    many more can be achieved
+    Class containing an example metric of the ControlLoss scenario.
     """
 
     def __init__(self, town_map, recorder, criteria=None):
@@ -20,26 +16,18 @@ class ControlLossMetric(BasicMetric):
         Initialization of the metric class. Must always call the BasicMetric __init__
 
         Args:
-            recorder (dict): dictionary with all the information
-                of the simulation
-            criteria (list): list of dictionaries with all the
-                information regarding the criterias used 
+            client (carla.Client): client of the simulation.
+            recorder (dict): dictionary with all the information of the simulation
+            criteria (list): list of dictionaries with all the criteria information
         """
+
         self._map = town_map
+
         super(ControlLossMetric, self).__init__(town_map, recorder, criteria)
 
     def _create_metrics(self, metrics_log):
         """
-        Implementation of the metric. Here the user is meant to freely calculate the
-        wanted metrics
-        
-        Args:
-            metrics_log (srunner.metrics.metrics_log.MetricsLog): class with all the 
-                information passed through the MetricsManager. This information has been
-                parsed and some functions have been added for easy access
-
-        Here we have two metrics. The first one plots the distance between the two vehicles
-        and the second one, prints the amount of collisions using the criteria
+        Implementation of the metric. This is an example to show how to use the town map.
         """
 
         ### Rough calculus of the distance to the center of the lane ###

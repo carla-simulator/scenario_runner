@@ -1,18 +1,12 @@
-import pprint
-import json
 import math
 import matplotlib.pyplot as plt
 
-from srunner.metrics.metrics_log import MetricsLog
 from srunner.metrics.basic_metric import BasicMetric
 
 
 class FollowLeadingVehicleMetrics(BasicMetric):
     """
-    Class containing a metric of the FollowLeadingVehicle scenario.
-
-    This is just an example to show the user how one might be created, but
-    many more can be achieved
+    Class containing an example metric of the FollowLeadingVehicle scenario.
     """
 
     def __init__(self, town_map, recorder, criteria=None):
@@ -20,29 +14,20 @@ class FollowLeadingVehicleMetrics(BasicMetric):
         Initialization of the metric class. Must always call the BasicMetric __init__
 
         Args:
-            recorder (dict): dictionary with all the information
-                of the simulation
-            criteria (list): list of dictionaries with all the
-                information regarding the criterias used 
+            town_map (carla.Map): map of the simulation. Used to access the Waypoint API.
+            recorder (dict): dictionary with all the information of the simulation
+            criteria (list): list of dictionaries with all the criteria information
         """
 
         super(FollowLeadingVehicleMetrics, self).__init__(town_map, recorder, criteria)
 
     def _create_metrics(self, metrics_log):
         """
-        Implementation of the metric. Here the user is meant to freely calculate the
-        wanted metrics
-        
-        Args:
-            metrics_log (srunner.metrics.metrics_log.MetricsLog): class with all the 
-                information passed through the MetricsManager. This information has been
-                parsed and some functions have been added for easy access
-
-        Here we have two metrics. The first one plots the distance between the two vehicles
-        and the second one, prints the amount of collisions using the criteria
+        Implementation of the metric. This is an example to show how to use the recorder,
+        accessed via the metrics_log.
         """
 
-        ##### Example 1: Get the distance between two vehicles and plot it #####
+        ##### Calculate distance between the two vehicles and plot it #####
 
         # Get their ID's
         hero_id = metrics_log.get_actor_ids_with_role_name("hero")[0]
@@ -84,17 +69,3 @@ class FollowLeadingVehicleMetrics(BasicMetric):
         # Plot the results
         plt.plot(frames_list, distances_list)
         plt.show()
-
-        ##### Example 2: Get the amount of collision using the CollisionTest criteria #####
-
-        collision_criteria = metrics_log.get_criterion("CollisionTest")
-        number_of_hits = collision_criteria["actual_value"]
-        print("-- The ego vehicles has had a total of {} collisions --".format(number_of_hits))
-
-        ##### Example 2.1: Or using the collisions utility of the recorder #####
-
-        collisions = metrics_log.get_collisions(hero_id)
-        number_of_hits = len(collisions)
-        print("-- The ego vehicles has had a total of {} collisions --".format(number_of_hits))
-
-        # These two might differ as the computation methods are different

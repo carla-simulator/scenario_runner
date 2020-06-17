@@ -173,6 +173,13 @@ class MetricsLog(object):
 
         return None
 
+    def get_criteria(self):
+        """
+        Returns the criteria dictionary
+        """
+
+        return self._criteria
+
     def get_total_frame_count(self):
         """
         Returns an int with the total amount of frames the simulation lasted

@@ -1592,6 +1592,7 @@ class RouteCompletionTest(Criterion):
                 route_completion_event.set_message("Destination was successfully reached")
                 self.list_traffic_events.append(route_completion_event)
                 self.test_status = "SUCCESS"
+                self._percentage_route_completed = 100
 
         elif self.test_status == "SUCCESS":
             new_status = py_trees.common.Status.SUCCESS
@@ -1605,6 +1606,7 @@ class RouteCompletionTest(Criterion):
         Set test status to failure if not successful and terminate
         """
         self.actual_value = round(self._percentage_route_completed, 2)
+
         # Blackboard variable
         blackv = py_trees.blackboard.Blackboard()
         _ = blackv.set("RouteCompletion", round(self._percentage_route_completed, 2))

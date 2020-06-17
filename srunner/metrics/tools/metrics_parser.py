@@ -137,18 +137,6 @@ class MetricsParser(object):
             i = 1
             frame_row = frame_list[i]
 
-            while frame_row.startswith(' Collision'):
-                # Get the elements of the row
-                frame_row = frame_row[1:]
-                elements = frame_row.split(" ")
-                collision_id = int(elements[4])
-                other_id = int(elements[4])
-                frame_state["collisions"].update({collision_id: other_id})
-
-                # Advance one row
-                i += 1
-                frame_row = frame_list[i]
-
             while frame_row.startswith(' Create') or frame_row.startswith('  '):
                 
                 if frame_row.startswith(' Create'):
@@ -187,10 +175,23 @@ class MetricsParser(object):
                 i += 1
                 frame_row = frame_list[i]
 
+            while frame_row.startswith(' Collision'):
+                # Get the elements of the row
+                frame_row = frame_row[1:]
+                elements = frame_row.split(" ")
+                collision_id = int(elements[4])
+                other_id = int(elements[4])
+                frame_state["collisions"].update({collision_id: other_id})
+
+                # Advance one row
+                i += 1
+                frame_row = frame_list[i]
+
             while frame_row.startswith(' Parenting'):
                 i += 1
                 frame_row = frame_list[i]
 
+            # print(frame_number)
             while frame_row.startswith(' Positions') or frame_row.startswith('  '):
 
                 if frame_row.startswith('  '):

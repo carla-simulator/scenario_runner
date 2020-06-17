@@ -1,7 +1,7 @@
 import pprint
 import json
 
-from srunner.metrics.metrics_log import MetricsLog
+from srunner.metrics.tools.metrics_log import MetricsLog
 
 
 class BasicMetric(object):
@@ -13,15 +13,14 @@ class BasicMetric(object):
 
     def __init__(self, town_map, recorder, criteria=None):
         """
-        Initialization of the metrics class.
+        Initialization of the metric class. This calls the metrics log and creates the metrics
 
         Args:
-            town_map (carla.Map): map of the town
-            recorder (dict): dictionary with all the information
-                of the simulation
-            criteria (list): list of dictionaries with all the
-                information regarding the criterias used 
+            town_map (carla.Map): map of the simulation. Used to access the Waypoint API.
+            recorder (dict): dictionary with all the information of the simulation
+            criteria (list): list of dictionaries with all the criteria information
         """
+        self._map = town_map
 
         # Instanciate the MetricsLog, used to querry the needed info
         metrics_log = MetricsLog(recorder, criteria)

@@ -1,4 +1,3 @@
-import carla
 import os
 import sys
 import argparse
@@ -7,6 +6,7 @@ import inspect
 import json
 from argparse import RawTextHelpFormatter
 
+import carla
 
 from srunner.metrics.metrics_parser import MetricsParser
 
@@ -24,17 +24,17 @@ class MetricsManager(object):
         """
 
         self._args = args
-        client = carla.Client('127.0.0.1', 2000)
+        self._client = carla.Client(self._args.host, self._args.port)
 
         # Get the log information. Here to avoid passing the client instance
         recorder_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.log)
-        recorder_str = client.show_recorder_file_info(recorder_file, True)
+        recorder_str = self._client.show_recorder_file_info(recorder_file, True)
         recorder_info = MetricsParser.parse_recorder_info(recorder_str)
 
         # Load the correct town and get its map
         map_name = recorder_info[1][0]["map"]
-        world = client.load_world(map_name)
-        town_map = world.get_map()
+        self._world = self._client.load_world(map_name)
+        town_map = self._world.get_map()
 
         if self._args.criteria:
             with open(self._args.criteria) as criteria_file:
