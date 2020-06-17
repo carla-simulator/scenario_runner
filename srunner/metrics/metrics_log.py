@@ -7,7 +7,7 @@ class MetricsLog(object):
     the log must be accesed through the functions:
     """
 
-    def __init__(self, recorder, criteria):
+    def __init__(self, recorder, criteria=None):
         """
         Initializes the log class and parses it to extract the disctionaries
         """

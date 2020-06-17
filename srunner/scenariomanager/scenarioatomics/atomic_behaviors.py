@@ -1933,6 +1933,53 @@ class ActorSink(AtomicBehavior):
         CarlaDataProvider.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
 
+class StartRecorder(AtomicBehavior):
+
+    """
+    Atomic that starts the CARLA recorder. Only one can be active
+    at a time, and if this isn't the case, the recorder will
+    automatically stop the previous one.
+
+    Args:
+        recorder_name (str): name of the file to write the recorded data.
+            Remember that a simple name will save the recording in
+            'CarlaUE4/Saved/'. Otherwise, if some folder appears in the name,
+            it will be considered an absolute path.
+        name (str): name of the behavior
+    """
+
+    def __init__(self, recorder_name, name="StartRecorder"):
+        """
+        Setup class members
+        """
+        super(StartRecorder, self).__init__(name)
+        self._client = CarlaDataProvider.get_client()
+        self._recorder_name = recorder_name
+
+    def update(self):
+        self._client.start_recorder(self._recorder_name)
+        return py_trees.common.Status.SUCCESS
+
+
+class StopRecorder(AtomicBehavior):
+
+    """
+    Atomic that stops the CARLA recorder.
+
+    Args:
+        name (str): name of the behavior
+    """
+
+    def __init__(self, name="StopRecorder"):
+        """
+        Setup class members
+        """
+        super(StopRecorder, self).__init__(name)
+
+    def update(self):
+        self._client.stop_recorder()
+        return py_trees.common.Status.SUCCESS
+
 
 class TrafficLightManipulator(AtomicBehavior):
 

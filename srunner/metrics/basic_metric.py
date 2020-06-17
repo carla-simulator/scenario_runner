@@ -11,11 +11,12 @@ class BasicMetric(object):
     and creates the desired metric
     """
 
-    def __init__(self, recorder, criteria=None):
+    def __init__(self, town_map, recorder, criteria=None):
         """
         Initialization of the metrics class.
 
         Args:
+            town_map (carla.Map): map of the town
             recorder (dict): dictionary with all the information
                 of the simulation
             criteria (list): list of dictionaries with all the

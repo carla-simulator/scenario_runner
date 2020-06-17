@@ -24,22 +24,27 @@ class MetricsManager(object):
         """
 
         self._args = args
-        self.client = carla.Client(self._args.host, self._args.port)
-        self.client.set_timeout(self._args.timeout)
-
-        # Read the metric argument to get the metric class
-        self._metric_class = self._get_metric_class(self._args.metric)
+        client = carla.Client('127.0.0.1', 2000)
 
         # Get the log information. Here to avoid passing the client instance
         recorder_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.log)
-        recorder_str = self.client.show_recorder_file_info(recorder_file, True)
+        recorder_str = client.show_recorder_file_info(recorder_file, True)
         recorder_info = MetricsParser.parse_recorder_info(recorder_str)
 
-        with open(self._args.criteria) as criteria_file:
-            criteria_dict = json.load(criteria_file)
+        # Load the correct town and get its map
+        map_name = recorder_info[1][0]["map"]
+        world = client.load_world(map_name)
+        town_map = world.get_map()
 
-        # Run the metric class
-        metric = self._metric_class(recorder_info, criteria_dict)
+        if self._args.criteria:
+            with open(self._args.criteria) as criteria_file:
+                criteria_dict = json.load(criteria_file)
+        else:
+            criteria_dict = None
+
+        # Read and run the metric class
+        self._metric_class = self._get_metric_class(self._args.metric)
+        metric = self._metric_class(town_map, recorder_info, criteria_dict)
 
     def _get_metric_class(self, metric_file):
         """
@@ -65,17 +70,14 @@ def main():
     """
     main function
     """
-    description = ("Scenario Runner's metrics module. Evaluate the scenario's execution\n"
-                   "Current version: ")
+    description = ("Scenario Runner's metrics module. Evaluate the scenario's execution\n")
 
     parser = argparse.ArgumentParser(description=description,
                                     formatter_class=RawTextHelpFormatter)
     parser.add_argument('--host', default='127.0.0.1',
                         help='IP of the host server (default: localhost)')
-    parser.add_argument('--port', default=2000,
+    parser.add_argument('--port', '-p', default=2000,
                         help='TCP port to listen to (default: 2000)')
-    parser.add_argument('--timeout', default=10.0,
-                        help='Set the CARLA client timeout value in seconds')
     parser.add_argument('--log', required=True,
                         help='Path to the CARLA recorder .log file')
     parser.add_argument('--metric', required=True,

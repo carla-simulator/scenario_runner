@@ -15,7 +15,7 @@ class FollowLeadingVehicleMetrics(BasicMetric):
     many more can be achieved
     """
 
-    def __init__(self, recorder, criteria=None):
+    def __init__(self, town_map, recorder, criteria=None):
         """
         Initialization of the metric class. Must always call the BasicMetric __init__
 
@@ -26,7 +26,7 @@ class FollowLeadingVehicleMetrics(BasicMetric):
                 information regarding the criterias used 
         """
 
-        super(FollowLeadingVehicleMetrics, self).__init__(recorder, criteria)
+        super(FollowLeadingVehicleMetrics, self).__init__(town_map, recorder, criteria)
 
     def _create_metrics(self, metrics_log):
         """
@@ -96,3 +96,5 @@ class FollowLeadingVehicleMetrics(BasicMetric):
         collisions = metrics_log.get_collisions(hero_id)
         number_of_hits = len(collisions)
         print("-- The ego vehicles has had a total of {} collisions --".format(number_of_hits))
+
+        # These two might differ as the computation methods are different
