@@ -27,8 +27,8 @@ import os
 import signal
 import sys
 import time
-import pkg_resources
 import json
+import pkg_resources
 
 import carla
 
@@ -264,7 +264,7 @@ class ScenarioRunner(object):
 
         # Filter the attributes that aren't JSON serializable
         with open('temp.json', 'w') as fp:
-            
+
             criteria_dict = {}
             for criterion in criteria:
 
@@ -285,7 +285,6 @@ class ScenarioRunner(object):
         # Save the criteria dictionary into a .json file
         with open(file_name, 'w') as fp:
             json.dump(criteria_dict, fp, sort_keys=False, indent=4)
-        
 
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """

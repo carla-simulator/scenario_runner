@@ -1,9 +1,9 @@
 import os
 import sys
-import argparse
 import importlib
 import inspect
 import json
+import argparse
 from argparse import RawTextHelpFormatter
 
 import carla
@@ -53,8 +53,7 @@ class MetricsManager(object):
 
         # Read and run the metric class
         self._metric_class = self._get_metric_class(self._args.metric)
-        town_map = self._world.get_map()
-        metric = self._metric_class(town_map, recorder_info, criteria_dict)
+        self._metric_class(town_map, recorder_info, criteria_dict)
 
     def _get_metric_class(self, metric_file):
         """

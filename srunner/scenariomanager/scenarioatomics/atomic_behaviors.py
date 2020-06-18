@@ -1933,6 +1933,7 @@ class ActorSink(AtomicBehavior):
         CarlaDataProvider.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
 
+
 class StartRecorder(AtomicBehavior):
 
     """
@@ -1975,6 +1976,7 @@ class StopRecorder(AtomicBehavior):
         Setup class members
         """
         super(StopRecorder, self).__init__(name)
+        self._client = CarlaDataProvider.get_client()
 
     def update(self):
         self._client.stop_recorder()

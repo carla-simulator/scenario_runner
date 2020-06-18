@@ -1,8 +1,6 @@
 import math
 import matplotlib.pyplot as plt
 
-import carla
-
 from srunner.metrics.basic_metric import BasicMetric
 
 
@@ -33,7 +31,7 @@ class ControlLossMetric(BasicMetric):
         ### Rough calculus of the distance to the center of the lane ###
 
         # Get their ID's
-        hero_id = metrics_log.get_actor_ids_with_role_name("hero")[0]
+        hero_id = metrics_log.get_ego_vehicle_id()
 
         distances_list = []
         lane_width_list = []

@@ -9,18 +9,6 @@ class FollowLeadingVehicleMetrics(BasicMetric):
     Class containing an example metric of the FollowLeadingVehicle scenario.
     """
 
-    def __init__(self, town_map, recorder, criteria=None):
-        """
-        Initialization of the metric class. Must always call the BasicMetric __init__
-
-        Args:
-            town_map (carla.Map): map of the simulation. Used to access the Waypoint API.
-            recorder (dict): dictionary with all the information of the simulation
-            criteria (list): list of dictionaries with all the criteria information
-        """
-
-        super(FollowLeadingVehicleMetrics, self).__init__(town_map, recorder, criteria)
-
     def _create_metrics(self, metrics_log):
         """
         Implementation of the metric. This is an example to show how to use the recorder,
@@ -30,7 +18,7 @@ class FollowLeadingVehicleMetrics(BasicMetric):
         ##### Calculate distance between the two vehicles and plot it #####
 
         # Get their ID's
-        hero_id = metrics_log.get_actor_ids_with_role_name("hero")[0]
+        hero_id = metrics_log.get_ego_vehicle_id()
         adve_id = metrics_log.get_actor_ids_with_role_name("scenario")[0]
 
         distances_list = []
@@ -58,8 +46,8 @@ class FollowLeadingVehicleMetrics(BasicMetric):
 
             distance_vec = hero_location - adve_location
             distance = math.sqrt(
-                distance_vec.x * distance_vec.x + 
-                distance_vec.y * distance_vec.y + 
+                distance_vec.x * distance_vec.x +
+                distance_vec.y * distance_vec.y +
                 distance_vec.z * distance_vec.z
             )
 

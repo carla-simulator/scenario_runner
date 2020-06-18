@@ -1,6 +1,12 @@
 import carla
 
 def parse_actor(info):
+    """
+    Returns a dictionary with the basic actor information
+
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
 
     actor = {
         "type_id": info[2],
@@ -14,7 +20,12 @@ def parse_actor(info):
     return actor
 
 def parse_transform(info):
+    """
+    Parses a list into a carla.Transform
 
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
     transform = carla.Transform(
         carla.Location(
             float(info[3][1:-1]) / 100,
@@ -31,7 +42,12 @@ def parse_transform(info):
     return transform
 
 def parse_control(info):
+    """
+    Parses a list into a carla.VehicleControl
 
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
     control = carla.VehicleControl(
         float(info[6]),         # throttle
         float(info[4]),         # steer
@@ -44,7 +60,12 @@ def parse_control(info):
     return control
 
 def parse_traffic_light(info):
+    """
+    Parses a list into a dictionary with all the traffic light's information
 
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
     number_to_state = {
         "0": carla.TrafficLightState.Red,
         "1": carla.TrafficLightState.Yellow,
@@ -62,7 +83,12 @@ def parse_traffic_light(info):
     return traffic_light
 
 def parse_velocity(transform, prev_transform, frame_time, prev_frame_time):
+    """
+    Parses a list into a dictionary with all the traffic light's information
 
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
     if transform is None or prev_transform is None :
         velocity = carla.Vector3D(0, 0, 0)
     else:

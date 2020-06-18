@@ -8,18 +8,6 @@ class RoutesMetric(BasicMetric):
     Class containing a metric of the Route scenario.
     """
 
-    def __init__(self, town_map, recorder, criteria=None):
-        """
-        Initialization of the metric class. Must always call the BasicMetric __init__
-
-        Args:
-            town_map (carla.Map): map of the simulation. Used to access the Waypoint API.
-            recorder (dict): dictionary with all the information of the simulation
-            criteria (list): list of dictionaries with all the criteria information
-        """
-
-        super(RoutesMetric, self).__init__(town_map, recorder, criteria)
-
     def _create_metrics(self, metrics_log):
         """
         Implementation of the metric. This is an example to show how to use the criteria,
@@ -49,4 +37,3 @@ class RoutesMetric(BasicMetric):
         output += "\n"
 
         print(output)
-

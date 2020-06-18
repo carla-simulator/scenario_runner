@@ -1,8 +1,4 @@
-import pprint
-import json
-
 from srunner.metrics.tools.metrics_log import MetricsLog
-
 
 class BasicMetric(object):
     """
@@ -24,14 +20,14 @@ class BasicMetric(object):
         metrics_log = MetricsLog(recorder, criteria)
 
         # Create the metrics of the simulation. This part is left to the user
-        metrics = self._create_metrics(metrics_log)
+        self._create_metrics(metrics_log)
 
     def _create_metrics(self, metrics_log):
         """
         Pure virtual function to setup the metrics by the user.
-        
+
         Args:
-            metrics_log (srunner.metrics.metrics_log.MetricsLog): class with all the 
+            metrics_log (srunner.metrics.metrics_log.MetricsLog): class with all the
                 information passed through the MetricsManager. this information has been
                 parsed and some function have been added for easy access
         """

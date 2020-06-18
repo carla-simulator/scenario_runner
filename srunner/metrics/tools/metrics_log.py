@@ -1,6 +1,3 @@
-import carla
-
-
 class MetricsLog(object):
     """
     Utility class to query the metrics log. The information of
@@ -41,11 +38,11 @@ class MetricsLog(object):
             if state not in frame_state[actor_id]:
                 print("WARNING: Can't find {} for actor with ID {}".format(state, actor_id))
                 return None
-        
+
             state_info = frame_state[actor_id][state]
             return state_info
         return None
-    
+
     def get_all_actor_states(self, actor_id, state, ini_frame=None, end_frame=None):
         """
         Given an actor id, returns a list of the specific variable of that actor during
@@ -55,7 +52,7 @@ class MetricsLog(object):
         Args:
             actor_id (int): ID of the actor
             attribute: name of the actor's attribute to be returned
-            ini_frame (int): First frame checked. By default, 0 
+            ini_frame (int): First frame checked. By default, 0
             end_frame (int): Last frame checked. By default, max number of frames.
         """
         if ini_frame is None:
@@ -91,7 +88,7 @@ class MetricsLog(object):
         """
         Returns an int with the id of the ego vehicle.
         """
-        return get_actor_id_with_role_name("hero")
+        return self.get_actor_ids_with_role_name("hero")[0]
 
     def get_actor_ids_with_role_name(self, rolename):
         """
@@ -110,7 +107,7 @@ class MetricsLog(object):
                 actor_list.append(actor_id)
 
         return actor_list
-        
+
     def get_actor_ids_with_type_id(self, type_id):
         """
         Returns an int with the actor's id of the one with a specific type_id
@@ -123,7 +120,7 @@ class MetricsLog(object):
         for actor_id in self._actors_info:
 
             actor_info = self._actors_info[actor_id]
-            if "type_id" in actor_info and actor_info["type_id"] == rolename:
+            if "type_id" in actor_info and actor_info["type_id"] == type_id:
                 actor_list.append(actor_id)
 
         return actor_list
@@ -151,7 +148,7 @@ class MetricsLog(object):
         if actor_id in self._actors_info:
 
             actor_info = self._actors_info[actor_id]
-            first_frame = actor_info ["created"]
+            first_frame = actor_info["created"]
             if "destroyed" in actor_info:
                 last_frame = actor_info["destroyed"] - 1
             else:
