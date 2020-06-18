@@ -1,3 +1,13 @@
+"""
+Follow Leading Vehicle metric:
+
+This metric calculates the distance between the ego vehicle and
+the other actor, plotting it.
+
+It is meant to serve as an example of how to use the information from
+the recorder
+"""
+
 import math
 import matplotlib.pyplot as plt
 

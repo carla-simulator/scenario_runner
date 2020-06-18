@@ -1,7 +1,14 @@
+"""
+Support class of the MetricsManager to query the information available
+to the metrics.
+
+It also provides a series of functions to help the user querry
+specific information
+"""
+
 class MetricsLog(object):
     """
-    Utility class to query the metrics log. The information of
-    the log must be accesed through the functions:
+    Utility class to query the metrics log.
     """
 
     def __init__(self, recorder, criteria=None):
@@ -124,7 +131,7 @@ class MetricsLog(object):
                 actor_list.append(actor_id)
 
         return actor_list
-    
+
     def get_actor_attributes(self, actor_id):
         """
         Returns all the blueprint attributes of an actor
@@ -155,7 +162,7 @@ class MetricsLog(object):
                 last_frame = self.get_total_frame_count()
 
             return first_frame, last_frame
-        
+
         return None, None
 
     def get_criterion(self, name):

@@ -1,3 +1,11 @@
+"""
+RouteScenario metric:
+
+This metric puts the criterias into a table and prints it through the terminal.
+
+It is meant to serve as an example of how to use the criteria
+"""
+
 from tabulate import tabulate
 
 from srunner.metrics.basic_metric import BasicMetric

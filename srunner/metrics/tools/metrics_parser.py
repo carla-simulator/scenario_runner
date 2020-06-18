@@ -1,3 +1,8 @@
+"""
+Support class of the MetricsManager to parse the information of
+the CARLA recorder into a readable dictionary
+"""
+
 import carla
 
 def parse_actor(info):
@@ -16,7 +21,7 @@ def parse_actor(info):
             float(info[7][:-1]) / 100
         )
     }
-    
+
     return actor
 
 def parse_transform(info):
@@ -151,7 +156,7 @@ class MetricsParser(object):
             frame_info = frame_list[0].split(" ")
             frame_number = int(frame_info[1])
             frame_time = float(frame_info[3])
-            
+
             # Variable to store all the information about the frame
             frame_state = {
                 "elapsed_time": frame_time,
@@ -164,7 +169,7 @@ class MetricsParser(object):
             frame_row = frame_list[i]
 
             while frame_row.startswith(' Create') or frame_row.startswith('  '):
-                
+
                 if frame_row.startswith(' Create'):
                     # Get the elements of the row
                     frame_row = frame_row[1:]

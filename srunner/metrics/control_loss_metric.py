@@ -1,3 +1,12 @@
+"""
+Control Loss metric:
+
+This metric calculates the distance between the ego vehicle and
+the center of the lane, plotting it.
+
+It is meant to serve as an example of how to use the map API
+"""
+
 import math
 import matplotlib.pyplot as plt
 
@@ -25,7 +34,7 @@ class ControlLossMetric(BasicMetric):
 
     def _create_metrics(self, metrics_log):
         """
-        Implementation of the metric. This is an example to show how to use the town map.
+        Implementation of the metric.
         """
 
         ### Rough calculus of the distance to the center of the lane ###

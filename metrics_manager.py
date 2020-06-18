@@ -1,3 +1,11 @@
+"""
+Welcome to the ScenarioRunner's metric module
+
+This is the main script to be executed when running a metric.
+It is responsible of parsing all the information and executing
+the metric specified by the user.
+"""
+
 import os
 import sys
 import importlib
