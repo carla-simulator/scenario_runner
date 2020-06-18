@@ -44,7 +44,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
                                                                      InRouteTest,
                                                                      RouteCompletionTest,
                                                                      RunningRedLightTest,
-                                                                     RunningStopTest)
+                                                                     RunningStopTest,
+                                                                     OffRoadTest)
 # pylint: enable=unused-import
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
                                                                                InTriggerDistanceToOSCPosition,
@@ -468,7 +469,11 @@ class OpenScenarioParser(object):
                     atomic = atomic_cls(trigger_actor, triggered_actor, terminate_on_failure=True, name=condition_name)
 
                 elif entity_condition.find('OffroadCondition') is not None:
-                    raise NotImplementedError("Offroad conditions are not yet supported")
+                    off_condition = entity_condition.find('OffroadCondition')
+                    condition_duration = float(off_condition.attrib.get('duration'))
+                    atomic_cls = py_trees.meta.inverter(OffRoadTest)
+                    atomic = atomic_cls(
+                        trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('TimeHeadwayCondition') is not None:
                     raise NotImplementedError("TimeHeadway conditions are not yet supported")
                 elif entity_condition.find('TimeToCollisionCondition') is not None:
