@@ -8,7 +8,7 @@ from argparse import RawTextHelpFormatter
 
 import carla
 
-from srunner.metrics.metrics_parser import MetricsParser
+from srunner.metrics.tools.metrics_parser import MetricsParser
 
 
 class MetricsManager(object):
@@ -26,12 +26,21 @@ class MetricsManager(object):
         self._args = args
         self._client = carla.Client(self._args.host, self._args.port)
 
-        # Get the log information. Here to avoid passing the client instance
+        # Get the log information.
         recorder_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.log)
+
+        # client.start_recorder() doesn't check if the file is valid, so do so before calling it
+        if recorder_file[-4:] != '.log':
+            print("ERROR: The log argument has to point to a .log file")
+            sys.exit(-1)
+        if not os.path.exists(recorder_file):
+            print("ERROR: The specified log file does not exist")
+            sys.exit(-1)
+
         recorder_str = self._client.show_recorder_file_info(recorder_file, True)
         recorder_info = MetricsParser.parse_recorder_info(recorder_str)
 
-        # Load the correct town and get its map
+        # Load the correct town and get its map (gives the user access to the map API)
         map_name = recorder_info[1][0]["map"]
         self._world = self._client.load_world(map_name)
         town_map = self._world.get_map()
@@ -44,12 +53,16 @@ class MetricsManager(object):
 
         # Read and run the metric class
         self._metric_class = self._get_metric_class(self._args.metric)
+        town_map = self._world.get_map()
         metric = self._metric_class(town_map, recorder_info, criteria_dict)
 
     def _get_metric_class(self, metric_file):
         """
         Function to extract the metrics class from the path given by the metrics
         argument. Returns the first class found that is a child of BasicMetric
+
+        Args:
+            metric_file (str): path to the metric's file.
         """
         # Get their module
         module_name = os.path.basename(metric_file).split('.')[0]
@@ -70,7 +83,9 @@ def main():
     """
     main function
     """
-    description = ("Scenario Runner's metrics module. Evaluate the scenario's execution\n")
+
+    # pylint: disable=line-too-long
+    description = ("Scenario Runner's metrics module. Evaluate the execution of a specific scenario by developing your own metric.\n")
 
     parser = argparse.ArgumentParser(description=description,
                                     formatter_class=RawTextHelpFormatter)
@@ -79,11 +94,12 @@ def main():
     parser.add_argument('--port', '-p', default=2000,
                         help='TCP port to listen to (default: 2000)')
     parser.add_argument('--log', required=True,
-                        help='Path to the CARLA recorder .log file')
+                        help='Path to the CARLA recorder .log file (relative to SCENARIO_RUNNER_ROOT).\nThis file is created by the record functionality at ScenarioRunner')
     parser.add_argument('--metric', required=True,
-                        help='Path to the .py file defining the used metric')
+                        help='Path to the .py file defining the used metric.\nSome examples at srunner/metrics')
     parser.add_argument('--criteria', default="",
-                        help='Path to the .json file with the criteria information')
+                        help='Path to the .json file with the criteria information.\nThis file is created by the record functionality at ScenarioRunner')
+    # pylint: enable=line-too-long
 
     args = parser.parse_args()
 

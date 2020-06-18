@@ -6,9 +6,7 @@ from srunner.metrics.tools.metrics_log import MetricsLog
 
 class BasicMetric(object):
     """
-    Base class for all the user-made metrics. It instanciates a
-    MetricsLog object with all the information of the simulation
-    and creates the desired metric
+    Base class of all the metrics.
     """
 
     def __init__(self, town_map, recorder, criteria=None):
