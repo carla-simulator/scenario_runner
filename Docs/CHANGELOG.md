@@ -31,6 +31,7 @@
     - Added support for AccelerationCondition
     - Added support for TimeOfDayCondition
     - Added support for OffroadCondition
+    - Added support for CollisionCondition
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
@@ -46,6 +47,7 @@
     - new TimeOfDayComparison trigger condition, comparing the simulation time (set up by the new weather system) with a given *datetime*.
     - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. This *duration* is 0 by default, so the behavior is unchanged.
     - Added new *OffRoadTest* criteria.
+    - CollisionTest criterion can now filter the collisions for a specific actor, or actor type_id. 
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes
 * Do not register SIGHUP signal in windows
