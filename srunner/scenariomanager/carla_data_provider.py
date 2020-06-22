@@ -13,8 +13,8 @@ local buffers to avoid blocking calls to CARLA
 from __future__ import print_function
 
 import math
-import random
 import re
+import numpy.random as random
 from six import iteritems
 
 import carla
@@ -59,6 +59,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _spawn_index = 0
     _blueprint_library = None
     _ego_vehicle_route = None
+    _rng = random.RandomState(2000)
 
     @staticmethod
     def register_actor(actor):
@@ -402,7 +403,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Generate spawn points for the current map
         """
         spawn_points = list(CarlaDataProvider.get_map(CarlaDataProvider._world).get_spawn_points())
-        random.shuffle(spawn_points)
+        CarlaDataProvider._rng.shuffle(spawn_points)
         CarlaDataProvider._spawn_points = spawn_points
         CarlaDataProvider._spawn_index = 0
 
@@ -428,7 +429,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         # Set the model
         try:
-            blueprint = random.choice(CarlaDataProvider._blueprint_library.filter(model))
+            blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(model))
         except IndexError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
@@ -436,7 +437,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if new_model != '':
                 bp_filter = new_model
             print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
-            blueprint = random.choice(CarlaDataProvider._blueprint_library.filter(bp_filter))
+            blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(bp_filter))
 
         # Set the color
         if color:
@@ -455,8 +456,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                         color, blueprint.id, default_color))
                     blueprint.set_attribute('color', default_color)
         else:
-            if blueprint.has_attribute('color'):
-                color = random.choice(blueprint.get_attribute('color').recommended_values)
+            if blueprint.has_attribute('color') and rolename != 'hero':
+                color = CarlaDataProvider._rng.choice(blueprint.get_attribute('color').recommended_values)
                 blueprint.set_attribute('color', color)
 
         # Make pedestrians mortal
@@ -514,7 +515,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         if random_location:
             actor = None
             while not actor:
-                spawn_point = random.choice(CarlaDataProvider._spawn_points)
+                spawn_point = CarlaDataProvider._rng.choice(CarlaDataProvider._spawn_points)
                 actor = CarlaDataProvider._world.try_spawn_actor(blueprint, spawn_point)
 
         else:
