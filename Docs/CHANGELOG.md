@@ -30,6 +30,7 @@
     - Added support for AccelerationCondition
     - Added support for TimeOfDayCondition
     - Added support for OffroadCondition
+    - Added support for CollisionCondition
     - Added support for EndOfRoadCondition
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Created example scenarios to illustrate usage of controllers and weather changes
@@ -45,8 +46,9 @@
     - new RelativeVelocityToOtherActor trigger condition, used to compare velocities of two actors
     - new TriggerAcceleration trigger condition which compares a reference acceleration with the actor's one.
     - new TimeOfDayComparison trigger condition, comparing the simulation time (set up by the new weather system) with a given *datetime*.
-    - new *OffRoadTest* criteria.
-    - new *EndofRoadTest* criteria, to detect when a vehicle changes between OpenDRIVE roads.
+    - Added new *OffRoadTest* criteria.
+    - Added new *EndofRoadTest* criteria, to detect when a vehicle changes between OpenDRIVE roads.
+    - CollisionTest criterion can now filter the collisions for a specific actor, or actor type_id.
     - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. The default behavior has been unchanged.
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
 ### :bug: Bug Fixes

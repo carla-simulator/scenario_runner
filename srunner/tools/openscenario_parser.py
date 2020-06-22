@@ -74,6 +74,12 @@ class OpenScenarioParser(object):
         "equalTo": operator.eq
     }
 
+    actor_types = {
+        "pedestrian": "walker",
+        "vehicle": "vehicle",
+        "miscellaneous": "miscellaneous"
+    }
+
     use_carla_coordinate_system = False
 
     @staticmethod
@@ -442,8 +448,34 @@ class OpenScenarioParser(object):
                     atomic = atomic_cls(
                         trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('CollisionCondition') is not None:
-                    atomic_cls = py_trees.meta.inverter(CollisionTest)
-                    atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
+
+                    collision_condition = entity_condition.find('CollisionCondition')
+
+                    if collision_condition.find('EntityRef') is not None:
+                        collision_entity = collision_condition.find('EntityRef')
+
+                        for actor in actor_list:
+                            if collision_entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
+                                triggered_actor = actor
+                                break
+
+                        if triggered_actor is None:
+                            raise AttributeError("Cannot find actor '{}' for condition".format(
+                                collision_condition.attrib.get('entityRef', None)))
+
+                        atomic_cls = py_trees.meta.inverter(CollisionTest)
+                        atomic = atomic_cls(trigger_actor, other_actor=triggered_actor,
+                                            terminate_on_failure=True, name=condition_name)
+
+                    elif collision_condition.find('ByType') is not None:
+                        collision_type = collision_condition.find('ByType').attrib.get('type', None)
+
+                        triggered_type = OpenScenarioParser.actor_types[collision_type]
+
+                        atomic_cls = py_trees.meta.inverter(CollisionTest)
+                        atomic = atomic_cls(trigger_actor, other_actor_type=triggered_type,
+                                            terminate_on_failure=True, name=condition_name)
+
                 elif entity_condition.find('OffroadCondition') is not None:
                     off_condition = entity_condition.find('OffroadCondition')
                     condition_duration = float(off_condition.attrib.get('duration'))
