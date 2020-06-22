@@ -2,14 +2,14 @@
 Follow Leading Vehicle metric:
 
 This metric calculates the distance between the ego vehicle and
-the other actor, plotting it.
+the other actor, dumping it to a json file.
 
 It is meant to serve as an example of how to use the information from
 the recorder
 """
 
 import math
-import matplotlib.pyplot as plt
+import json
 
 from srunner.metrics.basic_metric import BasicMetric
 
@@ -64,6 +64,7 @@ class FollowLeadingVehicleMetrics(BasicMetric):
             distances_list.append(distance)
             frames_list.append(i)
 
-        # Plot the results
-        plt.plot(frames_list, distances_list)
-        plt.show()
+        results = {'frames': frames_list, 'distance': distances_list}
+
+        with open('srunner/metrics/data/FollowLeadingVehicle_metric.json', 'w') as fw:
+            json.dump(results, fw, sort_keys=False, indent=4)

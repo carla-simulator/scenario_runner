@@ -2,13 +2,13 @@
 Control Loss metric:
 
 This metric calculates the distance between the ego vehicle and
-the center of the lane, plotting it.
+the center of the lane, dumping it to a json file.
 
 It is meant to serve as an example of how to use the map API
 """
 
 import math
-import matplotlib.pyplot as plt
+import json
 
 from srunner.metrics.basic_metric import BasicMetric
 
@@ -87,8 +87,7 @@ class ControlLossMetric(BasicMetric):
             distances_list.append(project_dist)
             frames_list.append(i)
 
-        # Plot the results
-        plt.plot(frames_list, distances_list)
-        # plt.plot(frames_list, lane_width_list)
-        # plt.plot(frames_list, [-x for x in lane_width_list])
-        plt.show()
+        results = {'frames': frames_list, 'distance': distances_list}
+
+        with open('srunner/metrics/data/ControlLoss_metric.json', 'w') as fw:
+            json.dump(results, fw, sort_keys=False, indent=4)

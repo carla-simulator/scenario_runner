@@ -1,12 +1,14 @@
 """
 RouteScenario metric:
 
-This metric puts the criterias into a table and prints it through the terminal.
+This metric filters the useful information of the criteria (sucess / fail ...),
+and dump it into a json file
 
 It is meant to serve as an example of how to use the criteria
 """
 
 from tabulate import tabulate
+import json
 
 from srunner.metrics.basic_metric import BasicMetric
 
@@ -22,26 +24,21 @@ class RoutesMetric(BasicMetric):
         accessed via the metrics_log.
         """
 
-        ### Parsing of the criterias into a printable table ###
+        ### Parse the criteria information, filtering only the useful information, and dump it into a json ###
 
-        output = "\n"
-        output += " ======= Metrics of the scenario =======\n"
-        output += "\n"
-
-        # Get all the criterias
         criteria = metrics_log.get_criteria()
-        list_criteria = [['Name', 'Result', 'Actual Value', 'Expected Value']]
 
+        results = {}
         for criterion_name in criteria:
             criterion = criteria[criterion_name]
-            name = criterion_name
-            actual_value = criterion["actual_value"]
-            status = criterion["test_status"]
-            expected_value = criterion["expected_value_success"]
+            results.update({criterion_name:
+                {
+                    "test_status": criterion["test_status"],
+                    "actual_value": criterion["actual_value"],
+                    "success_value": criterion["expected_value_success"]
+                }
+            }
+        )
 
-            list_criteria.extend([[name, status, actual_value, expected_value]])
-
-        output += tabulate(list_criteria, tablefmt='fancy_grid')
-        output += "\n"
-
-        print(output)
+        with open('srunner/metrics/data/Routes_metric.json', 'w') as fw:
+            json.dump(results, fw, sort_keys=False, indent=4)
