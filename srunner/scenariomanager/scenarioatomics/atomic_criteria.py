@@ -298,6 +298,7 @@ class CollisionTest(Criterion):
 
     MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area is forgotten
+    MAX_ID_TIME = 5                 # Amount of time the last collision if is remembered
 
     def __init__(self, actor, other_actor=None, other_actor_type=None,
                  optional=False, name="CollisionTest", terminate_on_failure=False):
@@ -316,6 +317,7 @@ class CollisionTest(Criterion):
         self.other_actor_type = other_actor_type
         self.registered_collisions = []
         self.last_id = None
+        self.collision_time = None
 
     def update(self):
         """
@@ -341,6 +343,9 @@ class CollisionTest(Criterion):
                 new_registered_collisions.append(collision_location)
 
         self.registered_collisions = new_registered_collisions
+
+        if self.last_id and GameTime.get_time() - self.collision_time > self.MAX_ID_TIME:
+            self.last_id = None
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -424,6 +429,7 @@ class CollisionTest(Criterion):
 
         self.test_status = "FAILURE"
         self.actual_value += 1
+        self.collision_time = GameTime.get_time()
 
         self.registered_collisions.append(actor_location)
         self.list_traffic_events.append(collision_event)
