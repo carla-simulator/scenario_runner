@@ -45,7 +45,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
                                                                      RouteCompletionTest,
                                                                      RunningRedLightTest,
                                                                      RunningStopTest,
-                                                                     OffRoadTest)
+                                                                     OffRoadTest,
+                                                                     EndofRoadTest)
 # pylint: enable=unused-import
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
                                                                                InTriggerDistanceToOSCPosition,
@@ -441,7 +442,11 @@ class OpenScenarioParser(object):
 
             for entity_condition in condition.find('ByEntityCondition').iter('EntityCondition'):
                 if entity_condition.find('EndOfRoadCondition') is not None:
-                    raise NotImplementedError("EndOfRoad conditions are not yet supported")
+                    end_road_condition = entity_condition.find('EndOfRoadCondition')
+                    condition_duration = float(end_road_condition.attrib.get('duration'))
+                    atomic_cls = py_trees.meta.inverter(EndofRoadTest)
+                    atomic = atomic_cls(
+                        trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('CollisionCondition') is not None:
 
                     collision_condition = entity_condition.find('CollisionCondition')

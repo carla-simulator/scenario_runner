@@ -641,7 +641,6 @@ class OffRoadTest(Criterion):
         super(OffRoadTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-        self._actor = actor
         self._map = CarlaDataProvider.get_map()
         self._offroad = False
 
@@ -661,7 +660,7 @@ class OffRoadTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        current_location = CarlaDataProvider.get_location(self._actor)
+        current_location = CarlaDataProvider.get_location(self.actor)
 
         # Get the waypoint at the current location to see if the actor is offroad
         drive_waypoint = self._map.get_waypoint(
@@ -694,6 +693,75 @@ class OffRoadTest(Criterion):
 
         if self._terminate_on_failure and self.test_status == "FAILURE":
             new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class EndofRoadTest(Criterion):
+
+    """
+    Atomic containing a test to detect when an actor has changed to a different road
+
+    Args:
+        actor (carla.Actor): CARLA actor to be used for this test
+        duration (float): Time spent after ending the road before the atomic fails.
+            If terminate_on_failure isn't active, this is ignored.
+        optional (bool): If True, the result is not considered for an overall pass/fail result
+            when using the output argument
+        terminate_on_failure (bool): If True, the atomic will fail when the duration condition has been met.
+    """
+
+    def __init__(self, actor, duration=0, optional=False, terminate_on_failure=False, name="EndofRoadTest"):
+        """
+        Setup of the variables
+        """
+        super(EndofRoadTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._map = CarlaDataProvider.get_map()
+        self._end_of_road = False
+
+        self._duration = duration
+        self._start_time = None
+        self._time_end_road = 0
+        self._road_id = None
+
+    def update(self):
+        """
+        First, transforms the actor's current position to its corresponding waypoint. Then the road id
+        is compared with the initial one and if that's the case, a time is started
+
+        returns:
+            py_trees.common.Status.FAILURE: when the actor has spent a given duration outside driving lanes
+            py_trees.common.Status.RUNNING: the rest of the time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self.actor)
+        current_waypoint = self._map.get_waypoint(current_location)
+
+        # Get the current road id
+        if self._road_id is None:
+            self._road_id = current_waypoint.road_id
+
+        else:
+            # Wait until the actor has left the road
+            if self._road_id != current_waypoint.road_id or self._start_time:
+
+                # Start counting
+                if self._start_time is None:
+                    self._start_time = GameTime.get_time()
+                    return new_status
+
+                curr_time = GameTime.get_time()
+                self._time_end_road = curr_time - self._start_time
+
+                if self._time_end_road > self._duration:
+                    self.test_status = "FAILURE"
+                    self.actual_value += 1
+                    return py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
