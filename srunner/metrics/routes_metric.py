@@ -7,7 +7,6 @@ and dump it into a json file
 It is meant to serve as an example of how to use the criteria
 """
 
-from tabulate import tabulate
 import json
 
 from srunner.metrics.basic_metric import BasicMetric
