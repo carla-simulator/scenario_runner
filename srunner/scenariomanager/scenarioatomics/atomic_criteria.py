@@ -287,20 +287,24 @@ class CollisionTest(Criterion):
     """
     This class contains an atomic test for collisions.
 
-    Important parameters:
-    - actor: CARLA actor to be used for this test
+    Args:
+    - actor (carla.Actor): CARLA actor to be used for this test
+    - other_actor (carla.Actor): only collisions with this actor will be registered
+    - other_actor_type (str): only collisions with actors including this type_id will count.
+        Additionally, the "miscellaneous" tag can also be used to include all static objects in the scene
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
     MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
-    MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area if forgotten
+    MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area is forgotten
+    MAX_ID_TIME = 5                 # Amount of time the last collision if is remembered
 
-    def __init__(self, actor, optional=False, name="CollisionTest", terminate_on_failure=False):
+    def __init__(self, actor, other_actor=None, other_actor_type=None,
+                 optional=False, name="CollisionTest", terminate_on_failure=False):
         """
         Construction with sensor setup
         """
-        self._actor = actor
         super(CollisionTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -308,9 +312,12 @@ class CollisionTest(Criterion):
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
         self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
+
+        self.other_actor = other_actor
+        self.other_actor_type = other_actor_type
         self.registered_collisions = []
         self.last_id = None
-        self.actual_value = 0
+        self.collision_time = None
 
     def update(self):
         """
@@ -321,7 +328,7 @@ class CollisionTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        actor_location = CarlaDataProvider.get_location(self._actor)
+        actor_location = CarlaDataProvider.get_location(self.actor)
         new_registered_collisions = []
 
         # Loops through all the previous registered collisions
@@ -336,6 +343,9 @@ class CollisionTest(Criterion):
                 new_registered_collisions.append(collision_location)
 
         self.registered_collisions = new_registered_collisions
+
+        if self.last_id and GameTime.get_time() - self.collision_time > self.MAX_ID_TIME:
+            self.last_id = None
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -355,7 +365,7 @@ class CollisionTest(Criterion):
         super(CollisionTest, self).terminate(new_status)
 
     @staticmethod
-    def _count_collisions(weak_self, event):
+    def _count_collisions(weak_self, event):     # pylint: disable=too-many-return-statements
         """
         Callback to update collision count
         """
@@ -363,62 +373,70 @@ class CollisionTest(Criterion):
         if not self:
             return
 
-        registered = False
-        actor_type = None
-
-        self.test_status = "FAILURE"
-
         actor_location = CarlaDataProvider.get_location(self.actor)
 
         # Ignore the current one if it is the same id as before
         if self.last_id == event.other_actor.id:
-            registered = True
+            return
+
+        # Filter to only a specific actor
+        if self.other_actor and self.other_actor.id != event.other_actor.id:
+            return
+
+        # Filter to only a specific type
+        if self.other_actor_type:
+            if self.other_actor_type == "miscellaneous":
+                if "traffic" not in event.other_actor.type_id \
+                        and "static" not in event.other_actor.type_id:
+                    return
+            else:
+                if self.other_actor_type not in event.other_actor.type_id:
+                    return
+
+        # Ignore it if its too close to a previous collision (avoid micro collisions)
+        for collision_location in self.registered_collisions:
+
+            distance_vector = actor_location - collision_location
+            distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+
+            if distance <= self.MIN_AREA_OF_COLLISION:
+                return
+
+        if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
+                and 'sidewalk' not in event.other_actor.type_id:
+            actor_type = TrafficEventType.COLLISION_STATIC
+        elif 'vehicle' in event.other_actor.type_id:
+            actor_type = TrafficEventType.COLLISION_VEHICLE
+        elif 'walker' in event.other_actor.type_id:
+            actor_type = TrafficEventType.COLLISION_PEDESTRIAN
         else:
-            # Loops through all the previous registered collisions
-            for collision_location in self.registered_collisions:
+            return
 
-                # Get the distance to the collision point
-                distance_vector = actor_location - collision_location
-                distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+        collision_event = TrafficEvent(event_type=actor_type)
+        collision_event.set_dict({
+            'type': event.other_actor.type_id,
+            'id': event.other_actor.id,
+            'x': actor_location.x,
+            'y': actor_location.y,
+            'z': actor_location.z})
+        collision_event.set_message(
+            "Agent collided against object with type={} and id={} at (x={}, y={}, z={})".format(
+                event.other_actor.type_id,
+                event.other_actor.id,
+                round(actor_location.x, 3),
+                round(actor_location.y, 3),
+                round(actor_location.z, 3)))
 
-                # Ignore the current one if close to a previous one
-                if distance <= self.MIN_AREA_OF_COLLISION:
-                    registered = True
-                    break
+        self.test_status = "FAILURE"
+        self.actual_value += 1
+        self.collision_time = GameTime.get_time()
 
-        # Register it if needed
-        if not registered:
-            self.actual_value += 1
-            if event.other_actor.id != 0:  # Number 0: static objects -> ignore it
-                self.last_id = event.other_actor.id
+        self.registered_collisions.append(actor_location)
+        self.list_traffic_events.append(collision_event)
 
-            if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
-                    and 'sidewalk' not in event.other_actor.type_id:
-                actor_type = TrafficEventType.COLLISION_STATIC
-
-            elif 'vehicle' in event.other_actor.type_id:
-                actor_type = TrafficEventType.COLLISION_VEHICLE
-
-            elif 'walker' in event.other_actor.type_id:
-                actor_type = TrafficEventType.COLLISION_PEDESTRIAN
-
-            collision_event = TrafficEvent(event_type=actor_type)
-            collision_event.set_dict({
-                'type': event.other_actor.type_id,
-                'id': event.other_actor.id,
-                'x': actor_location.x,
-                'y': actor_location.y,
-                'z': actor_location.z})
-            collision_event.set_message(
-                "Agent collided against object with type={} and id={} at (x={}, y={}, z={})".format(
-                    event.other_actor.type_id,
-                    event.other_actor.id,
-                    round(actor_location.x, 3),
-                    round(actor_location.y, 3),
-                    round(actor_location.z, 3)))
-
-            self.registered_collisions.append(actor_location)
-            self.list_traffic_events.append(collision_event)
+        # Number 0: static objects -> ignore it
+        if event.other_actor.id != 0:
+            self.last_id = event.other_actor.id
 
 
 class ActorSpeedAboveThresholdTest(Criterion):
@@ -629,7 +647,6 @@ class OffRoadTest(Criterion):
         super(OffRoadTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
-        self._actor = actor
         self._map = CarlaDataProvider.get_map()
         self._offroad = False
 
@@ -649,7 +666,7 @@ class OffRoadTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        current_location = CarlaDataProvider.get_location(self._actor)
+        current_location = CarlaDataProvider.get_location(self.actor)
 
         # Get the waypoint at the current location to see if the actor is offroad
         drive_waypoint = self._map.get_waypoint(
@@ -682,6 +699,75 @@ class OffRoadTest(Criterion):
 
         if self._terminate_on_failure and self.test_status == "FAILURE":
             new_status = py_trees.common.Status.FAILURE
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class EndofRoadTest(Criterion):
+
+    """
+    Atomic containing a test to detect when an actor has changed to a different road
+
+    Args:
+        actor (carla.Actor): CARLA actor to be used for this test
+        duration (float): Time spent after ending the road before the atomic fails.
+            If terminate_on_failure isn't active, this is ignored.
+        optional (bool): If True, the result is not considered for an overall pass/fail result
+            when using the output argument
+        terminate_on_failure (bool): If True, the atomic will fail when the duration condition has been met.
+    """
+
+    def __init__(self, actor, duration=0, optional=False, terminate_on_failure=False, name="EndofRoadTest"):
+        """
+        Setup of the variables
+        """
+        super(EndofRoadTest, self).__init__(name, actor, 0, None, optional, terminate_on_failure)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._map = CarlaDataProvider.get_map()
+        self._end_of_road = False
+
+        self._duration = duration
+        self._start_time = None
+        self._time_end_road = 0
+        self._road_id = None
+
+    def update(self):
+        """
+        First, transforms the actor's current position to its corresponding waypoint. Then the road id
+        is compared with the initial one and if that's the case, a time is started
+
+        returns:
+            py_trees.common.Status.FAILURE: when the actor has spent a given duration outside driving lanes
+            py_trees.common.Status.RUNNING: the rest of the time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self.actor)
+        current_waypoint = self._map.get_waypoint(current_location)
+
+        # Get the current road id
+        if self._road_id is None:
+            self._road_id = current_waypoint.road_id
+
+        else:
+            # Wait until the actor has left the road
+            if self._road_id != current_waypoint.road_id or self._start_time:
+
+                # Start counting
+                if self._start_time is None:
+                    self._start_time = GameTime.get_time()
+                    return new_status
+
+                curr_time = GameTime.get_time()
+                self._time_end_road = curr_time - self._start_time
+
+                if self._time_end_road > self._duration:
+                    self.test_status = "FAILURE"
+                    self.actual_value += 1
+                    return py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
