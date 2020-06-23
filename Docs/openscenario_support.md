@@ -320,12 +320,12 @@ The following two tables list the support status for each.
 <td></td>
 <tr>
 <td><code>TimeHeadwayCondition</code></td>
-<td>&#10060;</td>
-<td></td>
+<td>&#9989;</td>
+<td>*freespace* attribute is still not supported</td>
 <tr>
 <td><code>TimeToCollisionCondition</code></td>
 <td>&#9989;</td>
-<td></td>
+<td>*freespace* attribute is still not supported</td>
 <tr>
 <td><code>TraveledDistanceCondition</code></td>
 <td>&#9989;</td>
