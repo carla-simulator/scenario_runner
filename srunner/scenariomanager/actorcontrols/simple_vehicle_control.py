@@ -64,7 +64,7 @@ class SimpleVehicleControl(BasicControl):
 
             map_wp = None
             if not self._generated_waypoint_list:
-                map_wp = CarlaDataProvider11.get_map().get_waypoint(CarlaDataProvider.get_location(self._actor))
+                map_wp = CarlaDataProvider.get_map().get_waypoint(CarlaDataProvider.get_location(self._actor))
             else:
                 map_wp = CarlaDataProvider.get_map().get_waypoint(self._generated_waypoint_list[-1].location)
             while len(self._generated_waypoint_list) < 50:

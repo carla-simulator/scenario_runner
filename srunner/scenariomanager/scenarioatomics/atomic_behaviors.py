@@ -2190,9 +2190,9 @@ class TrafficLightManipulator(AtomicBehavior):
                     if annotations[configuration]:
                         # Found a valid configuration
                         break
-                    else:
-                        # The traffic light doesn't exist, get another one
-                        configuration = None
+
+                    # The traffic light doesn't exist, get another one
+                    configuration = None
                 else:
                     if self.debug:
                         print("This configuration name is wrong")

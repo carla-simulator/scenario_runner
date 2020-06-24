@@ -70,20 +70,18 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         if actor in CarlaDataProvider._actor_velocity_map:
             raise KeyError(
                 "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        else:
-            CarlaDataProvider._actor_velocity_map[actor] = 0.0
 
         if actor in CarlaDataProvider._actor_location_map:
             raise KeyError(
                 "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        else:
-            CarlaDataProvider._actor_location_map[actor] = None
 
         if actor in CarlaDataProvider._actor_transform_map:
             raise KeyError(
                 "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        else:
-            CarlaDataProvider._actor_transform_map[actor] = None
+        
+        CarlaDataProvider._actor_velocity_map[actor] = 0.0
+        CarlaDataProvider._actor_location_map[actor] = None
+        CarlaDataProvider._actor_transform_map[actor] = None
 
     @staticmethod
     def register_actors(actors):
@@ -198,8 +196,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if world is None:
                 if CarlaDataProvider._world is None:
                     raise ValueError("class member \'world'\' not initialized yet")
-                else:
-                    CarlaDataProvider._map = CarlaDataProvider._world.get_map()
+                CarlaDataProvider._map = CarlaDataProvider._world.get_map()
             else:
                 CarlaDataProvider._map = world.get_map()
 
@@ -267,7 +264,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
                 if diff > 330:
                     continue
-                elif diff > 225:
+                elif diff > 225: # pylint: disable=no-else-continue
                     dict_annotations['right'].append(target_tl)
                 elif diff > 135.0:
                     dict_annotations['opposite'].append(target_tl)
@@ -530,12 +527,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         if actor is None:
             raise RuntimeError(
                 "Error: Unable to spawn vehicle {} at {}".format(blueprint.id, spawn_point))
+        
+        # Let's deactivate the autopilot of the actor if it belongs to vehicle
+        if actor in CarlaDataProvider._blueprint_library.filter('vehicle.*'):
+            actor.set_autopilot(autopilot)
         else:
-            # Let's deactivate the autopilot of the actor if it belongs to vehicle
-            if actor in CarlaDataProvider._blueprint_library.filter('vehicle.*'):
-                actor.set_autopilot(autopilot)
-            else:
-                pass
+            pass
 
         # wait for the actor to be spawned properly before we do anything
         if CarlaDataProvider.is_sync_mode():
@@ -581,9 +578,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
                     print("No more spawn points to use")
                     break
-                else:
-                    _spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
-                    CarlaDataProvider._spawn_index += 1
+
+                _spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
+                CarlaDataProvider._spawn_index += 1
 
             else:
                 _spawn_point = carla.Transform()
@@ -643,9 +640,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
                     print("No more spawn points to use. Spawned {} actors out of {}".format(i + 1, amount))
                     break
-                else:
-                    spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
-                    CarlaDataProvider._spawn_index += 1
+
+                spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
+                CarlaDataProvider._spawn_index += 1
             else:
                 try:
                     spawn_point = spawn_points[i]

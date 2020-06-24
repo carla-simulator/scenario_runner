@@ -41,8 +41,18 @@ jobs:
       ################################
       # Run Linter against code base #
       ################################
-      - name: Lint Code Base
-        uses: docker://github/super-linter:v2.2.0
-        env:
-          VALIDATE_ALL_CODEBASE: true
-          VALIDATE_PYTHON: true
+      - name: Get Python Setup
+        uses: actions/setup-python@v1
+        
+      - name: Get dependencies
+        run: |
+          sudo apt-get install libgeos-dev
+          pip install pylint setuptools
+          pip install -r requirements.txt 
+
+      - name: Run Linter
+        run: |
+          cd $GITHUB_WORKSPACE
+          pylint --rcfile=.pylintrc srunner/
+          pylint --rcfile=.pylintrc scenario_runner.py
+            
