@@ -84,21 +84,17 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
     OpenSCENARIO atomic
     This class contains the trigger condition for a distance to an OpenSCENARIO position
 
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - osc_position: OpenSCENARIO position
-    - distance: Trigger distance between the actor and the target location in meters
-    - name: Name of the condition
+    Args:
+        actor (carla.Actor): CARLA actor to execute the behavior
+        osc_position (str): OpenSCENARIO position
+        distance (float): Trigger distance between the actor and the target location in meters
+        name (str): Name of the condition
 
     The condition terminates with SUCCESS, when the actor reached the target distance to the openSCENARIO position
     """
 
-    def __init__(self,
-                 actor,
-                 osc_position,
-                 distance,
-                 comparison_operator=operator.lt,
-                 name="InTriggerDistanceToOSCPosition"):
+    def __init__(self, actor, osc_position, distance, along_route=False,
+                 comparison_operator=operator.lt, name="InTriggerDistanceToOSCPosition"):
         """
         Setup parameters
         """
@@ -106,7 +102,18 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
         self._actor = actor
         self._osc_position = osc_position
         self._distance = distance
+        self._along_route = along_route
         self._comparison_operator = comparison_operator
+        self._map = CarlaDataProvider.get_map()
+
+        if self._along_route:
+            # Get the global route planner, used to calculate the route
+            dao = GlobalRoutePlannerDAO(self._map, 0.5)
+            grp = GlobalRoutePlanner(dao)
+            grp.setup()
+            self._grp = grp
+        else:
+            self._grp = None
 
     def initialise(self):
         if self._distance < 0:
@@ -125,7 +132,13 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
         if osc_transform is not None:
             osc_location = osc_transform.location
             actor_location = CarlaDataProvider.get_location(self._actor)
-            distance = calculate_distance(osc_location, actor_location)
+
+            if self._along_route:
+                # Global planner needs a location at a driving lane
+                actor_location = self._map.get_waypoint(actor_location).transform.location
+                osc_location = self._map.get_waypoint(osc_location).transform.location
+
+            distance = calculate_distance(actor_location, osc_location, self._grp)
 
             if self._comparison_operator(distance, self._distance):
                 new_status = py_trees.common.Status.SUCCESS
@@ -167,6 +180,8 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
             grp = GlobalRoutePlanner(dao)
             grp.setup()
             self._grp = grp
+        else:
+            self._grp = None
 
     def initialise(self):
         if self._time < 0:
@@ -191,21 +206,11 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
             return new_status
 
         if self._along_route:
-            distance = 0
+            # Global planner needs a location at a driving lane
+            actor_location = self._map.get_waypoint(actor_location).transform.location
+            target_location = self._map.get_waypoint(target_location).transform.location
 
-            # Get the route
-            actor_drive_loc = self._map.get_waypoint(actor_location).transform.location
-            target_drive_loc = self._map.get_waypoint(target_location).transform.location
-            route = self._grp.trace_route(actor_drive_loc, target_drive_loc)
-
-            # Get the distance of the route
-            for i in range(1, len(route)):
-                curr_loc = route[i][0].transform.location
-                prev_loc = route[i - 1][0].transform.location
-
-                distance += curr_loc.distance(prev_loc)
-        else:
-            distance = calculate_distance(actor_location, target_location)
+        distance = calculate_distance(actor_location, target_location, self._grp)
 
         actor_velocity = CarlaDataProvider.get_velocity(self._actor)
 
@@ -845,6 +850,8 @@ class InTimeToArrivalToVehicle(AtomicCondition):
             grp = GlobalRoutePlanner(dao)
             grp.setup()
             self._grp = grp
+        else:
+            self._grp = None
 
     def update(self):
         """
@@ -862,21 +869,11 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         other_velocity = CarlaDataProvider.get_velocity(self._other_actor)
 
         if self._along_route:
-            distance = 0
+            # Global planner needs a location at a driving lane
+            current_location = self._map.get_waypoint(current_location).transform.location
+            other_location = self._map.get_waypoint(other_location).transform.location
 
-            # Get the route
-            curr_drive_loc = self._map.get_waypoint(current_location).transform.location
-            other_drive_loc = self._map.get_waypoint(other_location).transform.location
-            route = self._grp.trace_route(curr_drive_loc, other_drive_loc)
-
-            # Get the distance of the route
-            for i in range(1, len(route)):
-                curr_loc = route[i][0].transform.location
-                prev_loc = route[i - 1][0].transform.location
-
-                distance += curr_loc.distance(prev_loc)
-        else:
-            distance = calculate_distance(current_location, other_location)
+        distance = calculate_distance(current_location, other_location, self._grp)
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self._max_time_to_arrival

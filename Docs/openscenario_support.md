@@ -289,7 +289,7 @@ The following two tables list the support status for each.
 <tr>
 <td><code>DistanceCondition</code></td>
 <td>&#9989;</td>
-<td></td>
+<td>*freespace* attribute is still not supported</td>
 <tr>
 <td><code>EndOfRoadCondition</code></td>
 <td>&#9989;</td>
@@ -305,7 +305,7 @@ The following two tables list the support status for each.
 <tr>
 <td><code>RelativeDistanceCondition</code></td>
 <td>&#9989;</td>
-<td></td>
+<td>*freespace* attribute is still not supported</td>
 <tr>
 <td><code>RelativeSpeedCondition</code></td>
 <td>&#9989;</td>

@@ -588,17 +588,32 @@ class OpenScenarioParser(object):
                         trigger_actor, position, distance_value, name=condition_name)
                 elif entity_condition.find('DistanceCondition') is not None:
                     distance_condition = entity_condition.find('DistanceCondition')
+
                     distance_value = float(distance_condition.attrib.get('value'))
+
                     distance_rule = distance_condition.attrib.get('rule')
                     distance_operator = OpenScenarioParser.operators[distance_rule]
+
+                    distance_freespace = strtobool(distance_condition.attrib.get('freespace', False))
+                    if distance_freespace:
+                        raise NotImplementedError(
+                            "DistanceCondition: freespace attribute is currently not implemented")
+                    distance_along_route = strtobool(distance_condition.attrib.get('alongRoute', False))
+
                     if distance_condition.find('Position') is not None:
                         position = distance_condition.find('Position')
                         atomic = InTriggerDistanceToOSCPosition(
-                            trigger_actor, position, distance_value, distance_operator, name=condition_name)
+                            trigger_actor, position, distance_value, distance_along_route,
+                            distance_operator, name=condition_name)
 
                 elif entity_condition.find('RelativeDistanceCondition') is not None:
                     distance_condition = entity_condition.find('RelativeDistanceCondition')
                     distance_value = float(distance_condition.attrib.get('value'))
+
+                    distance_freespace = strtobool(distance_condition.attrib.get('freespace', False))
+                    if distance_freespace:
+                        raise NotImplementedError(
+                            "RelativeDistanceCondition: freespace attribute is currently not implemented")
                     if distance_condition.attrib.get('relativeDistanceType') == "cartesianDistance":
                         for actor in actor_list:
                             if distance_condition.attrib.get('entityRef', None) == actor.attributes['role_name']:
