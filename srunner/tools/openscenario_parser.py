@@ -476,6 +476,10 @@ class OpenScenarioParser(object):
                         atomic = atomic_cls(trigger_actor, other_actor_type=triggered_type,
                                             terminate_on_failure=True, name=condition_name)
 
+                    else:
+                        atomic_cls = py_trees.meta.inverter(CollisionTest)
+                        atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
+
                 elif entity_condition.find('OffroadCondition') is not None:
                     off_condition = entity_condition.find('OffroadCondition')
                     condition_duration = float(off_condition.attrib.get('duration'))
