@@ -42,6 +42,7 @@
     - The RoadNetwork can be defined as global Parameter
     - Fixed handling of relative positions with negative offset
     - Added support for local ParamaterDeclarations
+    - Fixed use of relative initial positions for any actor
 * Atomics:
     - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time
