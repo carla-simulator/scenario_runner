@@ -23,7 +23,11 @@
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
 * Enable weather animation during scenario execution (requires ephem pip package)
 * OpenSCENARIO support:
-    - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller.
+    - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
+        - Pedestrian controller
+        - NPC vehicle controller (based on CARLA LocalPlanner)
+        - Simple vehicle controller to set velocities not brake/throttle
+        - External controller (to forward control to external entities)
     - Added initial speed support for pedestrians for OpenSCENARIO
     - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
     - Added support for RelativeSpeedCondition
