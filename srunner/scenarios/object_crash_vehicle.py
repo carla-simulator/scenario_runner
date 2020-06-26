@@ -321,8 +321,8 @@ class DynamicObjectCrossing(BasicScenario):
                                                                     self.transform.location,
                                                                     dist_to_trigger)
         else:
-            start_condition = InTimeToArrivalToVehicle(self.other_actors[0],
-                                                       self.ego_vehicles[0],
+            start_condition = InTimeToArrivalToVehicle(self.ego_vehicles[0],
+                                                       self.other_actors[0],
                                                        self._time_to_reach)
 
         actor_velocity = KeepVelocity(self.other_actors[0],
