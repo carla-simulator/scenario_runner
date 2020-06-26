@@ -35,7 +35,7 @@ Currently no build is required, as all code is in Python.
 Using the ScenarioRunner
 ------------------------
 
-Please take a look at our [Getting started](Docs/getting_started.md)
+Please take a look at our [Getting started](Docs/getting_scenariorunner.md)
 documentation.
 
 Challenge Evaluation
