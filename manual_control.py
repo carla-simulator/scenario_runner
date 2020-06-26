@@ -185,12 +185,15 @@ class World(object):
 class KeyboardControl(object):
     def __init__(self, world, start_in_autopilot):
         self._autopilot_enabled = start_in_autopilot
+        self._lights = carla.VehicleLightState.NONE
         self._control = carla.VehicleControl()
         self._steer_cache = 0.0
+        world.vehicle.set_light_state(self._lights)
         world.vehicle.set_autopilot(self._autopilot_enabled)
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
 
     def parse_events(self, world, clock):
+        current_lights = self._lights
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return True
@@ -222,7 +225,20 @@ class KeyboardControl(object):
                     world.vehicle.set_autopilot(self._autopilot_enabled)
                     world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
         if not self._autopilot_enabled:
+
             self._parse_keys(pygame.key.get_pressed(), clock.get_time())
+            # Set automatic control-related vehicle lights
+            if self._control.brake:
+                current_lights |= carla.VehicleLightState.Brake
+            else: # Remove the Brake flag
+                current_lights &= ~carla.VehicleLightState.Brake
+            if self._control.reverse:
+                current_lights |= carla.VehicleLightState.Reverse
+            else: # Remove the Reverse flag
+                current_lights &= ~carla.VehicleLightState.Reverse
+            if current_lights != self._lights: # Change the light state only if necessary
+                self._lights = current_lights
+                world.vehicle.set_light_state(carla.VehicleLightState(self._lights))
             world.vehicle.apply_control(self._control)
 
     def _parse_keys(self, keys, milliseconds):
