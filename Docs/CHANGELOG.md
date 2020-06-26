@@ -22,6 +22,7 @@
 * Remade how ScenarioRunner reads the scenarios files. It now reads all scenarios inside the *srunner/scenarios* folder without needing to import them. Scenarios outside that folder will still need the *--additionalScenario* argument.
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
 * Enable weather animation during scenario execution (requires ephem pip package)
+* Added vehicle lights to the manual control
 * OpenSCENARIO support:
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
