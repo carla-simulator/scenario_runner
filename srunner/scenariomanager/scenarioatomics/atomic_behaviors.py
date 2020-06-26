@@ -43,7 +43,7 @@ import srunner.tools
 EPSILON = 0.001
 
 
-def calculate_distance(location, other_location):
+def calculate_distance(location, other_location, global_planner=None):
     """
     Method to calculate the distance between to locations
 
@@ -52,6 +52,21 @@ def calculate_distance(location, other_location):
           To be accurate, it would have to use the distance along the
           (shortest) route between the two locations.
     """
+    if global_planner:
+        distance = 0
+
+        # Get the route
+        route = global_planner.trace_route(location, other_location)
+
+        # Get the distance of the route
+        for i in range(1, len(route)):
+            curr_loc = route[i][0].transform.location
+            prev_loc = route[i - 1][0].transform.location
+
+            distance += curr_loc.distance(prev_loc)
+
+        return distance
+
     return location.distance(other_location)
 
 
