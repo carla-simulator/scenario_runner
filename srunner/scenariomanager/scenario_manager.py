@@ -208,6 +208,7 @@ class ScenarioManager(object):
         result = "SUCCESS"
 
         if self.scenario.test_criteria is None:
+            print("Nothing to analyze, this scenario has no criteria")
             return True
 
         for criterion in self.scenario.get_criteria():

@@ -70,6 +70,7 @@
 * Fixed bug causing the *group:* functionality to behave incorrectly when moving scenarios around.
 * Fixed bug causing FollowLeadingVehicle and FollowLeadingVehicleWithObstacle scenarios to not properly end
 * Fixed bug causing CollisionTest to ignore multiple collisions with scene objects
+* Fixed bug causing NoSignalJunctionCrossing to not output the results of the scenario
 
 
 ## CARLA ScenarioRunner 0.9.9
