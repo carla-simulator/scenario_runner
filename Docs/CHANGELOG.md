@@ -59,7 +59,7 @@
     - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. The default behavior has been unchanged.
     - InTimeToArrivalToVehicle has had its two actor arguments swapped, to match all the other behaviors.
     - Added *along_route* flag to InTimeToArrivalToVehicle, to take into account the topology of the road
-* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity) 
+* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction) 
 ### :bug: Bug Fixes
 * Do not register SIGHUP signal in windows
 * Fixed initial speed of vehicles using OpenSCENARIO
