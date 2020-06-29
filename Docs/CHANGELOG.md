@@ -16,13 +16,15 @@
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
     - Renamed the _map_ element at routes to _town_, matching the scenario configuration files
 
+* Added new environment variables needed. They can be seen at (Docs/getting_scenariorunner.md).
 * Improved the visual display of the information from the *output* and *file* arguments.
 * Routes are now deterministic in regards to the spawning scenarios when more than one are at the same location
 * The BackgroundActivity functionality has been unchanged but some tweaks have been made, fixing a previous patch. As a result, the *amount* parameter at *ActorConfigurationData* has been removed.
 * Remade how ScenarioRunner reads the scenarios files. It now reads all scenarios inside the *srunner/scenarios* folder without needing to import them. Scenarios outside that folder will still need the *--additionalScenario* argument.
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
 * Enable weather animation during scenario execution (requires ephem pip package)
-* Added vehicle lights to the manual control
+* Changed manual control to be in par with the CARLA version. Among others, added vehicle lights, recording and some new sensors
+* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction) 
 * OpenSCENARIO support:
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
@@ -60,7 +62,6 @@
     - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. The default behavior has been unchanged.
     - InTimeToArrivalToVehicle has had its two actor arguments swapped, to match all the other behaviors.
     - Added *along_route* flag to InTimeToArrivalToVehicle, to take into account the topology of the road
-* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction) 
 ### :bug: Bug Fixes
 * Do not register SIGHUP signal in windows
 * Fixed initial speed of vehicles using OpenSCENARIO
