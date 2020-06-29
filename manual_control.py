@@ -58,7 +58,6 @@ import carla
 from examples.manual_control import (World, HUD, KeyboardControl, CameraManager,
                                      CollisionSensor, LaneInvasionSensor, GnssSensor, IMUSensor)
 
-import re
 import os
 import argparse
 import logging
@@ -68,13 +67,6 @@ import pygame
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
-
-
-def find_weather_presets():
-    rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
-    name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
-    presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
-    return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
 
 
 def get_actor_display_name(actor, truncate=250):
@@ -88,44 +80,47 @@ def get_actor_display_name(actor, truncate=250):
 
 class WorldSR(World):
 
-    def __init__(self, carla_world, hud, args):
-        self.world = carla_world
-        self.map = self.world.get_map()
-        self.hud = hud
-        self.world.on_tick(hud.on_world_tick)
-        self.world.wait_for_tick(10.0)
-        self.player = None
-        self._gamma = args.gamma
+    restarted = False
+
+    def restart(self):
+
+        if self.restarted:
+            return
+        self.restarted = True
+
+        self.player_max_speed = 1.589
+        self.player_max_speed_fast = 3.713
+
+        # Keep same camera config if the camera manager exists.
+        cam_index = self.camera_manager.index if self.camera_manager is not None else 0
+        cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
+
+        # Get the ego vehicle
         while self.player is None:
-            print("Scenario not yet ready")
+            print("Waiting for the ego vehicle...")
             time.sleep(1)
             possible_vehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in possible_vehicles:
                 if vehicle.attributes['role_name'] == "hero":
+                    print("Ego vehicle found")
                     self.player = vehicle
+                    break
+        
         self.player_name = self.player.type_id
 
+        # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
         self.lane_invasion_sensor = LaneInvasionSensor(self.player, self.hud)
-
-        self.camera_manager = CameraManager(self.player, self.hud, self._gamma)
-        self.camera_manager.transform_index = 0
-        self.camera_manager.set_sensor(0, notify=False)
-
         self.gnss_sensor = GnssSensor(self.player)
         self.imu_sensor = IMUSensor(self.player)
-        self.radar_sensor = None
-
-        self.controller = None
-        self._weather_presets = find_weather_presets()
-        self._weather_index = 0
-
-        self.recording_enabled = False
-        self.recording_start = 0
+        self.camera_manager = CameraManager(self.player, self.hud, self._gamma)
+        self.camera_manager.transform_index = cam_pos_index
+        self.camera_manager.set_sensor(cam_index, notify=False)
+        actor_type = get_actor_display_name(self.player)
+        self.hud.notification(actor_type)
 
     def tick(self, clock):
         if len(self.world.get_actors().filter(self.player_name)) < 1:
-            print("Scenario ended -- Terminating")
             return False
 
         self.hud.tick(self, clock)
@@ -206,23 +201,11 @@ def main():
         metavar='WIDTHxHEIGHT',
         default='1280x720',
         help='window resolution (default: 1280x720)')
-    argparser.add_argument(
-        '--filter',
-        metavar='PATTERN',
-        default='vehicle.*',
-        help='actor filter (default: "vehicle.*")')
-    argparser.add_argument(
-        '--rolename',
-        metavar='NAME',
-        default='hero',
-        help='actor role name (default: "hero")')
-    argparser.add_argument(
-        '--gamma',
-        default=2.2,
-        type=float,
-        help='Gamma correction of the camera (default: 2.2)')
     args = argparser.parse_args()
 
+    args.rolename = 'hero'      # Needed for CARLA version
+    args.filter = "vehicle.*"   # Needed for CARLA version
+    args.gamma = 2.2   # Needed for CARLA version
     args.width, args.height = [int(x) for x in args.res.split('x')]
 
     log_level = logging.DEBUG if args.debug else logging.INFO
