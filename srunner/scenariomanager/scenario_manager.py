@@ -105,8 +105,6 @@ class ScenarioManager(object):
         self.ego_vehicles = scenario.ego_vehicles
         self.other_actors = scenario.other_actors
 
-        CarlaDataProvider.register_actors(self.ego_vehicles)
-        CarlaDataProvider.register_actors(self.other_actors)
         # To print the scenario tree uncomment the next line
         # py_trees.display.render_dot_tree(self.scenario_tree)
 
@@ -211,6 +209,7 @@ class ScenarioManager(object):
         result = "SUCCESS"
 
         if self.scenario.test_criteria is None:
+            print("Nothing to analyze, this scenario has no criteria")
             return True
 
         for criterion in self.scenario.get_criteria():
