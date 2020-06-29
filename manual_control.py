@@ -57,6 +57,7 @@ import carla
 
 from examples.manual_control import *
 
+import os
 import argparse
 import logging
 import time
