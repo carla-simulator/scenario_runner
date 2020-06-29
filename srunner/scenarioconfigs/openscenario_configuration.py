@@ -227,6 +227,26 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 for misc in obj.iter("MiscObject"):
                     self._extract_misc_information(obj, rolename, misc, args)
 
+        # Set transform for all actors
+        # This has to be done in a multi-stage loop to resolve relative position settings
+        all_actor_transforms_set = False
+        while not all_actor_transforms_set:
+            all_actor_transforms_set = True
+            for actor in self.other_actors + self.ego_vehicles:
+                if actor.transform is None:
+                    try:
+                        actor.transform = self._get_actor_transform(actor.rolename)
+                    except AttributeError as e:
+                        if "Object '" in str(e):
+                            ref_actor_rolename = str(e).split('\'')[1]
+                            for ref_actor in self.other_actors + self.ego_vehicles:
+                                if ref_actor.rolename == ref_actor_rolename:
+                                    if ref_actor.transform is not None:
+                                        raise e
+                                    break
+                    if actor.transform is None:
+                        all_actor_transforms_set = False
+
     def _extract_vehicle_information(self, obj, rolename, vehicle, args):
         """
         Helper function to _set_actor_information for getting vehicle information from XML tree
@@ -243,8 +263,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         speed = self._get_actor_speed(rolename)
         new_actor = ActorConfigurationData(
-            model, carla.Transform(), rolename, speed, color=color, category=category, args=args)
-        new_actor.transform = self._get_actor_transform(rolename)
+            model, None, rolename, speed, color=color, category=category, args=args)
 
         if ego_vehicle:
             self.ego_vehicles.append(new_actor)
@@ -258,8 +277,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         model = pedestrian.attrib.get('model', "walker.*")
 
         speed = self._get_actor_speed(rolename)
-        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, speed, category="pedestrian", args=args)
-        new_actor.transform = self._get_actor_transform(rolename)
+        new_actor = ActorConfigurationData(model, None, rolename, speed, category="pedestrian", args=args)
 
         self.other_actors.append(new_actor)
 
@@ -274,8 +292,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             model = "static.prop.chainbarrier"
         else:
             model = misc.attrib.get('name')
-        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="misc", args=args)
-        new_actor.transform = self._get_actor_transform(rolename)
+        new_actor = ActorConfigurationData(model, None, rolename, category="misc", args=args)
 
         self.other_actors.append(new_actor)
 
@@ -305,7 +322,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 actor_found = True
                 for position in private_action.iter('Position'):
                     transform = OpenScenarioParser.convert_position_to_transform(
-                        position, actor_list=self.other_actors)
+                        position, actor_list=self.other_actors + self.ego_vehicles)
                     if transform:
                         actor_transform = transform
 

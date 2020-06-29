@@ -142,10 +142,13 @@ __3. Pull the latest changes from the repository.__
 git pull
 ```
 
-__4. Add environemnt variables and Python paths__ These are necessary for the system to find CARLA, and add the PythonAPI to the Python path.  
+__4. Add environment variables and Python paths__ These are necessary for the system to find CARLA, and add the PythonAPI to the Python path.
+
+*   __For Linux__
 
 ```sh
 # ${CARLA_ROOT} is the CARLA installation directory
+# ${SCENARIO_RUNNER} is the ScenarioRunner installation directory
 # <VERSION> is the correct string for the Python version being used
 # In a build from source, the .egg files may be in: ${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI
 export CARLA_ROOT=/path/to/your/carla/installation
@@ -153,11 +156,30 @@ export SCENARIO_RUNNER_ROOT=/path/to/your/scenario/runner/installation
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/agents
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
-export PYTHONPATH=$PYTHONPATH:${SCENARIO_RUNNER}/PythonAPI/carla
 ```
 
 !!! Note
     Change the command lines with the proper paths, according to the comments. 
+
+*   __For Windows__
+
+
+```sh
+# %CARLA_ROOT% is the CARLA installation directory
+# %SCENARIO_RUNNER% is the ScenarioRunner installation directory
+# <VERSION> is the correct string for the Python version being used
+# In a build from source, the .egg files may be in: ${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI
+set CARLA_ROOT=\path\to\your\carla\installation
+set SCENARIO_RUNNER_ROOT=\path\to\your\scenario\runner\installation
+set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla\dist\carla-<VERSION>.egg
+set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla\agents
+set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla
+```
+
+!!! Note
+    Change the command lines with the proper paths, according to the comments. 
+
+To permanently set the environment variables, go to *edit the environment variables of this account*. This can be quickly accessed by writing *env* on the Windows' search panel.
 
 ---
 ## Run a test 
