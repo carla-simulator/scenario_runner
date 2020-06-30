@@ -156,6 +156,7 @@ export SCENARIO_RUNNER_ROOT=/path/to/your/scenario/runner/installation
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/agents
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI
 ```
 
 !!! Note
@@ -174,6 +175,7 @@ set SCENARIO_RUNNER_ROOT=\path\to\your\scenario\runner\installation
 set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla\dist\carla-<VERSION>.egg
 set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla\agents
 set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla
+set PYTHONPATH=%PYTHONPATH%:%CARLA_ROOT%\PythonAPI
 ```
 
 !!! Note

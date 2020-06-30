@@ -547,6 +547,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             return None
 
         CarlaDataProvider._carla_actor_pool[actor.id] = actor
+        CarlaDataProvider.register_actor(actor)
         return actor
 
     @staticmethod
@@ -612,6 +613,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if actor is None:
                 continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
+            CarlaDataProvider.register_actor(actor)
         return actors
 
     @staticmethod
@@ -665,6 +667,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if actor is None:
                 continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
+            CarlaDataProvider.register_actor(actor)
         return actors
 
     @staticmethod

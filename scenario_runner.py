@@ -223,6 +223,7 @@ class ScenarioRunner(object):
 
             for i, _ in enumerate(self.ego_vehicles):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
+                CarlaDataProvider.register_actor(self.ego_vehicles[i])
 
         # sync state
         if CarlaDataProvider.is_sync_mode():
