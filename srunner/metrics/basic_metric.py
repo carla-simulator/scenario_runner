@@ -17,7 +17,7 @@ class BasicMetric(object):
     Base class of all the metrics.
     """
 
-    def __init__(self, town_map, recorder, criteria=None):
+    def __init__(self, world, recorder, criteria=None):
         """
         Initialization of the metric class. This calls the metrics log and creates the metrics
 
@@ -26,7 +26,8 @@ class BasicMetric(object):
             recorder (dict): dictionary with all the information of the simulation
             criteria (list): list of dictionaries with all the criteria information
         """
-        self._map = town_map
+        self._world = world
+        self._map = self._world.get_map()
 
         # Instanciate the MetricsLog, used to querry the needed info
         metrics_log = MetricsLog(recorder, criteria)

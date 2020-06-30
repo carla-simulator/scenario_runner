@@ -7,10 +7,8 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-Follow Leading Vehicle metric:
-
 This metric calculates the distance between the ego vehicle and
-the other actor, dumping it to a json file.
+another actor, dumping it to a json file.
 
 It is meant to serve as an example of how to use the information from
 the recorder
@@ -22,9 +20,9 @@ import json
 from srunner.metrics.basic_metric import BasicMetric
 
 
-class FollowLeadingVehicleMetrics(BasicMetric):
+class DistanceBetweenTwoVehicles(BasicMetric):
     """
-    Class containing an example metric of the FollowLeadingVehicle scenario.
+    Metric class DistanceBetweenTwoVehicles
     """
 
     def _create_metrics(self, metrics_log):
@@ -74,5 +72,5 @@ class FollowLeadingVehicleMetrics(BasicMetric):
 
         results = {'frames': frames_list, 'distance': distances_list}
 
-        with open('srunner/metrics/data/FollowLeadingVehicle_metric.json', 'w') as fw:
+        with open('srunner/metrics/data/DistanceBetweenTwoVehicles_Result.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

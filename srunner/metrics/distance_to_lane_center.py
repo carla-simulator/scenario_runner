@@ -7,8 +7,6 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-Control Loss metric:
-
 This metric calculates the distance between the ego vehicle and
 the center of the lane, dumping it to a json file.
 
@@ -21,24 +19,10 @@ import json
 from srunner.metrics.basic_metric import BasicMetric
 
 
-class ControlLossMetric(BasicMetric):
+class DistanceToLaneCenter(BasicMetric):
     """
-    Class containing an example metric of the ControlLoss scenario.
+    Metric class DistanceToLaneCenter
     """
-
-    def __init__(self, town_map, recorder, criteria=None):
-        """
-        Initialization of the metric class. Must always call the BasicMetric __init__
-
-        Args:
-            client (carla.Client): client of the simulation.
-            recorder (dict): dictionary with all the information of the simulation
-            criteria (list): list of dictionaries with all the criteria information
-        """
-
-        self._map = town_map
-
-        super(ControlLossMetric, self).__init__(town_map, recorder, criteria)
 
     def _create_metrics(self, metrics_log):
         """
@@ -97,5 +81,5 @@ class ControlLossMetric(BasicMetric):
 
         results = {'frames': frames_list, 'distance': distances_list}
 
-        with open('srunner/metrics/data/ControlLoss_metric.json', 'w') as fw:
+        with open('srunner/metrics/data/DistanceToLaneCenter_Result.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

@@ -7,8 +7,6 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-RouteScenario metric:
-
 This metric filters the useful information of the criteria (sucess / fail ...),
 and dump it into a json file
 
@@ -20,9 +18,9 @@ import json
 from srunner.metrics.basic_metric import BasicMetric
 
 
-class RoutesMetric(BasicMetric):
+class CriteriaFilter(BasicMetric):
     """
-    Class containing a metric of the Route scenario.
+    Metric class CriteriaFilter
     """
 
     def _create_metrics(self, metrics_log):
@@ -47,5 +45,5 @@ class RoutesMetric(BasicMetric):
             }
         )
 
-        with open('srunner/metrics/data/Routes_metric.json', 'w') as fw:
+        with open('srunner/metrics/data/CriteriaFilter_Result.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

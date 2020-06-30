@@ -32,6 +32,36 @@ def parse_actor(info):
 
     return actor
 
+def parse_traffic_actor(info, world):
+    """
+    Returns an instante of a carla.TrafficSign / carla.TrafficLight
+
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
+
+    type_id = info[2]
+    location = carla.Location(
+        float(info[5][1:-1]) / 100,
+        float(info[6][:-1]) / 100,
+        float(info[7][:-1]) / 100
+    )
+
+    traffic_actors = world.get_actors().filter("traffic.*")
+
+    for actor in traffic_actors:
+        actor_location = actor.get_transform().location
+        distance = actor_location.distance(location)
+
+        if distance < 0.1:  # Can't use "equal" due to str-float conversion errors
+            actor_dict = {
+                "type_id": type_id,
+                "actor": actor
+            }
+            return actor_dict
+
+    return None
+
 def parse_transform(info):
     """
     Parses a list into a carla.Transform
@@ -123,9 +153,23 @@ class MetricsParser(object):
     Support class to the MetricsManager to parse the CARLA recorder
     into readable information
     """
+    @staticmethod
+    def get_map_name(recorder_info):
+        """
+        Returns the name of the map the simualtion took place in
+
+        Args:
+            recorder_info (str): log created by the recorder
+        """
+
+        header = recorder_info.split("\n")
+        sim_map = header[1][5:]
+
+        return sim_map
+
 
     @staticmethod
-    def parse_recorder_info(recorder_info):
+    def parse_recorder_info(recorder_info, world):
         """
         Parses recorder_info into readable information.
 
@@ -185,7 +229,10 @@ class MetricsParser(object):
 
                     # Save them to the dictionary
                     actor_id = int(elements[1][:-1])
-                    actor = parse_actor(elements)
+                    if "traffic" in elements[2]:  # Gets their instance
+                        actor = parse_traffic_actor(elements, world)
+                    else:
+                        actor = parse_actor(elements)
                     actors_info.update({actor_id: actor})
                     actors_info[actor_id].update({"created": frame_number})
                 else:

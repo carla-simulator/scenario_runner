@@ -55,13 +55,15 @@ class MetricsManager(object):
             print("ERROR: The specified log file does not exist")
             sys.exit(-1)
 
+        # Get the log information
         recorder_str = self._client.show_recorder_file_info(recorder_file, True)
-        recorder_info = MetricsParser.parse_recorder_info(recorder_str)
 
-        # Load the correct town and get its map (gives the user access to the map API)
-        map_name = recorder_info[1][0]["map"]
+        # Get the correct world and load it (gives the user access to the map API and static actors)
+        map_name = MetricsParser.get_map_name(recorder_str)
         self._world = self._client.load_world(map_name)
-        town_map = self._world.get_map()
+
+        # Parse the information
+        recorder_info = MetricsParser.parse_recorder_info(recorder_str, self._world)
 
         if self._args.criteria:
             with open(self._args.criteria) as criteria_file:
@@ -71,7 +73,7 @@ class MetricsManager(object):
 
         # Read and run the metric class
         self._metric_class = self._get_metric_class(self._args.metric)
-        self._metric_class(town_map, recorder_info, criteria_dict)
+        self._metric_class(self._world, recorder_info, criteria_dict)
 
     def _get_metric_class(self, metric_file):
         """
