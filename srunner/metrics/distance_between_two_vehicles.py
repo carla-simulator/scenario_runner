@@ -25,52 +25,48 @@ class DistanceBetweenTwoVehicles(BasicMetric):
     Metric class DistanceBetweenTwoVehicles
     """
 
-    def _create_metrics(self, metrics_log):
+    def _create_metrics(self, town_map, log, criteria):
         """
         Implementation of the metric. This is an example to show how to use the recorder,
-        accessed via the metrics_log.
+        accessed via the log.
         """
 
         ##### Calculate distance between the two vehicles and plot it #####
 
-        # Get their ID's
-        hero_id = metrics_log.get_ego_vehicle_id()
-        adve_id = metrics_log.get_actor_ids_with_role_name("scenario")[0]
+        # Get the ID of the two vehicles
+        ego_id = log.get_ego_vehicle_id()
+        adv_id = log.get_actor_ids_with_role_name("scenario")[0]  # Could have also used its type_id
 
-        distances_list = []
+        dist_list = []
         frames_list = []
 
         # Get the frames both actors were alive
-        start_hero, end_hero = metrics_log.get_actor_alive_frames(hero_id)
-        start_adve, end_adve = metrics_log.get_actor_alive_frames(adve_id)
-        start = max(start_hero, start_adve)
-        end = min(end_hero, end_adve)
+        start_ego, end_ego = log.get_actor_alive_frames(ego_id)
+        start_adv, end_adv = log.get_actor_alive_frames(adv_id)
+        start = max(start_ego, start_adv)
+        end = min(end_ego, end_adv)
 
         # Get the list of transforms
-        hero_transform_list = metrics_log.get_all_actor_states(hero_id, "transform", start, end)
-        adve_transform_list = metrics_log.get_all_actor_states(adve_id, "transform", start, end)
+        ego_transform_list = log.get_all_transforms(ego_id, start, end)
+        adv_transform_list = log.get_all_transforms(adv_id, start, end)
 
         # Get the distance between the two
         for i in range(start, end):
 
-            hero_location = hero_transform_list[i - 1].location  # Frames start at 1! Indexes should be one less
-            adve_location = adve_transform_list[i - 1].location  # Frames start at 1! Indexes should be one less
+            ego_location = ego_transform_list[i - 1].location  # Frames start at 1!
+            adv_location = adv_transform_list[i - 1].location  # Frames start at 1!
 
             # Filter some points for a better graph
-            if adve_location.z < -10:
+            if adv_location.z < -10:
                 continue
 
-            distance_vec = hero_location - adve_location
-            distance = math.sqrt(
-                distance_vec.x * distance_vec.x +
-                distance_vec.y * distance_vec.y +
-                distance_vec.z * distance_vec.z
-            )
+            dist_v = ego_location - adv_location
+            dist = math.sqrt(dist_v.x * dist_v.x + dist_v.y * dist_v.y + dist_v.z * dist_v.z)
 
-            distances_list.append(distance)
+            dist_list.append(dist)
             frames_list.append(i)
 
-        results = {'frames': frames_list, 'distance': distances_list}
+        results = {'frames': frames_list, 'distance': dist_list}
 
-        with open('srunner/metrics/data/DistanceBetweenTwoVehicles_Result.json', 'w') as fw:
+        with open('srunner/metrics/data/DistanceBetweenTwoVehicles_results.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

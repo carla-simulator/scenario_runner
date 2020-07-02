@@ -25,8 +25,7 @@ import argparse
 from argparse import RawTextHelpFormatter
 
 import carla
-
-from srunner.metrics.tools.metrics_parser import MetricsParser
+from srunner.metrics.tools.metrics_log import MetricsLog
 
 
 class MetricsManager(object):
@@ -40,14 +39,34 @@ class MetricsManager(object):
         Initialization of the metrics manager. This creates the client, needed to parse
         the information from the recorder, extract the metrics class, and runs it
         """
-
         self._args = args
-        self._client = carla.Client(self._args.host, self._args.port)
+
+        # Parse the arguments
+        recorder_str = self._get_recorder(self._args.log)
+        criteria_dict = self._get_criteria(self._args.criteria)
+
+        # Get the correct world and load it
+        map_name = self._get_recorder_map(recorder_str)
+        world = self._client.load_world(map_name)
+        town_map = world.get_map()
+
+        # Instanciate the MetricsLog, used to querry the needed information
+        log = MetricsLog(recorder_str)
+
+        # Read and run the metric class
+        metric_class = self._get_metric_class(self._args.metric)
+        metric_class(town_map, log, criteria_dict)
+
+    def _get_recorder(self, log):
+        """
+        Parses the log argument into readable information
+        """
 
         # Get the log information.
-        recorder_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.log)
+        self._client = carla.Client(self._args.host, self._args.port)
+        recorder_file = "{}/{}".format(os.getenv('SCENARIO_RUNNER_ROOT', "./"), log)
 
-        # client.start_recorder() doesn't check if the file is valid, so do so before calling it
+        # Check that the file is correct
         if recorder_file[-4:] != '.log':
             print("ERROR: The log argument has to point to a .log file")
             sys.exit(-1)
@@ -55,25 +74,21 @@ class MetricsManager(object):
             print("ERROR: The specified log file does not exist")
             sys.exit(-1)
 
-        # Get the log information
         recorder_str = self._client.show_recorder_file_info(recorder_file, True)
 
-        # Get the correct world and load it (gives the user access to the map API and static actors)
-        map_name = MetricsParser.get_map_name(recorder_str)
-        self._world = self._client.load_world(map_name)
+        return recorder_str
 
-        # Parse the information
-        recorder_info = MetricsParser.parse_recorder_info(recorder_str, self._world)
-
-        if self._args.criteria:
-            with open(self._args.criteria) as criteria_file:
-                criteria_dict = json.load(criteria_file)
+    def _get_criteria(self, criteria_file):
+        """
+        Parses the criteria argument into a dictionary
+        """
+        if criteria_file:
+            with open(criteria_file) as fd:
+                criteria_dict = json.load(fd)
         else:
             criteria_dict = None
 
-        # Read and run the metric class
-        self._metric_class = self._get_metric_class(self._args.metric)
-        self._metric_class(self._world, recorder_info, criteria_dict)
+        return criteria_dict
 
     def _get_metric_class(self, metric_file):
         """
@@ -97,6 +112,17 @@ class MetricsManager(object):
 
         print("No child class of BasicMetric was found ... Exiting")
         sys.exit(-1)
+
+    def _get_recorder_map(self, recorder_str):
+        """
+        Returns the name of the map the simulation took place in
+        """
+
+        header = recorder_str.split("\n")
+        sim_map = header[1][5:]
+
+        return sim_map
+    
 
 def main():
     """

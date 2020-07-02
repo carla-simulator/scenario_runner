@@ -24,62 +24,48 @@ class DistanceToLaneCenter(BasicMetric):
     Metric class DistanceToLaneCenter
     """
 
-    def _create_metrics(self, metrics_log):
+    def _create_metrics(self, town_map, log, criteria):
         """
         Implementation of the metric.
         """
+        ### Distance to the center of the lane ###
 
-        ### Rough calculus of the distance to the center of the lane ###
+        # Get ego vehicle id
+        ego_id = log.get_ego_vehicle_id()
 
-        # Get their ID's
-        hero_id = metrics_log.get_ego_vehicle_id()
-
-        distances_list = []
-        lane_width_list = []
+        dist_list = []
         frames_list = []
 
-        # Get the frames the hero actor was alive and its transforms
-        start, end = metrics_log.get_actor_alive_frames(hero_id)
-        hero_transform_list = metrics_log.get_all_actor_states(hero_id, "transform", start, end)
+        # Get the frames the ego actor was alive and its transforms
+        start, end = log.get_actor_alive_frames(ego_id)
 
         # Get the projected distance vector to the center of the lane
-        for i in range(start, end):
+        for i in range(start, end + 1):
 
-            # Frames start at 1! Indexes should be one less
-            hero_location = hero_transform_list[i - 1].location
+            ego_location = log.get_transform(ego_id, i).location
+            ego_waypoint = town_map.get_waypoint(ego_location)
 
-            hero_waypoint = self._map.get_waypoint(hero_location)
-            lane_width = hero_waypoint.lane_width / 2  # Get the lane width
+            # Get the distance vector and project it
+            a = ego_location - ego_waypoint.transform.location      # Ego to waypoint vector
+            a_norm = math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z)
+            b = ego_waypoint.transform.get_right_vector()           # Waypoint perpendicular vector
+            b_norm = math.sqrt(b.x * b.x + b.y * b.y + b.z * b.z)
 
-            perp_wp_vec = hero_waypoint.transform.get_right_vector()
-            hero_wp_vec = hero_location - hero_waypoint.transform.location
+            ab_dot = a.x * b.x + a.y * b.y + a.z * b.z
+            dist_v = ab_dot/(b_norm*b_norm)*b
+            dist = math.sqrt(dist_v.x * dist_v.x + dist_v.y * dist_v.y + dist_v.z * dist_v.z)
+            
 
-            dot = perp_wp_vec.x * hero_wp_vec.x + perp_wp_vec.y * hero_wp_vec.y + perp_wp_vec.z * hero_wp_vec.z
-            perp_wp = math.sqrt(
-                perp_wp_vec.x * perp_wp_vec.x +
-                perp_wp_vec.y * perp_wp_vec.y +
-                perp_wp_vec.z * perp_wp_vec.z
-            )
+            # Get the sign of the distance (left side is positive)
+            c = ego_waypoint.transform.get_forward_vector()         # Waypoint forward vector
+            ac_cross = c.x * a.y - c.y * a.x
+            if ac_cross < 0:
+                dist *= -1
 
-            project_vec = dot / (perp_wp * perp_wp) * perp_wp_vec
-            project_dist = math.sqrt(
-                project_vec.x * project_vec.x +
-                project_vec.y * project_vec.y +
-                project_vec.z * project_vec.z
-            )
-
-            # Differentiate between one side and another
-            forw_wp_vec = hero_waypoint.transform.get_forward_vector()
-            cross_z = forw_wp_vec.x * hero_wp_vec.y - forw_wp_vec.y * hero_wp_vec.x
-            if cross_z < 0:
-                project_dist = - project_dist
-
-            lane_width_list.append(lane_width)
-
-            distances_list.append(project_dist)
+            dist_list.append(dist)
             frames_list.append(i)
 
-        results = {'frames': frames_list, 'distance': distances_list}
+        results = {'frames': frames_list, 'distance': dist_list}
 
         with open('srunner/metrics/data/DistanceToLaneCenter_Result.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

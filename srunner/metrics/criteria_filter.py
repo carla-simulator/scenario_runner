@@ -23,15 +23,12 @@ class CriteriaFilter(BasicMetric):
     Metric class CriteriaFilter
     """
 
-    def _create_metrics(self, metrics_log):
+    def _create_metrics(self, town_map, log, criteria):
         """
-        Implementation of the metric. This is an example to show how to use the criteria,
-        accessed via the metrics_log.
+        Implementation of the metric. This is an example to show how to use the criteria
         """
 
         ### Parse the criteria information, filtering only the useful information, and dump it into a json ###
-
-        criteria = metrics_log.get_criteria()
 
         results = {}
         for criterion_name in criteria:
@@ -45,5 +42,5 @@ class CriteriaFilter(BasicMetric):
             }
         )
 
-        with open('srunner/metrics/data/CriteriaFilter_Result.json', 'w') as fw:
+        with open('srunner/metrics/data/CriteriaFilter_results.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)
