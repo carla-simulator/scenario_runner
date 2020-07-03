@@ -122,7 +122,7 @@ class MetricsManager(object):
         sim_map = header[1][5:]
 
         return sim_map
-    
+
 
 def main():
     """

@@ -97,7 +97,7 @@ def parse_vehicle_lights(info):
     first_light_str = " ".join(first_light_list)
     lights = [carla.VehicleLightState(srt_to_vlight[first_light_str])]
 
-    for i in range (1, len(info)):
+    for i in range(1, len(info)):
         lights.append(srt_to_vlight[info[i]])
 
     return lights
@@ -260,7 +260,7 @@ class MetricsParser(object):
                     actor_id = int(elements[1][:-1])
                     actor_type = elements[2]
 
-                    if "spectator" not in actor_type and "static.prop" != actor_type:
+                    if "spectator" not in actor_type and actor_type != "static.prop":
                         # Ignore the spectator and the static elements not spawned by the user
                         actor = parse_actor(elements)
                         actors_info.update({actor_id: actor})

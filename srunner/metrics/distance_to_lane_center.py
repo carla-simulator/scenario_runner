@@ -47,14 +47,12 @@ class DistanceToLaneCenter(BasicMetric):
 
             # Get the distance vector and project it
             a = ego_location - ego_waypoint.transform.location      # Ego to waypoint vector
-            a_norm = math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z)
             b = ego_waypoint.transform.get_right_vector()           # Waypoint perpendicular vector
             b_norm = math.sqrt(b.x * b.x + b.y * b.y + b.z * b.z)
 
             ab_dot = a.x * b.x + a.y * b.y + a.z * b.z
             dist_v = ab_dot/(b_norm*b_norm)*b
             dist = math.sqrt(dist_v.x * dist_v.x + dist_v.y * dist_v.y + dist_v.z * dist_v.z)
-            
 
             # Get the sign of the distance (left side is positive)
             c = ego_waypoint.transform.get_forward_vector()         # Waypoint forward vector

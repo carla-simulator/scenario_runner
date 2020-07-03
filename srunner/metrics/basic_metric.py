@@ -10,8 +10,6 @@
 This module provide BasicMetric, the basic class of all the metrics.
 """
 
-from srunner.metrics.tools.metrics_log import MetricsLog
-
 class BasicMetric(object):
     """
     Base class of all the metrics.

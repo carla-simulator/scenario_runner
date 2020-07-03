@@ -17,7 +17,7 @@ specific information
 import fnmatch
 from srunner.metrics.tools.metrics_parser import MetricsParser
 
-class MetricsLog(object):
+class MetricsLog(object):  # pylint: disable=too-many-public-methods
     """
     Utility class to query the log.
     """
@@ -122,10 +122,8 @@ class MetricsLog(object):
         # Check if the actor exists
         if actor_id in frame_state:
 
-            
             # Check if the state exists
             if state not in frame_state[actor_id]:
-                # print("HI")
                 return None
 
             state_info = frame_state[actor_id][state]
@@ -332,7 +330,7 @@ class MetricsLog(object):
         Args:
             actor_id (int): ID of the actor.
         """
-        collisions = self._general_info["collisions"]
+        collisions = self._simulation["collisions"]
 
         if actor_id in collisions:
             return collisions[actor_id]
@@ -344,7 +342,7 @@ class MetricsLog(object):
         Returns an int with the total amount of frames the simulation lasted.
         """
 
-        return self._general_info["total_frames"]
+        return self._simulation["total_frames"]
 
     def get_elapsed_time(self, frame):
         """
@@ -366,4 +364,3 @@ class MetricsLog(object):
         """
 
         return self._frames[frame]["frame"]["platform_time"]
-
