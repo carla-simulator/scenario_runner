@@ -72,6 +72,36 @@ def parse_control(info):
 
     return control
 
+def parse_vehicle_lights(info):
+    """
+    Parses a list into a carla.VehicleLightState
+
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
+    srt_to_vlight = {
+        "Position": carla.VehicleLightState.Position,
+        "Low Beam": carla.VehicleLightState.LowBeam,
+        "Hight Beam": carla.VehicleLightState.HighBeam,
+        "Brake": carla.VehicleLightState.Brake,
+        "Right Blinker": carla.VehicleLightState.RightBlinker,
+        "Left Blinker": carla.VehicleLightState.LeftBlinker,
+        "Reverse": carla.VehicleLightState.Reverse,
+        "Fog": carla.VehicleLightState.Fog,
+        "Interior": carla.VehicleLightState.Interior,
+        "Special1": carla.VehicleLightState.Special1,
+        "Special2": carla.VehicleLightState.Special2,
+    }
+
+    first_light_list = info[0].split(" ")[5:]
+    first_light_str = " ".join(first_light_list)
+    lights = [carla.VehicleLightState(srt_to_vlight[first_light_str])]
+
+    for i in range (1, len(info)):
+        lights.append(srt_to_vlight[info[i]])
+
+    return lights
+
 def parse_traffic_light(info):
     """
     Parses a list into a dictionary with all the traffic light's information
@@ -95,27 +125,59 @@ def parse_traffic_light(info):
 
     return traffic_light
 
-def parse_velocity(transform, prev_transform, frame_time, prev_frame_time):
+def parse_velocity(info):
     """
-    Parses a list into a dictionary with all the traffic light's information
+    Parses a list into a carla.Vector3D with the velocity
 
     Args:
         info (list): list corresponding to a row of the recorder
     """
-    if transform is None or prev_transform is None :
-        velocity = carla.Vector3D(0, 0, 0)
-    else:
-        delta_time = frame_time - prev_frame_time
-        location = transform.location
-        prev_location = prev_transform.location
-
-        velocity = carla.Vector3D(
-            (location.x - prev_location.x) / delta_time,
-            (location.y - prev_location.y) / delta_time,
-            (location.z - prev_location.z) / delta_time
-        )
+    velocity = carla.Vector3D(
+        float(info[5][1:-1]),
+        float(info[6][:-1]),
+        float(info[7][:-1])
+    )
 
     return velocity
+
+def parse_angular_velocity(info):
+    """
+    Parses a list into a carla.Vector3D with the angular velocity
+
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
+    velocity = carla.Vector3D(
+        float(info[10][1:-1]),
+        float(info[11][:-1]),
+        float(info[12][:-1])
+    )
+
+    return velocity
+
+
+def parse_scene_lights(info):
+    """
+    Parses a list into a carla.VehicleLightState
+
+    Args:
+        info (list): list corresponding to a row of the recorder
+    """
+    str_to_bool = {
+        "enabled": True,
+        "disabled": False
+    }
+
+    red = int(float(info[-3][1:]) * 255)
+    green = int(float(info[-2]) * 255)
+    blue = int(float(info[-1][:-1]) * 255)
+
+    scene_light = {
+        "enabled": str_to_bool[info[3][:-1]],
+        "intensity": int(info[5][:-1]),
+        "color": carla.Color(red, green, blue)
+    }
+    return scene_light
 
 
 class MetricsParser(object):
@@ -167,10 +229,22 @@ class MetricsParser(object):
             frame_number = int(frame_info[1])
             frame_time = float(frame_info[3])
 
+            try:
+                prev_frame = frames_info[frame_number - 2]
+                prev_time = prev_frame["frame"]["elapsed_time"]
+                delta_time = round(frame_time - prev_time, 6)
+            except IndexError:
+                delta_time = 0
+
             # Variable to store all the information about the frame
             frame_state = {
-                "elapsed_time": frame_time,
-                "actors": {}
+                "frame": {
+                    "elapsed_time": frame_time,
+                    "delta_time": delta_time,
+                    "platform_time": None
+                },
+                "actors": {},
+                "scene_lights": {}
             }
 
             # Loop through all the other rows.
@@ -216,15 +290,15 @@ class MetricsParser(object):
                 frame_row = frame_row[1:]
                 elements = frame_row.split(" ")
 
-                collision_actor_id = int(elements[4])
-                collision_other_id = int(elements[-1])
+                actor_id = int(elements[4])
+                other_id = int(elements[-1])
 
-                if collision_actor_id in simulation_info["collisions"]:
+                if actor_id in simulation_info["collisions"]:
                     # Add it to the collisions list
-                    simulation_info["collisions"][collision_actor_id].update({frame_number: collision_other_id})
+                    simulation_info["collisions"][actor_id].update({frame_number: other_id})
                 else:
                     # Create the collisions list (list of dictionaries)
-                    simulation_info["collisions"].update({collision_actor_id: {frame_number: collision_other_id}})
+                    simulation_info["collisions"].update({actor_id: {frame_number: other_id}})
 
                 i += 1
                 frame_row = frame_list[i]
@@ -247,19 +321,9 @@ class MetricsParser(object):
                     frame_row = frame_row[2:]
                     elements = frame_row.split(" ")
 
-                    transform_id = int(elements[1])
+                    actor_id = int(elements[1])
                     transform = parse_transform(elements)
-                    frame_state["actors"].update({transform_id: {"transform": transform}})
-
-                    prev_frame = frame_number - 1
-                    if prev_frame > 1:
-                        prev_transform = frames_info[prev_frame - 1]["actors"][transform_id]["transform"]
-                        prev_frame_time = frames_info[prev_frame - 1]["elapsed_time"]
-                    else:
-                        prev_transform = None
-                        prev_frame_time = None
-                    velocity = parse_velocity(transform, prev_transform, frame_time, prev_frame_time)
-                    frame_state["actors"][transform_id].update({"velocity": velocity})
+                    frame_state["actors"].update({actor_id: {"transform": transform}})
 
                 i += 1
                 frame_row = frame_list[i]
@@ -270,9 +334,9 @@ class MetricsParser(object):
                     frame_row = frame_row[2:]
                     elements = frame_row.split(" ")
 
-                    traffic_light_id = int(elements[1])
+                    actor_id = int(elements[1])
                     traffic_light = parse_traffic_light(elements)
-                    frame_state["actors"][traffic_light_id] = traffic_light
+                    frame_state["actors"].update({actor_id: traffic_light})
 
                 i += 1
                 frame_row = frame_list[i]
@@ -283,9 +347,9 @@ class MetricsParser(object):
                     frame_row = frame_row[2:]
                     elements = frame_row.split(" ")
 
-                    control_id = int(elements[2][:-1])
+                    actor_id = int(elements[2][:-1])
                     control = parse_control(elements)
-                    frame_state["actors"][control_id]["control"] = control
+                    frame_state["actors"][actor_id].update({"control": control})
 
                 i += 1
                 frame_row = frame_list[i]
@@ -296,8 +360,78 @@ class MetricsParser(object):
                     frame_row = frame_row[2:]
                     elements = frame_row.split(" ")
 
-                    walker_id = int(elements[2][:-1])
-                    frame_state["actors"][walker_id]["speed"] = elements[4]
+                    actor_id = int(elements[2][:-1])
+                    frame_state["actors"][actor_id].update({"speed": elements[4]})
+
+                i += 1
+                frame_row = frame_list[i]
+
+            while frame_row.startswith(' Vehicle light animations') or frame_row.startswith('  '):
+
+                if frame_row.startswith('  '):
+                    frame_row = frame_row[2:]
+                    elements = frame_row.split(" ")
+
+                    actor_id = int(elements[2][:-1])
+                    if elements[3] == "no":
+                        lights = [carla.VehicleLightState.NONE]
+                    else:
+                        elements_2 = frame_row.split(", ")
+                        lights = parse_vehicle_lights(elements_2)
+                    frame_state["actors"][actor_id].update({"lights": lights})
+
+
+                i += 1
+                frame_row = frame_list[i]
+
+            while frame_row.startswith(' Scene light changes') or frame_row.startswith('  '):
+
+                if frame_row.startswith('  '):
+                    frame_row = frame_row[2:]
+                    elements = frame_row.split(" ")
+
+                    light_id = int(elements[2][:-1])
+                    scene_light = parse_scene_lights(elements)
+                    frame_state["scene_lights"].update({light_id: scene_light})
+
+                i += 1
+                frame_row = frame_list[i]
+
+            while frame_row.startswith(' Dynamic actors') or frame_row.startswith('  '):
+
+                if frame_row.startswith('  '):
+                    frame_row = frame_row[2:]
+                    elements = frame_row.split(" ")
+
+                    velocity_id = int(elements[2][:-1])
+                    velocity = parse_velocity(elements)
+                    frame_state["actors"][velocity_id].update({"velocity": velocity})
+                    angular_v = parse_angular_velocity(elements)
+                    frame_state["actors"][velocity_id].update({"angular_velocity": angular_v})
+
+                    if delta_time == 0:
+                        acceleration = carla.Vector3D(0, 0, 0)
+                    else:
+                        prev_velocity = frame_state["actors"][velocity_id]["velocity"]
+                        acceleration = (velocity - prev_velocity) / delta_time
+
+                    frame_state["actors"][velocity_id].update({"acceleration": acceleration})
+
+                i += 1
+                frame_row = frame_list[i]
+
+            while frame_row.startswith(' Actor bounding boxes') or frame_row.startswith('  '):
+
+                i += 1
+                frame_row = frame_list[i]
+
+            while frame_row.startswith(' Current platform time'):
+
+                frame_row = frame_row[1:]
+                elements = frame_row.split(" ")
+
+                platform_time = float(elements[-1])
+                frame_state["frame"]["platform_time"] = platform_time
 
                 i += 1
                 frame_row = frame_list[i]

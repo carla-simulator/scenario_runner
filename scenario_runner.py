@@ -386,7 +386,7 @@ class ScenarioRunner(object):
             if self._args.record:
                 recorder_name = "{}/{}/{}.log".format(
                     os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.record, config.name)
-                self.client.start_recorder(recorder_name)
+                self.client.start_recorder(recorder_name, True)
 
             # Load scenario and run it
             self.manager.load_scenario(scenario, self.agent_instance)

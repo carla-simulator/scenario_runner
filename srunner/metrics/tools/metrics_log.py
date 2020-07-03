@@ -24,7 +24,7 @@ class MetricsLog(object):
 
     def __init__(self, recorder):
         """
-        Initializes the log class and parses it to extract the dictionaries
+        Initializes the log class and parses it to extract the dictionaries.
         """
         # Parse the information
         self._simulation, self._actors, self._frames = MetricsParser.parse_recorder_info(recorder)
@@ -34,16 +34,16 @@ class MetricsLog(object):
     ###############################################
     def get_ego_vehicle_id(self):
         """
-        Returns the id of the ego vehicle
+        Returns the id of the ego vehicle.
         """
         return self.get_actor_ids_with_role_name("hero")[0]
 
     def get_actor_ids_with_role_name(self, role_name):
         """
-        Returns a list of actor ids that match the given role_name
+        Returns a list of actor ids that match the given role_name.
 
         Args:
-            role_name (str): string with the desired role_name to filter the actors
+            role_name (str): string with the desired role_name to filter the actors.
         """
         actor_list = []
 
@@ -56,10 +56,10 @@ class MetricsLog(object):
 
     def get_actor_ids_with_type_id(self, type_id):
         """
-        Returns a list of actor ids that match the given type_id, matching fnmatch standard
+        Returns a list of actor ids that match the given type_id, matching fnmatch standard.
 
         Args:
-            type_id (str): string with the desired type id to filter the actors
+            type_id (str): string with the desired type id to filter the actors.
         """
         actor_list = []
 
@@ -72,10 +72,10 @@ class MetricsLog(object):
 
     def get_actor_attributes(self, actor_id):
         """
-        Returns a dictionary with all the attributes of an actor
+        Returns a dictionary with all the attributes of an actor.
 
         Args:
-            actor_id (int): ID of the actor
+            actor_id (int): ID of the actor.
         """
         if actor_id in self._actors:
             return self._actors[actor_id]
@@ -85,9 +85,10 @@ class MetricsLog(object):
     def get_actor_alive_frames(self, actor_id):
         """
         Returns a tuple with the first and last frame an actor was alive.
+        It is important to note that frames start at 1, not 0.
 
         Args:
-            actor_id (int): Id of the actor from which the information will be returned
+            actor_id (int): Id of the actor from which the information will be returned.
         """
 
         if actor_id in self._actors:
@@ -109,12 +110,12 @@ class MetricsLog(object):
     def _get_actor_state(self, actor_id, state, frame):
         """
         Given an actor id, returns the specific variable of that actor at a given frame.
-        Returns None if the actor_id or the state are missing
+        Returns None if the actor_id or the state are missing.
 
         Args:
-            actor_id (int): Id of the actor to be checked
-            frame: (int): frame number of the simulation
-            attribute (str): name of the actor's attribute to be returned
+            actor_id (int): Id of the actor to be checked.
+            frame: (int): frame number of the simulation.
+            attribute (str): name of the actor's attribute to be returned.
         """
         frame_state = self._frames[frame - 1]["actors"]
 
@@ -135,14 +136,14 @@ class MetricsLog(object):
     def _get_all_actor_states(self, actor_id, state, ini_frame=None, end_frame=None):
         """
         Given an actor id, returns a list of the specific variable of that actor during
-        a frame interval. Some elements might be None
+        a frame interval. Some elements might be None.
 
         By default, ini_frame and end_frame are the start and end of the simulation, respectively.
 
         Args:
-            actor_id (int): ID of the actor
-            attribute: name of the actor's attribute to be returned
-            ini_frame (int): First frame checked. By default, 0
+            actor_id (int): ID of the actor.
+            attribute: name of the actor's attribute to be returned.
+            ini_frame (int): First frame checked. By default, 0.
             end_frame (int): Last frame checked. By default, max number of frames.
         """
         if ini_frame is None:
@@ -215,6 +216,46 @@ class MetricsLog(object):
         """
         return self._get_states_at_frame(frame, "velocity", actor_list)
 
+    # Angular velocities
+    def get_angular_velocity(self, actor_id, frame):
+        """
+        Returns the angular velocity of the actor at a specific frame.
+        """
+        return self._get_actor_state(actor_id, "angular_velocity", frame)
+
+    def get_all_angular_velocities(self, actor_id, ini_frame=None, end_frame=None):
+        """
+        Returns a list with all the angular velocities of the actor at the frame interval.
+        """
+        return self._get_all_actor_states(actor_id, "angular_velocity", ini_frame, end_frame)
+
+    def get_angular_velocities_at_frame(self, frame, actor_list=None):
+        """
+        Returns a dictionary {int - carla.Vector3D} with the actor ID and angular velocity
+        at a given frame of all the actors at actor_list.
+        """
+        return self._get_states_at_frame(frame, "angular_velocity", actor_list)
+
+    # Acceleration
+    def get_acceleration(self, actor_id, frame):
+        """
+        Returns the acceleration of the actor at a specific frame.
+        """
+        return self._get_actor_state(actor_id, "acceleration", frame)
+
+    def get_all_accelerations(self, actor_id, ini_frame=None, end_frame=None):
+        """
+        Returns a list with all the accelerations of the actor at the frame interval.
+        """
+        return self._get_all_actor_states(actor_id, "acceleration", ini_frame, end_frame)
+
+    def get_accelerations_at_frame(self, frame, actor_list=None):
+        """
+        Returns a dictionary {int - carla.Vector3D} with the actor ID and angular velocity
+        at a given frame of all the actors at actor_list.
+        """
+        return self._get_states_at_frame(frame, "acceleration", actor_list)
+
     # Controls
     def get_vehicle_control(self, vehicle_id, frame):
         """
@@ -247,16 +288,49 @@ class MetricsLog(object):
         """
         return self._get_actor_state(actor_id, "elapsed_time", frame)
 
+    # Vehicle lights
+    def get_vehicle_lights(self, vehicle_id, frame):
+        """
+        Returns the vehicle lights of the vehicle at a specific frame.
+        """
+        return self._get_actor_state(vehicle_id, "lights", frame)
+
+    def is_vehicle_light_active(self, light, vehicle_id, frame):
+        """
+        Returns the elapsed time of the traffic light at a specific frame.
+        """
+        lights = self.get_vehicle_lights(vehicle_id, frame)
+
+        if light in lights:
+            return True
+
+        return False
+
+    # Scene lights
+    def get_scene_light_state(self, light_id, frame):
+        """
+        Returns the state of the scene light at a specific frame. Returns None
+        if the light hasn't been changed since the start of the recorder.
+        """
+
+        for i in range(frame - 1, -1, -1):  # Go backwards from the frame until 0
+            scene_lights_info = self._frames[i]["scene_lights"]
+
+            if light_id in scene_lights_info:
+                return scene_lights_info[light_id]
+
+        return None
+
     ########################################################
     # Functions used to get general info of the simulation #
     ########################################################
     def get_collisions(self, actor_id):
         """
         Returns a {frame_number - other_ID} dictionary containing the
-        frames at which the actor collided and the id of the other actor
+        frames at which the actor collided and the id of the other actor.
 
         Args:
-            actor_id (int): ID of the actor
+            actor_id (int): ID of the actor.
         """
         collisions = self._general_info["collisions"]
 
@@ -267,8 +341,29 @@ class MetricsLog(object):
 
     def get_total_frame_count(self):
         """
-        Returns an int with the total amount of frames the simulation lasted
+        Returns an int with the total amount of frames the simulation lasted.
         """
 
         return self._general_info["total_frames"]
+
+    def get_elapsed_time(self, frame):
+        """
+        Returns an float with the elapsed time of that frame.
+        """
+
+        return self._frames[frame]["frame"]["elapsed_time"]
+
+    def get_delta_time(self, frame):
+        """
+        Returns an float with the delta time of that frame.
+        """
+
+        return self._frames[frame]["frame"]["delta_time"]
+
+    def get_platform_time(self, frame):
+        """
+        Returns an float with the platform_time time of that frame.
+        """
+
+        return self._frames[frame]["frame"]["platform_time"]
 

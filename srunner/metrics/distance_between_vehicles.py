@@ -20,9 +20,9 @@ import json
 from srunner.metrics.basic_metric import BasicMetric
 
 
-class DistanceBetweenTwoVehicles(BasicMetric):
+class DistanceBetweenVehicles(BasicMetric):
     """
-    Metric class DistanceBetweenTwoVehicles
+    Metric class DistanceBetweenVehicles
     """
 
     def _create_metrics(self, town_map, log, criteria):
@@ -68,5 +68,5 @@ class DistanceBetweenTwoVehicles(BasicMetric):
 
         results = {'frames': frames_list, 'distance': dist_list}
 
-        with open('srunner/metrics/data/DistanceBetweenTwoVehicles_results.json', 'w') as fw:
+        with open('srunner/metrics/data/DistanceBetweenVehicles_results.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)
