@@ -1188,9 +1188,10 @@ class SyncArrival(AtomicBehavior):
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-        self._control.throttle = 0.0
-        self._control.brake = 0.0
-        self._actor.apply_control(self._control)
+        if self._actor is not None and self._actor.is_alive:
+            self._control.throttle = 0.0
+            self._control.brake = 0.0
+            self._actor.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
 
 

@@ -77,6 +77,7 @@
 * Fixed bug causing FollowLeadingVehicle and FollowLeadingVehicleWithObstacle scenarios to not properly end
 * Fixed bug causing CollisionTest to ignore multiple collisions with scene objects
 * Fixed bug causing NoSignalJunctionCrossing to not output the results of the scenario
+* Fixed bug causing SyncArrival to fail when the actor was destroyed after the behavior ended
 
 
 ## CARLA ScenarioRunner 0.9.9
