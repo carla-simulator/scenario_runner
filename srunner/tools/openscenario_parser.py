@@ -64,6 +64,37 @@ from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 
 
+def get_traffic_light_from_osc_name(self, name):
+    """
+    Returns a carla.TrafficLight instance that matches the name given
+    """
+    traffic_light = None
+
+    # Given by id
+    if name.startswith("id="):
+        tl_id = name[3:]
+        for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+            if carla_tl.id == tl_id:
+                traffic_light = carla_tl
+                break
+    # Given by position
+    elif name.startswith("pos="):
+        tl_pos = name[4:]
+        pos = tl_pos.split(",")
+        for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+            carla_tl_location = carla_tl.get_transform().location
+            distance = carla_tl_location.distance(carla.Location(float(pos[0]),
+                                                                    float(pos[1]),
+                                                                    carla_tl_location.z))
+            if distance < 2.0:
+                traffic_light = carla_tl
+                break
+
+    if traffic_light is None:
+        raise AttributeError("Unknown  traffic light {}".format(name))
+
+    return traffic_light
+
 class OpenScenarioParser(object):
 
     """
@@ -693,40 +724,21 @@ class OpenScenarioParser(object):
             elif value_condition.find('UserDefinedValueCondition') is not None:
                 raise NotImplementedError("ByValue UserDefinedValue conditions are not yet supported")
             elif value_condition.find('TrafficSignalCondition') is not None:
-                traffic_light = None
                 tl_condition = value_condition.find('TrafficSignalCondition')
+
                 name_condition = tl_condition.attrib.get('name')
-
-                if name_condition.startswith("id="):
-                    tl_id = name_condition[3:]
-                    for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                        if carla_tl.id == tl_id:
-                            traffic_light = carla_tl
-                            break
-                elif name_condition.startswith("pos="):
-                    tl_pos = name_condition[4:]
-                    pos = tl_pos.split(",")
-                    for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                        carla_tl_location = carla_tl.get_transform().location
-                        distance = carla_tl_location.distance(carla.Location(float(pos[0]),
-                                                                             float(pos[1]),
-                                                                             carla_tl_location.z))
-                        if distance < 2.0:
-                            traffic_light = carla_tl
-                            break
-
-                if traffic_light is None:
-                    raise AttributeError("Unknown  traffic light {}".format(name_condition))
+                traffic_light = get_traffic_light_from_osc_name(name_condition)
 
                 tl_state = tl_condition.attrib.get('state').upper()
                 if tl_state not in OpenScenarioParser.tl_states:
-                    raise KeyError("TrafficSignalState must be Green, Red, Yellow or Off")
+                    raise KeyError("CARLA only supports Green, Red, Yellow or Off")
                 state_condition = OpenScenarioParser.tl_states[tl_state]
 
                 atomic = WaitForTrafficLightState(
                     traffic_light, state_condition, name=condition_name)
             elif value_condition.find('TrafficSignalControllerCondition') is not None:
-                raise NotImplementedError("ByValue TrafficSignalController conditions are not yet supported")
+                tlc_condition = value_condition.find('TrafficSignalControllerCondition')
+                name_condition = tlc_condition.attrib.get('name')
             else:
                 raise AttributeError("Unknown ByValue condition")
 
@@ -756,39 +768,20 @@ class OpenScenarioParser(object):
             if global_action.find('InfrastructureAction') is not None:
                 infrastructure_action = global_action.find('InfrastructureAction').find('TrafficSignalAction')
                 if infrastructure_action.find('TrafficSignalStateAction') is not None:
-                    traffic_light = None
                     traffic_light_action = infrastructure_action.find('TrafficSignalStateAction')
+
                     name = traffic_light_action.attrib.get('name')
-
-                    if name.startswith("id="):
-                        tl_id = name[3:]
-                        for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                            if carla_tl.id == tl_id:
-                                traffic_light = carla_tl
-                                break
-                    elif name.startswith("pos="):
-                        tl_pos = name[4:]
-                        pos = tl_pos.split(",")
-                        for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                            carla_tl_location = carla_tl.get_transform().location
-                            distance = carla_tl_location.distance(carla.Location(float(pos[0]),
-                                                                                 float(pos[1]),
-                                                                                 carla_tl_location.z))
-                            if distance < 2.0:
-                                traffic_light = carla_tl
-                                break
-
-                    if traffic_light is None:
-                        raise AttributeError("Unknown traffic light for {}".format(name))
+                    traffic_light = get_traffic_light_from_osc_name(name_condition)
 
                     tl_state = traffic_light_action.attrib.get('state').upper()
                     if tl_state not in OpenScenarioParser.tl_states:
-                        raise KeyError("TrafficSignalState must be Green, Red, Yellow or Off")
+                        raise KeyError("CARLA only supports Green, Red, Yellow or Off")
                     traffic_light_state = OpenScenarioParser.tl_states[tl_state]
 
                     atomic = TrafficLightStateSetter(
                         traffic_light, traffic_light_state, name=maneuver_name + "_" + str(traffic_light.id))
                 else:
+                    
                     raise NotImplementedError("TrafficLights can only be influenced via TrafficSignalStateAction")
             elif global_action.find('EnvironmentAction') is not None:
                 weather_behavior = ChangeWeather(
