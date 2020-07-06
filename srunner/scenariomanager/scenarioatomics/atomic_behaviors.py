@@ -1814,19 +1814,19 @@ class TrafficLightStateSetter(AtomicBehavior):
     This class contains an atomic behavior to set the state of a given traffic light
 
     Args:
-        traffic_light (carla.TrafficLight): ID of the traffic light that shall be changed
+        actor (carla.TrafficLight): ID of the traffic light that shall be changed
         state (carla.TrafficLightState): New target state
 
     The behavior terminates after trying to set the new state
     """
 
-    def __init__(self, traffic_light, state, name="TrafficLightStateSetter"):
+    def __init__(self, actor, state, name="TrafficLightStateSetter"):
         """
         Init
         """
         super(TrafficLightStateSetter, self).__init__(name)
 
-        self._actor = traffic_light if "traffic_light" in traffic_light.type_id else None
+        self._actor = actor if "traffic_light" in actor.type_id else None
         self._state = state
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 

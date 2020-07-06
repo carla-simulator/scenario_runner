@@ -1132,31 +1132,31 @@ class WaitForTrafficLightState(AtomicCondition):
     to have the desired state.
 
     Args:
-        traffic_light (carla.TrafficLight): CARLA traffic light to execute the condition
+        actor (carla.TrafficLight): CARLA traffic light to execute the condition
         state (carla.TrafficLightState): State to be checked in this condition
 
     The condition terminates with SUCCESS, when the traffic light switches to the desired state
     """
 
-    def __init__(self, traffic_light, state, name="WaitForTrafficLightState"):
+    def __init__(self, actor, state, name="WaitForTrafficLightState"):
         """
         Setup traffic_light
         """
         super(WaitForTrafficLightState, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._traffic_light = traffic_light
-        self._traffic_light_state = state
+        self._actor = actor if "traffic_light" in actor.type_id else None
+        self._state = state
 
     def update(self):
         """
         Set status to SUCCESS, when traffic light state matches the expected one
         """
-        print("Waiting for state {}".format(self._traffic_light_state))
+        if self._actor is None:
+            return py_trees.common.Status.FAILURE
 
         new_status = py_trees.common.Status.RUNNING
 
-        if self._traffic_light.state == self._traffic_light_state:
-            print("Found the state")
+        if self._actor.state == self._state:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
