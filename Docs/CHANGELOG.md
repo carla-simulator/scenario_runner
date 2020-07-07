@@ -10,7 +10,7 @@
 
 ## Latest Changes
 ### :rocket: New Features
-* Renamed some agent labels inside Jenkins CI pipelines for more precise meaning here.
+* Renamed some agent labels inside Jenkins CI pipelines for new standard proposals.
 * Added support for Jenkins CI pipelines doing automated testing and docker images creation. It builds docker images for Scenario Runner, tags them with the commit id that triggers the pipeline, and stores those images into a shared Elastic Container Registry. 
 * **Very important:** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
     - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
