@@ -41,6 +41,7 @@
     - Added support for CollisionCondition
     - Added support for EndOfRoadCondition
     - Added support for TimeHeadwayCondition
+    - Added support for TrafficSignalCondition
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
@@ -63,6 +64,8 @@
     - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. The default behavior has been unchanged.
     - InTimeToArrivalToVehicle has had its two actor arguments swapped, to match all the other behaviors.
     - Added *along_route* flag to InTimeToArrivalToVehicle, to take into account the topology of the road
+    - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
+
 ### :bug: Bug Fixes
 * Do not register SIGHUP signal in windows
 * Fixed initial speed of vehicles using OpenSCENARIO
