@@ -111,8 +111,8 @@ class OpenScenarioParser(object):
             for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
                 carla_tl_location = carla_tl.get_transform().location
                 distance = carla_tl_location.distance(carla.Location(float(pos[0]),
-                                                                        float(pos[1]),
-                                                                        carla_tl_location.z))
+                                                                     float(pos[1]),
+                                                                     carla_tl_location.z))
                 if distance < 2.0:
                     traffic_light = carla_tl
                     break
@@ -770,7 +770,7 @@ class OpenScenarioParser(object):
                 if infrastructure_action.find('TrafficSignalStateAction') is not None:
                     traffic_light_action = infrastructure_action.find('TrafficSignalStateAction')
 
-                    name = traffic_light_action.attrib.get('name')
+                    name_condition = traffic_light_action.attrib.get('name')
                     traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(name_condition)
 
                     tl_state = traffic_light_action.attrib.get('state').upper()
