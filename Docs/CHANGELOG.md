@@ -50,6 +50,7 @@
     - Added support for local ParamaterDeclarations
     - Fixed use of relative initial positions for any actor
     - Added possibility to use synchronous execution mode with OpenSCENARIO
+    - Fixed use of relative paths in CustomCommandAction
 * Atomics:
     - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time
@@ -67,6 +68,7 @@
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
 
 ### :bug: Bug Fixes
+* Add cleanup of instantiated OpenSCENARIO controllers
 * Do not register SIGHUP signal in windows
 * Fixed initial speed of vehicles using OpenSCENARIO
 * Fixed bug causing an exception when calling BasicScenario's *_initialize_actors* with no other_actors.

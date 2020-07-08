@@ -142,22 +142,26 @@ class RunScript(AtomicBehavior):
     Args:
         script (str): String containing the interpreter, scriptpath and arguments
             Example: "python /path/to/script.py --arg1"
+        base_path (str): String containing the base path of for the script
 
     Attributes:
         _script (str): String containing the interpreter, scriptpath and arguments
             Example: "python /path/to/script.py --arg1"
+        _base_path (str): String containing the base path of for the script
+            Example: "/path/to/"
 
     Note:
         This is intended for the use with OpenSCENARIO. Be aware of security side effects.
     """
 
-    def __init__(self, script, name="RunScript"):
+    def __init__(self, script, base_path=None, name="RunScript"):
         """
         Setup parameters
         """
         super(RunScript, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._script = script
+        self._base_path = base_path
 
     def update(self):
         """
@@ -169,10 +173,12 @@ class RunScript(AtomicBehavior):
             path = script_components[1]
 
         if not os.path.isfile(path):
+            path = os.path.join(self._base_path, path)
+        if not os.path.isfile(path):
             new_status = py_trees.common.Status.FAILURE
             print("Script file does not exists {}".format(path))
         else:
-            subprocess.Popen(self._script, shell=True)
+            subprocess.Popen(self._script, shell=True, cwd=self._base_path)
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
