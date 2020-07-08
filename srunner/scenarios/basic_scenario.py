@@ -297,6 +297,7 @@ class Scenario(object):
             node.terminate(py_trees.common.Status.INVALID)
 
         # Cleanup all instantiated controllers
+        actor_dict = {}
         try:
             check_actors = operator.attrgetter("ActorsWithController")
             actor_dict = check_actors(py_trees.blackboard.Blackboard())
