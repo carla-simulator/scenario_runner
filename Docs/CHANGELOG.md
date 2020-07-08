@@ -50,6 +50,7 @@
     - Added support for local ParamaterDeclarations
     - Fixed use of relative initial positions for any actor
     - Added possibility to use synchronous execution mode with OpenSCENARIO
+    - Fixed use of relative paths in CustomCommandAction
 * Atomics:
     - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time

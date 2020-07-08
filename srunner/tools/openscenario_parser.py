@@ -89,6 +89,7 @@ class OpenScenarioParser(object):
     }
 
     use_carla_coordinate_system = False
+    osc_filepath = None
 
     @staticmethod
     def get_traffic_light_from_osc_name(name):
@@ -121,6 +122,14 @@ class OpenScenarioParser(object):
             raise AttributeError("Unknown  traffic light {}".format(name))
 
         return traffic_light
+
+    @staticmethod
+    def set_osc_filepath(filepath):
+        """
+        Set path of OSC file. This is required if for example custom commands are provided with
+        relative paths.
+        """
+        OpenScenarioParser.osc_filepath = filepath
 
     @staticmethod
     def set_use_carla_coordinate_system():
@@ -804,7 +813,7 @@ class OpenScenarioParser(object):
             user_defined_action = action.find('UserDefinedAction')
             if user_defined_action.find('CustomCommandAction') is not None:
                 command = user_defined_action.find('CustomCommandAction').attrib.get('type')
-                atomic = RunScript(command, name=maneuver_name)
+                atomic = RunScript(command, base_path=OpenScenarioParser.osc_filepath, name=maneuver_name)
         elif action.find('PrivateAction') is not None:
             private_action = action.find('PrivateAction')
 
