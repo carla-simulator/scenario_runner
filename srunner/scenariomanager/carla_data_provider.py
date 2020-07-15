@@ -746,7 +746,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         batch = []
 
         for actor_id in CarlaDataProvider._carla_actor_pool.copy():
-            batch.append(DestroyActor(CarlaDataProvider._carla_actor_pool[actor_id]))
+            actor = CarlaDataProvider._carla_actor_pool[actor_id]
+            if actor.is_alive:
+                batch.append(DestroyActor(actor))
 
         if CarlaDataProvider._client:
             try:
