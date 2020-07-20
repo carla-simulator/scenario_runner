@@ -27,7 +27,8 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         Initializes the log class and parses it to extract the dictionaries.
         """
         # Parse the information
-        self._simulation, self._actors, self._frames = MetricsParser.parse_recorder_info(recorder)
+        parser = MetricsParser(recorder)
+        self._simulation, self._actors, self._frames = parser.parse_recorder_info()
 
     ###############################################
     # Functions used to get info about the actors #
@@ -81,6 +82,38 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
             return self._actors[actor_id]
 
         return None
+
+    def get_actor_bounding_box(self, actor_id):
+        """
+        Returns a carla.BoundingBox
+
+        Args:
+            actor_id (int): Id of the actor from which the information will be returned.
+        """
+
+        if actor_id in self._actors:
+            if "bounding_box" in self._actors[actor_id]:
+                return self._actors[actor_id]["bounding_box"]
+            else:
+                return None
+
+        return actor_list
+
+    def get_traffic_light_trigger_volume(self, traffic_light_id):
+        """
+        Returns a carla.BoundingBox
+
+        Args:
+            actor_id (int): Id of the actor from which the information will be returned.
+        """
+
+        if traffic_light_id in self._actors:
+            if "trigger_volume" in self._actors[traffic_light_id]:
+                return self._actors[traffic_light_id]["trigger_volume"]
+            else:
+                return None
+
+        return actor_list
 
     def get_actor_alive_frames(self, actor_id):
         """
@@ -145,7 +178,7 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
             end_frame (int): Last frame checked. By default, max number of frames.
         """
         if ini_frame is None:
-            ini_frame = 0
+            ini_frame = 1
         if end_frame is None:
             end_frame = self.get_total_frame_count()
 
@@ -168,7 +201,11 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         actor_info = self._frames[frame]["actors"]
 
         for actor_id in actor_info:
-            if not actor_list or actor_id in actor_list:
+            if not actor_list:
+                _state = self._get_actor_state(actor_id, state, frame)
+                if _state:
+                    states.update({actor_id: _state})
+            elif actor_id in actor_list:
                 _state = self._get_actor_state(actor_id, state, frame)
                 states.update({actor_id: _state})
 
@@ -261,6 +298,20 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         """
         return self._get_actor_state(vehicle_id, "control", frame)
 
+    def get_vehicle_physics_control(self, actor_id, frame):
+        """
+        Returns the carla.VehiclePhysicsControl of a vehicle at a specific frame.
+        Returns None if the id can't be found.
+        """
+
+        for i in range(frame - 1, -1, -1):  # Go backwards from the frame until 0
+            physics_info = self._frames[i]["events"]["physics_control"]
+
+            if actor_id in physics_info:
+                return physics_info[actor_id]
+
+        return None
+
     def get_walker_speed(self, walker_id, frame):
         """
         Returns the speed of the walker at a specific frame.
@@ -286,6 +337,22 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         """
         return self._get_actor_state(actor_id, "elapsed_time", frame)
 
+    def get_traffic_light_state_time(self, light_id, state, frame):
+        """
+        Returns the state time of the traffic light at a specific frame.
+        Returns None if the id can't be found.
+        """
+
+        for i in range(frame - 1, -1, -1):  # Go backwards from the frame until 0
+            state_times_info = self._frames[i] ["events"]["traffic_light_state_time"]
+
+            if light_id in state_times_info:
+                states = state_times_info[light_id]
+                if state in states:
+                    return state_times_info[light_id][state]
+
+        return None
+
     # Vehicle lights
     def get_vehicle_lights(self, vehicle_id, frame):
         """
@@ -307,12 +374,12 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
     # Scene lights
     def get_scene_light_state(self, light_id, frame):
         """
-        Returns the state of the scene light at a specific frame. Returns None
-        if the light hasn't been changed since the start of the recorder.
+        Returns the state of the scene light at a specific frame.
+        Returns None if the id can't be found.
         """
 
         for i in range(frame - 1, -1, -1):  # Go backwards from the frame until 0
-            scene_lights_info = self._frames[i]["scene_lights"]
+            scene_lights_info = self._frames[i]["events"]["scene_lights"]
 
             if light_id in scene_lights_info:
                 return scene_lights_info[light_id]
@@ -330,12 +397,19 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         Args:
             actor_id (int): ID of the actor.
         """
-        collisions = self._simulation["collisions"]
+        actor_collisions = []
 
-        if actor_id in collisions:
-            return collisions[actor_id]
+        for i, frame in enumerate(self._frames):
+            collisions = frame["events"]["collisions"]
 
-        return None
+            if actor_id in collisions:
+                collision_dict = {
+                    "frame": i,
+                    "other_id": collisions[actor_id]
+                }
+                actor_collisions.append(collision_dict)
+
+        return actor_collisions
 
     def get_total_frame_count(self):
         """
