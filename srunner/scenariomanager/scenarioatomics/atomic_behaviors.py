@@ -31,7 +31,8 @@ import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
 
-from srunner.scenariomanager.carla_data_provider import CarlaActorPool, CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
@@ -42,7 +43,7 @@ import srunner.tools
 EPSILON = 0.001
 
 
-def calculate_distance(location, other_location):
+def calculate_distance(location, other_location, global_planner=None):
     """
     Method to calculate the distance between to locations
 
@@ -51,6 +52,21 @@ def calculate_distance(location, other_location):
           To be accurate, it would have to use the distance along the
           (shortest) route between the two locations.
     """
+    if global_planner:
+        distance = 0
+
+        # Get the route
+        route = global_planner.trace_route(location, other_location)
+
+        # Get the distance of the route
+        for i in range(1, len(route)):
+            curr_loc = route[i][0].transform.location
+            prev_loc = route[i - 1][0].transform.location
+
+            distance += curr_loc.distance(prev_loc)
+
+        return distance
+
     return location.distance(other_location)
 
 
@@ -126,22 +142,26 @@ class RunScript(AtomicBehavior):
     Args:
         script (str): String containing the interpreter, scriptpath and arguments
             Example: "python /path/to/script.py --arg1"
+        base_path (str): String containing the base path of for the script
 
     Attributes:
         _script (str): String containing the interpreter, scriptpath and arguments
             Example: "python /path/to/script.py --arg1"
+        _base_path (str): String containing the base path of for the script
+            Example: "/path/to/"
 
     Note:
         This is intended for the use with OpenSCENARIO. Be aware of security side effects.
     """
 
-    def __init__(self, script, name="RunScript"):
+    def __init__(self, script, base_path=None, name="RunScript"):
         """
         Setup parameters
         """
         super(RunScript, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._script = script
+        self._base_path = base_path
 
     def update(self):
         """
@@ -153,13 +173,559 @@ class RunScript(AtomicBehavior):
             path = script_components[1]
 
         if not os.path.isfile(path):
+            path = os.path.join(self._base_path, path)
+        if not os.path.isfile(path):
             new_status = py_trees.common.Status.FAILURE
             print("Script file does not exists {}".format(path))
         else:
-            subprocess.Popen(self._script, shell=True)
+            subprocess.Popen(self._script, shell=True, cwd=self._base_path)
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+
+class ChangeWeather(AtomicBehavior):
+
+    """
+    Atomic to write a new weather configuration into the blackboard.
+    Used in combination with WeatherBehavior() to have a continuous weather simulation.
+
+    The behavior immediately terminates with SUCCESS after updating the blackboard.
+
+    Args:
+        weather (srunner.scenariomanager.weather_sim.Weather): New weather settings.
+        name (string): Name of the behavior.
+            Defaults to 'UpdateWeather'.
+
+    Attributes:
+        _weather (srunner.scenariomanager.weather_sim.Weather): Weather settings.
+    """
+
+    def __init__(self, weather, name="ChangeWeather"):
+        """
+        Setup parameters
+        """
+        super(ChangeWeather, self).__init__(name)
+        self._weather = weather
+
+    def update(self):
+        """
+        Write weather into blackboard and exit with success
+
+        returns:
+            py_trees.common.Status.SUCCESS
+        """
+        py_trees.blackboard.Blackboard().set("CarlaWeather", self._weather, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class ChangeRoadFriction(AtomicBehavior):
+
+    """
+    Atomic to update the road friction in CARLA.
+
+    The behavior immediately terminates with SUCCESS after updating the friction.
+
+    Args:
+        friction (float): New friction coefficient.
+        name (string): Name of the behavior.
+            Defaults to 'UpdateRoadFriction'.
+
+    Attributes:
+        _friction (float): Friction coefficient.
+    """
+
+    def __init__(self, friction, name="ChangeRoadFriction"):
+        """
+        Setup parameters
+        """
+        super(ChangeRoadFriction, self).__init__(name)
+        self._friction = friction
+
+    def update(self):
+        """
+        Update road friction. Spawns new friction blueprint and removes the old one, if existing.
+
+        returns:
+            py_trees.common.Status.SUCCESS
+        """
+
+        for actor in CarlaDataProvider.get_world().get_actors().filter('static.trigger.friction'):
+            actor.destroy()
+
+        friction_bp = CarlaDataProvider.get_world().get_blueprint_library().find('static.trigger.friction')
+        extent = carla.Location(1000000.0, 1000000.0, 1000000.0)
+        friction_bp.set_attribute('friction', str(self._friction))
+        friction_bp.set_attribute('extent_x', str(extent.x))
+        friction_bp.set_attribute('extent_y', str(extent.y))
+        friction_bp.set_attribute('extent_z', str(extent.z))
+
+        # Spawn Trigger Friction
+        transform = carla.Transform()
+        transform.location = carla.Location(-10000.0, -10000.0, 0.0)
+        CarlaDataProvider.get_world().spawn_actor(friction_bp, transform)
+
+        return py_trees.common.Status.SUCCESS
+
+
+class ChangeActorControl(AtomicBehavior):
+
+    """
+    Atomic to change the longitudinal/lateral control logic for an actor.
+    The (actor, controller) pair is stored inside the Blackboard.
+
+    The behavior immediately terminates with SUCCESS after the controller.
+
+    Args:
+        actor (carla.Actor): Actor that should be controlled by the controller.
+        control_py_module (string): Name of the python module containing the implementation
+            of the controller.
+        args (dictionary): Additional arguments for the controller.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorControl'.
+
+    Attributes:
+        _actor_control (ActorControl): Instance of the actor control.
+    """
+
+    def __init__(self, actor, control_py_module, args, name="ChangeActorControl"):
+        """
+        Setup actor controller.
+        """
+        super(ChangeActorControl, self).__init__(name, actor)
+
+        self._actor_control = ActorControl(actor, control_py_module=control_py_module, args=args)
+
+    def update(self):
+        """
+        Write (actor, controler) pair to Blackboard, or update the controller
+        if actor already exists as a key.
+
+        returns:
+            py_trees.common.Status.SUCCESS
+        """
+
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if actor_dict:
+            if self._actor.id in actor_dict:
+                actor_dict[self._actor.id].reset()
+
+        actor_dict[self._actor.id] = self._actor_control
+        py_trees.blackboard.Blackboard().set("ActorsWithController", actor_dict, overwrite=True)
+
+        return py_trees.common.Status.SUCCESS
+
+
+class UpdateAllActorControls(AtomicBehavior):
+
+    """
+    Atomic to update (run one control loop step) all actor controls.
+
+    The behavior is always in RUNNING state.
+
+    Args:
+        name (string): Name of the behavior.
+            Defaults to 'UpdateAllActorControls'.
+    """
+
+    def __init__(self, name="UpdateAllActorControls"):
+        """
+        Constructor
+        """
+        super(UpdateAllActorControls, self).__init__(name)
+
+    def update(self):
+        """
+        Execute one control loop step for all actor controls.
+
+        returns:
+            py_trees.common.Status.RUNNING
+        """
+
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        for actor_id in actor_dict:
+            actor_dict[actor_id].run_step()
+
+        return py_trees.common.Status.RUNNING
+
+
+class ChangeActorTargetSpeed(AtomicBehavior):
+
+    """
+    Atomic to change the target speed for an actor controller.
+
+    The behavior is in RUNNING state until the distance/duration
+    conditions are satisfied, or if a second ChangeActorTargetSpeed atomic
+    for the same actor is triggered.
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        target_speed (float): New target speed [m/s].
+        init_speed (boolean): Flag to indicate if the speed is the initial actor speed.
+            Defaults to False.
+        duration (float): Duration of the maneuver [s].
+            Defaults to None.
+        distance (float): Distance of the maneuver [m].
+            Defaults to None.
+        relative_actor (carla.Actor): If the target speed setting should be relative to another actor.
+            Defaults to None.
+        value (float): Offset, if the target speed setting should be relative to another actor.
+            Defaults to None.
+        value_type (string): Either 'Delta' or 'Factor' influencing how the offset to the reference actors
+            velocity is applied. Defaults to None.
+        continuous (boolean): If True, the atomic remains in RUNNING, independent of duration or distance.
+            Defaults to False.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorTargetSpeed'.
+
+    Attributes:
+        _target_speed (float): New target speed [m/s].
+        _init_speed (boolean): Flag to indicate if the speed is the initial actor speed.
+            Defaults to False.
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+        _start_location (carla.Location): Start location of the atomic.
+            Defaults to None.
+        _duration (float): Duration of the maneuver [s].
+            Defaults to None.
+        _distance (float): Distance of the maneuver [m].
+            Defaults to None.
+        _relative_actor (carla.Actor): If the target speed setting should be relative to another actor.
+            Defaults to None.
+        _value (float): Offset, if the target speed setting should be relative to another actor.
+            Defaults to None.
+        _value_type (string): Either 'Delta' or 'Factor' influencing how the offset to the reference actors
+            velocity is applied. Defaults to None.
+        _continuous (boolean): If True, the atomic remains in RUNNING, independent of duration or distance.
+            Defaults to False.
+    """
+
+    def __init__(self, actor, target_speed, init_speed=False,
+                 duration=None, distance=None, relative_actor=None,
+                 value=None, value_type=None, continuous=False, name="ChangeActorTargetSpeed"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorTargetSpeed, self).__init__(name, actor)
+
+        self._target_speed = target_speed
+        self._init_speed = init_speed
+
+        self._start_time = None
+        self._start_location = None
+
+        self._relative_actor = relative_actor
+        self._value = value
+        self._value_type = value_type
+        self._continuous = continuous
+        self._duration = duration
+        self._distance = distance
+
+    def initialise(self):
+        """
+        Set initial parameters such as _start_time and _start_location,
+        and get (actor, controller) pair from Blackboard.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+        self._start_location = CarlaDataProvider.get_location(self._actor)
+
+        actor_dict[self._actor.id].update_target_speed(self._target_speed, start_time=self._start_time)
+
+        if self._init_speed:
+            actor_dict[self._actor.id].set_init_speed()
+
+        super(ChangeActorTargetSpeed, self).initialise()
+
+    def update(self):
+        """
+        Check the actor's current state and update target speed, if it is relative to another actor.
+
+        returns:
+            py_trees.common.Status.SUCCESS, if the duration or distance driven exceeded limits
+                                            if another ChangeActorTargetSpeed atomic for the same actor was triggered.
+            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
+            py_trees.common.Status.FAILURE, else.
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_longitudinal_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._relative_actor:
+            relative_velocity = CarlaDataProvider.get_velocity(self._relative_actor)
+
+            # get target velocity
+            if self._value_type == 'delta':
+                actor_dict[self._actor.id].update_target_speed(relative_velocity + self._value)
+            elif self._value_type == 'factor':
+                actor_dict[self._actor.id].update_target_speed(relative_velocity * self._value)
+            else:
+                print('self._value_type must be delta or factor')
+
+        # check duration and driven_distance
+        if not self._continuous:
+            if (self._duration is not None) and (GameTime.get_time() - self._start_time > self._duration):
+                new_status = py_trees.common.Status.SUCCESS
+
+            driven_distance = CarlaDataProvider.get_location(self._actor).distance(self._start_location)
+            if (self._distance is not None) and (driven_distance > self._distance):
+                new_status = py_trees.common.Status.SUCCESS
+
+        if self._distance is None and self._duration is None:
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
+class ChangeActorWaypoints(AtomicBehavior):
+
+    """
+    Atomic to change the waypoints for an actor controller.
+
+    The behavior is in RUNNING state until the last waypoint is reached,
+    or if a second ChangeActorWaypoints atomic for the same actor is triggered.
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorWaypoints'.
+
+    Attributes:
+        _waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+    """
+
+    def __init__(self, actor, waypoints, name="ChangeActorWaypoints"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorWaypoints, self).__init__(name, actor)
+
+        self._waypoints = waypoints
+        self._start_time = None
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Set waypoint list for actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+
+        actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
+
+        super(ChangeActorWaypoints, self).initialise()
+
+    def update(self):
+        """
+        Check the actor's state along the waypoint route.
+
+        returns:
+            py_trees.common.Status.SUCCESS, if the final waypoint was reached, or
+                                            if another ChangeActorWaypoints atomic for the same actor was triggered.
+            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
+            py_trees.common.Status.FAILURE, else.
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        new_status = py_trees.common.Status.RUNNING
+
+        if actor_dict[self._actor.id].check_reached_waypoint_goal():
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
+class ChangeActorLateralMotion(AtomicBehavior):
+
+    """
+    Atomic to change the waypoints for an actor controller.
+
+    The behavior is in RUNNING state until the driven distance exceeds
+    distance_lane_change, or if a second ChangeActorLateralMotion atomic
+    for the same actor is triggered.
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        direction (string): Lane change direction ('left' or 'right').
+            Defaults to 'left'.
+        distance_lane_change (float): Distance of the lance change [meters].
+            Defaults to 25.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorLateralMotion'.
+
+    Attributes:
+        _waypoints (List of carla.Transform): List of waypoints representing the lane change (CARLA transforms).
+        _direction (string): Lane change direction ('left' or 'right').
+        _distance_same_lane (float): Distance on the same lane before the lane change starts [meters]
+            Constant to 5.
+        _distance_other_lane (float): Max. distance on the target lane after the lance change [meters]
+            Constant to 100.
+        _distance_lane_change (float): Max. total distance of the lane change [meters].
+        _pos_before_lane_change: carla.Location of the actor before the lane change.
+            Defaults to None.
+        _target_lane_id (int): Id of the target lane
+            Defaults to None.
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+    """
+
+    def __init__(self, actor, direction='left', distance_lane_change=25, name="ChangeActorLateralMotion"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorLateralMotion, self).__init__(name, actor)
+
+        self._waypoints = []
+        self._direction = direction
+        self._distance_same_lane = 5
+        self._distance_other_lane = 100
+        self._distance_lane_change = distance_lane_change
+        self._pos_before_lane_change = None
+        self._target_lane_id = None
+
+        self._start_time = None
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Generate a waypoint list (route) which representes the lane change. Set
+        this waypoint list for the actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+
+        # get start position
+        position_actor = CarlaDataProvider.get_map().get_waypoint(CarlaDataProvider.get_location(self._actor))
+
+        # calculate plan with scenario_helper function
+        plan, self._target_lane_id = generate_target_waypoint_list_multilane(
+            position_actor, self._direction, self._distance_same_lane,
+            self._distance_other_lane, self._distance_lane_change, check='false')
+
+        for elem in plan:
+            self._waypoints.append(elem[0].transform)
+
+        actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
+
+        super(ChangeActorLateralMotion, self).initialise()
+
+    def update(self):
+        """
+        Check the actor's current state and if the lane change was completed
+
+        returns:
+            py_trees.common.Status.SUCCESS, if lane change was successful, or
+                                            if another ChangeActorLateralMotion atomic for the same actor was triggered.
+            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
+            py_trees.common.Status.FAILURE, else.
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        new_status = py_trees.common.Status.RUNNING
+
+        current_position_actor = CarlaDataProvider.get_map().get_waypoint(self._actor.get_location())
+        current_lane_id = current_position_actor.lane_id
+
+        if current_lane_id == self._target_lane_id:
+            # driving on new lane
+            distance = current_position_actor.transform.location.distance(self._pos_before_lane_change)
+
+            if distance > self._distance_other_lane:
+                # long enough distance on new lane --> SUCCESS
+                new_status = py_trees.common.Status.SUCCESS
+        else:
+            # no lane change yet
+            self._pos_before_lane_change = current_position_actor.transform.location
+
         return new_status
 
 
@@ -217,89 +783,6 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
         if calculate_distance(self._actor.get_location(), self._osc_transform.location) < 1.0:
             if self._physics:
                 self._actor.set_simulate_physics(enabled=True)
-            new_status = py_trees.common.Status.SUCCESS
-
-        return new_status
-
-
-class SetRelativeOSCVelocity(AtomicBehavior):
-
-    """
-    OpenSCENARIO atomic
-    This class contains an atomic behavior to set a relative velocity of an OpenSCENARIO actor.
-
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - relative_actor: Relative CARLA actor for relative_velocity
-    - value: offset or factor for relative_velocity
-    - value_type: Must be delta or factor
-    - continuous: Boolean value, not considered
-    - duration[optional]: Maximum duration in seconds
-    - distance[optional]: Maximum distance in meters
-
-    The behavior terminates successfully after driven distance is reached or maximum duration
-    passed by. There is no check whether the target velocity is reached.
-    If duration and distance are both set to None, then the behavior will not terminate.
-    """
-
-    def __init__(self, actor, relative_actor, value, value_type, continuous,
-                 duration=None, distance=None, name="SetRelativeOSCVelocity"):
-        """
-        Setup parameters
-        """
-        super(SetRelativeOSCVelocity, self).__init__(name, actor)
-        self._relative_actor = relative_actor
-        self._value = value
-        self._value_type = value_type
-        self._continuous = continuous
-        self._duration = duration
-        self._distance = distance
-
-        self._start_time = None
-        self._start_location = None
-
-        self._control, self._type = get_actor_control(actor)
-
-    def initialise(self):
-        """
-        Set initial start values for time and location
-        """
-        self._start_time = GameTime.get_time()
-        self._start_location = CarlaDataProvider.get_location(self._actor)
-        super(SetRelativeOSCVelocity, self).initialise()
-
-    def update(self):
-        """
-        Set speed value and check termination conditions
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        actor_velocity = CarlaDataProvider.get_velocity(self._actor)
-        relative_velocity = CarlaDataProvider.get_velocity(self._relative_actor)
-
-        # get target velocity
-        if self._value_type == 'delta':
-            target_velocity = relative_velocity + self._value
-        elif self._value_type == 'factor':
-            target_velocity = relative_velocity * self._value
-        else:
-            print('self._value_type must be delta or factor')
-
-        # set target velocity
-        if actor_velocity < target_velocity:
-            self._control.throttle = 1.0
-            self._control.brake = 0.0
-        else:
-            self._control.throttle = 0.0
-            self._control.brake = 1.0
-        self._actor.apply_control(self._control)
-
-        # check duration and driven_distance
-        if (self._duration is not None) and (GameTime.get_time() - self._start_time > self._duration):
-            new_status = py_trees.common.Status.SUCCESS
-
-        driven_distance = CarlaDataProvider.get_location(self._actor).distance(self._start_location)
-        if (self._distance is not None) and (driven_distance > self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
@@ -553,7 +1036,7 @@ class ChangeAutoPilot(AtomicBehavior):
         super(ChangeAutoPilot, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._activate = activate
-        self._tm = CarlaActorPool.get_client().get_trafficmanager()
+        self._tm = CarlaDataProvider.get_client().get_trafficmanager()
         self._parameters = parameters
 
     def update(self):
@@ -711,9 +1194,10 @@ class SyncArrival(AtomicBehavior):
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-        self._control.throttle = 0.0
-        self._control.brake = 0.0
-        self._actor.apply_control(self._control)
+        if self._actor is not None and self._actor.is_alive:
+            self._control.throttle = 0.0
+            self._control.brake = 0.0
+            self._actor.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
 
 
@@ -843,112 +1327,6 @@ class BasicAgentBehavior(AtomicBehavior):
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
         super(BasicAgentBehavior, self).terminate(new_status)
-
-
-class TrafficJamChecker(AtomicBehavior):
-
-    """
-    Atomic behavior that performs the following actions:
-       1. Instantiates a set of vehicles managed by a server autopilot
-       2. Check for possible traffic jams
-       3. Destroy the NPC actors (in autopilot mode) involved in the traffic jam
-
-    This behavior stops when blackboard.get('master_scenario_command') == scenarios_stop_request
-    """
-
-    SOFT_NUMBER_BLOCKS = 10  # 10 seconds
-    HARD_NUMBER_BLOCKS = 30  # 30 seconds
-
-    MINIMUM_DISTANCE = 5.0  # meters
-
-    def __init__(self, debug=False, name="TrafficJamChecker"):
-        super(TrafficJamChecker, self).__init__(name)
-        self.debug = debug
-        self.blackboard = Blackboard()
-        self.world = CarlaDataProvider.get_world()
-        self.map = CarlaDataProvider.get_map()
-        self.list_intersection_waypoints = []
-
-        # remove initial collisions during setup
-        list_actors = list(CarlaActorPool.get_actors())
-        for _, actor in list_actors:
-            if actor.attributes['role_name'] == 'autopilot':
-                if detect_lane_obstacle(actor, margin=0.2):
-                    CarlaActorPool.remove_actor_by_id(actor.id)
-
-        # prepare a table to check for stalled vehicles during the execution of the scenario
-        self.table_blocked_actors = {}
-        current_game_time = GameTime.get_time()
-        for actor_id, actor in CarlaActorPool.get_actors():
-            if actor.attributes['role_name'] == 'autopilot':
-                actor.set_autopilot(True)
-                self.table_blocked_actors[actor_id] = {'location': actor.get_location(),
-                                                       'time': current_game_time
-                                                       }
-
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-
-    def update(self):
-        master_scenario_command = self.blackboard.get('master_scenario_command')
-        if master_scenario_command and master_scenario_command == 'scenarios_stop_request':
-            new_status = py_trees.common.Status.SUCCESS
-            return new_status
-        else:
-            new_status = py_trees.common.Status.RUNNING
-
-        current_game_time = GameTime.get_time()
-
-        list_actors_to_destroy = []
-        for actor_id, actor in CarlaActorPool.get_actors():
-            if actor.attributes['role_name'] == 'autopilot':
-                block_info = self.table_blocked_actors[actor_id]
-                current_location = actor.get_location()
-                distance = current_location.distance(block_info['location'])
-
-                # if vehicle is moving we reset the current time
-                if distance >= self.MINIMUM_DISTANCE:
-                    self.table_blocked_actors[actor_id]['location'] = current_location
-                    self.table_blocked_actors[actor_id]['time'] = current_game_time
-
-                # if the vehicle is on a trigger box than it should have the time reset
-                if actor.is_at_traffic_light():
-                    self.table_blocked_actors[actor_id]['location'] = current_location
-                    self.table_blocked_actors[actor_id]['time'] = current_game_time
-                    if self.debug:
-                        self.world.debug.draw_point(current_location,
-                                                    size=1.3,
-                                                    color=carla.Color(0, 255, 0),
-                                                    life_time=5)
-
-                # if vehicle has been static for a long time we get rid of it
-                if (current_game_time - self.table_blocked_actors[actor_id]['time']) > self.HARD_NUMBER_BLOCKS:
-                    list_actors_to_destroy.append(actor_id)
-
-                    if self.debug:
-                        self.world.debug.draw_point(current_location,
-                                                    size=1.3,
-                                                    color=carla.Color(255, 0, 0),
-                                                    life_time=5)
-
-                # if the vehicle has been static for a short period of time...
-                elif (current_game_time - self.table_blocked_actors[actor_id]['time']) > self.SOFT_NUMBER_BLOCKS:
-                    # check if this vehicle is at an intersection
-                    current_waypoint = self.map.get_waypoint(current_location)
-
-                    # is it blocked at an intersection? Then we need to get rid of it!
-                    if current_waypoint.is_intersection:
-                        if self.debug:
-                            self.world.debug.draw_point(current_location,
-                                                        size=1.3,
-                                                        color=carla.Color(0, 0, 255),
-                                                        life_time=5)
-                        list_actors_to_destroy.append(actor_id)
-
-        for actor_id in list_actors_to_destroy:
-            CarlaActorPool.remove_actor_by_id(actor_id)
-            self.table_blocked_actors[actor_id] = None
-
-        return new_status
 
 
 class Idle(AtomicBehavior):
@@ -1168,18 +1546,24 @@ class WaypointFollower(AtomicBehavior):
                 # The walker is sent to the next waypoint in its plan
                 else:
                     actor_location = CarlaDataProvider.get_location(actor)
+                    success = False
                     if self._actor_dict[actor]:
-                        success = False
                         location = self._actor_dict[actor][0]
                         direction = location - actor_location
                         direction_norm = math.sqrt(direction.x**2 + direction.y**2)
-                        if direction_norm > 1.0:
-                            control = actor.get_control()
-                            control.speed = self._target_speed
-                            control.direction = direction / direction_norm
-                            actor.apply_control(control)
-                        else:
+                        control = actor.get_control()
+                        control.speed = self._target_speed
+                        control.direction = direction / direction_norm
+                        actor.apply_control(control)
+                        if direction_norm < 1.0:
                             self._actor_dict[actor] = self._actor_dict[actor][1:]
+                            if self._actor_dict[actor] is None:
+                                success = True
+                    else:
+                        control = actor.get_control()
+                        control.speed = self._target_speed
+                        control.direction = CarlaDataProvider.get_transform(actor).rotation.get_forward_vector()
+                        actor.apply_control(control)
 
         if success:
             new_status = py_trees.common.Status.SUCCESS
@@ -1272,60 +1656,6 @@ class LaneChange(WaypointFollower):
             self._pos_before_lane_change = current_position_actor.transform.location
 
         return status
-
-
-class SetOSCInitSpeed(WaypointFollower):
-
-    """
-    OpenSCENARIO atomic
-    This class inherits from the class WaypointFollower.
-    This class contains an atomic behavior to set the init_speed of an OpenSCENARIO actor.
-
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - init_speed: initial actor speed when scenario starts, in m/s
-
-    Termination of behavior with blackboard variable which is set in
-    super(classname, self).initialise() of all other behavioral atomics.
-    """
-
-    def __init__(self, actor, init_speed=10, name='SetOSCInitSpeed'):
-
-        self._init_speed = init_speed
-        self._terminate = None
-
-        super(SetOSCInitSpeed, self).__init__(actor, target_speed=init_speed, name=name)
-
-    def initialise(self):
-        """
-        Calculate the init_velocity and set blackboard variable
-        terminate_init_speed_actor_ID to False to stop termination of behavior
-        """
-        super(SetOSCInitSpeed, self).initialise()
-
-        transform = self._actor.get_transform()
-        yaw = transform.rotation.yaw * (math.pi / 180)
-
-        vx = math.cos(yaw) * self._init_speed
-        vy = math.sin(yaw) * self._init_speed
-        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-
-    def update(self):
-        """
-        Run local planner and calculate a new velocity if the deviation from target_speed
-        is greater than 3m/s. Check whether the SetOSCInitSpeed behavior should terminate by
-        checking the corresponding blackboard variable.
-        """
-        new_status = super(SetOSCInitSpeed, self).update()
-
-        # set velocity, workaround because local planner doesn't hold velocity
-        if abs(self._init_speed - CarlaDataProvider.get_velocity(self._actor)) > 3:
-            yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-            vx = math.cos(yaw) * self._init_speed
-            vy = math.sin(yaw) * self._init_speed
-            self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
-
-        return new_status
 
 
 class SetInitSpeed(AtomicBehavior):
@@ -1425,7 +1755,7 @@ class ActorDestroy(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         if self._actor:
-            CarlaActorPool.remove_actor_by_id(self._actor.id)
+            CarlaDataProvider.remove_actor_by_id(self._actor.id)
             self._actor = None
             new_status = py_trees.common.Status.SUCCESS
 
@@ -1490,53 +1820,38 @@ class TrafficLightStateSetter(AtomicBehavior):
     """
     This class contains an atomic behavior to set the state of a given traffic light
 
-    Important parameters:
-    - traffic_light_id: ID of the traffic light that shall be changed
-    - state: New target state
+    Args:
+        actor (carla.TrafficLight): ID of the traffic light that shall be changed
+        state (carla.TrafficLightState): New target state
 
     The behavior terminates after trying to set the new state
     """
 
-    def __init__(self, traffic_light_id, state, name="TrafficLightStateSetter"):
+    def __init__(self, actor, state, name="TrafficLightStateSetter"):
         """
         Init
         """
         super(TrafficLightStateSetter, self).__init__(name)
 
-        self._actor = None
-        actor_list = CarlaDataProvider.get_world().get_actors()
-        for actor in actor_list:
-            if actor.id == int(traffic_light_id):
-                self._actor = actor
-                break
-
-        new_state = carla.TrafficLightState.Unknown
-        if state.upper() == "GREEN":
-            new_state = carla.TrafficLightState.Green
-        elif state.upper() == "RED":
-            new_state = carla.TrafficLightState.Red
-        elif state.upper() == "YELLOW":
-            new_state = carla.TrafficLightState.Yellow
-        elif state.upper() == "OFF":
-            new_state = carla.TrafficLightState.Off
-
-        self._new_traffic_light_state = new_state
+        self._actor = actor if "traffic_light" in actor.type_id else None
+        self._state = state
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
         """
-        Transform actor
+        Change the state of the traffic light
         """
         if self._actor is None:
             return py_trees.common.Status.FAILURE
 
         new_status = py_trees.common.Status.RUNNING
         if self._actor.is_alive:
-            self._actor.set_state(self._new_traffic_light_state)
+            self._actor.set_state(self._state)
             new_status = py_trees.common.Status.SUCCESS
         else:
             # For some reason the actor is gone...
             new_status = py_trees.common.Status.FAILURE
+
         return new_status
 
 
@@ -1589,7 +1904,8 @@ class ActorSource(AtomicBehavior):
 
             if not spawn_point_blocked:
                 try:
-                    new_actor = CarlaActorPool.request_new_actor(np.random.choice(self._actor_types), self._spawn_point)
+                    new_actor = CarlaDataProvider.request_new_actor(
+                        np.random.choice(self._actor_types), self._spawn_point)
                     self._actor_limit -= 1
                     self._queue.put(new_actor)
                 except:                             # pylint: disable=bare-except
@@ -1621,7 +1937,7 @@ class ActorSink(AtomicBehavior):
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
-        CarlaActorPool.remove_actors_in_surrounding(self._sink_location, self._threshold)
+        CarlaDataProvider.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
 
 

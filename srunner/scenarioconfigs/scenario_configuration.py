@@ -19,52 +19,47 @@ class ActorConfigurationData(object):
     """
 
     def __init__(self, model, transform, rolename='other', speed=0, autopilot=False,
-                 random=False, amount=1, color=None, category="car", args=None):
+                 random=False, color=None, category="car", args=None):
         self.model = model
         self.rolename = rolename
         self.transform = transform
         self.speed = speed
         self.autopilot = autopilot
         self.random_location = random
-        self.amount = amount
         self.color = color
         self.category = category
         self.args = args
 
+    @staticmethod
+    def parse_from_node(node, rolename):
+        """
+        static method to initialize an ActorConfigurationData from a given ET tree
+        """
 
-class ActorConfiguration(ActorConfigurationData):
-
-    """
-    This class provides the basic actor configuration for a
-    scenario:
-    - Location and rotation (transform)
-    - Model (e.g. Lincoln MKZ2017)
-    """
-
-    def __init__(self, node, rolename):
+        model = node.attrib.get('model', 'vehicle.*')
 
         pos_x = float(node.attrib.get('x', 0))
         pos_y = float(node.attrib.get('y', 0))
         pos_z = float(node.attrib.get('z', 0))
         yaw = float(node.attrib.get('yaw', 0))
 
-        random_location = False
-        if 'random_location' in node.keys():
-            random_location = True
+        transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw))
+
+        rolename = node.attrib.get('rolename', rolename)
+
+        speed = node.attrib.get('speed', 0)
 
         autopilot = False
         if 'autopilot' in node.keys():
             autopilot = True
 
-        amount = 1
-        if 'amount' in node.keys():
-            amount = int(node.attrib['amount'])
+        random_location = False
+        if 'random_location' in node.keys():
+            random_location = True
 
-        super(ActorConfiguration, self).__init__(node.attrib.get('model', 'vehicle.*'),
-                                                 carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z),
-                                                                 carla.Rotation(yaw=yaw)),
-                                                 node.attrib.get('rolename', rolename),
-                                                 autopilot, random_location, amount)
+        color = node.attrib.get('color', None)
+
+        return ActorConfigurationData(model, transform, rolename, speed, autopilot, random_location, color)
 
 
 class ScenarioConfiguration(object):
@@ -83,7 +78,6 @@ class ScenarioConfiguration(object):
     town = None
     name = None
     type = None
-    target = None
     route = None
     agent = None
     weather = carla.WeatherParameters()

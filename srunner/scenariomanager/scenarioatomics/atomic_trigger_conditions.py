@@ -21,8 +21,13 @@ base class
 from __future__ import print_function
 
 import operator
+import datetime
+import math
 import py_trees
 import carla
+
+from agents.navigation.global_route_planner import GlobalRoutePlanner
+from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -79,21 +84,17 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
     OpenSCENARIO atomic
     This class contains the trigger condition for a distance to an OpenSCENARIO position
 
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - osc_position: OpenSCENARIO position
-    - distance: Trigger distance between the actor and the target location in meters
-    - name: Name of the condition
+    Args:
+        actor (carla.Actor): CARLA actor to execute the behavior
+        osc_position (str): OpenSCENARIO position
+        distance (float): Trigger distance between the actor and the target location in meters
+        name (str): Name of the condition
 
     The condition terminates with SUCCESS, when the actor reached the target distance to the openSCENARIO position
     """
 
-    def __init__(self,
-                 actor,
-                 osc_position,
-                 distance,
-                 comparison_operator=operator.lt,
-                 name="InTriggerDistanceToOSCPosition"):
+    def __init__(self, actor, osc_position, distance, along_route=False,
+                 comparison_operator=operator.lt, name="InTriggerDistanceToOSCPosition"):
         """
         Setup parameters
         """
@@ -101,7 +102,18 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
         self._actor = actor
         self._osc_position = osc_position
         self._distance = distance
+        self._along_route = along_route
         self._comparison_operator = comparison_operator
+        self._map = CarlaDataProvider.get_map()
+
+        if self._along_route:
+            # Get the global route planner, used to calculate the route
+            dao = GlobalRoutePlannerDAO(self._map, 0.5)
+            grp = GlobalRoutePlanner(dao)
+            grp.setup()
+            self._grp = grp
+        else:
+            self._grp = None
 
     def initialise(self):
         if self._distance < 0:
@@ -120,7 +132,13 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
         if osc_transform is not None:
             osc_location = osc_transform.location
             actor_location = CarlaDataProvider.get_location(self._actor)
-            distance = calculate_distance(osc_location, actor_location)
+
+            if self._along_route:
+                # Global planner needs a location at a driving lane
+                actor_location = self._map.get_waypoint(actor_location).transform.location
+                osc_location = self._map.get_waypoint(osc_location).transform.location
+
+            distance = calculate_distance(actor_location, osc_location, self._grp)
 
             if self._comparison_operator(distance, self._distance):
                 new_status = py_trees.common.Status.SUCCESS
@@ -143,15 +161,27 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
     The condition terminates with SUCCESS, when the actor can reach the position within the given time
     """
 
-    def __init__(self, actor, osc_position, time, comparison_operator=operator.lt, name="InTimeToArrivalToOSCPosition"):
+    def __init__(self, actor, osc_position, time, along_route=False,
+                 comparison_operator=operator.lt, name="InTimeToArrivalToOSCPosition"):
         """
         Setup parameters
         """
         super(InTimeToArrivalToOSCPosition, self).__init__(name)
+        self._map = CarlaDataProvider.get_map()
         self._actor = actor
         self._osc_position = osc_position
         self._time = float(time)
+        self._along_route = along_route
         self._comparison_operator = comparison_operator
+
+        if self._along_route:
+            # Get the global route planner, used to calculate the route
+            dao = GlobalRoutePlannerDAO(self._map, 0.5)
+            grp = GlobalRoutePlanner(dao)
+            grp.setup()
+            self._grp = grp
+        else:
+            self._grp = None
 
     def initialise(self):
         if self._time < 0:
@@ -175,7 +205,13 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
         if target_location is None or actor_location is None:
             return new_status
 
-        distance = calculate_distance(actor_location, target_location)
+        if self._along_route:
+            # Global planner needs a location at a driving lane
+            actor_location = self._map.get_waypoint(actor_location).transform.location
+            target_location = self._map.get_waypoint(target_location).transform.location
+
+        distance = calculate_distance(actor_location, target_location, self._grp)
+
         actor_velocity = CarlaDataProvider.get_velocity(self._actor)
 
         # time to arrival
@@ -241,36 +277,186 @@ class StandStill(AtomicCondition):
         return new_status
 
 
+class RelativeVelocityToOtherActor(AtomicCondition):
+
+    """
+    Atomic containing a comparison between an actor's velocity
+    and another actor's one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
+
+    Args:
+        actor (carla.Actor): actor from which the velocity is taken
+        other_actor (carla.Actor): The actor with the reference velocity
+        speed (float): Difference of speed between the actors
+        name (string): Name of the condition
+        comparison_operator: Type "operator", used to compare the two velocities
+    """
+
+    def __init__(self, actor, other_actor, speed, comparison_operator=operator.gt,
+                 name="RelativeVelocityToOtherActor"):
+        """
+        Setup the parameters
+        """
+        super(RelativeVelocityToOtherActor, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._other_actor = other_actor
+        self._relative_speed = speed
+        self._comparison_operator = comparison_operator
+
+    def update(self):
+        """
+        Gets the speed of the two actors and compares them according to the comparison operator
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        curr_speed = CarlaDataProvider.get_velocity(self._actor)
+        other_speed = CarlaDataProvider.get_velocity(self._other_actor)
+
+        relative_speed = curr_speed - other_speed
+
+        if self._comparison_operator(relative_speed, self._relative_speed):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class TriggerVelocity(AtomicCondition):
 
     """
-    This class contains the trigger velocity (condition) of a scenario
+    Atomic containing a comparison between an actor's speed and a reference one.
+    The behavior returns SUCCESS when the expected comparison (greater than /
+    less than / equal to) is achieved.
 
-    Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - name: Name of the condition
-    - target_velocity: The behavior is successful, if the actor is at least as fast as target_velocity in m/s
-
-    The condition terminates with SUCCESS, when the actor reached the target_velocity
+    Args:
+        actor (carla.Actor): CARLA actor from which the speed will be taken.
+        name (string): Name of the atomic
+        target_velocity (float): velcoity to be compared with the actor's one
+        comparison_operator: Type "operator", used to compare the two velocities
     """
 
-    def __init__(self, actor, target_velocity, name="TriggerVelocity"):
+    def __init__(self, actor, target_velocity, comparison_operator=operator.gt, name="TriggerVelocity"):
         """
-        Setup trigger velocity
+        Setup the atomic parameters
         """
         super(TriggerVelocity, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._actor = actor
         self._target_velocity = target_velocity
+        self._comparison_operator = comparison_operator
 
     def update(self):
         """
-        Check if the actor has the trigger velocity
+        Gets the speed of the actor and compares it with the reference one
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
         """
         new_status = py_trees.common.Status.RUNNING
 
-        delta_velocity = self._target_velocity - CarlaDataProvider.get_velocity(self._actor)
-        if delta_velocity < EPSILON:
+        actor_speed = CarlaDataProvider.get_velocity(self._actor)
+
+        if self._comparison_operator(actor_speed, self._target_velocity):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class TriggerAcceleration(AtomicCondition):
+
+    """
+    Atomic containing a comparison between an actor's acceleration
+    and a reference one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
+
+    Args:
+        actor (carla.Actor): CARLA actor to execute the behavior
+        name (str): Name of the condition
+        target_acceleration (float): Acceleration reference (in m/s^2) on which the success is dependent
+        comparison_operator (operator): Type "operator", used to compare the two acceleration
+    """
+
+    def __init__(self, actor, target_acceleration, comparison_operator=operator.gt, name="TriggerAcceleration"):
+        """
+        Setup trigger acceleration
+        """
+        super(TriggerAcceleration, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._actor = actor
+        self._target_acceleration = target_acceleration
+        self._comparison_operator = comparison_operator
+
+    def update(self):
+        """
+        Gets the accleration of the actor and compares it with the reference one
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        acceleration = self._actor.get_acceleration()
+        linear_accel = math.sqrt(math.pow(acceleration.x, 2) +
+                                 math.pow(acceleration.y, 2) +
+                                 math.pow(acceleration.z, 2))
+
+        if self._comparison_operator(linear_accel, self._target_acceleration):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class TimeOfDayComparison(AtomicCondition):
+
+    """
+    Atomic containing a comparison between the current time of day of the simulation
+    and a given one. The behavior returns SUCCESS when the
+    expected comparison (greater than / less than / equal to) is achieved
+
+    Args:
+        datetime (datetime): CARLA actor to execute the behavior
+        name (str): Name of the condition
+        target_acceleration (float): Acceleration reference (in m/s^2) on which the success is dependent
+        comparison_operator (operator): Type "operator", used to compare the two acceleration
+    """
+
+    def __init__(self, dattime, comparison_operator=operator.gt, name="TimeOfDayComparison"):
+        """
+        """
+        super(TimeOfDayComparison, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._datetime = datetime.datetime.strptime(dattime, "%Y-%m-%dT%H:%M:%S")
+        self._comparison_operator = comparison_operator
+
+    def update(self):
+        """
+        Gets the time of day of the simulation and compares it with the reference one
+
+        returns:
+            py_trees.common.Status.RUNNING when the comparison fails and
+            py_trees.common.Status.SUCCESS when it succeeds
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        try:
+            check_dtime = operator.attrgetter("Datetime")
+            dtime = check_dtime(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if self._comparison_operator(dtime, self._datetime):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -644,16 +830,28 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, other_actor, actor, time, comparison_operator=operator.lt, name="TimeToArrival"):
+    def __init__(self, actor, other_actor, time, along_route=False,
+                 comparison_operator=operator.lt, name="TimeToArrival"):
         """
         Setup parameters
         """
         super(InTimeToArrivalToVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._other_actor = other_actor
+        self._map = CarlaDataProvider.get_map()
         self._actor = actor
+        self._other_actor = other_actor
         self._time = time
+        self._along_route = along_route
         self._comparison_operator = comparison_operator
+
+        if self._along_route:
+            # Get the global route planner, used to calculate the route
+            dao = GlobalRoutePlannerDAO(self._map, 0.5)
+            grp = GlobalRoutePlanner(dao)
+            grp.setup()
+            self._grp = grp
+        else:
+            self._grp = None
 
     def update(self):
         """
@@ -662,14 +860,20 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         current_location = CarlaDataProvider.get_location(self._actor)
-        target_location = CarlaDataProvider.get_location(self._other_actor)
+        other_location = CarlaDataProvider.get_location(self._other_actor)
 
-        if current_location is None or target_location is None:
+        if current_location is None or other_location is None:
             return new_status
 
-        distance = calculate_distance(current_location, target_location)
         current_velocity = CarlaDataProvider.get_velocity(self._actor)
         other_velocity = CarlaDataProvider.get_velocity(self._other_actor)
+
+        if self._along_route:
+            # Global planner needs a location at a driving lane
+            current_location = self._map.get_waypoint(current_location).transform.location
+            other_location = self._map.get_waypoint(other_location).transform.location
+
+        distance = calculate_distance(current_location, other_location, self._grp)
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self._max_time_to_arrival
@@ -927,40 +1131,37 @@ class WaitForTrafficLightState(AtomicCondition):
     This class contains an atomic behavior to wait for a given traffic light
     to have the desired state.
 
-    Important parameters:
-    - traffic_light: CARLA traffic light to execute the condition
-    - state: State to be checked in this condition
+    Args:
+        actor (carla.TrafficLight): CARLA traffic light to execute the condition
+        state (carla.TrafficLightState): State to be checked in this condition
 
     The condition terminates with SUCCESS, when the traffic light switches to the desired state
     """
 
-    def __init__(self, traffic_light, state, name="WaitForTrafficLightState"):
+    def __init__(self, actor, state, name="WaitForTrafficLightState"):
         """
         Setup traffic_light
         """
         super(WaitForTrafficLightState, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._traffic_light = traffic_light
-        self._traffic_light_state = state
+        self._actor = actor if "traffic_light" in actor.type_id else None
+        self._state = state
 
     def update(self):
         """
-        Set status to SUCCESS, when traffic light state is RED
+        Set status to SUCCESS, when traffic light state matches the expected one
         """
+        if self._actor is None:
+            return py_trees.common.Status.FAILURE
+
         new_status = py_trees.common.Status.RUNNING
 
-        # the next line may throw, if self._traffic_light is not a traffic
-        # light, but another actor. This is intended.
-        if str(self._traffic_light.state) == self._traffic_light_state:
+        if self._actor.state == self._state:
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
-
-    def terminate(self, new_status):
-        self._traffic_light = None
-        super(WaitForTrafficLightState, self).terminate(new_status)
 
 
 class WaitEndIntersection(AtomicCondition):
