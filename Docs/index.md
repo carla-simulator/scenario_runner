@@ -25,6 +25,8 @@ CARLA forum</a>
         — Brief tutorials on how to run different types of scenarios.  
     [__Create a new scenario__](creating_new_scenario.md)
         — Tutorial on how to create a new scenario using ScenarioRunner.  
+    [__Metrics module__](metrics_module.md)
+        — Explanation of the metrics module.  
     [__F.A.Q.__](faq.md)
         — Some of the most frequent installation issues.  
     [__Release notes__](release_notes.md)

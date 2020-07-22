@@ -261,7 +261,7 @@ class ScenarioRunner(object):
         dumps them into a file. This will be used by the metrics manager,
         in case the user wants specific information about the criterias.
         """
-        file_name = name[:-4] + "_criteria.json"
+        file_name = name[:-4] + ".json"
 
         # Filter the attributes that aren't JSON serializable
         with open('temp.json', 'w') as fp:

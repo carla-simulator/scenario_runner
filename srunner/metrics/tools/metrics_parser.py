@@ -68,8 +68,9 @@ def parse_control(info):
         float(info[5]),         # throttle
         float(info[3]),         # steer
         float(info[7]),         # brake
-        bool(int(info[9])),    # hand_brake
+        bool(int(info[9])),     # hand_brake
         int(info[11]) < 0,      # reverse
+        False,                  # manual_gear_shift
         int(info[11]),          # gear
     )
 
@@ -173,11 +174,13 @@ def parse_scene_lights(info):
     green = int(float(info[8][:-1]) * 255)
     blue = int(float(info[9][:-1]) * 255)
 
-    scene_light = {
-        "enabled": bool(info[3]),
-        "intensity": int(info[5]),
-        "color": carla.Color(red, green, blue)
-    }
+    scene_light = carla.LightState(
+        int(info[5]),
+        carla.Color(red, green, blue),
+        carla.LightGroup.NONE,
+        bool(info[3])
+    )
+
     return scene_light
 
 

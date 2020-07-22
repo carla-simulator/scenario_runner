@@ -16,7 +16,7 @@ It is meant to serve as an example of how to use the map API
 import math
 import json
 
-from srunner.metrics.basic_metric import BasicMetric
+from srunner.metrics.examples.basic_metric import BasicMetric
 
 
 class DistanceToLaneCenter(BasicMetric):
@@ -24,11 +24,10 @@ class DistanceToLaneCenter(BasicMetric):
     Metric class DistanceToLaneCenter
     """
 
-    def _create_metrics(self, town_map, log, criteria):
+    def _create_metric(self, town_map, log, criteria):
         """
         Implementation of the metric.
         """
-        ### Distance to the center of the lane ###
 
         # Get ego vehicle id
         ego_id = log.get_ego_vehicle_id()
@@ -42,7 +41,7 @@ class DistanceToLaneCenter(BasicMetric):
         # Get the projected distance vector to the center of the lane
         for i in range(start, end + 1):
 
-            ego_location = log.get_transform(ego_id, i).location
+            ego_location = log.get_actor_transform(ego_id, i).location
             ego_waypoint = town_map.get_waypoint(ego_location)
 
             # Get the distance vector and project it
@@ -63,7 +62,7 @@ class DistanceToLaneCenter(BasicMetric):
             dist_list.append(dist)
             frames_list.append(i)
 
+        # Save the results to a file
         results = {'frames': frames_list, 'distance': dist_list}
-
         with open('srunner/metrics/data/DistanceToLaneCenter_Result.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

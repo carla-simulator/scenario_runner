@@ -30,9 +30,53 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         parser = MetricsParser(recorder)
         self._simulation, self._actors, self._frames = parser.parse_recorder_info()
 
-    ###############################################
-    # Functions used to get info about the actors #
-    ###############################################
+    ### Functions used to get general info of the simulation ###
+    def get_actor_collisions(self, actor_id):
+        """
+        Returns a dict where the keys are the frame number and the values, a list of actor ids the actor collided with. 
+
+        Args:
+            actor_id (int): ID of the actor.
+        """
+        actor_collisions = {}
+
+        for i, frame in enumerate(self._frames):
+            collisions = frame["events"]["collisions"]
+
+            if actor_id in collisions:
+                actor_collisions.update({i: collisions[actor_id]})
+
+        return actor_collisions
+
+    def get_total_frame_count(self):
+        """
+        Returns an int with the total amount of frames the simulation lasted.
+        """
+
+        return self._simulation["total_frames"]
+
+    def get_elapsed_time(self, frame):
+        """
+        Returns a float with the elapsed time of a specific frame.
+        """
+
+        return self._frames[frame]["frame"]["elapsed_time"]
+
+    def get_delta_time(self, frame):
+        """
+        Returns a float with the delta time of a specific frame.
+        """
+
+        return self._frames[frame]["frame"]["delta_time"]
+
+    def get_platform_time(self, frame):
+        """
+        Returns a float with the platform time time of a specific frame.
+        """
+
+        return self._frames[frame]["frame"]["platform_time"]
+
+    ### Functions used to get info about the actors ###
     def get_ego_vehicle_id(self):
         """
         Returns the id of the ego vehicle.
@@ -85,10 +129,10 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
 
     def get_actor_bounding_box(self, actor_id):
         """
-        Returns a carla.BoundingBox
+        Returns the bounding box of the specified actor
 
         Args:
-            actor_id (int): Id of the actor from which the information will be returned.
+            actor_id (int): Id of the actor
         """
 
         if actor_id in self._actors:
@@ -101,10 +145,10 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
 
     def get_traffic_light_trigger_volume(self, traffic_light_id):
         """
-        Returns a carla.BoundingBox
+        Returns the trigger volume of the specified traffic light
 
         Args:
-            actor_id (int): Id of the actor from which the information will be returned.
+            actor_id (int): Id of the traffic light
         """
 
         if traffic_light_id in self._actors:
@@ -121,7 +165,7 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         It is important to note that frames start at 1, not 0.
 
         Args:
-            actor_id (int): Id of the actor from which the information will be returned.
+            actor_id (int): Id of the actor
         """
 
         if actor_id in self._actors:
@@ -137,9 +181,7 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
 
         return None, None
 
-    ##########################################
-    # Functions used to get the actor states #
-    ##########################################
+    ### Functions used to get the actor states ###
     def _get_actor_state(self, actor_id, state, frame):
         """
         Given an actor id, returns the specific variable of that actor at a given frame.
@@ -164,27 +206,27 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
 
         return None
 
-    def _get_all_actor_states(self, actor_id, state, ini_frame=None, end_frame=None):
+    def _get_all_actor_states(self, actor_id, state, first_frame=None, last_frame=None):
         """
         Given an actor id, returns a list of the specific variable of that actor during
         a frame interval. Some elements might be None.
 
-        By default, ini_frame and end_frame are the start and end of the simulation, respectively.
+        By default, first_frame and last_frame are the start and end of the simulation, respectively.
 
         Args:
             actor_id (int): ID of the actor.
             attribute: name of the actor's attribute to be returned.
-            ini_frame (int): First frame checked. By default, 0.
-            end_frame (int): Last frame checked. By default, max number of frames.
+            first_frame (int): First frame checked. By default, 0.
+            last_frame (int): Last frame checked. By default, max number of frames.
         """
-        if ini_frame is None:
-            ini_frame = 1
-        if end_frame is None:
-            end_frame = self.get_total_frame_count()
+        if first_frame is None:
+            first_frame = 1
+        if last_frame is None:
+            last_frame = self.get_total_frame_count()
 
         state_list = []
 
-        for frame_number in range(ini_frame, end_frame + 1):
+        for frame_number in range(first_frame, last_frame + 1):
             state_info = self._get_actor_state(actor_id, state, frame_number)
             state_list.append(state_info)
 
@@ -192,10 +234,10 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
 
     def _get_states_at_frame(self, frame, state, actor_list=None):
         """
-        Returns a dictionary {int - carla.Transform} with the actor ID and transform
-        at a given frame of all the actors at actor_list. Some states might be None.
-
-        By default, all actors will be considered
+        Returns a dict where the keys are the frame number, and the values are the
+        carla.Transform of the actor at the given frame.
+        
+        By default, all actors will be considered.
         """
         states = {}
         actor_info = self._frames[frame]["actors"]
@@ -212,19 +254,19 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         return states
 
     # Transforms
-    def get_transform(self, actor_id, frame):
+    def get_actor_transform(self, actor_id, frame):
         """
-        Returns the transform of the actor at a specific frame.
+        Returns the transform of the actor at a given frame.
         """
         return self._get_actor_state(actor_id, "transform", frame)
 
-    def get_all_transforms(self, actor_id, ini_frame=None, end_frame=None):
+    def get_all_actor_transforms(self, actor_id, first_frame=None, last_frame=None):
         """
         Returns a list with all the transforms of the actor at the frame interval.
         """
-        return self._get_all_actor_states(actor_id, "transform", ini_frame, end_frame)
+        return self._get_all_actor_states(actor_id, "transform", first_frame, last_frame)
 
-    def get_transforms_at_frame(self, frame, actor_list=None):
+    def get_actor_transforms_at_frame(self, frame, actor_list=None):
         """
         Returns a dictionary {int - carla.Transform} with the actor ID and transform
         at a given frame of all the actors at actor_list.
@@ -232,19 +274,19 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         return self._get_states_at_frame(frame, "transform", actor_list)
 
     # Velocities
-    def get_velocity(self, actor_id, frame):
+    def get_actor_velocity(self, actor_id, frame):
         """
-        Returns the velocity of the actor at a specific frame.
+        Returns the velocity of the actor at a given frame.
         """
         return self._get_actor_state(actor_id, "velocity", frame)
 
-    def get_all_velocities(self, actor_id, ini_frame=None, end_frame=None):
+    def get_all_actor_velocities(self, actor_id, first_frame=None, last_frame=None):
         """
         Returns a list with all the velocities of the actor at the frame interval.
         """
-        return self._get_all_actor_states(actor_id, "velocity", ini_frame, end_frame)
+        return self._get_all_actor_states(actor_id, "velocity", first_frame, last_frame)
 
-    def get_velocities_at_frame(self, frame, actor_list=None):
+    def get_actor_velocities_at_frame(self, frame, actor_list=None):
         """
         Returns a dictionary {int - carla.Vector3D} with the actor ID and velocity
         at a given frame of all the actors at actor_list.
@@ -252,19 +294,19 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         return self._get_states_at_frame(frame, "velocity", actor_list)
 
     # Angular velocities
-    def get_angular_velocity(self, actor_id, frame):
+    def get_actor_angular_velocity(self, actor_id, frame):
         """
-        Returns the angular velocity of the actor at a specific frame.
+        Returns the angular velocity of the actor at a given frame.
         """
         return self._get_actor_state(actor_id, "angular_velocity", frame)
 
-    def get_all_angular_velocities(self, actor_id, ini_frame=None, end_frame=None):
+    def get_all_actor_angular_velocities(self, actor_id, first_frame=None, last_frame=None):
         """
         Returns a list with all the angular velocities of the actor at the frame interval.
         """
-        return self._get_all_actor_states(actor_id, "angular_velocity", ini_frame, end_frame)
+        return self._get_all_actor_states(actor_id, "angular_velocity", first_frame, last_frame)
 
-    def get_angular_velocities_at_frame(self, frame, actor_list=None):
+    def get_actor_angular_velocities_at_frame(self, frame, actor_list=None):
         """
         Returns a dictionary {int - carla.Vector3D} with the actor ID and angular velocity
         at a given frame of all the actors at actor_list.
@@ -272,19 +314,19 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         return self._get_states_at_frame(frame, "angular_velocity", actor_list)
 
     # Acceleration
-    def get_acceleration(self, actor_id, frame):
+    def get_actor_acceleration(self, actor_id, frame):
         """
-        Returns the acceleration of the actor at a specific frame.
+        Returns the acceleration of the actor at a given frame.
         """
         return self._get_actor_state(actor_id, "acceleration", frame)
 
-    def get_all_accelerations(self, actor_id, ini_frame=None, end_frame=None):
+    def get_all_actor_accelerations(self, actor_id, first_frame=None, last_frame=None):
         """
         Returns a list with all the accelerations of the actor at the frame interval.
         """
-        return self._get_all_actor_states(actor_id, "acceleration", ini_frame, end_frame)
+        return self._get_all_actor_states(actor_id, "acceleration", first_frame, last_frame)
 
-    def get_accelerations_at_frame(self, frame, actor_list=None):
+    def get_actor_accelerations_at_frame(self, frame, actor_list=None):
         """
         Returns a dictionary {int - carla.Vector3D} with the actor ID and angular velocity
         at a given frame of all the actors at actor_list.
@@ -294,21 +336,21 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
     # Controls
     def get_vehicle_control(self, vehicle_id, frame):
         """
-        Returns the control of the vehicle at a specific frame.
+        Returns the control of the vehicle at a given frame.
         """
         return self._get_actor_state(vehicle_id, "control", frame)
 
-    def get_vehicle_physics_control(self, actor_id, frame):
+    def get_vehicle_physics_control(self, vehicle_id, frame):
         """
-        Returns the carla.VehiclePhysicsControl of a vehicle at a specific frame.
+        Returns the carla.VehiclePhysicsControl of a vehicle at a given frame.
         Returns None if the id can't be found.
         """
 
         for i in range(frame - 1, -1, -1):  # Go backwards from the frame until 0
             physics_info = self._frames[i]["events"]["physics_control"]
 
-            if actor_id in physics_info:
-                return physics_info[actor_id]
+            if vehicle_id in physics_info:
+                return physics_info[vehicle_id]
 
         return None
 
@@ -319,25 +361,25 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         return self._get_actor_state(walker_id, "speed", frame)
 
     # Traffic lights
-    def get_traffic_light_state(self, tl_id, frame):
+    def get_traffic_light_state(self, traffic_light_id, frame):
         """
         Returns the state of the traffic light at a specific frame.
         """
-        return self._get_actor_state(tl_id, "state", frame)
+        return self._get_actor_state(traffic_light_id, "state", frame)
 
-    def is_traffic_light_frozen(self, actor_id, frame):
+    def is_traffic_light_frozen(self, traffic_light_id, frame):
         """
         Returns whether or not the traffic light is frozen at a specific frame.
         """
-        return self._get_actor_state(actor_id, "frozen", frame)
+        return self._get_actor_state(traffic_light_id, "frozen", frame)
 
-    def get_traffic_light_elapsed_time(self, actor_id, frame):
+    def get_traffic_light_elapsed_time(self, traffic_light_id, frame):
         """
         Returns the elapsed time of the traffic light at a specific frame.
         """
-        return self._get_actor_state(actor_id, "elapsed_time", frame)
+        return self._get_actor_state(traffic_light_id, "elapsed_time", frame)
 
-    def get_traffic_light_state_time(self, light_id, state, frame):
+    def get_traffic_light_state_time(self, traffic_light_id, state, frame):
         """
         Returns the state time of the traffic light at a specific frame.
         Returns None if the id can't be found.
@@ -346,10 +388,10 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         for i in range(frame - 1, -1, -1):  # Go backwards from the frame until 0
             state_times_info = self._frames[i] ["events"]["traffic_light_state_time"]
 
-            if light_id in state_times_info:
-                states = state_times_info[light_id]
+            if traffic_light_id in state_times_info:
+                states = state_times_info[traffic_light_id]
                 if state in states:
-                    return state_times_info[light_id][state]
+                    return state_times_info[traffic_light_id][state]
 
         return None
 
@@ -385,56 +427,3 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
                 return scene_lights_info[light_id]
 
         return None
-
-    ########################################################
-    # Functions used to get general info of the simulation #
-    ########################################################
-    def get_collisions(self, actor_id):
-        """
-        Returns a {frame_number - other_ID} dictionary containing the
-        frames at which the actor collided and the id of the other actor.
-
-        Args:
-            actor_id (int): ID of the actor.
-        """
-        actor_collisions = []
-
-        for i, frame in enumerate(self._frames):
-            collisions = frame["events"]["collisions"]
-
-            if actor_id in collisions:
-                collision_dict = {
-                    "frame": i,
-                    "other_id": collisions[actor_id]
-                }
-                actor_collisions.append(collision_dict)
-
-        return actor_collisions
-
-    def get_total_frame_count(self):
-        """
-        Returns an int with the total amount of frames the simulation lasted.
-        """
-
-        return self._simulation["total_frames"]
-
-    def get_elapsed_time(self, frame):
-        """
-        Returns an float with the elapsed time of that frame.
-        """
-
-        return self._frames[frame]["frame"]["elapsed_time"]
-
-    def get_delta_time(self, frame):
-        """
-        Returns an float with the delta time of that frame.
-        """
-
-        return self._frames[frame]["frame"]["delta_time"]
-
-    def get_platform_time(self, frame):
-        """
-        Returns an float with the platform_time time of that frame.
-        """
-
-        return self._frames[frame]["frame"]["platform_time"]

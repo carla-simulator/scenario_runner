@@ -26,9 +26,9 @@ class BasicMetric(object):
         """
 
         # Create the metrics of the simulation. This part is left to the user
-        self._create_metrics(town_map, log, criteria)
+        self._create_metric(town_map, log, criteria)
 
-    def _create_metrics(self, town_map, log, criteria):
+    def _create_metric(self, town_map, log, criteria):
         """
         Pure virtual function to setup the metrics by the user.
 

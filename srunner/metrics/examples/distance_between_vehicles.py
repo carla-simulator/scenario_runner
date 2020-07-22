@@ -16,8 +16,9 @@ the recorder
 
 import math
 import json
+import matplotlib.pyplot as plt
 
-from srunner.metrics.basic_metric import BasicMetric
+from srunner.metrics.examples.basic_metric import BasicMetric
 
 
 class DistanceBetweenVehicles(BasicMetric):
@@ -25,13 +26,11 @@ class DistanceBetweenVehicles(BasicMetric):
     Metric class DistanceBetweenVehicles
     """
 
-    def _create_metrics(self, town_map, log, criteria):
+    def _create_metric(self, town_map, log, criteria):
         """
         Implementation of the metric. This is an example to show how to use the recorder,
         accessed via the log.
         """
-
-        ##### Calculate distance between the two vehicles and plot it #####
 
         # Get the ID of the two vehicles
         ego_id = log.get_ego_vehicle_id()
@@ -46,15 +45,12 @@ class DistanceBetweenVehicles(BasicMetric):
         start = max(start_ego, start_adv)
         end = min(end_ego, end_adv)
 
-        # Get the list of transforms
-        ego_transform_list = log.get_all_transforms(ego_id, start, end)
-        adv_transform_list = log.get_all_transforms(adv_id, start, end)
-
         # Get the distance between the two
         for i in range(start, end):
 
-            ego_location = ego_transform_list[i - 1].location  # Frames start at 1!
-            adv_location = adv_transform_list[i - 1].location  # Frames start at 1!
+            # Get the transforms
+            ego_location = log.get_actor_transform(ego_id, i).location
+            adv_location = log.get_actor_transform(adv_id, i).location
 
             # Filter some points for a better graph
             if adv_location.z < -10:
@@ -66,7 +62,14 @@ class DistanceBetweenVehicles(BasicMetric):
             dist_list.append(dist)
             frames_list.append(i)
 
-        results = {'frames': frames_list, 'distance': dist_list}
+        # 1) Use matplotlib to show the results
+        plt.plot(frames_list, dist_list)
+        plt.ylabel('Distance [m]')
+        plt.xlabel('Frame number')
+        plt.title('Distance between the ego vehicle and the adversary over time')
+        plt.show()
 
-        with open('srunner/metrics/data/DistanceBetweenVehicles_results.json', 'w') as fw:
-            json.dump(results, fw, sort_keys=False, indent=4)
+        # 2) Save the results to a json file
+        # results = {'frames': frames_list, 'distance': dist_list}
+        # with open('srunner/metrics/data/DistanceBetweenVehicles_results.json', 'w') as fw:
+        #     json.dump(results, fw, sort_keys=False, indent=4)
