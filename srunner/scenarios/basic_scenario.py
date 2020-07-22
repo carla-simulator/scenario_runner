@@ -11,6 +11,7 @@ This module provide BasicScenario, the basic class of all the scenarios.
 
 from __future__ import print_function
 
+import operator
 import py_trees
 
 import carla
@@ -294,3 +295,14 @@ class Scenario(object):
         # Set status to INVALID
         for node in node_list:
             node.terminate(py_trees.common.Status.INVALID)
+
+        # Cleanup all instantiated controllers
+        actor_dict = {}
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+        for actor_id in actor_dict:
+            actor_dict[actor_id].reset()
+        py_trees.blackboard.Blackboard().set("ActorsWithController", {}, overwrite=True)

@@ -142,22 +142,26 @@ class RunScript(AtomicBehavior):
     Args:
         script (str): String containing the interpreter, scriptpath and arguments
             Example: "python /path/to/script.py --arg1"
+        base_path (str): String containing the base path of for the script
 
     Attributes:
         _script (str): String containing the interpreter, scriptpath and arguments
             Example: "python /path/to/script.py --arg1"
+        _base_path (str): String containing the base path of for the script
+            Example: "/path/to/"
 
     Note:
         This is intended for the use with OpenSCENARIO. Be aware of security side effects.
     """
 
-    def __init__(self, script, name="RunScript"):
+    def __init__(self, script, base_path=None, name="RunScript"):
         """
         Setup parameters
         """
         super(RunScript, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._script = script
+        self._base_path = base_path
 
     def update(self):
         """
@@ -169,10 +173,12 @@ class RunScript(AtomicBehavior):
             path = script_components[1]
 
         if not os.path.isfile(path):
+            path = os.path.join(self._base_path, path)
+        if not os.path.isfile(path):
             new_status = py_trees.common.Status.FAILURE
             print("Script file does not exists {}".format(path))
         else:
-            subprocess.Popen(self._script, shell=True)
+            subprocess.Popen(self._script, shell=True, cwd=self._base_path)
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -1188,9 +1194,10 @@ class SyncArrival(AtomicBehavior):
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-        self._control.throttle = 0.0
-        self._control.brake = 0.0
-        self._actor.apply_control(self._control)
+        if self._actor is not None and self._actor.is_alive:
+            self._control.throttle = 0.0
+            self._control.brake = 0.0
+            self._actor.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
 
 
@@ -1813,53 +1820,38 @@ class TrafficLightStateSetter(AtomicBehavior):
     """
     This class contains an atomic behavior to set the state of a given traffic light
 
-    Important parameters:
-    - traffic_light_id: ID of the traffic light that shall be changed
-    - state: New target state
+    Args:
+        actor (carla.TrafficLight): ID of the traffic light that shall be changed
+        state (carla.TrafficLightState): New target state
 
     The behavior terminates after trying to set the new state
     """
 
-    def __init__(self, traffic_light_id, state, name="TrafficLightStateSetter"):
+    def __init__(self, actor, state, name="TrafficLightStateSetter"):
         """
         Init
         """
         super(TrafficLightStateSetter, self).__init__(name)
 
-        self._actor = None
-        actor_list = CarlaDataProvider.get_world().get_actors()
-        for actor in actor_list:
-            if actor.id == int(traffic_light_id):
-                self._actor = actor
-                break
-
-        new_state = carla.TrafficLightState.Unknown
-        if state.upper() == "GREEN":
-            new_state = carla.TrafficLightState.Green
-        elif state.upper() == "RED":
-            new_state = carla.TrafficLightState.Red
-        elif state.upper() == "YELLOW":
-            new_state = carla.TrafficLightState.Yellow
-        elif state.upper() == "OFF":
-            new_state = carla.TrafficLightState.Off
-
-        self._new_traffic_light_state = new_state
+        self._actor = actor if "traffic_light" in actor.type_id else None
+        self._state = state
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
         """
-        Transform actor
+        Change the state of the traffic light
         """
         if self._actor is None:
             return py_trees.common.Status.FAILURE
 
         new_status = py_trees.common.Status.RUNNING
         if self._actor.is_alive:
-            self._actor.set_state(self._new_traffic_light_state)
+            self._actor.set_state(self._state)
             new_status = py_trees.common.Status.SUCCESS
         else:
             # For some reason the actor is gone...
             new_status = py_trees.common.Status.FAILURE
+
         return new_status
 
 

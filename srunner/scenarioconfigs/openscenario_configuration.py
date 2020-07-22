@@ -82,6 +82,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Parse the given OpenSCENARIO config file, set and validate parameters
         """
+        OpenScenarioParser.set_osc_filepath(os.path.dirname(self._filename))
+
         self._check_version()
         self._load_catalogs()
         self._set_scenario_name()

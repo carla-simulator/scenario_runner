@@ -10,6 +10,7 @@
 
 ## Latest Changes
 ### :rocket: New Features
+* Renamed some agent labels inside Jenkins CI pipelines for new standard proposals.
 * Added support for Jenkins CI pipelines doing automated testing and docker images creation. It builds docker images for Scenario Runner, tags them with the commit id that triggers the pipeline, and stores those images into a shared Elastic Container Registry. 
 * **Very important:** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
     - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
@@ -40,6 +41,7 @@
     - Added support for CollisionCondition
     - Added support for EndOfRoadCondition
     - Added support for TimeHeadwayCondition
+    - Added support for TrafficSignalCondition
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
@@ -48,6 +50,7 @@
     - Added support for local ParamaterDeclarations
     - Fixed use of relative initial positions for any actor
     - Added possibility to use synchronous execution mode with OpenSCENARIO
+    - Fixed use of relative paths in CustomCommandAction
 * Atomics:
     - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time
@@ -62,7 +65,10 @@
     - Added a *duration* argument to *OnSidewalkTest* criteria, which makes the criteria fail after a certain time has passed, instead of doing so immediately. The default behavior has been unchanged.
     - InTimeToArrivalToVehicle has had its two actor arguments swapped, to match all the other behaviors.
     - Added *along_route* flag to InTimeToArrivalToVehicle, to take into account the topology of the road
+    - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
+
 ### :bug: Bug Fixes
+* Add cleanup of instantiated OpenSCENARIO controllers
 * Do not register SIGHUP signal in windows
 * Fixed initial speed of vehicles using OpenSCENARIO
 * Fixed bug causing an exception when calling BasicScenario's *_initialize_actors* with no other_actors.
@@ -74,6 +80,7 @@
 * Fixed bug causing FollowLeadingVehicle and FollowLeadingVehicleWithObstacle scenarios to not properly end
 * Fixed bug causing CollisionTest to ignore multiple collisions with scene objects
 * Fixed bug causing NoSignalJunctionCrossing to not output the results of the scenario
+* Fixed bug causing SyncArrival to fail when the actor was destroyed after the behavior ended
 
 
 ## CARLA ScenarioRunner 0.9.9

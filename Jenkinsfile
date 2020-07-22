@@ -136,7 +136,7 @@ pipeline
                                     {
                                         stage('install CARLA')
                                         {
-                                                agent { label "slave && ubuntu && gpu && sr" }
+                                                agent { label "secondary && ubuntu && gpu && sr" }
                                                 steps
                                                 {
                                                     println "using CARLA version ${CARLA_RELEASE}"
@@ -149,7 +149,7 @@ pipeline
                 }
                 stage('run test')
                 {
-                    agent { label "slave && ubuntu && gpu && sr" }
+                    agent { label "secondary && ubuntu && gpu && sr" }
                         steps
                         {
                             sh 'DISPLAY= ./CarlaUE4.sh -opengl -nosound > CarlaUE4.log&'
