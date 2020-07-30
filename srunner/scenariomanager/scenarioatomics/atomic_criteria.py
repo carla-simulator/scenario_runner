@@ -1696,7 +1696,7 @@ class RunningRedLightTest(Criterion):
     - actor: CARLA actor to be used for this test
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    DISTANCE_LIGHT = 10  # m
+    DISTANCE_LIGHT = 15  # m
 
     def __init__(self, actor, name="RunningRedLightTest", terminate_on_failure=False):
         """
