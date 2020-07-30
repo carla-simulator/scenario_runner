@@ -224,8 +224,7 @@ class OpenScenario(BasicScenario):
                         if private.attrib.get('entityRef', None) == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
                                 for controller_action in private_action.iter('ControllerAction'):
-                                    module, args = OpenScenarioParser.get_controller(
-                                        controller_action, self.config.catalogs)
+                                    module, args = OpenScenarioParser.get_controller(controller_action)
                                     controller_atomic = ChangeActorControl(
                                         carla_actor, control_py_module=module, args=args)
 
@@ -289,8 +288,7 @@ class OpenScenario(BasicScenario):
                    # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
                     catalog_maneuver_list = []
                     for catalog_reference in sequence.iter("CatalogReference"):
-                        catalog_maneuver = self.config.catalogs[catalog_reference.attrib.get(
-                            "catalogName")][catalog_reference.attrib.get("entryName")]
+                        catalog_maneuver = OpenScenarioParser.get_catalog_entry(self.config.catalogs, catalog_reference)
                         catalog_maneuver_list.append(catalog_maneuver)
                     all_maneuvers = itertools.chain(iter(catalog_maneuver_list), sequence.iter("Maneuver"))
                     single_sequence_iteration = py_trees.composites.Parallel(
@@ -312,7 +310,7 @@ class OpenScenario(BasicScenario):
                                         maneuver_behavior = StoryElementStatusToBlackboard(
                                             maneuver_behavior, "ACTION", child.attrib.get('name'))
                                         parallel_actions.add_child(
-                                            oneshot_behavior(variable_name=# See note in get_xml_path
+                                            oneshot_behavior(variable_name=  # See note in get_xml_path
                                                              get_xml_path(self.config.story, sequence) + '>' + \
                                                              get_xml_path(maneuver, child),
                                                              behaviour=maneuver_behavior))
