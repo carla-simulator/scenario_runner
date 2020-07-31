@@ -1951,7 +1951,10 @@ class RunningStopTest(Criterion):
         waypoint = self._map.get_waypoint(current_location)
         for _ in range(multi_step):
             if waypoint:
-                waypoint = waypoint.next(self.WAYPOINT_STEP)[0]
+                next_wps = waypoint.next(self.WAYPOINT_STEP)
+                if not next_wps:
+                    break
+                waypoint = next_wps[0]
                 if not waypoint:
                     break
                 list_locations.append(waypoint.transform.location)
