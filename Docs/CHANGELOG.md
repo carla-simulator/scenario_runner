@@ -81,6 +81,7 @@
 * Fixed bug causing CollisionTest to ignore multiple collisions with scene objects
 * Fixed bug causing NoSignalJunctionCrossing to not output the results of the scenario
 * Fixed bug causing SyncArrival to fail when the actor was destroyed after the behavior ended
+* Fixed bug with ending roads near stop signals to break the simulation
 
 
 ## CARLA ScenarioRunner 0.9.9
