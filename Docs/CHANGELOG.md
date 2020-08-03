@@ -30,7 +30,7 @@
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
         - NPC vehicle controller (based on CARLA LocalPlanner)
-        - Simple vehicle controller to set velocities not brake/throttle
+        - Simple vehicle controller to set velocities not brake/throttle, and consider obstacles in the forward-facing region.
         - External controller (to forward control to external entities)
     - Added initial speed support for pedestrians for OpenSCENARIO
     - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
