@@ -279,6 +279,8 @@ class ScenarioRunner(object):
                             time.sleep(1)
                             break
 
+        CarlaDataProvider.set_traffic_manager_port(int(self._args.trafficManagerPort))
+
         self.world = self.client.get_world()
 
         if self._args.sync:
@@ -464,6 +466,8 @@ def main():
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
+    parser.add_argument('--trafficManagerPort', default='8000',
+                        help='Port to use for the TrafficManager (default: 8000)')
     parser.add_argument('--sync', action='store_true',
                         help='Forces the simulation to run synchronously')
     parser.add_argument('--debug', action="store_true", help='Run with debug output')
