@@ -48,6 +48,9 @@
     - The RoadNetwork can be defined as global Parameter
     - Fixed handling of relative positions with negative offset
     - Added support for local ParamaterDeclarations
+    - Added support for Parameters within Catalogs
+    - Added support for ParameterAssignments for CatalogReferences
+    - Fixed name handling of Parameters: Parameter declerations must not start with a leading '$', but when the parameter is used a leading '$' is required.
     - Fixed use of relative initial positions for any actor
     - Added possibility to use synchronous execution mode with OpenSCENARIO
     - Fixed use of relative paths in CustomCommandAction
