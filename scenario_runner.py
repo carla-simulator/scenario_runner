@@ -279,8 +279,6 @@ class ScenarioRunner(object):
                             time.sleep(1)
                             break
 
-        CarlaDataProvider.set_traffic_manager_port(int(self._args.trafficManagerPort))
-
         self.world = self.client.get_world()
 
         if self._args.sync:
@@ -291,6 +289,7 @@ class ScenarioRunner(object):
 
         CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
+        CarlaDataProvider.set_traffic_manager_port(int(self._args.trafficManagerPort))
 
         # Wait for the world to be ready
         if CarlaDataProvider.is_sync_mode():
