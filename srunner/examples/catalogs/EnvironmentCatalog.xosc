@@ -14,7 +14,7 @@
     <Environment name="ClearMidnight">
       <TimeOfDay animation="false" dateTime="2020-01-01T00:00:00"/>
       <Weather cloudState="free">
-        <Sun intensity="1.0" azimuth="0.0" elevation="1.5"/>
+        <Sun intensity="1.0" azimuth="0.26" elevation="-1.1"/>
         <Fog visualRange="10000.0"/>
         <Precipitation precipitationType="dry" intensity="0.0"/>
       </Weather>

@@ -88,6 +88,7 @@ class OpenScenarioParser(object):
         "OFF": carla.TrafficLightState.Off,
     }
 
+    global_osc_parameters = dict()
     use_carla_coordinate_system = False
     osc_filepath = None
 
@@ -141,37 +142,115 @@ class OpenScenarioParser(object):
         OpenScenarioParser.use_carla_coordinate_system = True
 
     @staticmethod
-    def set_parameters(xml_tree):
+    def set_parameters(xml_tree, additional_parameter_dict=None):
         """
         Parse the xml_tree, and replace all parameter references
-        with the actual values
+        with the actual values.
+
+        Note: Parameter names must not start with "$", however when referencing a parameter the
+              reference has to start with "$".
+              https://releases.asam.net/OpenSCENARIO/1.0.0/ASAM_OpenSCENARIO_BS-1-2_User-Guide_V1-0-0.html#_re_use_mechanisms
 
         Args:
             xml_tree: Containing all nodes that should be updated
+            additional_parameter_dict (dictionary): Additional parameters as dict (key, value). Optional.
 
         returns:
-            updated xml_tree
+            updated xml_tree, dictonary containing all parameters and their values
         """
 
         parameter_dict = dict()
+        if additional_parameter_dict is not None:
+            parameter_dict = additional_parameter_dict
         parameters = xml_tree.find('ParameterDeclarations')
 
+        if parameters is None and not parameter_dict:
+            return xml_tree, parameter_dict
+
         if parameters is None:
-            return xml_tree
+            parameters = []
 
         for parameter in parameters:
             name = parameter.attrib.get('name')
             value = parameter.attrib.get('value')
-
             parameter_dict[name] = value
 
         for node in xml_tree.iter():
             for key in node.attrib:
                 for param in parameter_dict:
-                    if node.attrib[key] == param:
+                    if node.attrib[key] == "$" + param:
                         node.attrib[key] = parameter_dict[param]
 
-        return xml_tree
+        return xml_tree, parameter_dict
+
+    @staticmethod
+    def set_global_parameters(parameter_dict):
+        """
+        Set global_osc_parameter dictionary
+
+        Args:
+            parameter_dict (Dictionary): Input for global_osc_parameter
+        """
+        OpenScenarioParser.global_osc_parameters = parameter_dict
+
+    @staticmethod
+    def get_catalog_entry(catalogs, catalog_reference):
+        """
+        Get catalog entry referenced by catalog_reference included correct parameter settings
+
+        Args:
+            catalogs (Dictionary of dictionaries): List of all catalogs and their entries
+            catalog_reference (XML ElementTree): Reference containing the exact catalog to be used
+
+        returns:
+            Catalog entry (XML ElementTree)
+        """
+
+        entry = catalogs[catalog_reference.attrib.get("catalogName")][catalog_reference.attrib.get("entryName")]
+        entry = OpenScenarioParser.assign_catalog_parameters(entry, catalog_reference)
+
+        return entry
+
+    @staticmethod
+    def assign_catalog_parameters(entry_instance, catalog_reference):
+        """
+        Parse catalog_reference, and replace all parameter references
+        in entry_instance by the values provided in catalog_reference.
+
+        Not to be used from outside this class.
+
+        Args:
+            entry_instance (XML ElementTree): Entry to be updated
+            catalog_reference (XML ElementTree): Reference containing the exact parameter values
+
+        returns:
+            updated entry_instance with updated parameter values
+        """
+
+        parameter_dict = dict()
+        for elem in entry_instance.iter():
+            if elem.find('ParameterDeclarations') is not None:
+                parameters = elem.find('ParameterDeclarations')
+                for parameter in parameters:
+                    name = parameter.attrib.get('name')
+                    value = parameter.attrib.get('value')
+                    parameter_dict[name] = value
+
+        for parameter_assignments in catalog_reference.iter("ParameterAssignments"):
+            for parameter_assignment in parameter_assignments.iter("ParameterAssignment"):
+                parameter = parameter_assignment.attrib.get("parameterRef")
+                value = parameter_assignment.attrib.get("value")
+                parameter_dict[parameter] = value
+
+        for node in entry_instance.iter():
+            for key in node.attrib:
+                for param in parameter_dict:
+                    if node.attrib[key] == "$" + param:
+                        node.attrib[key] = parameter_dict[param]
+
+        OpenScenarioParser.set_parameters(entry_instance, OpenScenarioParser.global_osc_parameters)
+
+        return entry_instance
 
     @staticmethod
     def get_friction_from_env_action(xml_tree, catalogs):
@@ -188,9 +267,15 @@ class OpenScenarioParser(object):
         """
         set_environment = next(xml_tree.iter("EnvironmentAction"))
 
+        if sum(1 for _ in set_environment.iter("Weather")) != 0:
+            environment = set_environment.find("Environment")
+        elif set_environment.find("CatalogReference") is not None:
+            catalog_reference = set_environment.find("CatalogReference")
+            environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+
         friction = 1.0
 
-        road_condition = set_environment.iter("RoadCondition")
+        road_condition = environment.iter("RoadCondition")
         for condition in road_condition:
             friction = condition.attrib.get('frictionScaleFactor')
 
@@ -215,8 +300,7 @@ class OpenScenarioParser(object):
             environment = set_environment.find("Environment")
         elif set_environment.find("CatalogReference") is not None:
             catalog_reference = set_environment.find("CatalogReference")
-            environment = catalogs[catalog_reference.attrib.get(
-                "catalogName")][catalog_reference.attrib.get("entryName")]
+            environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
 
         weather = environment.find("Weather")
         sun = weather.find("Sun")
@@ -249,14 +333,13 @@ class OpenScenarioParser(object):
         return Weather(carla_weather, dtime, weather_animation)
 
     @staticmethod
-    def get_controller(xml_tree, catalogs):
+    def get_controller(xml_tree):
         """
         Extract the object controller from the OSC XML or a catalog
 
         Args:
             xml_tree: Containing the controller information,
                 or the reference to the catalog it is defined in.
-            catalogs: XML Catalogs that could contain the controller definition
 
         returns:
            module: Python module containing the controller implementation
@@ -899,7 +982,7 @@ class OpenScenarioParser(object):
                 atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
                 controller_action = private_action.find('ControllerAction')
-                module, args = OpenScenarioParser.get_controller(controller_action, catalogs)
+                module, args = OpenScenarioParser.get_controller(controller_action)
                 atomic = ChangeActorControl(actor, control_py_module=module, args=args)
             elif private_action.find('TeleportAction') is not None:
                 position = private_action.find('TeleportAction')
