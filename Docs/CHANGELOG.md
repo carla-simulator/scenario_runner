@@ -82,7 +82,8 @@
 * Fixed bug causing NoSignalJunctionCrossing to not output the results of the scenario
 * Fixed bug causing SyncArrival to fail when the actor was destroyed after the behavior ended
 * Fixed bug with ending roads near stop signals to break the simulation
-
+### :ghost: Maintenance
+* Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.
 
 ## CARLA ScenarioRunner 0.9.9
 ### :rocket: New Features
