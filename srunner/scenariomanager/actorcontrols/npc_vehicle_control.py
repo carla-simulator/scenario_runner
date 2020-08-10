@@ -40,7 +40,7 @@ class NpcVehicleControl(BasicControl):
                 'target_speed': self._target_speed * 3.6,
                     'lateral_control_dict': self._args})
 
-        if self._waypoints or self._trajectory:
+        if self._waypoints:
             self._update_plan()
 
     def _update_plan(self):
