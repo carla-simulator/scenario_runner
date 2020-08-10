@@ -431,7 +431,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Set the model
         try:
             blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(model))
-        except IndexError:
+        except ValueError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
             new_model = _actor_blueprint_categories[actor_category]
