@@ -71,6 +71,7 @@
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
 
 ### :bug: Bug Fixes
+* Fix parsing of properties within ControllerCatalogs
 * Add cleanup of instantiated OpenSCENARIO controllers
 * Do not register SIGHUP signal in windows
 * Fixed initial speed of vehicles using OpenSCENARIO
