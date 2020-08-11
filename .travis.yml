@@ -38,7 +38,6 @@ matrix:
             - python-pip
       before_install:
         - pip2 install --user pylint==1.9.4
-        - pip2 install --user opencv-python
         - pip2 install --user -r requirements.txt
       script:
         - pylint --version

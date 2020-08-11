@@ -333,23 +333,32 @@ class OpenScenarioParser(object):
         return Weather(carla_weather, dtime, weather_animation)
 
     @staticmethod
-    def get_controller(xml_tree):
+    def get_controller(xml_tree, catalogs):
         """
         Extract the object controller from the OSC XML or a catalog
 
         Args:
             xml_tree: Containing the controller information,
                 or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the EnvironmentAction
 
         returns:
            module: Python module containing the controller implementation
            args: Dictonary with (key, value) parameters for the controller
         """
 
-        assign_action = xml_tree.find('AssignControllerAction')
+        assign_action = next(xml_tree.iter("AssignControllerAction"))
+
+        properties = None
+        if assign_action.find('Controller') is not None:
+            properties = assign_action.find('Controller').find('Properties')
+        elif assign_action.find("CatalogReference") is not None:
+            catalog_reference = assign_action.find("CatalogReference")
+            properties = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference).find('Properties')
+
         module = None
         args = {}
-        for prop in assign_action.find('Controller').find('Properties'):
+        for prop in properties:
             if prop.attrib.get('name') == "module":
                 module = prop.attrib.get('value')
             else:
@@ -982,7 +991,7 @@ class OpenScenarioParser(object):
                 atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
                 controller_action = private_action.find('ControllerAction')
-                module, args = OpenScenarioParser.get_controller(controller_action)
+                module, args = OpenScenarioParser.get_controller(controller_action, catalogs)
                 atomic = ChangeActorControl(actor, control_py_module=module, args=args)
             elif private_action.find('TeleportAction') is not None:
                 position = private_action.find('TeleportAction')
