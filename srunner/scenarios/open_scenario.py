@@ -224,7 +224,8 @@ class OpenScenario(BasicScenario):
                         if private.attrib.get('entityRef', None) == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
                                 for controller_action in private_action.iter('ControllerAction'):
-                                    module, args = OpenScenarioParser.get_controller(controller_action, self.config.catalogs)
+                                    module, args = OpenScenarioParser.get_controller(
+                                        controller_action, self.config.catalogs)
                                     controller_atomic = ChangeActorControl(
                                         carla_actor, control_py_module=module, args=args)
 
@@ -310,7 +311,7 @@ class OpenScenario(BasicScenario):
                                         maneuver_behavior = StoryElementStatusToBlackboard(
                                             maneuver_behavior, "ACTION", child.attrib.get('name'))
                                         parallel_actions.add_child(
-                                            oneshot_behavior(variable_name=  # See note in get_xml_path
+                                            oneshot_behavior(variable_name=# See note in get_xml_path
                                                              get_xml_path(self.config.story, sequence) + '>' + \
                                                              get_xml_path(maneuver, child),
                                                              behaviour=maneuver_behavior))
