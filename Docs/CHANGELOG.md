@@ -72,6 +72,7 @@
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
 
 ### :bug: Bug Fixes
+* Support Routes in Catalogs
 * Fix parsing of properties within ControllerCatalogs
 * Add cleanup of instantiated OpenSCENARIO controllers
 * Do not register SIGHUP signal in windows

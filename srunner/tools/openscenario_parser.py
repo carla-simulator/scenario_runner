@@ -372,6 +372,38 @@ class OpenScenarioParser(object):
         return module, args
 
     @staticmethod
+    def get_route(xml_tree, catalogs):
+        """
+        Extract the route from the OSC XML or a catalog
+
+        Args:
+            xml_tree: Containing the route information,
+                or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the Route
+
+        returns:
+           waypoints: List of route waypoints
+        """
+        route = None
+
+        if xml_tree.find('Route') is not None:
+            route = xml_tree.find('Route')
+        elif xml_tree.find('CatalogReference') is not None:
+            catalog_reference = xml_tree.find("CatalogReference")
+            route = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+        else:
+            raise AttributeError("Unknown private FollowRoute action")
+
+        waypoints = []
+        if route is not None:
+            for waypoint in route.iter('Waypoint'):
+                position = waypoint.find('Position')
+                transform = OpenScenarioParser.convert_position_to_transform(position)
+                waypoints.append(transform)
+
+        return waypoints
+
+    @staticmethod
     def convert_position_to_transform(position, actor_list=None):
         """
         Convert an OpenScenario position into a CARLA transform
@@ -999,20 +1031,10 @@ class OpenScenarioParser(object):
             elif private_action.find('RoutingAction') is not None:
                 private_action = private_action.find('RoutingAction')
                 if private_action.find('AssignRouteAction') is not None:
-                    private_action = private_action.find('AssignRouteAction')
-                    if private_action.find('Route') is not None:
-                        route = private_action.find('Route')
-                        waypoints = []
-                        for waypoint in route.iter('Waypoint'):
-                            position = waypoint.find('Position')
-                            transform = OpenScenarioParser.convert_position_to_transform(position)
-                            waypoints.append(transform)
-                        # @TODO: How to handle relative positions here? This might chance at runtime?!
-                        atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
-                    elif private_action.find('CatalogReference') is not None:
-                        raise NotImplementedError("CatalogReference private actions are not yet supported")
-                    else:
-                        raise AttributeError("Unknown private FollowRoute action")
+                    # @TODO: How to handle relative positions here? This might chance at runtime?!
+                    route_action = private_action.find('AssignRouteAction')
+                    waypoints = OpenScenarioParser.get_route(route_action, catalogs)
+                    atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                 elif private_action.find('FollowTrajectoryAction') is not None:
                     raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
                 elif private_action.find('AcquirePositionAction') is not None:
