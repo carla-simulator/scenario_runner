@@ -178,8 +178,8 @@ class OpenScenarioParser(object):
         for node in xml_tree.iter():
             for key in node.attrib:
                 for param in parameter_dict:
-                    if node.attrib[key] == "$" + param:
-                        node.attrib[key] = parameter_dict[param]
+                    if "$" + param in node.attrib[key]:
+                        node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
 
         return xml_tree, parameter_dict
 
@@ -245,8 +245,8 @@ class OpenScenarioParser(object):
         for node in entry_instance.iter():
             for key in node.attrib:
                 for param in parameter_dict:
-                    if node.attrib[key] == "$" + param:
-                        node.attrib[key] = parameter_dict[param]
+                    if "$" + param in node.attrib[key]:
+                        node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
 
         OpenScenarioParser.set_parameters(entry_instance, OpenScenarioParser.global_osc_parameters)
 
