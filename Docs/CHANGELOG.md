@@ -72,6 +72,7 @@
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
 
 ### :bug: Bug Fixes
+* Support OpenSCENARIO parameters also if they're only part of a string value
 * Support Routes in Catalogs
 * Fix parsing of properties within ControllerCatalogs
 * Add cleanup of instantiated OpenSCENARIO controllers
