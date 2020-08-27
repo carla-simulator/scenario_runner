@@ -2,7 +2,7 @@
 <OpenSCENARIO>
   <FileHeader revMajor="1" revMinor="0" date="2020-03-24T12:00:00" description="CARLA:PedestrianCrossing" author=""/>
   <ParameterDeclarations>
-    <ParameterDeclaration name="weather" parameterType="string" value="ClearMidnight" />
+    <ParameterDeclaration name="weather" parameterType="string" value="ClearNoon" />
     <ParameterDeclaration name="carcolor" parameterType="string" value="122,122,122" />
   </ParameterDeclarations>
   <CatalogLocations>
@@ -37,6 +37,13 @@
       <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.tesla.model3">
         <ParameterAssignments>
           <ParameterAssignment parameterRef="carcolor" value="255,255,0" />
+        </ParameterAssignments>
+      </CatalogReference>
+    </ScenarioObject>
+    <ScenarioObject name="vehicle2">
+      <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.tesla.model3">
+        <ParameterAssignments>
+          <ParameterAssignment parameterRef="carcolor" value="122,122,122" />
         </ParameterAssignments>
       </CatalogReference>
     </ScenarioObject>
@@ -84,6 +91,15 @@
             <TeleportAction>
               <Position>
                 <WorldPosition x="150" y="55" z="0" h="3.14159265359"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="vehicle2">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="150" y="60" z="0" h="3.14159265359"/>
               </Position>
             </TeleportAction>
           </PrivateAction>
