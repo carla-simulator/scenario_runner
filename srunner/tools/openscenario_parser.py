@@ -10,6 +10,7 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 """
 
 from distutils.util import strtobool
+import copy
 import datetime
 import math
 import operator
@@ -207,7 +208,9 @@ class OpenScenarioParser(object):
         """
 
         entry = catalogs[catalog_reference.attrib.get("catalogName")][catalog_reference.attrib.get("entryName")]
-        entry = OpenScenarioParser.assign_catalog_parameters(entry, catalog_reference)
+        entry_copy = copy.deepcopy(entry)
+        catalog_copy = copy.deepcopy(catalog_reference)
+        entry = OpenScenarioParser.assign_catalog_parameters(entry_copy, catalog_copy)
 
         return entry
 

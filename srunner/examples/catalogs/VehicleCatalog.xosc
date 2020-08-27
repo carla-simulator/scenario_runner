@@ -19,7 +19,7 @@
     </Vehicle>
     <Vehicle name="vehicle.tesla.model3" vehicleCategory="car">
       <ParameterDeclarations>
-        <ParameterDeclaration name="carcolor" parameterType="string" value="0,255,255" />
+        <ParameterDeclaration name="carcolor" parameterType="string" value="0,0,0" />
       </ParameterDeclarations>
       <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
       <BoundingBox>
