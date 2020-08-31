@@ -378,7 +378,6 @@ class MetricsParser(object):
                 if self.frame_row.startswith(' Create'):
                     elements = self.get_row_elements(1, " ")
                     actor_id = int(elements[1][:-1])
-                    actor_type = elements[2]
 
                     actor = parse_actor(elements)
                     actors_info.update({actor_id: actor})
@@ -532,7 +531,7 @@ class MetricsParser(object):
                 while self.frame_row.startswith('  '):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
-    
+
                     trigvol = parse_bounding_box(elements)
                     actors_info[actor_id].update({"trigger_volume": trigvol})
                     self.next_row()

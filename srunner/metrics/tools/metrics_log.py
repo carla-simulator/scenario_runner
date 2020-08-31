@@ -33,7 +33,8 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
     ### Functions used to get general info of the simulation ###
     def get_actor_collisions(self, actor_id):
         """
-        Returns a dict where the keys are the frame number and the values, a list of actor ids the actor collided with. 
+        Returns a dict where the keys are the frame number and the values,
+        a list of actor ids the actor collided with. 
 
         Args:
             actor_id (int): ID of the actor.
@@ -138,10 +139,9 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         if actor_id in self._actors:
             if "bounding_box" in self._actors[actor_id]:
                 return self._actors[actor_id]["bounding_box"]
-            else:
-                return None
+            return None
 
-        return actor_list
+        return None
 
     def get_traffic_light_trigger_volume(self, traffic_light_id):
         """
@@ -154,10 +154,9 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         if traffic_light_id in self._actors:
             if "trigger_volume" in self._actors[traffic_light_id]:
                 return self._actors[traffic_light_id]["trigger_volume"]
-            else:
-                return None
+            return None
 
-        return actor_list
+        return None
 
     def get_actor_alive_frames(self, actor_id):
         """
@@ -386,7 +385,7 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         """
 
         for i in range(frame - 1, -1, -1):  # Go backwards from the frame until 0
-            state_times_info = self._frames[i] ["events"]["traffic_light_state_time"]
+            state_times_info = self._frames[i]["events"]["traffic_light_state_time"]
 
             if traffic_light_id in state_times_info:
                 states = state_times_info[traffic_light_id]

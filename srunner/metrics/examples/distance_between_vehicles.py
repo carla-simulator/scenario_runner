@@ -15,7 +15,7 @@ the recorder
 """
 
 import math
-import json
+# import json
 import matplotlib.pyplot as plt
 
 from srunner.metrics.examples.basic_metric import BasicMetric
