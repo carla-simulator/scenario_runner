@@ -236,7 +236,7 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
         """
         Returns a dict where the keys are the frame number, and the values are the
         carla.Transform of the actor at the given frame.
-        
+
         By default, all actors will be considered.
         """
         states = {}
