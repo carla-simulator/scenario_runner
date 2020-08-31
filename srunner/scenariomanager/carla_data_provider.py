@@ -59,6 +59,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _spawn_index = 0
     _blueprint_library = None
     _ego_vehicle_route = None
+    _traffic_manager_port = 8000
     _rng = random.RandomState(2000)
 
     @staticmethod
@@ -430,7 +431,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Set the model
         try:
             blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(model))
-        except IndexError:
+        except ValueError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
             new_model = _actor_blueprint_categories[actor_category]
@@ -595,7 +596,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             # Get the command
             command = SpawnActor(blueprint, _spawn_point)
-            command.then(SetAutopilot(FutureActor, actor.autopilot))
+            command.then(SetAutopilot(FutureActor, actor.autopilot,
+                                      CarlaDataProvider._traffic_manager_port))
 
             if actor.category == 'misc':
                 command.then(PhysicsCommand(FutureActor, True))
@@ -656,7 +658,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     break
 
             if spawn_point:
-                batch.append(SpawnActor(blueprint, spawn_point).then(SetAutopilot(FutureActor, autopilot)))
+                batch.append(SpawnActor(blueprint, spawn_point).then(
+                    SetAutopilot(FutureActor, autopilot,
+                                 CarlaDataProvider._traffic_manager_port)))
 
         actors = CarlaDataProvider.handle_actor_batch(batch)
 
@@ -736,6 +740,20 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         # Remove all keys with None values
         CarlaDataProvider._carla_actor_pool = dict({k: v for k, v in CarlaDataProvider._carla_actor_pool.items() if v})
+
+    @staticmethod
+    def get_traffic_manager_port():
+        """
+        Get the port of the traffic manager.
+        """
+        return CarlaDataProvider._traffic_manager_port
+
+    @staticmethod
+    def set_traffic_manager_port(tm_port):
+        """
+        Set the port to use for the traffic manager.
+        """
+        CarlaDataProvider._traffic_manager_port = tm_port
 
     @staticmethod
     def cleanup():

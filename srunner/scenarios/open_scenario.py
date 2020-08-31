@@ -289,8 +289,7 @@ class OpenScenario(BasicScenario):
                    # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
                     catalog_maneuver_list = []
                     for catalog_reference in sequence.iter("CatalogReference"):
-                        catalog_maneuver = self.config.catalogs[catalog_reference.attrib.get(
-                            "catalogName")][catalog_reference.attrib.get("entryName")]
+                        catalog_maneuver = OpenScenarioParser.get_catalog_entry(self.config.catalogs, catalog_reference)
                         catalog_maneuver_list.append(catalog_maneuver)
                     all_maneuvers = itertools.chain(iter(catalog_maneuver_list), sequence.iter("Maneuver"))
                     single_sequence_iteration = py_trees.composites.Parallel(

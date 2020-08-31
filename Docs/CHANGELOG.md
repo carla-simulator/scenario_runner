@@ -30,7 +30,7 @@
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
         - NPC vehicle controller (based on CARLA LocalPlanner)
-        - Simple vehicle controller to set velocities not brake/throttle
+        - Simple vehicle controller to set velocities not brake/throttle, and consider obstacles in the forward-facing region.
         - External controller (to forward control to external entities)
     - Added initial speed support for pedestrians for OpenSCENARIO
     - Support for EnvironmentActions within Story (before only within Init). This allows changing weather conditions during scenario execution
@@ -48,9 +48,14 @@
     - The RoadNetwork can be defined as global Parameter
     - Fixed handling of relative positions with negative offset
     - Added support for local ParamaterDeclarations
+    - Added support for Parameters within Catalogs
+    - Added support for ParameterAssignments for CatalogReferences
+    - Fixed name handling of Parameters: Parameter declerations must not start with a leading '$', but when the parameter is used a leading '$' is required.
+    - Fixed use of Parameters for multiple instances of the same Catalog element
     - Fixed use of relative initial positions for any actor
     - Added possibility to use synchronous execution mode with OpenSCENARIO
     - Fixed use of relative paths in CustomCommandAction
+    - Fixed use of ControllerCatalogs
 * Atomics:
     - Several new atomics to enable usage of OSC controllers
     - WeatherBehavior to simulate weather over time
@@ -68,6 +73,9 @@
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
 
 ### :bug: Bug Fixes
+* Support OpenSCENARIO parameters also if they're only part of a string value
+* Support Routes in Catalogs
+* Fix parsing of properties within ControllerCatalogs
 * Add cleanup of instantiated OpenSCENARIO controllers
 * Do not register SIGHUP signal in windows
 * Fixed initial speed of vehicles using OpenSCENARIO
@@ -81,7 +89,11 @@
 * Fixed bug causing CollisionTest to ignore multiple collisions with scene objects
 * Fixed bug causing NoSignalJunctionCrossing to not output the results of the scenario
 * Fixed bug causing SyncArrival to fail when the actor was destroyed after the behavior ended
-
+* Fixed bug with ending roads near stop signals to break the simulation
+* Fixed exception bug in spawn function of CarlaDataProvider
+* Fixed access to private member of CARLA LocalPlanner inside OSC NpcVehicleControl
+### :ghost: Maintenance
+* Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.
 
 ## CARLA ScenarioRunner 0.9.9
 ### :rocket: New Features

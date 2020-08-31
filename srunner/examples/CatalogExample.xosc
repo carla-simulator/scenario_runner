@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <OpenSCENARIO>
   <FileHeader revMajor="1" revMinor="0" date="2020-03-24T12:00:00" description="CARLA:PedestrianCrossing" author=""/>
+  <ParameterDeclarations>
+    <ParameterDeclaration name="weather" parameterType="string" value="ClearNoon" />
+    <ParameterDeclaration name="carcolor" parameterType="string" value="122,122,122" />
+  </ParameterDeclarations>
   <CatalogLocations>
     <VehicleCatalog>
       <Directory path="catalogs"/>
@@ -17,6 +21,9 @@
     <ManeuverCatalog>
       <Directory path="catalogs"/>
     </ManeuverCatalog>
+    <ControllerCatalog>
+      <Directory path="catalogs"/>
+    </ControllerCatalog>
   </CatalogLocations>
   <RoadNetwork>
     <LogicFile filepath="Town01"/>
@@ -24,10 +31,21 @@
   </RoadNetwork>
   <Entities>
     <ScenarioObject name="hero">
-      <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.volkswagen.t2"/>
+      <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.volkswagen.t2"/> 
     </ScenarioObject>
     <ScenarioObject name="vehicle">
-      <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.tesla.model3"/>
+      <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.tesla.model3">
+        <ParameterAssignments>
+          <ParameterAssignment parameterRef="carcolor" value="255,255,0" />
+        </ParameterAssignments>
+      </CatalogReference>
+    </ScenarioObject>
+    <ScenarioObject name="vehicle2">
+      <CatalogReference catalogName="VehicleCatalog" entryName="vehicle.tesla.model3">
+        <ParameterAssignments>
+          <ParameterAssignment parameterRef="carcolor" value="122,122,122" />
+        </ParameterAssignments>
+      </CatalogReference>
     </ScenarioObject>
     <ScenarioObject name="adversary">
       <CatalogReference catalogName="PedestrianCatalog" entryName="Pedestrian1"/>
@@ -41,7 +59,7 @@
       <Actions>
         <GlobalAction>
           <EnvironmentAction>
-            <CatalogReference catalogName="EnvironmentCatalog" entryName="ClearMidnight"/>
+            <CatalogReference catalogName="EnvironmentCatalog" entryName="$weather"/>
           </EnvironmentAction>
         </GlobalAction>
         <Private entityRef="hero">
@@ -55,11 +73,7 @@
           <PrivateAction>
             <ControllerAction>
               <AssignControllerAction>
-                <Controller name="HeroAgent">
-                  <Properties>
-                    <Property name="module" value="external_control"/>
-                  </Properties>
-                </Controller>
+                <CatalogReference catalogName="ControllerCatalog" entryName="ExternalControl"/>
               </AssignControllerAction>
               <OverrideControllerValueAction>
                 <Throttle value="0" active="false"/>
@@ -77,6 +91,15 @@
             <TeleportAction>
               <Position>
                 <WorldPosition x="150" y="55" z="0" h="3.14159265359"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="vehicle2">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="150" y="60" z="0" h="3.14159265359"/>
               </Position>
             </TeleportAction>
           </PrivateAction>

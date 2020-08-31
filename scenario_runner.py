@@ -321,6 +321,7 @@ class ScenarioRunner(object):
 
         CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
+        CarlaDataProvider.set_traffic_manager_port(int(self._args.trafficManagerPort))
 
         # Wait for the world to be ready
         if CarlaDataProvider.is_sync_mode():
@@ -506,6 +507,8 @@ def main():
                         help='TCP port to listen to (default: 2000)')
     parser.add_argument('--timeout', default="10.0",
                         help='Set the CARLA client timeout value in seconds')
+    parser.add_argument('--trafficManagerPort', default='8000',
+                        help='Port to use for the TrafficManager (default: 8000)')
     parser.add_argument('--sync', action='store_true',
                         help='Forces the simulation to run synchronously')
     parser.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
