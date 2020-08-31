@@ -34,7 +34,7 @@ class MetricsLog(object):  # pylint: disable=too-many-public-methods
     def get_actor_collisions(self, actor_id):
         """
         Returns a dict where the keys are the frame number and the values,
-        a list of actor ids the actor collided with. 
+        a list of actor ids the actor collided with.
 
         Args:
             actor_id (int): ID of the actor.
