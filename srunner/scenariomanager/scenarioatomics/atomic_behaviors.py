@@ -638,7 +638,8 @@ class ChangeActorLateralMotion(AtomicBehavior):
             Defaults to None.
     """
 
-    def __init__(self, actor, direction='left', distance_lane_change=25, lane_changes=1, name="ChangeActorLateralMotion"):
+    def __init__(self, actor, direction='left', distance_lane_change=25,
+                 lane_changes=1, name="ChangeActorLateralMotion"):
         """
         Setup parameters
         """
@@ -1623,8 +1624,8 @@ class LaneChange(WaypointFollower):
     A parallel termination behavior has to be used.
     """
 
-    def __init__(self, actor, speed=10, direction='left',
-                 distance_same_lane=5, distance_other_lane=100, distance_lane_change=25, lane_changes=1, name='LaneChange'):
+    def __init__(self, actor, speed=10, direction='left', distance_same_lane=5, distance_other_lane=100,
+                 distance_lane_change=25, lane_changes=1, name='LaneChange'):
 
         self._direction = direction
         self._distance_same_lane = distance_same_lane
