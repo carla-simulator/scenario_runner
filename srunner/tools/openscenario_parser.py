@@ -178,7 +178,7 @@ class OpenScenarioParser(object):
 
         for node in xml_tree.iter():
             for key in node.attrib:
-                for param in parameter_dict:
+                for param in sorted(parameter_dict, key=len, reverse=True):
                     if "$" + param in node.attrib[key]:
                         node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
 
@@ -247,7 +247,7 @@ class OpenScenarioParser(object):
 
         for node in entry_instance.iter():
             for key in node.attrib:
-                for param in parameter_dict:
+                for param in sorted(parameter_dict, key=len, reverse=True):
                     if "$" + param in node.attrib[key]:
                         node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
 
@@ -1013,6 +1013,7 @@ class OpenScenarioParser(object):
                             lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
                     atomic = ChangeActorLateralMotion(actor, direction=direction,
                                                       distance_lane_change=distance,
+                                                      distance_other_lane=1000,
                                                       lane_changes=lane_changes,
                                                       name=maneuver_name)
                 else:

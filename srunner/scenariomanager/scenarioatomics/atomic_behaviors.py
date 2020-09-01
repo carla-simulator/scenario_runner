@@ -619,6 +619,8 @@ class ChangeActorLateralMotion(AtomicBehavior):
             Defaults to 'left'.
         distance_lane_change (float): Distance of the lance change [meters].
             Defaults to 25.
+        distance_other_lane (float): Driven distance after the lange change [meters].
+            Defaults to 100.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorLateralMotion'.
 
@@ -638,7 +640,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
             Defaults to None.
     """
 
-    def __init__(self, actor, direction='left', distance_lane_change=25,
+    def __init__(self, actor, direction='left', distance_lane_change=25, distance_other_lane=100,
                  lane_changes=1, name="ChangeActorLateralMotion"):
         """
         Setup parameters
@@ -648,7 +650,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         self._waypoints = []
         self._direction = direction
         self._distance_same_lane = 5
-        self._distance_other_lane = 100
+        self._distance_other_lane = distance_other_lane
         self._distance_lane_change = distance_lane_change
         self._lane_changes = lane_changes
         self._pos_before_lane_change = None
