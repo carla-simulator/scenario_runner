@@ -655,6 +655,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         self._lane_changes = lane_changes
         self._pos_before_lane_change = None
         self._target_lane_id = None
+        self._plan = None
 
         self._start_time = None
 
@@ -1643,6 +1644,7 @@ class LaneChange(WaypointFollower):
         self._target_lane_id = None
         self._distance_new_lane = 0
         self._pos_before_lane_change = None
+        self._plan = None
 
         super(LaneChange, self).__init__(actor, target_speed=speed, name=name)
 

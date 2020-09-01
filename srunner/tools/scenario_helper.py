@@ -256,12 +256,10 @@ def generate_target_waypoint_list(waypoint, turn=0):
     return plan, plan[-1][0]
 
 
-def generate_target_waypoint_list_multilane(waypoint, change='left',
-                                            distance_same_lane=10,
-                                            distance_other_lane=25,
-                                            total_lane_change_distance=25, check=True,
-                                            lane_changes=1,
-                                            step_distance=2):
+def generate_target_waypoint_list_multilane(waypoint, change='left', distance_same_lane=10,
+                                            distance_other_lane=25, total_lane_change_distance=25,
+                                            check=True, lane_changes=1,
+                                            step_distance=2):  # pylint: disable=too-many-return-statements
     """
     This methods generates a waypoint list which leads the vehicle to a parallel lane.
     The change input must be 'left' or 'right', depending on which lane you want to change.
