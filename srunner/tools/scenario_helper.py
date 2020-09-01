@@ -270,22 +270,20 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',
     The default step distance between the lane change is set to 25m.
 
     @returns a waypoint list from the starting point to the end point on a right or left parallel lane.
-    The list might break before reaching the end point, if the asked behavior is impossible.
+    The function might break before reaching the end point, if the asked behavior is impossible.
     """
 
     plan = []
     plan.append((waypoint, RoadOption.LANEFOLLOW))  # start position
 
     target_lane_id = waypoint.lane_id
-    lane_change_possibilities = ['Left', 'Right', 'Both']
     option = RoadOption.LANEFOLLOW
 
-    # same lane
+    # Same lane
     distance = 0
     while distance < distance_same_lane:
         next_wps = plan[-1][0].next(step_distance)
         if not next_wps:
-            print("No next 1")
             return plan, target_lane_id
         next_wp = next_wps[0]
         distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
@@ -302,41 +300,37 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',
     lane_changes_done = 0
     lane_change_distance = total_lane_change_distance / lane_changes
 
+    # Lane change
     while lane_changes_done < lane_changes:
 
-        # 1) Get the next wp
+        # Move forward
         next_wps = plan[-1][0].next(lane_change_distance)
         if not next_wps:
-            print("No next 2")
             return plan, target_lane_id
         next_wp = next_wps[0]
 
-        # 2) Get the side lane
+        # Get the side lane
         if change == 'left':
             if check and str(next_wp.lane_change) not in ['Left', 'Both']:
-                print("check left")
                 break
             side_wp = next_wp.get_left_lane()
         else:
             if check and str(next_wp.lane_change) not in ['Right', 'Both']:
-                print("check right")
                 break
             side_wp = next_wp.get_right_lane()
 
         if not side_wp or side_wp.lane_type != carla.LaneType.Driving:
-            print("No side")
             break
 
+        # Update the plan
         plan.append((side_wp, option))
-
         lane_changes_done += 1
 
-    # other lane
+    # Other lane
     distance = 0
     while distance < distance_other_lane:
         next_wps = plan[-1][0].next(step_distance)
         if not next_wps:
-            print("No next 3")
             return plan, target_lane_id
         next_wp = next_wps[0]
         distance += next_wp.transform.location.distance(plan[-1][0].transform.location)

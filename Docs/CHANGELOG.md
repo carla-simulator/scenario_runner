@@ -25,7 +25,7 @@
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
 * Enable weather animation during scenario execution (requires ephem pip package)
 * Changed manual control to be in par with the CARLA version. Among others, added vehicle lights, recording and some new sensors
-* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction)
+* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction) 
 * OpenSCENARIO support:
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
@@ -44,7 +44,7 @@
     - Added support for TrafficSignalCondition
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Created example scenarios to illustrate usage of controllers and weather changes
-    - Extended LaneChangeAction to allow lane changes of multiple lanes.
+    - Extended LaneChangeAction to allow lane changes of multiple lanes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
     - Fixed handling of relative positions with negative offset
@@ -72,7 +72,7 @@
     - InTimeToArrivalToVehicle has had its two actor arguments swapped, to match all the other behaviors.
     - Added *along_route* flag to InTimeToArrivalToVehicle, to take into account the topology of the road
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
-    - Improved LaneChange atomic to allow lane changes of multiple lanes.
+    - Improved LaneChange atomic to allow lane changes of multiple lanes
 
 ### :bug: Bug Fixes
 * Support OpenSCENARIO parameters also if they're only part of a string value
@@ -94,7 +94,7 @@
 * Fixed bug with ending roads near stop signals to break the simulation
 * Fixed exception bug in spawn function of CarlaDataProvider
 * Fixed access to private member of CARLA LocalPlanner inside OSC NpcVehicleControl
-* Fixed bug causing LaneChange to break the simulation if the asked lane change was impossible.
+* Fixed bug causing LaneChange to break the simulation if the asked lane change was impossible
 * Fixed bug causing ChangeLane scenarios to never end
 ### :ghost: Maintenance
 * Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.
