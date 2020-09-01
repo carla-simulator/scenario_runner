@@ -685,12 +685,13 @@ class ChangeActorLateralMotion(AtomicBehavior):
         position_actor = CarlaDataProvider.get_map().get_waypoint(CarlaDataProvider.get_location(self._actor))
 
         # calculate plan with scenario_helper function
-        plan, self._target_lane_id = generate_target_waypoint_list_multilane(
+        self._plan, self._target_lane_id = generate_target_waypoint_list_multilane(
             position_actor, self._direction, self._distance_same_lane,
             self._distance_other_lane, self._distance_lane_change, check=False, lane_changes=self._lane_changes)
 
-        for elem in plan:
-            self._waypoints.append(elem[0].transform)
+        if self._plan:
+            for elem in self._plan:
+                self._waypoints.append(elem[0].transform)
 
         actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
 
@@ -706,6 +707,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
             py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
             py_trees.common.Status.FAILURE, else.
         """
+
         try:
             check_actors = operator.attrgetter("ActorsWithController")
             actor_dict = check_actors(py_trees.blackboard.Blackboard())
@@ -713,6 +715,10 @@ class ChangeActorLateralMotion(AtomicBehavior):
             pass
 
         if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if not self._plan:
+            print("{} couldn't perform the expected lane change".format(self._actor))
             return py_trees.common.Status.FAILURE
 
         if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
@@ -1652,6 +1658,11 @@ class LaneChange(WaypointFollower):
         super(LaneChange, self).initialise()
 
     def update(self):
+
+        if not self._plan:
+            print("{} couldn't perform the expected lane change".format(self._actor))
+            return py_trees.common.Status.FAILURE
+
         status = super(LaneChange, self).update()
 
         current_position_actor = CarlaDataProvider.get_map().get_waypoint(self._actor.get_location())

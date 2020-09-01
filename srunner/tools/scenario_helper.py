@@ -284,7 +284,7 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',
     while distance < distance_same_lane:
         next_wps = plan[-1][0].next(step_distance)
         if not next_wps:
-            return plan, target_lane_id
+            return None, None
         next_wp = next_wps[0]
         distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
         plan.append((next_wp, RoadOption.LANEFOLLOW))
@@ -295,7 +295,7 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',
         option = RoadOption.CHANGELANERIGHT
     else:
         # ERROR, input value for change must be 'left' or 'right'
-        return plan, target_lane_id
+        return None, None
 
     lane_changes_done = 0
     lane_change_distance = total_lane_change_distance / lane_changes
@@ -306,21 +306,21 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',
         # Move forward
         next_wps = plan[-1][0].next(lane_change_distance)
         if not next_wps:
-            return plan, target_lane_id
+            return None, None
         next_wp = next_wps[0]
 
         # Get the side lane
         if change == 'left':
             if check and str(next_wp.lane_change) not in ['Left', 'Both']:
-                break
+                return None, None
             side_wp = next_wp.get_left_lane()
         else:
             if check and str(next_wp.lane_change) not in ['Right', 'Both']:
-                break
+                return None, None
             side_wp = next_wp.get_right_lane()
 
         if not side_wp or side_wp.lane_type != carla.LaneType.Driving:
-            break
+            return None, None
 
         # Update the plan
         plan.append((side_wp, option))
@@ -331,7 +331,7 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',
     while distance < distance_other_lane:
         next_wps = plan[-1][0].next(step_distance)
         if not next_wps:
-            return plan, target_lane_id
+            return None, None
         next_wp = next_wps[0]
         distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
         plan.append((next_wp, RoadOption.LANEFOLLOW))
