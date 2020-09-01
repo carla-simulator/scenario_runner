@@ -609,6 +609,10 @@ class ChangeActorLateralMotion(AtomicBehavior):
     distance_lane_change, or if a second ChangeActorLateralMotion atomic
     for the same actor is triggered.
 
+    If an impossible lane change is asked for (due to the lack of lateral lanes,
+    next waypoints, continuous line, etc) the atomic will return a plan with the
+    waypoints until such impossibility is found.
+
     Args:
         actor (carla.Actor): Controlled actor.
         direction (string): Lane change direction ('left' or 'right').
@@ -634,7 +638,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
             Defaults to None.
     """
 
-    def __init__(self, actor, direction='left', distance_lane_change=25, name="ChangeActorLateralMotion"):
+    def __init__(self, actor, direction='left', distance_lane_change=25, lane_changes=1, name="ChangeActorLateralMotion"):
         """
         Setup parameters
         """
@@ -645,6 +649,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         self._distance_same_lane = 5
         self._distance_other_lane = 100
         self._distance_lane_change = distance_lane_change
+        self._lane_changes = lane_changes
         self._pos_before_lane_change = None
         self._target_lane_id = None
 
@@ -679,7 +684,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         # calculate plan with scenario_helper function
         plan, self._target_lane_id = generate_target_waypoint_list_multilane(
             position_actor, self._direction, self._distance_same_lane,
-            self._distance_other_lane, self._distance_lane_change, check='false')
+            self._distance_other_lane, self._distance_lane_change, check=False, lane_changes=self._lane_changes)
 
         for elem in plan:
             self._waypoints.append(elem[0].transform)
@@ -1593,11 +1598,15 @@ class WaypointFollower(AtomicBehavior):
 class LaneChange(WaypointFollower):
 
     """
-     This class inherits from the class WaypointFollower.
+    This class inherits from the class WaypointFollower.
 
-     This class contains an atomic lane change behavior to a parallel lane.
-     The vehicle follows a waypoint plan to the other lane, which is calculated in the initialise method.
-     This waypoint plan is calculated with a scenario helper function.
+    This class contains an atomic lane change behavior to a parallel lane.
+    The vehicle follows a waypoint plan to the other lane, which is calculated in the initialise method.
+    This waypoint plan is calculated with a scenario helper function.
+
+    If an impossible lane change is asked for (due to the lack of lateral lanes,
+    next waypoints, continuous line, etc) the atomic will return a plan with the
+    waypoints until such impossibility is found.
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
@@ -1615,12 +1624,13 @@ class LaneChange(WaypointFollower):
     """
 
     def __init__(self, actor, speed=10, direction='left',
-                 distance_same_lane=5, distance_other_lane=100, distance_lane_change=25, name='LaneChange'):
+                 distance_same_lane=5, distance_other_lane=100, distance_lane_change=25, lane_changes=1, name='LaneChange'):
 
         self._direction = direction
         self._distance_same_lane = distance_same_lane
         self._distance_other_lane = distance_other_lane
         self._distance_lane_change = distance_lane_change
+        self._lane_changes = lane_changes
 
         self._target_lane_id = None
         self._distance_new_lane = 0
@@ -1636,7 +1646,7 @@ class LaneChange(WaypointFollower):
         # calculate plan with scenario_helper function
         self._plan, self._target_lane_id = generate_target_waypoint_list_multilane(
             position_actor, self._direction, self._distance_same_lane,
-            self._distance_other_lane, self._distance_lane_change, check='true')
+            self._distance_other_lane, self._distance_lane_change, check=True, lane_changes=self._lane_changes)
         super(LaneChange, self).initialise()
 
     def update(self):
@@ -1645,6 +1655,9 @@ class LaneChange(WaypointFollower):
         current_position_actor = CarlaDataProvider.get_map().get_waypoint(self._actor.get_location())
         current_lane_id = current_position_actor.lane_id
 
+        if not self._pos_before_lane_change:
+            self._pos_before_lane_change = current_position_actor.transform.location
+
         if current_lane_id == self._target_lane_id:
             # driving on new lane
             distance = current_position_actor.transform.location.distance(self._pos_before_lane_change)
@@ -1652,9 +1665,6 @@ class LaneChange(WaypointFollower):
             if distance > self._distance_other_lane:
                 # long enough distance on new lane --> SUCCESS
                 status = py_trees.common.Status.SUCCESS
-        else:
-            # no lane change yet
-            self._pos_before_lane_change = current_position_actor.transform.location
 
         return status
 
