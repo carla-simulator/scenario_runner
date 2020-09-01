@@ -259,58 +259,88 @@ def generate_target_waypoint_list(waypoint, turn=0):
 def generate_target_waypoint_list_multilane(waypoint, change='left',
                                             distance_same_lane=10,
                                             distance_other_lane=25,
-                                            total_lane_change_distance=25, check='true'):
+                                            total_lane_change_distance=25, check=True,
+                                            lane_changes=1,
+                                            step_distance=2):
     """
     This methods generates a waypoint list which leads the vehicle to a parallel lane.
     The change input must be 'left' or 'right', depending on which lane you want to change.
 
-    The step distance between waypoints on the same lane is 2m.
-    The step distance between the lane change is set to 25m.
+    The default step distance between waypoints on the same lane is 2m.
+    The default step distance between the lane change is set to 25m.
 
     @returns a waypoint list from the starting point to the end point on a right or left parallel lane.
+    The list might break before reaching the end point, if the asked behavior is impossible.
     """
+
     plan = []
     plan.append((waypoint, RoadOption.LANEFOLLOW))  # start position
 
-    step_distance = 2
-
-    # check if lane change possible
-    if check == 'true':
-        lane_change_possibilities = ['Left', 'Right', 'Both']
-        if str(waypoint.lane_change) not in lane_change_possibilities:
-            # ERROR, lane change is not possible
-            return None
+    target_lane_id = waypoint.lane_id
+    lane_change_possibilities = ['Left', 'Right', 'Both']
+    option = RoadOption.LANEFOLLOW
 
     # same lane
     distance = 0
     while distance < distance_same_lane:
-        next_wp = plan[-1][0].next(step_distance)
-        distance += next_wp[0].transform.location.distance(plan[-1][0].transform.location)
-        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+        next_wps = plan[-1][0].next(step_distance)
+        if not next_wps:
+            print("No next 1")
+            return plan, target_lane_id
+        next_wp = next_wps[0]
+        distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
+        plan.append((next_wp, RoadOption.LANEFOLLOW))
 
-    target_lane_id = None
     if change == 'left':
-        # go left
-        wp_left = plan[-1][0].get_left_lane()
-        target_lane_id = wp_left.lane_id
-        next_wp = wp_left.next(total_lane_change_distance)
-        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+        option = RoadOption.CHANGELANELEFT
     elif change == 'right':
-        # go right
-        wp_right = plan[-1][0].get_right_lane()
-        target_lane_id = wp_right.lane_id
-        next_wp = wp_right.next(total_lane_change_distance)
-        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+        option = RoadOption.CHANGELANERIGHT
     else:
         # ERROR, input value for change must be 'left' or 'right'
-        return None
+        return plan, target_lane_id
+
+    lane_changes_done = 0
+    lane_change_distance = total_lane_change_distance / lane_changes
+
+    while lane_changes_done < lane_changes:
+
+        # 1) Get the next wp
+        next_wps = plan[-1][0].next(lane_change_distance)
+        if not next_wps:
+            print("No next 2")
+            return plan, target_lane_id
+        next_wp = next_wps[0]
+
+        # 2) Get the side lane
+        if change == 'left':
+            if check and str(next_wp.lane_change) not in ['Left', 'Both']:
+                print("check left")
+                break
+            side_wp = next_wp.get_left_lane()
+        else:
+            if check and str(next_wp.lane_change) not in ['Right', 'Both']:
+                print("check right")
+                break
+            side_wp = next_wp.get_right_lane()
+
+        if not side_wp or side_wp.lane_type != carla.LaneType.Driving:
+            print("No side")
+            break
+
+        plan.append((side_wp, option))
+
+        lane_changes_done += 1
 
     # other lane
     distance = 0
     while distance < distance_other_lane:
-        next_wp = plan[-1][0].next(step_distance)
-        distance += next_wp[0].transform.location.distance(plan[-1][0].transform.location)
-        plan.append((next_wp[0], RoadOption.LANEFOLLOW))
+        next_wps = plan[-1][0].next(step_distance)
+        if not next_wps:
+            print("No next 3")
+            return plan, target_lane_id
+        next_wp = next_wps[0]
+        distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
+        plan.append((next_wp, RoadOption.LANEFOLLOW))
 
     return plan, target_lane_id
 
