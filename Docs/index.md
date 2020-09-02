@@ -27,15 +27,15 @@ CARLA forum</a>
         — Tutorial on how to create a new scenario using ScenarioRunner.  
     [__Metrics module__](metrics_module.md)
         — Explanation of the metrics module.  
-    [__F.A.Q.__](faq.md)
+    [__F.A.Q.__](FAQ.md)
         — Some of the most frequent installation issues.  
-    [__Release notes__](release_notes.md)
+    [__Release notes__](CHANGELOG.md)
         — Features, fixes and other changes listed per release.  
   </p>
 
 ## References
   <p style="padding-left:30px;line-height:1.8">
-    [__List of scenarios_](list_of_scenarios.md)
+    [__List of scenarios__](list_of_scenarios.md)
         — Example scenarios available in ScenarioRunner.  
     [__OpenScenario support__](getting_started.md)
         — Support status of OpenSCENARIO features.  
