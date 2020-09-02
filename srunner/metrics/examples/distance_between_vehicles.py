@@ -15,7 +15,6 @@ the recorder
 """
 
 import math
-# import json
 import matplotlib.pyplot as plt
 
 from srunner.metrics.examples.basic_metric import BasicMetric
@@ -62,14 +61,9 @@ class DistanceBetweenVehicles(BasicMetric):
             dist_list.append(dist)
             frames_list.append(i)
 
-        # 1) Use matplotlib to show the results
+        # Use matplotlib to show the results
         plt.plot(frames_list, dist_list)
         plt.ylabel('Distance [m]')
         plt.xlabel('Frame number')
         plt.title('Distance between the ego vehicle and the adversary over time')
         plt.show()
-
-        # 2) Save the results to a json file
-        # results = {'frames': frames_list, 'distance': dist_list}
-        # with open('srunner/metrics/data/DistanceBetweenVehicles_results.json', 'w') as fw:
-        #     json.dump(results, fw, sort_keys=False, indent=4)

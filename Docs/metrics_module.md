@@ -103,17 +103,12 @@ Let's dig a little bit into the code itself to show how to use the log class:
             dist_list.append(dist)
             frames_list.append(i)
 
-        # 1) Use matplotlib to show the results
+        # Use matplotlib to show the results
         plt.plot(frames_list, dist_list)
         plt.ylabel('Distance [m]')
         plt.xlabel('Frame number')
         plt.title('Distance between the ego vehicle and the adversary over time')
         plt.show()
-
-        # 2) Save the results to a json file
-        # results = {'frames': frames_list, 'distance': dist_list}
-        # with open('srunner/metrics/data/DistanceBetweenVehicles_results.json', 'w') as fw:
-        #     json.dump(results, fw, sort_keys=False, indent=4)
     ```
 
 As previously explained, all metrics are childs of *BasicMetric*, and this one is no exception. The only required function for the metric to work is *_create_metric()*, which has three arguments:
@@ -127,7 +122,6 @@ This class is an example of a possible metric related to the *FollowLeadingVehic
 To do so, the first thing that's needed are the id's of the two vehicles. This can be done by the log functions *get_ego_vehicle_id()* and *get_actor_ids_with_role_name("scenario")[0]*. With their ids, the frames where they were both alive can be gotten, using *get_actor_alive_frames(actor_id)*. Now everything is ready to loop through those frames, get their transforms and calculate the distance. To get the transform, *get_actor_transform(actor_id, frame)* is used. As a quick note, the vertical condition of the adversary is to only take into account the moments where the adversary was driving normally.
 
 Lastly, we just plot the results, which creates the window previously shown.
-
 
 ### Accessing the recorder
 
