@@ -1013,6 +1013,7 @@ class OpenScenarioParser(object):
                     atomic = ChangeActorLateralMotion(actor,
                                                       direction="left" if target_lane_rel < 0 else "right",
                                                       distance_lane_change=distance,
+                                                      distance_other_lane=1000,
                                                       name=maneuver_name)
                 else:
                     raise AttributeError("Unknown lateral action")

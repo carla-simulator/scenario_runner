@@ -92,7 +92,8 @@ class SimpleVehicleControl(BasicControl):
             bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.other.obstacle')
             bp.set_attribute('distance', '250')
             if args and 'proximity_threshold' in args:
-                bp.set_attribute('distance', args['proximity_threshold'])
+                self._proximity_threshold = float(args['proximity_threshold'])
+                bp.set_attribute('distance', str(max(float(args['proximity_threshold']), 250)))
             bp.set_attribute('hit_radius', '1')
             bp.set_attribute('only_dynamics', 'True')
             self._obstacle_sensor = CarlaDataProvider.get_world().spawn_actor(
@@ -194,9 +195,15 @@ class SimpleVehicleControl(BasicControl):
             if direction_norm < 2.0:
                 self._generated_waypoint_list = self._generated_waypoint_list[1:]
         else:
+            # When changing from "free" driving without pre-defined waypoints to a defined route with waypoints
+            # it may happen that the first few waypoints are too close to the ego vehicle for obtaining a
+            # reasonable control command. Therefore, we drop these waypoints first.
+            while self._waypoints and self._waypoints[0].location.distance(self._actor.get_location()) < 0.5:
+                self._waypoints = self._waypoints[1:]
+
             self._reached_goal = False
             direction_norm = self._set_new_velocity(self._waypoints[0].location)
-            if direction_norm < 2.0:
+            if direction_norm < 4.0:
                 self._waypoints = self._waypoints[1:]
                 if not self._waypoints:
                     self._reached_goal = True
@@ -247,8 +254,13 @@ class SimpleVehicleControl(BasicControl):
 
         # set new angular velocity
         current_yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw
-        new_yaw = CarlaDataProvider.get_map().get_waypoint(next_location).transform.rotation.yaw
-        delta_yaw = new_yaw - current_yaw
+        # When we have a waypoint list, use the direction between the waypoints to calculate the heading (change)
+        # otherwise use the waypoint heading directly
+        if self._waypoints:
+            delta_yaw = math.degrees(math.atan2(direction.y, direction.x)) - current_yaw
+        else:
+            new_yaw = CarlaDataProvider.get_map().get_waypoint(next_location).transform.rotation.yaw
+            delta_yaw = new_yaw - current_yaw
 
         if math.fabs(delta_yaw) > 360:
             delta_yaw = delta_yaw % 360
