@@ -730,9 +730,6 @@ class ChangeActorLateralMotion(AtomicBehavior):
         current_position_actor = CarlaDataProvider.get_map().get_waypoint(self._actor.get_location())
         current_lane_id = current_position_actor.lane_id
 
-        if not self._pos_before_lane_change:
-            self._pos_before_lane_change = current_position_actor.transform.location
-
         if current_lane_id == self._target_lane_id:
             # driving on new lane
             distance = current_position_actor.transform.location.distance(self._pos_before_lane_change)
@@ -740,6 +737,9 @@ class ChangeActorLateralMotion(AtomicBehavior):
             if distance > self._distance_other_lane:
                 # long enough distance on new lane --> SUCCESS
                 new_status = py_trees.common.Status.SUCCESS
+        else:
+            self._pos_before_lane_change = current_position_actor.transform.location
+
         return new_status
 
 
@@ -1670,9 +1670,6 @@ class LaneChange(WaypointFollower):
         current_position_actor = CarlaDataProvider.get_map().get_waypoint(self._actor.get_location())
         current_lane_id = current_position_actor.lane_id
 
-        if not self._pos_before_lane_change:
-            self._pos_before_lane_change = current_position_actor.transform.location
-
         if current_lane_id == self._target_lane_id:
             # driving on new lane
             distance = current_position_actor.transform.location.distance(self._pos_before_lane_change)
@@ -1680,6 +1677,8 @@ class LaneChange(WaypointFollower):
             if distance > self._distance_other_lane:
                 # long enough distance on new lane --> SUCCESS
                 status = py_trees.common.Status.SUCCESS
+        else:
+            self._pos_before_lane_change = current_position_actor.transform.location
 
         return status
 
