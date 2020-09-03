@@ -30,6 +30,8 @@ from py_trees.blackboard import Blackboard
 import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
+from agents.navigation.global_route_planner import GlobalRoutePlanner
+from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -599,6 +601,109 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         return new_status
 
+
+class ChangeActorWaypointsToReachPosition(AtomicBehavior):
+
+    """
+    Atomic to change the waypoints for an actor controller in order to reach
+    a given position.
+
+    The behavior is in RUNNING state until the last waypoint is reached,
+    or if a second ChangeActorWaypointsToReachPosition atomic for the same actor is triggered.
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        position (carla.Transform): CARLA transform to be reached by the actor.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorWaypointsToReachPosition'.
+
+    Attributes:
+        _waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        _end_transform (carla.Transform): Final position (CARLA transform).
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+    """
+
+    def __init__(self, actor, position, name="ChangeActorWaypointsToReachPosition"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorWaypointsToReachPosition, self).__init__(name, actor)
+
+        self._waypoints = []
+        self._start_time = None
+
+        self._end_transform = position
+
+        town_map = CarlaDataProvider.get_map()
+        dao = GlobalRoutePlannerDAO(town_map, 2)
+        self._grp = GlobalRoutePlanner(dao)
+        self._grp.setup()
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Generate a waypoint list (route) which representes the route. Set
+        this waypoint list for the actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        # get start position
+        position_actor = CarlaDataProvider.get_location(self._actor)
+
+        # calculate plan with global_route_planner function
+        plan = self._grp.trace_route(position_actor, self._end_transform.location)
+
+        for elem in plan:
+            self._waypoints.append(elem[0].transform)
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+
+        actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
+
+        super(ChangeActorWaypointsToReachPosition, self).initialise()
+
+    def update(self):
+        """
+        Check the actor's state along the waypoint route.
+
+        returns:
+            py_trees.common.Status.SUCCESS, if the final waypoint was reached, or
+                                            if another ChangeActorWaypoints atomic for the same actor was triggered.
+            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
+            py_trees.common.Status.FAILURE, else.
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        new_status = py_trees.common.Status.RUNNING
+
+        if actor_dict[self._actor.id].check_reached_waypoint_goal():
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
 
 class ChangeActorLateralMotion(AtomicBehavior):
 

@@ -93,6 +93,20 @@ class NpcVehicleControl(BasicControl):
             self._reached_goal = True
 
         self._actor.apply_control(control)
+        world = CarlaDataProvider.get_world()
+
+        i = 0
+        for wp, _ in self._local_planner._waypoints_queue:
+            if i < 10:
+                world.debug.draw_point(wp.transform.location + carla.Location(z=1), life_time=0.1, size=0.1)
+            else:
+                break
+            i += 1
+
+        if self._local_planner._waypoint_buffer:
+            buffer = self._local_planner._waypoint_buffer
+            for target, _ in buffer:
+                world.debug.draw_point(target.transform.location + carla.Location(z=1), life_time=0.1, size=0.1, color=carla.Color(0,0,0))
 
         if self._init_speed:
             current_speed = math.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
