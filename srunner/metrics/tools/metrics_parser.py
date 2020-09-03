@@ -175,7 +175,7 @@ def parse_scene_lights(info):
     blue = int(float(info[9][:-1]) * 255)
 
     scene_light = carla.LightState(
-        int(info[5]),
+        int(float(info[5])),
         carla.Color(red, green, blue),
         carla.LightGroup.NONE,
         bool(info[3])

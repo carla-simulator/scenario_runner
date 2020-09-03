@@ -64,5 +64,5 @@ class DistanceToLaneCenter(BasicMetric):
 
         # Save the results to a file
         results = {'frames': frames_list, 'distance': dist_list}
-        with open('srunner/metrics/data/DistanceToLaneCenter_Result.json', 'w') as fw:
+        with open('srunner/metrics/data/DistanceToLaneCenter_results.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

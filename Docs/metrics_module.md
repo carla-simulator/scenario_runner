@@ -183,7 +183,7 @@ Now everything is ready to loop through those frames, get their transforms, and 
         dist_list.append(dist)
 ```
 !!! Note
-    The vertical condition of the adversary is only taken into account when the adversary was driving normally.
+    The vertical condition of the adversary is to only take into account the adversary when it is driving normally.
 
 Lastly, use [matplotlib](https://matplotlib.org/) to define which should be the output of the metric when running `metrics_manager.py`.  
 
