@@ -96,6 +96,7 @@
 * Fixed access to private member of CARLA LocalPlanner inside OSC NpcVehicleControl
 * Fixed bug causing LaneChange to break the simulation if the asked lane change was impossible, instead of correctly stopping it
 * Fixed bug causing ChangeLane scenarios to never end
+* Fixed handling of OSC LanePosition (#625)
 ### :ghost: Maintenance
 * Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.
 
