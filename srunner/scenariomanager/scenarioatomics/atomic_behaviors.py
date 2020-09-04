@@ -602,7 +602,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         return new_status
 
 
-class ChangeActorWaypointsToReachPosition(AtomicBehavior):
+class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
 
     """
     Atomic to change the waypoints for an actor controller in order to reach
@@ -628,10 +628,7 @@ class ChangeActorWaypointsToReachPosition(AtomicBehavior):
         """
         Setup parameters
         """
-        super(ChangeActorWaypointsToReachPosition, self).__init__(name, actor)
-
-        self._waypoints = []
-        self._start_time = None
+        super(ChangeActorWaypointsToReachPosition, self).__init__(actor, None)
 
         self._end_transform = position
 
@@ -661,19 +658,6 @@ class ChangeActorWaypointsToReachPosition(AtomicBehavior):
         for elem in plan:
             self._waypoints.append(elem[0].transform)
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
-
-        if not actor_dict or not self._actor.id in actor_dict:
-            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
-
-        self._start_time = GameTime.get_time()
-
-        actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
-
         super(ChangeActorWaypointsToReachPosition, self).initialise()
 
     def update(self):
@@ -682,28 +666,12 @@ class ChangeActorWaypointsToReachPosition(AtomicBehavior):
 
         returns:
             py_trees.common.Status.SUCCESS, if the final waypoint was reached, or
-                                            if another ChangeActorWaypoints atomic for the same actor was triggered.
+                                            if another ChangeActorWaypointsToReachPosition atomic for the same actor was triggered.
             py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
             py_trees.common.Status.FAILURE, else.
         """
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        return super(ChangeActorWaypointsToReachPosition, self).update()
 
-        if not actor_dict or not self._actor.id in actor_dict:
-            return py_trees.common.Status.FAILURE
-
-        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
-            return py_trees.common.Status.SUCCESS
-
-        new_status = py_trees.common.Status.RUNNING
-
-        if actor_dict[self._actor.id].check_reached_waypoint_goal():
-            new_status = py_trees.common.Status.SUCCESS
-
-        return new_status
 
 class ChangeActorLateralMotion(AtomicBehavior):
 
