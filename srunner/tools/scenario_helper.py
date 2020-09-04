@@ -333,7 +333,6 @@ def generate_target_waypoint_list_multilane(waypoint, change='left',  # pylint: 
         distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
         plan.append((next_wp, RoadOption.LANEFOLLOW))
 
-
     target_lane_id = plan[-1][0].lane_id
 
     return plan, target_lane_id
