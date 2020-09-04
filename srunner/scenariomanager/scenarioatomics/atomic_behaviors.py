@@ -522,8 +522,11 @@ class ChangeActorWaypoints(AtomicBehavior):
     """
     Atomic to change the waypoints for an actor controller.
 
-    The behavior is in RUNNING state until the last waypoint is reached,
-    or if a second ChangeActorWaypoints atomic for the same actor is triggered.
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
@@ -608,8 +611,11 @@ class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
     Atomic to change the waypoints for an actor controller in order to reach
     a given position.
 
-    The behavior is in RUNNING state until the last waypoint is reached,
-    or if a second ChangeActorWaypointsToReachPosition atomic for the same actor is triggered.
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
@@ -622,13 +628,14 @@ class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
         _end_transform (carla.Transform): Final position (CARLA transform).
         _start_time (float): Start time of the atomic [s].
             Defaults to None.
+        _grp (GlobalPlanner): global planner instance of the town
     """
 
     def __init__(self, actor, position, name="ChangeActorWaypointsToReachPosition"):
         """
         Setup parameters
         """
-        super(ChangeActorWaypointsToReachPosition, self).__init__(actor, None)
+        super(ChangeActorWaypointsToReachPosition, self).__init__(actor, [])
 
         self._end_transform = position
 
@@ -678,9 +685,11 @@ class ChangeActorLateralMotion(AtomicBehavior):
     """
     Atomic to change the waypoints for an actor controller.
 
-    The behavior is in RUNNING state until the driven distance exceeds
-    distance_lane_change, or if a second ChangeActorLateralMotion atomic
-    for the same actor is triggered.
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
