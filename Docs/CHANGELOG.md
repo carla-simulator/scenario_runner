@@ -93,6 +93,7 @@
 * Fixed bug with ending roads near stop signals to break the simulation
 * Fixed exception bug in spawn function of CarlaDataProvider
 * Fixed access to private member of CARLA LocalPlanner inside OSC NpcVehicleControl
+* Fixed handling of OSC LanePosition (#625)
 ### :ghost: Maintenance
 * Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.
 

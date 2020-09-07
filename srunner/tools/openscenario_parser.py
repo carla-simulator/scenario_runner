@@ -562,7 +562,7 @@ class OpenScenarioParser(object):
 
             transform = waypoint.transform
             if lane_pos.find('Orientation') is not None:
-                orientation = rel_pos.find('Orientation')
+                orientation = lane_pos.find('Orientation')
                 dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
                 dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
                 droll = math.degrees(float(orientation.attrib.get('r', 0)))
