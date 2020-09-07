@@ -654,7 +654,6 @@ class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
-        actor_dict = {}
 
         # get start position
         position_actor = CarlaDataProvider.get_location(self._actor)
@@ -666,18 +665,6 @@ class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
             self._waypoints.append(elem[0].transform)
 
         super(ChangeActorWaypointsToReachPosition, self).initialise()
-
-    def update(self):
-        """
-        Check the actor's state along the waypoint route.
-
-        returns:
-            py_trees.common.Status.SUCCESS, if the final waypoint was reached, or
-                                            if another ChangeActorWaypointsToReachPosition atomic for the same actor was triggered.
-            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
-            py_trees.common.Status.FAILURE, else.
-        """
-        return super(ChangeActorWaypointsToReachPosition, self).update()
 
 
 class ChangeActorLateralMotion(AtomicBehavior):
