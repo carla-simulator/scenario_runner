@@ -25,7 +25,7 @@ Derive from RosAgent and implement the sensors() method.
         def sensors(self):
             return [ <sensor-definition> ]
 
-As an example for the sensor definition, see [HumanAgent.py](../srunner/autoagents/HumanAgent.py).
+As an example for the sensor definition, see [HumanAgent.py](../srunner/autoagents/human_agent.py).
 
 
 ### Define Startup
