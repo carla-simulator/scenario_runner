@@ -4,7 +4,7 @@
   <ParameterDeclarations/>
   <CatalogLocations/>
   <RoadNetwork>
-    <LogicFile filepath="Town05"/>
+    <LogicFile filepath="Town01"/>
     <SceneGraphFile filepath=""/>
   </RoadNetwork>
   <Entities>
@@ -65,7 +65,7 @@
           <PrivateAction>
             <TeleportAction>
               <Position>
-                <WorldPosition x="100.1" y="-1.8" z="0" h="3.14"/>
+                <LanePosition roadId="4" laneId="-1" offset="1.0" s="48.58"/>
               </Position>
             </TeleportAction>
           </PrivateAction>
@@ -93,7 +93,7 @@
           <PrivateAction>
             <TeleportAction>
               <Position>
-                <WorldPosition x="78.1" y="-1.8" z="0" h="3.14"/>
+                <WorldPosition x="190" y="133" z="0" h="0"/>
               </Position>
             </TeleportAction>
           </PrivateAction>
@@ -122,7 +122,7 @@
               <SpeedAction>
                 <SpeedActionDynamics dynamicsShape="step" value="20" dynamicsDimension="distance"/>
                 <SpeedActionTarget>
-                  <AbsoluteTargetSpeed value="10"/>
+                  <AbsoluteTargetSpeed value="1"/>
                 </SpeedActionTarget>
               </SpeedAction>
             </LongitudinalAction>
@@ -137,69 +137,30 @@
             <EntityRef entityRef="adversary"/>
           </Actors>
           <Maneuver name="FollowLeadingVehicleManeuver">
-            <!-- <Event name="AdversaryChangesLane" priority="overwrite">
-              <Action name="AdversaryChangesLane">
-                <PrivateAction>
-                  <LateralAction>
-                    <LaneChangeAction>
-                      <LaneChangeActionDynamics dynamicsShape="linear" value="25" dynamicsDimension="distance"/>
-                      <LaneChangeTarget>
-                        <RelativeTargetLane entityRef="adversary" value="1"/>
-                      </LaneChangeTarget>
-                    </LaneChangeAction>
-                  </LateralAction>
-                </PrivateAction>
-              </Action>
-              <StartTrigger>
-                <ConditionGroup>
-                  <Condition name="AfterAdversaryAccelerates" delay="0" conditionEdge="rising">
-                    <ByValueCondition>
-                      <SimulationTimeCondition value="0" rule="greaterThan"/>
-                    </ByValueCondition>
-                  </Condition>
-                </ConditionGroup>
-              </StartTrigger>
-            </Event> -->
             <Event name="LeadingVehicleKeepsVelocity" priority="overwrite">
               <Action name="LeadingVehicleKeepsVelocity">
                 <PrivateAction>
-                  <RoutingAction>
-                    <AcquirePositionAction>
-                      <Position>
-                        <WorldPosition x="-43" y="66" z="0" h="0"/>
-                      </Position>
-                    </AcquirePositionAction>
-                  </RoutingAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="step" value="10000" dynamicsDimension="distance"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="10"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
                 </PrivateAction>
               </Action>
               <StartTrigger>
                 <ConditionGroup>
                   <Condition name="StartConditionLeadingVehicleKeepsVelocity" delay="0" conditionEdge="rising">
-                    <ByValueCondition>
-                      <SimulationTimeCondition value="0" rule="greaterThan"/>
-                    </ByValueCondition>
-                  </Condition>
-                </ConditionGroup>
-              </StartTrigger>
-            </Event>
-            <Event name="asdasd" priority="overwrite">
-              <Action name="dsfadsasd">
-                <PrivateAction>
-                  <RoutingAction>
-                    <AcquirePositionAction>
-                      <Position>
-                        <WorldPosition x="-154" y="2" z="0" h="0"/>
-                      </Position>
-                    </AcquirePositionAction>
-                  </RoutingAction>
-                </PrivateAction>
-              </Action>
-              <StartTrigger>
-                <ConditionGroup>
-                  <Condition name="ewrtrw" delay="0" conditionEdge="rising">
-                    <ByValueCondition>
-                      <SimulationTimeCondition value="20" rule="greaterThan"/>
-                    </ByValueCondition>
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="hero"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <RelativeDistanceCondition entityRef="adversary" relativeDistanceType="cartesianDistance" value="20.0" freespace="false" rule="lessThan"/>
+                      </EntityCondition>
+                    </ByEntityCondition>
                   </Condition>
                 </ConditionGroup>
               </StartTrigger>
