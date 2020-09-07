@@ -330,7 +330,6 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         position, actor_list=self.other_actors + self.ego_vehicles)
                     if transform:
                         actor_transform = transform
-                        print(transform)
 
         if not actor_found:
             # pylint: disable=line-too-long
