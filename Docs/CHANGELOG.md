@@ -42,6 +42,7 @@
     - Added support for EndOfRoadCondition
     - Added support for TimeHeadwayCondition
     - Added support for TrafficSignalCondition
+    - Added support for AcquirePositionAction
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
