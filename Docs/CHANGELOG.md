@@ -25,7 +25,8 @@
 * The new weather parameters (related to fog) are now correctly read when running scenarios outside routes.
 * Enable weather animation during scenario execution (requires ephem pip package)
 * Changed manual control to be in par with the CARLA version. Among others, added vehicle lights, recording and some new sensors
-* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction) 
+* Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction)
+* Added a new metrics module, which gives access to all the information about a scenario in order to allow the user to extract any desired information about the simulation. More information [here](metrics_module.md)
 * OpenSCENARIO support:
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
