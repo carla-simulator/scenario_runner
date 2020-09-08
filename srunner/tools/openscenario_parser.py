@@ -29,6 +29,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeActorTargetSpeed,
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
+                                                                      ChangeActorWaypointsToReachPosition,
                                                                       ChangeActorLateralMotion,
                                                                       Idle)
 # pylint: disable=unused-import
@@ -1042,7 +1043,10 @@ class OpenScenarioParser(object):
                 elif private_action.find('FollowTrajectoryAction') is not None:
                     raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
                 elif private_action.find('AcquirePositionAction') is not None:
-                    raise NotImplementedError("Private AcquirePosition actions are not yet supported")
+                    route_action = private_action.find('AcquirePositionAction')
+                    osc_position = route_action.find('Position')
+                    position = OpenScenarioParser.convert_position_to_transform(osc_position)
+                    atomic = ChangeActorWaypointsToReachPosition(actor, position=position, name=maneuver_name)
                 else:
                     raise AttributeError("Unknown private routing action")
             else:

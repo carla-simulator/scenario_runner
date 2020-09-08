@@ -30,6 +30,8 @@ from py_trees.blackboard import Blackboard
 import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
+from agents.navigation.global_route_planner import GlobalRoutePlanner
+from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -520,8 +522,11 @@ class ChangeActorWaypoints(AtomicBehavior):
     """
     Atomic to change the waypoints for an actor controller.
 
-    The behavior is in RUNNING state until the last waypoint is reached,
-    or if a second ChangeActorWaypoints atomic for the same actor is triggered.
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
@@ -600,14 +605,78 @@ class ChangeActorWaypoints(AtomicBehavior):
         return new_status
 
 
+class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
+
+    """
+    Atomic to change the waypoints for an actor controller in order to reach
+    a given position.
+
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        position (carla.Transform): CARLA transform to be reached by the actor.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorWaypointsToReachPosition'.
+
+    Attributes:
+        _waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        _end_transform (carla.Transform): Final position (CARLA transform).
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+        _grp (GlobalPlanner): global planner instance of the town
+    """
+
+    def __init__(self, actor, position, name="ChangeActorWaypointsToReachPosition"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorWaypointsToReachPosition, self).__init__(actor, [])
+
+        self._end_transform = position
+
+        town_map = CarlaDataProvider.get_map()
+        dao = GlobalRoutePlannerDAO(town_map, 2)
+        self._grp = GlobalRoutePlanner(dao)
+        self._grp.setup()
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Generate a waypoint list (route) which representes the route. Set
+        this waypoint list for the actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+
+        # get start position
+        position_actor = CarlaDataProvider.get_location(self._actor)
+
+        # calculate plan with global_route_planner function
+        plan = self._grp.trace_route(position_actor, self._end_transform.location)
+
+        for elem in plan:
+            self._waypoints.append(elem[0].transform)
+
+        super(ChangeActorWaypointsToReachPosition, self).initialise()
+
+
 class ChangeActorLateralMotion(AtomicBehavior):
 
     """
     Atomic to change the waypoints for an actor controller.
 
-    The behavior is in RUNNING state until the driven distance exceeds
-    distance_lane_change, or if a second ChangeActorLateralMotion atomic
-    for the same actor is triggered.
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
