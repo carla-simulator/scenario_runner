@@ -43,6 +43,7 @@
     - Added support for EndOfRoadCondition
     - Added support for TimeHeadwayCondition
     - Added support for TrafficSignalCondition
+    - Added support for AcquirePositionAction
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Created example scenarios to illustrate usage of controllers and weather changes
     - Extended LaneChangeAction to allow lane changes of multiple lanes
