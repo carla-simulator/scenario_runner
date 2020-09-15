@@ -409,7 +409,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
 
     @staticmethod
-    def create_blueprint(model, rolename='scenario', color=None, actor_category="car"):
+    def create_blueprint(model, rolename='scenario', color=None, actor_category="car", safe=False):
         """
         Function to setup the blueprint of an actor given its model and other relevant parameters
         """
@@ -430,7 +430,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         # Set the model
         try:
-            blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(model))
+            if safe:
+                blueprint_library = CarlaDataProvider._blueprint_library.filter(model)
+                blueprints = [x for x in blueprint_library if int(x.get_attribute('number_of_wheels')) == 4]
+                blueprint = CarlaDataProvider._rng.choice(blueprints)
+            else:
+                blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(model))
         except ValueError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
@@ -641,7 +646,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         for i in range(amount):
             # Get vehicle by model
-            blueprint = CarlaDataProvider.create_blueprint(model, rolename)
+            blueprint = CarlaDataProvider.create_blueprint(model, rolename, safe=True)
 
             if random_location:
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
