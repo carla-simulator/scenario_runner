@@ -30,6 +30,8 @@ from py_trees.blackboard import Blackboard
 import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
+from agents.navigation.global_route_planner import GlobalRoutePlanner
+from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -520,8 +522,11 @@ class ChangeActorWaypoints(AtomicBehavior):
     """
     Atomic to change the waypoints for an actor controller.
 
-    The behavior is in RUNNING state until the last waypoint is reached,
-    or if a second ChangeActorWaypoints atomic for the same actor is triggered.
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
@@ -600,14 +605,78 @@ class ChangeActorWaypoints(AtomicBehavior):
         return new_status
 
 
+class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
+
+    """
+    Atomic to change the waypoints for an actor controller in order to reach
+    a given position.
+
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        position (carla.Transform): CARLA transform to be reached by the actor.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorWaypointsToReachPosition'.
+
+    Attributes:
+        _waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        _end_transform (carla.Transform): Final position (CARLA transform).
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+        _grp (GlobalPlanner): global planner instance of the town
+    """
+
+    def __init__(self, actor, position, name="ChangeActorWaypointsToReachPosition"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorWaypointsToReachPosition, self).__init__(actor, [])
+
+        self._end_transform = position
+
+        town_map = CarlaDataProvider.get_map()
+        dao = GlobalRoutePlannerDAO(town_map, 2)
+        self._grp = GlobalRoutePlanner(dao)
+        self._grp.setup()
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Generate a waypoint list (route) which representes the route. Set
+        this waypoint list for the actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+
+        # get start position
+        position_actor = CarlaDataProvider.get_location(self._actor)
+
+        # calculate plan with global_route_planner function
+        plan = self._grp.trace_route(position_actor, self._end_transform.location)
+
+        for elem in plan:
+            self._waypoints.append(elem[0].transform)
+
+        super(ChangeActorWaypointsToReachPosition, self).initialise()
+
+
 class ChangeActorLateralMotion(AtomicBehavior):
 
     """
     Atomic to change the waypoints for an actor controller.
 
-    The behavior is in RUNNING state until the driven distance exceeds
-    distance_lane_change, or if a second ChangeActorLateralMotion atomic
-    for the same actor is triggered.
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
@@ -615,6 +684,8 @@ class ChangeActorLateralMotion(AtomicBehavior):
             Defaults to 'left'.
         distance_lane_change (float): Distance of the lance change [meters].
             Defaults to 25.
+        distance_other_lane (float): Driven distance after the lange change [meters].
+            Defaults to 100.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorLateralMotion'.
 
@@ -634,7 +705,8 @@ class ChangeActorLateralMotion(AtomicBehavior):
             Defaults to None.
     """
 
-    def __init__(self, actor, direction='left', distance_lane_change=25, name="ChangeActorLateralMotion"):
+    def __init__(self, actor, direction='left', distance_lane_change=25,
+                 distance_other_lane=100, name="ChangeActorLateralMotion"):
         """
         Setup parameters
         """
@@ -643,7 +715,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         self._waypoints = []
         self._direction = direction
         self._distance_same_lane = 5
-        self._distance_other_lane = 100
+        self._distance_other_lane = distance_other_lane
         self._distance_lane_change = distance_lane_change
         self._pos_before_lane_change = None
         self._target_lane_id = None
@@ -1036,7 +1108,8 @@ class ChangeAutoPilot(AtomicBehavior):
         super(ChangeAutoPilot, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._activate = activate
-        self._tm = CarlaDataProvider.get_client().get_trafficmanager()
+        self._tm = CarlaDataProvider.get_client().get_trafficmanager(
+            CarlaDataProvider.get_traffic_manager_port())
         self._parameters = parameters
 
     def update(self):
@@ -1939,6 +2012,55 @@ class ActorSink(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
         CarlaDataProvider.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
+
+
+class StartRecorder(AtomicBehavior):
+
+    """
+    Atomic that starts the CARLA recorder. Only one can be active
+    at a time, and if this isn't the case, the recorder will
+    automatically stop the previous one.
+
+    Args:
+        recorder_name (str): name of the file to write the recorded data.
+            Remember that a simple name will save the recording in
+            'CarlaUE4/Saved/'. Otherwise, if some folder appears in the name,
+            it will be considered an absolute path.
+        name (str): name of the behavior
+    """
+
+    def __init__(self, recorder_name, name="StartRecorder"):
+        """
+        Setup class members
+        """
+        super(StartRecorder, self).__init__(name)
+        self._client = CarlaDataProvider.get_client()
+        self._recorder_name = recorder_name
+
+    def update(self):
+        self._client.start_recorder(self._recorder_name)
+        return py_trees.common.Status.SUCCESS
+
+
+class StopRecorder(AtomicBehavior):
+
+    """
+    Atomic that stops the CARLA recorder.
+
+    Args:
+        name (str): name of the behavior
+    """
+
+    def __init__(self, name="StopRecorder"):
+        """
+        Setup class members
+        """
+        super(StopRecorder, self).__init__(name)
+        self._client = CarlaDataProvider.get_client()
+
+    def update(self):
+        self._client.stop_recorder()
+        return py_trees.common.Status.SUCCESS
 
 
 class TrafficLightManipulator(AtomicBehavior):

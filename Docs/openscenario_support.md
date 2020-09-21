@@ -221,7 +221,7 @@ contains of submodules, which are not listed, the support status applies to all 
 <tr>
 <td><small><code>LongitudinalAction</code></small><br><code>LongitudinalDistanceAction</code></td>
 <td>&#10060;</td>
-<td>&#9989;</td>
+<td>&#10060;</td>
 <td></td>
 <tr>
 <td><small><code>LongitudinalAction</code></small><br><code>SpeedAction</code></td>
@@ -246,7 +246,7 @@ contains of submodules, which are not listed, the support status applies to all 
 <tr>
 <td><small><code>RoutingAction</code></small><br><code>AcquirePositionAction</code></td>
 <td>&#10060;</td>
-<td>&#10060;</td>
+<td>&#9989;</td>
 <td></td>
 <tr>
 <td><small><code>RoutingAction</code></small><br><code>AssignRouteAction</code></td>

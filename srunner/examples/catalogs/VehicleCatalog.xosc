@@ -18,7 +18,9 @@
       </Properties>
     </Vehicle>
     <Vehicle name="vehicle.tesla.model3" vehicleCategory="car">
-      <ParameterDeclarations/>
+      <ParameterDeclarations>
+        <ParameterDeclaration name="carcolor" parameterType="string" value="0,0,0" />
+      </ParameterDeclarations>
       <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
       <BoundingBox>
         <Center x="1.5" y="0.0" z="0.9"/>
@@ -28,7 +30,9 @@
         <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3"/>
         <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3"/>
       </Axles>
-      <Properties/>
+      <Properties>
+        <Property name="color" value="$carcolor"/>
+      </Properties>
     </Vehicle>
   </Catalog>
 </OpenSCENARIO>

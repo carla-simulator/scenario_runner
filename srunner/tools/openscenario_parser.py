@@ -10,6 +10,7 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 """
 
 from distutils.util import strtobool
+import copy
 import datetime
 import math
 import operator
@@ -28,6 +29,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeActorTargetSpeed,
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
+                                                                      ChangeActorWaypointsToReachPosition,
                                                                       ChangeActorLateralMotion,
                                                                       Idle)
 # pylint: disable=unused-import
@@ -88,6 +90,7 @@ class OpenScenarioParser(object):
         "OFF": carla.TrafficLightState.Off,
     }
 
+    global_osc_parameters = dict()
     use_carla_coordinate_system = False
     osc_filepath = None
 
@@ -141,37 +144,117 @@ class OpenScenarioParser(object):
         OpenScenarioParser.use_carla_coordinate_system = True
 
     @staticmethod
-    def set_parameters(xml_tree):
+    def set_parameters(xml_tree, additional_parameter_dict=None):
         """
         Parse the xml_tree, and replace all parameter references
-        with the actual values
+        with the actual values.
+
+        Note: Parameter names must not start with "$", however when referencing a parameter the
+              reference has to start with "$".
+              https://releases.asam.net/OpenSCENARIO/1.0.0/ASAM_OpenSCENARIO_BS-1-2_User-Guide_V1-0-0.html#_re_use_mechanisms
 
         Args:
             xml_tree: Containing all nodes that should be updated
+            additional_parameter_dict (dictionary): Additional parameters as dict (key, value). Optional.
 
         returns:
-            updated xml_tree
+            updated xml_tree, dictonary containing all parameters and their values
         """
 
         parameter_dict = dict()
+        if additional_parameter_dict is not None:
+            parameter_dict = additional_parameter_dict
         parameters = xml_tree.find('ParameterDeclarations')
 
+        if parameters is None and not parameter_dict:
+            return xml_tree, parameter_dict
+
         if parameters is None:
-            return xml_tree
+            parameters = []
 
         for parameter in parameters:
             name = parameter.attrib.get('name')
             value = parameter.attrib.get('value')
-
             parameter_dict[name] = value
 
         for node in xml_tree.iter():
             for key in node.attrib:
-                for param in parameter_dict:
-                    if node.attrib[key] == param:
-                        node.attrib[key] = parameter_dict[param]
+                for param in sorted(parameter_dict, key=len, reverse=True):
+                    if "$" + param in node.attrib[key]:
+                        node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
 
-        return xml_tree
+        return xml_tree, parameter_dict
+
+    @staticmethod
+    def set_global_parameters(parameter_dict):
+        """
+        Set global_osc_parameter dictionary
+
+        Args:
+            parameter_dict (Dictionary): Input for global_osc_parameter
+        """
+        OpenScenarioParser.global_osc_parameters = parameter_dict
+
+    @staticmethod
+    def get_catalog_entry(catalogs, catalog_reference):
+        """
+        Get catalog entry referenced by catalog_reference included correct parameter settings
+
+        Args:
+            catalogs (Dictionary of dictionaries): List of all catalogs and their entries
+            catalog_reference (XML ElementTree): Reference containing the exact catalog to be used
+
+        returns:
+            Catalog entry (XML ElementTree)
+        """
+
+        entry = catalogs[catalog_reference.attrib.get("catalogName")][catalog_reference.attrib.get("entryName")]
+        entry_copy = copy.deepcopy(entry)
+        catalog_copy = copy.deepcopy(catalog_reference)
+        entry = OpenScenarioParser.assign_catalog_parameters(entry_copy, catalog_copy)
+
+        return entry
+
+    @staticmethod
+    def assign_catalog_parameters(entry_instance, catalog_reference):
+        """
+        Parse catalog_reference, and replace all parameter references
+        in entry_instance by the values provided in catalog_reference.
+
+        Not to be used from outside this class.
+
+        Args:
+            entry_instance (XML ElementTree): Entry to be updated
+            catalog_reference (XML ElementTree): Reference containing the exact parameter values
+
+        returns:
+            updated entry_instance with updated parameter values
+        """
+
+        parameter_dict = dict()
+        for elem in entry_instance.iter():
+            if elem.find('ParameterDeclarations') is not None:
+                parameters = elem.find('ParameterDeclarations')
+                for parameter in parameters:
+                    name = parameter.attrib.get('name')
+                    value = parameter.attrib.get('value')
+                    parameter_dict[name] = value
+
+        for parameter_assignments in catalog_reference.iter("ParameterAssignments"):
+            for parameter_assignment in parameter_assignments.iter("ParameterAssignment"):
+                parameter = parameter_assignment.attrib.get("parameterRef")
+                value = parameter_assignment.attrib.get("value")
+                parameter_dict[parameter] = value
+
+        for node in entry_instance.iter():
+            for key in node.attrib:
+                for param in sorted(parameter_dict, key=len, reverse=True):
+                    if "$" + param in node.attrib[key]:
+                        node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
+
+        OpenScenarioParser.set_parameters(entry_instance, OpenScenarioParser.global_osc_parameters)
+
+        return entry_instance
 
     @staticmethod
     def get_friction_from_env_action(xml_tree, catalogs):
@@ -188,9 +271,15 @@ class OpenScenarioParser(object):
         """
         set_environment = next(xml_tree.iter("EnvironmentAction"))
 
+        if sum(1 for _ in set_environment.iter("Weather")) != 0:
+            environment = set_environment.find("Environment")
+        elif set_environment.find("CatalogReference") is not None:
+            catalog_reference = set_environment.find("CatalogReference")
+            environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+
         friction = 1.0
 
-        road_condition = set_environment.iter("RoadCondition")
+        road_condition = environment.iter("RoadCondition")
         for condition in road_condition:
             friction = condition.attrib.get('frictionScaleFactor')
 
@@ -215,8 +304,7 @@ class OpenScenarioParser(object):
             environment = set_environment.find("Environment")
         elif set_environment.find("CatalogReference") is not None:
             catalog_reference = set_environment.find("CatalogReference")
-            environment = catalogs[catalog_reference.attrib.get(
-                "catalogName")][catalog_reference.attrib.get("entryName")]
+            environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
 
         weather = environment.find("Weather")
         sun = weather.find("Sun")
@@ -256,17 +344,25 @@ class OpenScenarioParser(object):
         Args:
             xml_tree: Containing the controller information,
                 or the reference to the catalog it is defined in.
-            catalogs: XML Catalogs that could contain the controller definition
+            catalogs: XML Catalogs that could contain the EnvironmentAction
 
         returns:
            module: Python module containing the controller implementation
            args: Dictonary with (key, value) parameters for the controller
         """
 
-        assign_action = xml_tree.find('AssignControllerAction')
+        assign_action = next(xml_tree.iter("AssignControllerAction"))
+
+        properties = None
+        if assign_action.find('Controller') is not None:
+            properties = assign_action.find('Controller').find('Properties')
+        elif assign_action.find("CatalogReference") is not None:
+            catalog_reference = assign_action.find("CatalogReference")
+            properties = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference).find('Properties')
+
         module = None
         args = {}
-        for prop in assign_action.find('Controller').find('Properties'):
+        for prop in properties:
             if prop.attrib.get('name') == "module":
                 module = prop.attrib.get('value')
             else:
@@ -278,6 +374,38 @@ class OpenScenarioParser(object):
                 raise NotImplementedError("Controller override actions are not yet supported")
 
         return module, args
+
+    @staticmethod
+    def get_route(xml_tree, catalogs):
+        """
+        Extract the route from the OSC XML or a catalog
+
+        Args:
+            xml_tree: Containing the route information,
+                or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the Route
+
+        returns:
+           waypoints: List of route waypoints
+        """
+        route = None
+
+        if xml_tree.find('Route') is not None:
+            route = xml_tree.find('Route')
+        elif xml_tree.find('CatalogReference') is not None:
+            catalog_reference = xml_tree.find("CatalogReference")
+            route = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+        else:
+            raise AttributeError("Unknown private FollowRoute action")
+
+        waypoints = []
+        if route is not None:
+            for waypoint in route.iter('Waypoint'):
+                position = waypoint.find('Position')
+                transform = OpenScenarioParser.convert_position_to_transform(position)
+                waypoints.append(transform)
+
+        return waypoints
 
     @staticmethod
     def convert_position_to_transform(position, actor_list=None):
@@ -434,7 +562,7 @@ class OpenScenarioParser(object):
 
             transform = waypoint.transform
             if lane_pos.find('Orientation') is not None:
-                orientation = rel_pos.find('Orientation')
+                orientation = lane_pos.find('Orientation')
                 dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
                 dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
                 droll = math.degrees(float(orientation.attrib.get('r', 0)))
@@ -886,6 +1014,7 @@ class OpenScenarioParser(object):
                     atomic = ChangeActorLateralMotion(actor,
                                                       direction="left" if target_lane_rel < 0 else "right",
                                                       distance_lane_change=distance,
+                                                      distance_other_lane=1000,
                                                       name=maneuver_name)
                 else:
                     raise AttributeError("Unknown lateral action")
@@ -907,24 +1036,17 @@ class OpenScenarioParser(object):
             elif private_action.find('RoutingAction') is not None:
                 private_action = private_action.find('RoutingAction')
                 if private_action.find('AssignRouteAction') is not None:
-                    private_action = private_action.find('AssignRouteAction')
-                    if private_action.find('Route') is not None:
-                        route = private_action.find('Route')
-                        waypoints = []
-                        for waypoint in route.iter('Waypoint'):
-                            position = waypoint.find('Position')
-                            transform = OpenScenarioParser.convert_position_to_transform(position)
-                            waypoints.append(transform)
-                        # @TODO: How to handle relative positions here? This might chance at runtime?!
-                        atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
-                    elif private_action.find('CatalogReference') is not None:
-                        raise NotImplementedError("CatalogReference private actions are not yet supported")
-                    else:
-                        raise AttributeError("Unknown private FollowRoute action")
+                    # @TODO: How to handle relative positions here? This might chance at runtime?!
+                    route_action = private_action.find('AssignRouteAction')
+                    waypoints = OpenScenarioParser.get_route(route_action, catalogs)
+                    atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                 elif private_action.find('FollowTrajectoryAction') is not None:
                     raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
                 elif private_action.find('AcquirePositionAction') is not None:
-                    raise NotImplementedError("Private AcquirePosition actions are not yet supported")
+                    route_action = private_action.find('AcquirePositionAction')
+                    osc_position = route_action.find('Position')
+                    position = OpenScenarioParser.convert_position_to_transform(osc_position)
+                    atomic = ChangeActorWaypointsToReachPosition(actor, position=position, name=maneuver_name)
                 else:
                     raise AttributeError("Unknown private routing action")
             else:
