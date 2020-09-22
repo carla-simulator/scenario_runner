@@ -72,6 +72,13 @@ class GameTime(object):
         """
         return GameTime._platform_timestamp
 
+    @staticmethod
+    def get_frame():
+        """
+        Returns elapsed game time
+        """
+        return GameTime._last_frame
+
 
 class SimulationTimeCondition(py_trees.behaviour.Behaviour):
 
