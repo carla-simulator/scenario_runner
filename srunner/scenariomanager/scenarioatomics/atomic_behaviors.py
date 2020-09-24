@@ -835,8 +835,8 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
         super(ActorTransformSetterToOSCPosition, self).initialise()
 
         if self._actor.is_alive:
-            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
-            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
 
     def update(self):
         """
@@ -1756,7 +1756,7 @@ class SetInitSpeed(AtomicBehavior):
 
         vx = math.cos(yaw) * self._init_speed
         vy = math.sin(yaw) * self._init_speed
-        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+        self._actor.set_target_velocity(carla.Vector3D(vx, vy, 0))
 
     def update(self):
         """
@@ -1866,8 +1866,8 @@ class ActorTransformSetter(AtomicBehavior):
 
     def initialise(self):
         if self._actor.is_alive:
-            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
-            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
             self._actor.set_transform(self._transform)
         super(ActorTransformSetter, self).initialise()
 
