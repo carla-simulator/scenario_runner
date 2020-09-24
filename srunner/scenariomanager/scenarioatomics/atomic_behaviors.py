@@ -460,6 +460,17 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         self._start_time = GameTime.get_time()
         self._start_location = CarlaDataProvider.get_location(self._actor)
 
+        if self._relative_actor:
+            relative_velocity = CarlaDataProvider.get_velocity(self._relative_actor)
+
+            # get target velocity
+            if self._value_type == 'delta':
+                self._target_speed = relative_velocity + self._value
+            elif self._value_type == 'factor':
+                self._target_speed = relative_velocity * self._value
+            else:
+                print('self._value_type must be delta or factor')
+
         actor_dict[self._actor.id].update_target_speed(self._target_speed, start_time=self._start_time)
 
         if self._init_speed:
