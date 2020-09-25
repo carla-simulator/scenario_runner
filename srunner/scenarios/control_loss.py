@@ -72,7 +72,7 @@ class ControlLoss(BasicScenario):
     def _initialize_actors(self, config):
         """
         Custom initialization
-        """ 
+        """
         if self._randomize:
             self._distance = random.randint(low=10, high=80, size=3)
             self._distance = sorted(self._distance)

@@ -7,10 +7,6 @@
 This module provides a human agent to control the ego vehicle via keyboard
 """
 
-import time
-from threading import Thread
-import cv2
-import numpy as np
 import json
 
 try:
@@ -64,6 +60,9 @@ class HumanInterface(object):
         pygame.display.flip()
 
     def quit_interface(self):
+        """
+        Stops the pygame window
+        """
         pygame.quit()
 
 
@@ -195,7 +194,7 @@ class KeyboardControl(object):
         if self._mode == "playback":
             self._parse_json_control()
         else:
-            self._parse_vehicle_keys(pygame.key.get_pressed(), timestamp*1000)
+            self._parse_vehicle_keys(pygame.key.get_pressed(), timestamp * 1000)
 
         # Record the control
         if self._mode == "log":
@@ -209,7 +208,7 @@ class KeyboardControl(object):
         """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return 
+                return
             elif event.type == pygame.KEYUP:
                 if event.key == K_q:
                     self._control.gear = 1 if self._control.reverse else -1
