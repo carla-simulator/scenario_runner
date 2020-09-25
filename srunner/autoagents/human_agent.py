@@ -83,9 +83,9 @@ class HumanAgent(AutonomousAgent):
         """
 
         self.agent_engaged = False
+        self.prev_timestamp = 0
         self._hic = HumanInterface()
         self._controller = KeyboardControl(path_to_conf_file)
-        self._prev_timestamp = 0
 
     def sensors(self):
         """
@@ -120,8 +120,8 @@ class HumanAgent(AutonomousAgent):
         self.agent_engaged = True
         self._hic.run_interface(input_data)
 
-        control = self._controller.parse_events(timestamp - self._prev_timestamp)
-        self._prev_timestamp = timestamp
+        control = self._controller.parse_events(timestamp - self.prev_timestamp)
+        self.prev_timestamp = timestamp
 
         return control
 
@@ -166,7 +166,7 @@ class KeyboardControl(object):
                     try:
                         self._records = json.load(fd)
                         self._json_to_control()
-                    except json.decoder.JSONDecodeError:
+                    except json.JSONDecodeError:
                         pass
         else:
             self._mode = "normal"
