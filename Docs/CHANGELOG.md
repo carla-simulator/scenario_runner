@@ -75,6 +75,7 @@
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
 
 ### :bug: Bug Fixes
+* Fixed bug causing parsing RelativeTargetSpeed tag to fail. 
 * Fixed missing 'six' in requirements.txt
 * Support OpenSCENARIO parameters also if they're only part of a string value
 * Support Routes in Catalogs
