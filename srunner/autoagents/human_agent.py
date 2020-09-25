@@ -7,6 +7,8 @@
 This module provides a human agent to control the ego vehicle via keyboard
 """
 
+from __future__ import print_function
+
 import json
 
 try:
@@ -164,7 +166,7 @@ class KeyboardControl(object):
                     try:
                         self._records = json.load(fd)
                         self._json_to_control()
-                    except json.JSONDecodeError:
+                    except json.decoder.JSONDecodeError:
                         pass
         else:
             self._mode = "normal"
