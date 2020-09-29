@@ -460,6 +460,17 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         self._start_time = GameTime.get_time()
         self._start_location = CarlaDataProvider.get_location(self._actor)
 
+        if self._relative_actor:
+            relative_velocity = CarlaDataProvider.get_velocity(self._relative_actor)
+
+            # get target velocity
+            if self._value_type == 'delta':
+                self._target_speed = relative_velocity + self._value
+            elif self._value_type == 'factor':
+                self._target_speed = relative_velocity * self._value
+            else:
+                print('self._value_type must be delta or factor')
+
         actor_dict[self._actor.id].update_target_speed(self._target_speed, start_time=self._start_time)
 
         if self._init_speed:
@@ -835,8 +846,8 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
         super(ActorTransformSetterToOSCPosition, self).initialise()
 
         if self._actor.is_alive:
-            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
-            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
 
     def update(self):
         """
@@ -1756,7 +1767,7 @@ class SetInitSpeed(AtomicBehavior):
 
         vx = math.cos(yaw) * self._init_speed
         vy = math.sin(yaw) * self._init_speed
-        self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+        self._actor.set_target_velocity(carla.Vector3D(vx, vy, 0))
 
     def update(self):
         """
@@ -1866,8 +1877,8 @@ class ActorTransformSetter(AtomicBehavior):
 
     def initialise(self):
         if self._actor.is_alive:
-            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
-            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
             self._actor.set_transform(self._transform)
         super(ActorTransformSetter, self).initialise()
 

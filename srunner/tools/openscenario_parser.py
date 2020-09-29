@@ -980,7 +980,7 @@ class OpenScenarioParser(object):
                                 obj_actor = traffic_actor
 
                         atomic = ChangeActorTargetSpeed(actor,
-                                                        target_speed,
+                                                        target_speed=0.0,
                                                         relative_actor=obj_actor,
                                                         value=value,
                                                         value_type=value_type,

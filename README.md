@@ -47,7 +47,7 @@ of the CARLA Challenge by following [this tutorial](Docs/challenge_evaluation.md
 Contributing
 ------------
 
-Please take a look at our [Contribution guidelines](http://carla.readthedocs.io/en/latest/CONTRIBUTING).
+Please take a look at our [Contribution guidelines](https://carla.readthedocs.io/en/latest/#contributing).
 
 FAQ
 ------
