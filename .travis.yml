@@ -37,8 +37,8 @@ matrix:
           packages:
             - python-pip
       before_install:
-        - pip2 install --user pylint==1.9.4
-        - pip2 install --user -r requirements.txt
+        - pip3 install --user pylint==1.9.4
+        - pip3 install --user -r requirements.txt
       script:
         - pylint --version
         - static_code_quality_passed=1
