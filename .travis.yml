@@ -35,7 +35,7 @@ matrix:
       addons:
         apt:
           packages:
-            - python-pip
+            - python3-pip
       before_install:
         - pip3 install --user pylint==1.9.4
         - pip3 install --user -r requirements.txt
