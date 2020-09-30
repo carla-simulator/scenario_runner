@@ -68,6 +68,8 @@ class NpcVehicleControl(BasicControl):
         """
         Execute on tick of the controller's control loop
 
+        Note: Negative target speeds are not yet supported. Try using simple_vehicle_control.
+
         If _waypoints are provided, the vehicle moves towards the next waypoint
         with the given _target_speed, until reaching the final waypoint. Upon reaching
         the final waypoint, _reached_goal is set to True.
@@ -85,6 +87,10 @@ class NpcVehicleControl(BasicControl):
             self._update_plan()
 
         target_speed = self._target_speed
+        # If target speed is negavite, raise an exception
+        if target_speed < 0:
+            raise NotImplementedError("Negative target speeds are not yet supported")
+
         self._local_planner.set_speed(target_speed * 3.6)
         control = self._local_planner.run_step(debug=False)
 
@@ -103,4 +109,4 @@ class NpcVehicleControl(BasicControl):
                 yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
                 vx = math.cos(yaw) * target_speed
                 vy = math.sin(yaw) * target_speed
-                self._actor.set_target_velocity(carla.Vector3D(vx, vy, 0))
+                self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
