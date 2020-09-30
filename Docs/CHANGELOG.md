@@ -27,6 +27,7 @@
 * Changed manual control to be in par with the CARLA version. Among others, added vehicle lights, recording and some new sensors
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction)
 * Added a new metrics module, which gives access to all the information about a scenario in order to allow the user to extract any desired information about the simulation. More information [here](metrics_module.md)
+* Removed the default randomness at the ControlLoss scenario
 * OpenSCENARIO support:
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
@@ -97,6 +98,7 @@
 * Fixed exception bug in spawn function of CarlaDataProvider
 * Fixed access to private member of CARLA LocalPlanner inside OSC NpcVehicleControl
 * Fixed handling of OSC LanePosition (#625)
+* Fixed bug causing the route repetitions to spawn different background activity
 * Fixed bug causing the rotate_point function inside RunningRedLightTest to not function properly.
 ### :ghost: Maintenance
 * Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.

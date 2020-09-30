@@ -60,7 +60,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _blueprint_library = None
     _ego_vehicle_route = None
     _traffic_manager_port = 8000
-    _rng = random.RandomState(2000)
+    _random_seed = 2000
+    _rng = random.RandomState(_random_seed)
 
     @staticmethod
     def register_actor(actor):
@@ -789,3 +790,4 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._client = None
         CarlaDataProvider._spawn_points = None
         CarlaDataProvider._spawn_index = 0
+        CarlaDataProvider._rng = random.RandomState(CarlaDataProvider._random_seed)

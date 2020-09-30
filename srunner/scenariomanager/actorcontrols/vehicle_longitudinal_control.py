@@ -66,4 +66,4 @@ class VehicleLongitudinalControl(BasicControl):
                 yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
                 vx = math.cos(yaw) * self._target_speed
                 vy = math.sin(yaw) * self._target_speed
-                self._actor.set_velocity(carla.Vector3D(vx, vy, 0))
+                self._actor.set_target_velocity(carla.Vector3D(vx, vy, 0))
