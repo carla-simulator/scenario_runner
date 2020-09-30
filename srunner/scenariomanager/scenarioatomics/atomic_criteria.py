@@ -1831,7 +1831,7 @@ class RunningRedLightTest(Criterion):
         rotate a given point by a given angle
         """
         x_ = math.cos(math.radians(angle)) * point.x - math.sin(math.radians(angle)) * point.y
-        y_ = math.sin(math.radians(angle)) * point.x - math.cos(math.radians(angle)) * point.y
+        y_ = math.sin(math.radians(angle)) * point.x + math.cos(math.radians(angle)) * point.y
         return carla.Vector3D(x_, y_, point.z)
 
     def get_traffic_light_waypoints(self, traffic_light):
