@@ -68,7 +68,8 @@ class NpcVehicleControl(BasicControl):
         """
         Execute on tick of the controller's control loop
 
-        Note: Negative target speeds are not yet supported. Try using simple_vehicle_control or vehicle_longitudinal_control.
+        Note: Negative target speeds are not yet supported.
+              Try using simple_vehicle_control or vehicle_longitudinal_control.
 
         If _waypoints are provided, the vehicle moves towards the next waypoint
         with the given _target_speed, until reaching the final waypoint. Upon reaching
