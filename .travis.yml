@@ -5,8 +5,6 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 #
 language: python
-python:
-  - "3.6"
 
 os: linux
 dist: xenial
