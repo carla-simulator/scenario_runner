@@ -4,9 +4,6 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 #
-language: python
-python: 
-  - "3.6"
 
 os: linux
 dist: xenial
@@ -38,11 +35,10 @@ matrix:
       addons:
         apt:
           packages:
-            - python3
+            - python-pip
       before_install:
-        - pip3 install -q setuptools
-        - pip3 install -q pylint==1.9.4
-        - pip3 install -q -r requirements.txt
+        - pip2 install --user pylint==1.9.4
+        - pip2 install --user -r requirements.txt
       script:
         - pylint --version
         - static_code_quality_passed=1
