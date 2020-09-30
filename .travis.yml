@@ -39,11 +39,10 @@ matrix:
         apt:
           packages:
             - python3
-            - python3-pip
-      install:
-        - pip3 install -q --user setuptools
-        - pip3 install -q --user pylint==1.9.4
-        - pip3 install -q --user -r requirements.txt
+      before_install:
+        - pip3 install -q setuptools
+        - pip3 install -q pylint==1.9.4
+        - pip3 install -q -r requirements.txt
       script:
         - pylint --version
         - static_code_quality_passed=1
