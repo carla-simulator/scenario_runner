@@ -97,6 +97,7 @@
 * Fixed exception bug in spawn function of CarlaDataProvider
 * Fixed access to private member of CARLA LocalPlanner inside OSC NpcVehicleControl
 * Fixed handling of OSC LanePosition (#625)
+* Fixed bug causing the rotate_point function inside RunningRedLightTest to not function properly.
 ### :ghost: Maintenance
 * Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.
 
