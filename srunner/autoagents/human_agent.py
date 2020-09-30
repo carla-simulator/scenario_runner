@@ -76,6 +76,7 @@ class HumanAgent(AutonomousAgent):
 
     current_control = None
     agent_engaged = False
+    prev_timestamp = 0
 
     def setup(self, path_to_conf_file):
         """
@@ -166,7 +167,8 @@ class KeyboardControl(object):
                     try:
                         self._records = json.load(fd)
                         self._json_to_control()
-                    except json.JSONDecodeError:
+                    except ValueError:
+                        # Moving to Python 3.5+ this can be replaced with json.JSONDecodeError
                         pass
         else:
             self._mode = "normal"
