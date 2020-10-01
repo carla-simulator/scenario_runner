@@ -44,7 +44,7 @@ class VehicleLongitudinalControl(BasicControl):
         The control loop is very simplistic:
             If the actor speed is below the _target_speed, set throttle to 1.0,
             otherwise, set throttle to 0.0
-        Note, that this is a longitudinal controller only.
+        Note: This is a longitudinal controller only.
 
         If _init_speed is True, the control command is post-processed to ensure that
         the initial actor velocity is maintained independent of physics.
@@ -54,7 +54,11 @@ class VehicleLongitudinalControl(BasicControl):
 
         velocity = self._actor.get_velocity()
         current_speed = math.sqrt(velocity.x**2 + velocity.y**2)
-        if current_speed < self._target_speed:
+        if current_speed < self._target_speed and self._target_speed >= 0:
+            control.reverse = False
+            control.throttle = 1.0
+        elif current_speed > self._target_speed and self._target_speed < 0:
+            control.reverse = True
             control.throttle = 1.0
         else:
             control.throttle = 0.0
