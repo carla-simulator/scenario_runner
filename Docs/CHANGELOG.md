@@ -1,5 +1,6 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.10](#carla-scenariorunner-0910)
 * [CARLA ScenarioRunner 0.9.9](#carla-scenariorunner-099)
 * [CARLA ScenarioRunner 0.9.8](#carla-scenariorunner-098)
 * [CARLA ScenarioRunner 0.9.7](#carla-scenariorunner-097)
@@ -9,9 +10,11 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+
+## CARLA ScenarioRunner 0.9.10
 ### :rocket: New Features
 * Renamed some agent labels inside Jenkins CI pipelines for new standard proposals.
-* Added support for Jenkins CI pipelines doing automated testing and docker images creation. It builds docker images for Scenario Runner, tags them with the commit id that triggers the pipeline, and stores those images into a shared Elastic Container Registry. 
+* Added support for Jenkins CI pipelines doing automated testing and docker images creation.
 * **Very important:** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
     - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
