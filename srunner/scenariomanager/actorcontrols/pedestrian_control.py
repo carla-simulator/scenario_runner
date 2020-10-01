@@ -58,7 +58,7 @@ class PedestrianControl(BasicControl):
         control.speed = self._target_speed
 
         # If target speed is negavite, raise an exception
-        if control.speed < 0:
+        if self._target_speed < 0:
             raise NotImplementedError("Negative target speeds are not yet supported")
 
         if self._waypoints:
