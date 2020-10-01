@@ -55,6 +55,7 @@ class VehicleLongitudinalControl(BasicControl):
         velocity = self._actor.get_velocity()
         current_speed = math.sqrt(velocity.x**2 + velocity.y**2)
         if current_speed < self._target_speed and self._target_speed >= 0:
+            conrol.reverse = False
             control.throttle = 1.0
         elif current_speed > self._target_speed and self._target_speed < 0:
             control.reverse = True
