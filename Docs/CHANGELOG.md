@@ -10,6 +10,7 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+* Added an option to produce a machine-readable JSON version of the scenario report.
 
 ## CARLA ScenarioRunner 0.9.10
 ### :rocket: New Features
