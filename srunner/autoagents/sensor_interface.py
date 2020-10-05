@@ -160,6 +160,6 @@ class SensorInterface(object):
                 data_dict[sensor_data[0]] = ((sensor_data[1], sensor_data[2]))
 
         except Empty:
-            raise SensorReceivedNoData("A sensor took too long to send their data")
+            raise SensorReceivedNoData("A sensor took too long to send its data")
 
         return data_dict
