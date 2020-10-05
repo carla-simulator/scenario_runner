@@ -29,9 +29,6 @@ class SensorReceivedNoData(Exception):
     Exceptions thrown when the sensors used by the agent take too long to receive data
     """
 
-    def __init__(self, message):
-        super(SensorReceivedNoData, self).__init__(message)
-
 
 class CallBack(object):
 
