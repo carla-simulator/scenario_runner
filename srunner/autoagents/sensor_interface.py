@@ -10,14 +10,21 @@ handling the use of sensors for the agents
 
 import copy
 import logging
-import numpy as np
 
-from queue import Queue
-from queue import Empty
+try:
+    from queue import Queue
+    from queue import Empty
+except ImportError:
+    from Queue import Queue
+    from Queue import Empty
+
+import numpy as np
 
 import carla
 
+
 class SensorReceivedNoData(Exception):
+
     """
     Exceptions thrown when the sensors used by the agent take too long to receive data
     """
@@ -108,7 +115,7 @@ class CallBack(object):
                           imu_data.gyroscope.y,
                           imu_data.gyroscope.z,
                           imu_data.compass,
-                         ], dtype=np.float64)
+                          ], dtype=np.float64)
         self._data_provider.update_sensor(tag, array, imu_data.frame)
 
 
