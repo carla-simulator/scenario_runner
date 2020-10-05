@@ -97,13 +97,6 @@ class AutonomousAgent(object):
 
         return control
 
-    def all_sensors_ready(self):
-        """
-        Check if all sensors are ready
-        Returns true if sensors are ready
-        """
-        return self.sensor_interface.all_sensors_ready()
-
     def set_global_plan(self, global_plan_gps, global_plan_world_coord):
         """
         Set the plan (route) for the agent

@@ -81,10 +81,8 @@ class AgentWrapper(object):
             sensor.listen(CallBack(sensor_spec['id'], sensor, self._agent.sensor_interface))
             self._sensors_list.append(sensor)
 
-        while not self._agent.all_sensors_ready():
-            if debug_mode:
-                print(" waiting for one data reading from sensors...")
-            CarlaDataProvider.get_world().tick()
+        # Tick once to spawn the sensors
+        CarlaDataProvider.get_world().tick()
 
     def cleanup(self):
         """
