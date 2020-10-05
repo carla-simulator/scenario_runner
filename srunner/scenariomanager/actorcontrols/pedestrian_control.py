@@ -42,6 +42,8 @@ class PedestrianControl(BasicControl):
         """
         Execute on tick of the controller's control loop
 
+        Note: Walkers / pedestrians are not able to walk backwards.
+
         If _waypoints are provided, the pedestrian moves towards the next waypoint
         with the given _target_speed, until reaching the final waypoint. Upon reaching
         the final waypoint, _reached_goal is set to True.
@@ -54,6 +56,10 @@ class PedestrianControl(BasicControl):
 
         control = self._actor.get_control()
         control.speed = self._target_speed
+
+        # If target speed is negavite, raise an exception
+        if self._target_speed < 0:
+            raise NotImplementedError("Negative target speeds are not yet supported")
 
         if self._waypoints:
             self._reached_goal = False

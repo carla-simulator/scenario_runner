@@ -168,7 +168,7 @@ class SimpleVehicleControl(BasicControl):
         if self._reached_goal:
             # Reached the goal, so stop
             velocity = carla.Vector3D(0, 0, 0)
-            self._actor.set_velocity(velocity)
+            self._actor.set_target_velocity(velocity)
             return
 
         self._reached_goal = False
@@ -250,7 +250,7 @@ class SimpleVehicleControl(BasicControl):
         velocity.x = direction.x / direction_norm * target_speed
         velocity.y = direction.y / direction_norm * target_speed
 
-        self._actor.set_velocity(velocity)
+        self._actor.set_target_velocity(velocity)
 
         # set new angular velocity
         current_yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw
@@ -275,7 +275,7 @@ class SimpleVehicleControl(BasicControl):
             angular_velocity.z = 0
         else:
             angular_velocity.z = delta_yaw / (direction_norm / target_speed)
-        self._actor.set_angular_velocity(angular_velocity)
+        self._actor.set_target_angular_velocity(angular_velocity)
 
         self._last_update = current_time
 

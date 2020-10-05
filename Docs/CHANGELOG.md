@@ -1,5 +1,6 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.10](#carla-scenariorunner-0910)
 * [CARLA ScenarioRunner 0.9.9](#carla-scenariorunner-099)
 * [CARLA ScenarioRunner 0.9.8](#carla-scenariorunner-098)
 * [CARLA ScenarioRunner 0.9.7](#carla-scenariorunner-097)
@@ -9,9 +10,11 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+
+## CARLA ScenarioRunner 0.9.10
 ### :rocket: New Features
 * Renamed some agent labels inside Jenkins CI pipelines for new standard proposals.
-* Added support for Jenkins CI pipelines doing automated testing and docker images creation. It builds docker images for Scenario Runner, tags them with the commit id that triggers the pipeline, and stores those images into a shared Elastic Container Registry. 
+* Added support for Jenkins CI pipelines doing automated testing and docker images creation.
 * **Very important:** CarlaActorPool has been removed and all its functions moved to the CarlaDataProvider:
     - The spawning functions have been refactored. All the *setup* functions have been removed, and its functionalities moved to their *request* counterparts. For example, previously *request_new_actor* just called *setup_actor*, but now *setup_actor* no longer exists, and the spawning is done via *request_new_actor*. They have also been unified and are now more consistent.
     - Changed *ActorConfiguration* to *ActorConfigurationData.parse_from_node*
@@ -27,6 +30,7 @@
 * Changed manual control to be in par with the CARLA version. Among others, added vehicle lights, recording and some new sensors
 * Removed unsupported scenarios (ChallengeBasic and BackgroundActivity, VehicleTurnLeftAtJunction)
 * Added a new metrics module, which gives access to all the information about a scenario in order to allow the user to extract any desired information about the simulation. More information [here](metrics_module.md)
+* Removed the default randomness at the ControlLoss scenario
 * OpenSCENARIO support:
     - Added support for controllers and provided default implementations for vehicles and pedestrians. This required changing the handling of actors, which results in that now all actors are controlled by an OSC controller. Supported controllers:
         - Pedestrian controller
@@ -77,6 +81,8 @@
     - Improved LaneChange atomic to allow lane changes of multiple lanes
 
 ### :bug: Bug Fixes
+* Fixed bug causing parsing RelativeTargetSpeed tag to fail. 
+* Fixed missing 'six' in requirements.txt
 * Support OpenSCENARIO parameters also if they're only part of a string value
 * Support Routes in Catalogs
 * Fix parsing of properties within ControllerCatalogs
@@ -99,6 +105,8 @@
 * Fixed bug causing LaneChange to break the simulation if the asked lane change was impossible, instead of correctly stopping it
 * Fixed bug causing ChangeLane scenarios to never end
 * Fixed handling of OSC LanePosition (#625)
+* Fixed bug causing the route repetitions to spawn different background activity
+* Fixed bug causing the rotate_point function inside RunningRedLightTest to not function properly.
 ### :ghost: Maintenance
 * Exposed traffic manager port flag to enable the execution of multiple scenarios on a single machine.
 
