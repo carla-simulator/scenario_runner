@@ -10,9 +10,24 @@ handling the use of sensors for the agents
 
 import copy
 import logging
+
+try:
+    from queue import Queue
+    from queue import Empty
+except ImportError:
+    from Queue import Queue
+    from Queue import Empty
+
 import numpy as np
 
 import carla
+
+
+class SensorReceivedNoData(Exception):
+
+    """
+    Exceptions thrown when the sensors used by the agent take too long to receive data
+    """
 
 
 class CallBack(object):
@@ -38,8 +53,12 @@ class CallBack(object):
             self._parse_image_cb(data, self._tag)
         elif isinstance(data, carla.LidarMeasurement):
             self._parse_lidar_cb(data, self._tag)
+        elif isinstance(data, carla.RadarMeasurement):
+            self._parse_radar_cb(data, self._tag)
         elif isinstance(data, carla.GnssMeasurement):
             self._parse_gnss_cb(data, self._tag)
+        elif isinstance(data, carla.IMUMeasurement):
+            self._parse_imu_cb(data, self._tag)
         else:
             logging.error('No callback method for this sensor.')
 
@@ -59,8 +78,19 @@ class CallBack(object):
         """
         points = np.frombuffer(lidar_data.raw_data, dtype=np.dtype('f4'))
         points = copy.deepcopy(points)
-        points = np.reshape(points, (int(points.shape[0] / 3), 3))
+        points = np.reshape(points, (int(points.shape[0] / 4), 4))
         self._data_provider.update_sensor(tag, points, lidar_data.frame)
+
+    def _parse_radar_cb(self, radar_data, tag):
+        """
+        parses radar sensors
+        """
+        # [depth, azimuth, altitute, velocity]
+        points = np.frombuffer(radar_data.raw_data, dtype=np.dtype('f4'))
+        points = copy.deepcopy(points)
+        points = np.reshape(points, (int(points.shape[0] / 4), 4))
+        points = np.flip(points, 1)
+        self._data_provider.update_sensor(tag, points, radar_data.frame)
 
     def _parse_gnss_cb(self, gnss_data, tag):
         """
@@ -70,6 +100,20 @@ class CallBack(object):
                           gnss_data.longitude,
                           gnss_data.altitude], dtype=np.float64)
         self._data_provider.update_sensor(tag, array, gnss_data.frame)
+
+    def _parse_imu_cb(self, imu_data, tag):
+        """
+        parses IMU sensors
+        """
+        array = np.array([imu_data.accelerometer.x,
+                          imu_data.accelerometer.y,
+                          imu_data.accelerometer.z,
+                          imu_data.gyroscope.x,
+                          imu_data.gyroscope.y,
+                          imu_data.gyroscope.z,
+                          imu_data.compass,
+                          ], dtype=np.float64)
+        self._data_provider.update_sensor(tag, array, imu_data.frame)
 
 
 class SensorInterface(object):
@@ -83,8 +127,8 @@ class SensorInterface(object):
         Initializes the class
         """
         self._sensors_objects = {}
-        self._data_buffers = {}
-        self._timestamps = {}
+        self._new_data_buffers = Queue()
+        self._queue_timeout = 10
 
     def register_sensor(self, tag, sensor):
         """
@@ -94,8 +138,6 @@ class SensorInterface(object):
             raise ValueError("Duplicated sensor tag [{}]".format(tag))
 
         self._sensors_objects[tag] = sensor
-        self._data_buffers[tag] = None
-        self._timestamps[tag] = -1
 
     def update_sensor(self, tag, data, timestamp):
         """
@@ -103,23 +145,21 @@ class SensorInterface(object):
         """
         if tag not in self._sensors_objects:
             raise ValueError("The sensor with tag [{}] has not been created!".format(tag))
-        self._data_buffers[tag] = data
-        self._timestamps[tag] = timestamp
 
-    def all_sensors_ready(self):
-        """
-        Checks if all the sensors have sent data at least once
-        """
-        for key in self._sensors_objects:
-            if self._data_buffers[key] is None:
-                return False
-        return True
+        self._new_data_buffers.put((tag, timestamp, data))
 
     def get_data(self):
         """
         Returns the data of a sensor
         """
-        data_dict = {}
-        for key in self._sensors_objects:
-            data_dict[key] = (self._timestamps[key], self._data_buffers[key])
+        try:
+            data_dict = {}
+            while len(data_dict.keys()) < len(self._sensors_objects.keys()):
+
+                sensor_data = self._new_data_buffers.get(True, self._queue_timeout)
+                data_dict[sensor_data[0]] = ((sensor_data[1], sensor_data[2]))
+
+        except Empty:
+            raise SensorReceivedNoData("A sensor took too long to send its data")
+
         return data_dict

@@ -10,6 +10,8 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+- Added a sensor barrier for the agents to ensure that the simulation waits for them to render their data.
 
 ## CARLA ScenarioRunner 0.9.10
 ### :rocket: New Features
