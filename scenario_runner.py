@@ -246,13 +246,10 @@ class ScenarioRunner(object):
         if self._args.outputDir != '':
             config_name = os.path.join(self._args.outputDir, config_name)
 
-        res_dir = os.environ.get("RESULTS_DIR", "")
-        res_dir = res_dir + "/" if res_dir else ""
-
         if self._args.junit:
             junit_filename = config_name + current_time + ".xml"
         if self._args.json:
-            json_filename = res_dir + config_name + current_time + ".json"
+            json_filename = config_name + current_time + ".json"
         filename = None
         if self._args.file:
             filename = config_name + current_time + ".txt"
