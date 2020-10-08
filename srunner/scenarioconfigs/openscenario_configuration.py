@@ -220,7 +220,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     elif entry.tag == "MiscObject":
                         self._extract_misc_information(entry, rolename, entry, args)
                     else:
-                        self.logger.error(
+                        self.logger.debug(
                             " A CatalogReference specifies a reference that is not an Entity. Skipping...")
 
                 for vehicle in obj.iter("Vehicle"):

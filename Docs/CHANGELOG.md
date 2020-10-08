@@ -13,6 +13,9 @@
 ### :rocket: New Features
 * Added a sensor barrier for the agents to ensure that the simulation waits for them to render their data.
 * Added an option to produce a machine-readable JSON version of the scenario report.
+### :bug: Bug Fixes
+* Fixed exception when using OSC scenarios without EnvironmentAction inside Storyboard-Init 
+
 
 ## CARLA ScenarioRunner 0.9.10
 ### :rocket: New Features
