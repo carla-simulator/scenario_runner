@@ -269,7 +269,10 @@ class OpenScenarioParser(object):
         returns:
            friction (float)
         """
-        set_environment = next(xml_tree.iter("EnvironmentAction"))
+        if xml_tree.find("EnvironmentAction") is not None:
+            set_environment = next(xml_tree.iter("EnvironmentAction"))
+        else:
+            return 1.0
 
         if sum(1 for _ in set_environment.iter("Weather")) != 0:
             environment = set_environment.find("Environment")
@@ -298,7 +301,10 @@ class OpenScenarioParser(object):
         returns:
            Weather (srunner.scenariomanager.weather_sim.Weather)
         """
-        set_environment = next(xml_tree.iter("EnvironmentAction"))
+        if xml_tree.find("EnvironmentAction") is not None:
+            set_environment = next(xml_tree.iter("EnvironmentAction"))
+        else:
+            return Weather(carla.WeatherParameters())
 
         if sum(1 for _ in set_environment.iter("Weather")) != 0:
             environment = set_environment.find("Environment")
