@@ -241,16 +241,20 @@ class ScenarioRunner(object):
         # Create the filename
         current_time = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
         junit_filename = None
+        json_filename = None
         config_name = config.name
         if self._args.outputDir != '':
             config_name = os.path.join(self._args.outputDir, config_name)
+
         if self._args.junit:
             junit_filename = config_name + current_time + ".xml"
+        if self._args.json:
+            json_filename = config_name + current_time + ".json"
         filename = None
         if self._args.file:
             filename = config_name + current_time + ".txt"
 
-        if not self.manager.analyze_scenario(self._args.output, filename, junit_filename):
+        if not self.manager.analyze_scenario(self._args.output, filename, junit_filename, json_filename):
             print("All scenario tests were passed successfully!")
         else:
             print("Not all scenario tests were successful")
@@ -533,6 +537,7 @@ def main():
     parser.add_argument('--output', action="store_true", help='Provide results on stdout')
     parser.add_argument('--file', action="store_true", help='Write results into a txt file')
     parser.add_argument('--junit', action="store_true", help='Write results into a junit file')
+    parser.add_argument('--json', action="store_true", help='Write results into a JSON file')
     parser.add_argument('--outputDir', default='', help='Directory for output files (default: this directory)')
 
     parser.add_argument('--configFile', default='', help='Provide an additional scenario configuration file (*.xml)')

@@ -197,7 +197,7 @@ class ScenarioManager(object):
         """
         self._running = False
 
-    def analyze_scenario(self, stdout, filename, junit):
+    def analyze_scenario(self, stdout, filename, junit, json):
         """
         This function is intended to be called from outside and provide
         the final statistics about the scenario (human-readable, in form of a junit
@@ -225,7 +225,7 @@ class ScenarioManager(object):
             timeout = True
             result = "TIMEOUT"
 
-        output = ResultOutputProvider(self, result, stdout, filename, junit)
+        output = ResultOutputProvider(self, result, stdout, filename, junit, json)
         output.write()
 
         return failure or timeout
