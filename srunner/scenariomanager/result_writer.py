@@ -13,8 +13,8 @@ It shall be used from the ScenarioManager only.
 from __future__ import print_function
 
 import time
-from tabulate import tabulate
 import json
+from tabulate import tabulate
 
 
 class ResultOutputProvider(object):
@@ -24,21 +24,22 @@ class ResultOutputProvider(object):
     It shall be used from the ScenarioManager only.
     """
 
-    def __init__(self, data, result, stdout=True, filename=None, junit=None, json=None):
+    def __init__(self, data, result, stdout=True, filename=None, junitfile=None, jsonfile=None):
         """
         Setup all parameters
         - _data contains all scenario-related information
         - _result is overall pass/fail info
         - _stdout (True/False) is used to (de)activate terminal output
         - _filename is used to (de)activate file output in tabular form
-        - _junit is used to (de)activate file output in _junit form
+        - _junit is used to (de)activate file output in junit form
+        - _json is used to (de)activate file output in json form
         """
         self._data = data
         self._result = result
         self._stdout = stdout
         self._filename = filename
-        self._junit = junit
-        self._json = json
+        self._junit = junitfile
+        self._json = jsonfile
 
         self._start_time = time.strftime('%Y-%m-%d %H:%M:%S',
                                          time.localtime(self._data.start_system_time))
@@ -155,9 +156,7 @@ class ResultOutputProvider(object):
         """
         json_list = []
 
-        def result_dict(
-            name: str, actor: str, optional: bool, expected, actual, success: bool
-        ):
+        def result_dict(name, actor, optional, expected, actual, success):
             """
             Convenience function to convert its arguments into a JSON-ready dict
             :param name: Name of the test criterion
