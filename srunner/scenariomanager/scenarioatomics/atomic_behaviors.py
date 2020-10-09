@@ -593,7 +593,8 @@ class ChangeActorWaypoints(AtomicBehavior):
         roll = self._waypoints[:, 5]
 
         for i in range(len(self._waypoints)):
-            carla_transforms = carla.Transform(carla.Location(x=x[i], y=y[i], z=z[i]), carla.Rotation(yaw=yaw[i], pitch=pitch[i], roll=roll[i]))
+            carla_transforms = carla.Transform(carla.Location(x=x[i], y=y[i], z=z[i]), 
+                                               carla.Rotation(yaw=yaw[i], pitch=pitch[i], roll=roll[i]))
             carla_waypoints.append(carla_transforms)
 
         self._waypoints = carla_waypoints
@@ -601,7 +602,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
 
         super(ChangeActorWaypoints, self).initialise()
-        
+
     def update(self):
         """
         Check the actor's state along the waypoint route.
