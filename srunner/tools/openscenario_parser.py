@@ -402,21 +402,10 @@ class OpenScenarioParser(object):
         if route is not None:
             for waypoint in route.iter('Waypoint'):
                 position = waypoint.find('Position')
-                world_pos = position.find('WorldPosition')
-                x = float(world_pos.attrib.get('x', 0))
-                y = float(world_pos.attrib.get('y', 0))
-                z = float(world_pos.attrib.get('z', 0))
-                yaw = math.degrees(float(world_pos.attrib.get('h', 0)))
-                pitch = math.degrees(float(world_pos.attrib.get('p', 0)))
-                roll = math.degrees(float(world_pos.attrib.get('r', 0)))
-                if not OpenScenarioParser.use_carla_coordinate_system:
-                    y = y * (-1.0)
-                    yaw = yaw * (-1.0)
-                waypoint_pos = (x, y, z, yaw, pitch, roll)
-                waypoints.append(waypoint_pos)
+                waypoints.append(position)
         else:
             raise AttributeError("No waypoints has been set")
-
+        
         return waypoints
 
     @staticmethod
