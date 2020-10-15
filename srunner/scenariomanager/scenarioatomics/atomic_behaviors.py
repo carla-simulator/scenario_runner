@@ -584,8 +584,8 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         # Transforming OSC waypoints to Carla waypoints
         carla_waypoints = []
-        for i in range(len(self._waypoints)):
-            carla_transforms = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(self._waypoints[i])
+        for waypoint in self._waypoints:
+            carla_transforms = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(waypoint)
             carla_waypoints.append(carla_transforms)
         self._waypoints = carla_waypoints
         
