@@ -405,7 +405,7 @@ class OpenScenarioParser(object):
                 waypoints.append(position)
         else:
             raise AttributeError("No waypoints has been set")
-        
+
         return waypoints
 
     @staticmethod
