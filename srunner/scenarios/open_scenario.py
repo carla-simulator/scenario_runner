@@ -225,11 +225,20 @@ class OpenScenario(BasicScenario):
                         if private.attrib.get('entityRef', None) == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
                                 for controller_action in private_action.iter('ControllerAction'):
-                                    module, args = OpenScenarioParser.get_controller(
+                                    module, args = OpenScenarioParser.get_controller_from_action(
                                         controller_action, self.config.catalogs)
                                     controller_atomic = ChangeActorControl(
                                         carla_actor, control_py_module=module, args=args,
                                         scenario_file_path=os.path.dirname(self.config.filename))
+
+                    if actor.controller is not None:
+                        if controller_atomic is not None:
+                            print("Warning: A controller was already assigned to actor {}".format(actor.model))
+                        else:
+                            for controller in actor.controller:
+                                print(actor.rolename)
+                                module, args = OpenScenarioParser.get_controller(controller, self.config.catalogs)
+                                controller_atomic = ChangeActorControl(carla_actor, control_py_module=module, args=args)
 
                     if controller_atomic is None:
                         controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})

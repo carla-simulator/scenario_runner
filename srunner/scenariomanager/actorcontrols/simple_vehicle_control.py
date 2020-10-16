@@ -280,7 +280,8 @@ class SimpleVehicleControl(BasicControl):
                 self._actor.get_traffic_light_state() == carla.TrafficLightState.Red):
                 target_speed = 0
 
-        if target_speed < current_speed:
+        if target_speed < current_speed and math.fabs(target_speed - current_speed) > 0.01:
+            print(target_speed, current_speed)
             self._actor.set_light_state(carla.VehicleLightState.Brake)
             if self._max_deceleration is not None:
                 target_speed = max(target_speed, current_speed - (current_time -

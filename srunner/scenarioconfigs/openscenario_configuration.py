@@ -212,26 +212,30 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     value = prop.get('value')
                     args[key] = value
 
+                actor_controller = []
+                for controller in obj.iter("ObjectController"):
+                    actor_controller.append(controller)
+
                 for catalog_reference in obj.iter("CatalogReference"):
                     entry = OpenScenarioParser.get_catalog_entry(self.catalogs, catalog_reference)
                     if entry.tag == "Vehicle":
-                        self._extract_vehicle_information(entry, rolename, entry, args)
+                        self._extract_vehicle_information(entry, rolename, entry, args, actor_controller)
                     elif entry.tag == "Pedestrian":
-                        self._extract_pedestrian_information(entry, rolename, entry, args)
+                        self._extract_pedestrian_information(entry, rolename, entry, args, actor_controller)
                     elif entry.tag == "MiscObject":
-                        self._extract_misc_information(entry, rolename, entry, args)
+                        self._extract_misc_information(entry, rolename, entry, args, actor_controller)
                     else:
                         self.logger.debug(
                             " A CatalogReference specifies a reference that is not an Entity. Skipping...")
 
                 for vehicle in obj.iter("Vehicle"):
-                    self._extract_vehicle_information(obj, rolename, vehicle, args)
+                    self._extract_vehicle_information(obj, rolename, vehicle, args, actor_controller)
 
                 for pedestrian in obj.iter("Pedestrian"):
-                    self._extract_pedestrian_information(obj, rolename, pedestrian, args)
+                    self._extract_pedestrian_information(obj, rolename, pedestrian, args, actor_controller)
 
                 for misc in obj.iter("MiscObject"):
-                    self._extract_misc_information(obj, rolename, misc, args)
+                    self._extract_misc_information(obj, rolename, misc, args, actor_controller)
 
         # Set transform for all actors
         # This has to be done in a multi-stage loop to resolve relative position settings
@@ -253,7 +257,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     if actor.transform is None:
                         all_actor_transforms_set = False
 
-    def _extract_vehicle_information(self, obj, rolename, vehicle, args):
+    def _extract_vehicle_information(self, obj, rolename, vehicle, args, actor_controller):
         """
         Helper function to _set_actor_information for getting vehicle information from XML tree
         """
@@ -269,25 +273,26 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         speed = self._get_actor_speed(rolename)
         new_actor = ActorConfigurationData(
-            model, None, rolename, speed, color=color, category=category, args=args)
+            model, None, rolename, speed, color=color, category=category, args=args, controller=actor_controller)
 
         if ego_vehicle:
             self.ego_vehicles.append(new_actor)
         else:
             self.other_actors.append(new_actor)
 
-    def _extract_pedestrian_information(self, obj, rolename, pedestrian, args):
+    def _extract_pedestrian_information(self, obj, rolename, pedestrian, args, actor_controller):
         """
         Helper function to _set_actor_information for getting pedestrian information from XML tree
         """
         model = pedestrian.attrib.get('model', "walker.*")
 
         speed = self._get_actor_speed(rolename)
-        new_actor = ActorConfigurationData(model, None, rolename, speed, category="pedestrian", args=args)
+        new_actor = ActorConfigurationData(model, None, rolename, speed,
+                                           category="pedestrian", args=args, controller=actor_controller)
 
         self.other_actors.append(new_actor)
 
-    def _extract_misc_information(self, obj, rolename, misc, args):
+    def _extract_misc_information(self, obj, rolename, misc, args, actor_controller):
         """
         Helper function to _set_actor_information for getting vehicle information from XML tree
         """
@@ -298,7 +303,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             model = "static.prop.chainbarrier"
         else:
             model = misc.attrib.get('name')
-        new_actor = ActorConfigurationData(model, None, rolename, category="misc", args=args)
+        new_actor = ActorConfigurationData(model, None, rolename, category="misc",
+                                           args=args, controller=actor_controller)
 
         self.other_actors.append(new_actor)
 
