@@ -365,7 +365,7 @@ class OpenScenarioParser(object):
         return Weather(carla_weather, dtime, weather_animation)
 
     @staticmethod
-    def get_controller(xml_tree, catalogs):
+    def get_controller_from_action(xml_tree, catalogs):
         """
         Extract the object controller from the OSC XML or a catalog
 
@@ -400,6 +400,38 @@ class OpenScenarioParser(object):
         for child in override_action:
             if strtobool(child.attrib.get('active')):
                 raise NotImplementedError("Controller override actions are not yet supported")
+
+        return module, args
+
+    @staticmethod
+    def get_controller(xml_tree, catalogs):
+        """
+        Extract the object controller from the OSC XML or a catalog
+
+        Args:
+            xml_tree: Containing the controller information,
+                or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the EnvironmentAction
+
+        returns:
+           module: Python module containing the controller implementation
+           args: Dictonary with (key, value) parameters for the controller
+        """
+
+        properties = None
+        if xml_tree.find('Controller') is not None:
+            properties = xml_tree.find('Controller').find('Properties')
+        elif xml_tree.find("CatalogReference") is not None:
+            catalog_reference = xml_tree.find("CatalogReference")
+            properties = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference).find('Properties')
+
+        module = None
+        args = {}
+        for prop in properties:
+            if prop.attrib.get('name') == "module":
+                module = prop.attrib.get('value')
+            else:
+                args[prop.attrib.get('name')] = prop.attrib.get('value')
 
         return module, args
 
