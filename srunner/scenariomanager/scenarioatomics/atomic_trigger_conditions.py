@@ -75,7 +75,8 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
         """
         Default terminate. Can be extended in derived class
         """
-        self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
 
 class InTriggerDistanceToOSCPosition(AtomicCondition):
@@ -135,10 +136,13 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
 
             if self._along_route:
                 # Global planner needs a location at a driving lane
-                actor_location = self._map.get_waypoint(actor_location).transform.location
-                osc_location = self._map.get_waypoint(osc_location).transform.location
+                actor_location = self._map.get_waypoint(
+                    actor_location).transform.location
+                osc_location = self._map.get_waypoint(
+                    osc_location).transform.location
 
-            distance = calculate_distance(actor_location, osc_location, self._grp)
+            distance = calculate_distance(
+                actor_location, osc_location, self._grp)
 
             if self._comparison_operator(distance, self._distance):
                 new_status = py_trees.common.Status.SUCCESS
@@ -207,10 +211,13 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
 
         if self._along_route:
             # Global planner needs a location at a driving lane
-            actor_location = self._map.get_waypoint(actor_location).transform.location
-            target_location = self._map.get_waypoint(target_location).transform.location
+            actor_location = self._map.get_waypoint(
+                actor_location).transform.location
+            target_location = self._map.get_waypoint(
+                target_location).transform.location
 
-        distance = calculate_distance(actor_location, target_location, self._grp)
+        distance = calculate_distance(
+            actor_location, target_location, self._grp)
 
         actor_velocity = CarlaDataProvider.get_velocity(self._actor)
 
@@ -272,7 +279,8 @@ class StandStill(AtomicCondition):
         if GameTime.get_time() - self._start_time > self._duration:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -322,7 +330,8 @@ class RelativeVelocityToOtherActor(AtomicCondition):
         if self._comparison_operator(relative_speed, self._relative_speed):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -366,7 +375,8 @@ class TriggerVelocity(AtomicCondition):
         if self._comparison_operator(actor_speed, self._target_velocity):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -413,7 +423,8 @@ class TriggerAcceleration(AtomicCondition):
         if self._comparison_operator(linear_accel, self._target_acceleration):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -437,7 +448,8 @@ class TimeOfDayComparison(AtomicCondition):
         """
         super(TimeOfDayComparison, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._datetime = datetime.datetime.strptime(dattime, "%Y-%m-%dT%H:%M:%S")
+        self._datetime = datetime.datetime.strptime(
+            dattime, "%Y-%m-%dT%H:%M:%S")
         self._comparison_operator = comparison_operator
 
     def update(self):
@@ -459,7 +471,8 @@ class TimeOfDayComparison(AtomicCondition):
         if self._comparison_operator(dtime, self._datetime):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -503,12 +516,14 @@ class OSCStartEndCondition(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         if new_status == py_trees.common.Status.RUNNING:
-            blackboard_variable_name = "({}){}-{}".format(self._element_type, self._element_name, self._rule)
+            blackboard_variable_name = "({}){}-{}".format(
+                self._element_type, self._element_name, self._rule)
             element_start_time = self._blackboard.get(blackboard_variable_name)
             if element_start_time and element_start_time >= self._start_time:
                 new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -555,7 +570,8 @@ class InTriggerRegion(AtomicCondition):
         if not not_in_region:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -595,7 +611,8 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         location = CarlaDataProvider.get_location(self._actor)
-        reference_location = CarlaDataProvider.get_location(self._reference_actor)
+        reference_location = CarlaDataProvider.get_location(
+            self._reference_actor)
 
         if location is None or reference_location is None:
             return new_status
@@ -603,7 +620,8 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         if self._comparison_operator(calculate_distance(location, reference_location), self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -655,7 +673,8 @@ class InTriggerDistanceToLocation(AtomicCondition):
                 location, self._target_location), self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -696,13 +715,16 @@ class InTriggerDistanceToNextIntersection(AtomicCondition):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        current_waypoint = self._map.get_waypoint(CarlaDataProvider.get_location(self._actor))
-        distance = calculate_distance(current_waypoint.transform.location, self._final_location)
+        current_waypoint = self._map.get_waypoint(
+            CarlaDataProvider.get_location(self._actor))
+        distance = calculate_distance(
+            current_waypoint.transform.location, self._final_location)
 
         if distance < self._distance:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -735,7 +757,8 @@ class InTriggerDistanceToLocationAlongRoute(AtomicCondition):
         self._route = route
         self._distance = distance
 
-        self._location_distance, _ = get_distance_along_route(self._route, self._location)
+        self._location_distance, _ = get_distance_along_route(
+            self._route, self._location)
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
@@ -747,7 +770,8 @@ class InTriggerDistanceToLocationAlongRoute(AtomicCondition):
 
         if current_location.distance(self._location) < self._distance + 20:
 
-            actor_distance, _ = get_distance_along_route(self._route, current_location)
+            actor_distance, _ = get_distance_along_route(
+                self._route, current_location)
 
             # If closer than self._distance and hasn't passed the trigger point
             if (self._location_distance < actor_distance + self._distance and
@@ -808,7 +832,8 @@ class InTimeToArrivalToLocation(AtomicCondition):
         if self._comparison_operator(time_to_arrival, self._time):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -832,7 +857,6 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
     def __init__(self, actor, other_actor, time, condition_check, along_route=False,
                  comparison_operator=operator.lt, name="TimeToArrival"):
-       
         """
         Setup parameters
         """
@@ -872,58 +896,31 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
         if self._along_route:
             # Global planner needs a location at a driving lane
-            current_location = self._map.get_waypoint(current_location).transform.location
-            other_location = self._map.get_waypoint(other_location).transform.location
+            current_location = self._map.get_waypoint(
+                current_location).transform.location
+            other_location = self._map.get_waypoint(
+                other_location).transform.location
 
-        distance = calculate_distance(current_location, other_location, self._grp)
-
-        # if velocity is too small, simply use a large time to arrival
-        time_to_arrival = self._max_time_to_arrival 
-
-        if self._condition_check == "TimeToCollisionCondition":
-            time_to_arrival = (distance - self._actor.bounding_box.extent.x - self._other_actor.bounding_box.extent.x ) / abs(other_velocity - current_velocity)
-
-        elif self._condition_check == "TimeHeadwayCondition":
-            if current_velocity > other_velocity:
-                time_to_arrival = 2 * distance / (current_velocity - other_velocity)
-                      
-        if self._comparison_operator(time_to_arrival, self._time):
-            new_status = py_trees.common.Status.SUCCESS
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-
-        return new_status
-        """
-        Check if the ego vehicle can arrive at other actor within time
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        current_location = CarlaDataProvider.get_location(self._actor)
-        other_location = CarlaDataProvider.get_location(self._other_actor)
-
-        if current_location is None or other_location is None:
-            return new_status
-
-        current_velocity = CarlaDataProvider.get_velocity(self._actor)
-        other_velocity = CarlaDataProvider.get_velocity(self._other_actor)
-
-        if self._along_route:
-            # Global planner needs a location at a driving lane
-            current_location = self._map.get_waypoint(current_location).transform.location
-            other_location = self._map.get_waypoint(other_location).transform.location
-
-        distance = calculate_distance(current_location, other_location, self._grp)
+        distance = calculate_distance(
+            current_location, other_location, self._grp)
 
         # if velocity is too small, simply use a large time to arrival
         time_to_arrival = self._max_time_to_arrival
 
-        if current_velocity > other_velocity:
-            time_to_arrival = 2 * distance / (current_velocity - other_velocity)
+        if self._condition_check == "TimeToCollisionCondition":
+            time_to_arrival = (distance - self._actor.bounding_box.extent.x -
+                               self._other_actor.bounding_box.extent.x) / abs(other_velocity - current_velocity)
+
+        elif self._condition_check == "TimeHeadwayCondition":
+            if current_velocity > other_velocity:
+                time_to_arrival = 2 * distance / \
+                    (current_velocity - other_velocity)
 
         if self._comparison_operator(time_to_arrival, self._time):
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -1061,7 +1058,8 @@ class WaitUntilInFront(AtomicCondition):
         # Wait for the vehicle to be in front
         other_dir = other_next_waypoint.transform.get_forward_vector()
         act_other_dir = actor_location - other_next_waypoint.transform.location
-        dot_ve_wp = other_dir.x * act_other_dir.x + other_dir.y * act_other_dir.y + other_dir.z * act_other_dir.z
+        dot_ve_wp = other_dir.x * act_other_dir.x + other_dir.y * \
+            act_other_dir.y + other_dir.z * act_other_dir.z
 
         if dot_ve_wp > 0.0:
             in_front = True
@@ -1118,7 +1116,8 @@ class DriveDistance(AtomicCondition):
         if self._distance > self._target_distance:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
 
@@ -1160,7 +1159,8 @@ class AtRightmostLane(AtomicCondition):
         if lane_type != carla.LaneType.Driving:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
 
@@ -1198,7 +1198,8 @@ class WaitForTrafficLightState(AtomicCondition):
         if self._actor.state == self._state:
             new_status = py_trees.common.Status.SUCCESS
 
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self.logger.debug(
+            "%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
 
@@ -1266,7 +1267,8 @@ class WaitForBlackboardVariable(AtomicCondition):
         value = blackv.get(self._variable_name)
         if value == self._variable_value:
             if self._debug:
-                print("Blackboard variable {} set to True".format(self._variable_name))
+                print("Blackboard variable {} set to True".format(
+                    self._variable_name))
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status

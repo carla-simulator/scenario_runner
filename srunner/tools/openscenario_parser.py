@@ -115,7 +115,8 @@ class OpenScenarioParser(object):
             for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
                 carla_tl_location = carla_tl.get_transform().location
                 distance = carla_tl_location.distance(carla.Location(float(pos[0]),
-                                                                     float(pos[1]),
+                                                                     float(
+                                                                         pos[1]),
                                                                      carla_tl_location.z))
                 if distance < 2.0:
                     traffic_light = carla_tl
@@ -181,7 +182,8 @@ class OpenScenarioParser(object):
             for key in node.attrib:
                 for param in sorted(parameter_dict, key=len, reverse=True):
                     if "$" + param in node.attrib[key]:
-                        node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
+                        node.attrib[key] = node.attrib[key].replace(
+                            "$" + param, parameter_dict[param])
 
         return xml_tree, parameter_dict
 
@@ -208,10 +210,12 @@ class OpenScenarioParser(object):
             Catalog entry (XML ElementTree)
         """
 
-        entry = catalogs[catalog_reference.attrib.get("catalogName")][catalog_reference.attrib.get("entryName")]
+        entry = catalogs[catalog_reference.attrib.get(
+            "catalogName")][catalog_reference.attrib.get("entryName")]
         entry_copy = copy.deepcopy(entry)
         catalog_copy = copy.deepcopy(catalog_reference)
-        entry = OpenScenarioParser.assign_catalog_parameters(entry_copy, catalog_copy)
+        entry = OpenScenarioParser.assign_catalog_parameters(
+            entry_copy, catalog_copy)
 
         return entry
 
@@ -250,9 +254,11 @@ class OpenScenarioParser(object):
             for key in node.attrib:
                 for param in sorted(parameter_dict, key=len, reverse=True):
                     if "$" + param in node.attrib[key]:
-                        node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
+                        node.attrib[key] = node.attrib[key].replace(
+                            "$" + param, parameter_dict[param])
 
-        OpenScenarioParser.set_parameters(entry_instance, OpenScenarioParser.global_osc_parameters)
+        OpenScenarioParser.set_parameters(
+            entry_instance, OpenScenarioParser.global_osc_parameters)
 
         return entry_instance
 
@@ -278,7 +284,8 @@ class OpenScenarioParser(object):
             environment = set_environment.find("Environment")
         elif set_environment.find("CatalogReference") is not None:
             catalog_reference = set_environment.find("CatalogReference")
-            environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+            environment = OpenScenarioParser.get_catalog_entry(
+                catalogs, catalog_reference)
 
         friction = 1.0
 
@@ -310,17 +317,22 @@ class OpenScenarioParser(object):
             environment = set_environment.find("Environment")
         elif set_environment.find("CatalogReference") is not None:
             catalog_reference = set_environment.find("CatalogReference")
-            environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+            environment = OpenScenarioParser.get_catalog_entry(
+                catalogs, catalog_reference)
 
         weather = environment.find("Weather")
         sun = weather.find("Sun")
 
         carla_weather = carla.WeatherParameters()
-        carla_weather.sun_azimuth_angle = math.degrees(float(sun.attrib.get('azimuth', 0)))
-        carla_weather.sun_altitude_angle = math.degrees(float(sun.attrib.get('elevation', 0)))
-        carla_weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+        carla_weather.sun_azimuth_angle = math.degrees(
+            float(sun.attrib.get('azimuth', 0)))
+        carla_weather.sun_altitude_angle = math.degrees(
+            float(sun.attrib.get('elevation', 0)))
+        carla_weather.cloudiness = 100 - \
+            float(sun.attrib.get('intensity', 0)) * 100
         fog = weather.find("Fog")
-        carla_weather.fog_distance = float(fog.attrib.get('visualRange', 'inf'))
+        carla_weather.fog_distance = float(
+            fog.attrib.get('visualRange', 'inf'))
         if carla_weather.fog_distance < 1000:
             carla_weather.fog_density = 100
         carla_weather.precipitation = 0
@@ -329,7 +341,8 @@ class OpenScenarioParser(object):
         carla_weather.wind_intensity = 0
         precepitation = weather.find("Precipitation")
         if precepitation.attrib.get('precipitationType') == "rain":
-            carla_weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
+            carla_weather.precipitation = float(
+                precepitation.attrib.get('intensity')) * 100
             carla_weather.precipitation_deposits = 100  # if it rains, make the road wet
             carla_weather.wetness = carla_weather.precipitation
         elif precepitation.attrib.get('type') == "snow":
@@ -364,7 +377,8 @@ class OpenScenarioParser(object):
             properties = assign_action.find('Controller').find('Properties')
         elif assign_action.find("CatalogReference") is not None:
             catalog_reference = assign_action.find("CatalogReference")
-            properties = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference).find('Properties')
+            properties = OpenScenarioParser.get_catalog_entry(
+                catalogs, catalog_reference).find('Properties')
 
         module = None
         args = {}
@@ -377,7 +391,8 @@ class OpenScenarioParser(object):
         override_action = xml_tree.find('OverrideControllerValueAction')
         for child in override_action:
             if strtobool(child.attrib.get('active')):
-                raise NotImplementedError("Controller override actions are not yet supported")
+                raise NotImplementedError(
+                    "Controller override actions are not yet supported")
 
         return module, args
 
@@ -400,7 +415,8 @@ class OpenScenarioParser(object):
             route = xml_tree.find('Route')
         elif xml_tree.find('CatalogReference') is not None:
             catalog_reference = xml_tree.find("CatalogReference")
-            route = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+            route = OpenScenarioParser.get_catalog_entry(
+                catalogs, catalog_reference)
         else:
             raise AttributeError("Unknown private FollowRoute action")
 
@@ -408,7 +424,8 @@ class OpenScenarioParser(object):
         if route is not None:
             for waypoint in route.iter('Waypoint'):
                 position = waypoint.find('Position')
-                transform = OpenScenarioParser.convert_position_to_transform(position)
+                transform = OpenScenarioParser.convert_position_to_transform(
+                    position)
                 waypoints.append(transform)
 
         return waypoints
@@ -466,7 +483,8 @@ class OpenScenarioParser(object):
                         break
 
             if obj_actor is None:
-                raise AttributeError("Object '{}' provided as position reference is not known".format(obj))
+                raise AttributeError(
+                    "Object '{}' provided as position reference is not known".format(obj))
 
             # calculate orientation h, p, r
             is_absolute = False
@@ -518,7 +536,8 @@ class OpenScenarioParser(object):
                 offset = float(rel_pos.attrib.get('offset', 0.0))
 
                 carla_map = CarlaDataProvider.get_map()
-                relative_waypoint = carla_map.get_waypoint(actor_transform.location)
+                relative_waypoint = carla_map.get_waypoint(
+                    actor_transform.location)
 
                 if dlane == 0:
                     wp = relative_waypoint
@@ -527,7 +546,8 @@ class OpenScenarioParser(object):
                 elif dlane == 1:
                     wp = relative_waypoint.get_right_lane()
                 if wp is None:
-                    raise AttributeError("Object '{}' position with dLane={} is not valid".format(obj, dlane))
+                    raise AttributeError(
+                        "Object '{}' position with dLane={} is not valid".format(obj, dlane))
 
                 if ds < 0:
                     ds = (-1.0) * ds
@@ -554,7 +574,8 @@ class OpenScenarioParser(object):
         elif position.find('RoadPosition') is not None:
             raise NotImplementedError("Road positions are not yet supported")
         elif position.find('RelativeRoadPosition') is not None:
-            raise NotImplementedError("RelativeRoad positions are not yet supported")
+            raise NotImplementedError(
+                "RelativeRoad positions are not yet supported")
         elif position.find('LanePosition') is not None:
             lane_pos = position.find('LanePosition')
             road_id = int(lane_pos.attrib.get('roadId', 0))
@@ -582,7 +603,8 @@ class OpenScenarioParser(object):
 
             if offset != 0:
                 forward_vector = transform.rotation.get_forward_vector()
-                orthogonal_vector = carla.Vector3D(x=-forward_vector.y, y=forward_vector.x, z=forward_vector.z)
+                orthogonal_vector = carla.Vector3D(
+                    x=-forward_vector.y, y=forward_vector.x, z=forward_vector.z)
                 transform.location.x = transform.location.x + offset * orthogonal_vector.x
                 transform.location.y = transform.location.y + offset * orthogonal_vector.y
 
@@ -625,17 +647,21 @@ class OpenScenarioParser(object):
 
             for entity_condition in condition.find('ByEntityCondition').iter('EntityCondition'):
                 if entity_condition.find('EndOfRoadCondition') is not None:
-                    end_road_condition = entity_condition.find('EndOfRoadCondition')
-                    condition_duration = float(end_road_condition.attrib.get('duration'))
+                    end_road_condition = entity_condition.find(
+                        'EndOfRoadCondition')
+                    condition_duration = float(
+                        end_road_condition.attrib.get('duration'))
                     atomic_cls = py_trees.meta.inverter(EndofRoadTest)
                     atomic = atomic_cls(
                         trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('CollisionCondition') is not None:
 
-                    collision_condition = entity_condition.find('CollisionCondition')
+                    collision_condition = entity_condition.find(
+                        'CollisionCondition')
 
                     if collision_condition.find('EntityRef') is not None:
-                        collision_entity = collision_condition.find('EntityRef')
+                        collision_entity = collision_condition.find(
+                            'EntityRef')
 
                         for actor in actor_list:
                             if collision_entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
@@ -651,7 +677,8 @@ class OpenScenarioParser(object):
                                             terminate_on_failure=True, name=condition_name)
 
                     elif collision_condition.find('ByType') is not None:
-                        collision_type = collision_condition.find('ByType').attrib.get('type', None)
+                        collision_type = collision_condition.find(
+                            'ByType').attrib.get('type', None)
 
                         triggered_type = OpenScenarioParser.actor_types[collision_type]
 
@@ -661,28 +688,34 @@ class OpenScenarioParser(object):
 
                     else:
                         atomic_cls = py_trees.meta.inverter(CollisionTest)
-                        atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
+                        atomic = atomic_cls(
+                            trigger_actor, terminate_on_failure=True, name=condition_name)
 
                 elif entity_condition.find('OffroadCondition') is not None:
                     off_condition = entity_condition.find('OffroadCondition')
-                    condition_duration = float(off_condition.attrib.get('duration'))
+                    condition_duration = float(
+                        off_condition.attrib.get('duration'))
                     atomic_cls = py_trees.meta.inverter(OffRoadTest)
                     atomic = atomic_cls(
                         trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
                 elif entity_condition.find('TimeHeadwayCondition') is not None:
                     condition_check = "TimeHeadwayCondition"
-                    headtime_condition = entity_condition.find('TimeHeadwayCondition')
+                    headtime_condition = entity_condition.find(
+                        'TimeHeadwayCondition')
 
-                    condition_value = float(headtime_condition.attrib.get('value'))
+                    condition_value = float(
+                        headtime_condition.attrib.get('value'))
 
                     condition_rule = headtime_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
-                    condition_freespace = strtobool(headtime_condition.attrib.get('freespace', False))
+                    condition_freespace = strtobool(
+                        headtime_condition.attrib.get('freespace', False))
                     if condition_freespace:
                         raise NotImplementedError(
                             "TimeHeadwayCondition: freespace attribute is currently not implemented")
-                    condition_along_route = strtobool(headtime_condition.attrib.get('alongRoute', False))
+                    condition_along_route = strtobool(
+                        headtime_condition.attrib.get('alongRoute', False))
 
                     for actor in actor_list:
                         if headtime_condition.attrib.get('entityRef', None) == actor.attributes['role_name']:
@@ -693,26 +726,30 @@ class OpenScenarioParser(object):
                             headtime_condition.attrib.get('entityRef', None)))
 
                     atomic = InTimeToArrivalToVehicle(
-                        trigger_actor, triggered_actor, condition_value,condition_check,
+                        trigger_actor, triggered_actor, condition_value, condition_check,
                         condition_along_route, condition_operator, condition_name
                     )
 
                 elif entity_condition.find('TimeToCollisionCondition') is not None:
                     condition_check = "TimeToCollisionCondition"
-                    ttc_condition = entity_condition.find('TimeToCollisionCondition')
+                    ttc_condition = entity_condition.find(
+                        'TimeToCollisionCondition')
 
                     condition_rule = ttc_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
                     condition_value = float(ttc_condition.attrib.get('value'))
-                    condition_target = ttc_condition.find('TimeToCollisionConditionTarget')
+                    condition_target = ttc_condition.find(
+                        'TimeToCollisionConditionTarget')
                     entity_ref_ = condition_target.find('EntityRef')
 
-                    condition_freespace = strtobool(ttc_condition.attrib.get('freespace', False))
+                    condition_freespace = strtobool(
+                        ttc_condition.attrib.get('freespace', False))
                     if condition_freespace:
                         raise NotImplementedError(
                             "TimeToCollisionCondition: freespace attribute is currently not implemented")
-                    condition_along_route = strtobool(ttc_condition.attrib.get('alongRoute', False))
+                    condition_along_route = strtobool(
+                        ttc_condition.attrib.get('alongRoute', False))
 
                     if condition_target.find('Position') is not None:
                         position = condition_target.find('Position')
@@ -728,12 +765,14 @@ class OpenScenarioParser(object):
                                 entity_ref_.attrib.get('entityRef', None)))
 
                         atomic = InTimeToArrivalToVehicle(
-                            trigger_actor, triggered_actor, condition_value,condition_check,
+                            trigger_actor, triggered_actor, condition_value, condition_check,
                             condition_along_route, condition_operator, condition_name)
 
                 elif entity_condition.find('AccelerationCondition') is not None:
-                    accel_condition = entity_condition.find('AccelerationCondition')
-                    condition_value = float(accel_condition.attrib.get('value'))
+                    accel_condition = entity_condition.find(
+                        'AccelerationCondition')
+                    condition_value = float(
+                        accel_condition.attrib.get('value'))
                     condition_rule = accel_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
                     atomic = TriggerAcceleration(
@@ -741,7 +780,8 @@ class OpenScenarioParser(object):
                 elif entity_condition.find('StandStillCondition') is not None:
                     ss_condition = entity_condition.find('StandStillCondition')
                     duration = float(ss_condition.attrib.get('duration'))
-                    atomic = StandStill(trigger_actor, condition_name, duration)
+                    atomic = StandStill(
+                        trigger_actor, condition_name, duration)
                 elif entity_condition.find('SpeedCondition') is not None:
                     spd_condition = entity_condition.find('SpeedCondition')
                     condition_value = float(spd_condition.attrib.get('value'))
@@ -751,8 +791,10 @@ class OpenScenarioParser(object):
                     atomic = TriggerVelocity(
                         trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('RelativeSpeedCondition') is not None:
-                    relspd_condition = entity_condition.find('RelativeSpeedCondition')
-                    condition_value = float(relspd_condition.attrib.get('value'))
+                    relspd_condition = entity_condition.find(
+                        'RelativeSpeedCondition')
+                    condition_value = float(
+                        relspd_condition.attrib.get('value'))
                     condition_rule = relspd_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
@@ -768,28 +810,37 @@ class OpenScenarioParser(object):
                     atomic = RelativeVelocityToOtherActor(
                         trigger_actor, triggered_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('TraveledDistanceCondition') is not None:
-                    distance_condition = entity_condition.find('TraveledDistanceCondition')
-                    distance_value = float(distance_condition.attrib.get('value'))
-                    atomic = DriveDistance(trigger_actor, distance_value, name=condition_name)
+                    distance_condition = entity_condition.find(
+                        'TraveledDistanceCondition')
+                    distance_value = float(
+                        distance_condition.attrib.get('value'))
+                    atomic = DriveDistance(
+                        trigger_actor, distance_value, name=condition_name)
                 elif entity_condition.find('ReachPositionCondition') is not None:
-                    rp_condition = entity_condition.find('ReachPositionCondition')
-                    distance_value = float(rp_condition.attrib.get('tolerance'))
+                    rp_condition = entity_condition.find(
+                        'ReachPositionCondition')
+                    distance_value = float(
+                        rp_condition.attrib.get('tolerance'))
                     position = rp_condition.find('Position')
                     atomic = InTriggerDistanceToOSCPosition(
                         trigger_actor, position, distance_value, name=condition_name)
                 elif entity_condition.find('DistanceCondition') is not None:
-                    distance_condition = entity_condition.find('DistanceCondition')
+                    distance_condition = entity_condition.find(
+                        'DistanceCondition')
 
-                    distance_value = float(distance_condition.attrib.get('value'))
+                    distance_value = float(
+                        distance_condition.attrib.get('value'))
 
                     distance_rule = distance_condition.attrib.get('rule')
                     distance_operator = OpenScenarioParser.operators[distance_rule]
 
-                    distance_freespace = strtobool(distance_condition.attrib.get('freespace', False))
+                    distance_freespace = strtobool(
+                        distance_condition.attrib.get('freespace', False))
                     if distance_freespace:
                         raise NotImplementedError(
                             "DistanceCondition: freespace attribute is currently not implemented")
-                    distance_along_route = strtobool(distance_condition.attrib.get('alongRoute', False))
+                    distance_along_route = strtobool(
+                        distance_condition.attrib.get('alongRoute', False))
 
                     if distance_condition.find('Position') is not None:
                         position = distance_condition.find('Position')
@@ -798,10 +849,13 @@ class OpenScenarioParser(object):
                             distance_operator, name=condition_name)
 
                 elif entity_condition.find('RelativeDistanceCondition') is not None:
-                    distance_condition = entity_condition.find('RelativeDistanceCondition')
-                    distance_value = float(distance_condition.attrib.get('value'))
+                    distance_condition = entity_condition.find(
+                        'RelativeDistanceCondition')
+                    distance_value = float(
+                        distance_condition.attrib.get('value'))
 
-                    distance_freespace = strtobool(distance_condition.attrib.get('freespace', False))
+                    distance_freespace = strtobool(
+                        distance_condition.attrib.get('freespace', False))
                     if distance_freespace:
                         raise NotImplementedError(
                             "RelativeDistanceCondition: freespace attribute is currently not implemented")
@@ -825,7 +879,8 @@ class OpenScenarioParser(object):
         elif condition.find('ByValueCondition') is not None:
             value_condition = condition.find('ByValueCondition')
             if value_condition.find('ParameterCondition') is not None:
-                parameter_condition = value_condition.find('ParameterCondition')
+                parameter_condition = value_condition.find(
+                    'ParameterCondition')
                 arg_name = parameter_condition.attrib.get('parameterRef')
                 value = parameter_condition.attrib.get('value')
                 if value != '':
@@ -840,14 +895,17 @@ class OpenScenarioParser(object):
                     raise AttributeError(
                         "The condition {} cannot be mapped to a criterion atomic".format(condition_name))
 
-                atomic = py_trees.composites.Parallel("Evaluation Criteria for multiple ego vehicles")
+                atomic = py_trees.composites.Parallel(
+                    "Evaluation Criteria for multiple ego vehicles")
                 for triggered_actor in actor_list:
                     if arg_name != '':
-                        atomic.add_child(criterion_instance(triggered_actor, arg_value))
+                        atomic.add_child(criterion_instance(
+                            triggered_actor, arg_value))
                     else:
                         atomic.add_child(criterion_instance(triggered_actor))
             elif value_condition.find('SimulationTimeCondition') is not None:
-                simtime_condition = value_condition.find('SimulationTimeCondition')
+                simtime_condition = value_condition.find(
+                    'SimulationTimeCondition')
                 value = float(simtime_condition.attrib.get('value'))
                 rule = simtime_condition.attrib.get('rule')
                 atomic = SimulationTimeCondition(value, success_rule=rule)
@@ -856,36 +914,46 @@ class OpenScenarioParser(object):
                 condition_date = tod_condition.attrib.get('dateTime')
                 condition_rule = tod_condition.attrib.get('rule')
                 condition_operator = OpenScenarioParser.operators[condition_rule]
-                atomic = TimeOfDayComparison(condition_date, condition_operator, condition_name)
+                atomic = TimeOfDayComparison(
+                    condition_date, condition_operator, condition_name)
             elif value_condition.find('StoryboardElementStateCondition') is not None:
-                state_condition = value_condition.find('StoryboardElementStateCondition')
-                element_name = state_condition.attrib.get('storyboardElementRef')
-                element_type = state_condition.attrib.get('storyboardElementType')
+                state_condition = value_condition.find(
+                    'StoryboardElementStateCondition')
+                element_name = state_condition.attrib.get(
+                    'storyboardElementRef')
+                element_type = state_condition.attrib.get(
+                    'storyboardElementType')
                 state = state_condition.attrib.get('state')
                 if state == "startTransition":
-                    atomic = OSCStartEndCondition(element_type, element_name, rule="START", name=state + "Condition")
+                    atomic = OSCStartEndCondition(
+                        element_type, element_name, rule="START", name=state + "Condition")
                 elif state == "stopTransition" or state == "endTransition" or state == "completeState":
-                    atomic = OSCStartEndCondition(element_type, element_name, rule="END", name=state + "Condition")
+                    atomic = OSCStartEndCondition(
+                        element_type, element_name, rule="END", name=state + "Condition")
                 else:
                     raise NotImplementedError(
                         "Only start, stop, endTransitions and completeState are currently supported")
             elif value_condition.find('UserDefinedValueCondition') is not None:
-                raise NotImplementedError("ByValue UserDefinedValue conditions are not yet supported")
+                raise NotImplementedError(
+                    "ByValue UserDefinedValue conditions are not yet supported")
             elif value_condition.find('TrafficSignalCondition') is not None:
                 tl_condition = value_condition.find('TrafficSignalCondition')
 
                 name_condition = tl_condition.attrib.get('name')
-                traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(name_condition)
+                traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(
+                    name_condition)
 
                 tl_state = tl_condition.attrib.get('state').upper()
                 if tl_state not in OpenScenarioParser.tl_states:
-                    raise KeyError("CARLA only supports Green, Red, Yellow or Off")
+                    raise KeyError(
+                        "CARLA only supports Green, Red, Yellow or Off")
                 state_condition = OpenScenarioParser.tl_states[tl_state]
 
                 atomic = WaitForTrafficLightState(
                     traffic_light, state_condition, name=condition_name)
             elif value_condition.find('TrafficSignalControllerCondition') is not None:
-                raise NotImplementedError("ByValue TrafficSignalController conditions are not yet supported")
+                raise NotImplementedError(
+                    "ByValue TrafficSignalController conditions are not yet supported")
             else:
                 raise AttributeError("Unknown ByValue condition")
 
@@ -913,22 +981,27 @@ class OpenScenarioParser(object):
         if action.find('GlobalAction') is not None:
             global_action = action.find('GlobalAction')
             if global_action.find('InfrastructureAction') is not None:
-                infrastructure_action = global_action.find('InfrastructureAction').find('TrafficSignalAction')
+                infrastructure_action = global_action.find(
+                    'InfrastructureAction').find('TrafficSignalAction')
                 if infrastructure_action.find('TrafficSignalStateAction') is not None:
-                    traffic_light_action = infrastructure_action.find('TrafficSignalStateAction')
+                    traffic_light_action = infrastructure_action.find(
+                        'TrafficSignalStateAction')
 
                     name_condition = traffic_light_action.attrib.get('name')
-                    traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(name_condition)
+                    traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(
+                        name_condition)
 
                     tl_state = traffic_light_action.attrib.get('state').upper()
                     if tl_state not in OpenScenarioParser.tl_states:
-                        raise KeyError("CARLA only supports Green, Red, Yellow or Off")
+                        raise KeyError(
+                            "CARLA only supports Green, Red, Yellow or Off")
                     traffic_light_state = OpenScenarioParser.tl_states[tl_state]
 
                     atomic = TrafficLightStateSetter(
                         traffic_light, traffic_light_state, name=maneuver_name + "_" + str(traffic_light.id))
                 else:
-                    raise NotImplementedError("TrafficLights can only be influenced via TrafficSignalStateAction")
+                    raise NotImplementedError(
+                        "TrafficLights can only be influenced via TrafficSignalStateAction")
             elif global_action.find('EnvironmentAction') is not None:
                 weather_behavior = ChangeWeather(
                     OpenScenarioParser.get_weather_from_env_action(global_action, catalogs))
@@ -946,12 +1019,15 @@ class OpenScenarioParser(object):
                 return env_behavior
 
             else:
-                raise NotImplementedError("Global actions are not yet supported")
+                raise NotImplementedError(
+                    "Global actions are not yet supported")
         elif action.find('UserDefinedAction') is not None:
             user_defined_action = action.find('UserDefinedAction')
             if user_defined_action.find('CustomCommandAction') is not None:
-                command = user_defined_action.find('CustomCommandAction').attrib.get('type')
-                atomic = RunScript(command, base_path=OpenScenarioParser.osc_filepath, name=maneuver_name)
+                command = user_defined_action.find(
+                    'CustomCommandAction').attrib.get('type')
+                atomic = RunScript(
+                    command, base_path=OpenScenarioParser.osc_filepath, name=maneuver_name)
         elif action.find('PrivateAction') is not None:
             private_action = action.find('PrivateAction')
 
@@ -964,11 +1040,14 @@ class OpenScenarioParser(object):
                     # duration and distance
                     distance = float('inf')
                     duration = float('inf')
-                    dimension = long_maneuver.find("SpeedActionDynamics").attrib.get('dynamicsDimension')
+                    dimension = long_maneuver.find(
+                        "SpeedActionDynamics").attrib.get('dynamicsDimension')
                     if dimension == "distance":
-                        distance = float(long_maneuver.find("SpeedActionDynamics").attrib.get('value', float("inf")))
+                        distance = float(long_maneuver.find(
+                            "SpeedActionDynamics").attrib.get('value', float("inf")))
                     else:
-                        duration = float(long_maneuver.find("SpeedActionDynamics").attrib.get('value', float("inf")))
+                        duration = float(long_maneuver.find(
+                            "SpeedActionDynamics").attrib.get('value', float("inf")))
 
                     # absolute velocity with given target speed
                     if long_maneuver.find("SpeedActionTarget").find("AbsoluteTargetSpeed") is not None:
@@ -979,10 +1058,12 @@ class OpenScenarioParser(object):
 
                     # relative velocity to given actor
                     if long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed") is not None:
-                        relative_speed = long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed")
+                        relative_speed = long_maneuver.find(
+                            "SpeedActionTarget").find("RelativeTargetSpeed")
                         obj = relative_speed.attrib.get('entityRef')
                         value = float(relative_speed.attrib.get('value', 0))
-                        value_type = relative_speed.attrib.get('speedTargetValueType')
+                        value_type = relative_speed.attrib.get(
+                            'speedTargetValueType')
                         continuous = relative_speed.attrib.get('continuous')
 
                         for traffic_actor in CarlaDataProvider.get_world().get_actors():
@@ -1000,7 +1081,8 @@ class OpenScenarioParser(object):
                                                         name=maneuver_name)
 
                 elif private_action.find('LongitudinalDistanceAction') is not None:
-                    raise NotImplementedError("Longitudinal distance actions are not yet supported")
+                    raise NotImplementedError(
+                        "Longitudinal distance actions are not yet supported")
                 else:
                     raise AttributeError("Unknown longitudinal action")
             elif private_action.find('LateralAction') is not None:
@@ -1014,7 +1096,8 @@ class OpenScenarioParser(object):
                     # duration and distance
                     distance = float('inf')
                     duration = float('inf')
-                    dimension = lat_maneuver.find("LaneChangeActionDynamics").attrib.get('dynamicsDimension')
+                    dimension = lat_maneuver.find(
+                        "LaneChangeActionDynamics").attrib.get('dynamicsDimension')
                     if dimension == "distance":
                         distance = float(
                             lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
@@ -1029,34 +1112,45 @@ class OpenScenarioParser(object):
                 else:
                     raise AttributeError("Unknown lateral action")
             elif private_action.find('VisibilityAction') is not None:
-                raise NotImplementedError("Visibility actions are not yet supported")
+                raise NotImplementedError(
+                    "Visibility actions are not yet supported")
             elif private_action.find('SynchronizeAction') is not None:
-                raise NotImplementedError("Synchronization actions are not yet supported")
+                raise NotImplementedError(
+                    "Synchronization actions are not yet supported")
             elif private_action.find('ActivateControllerAction') is not None:
-                private_action = private_action.find('ActivateControllerAction')
+                private_action = private_action.find(
+                    'ActivateControllerAction')
                 activate = strtobool(private_action.attrib.get('longitudinal'))
                 atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
                 controller_action = private_action.find('ControllerAction')
-                module, args = OpenScenarioParser.get_controller(controller_action, catalogs)
-                atomic = ChangeActorControl(actor, control_py_module=module, args=args)
+                module, args = OpenScenarioParser.get_controller(
+                    controller_action, catalogs)
+                atomic = ChangeActorControl(
+                    actor, control_py_module=module, args=args)
             elif private_action.find('TeleportAction') is not None:
                 position = private_action.find('TeleportAction')
-                atomic = ActorTransformSetterToOSCPosition(actor, position, name=maneuver_name)
+                atomic = ActorTransformSetterToOSCPosition(
+                    actor, position, name=maneuver_name)
             elif private_action.find('RoutingAction') is not None:
                 private_action = private_action.find('RoutingAction')
                 if private_action.find('AssignRouteAction') is not None:
                     # @TODO: How to handle relative positions here? This might chance at runtime?!
                     route_action = private_action.find('AssignRouteAction')
-                    waypoints = OpenScenarioParser.get_route(route_action, catalogs)
-                    atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
+                    waypoints = OpenScenarioParser.get_route(
+                        route_action, catalogs)
+                    atomic = ChangeActorWaypoints(
+                        actor, waypoints=waypoints, name=maneuver_name)
                 elif private_action.find('FollowTrajectoryAction') is not None:
-                    raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
+                    raise NotImplementedError(
+                        "Private FollowTrajectory actions are not yet supported")
                 elif private_action.find('AcquirePositionAction') is not None:
                     route_action = private_action.find('AcquirePositionAction')
                     osc_position = route_action.find('Position')
-                    position = OpenScenarioParser.convert_position_to_transform(osc_position)
-                    atomic = ChangeActorWaypointsToReachPosition(actor, position=position, name=maneuver_name)
+                    position = OpenScenarioParser.convert_position_to_transform(
+                        osc_position)
+                    atomic = ChangeActorWaypointsToReachPosition(
+                        actor, position=position, name=maneuver_name)
                 else:
                     raise AttributeError("Unknown private routing action")
             else:
@@ -1064,7 +1158,8 @@ class OpenScenarioParser(object):
 
         else:
             if list(action):
-                raise AttributeError("Unknown action: {}".format(maneuver_name))
+                raise AttributeError(
+                    "Unknown action: {}".format(maneuver_name))
             else:
                 return Idle(duration=0, name=maneuver_name)
 
