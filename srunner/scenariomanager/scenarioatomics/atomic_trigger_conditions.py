@@ -40,7 +40,6 @@ EPSILON = 0.001
 
 
 class AtomicCondition(py_trees.behaviour.Behaviour):
-
     """
     Base class for all atomic conditions used to setup a scenario
 
@@ -79,7 +78,6 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
 
 
 class InTriggerDistanceToOSCPosition(AtomicCondition):
-
     """
     OpenSCENARIO atomic
     This class contains the trigger condition for a distance to an OpenSCENARIO position
@@ -147,7 +145,6 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
 
 
 class InTimeToArrivalToOSCPosition(AtomicCondition):
-
     """
     OpenSCENARIO atomic
     This class contains a trigger if an actor arrives within a given time to an OpenSCENARIO position
@@ -228,7 +225,6 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
 
 
 class StandStill(AtomicCondition):
-
     """
     This class contains a standstill behavior of a scenario
 
@@ -278,7 +274,6 @@ class StandStill(AtomicCondition):
 
 
 class RelativeVelocityToOtherActor(AtomicCondition):
-
     """
     Atomic containing a comparison between an actor's velocity
     and another actor's one. The behavior returns SUCCESS when the
@@ -328,7 +323,6 @@ class RelativeVelocityToOtherActor(AtomicCondition):
 
 
 class TriggerVelocity(AtomicCondition):
-
     """
     Atomic containing a comparison between an actor's speed and a reference one.
     The behavior returns SUCCESS when the expected comparison (greater than /
@@ -372,7 +366,6 @@ class TriggerVelocity(AtomicCondition):
 
 
 class TriggerAcceleration(AtomicCondition):
-
     """
     Atomic containing a comparison between an actor's acceleration
     and a reference one. The behavior returns SUCCESS when the
@@ -419,7 +412,6 @@ class TriggerAcceleration(AtomicCondition):
 
 
 class TimeOfDayComparison(AtomicCondition):
-
     """
     Atomic containing a comparison between the current time of day of the simulation
     and a given one. The behavior returns SUCCESS when the
@@ -465,7 +457,6 @@ class TimeOfDayComparison(AtomicCondition):
 
 
 class OSCStartEndCondition(AtomicCondition):
-
     """
     This class contains a check if a named story element has started/terminated.
 
@@ -514,7 +505,6 @@ class OSCStartEndCondition(AtomicCondition):
 
 
 class InTriggerRegion(AtomicCondition):
-
     """
     This class contains the trigger region (condition) of a scenario
 
@@ -551,7 +541,7 @@ class InTriggerRegion(AtomicCondition):
             return new_status
 
         not_in_region = (location.x < self._min_x or location.x > self._max_x) or (
-            location.y < self._min_y or location.y > self._max_y)
+                location.y < self._min_y or location.y > self._max_y)
         if not not_in_region:
             new_status = py_trees.common.Status.SUCCESS
 
@@ -561,7 +551,6 @@ class InTriggerRegion(AtomicCondition):
 
 
 class InTriggerDistanceToVehicle(AtomicCondition):
-
     """
     This class contains the trigger distance (condition) between to actors
     of a scenario
@@ -609,7 +598,6 @@ class InTriggerDistanceToVehicle(AtomicCondition):
 
 
 class InTriggerDistanceToLocation(AtomicCondition):
-
     """
     This class contains the trigger (condition) for a distance to a fixed
     location of a scenario
@@ -661,7 +649,6 @@ class InTriggerDistanceToLocation(AtomicCondition):
 
 
 class InTriggerDistanceToNextIntersection(AtomicCondition):
-
     """
     This class contains the trigger (condition) for a distance to the
     next intersection of a scenario
@@ -708,7 +695,6 @@ class InTriggerDistanceToNextIntersection(AtomicCondition):
 
 
 class InTriggerDistanceToLocationAlongRoute(AtomicCondition):
-
     """
     Implementation for a behavior that will check if a given actor
     is within a given distance to a given location considering a given route
@@ -759,7 +745,6 @@ class InTriggerDistanceToLocationAlongRoute(AtomicCondition):
 
 
 class InTimeToArrivalToLocation(AtomicCondition):
-
     """
     This class contains a check if a actor arrives within a given time
     at a given location.
@@ -814,7 +799,6 @@ class InTimeToArrivalToLocation(AtomicCondition):
 
 
 class InTimeToArrivalToVehicle(AtomicCondition):
-
     """
     This class contains a check if a actor arrives within a given time
     at another actor.
@@ -890,7 +874,6 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
 
 class InTimeToCollisionToVehicle(AtomicCondition):
-
     """
     This class contains a check of time to collision between two dynamic actors.
     The distance calculation is done from edge to edge to the actors.
@@ -957,7 +940,7 @@ class InTimeToCollisionToVehicle(AtomicCondition):
 
         if self._condition_freespace:
             time_to_arrival = (distance - self._actor.bounding_box.extent.x -
-                                self._other_actor.bounding_box.extent.x) / abs(other_velocity - current_velocity)
+                               self._other_actor.bounding_box.extent.x) / abs(other_velocity - current_velocity)
         else:
             time_to_arrival = distance / abs(other_velocity - current_velocity)
 
@@ -970,7 +953,6 @@ class InTimeToCollisionToVehicle(AtomicCondition):
 
 
 class InTimeToArrivalToVehicleSideLane(InTimeToArrivalToLocation):
-
     """
     This class contains a check if a actor arrives within a given time
     at another actor's side lane. Inherits from InTimeToArrivalToLocation
@@ -1043,7 +1025,6 @@ class InTimeToArrivalToVehicleSideLane(InTimeToArrivalToLocation):
 
 
 class WaitUntilInFront(AtomicCondition):
-
     """
     Behavior that support the creation of cut ins. It waits until the actor has passed another actor
 
@@ -1120,7 +1101,6 @@ class WaitUntilInFront(AtomicCondition):
 
 
 class DriveDistance(AtomicCondition):
-
     """
     This class contains an atomic behavior to drive a certain distance.
 
@@ -1164,7 +1144,6 @@ class DriveDistance(AtomicCondition):
 
 
 class AtRightmostLane(AtomicCondition):
-
     """
     This class contains an atomic behavior to check if the actor is at the rightest driving lane.
 
@@ -1206,7 +1185,6 @@ class AtRightmostLane(AtomicCondition):
 
 
 class WaitForTrafficLightState(AtomicCondition):
-
     """
     This class contains an atomic behavior to wait for a given traffic light
     to have the desired state.
@@ -1245,7 +1223,6 @@ class WaitForTrafficLightState(AtomicCondition):
 
 
 class WaitEndIntersection(AtomicCondition):
-
     """
     Atomic behavior that waits until the vehicles has gone outside the junction.
     If currently inside no intersection, it will wait until one is found
@@ -1279,7 +1256,6 @@ class WaitEndIntersection(AtomicCondition):
 
 
 class WaitForBlackboardVariable(AtomicCondition):
-
     """
     Atomic behavior that keeps running until the blackboard variable is set to the corresponding value.
     Used to avoid returning FAILURE if the blackboard comparison fails.
