@@ -68,7 +68,6 @@ from srunner.tools.py_trees_port import oneshot_behavior
 
 
 class OpenScenarioParser(object):
-
     """
     Pure static class providing conversions from OpenSCENARIO elements to ScenarioRunner elements
     """
@@ -614,7 +613,7 @@ class OpenScenarioParser(object):
 
         if condition.find('ByEntityCondition') is not None:
 
-            trigger_actor = None    # A-priori validation ensures that this will be not None
+            trigger_actor = None  # A-priori validation ensures that this will be not None
             triggered_actor = None
 
             for triggering_entities in condition.find('ByEntityCondition').iter('TriggeringEntities'):
