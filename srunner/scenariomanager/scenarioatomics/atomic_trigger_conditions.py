@@ -889,6 +889,86 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         return new_status
 
 
+class InTimeToCollisionToVehicle(AtomicCondition):
+
+    """
+    This class contains a check of time to collision between two dynamic actors.
+    The distance calculation is done from edge to edge to the actors.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - name: Name of the condition
+    - time: The behavior is successful, if TTA is less than _time_ in seconds
+    - other_actor: Reference actor used in this behavior
+
+    The condition terminates with SUCCESS, when the actor can reach the other vehicle within the given time
+    """
+
+    _max_time_to_arrival = float('inf')  # time to arrival in seconds
+
+    def __init__(self, actor, other_actor, time, condition_freespace, along_route=False,
+                 comparison_operator=operator.lt, name="TimeToArrival"):
+        """
+        Setup parameters
+        """
+        super(InTimeToCollisionToVehicle, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._map = CarlaDataProvider.get_map()
+        self._actor = actor
+        self._other_actor = other_actor
+        self._time = time
+        self._condition_freespace = condition_freespace
+        self._along_route = along_route
+        self._comparison_operator = comparison_operator
+
+        if self._along_route:
+            # Get the global route planner, used to calculate the route
+            dao = GlobalRoutePlannerDAO(self._map, 0.5)
+            grp = GlobalRoutePlanner(dao)
+            grp.setup()
+            self._grp = grp
+        else:
+            self._grp = None
+
+    def update(self):
+        """
+        Check if the ego vehicle can arrive at other actor within time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        current_location = CarlaDataProvider.get_location(self._actor)
+        other_location = CarlaDataProvider.get_location(self._other_actor)
+
+        if current_location is None or other_location is None:
+            return new_status
+
+        current_velocity = CarlaDataProvider.get_velocity(self._actor)
+        other_velocity = CarlaDataProvider.get_velocity(self._other_actor)
+
+        if self._along_route:
+            # Global planner needs a location at a driving lane
+            current_location = self._map.get_waypoint(current_location).transform.location
+            other_location = self._map.get_waypoint(other_location).transform.location
+
+        distance = calculate_distance(current_location, other_location, self._grp)
+
+        # if velocity is too small, simply use a large time to arrival
+        time_to_arrival = self._max_time_to_arrival
+
+        if self._condition_freespace:
+            time_to_arrival = (distance - self._actor.bounding_box.extent.x -
+                                self._other_actor.bounding_box.extent.x) / abs(other_velocity - current_velocity)
+        else:
+            time_to_arrival = distance / abs(other_velocity - current_velocity)
+
+        if self._comparison_operator(time_to_arrival, self._time):
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class InTimeToArrivalToVehicleSideLane(InTimeToArrivalToLocation):
 
     """
