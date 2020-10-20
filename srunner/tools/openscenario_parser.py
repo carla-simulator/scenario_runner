@@ -149,12 +149,15 @@ class OpenScenarioParser(object):
         """
         Parse the xml_tree, and replace all parameter references
         with the actual values.
+
         Note: Parameter names must not start with "$", however when referencing a parameter the
               reference has to start with "$".
               https://releases.asam.net/OpenSCENARIO/1.0.0/ASAM_OpenSCENARIO_BS-1-2_User-Guide_V1-0-0.html#_re_use_mechanisms
+
         Args:
             xml_tree: Containing all nodes that should be updated
             additional_parameter_dict (dictionary): Additional parameters as dict (key, value). Optional.
+
         returns:
             updated xml_tree, dictonary containing all parameters and their values
         """
@@ -187,6 +190,7 @@ class OpenScenarioParser(object):
     def set_global_parameters(parameter_dict):
         """
         Set global_osc_parameter dictionary
+
         Args:
             parameter_dict (Dictionary): Input for global_osc_parameter
         """
@@ -196,9 +200,11 @@ class OpenScenarioParser(object):
     def get_catalog_entry(catalogs, catalog_reference):
         """
         Get catalog entry referenced by catalog_reference included correct parameter settings
+
         Args:
             catalogs (Dictionary of dictionaries): List of all catalogs and their entries
             catalog_reference (XML ElementTree): Reference containing the exact catalog to be used
+
         returns:
             Catalog entry (XML ElementTree)
         """
@@ -215,10 +221,13 @@ class OpenScenarioParser(object):
         """
         Parse catalog_reference, and replace all parameter references
         in entry_instance by the values provided in catalog_reference.
+
         Not to be used from outside this class.
+
         Args:
             entry_instance (XML ElementTree): Entry to be updated
             catalog_reference (XML ElementTree): Reference containing the exact parameter values
+
         returns:
             updated entry_instance with updated parameter values
         """
@@ -252,10 +261,12 @@ class OpenScenarioParser(object):
     def get_friction_from_env_action(xml_tree, catalogs):
         """
         Extract the CARLA road friction coefficient from an OSC EnvironmentAction
+
         Args:
             xml_tree: Containing the EnvironmentAction,
                 or the reference to the catalog it is defined in.
             catalogs: XML Catalogs that could contain the EnvironmentAction
+
         returns:
            friction (float)
         """
@@ -282,10 +293,12 @@ class OpenScenarioParser(object):
     def get_weather_from_env_action(xml_tree, catalogs):
         """
         Extract the CARLA weather parameters from an OSC EnvironmentAction
+
         Args:
             xml_tree: Containing the EnvironmentAction,
                 or the reference to the catalog it is defined in.
             catalogs: XML Catalogs that could contain the EnvironmentAction
+
         returns:
            Weather (srunner.scenariomanager.weather_sim.Weather)
         """
@@ -334,10 +347,12 @@ class OpenScenarioParser(object):
     def get_controller(xml_tree, catalogs):
         """
         Extract the object controller from the OSC XML or a catalog
+
         Args:
             xml_tree: Containing the controller information,
                 or the reference to the catalog it is defined in.
             catalogs: XML Catalogs that could contain the EnvironmentAction
+
         returns:
            module: Python module containing the controller implementation
            args: Dictonary with (key, value) parameters for the controller
@@ -371,10 +386,12 @@ class OpenScenarioParser(object):
     def get_route(xml_tree, catalogs):
         """
         Extract the route from the OSC XML or a catalog
+
         Args:
             xml_tree: Containing the route information,
                 or the reference to the catalog it is defined in.
             catalogs: XML Catalogs that could contain the Route
+
         returns:
            waypoints: List of route waypoints
         """
@@ -401,6 +418,7 @@ class OpenScenarioParser(object):
     def convert_position_to_transform(position, actor_list=None):
         """
         Convert an OpenScenario position into a CARLA transform
+
         Not supported: Road, RelativeRoad, Lane, RelativeLane as the PythonAPI currently
                        does not provide sufficient access to OpenDrive information
                        Also not supported is Route. This can be added by checking additional
@@ -579,8 +597,10 @@ class OpenScenarioParser(object):
     def convert_condition_to_atomic(condition, actor_list):
         """
         Convert an OpenSCENARIO condition into a Behavior/Criterion atomic
+
         If there is a delay defined in the condition, then the condition is checked after the delay time
         passed by, e.g. <Condition name="" delay="5">.
+
         Note: Not all conditions are currently supported.
         """
 
@@ -880,6 +900,7 @@ class OpenScenarioParser(object):
     def convert_maneuver_to_atomic(action, actor, catalogs):
         """
         Convert an OpenSCENARIO maneuver action into a Behavior atomic
+
         Note not all OpenSCENARIO actions are currently supported
         """
         maneuver_name = action.attrib.get('name', 'unknown')

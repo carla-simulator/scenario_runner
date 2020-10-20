@@ -9,9 +9,11 @@
 This module provides all atomic scenario behaviors that reflect
 trigger conditions to either activate another behavior, or to stop
 another behavior.
+
 For example, such a condition could be "InTriggerRegion", which checks
 that a given actor reached a certain region on the map, and then starts/stops
 a behavior of this actor.
+
 The atomics are implemented with py_trees and make use of the AtomicCondition
 base class
 """
@@ -41,7 +43,9 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
 
     """
     Base class for all atomic conditions used to setup a scenario
+
     *All behaviors should use this class as parent*
+
     Important parameters:
     - name: Name of the atomic condition
     """
@@ -79,11 +83,13 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
     """
     OpenSCENARIO atomic
     This class contains the trigger condition for a distance to an OpenSCENARIO position
+
     Args:
         actor (carla.Actor): CARLA actor to execute the behavior
         osc_position (str): OpenSCENARIO position
         distance (float): Trigger distance between the actor and the target location in meters
         name (str): Name of the condition
+
     The condition terminates with SUCCESS, when the actor reached the target distance to the openSCENARIO position
     """
 
@@ -145,11 +151,13 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
     """
     OpenSCENARIO atomic
     This class contains a trigger if an actor arrives within a given time to an OpenSCENARIO position
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - osc_position: OpenSCENARIO position
     - time: The behavior is successful, if TTA is less than _time_ in seconds
     - name: Name of the condition
+
     The condition terminates with SUCCESS, when the actor can reach the position within the given time
     """
 
@@ -223,10 +231,12 @@ class StandStill(AtomicCondition):
 
     """
     This class contains a standstill behavior of a scenario
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - duration: Duration of the behavior in seconds
+
     The condition terminates with SUCCESS, when the actor does not move
     """
 
@@ -273,6 +283,7 @@ class RelativeVelocityToOtherActor(AtomicCondition):
     Atomic containing a comparison between an actor's velocity
     and another actor's one. The behavior returns SUCCESS when the
     expected comparison (greater than / less than / equal to) is achieved
+
     Args:
         actor (carla.Actor): actor from which the velocity is taken
         other_actor (carla.Actor): The actor with the reference velocity
@@ -296,6 +307,7 @@ class RelativeVelocityToOtherActor(AtomicCondition):
     def update(self):
         """
         Gets the speed of the two actors and compares them according to the comparison operator
+
         returns:
             py_trees.common.Status.RUNNING when the comparison fails and
             py_trees.common.Status.SUCCESS when it succeeds
@@ -321,6 +333,7 @@ class TriggerVelocity(AtomicCondition):
     Atomic containing a comparison between an actor's speed and a reference one.
     The behavior returns SUCCESS when the expected comparison (greater than /
     less than / equal to) is achieved.
+
     Args:
         actor (carla.Actor): CARLA actor from which the speed will be taken.
         name (string): Name of the atomic
@@ -341,6 +354,7 @@ class TriggerVelocity(AtomicCondition):
     def update(self):
         """
         Gets the speed of the actor and compares it with the reference one
+
         returns:
             py_trees.common.Status.RUNNING when the comparison fails and
             py_trees.common.Status.SUCCESS when it succeeds
@@ -363,6 +377,7 @@ class TriggerAcceleration(AtomicCondition):
     Atomic containing a comparison between an actor's acceleration
     and a reference one. The behavior returns SUCCESS when the
     expected comparison (greater than / less than / equal to) is achieved
+
     Args:
         actor (carla.Actor): CARLA actor to execute the behavior
         name (str): Name of the condition
@@ -383,6 +398,7 @@ class TriggerAcceleration(AtomicCondition):
     def update(self):
         """
         Gets the accleration of the actor and compares it with the reference one
+
         returns:
             py_trees.common.Status.RUNNING when the comparison fails and
             py_trees.common.Status.SUCCESS when it succeeds
@@ -408,6 +424,7 @@ class TimeOfDayComparison(AtomicCondition):
     Atomic containing a comparison between the current time of day of the simulation
     and a given one. The behavior returns SUCCESS when the
     expected comparison (greater than / less than / equal to) is achieved
+
     Args:
         datetime (datetime): CARLA actor to execute the behavior
         name (str): Name of the condition
@@ -426,6 +443,7 @@ class TimeOfDayComparison(AtomicCondition):
     def update(self):
         """
         Gets the time of day of the simulation and compares it with the reference one
+
         returns:
             py_trees.common.Status.RUNNING when the comparison fails and
             py_trees.common.Status.SUCCESS when it succeeds
@@ -450,10 +468,12 @@ class OSCStartEndCondition(AtomicCondition):
 
     """
     This class contains a check if a named story element has started/terminated.
+
     Important parameters:
     - element_name: The story element's name attribute
     - element_type: The element type [act,scene,maneuver,event,action]
     - rule: Either START or END
+
     The condition terminates with SUCCESS, when the named story element starts
     """
 
@@ -497,10 +517,12 @@ class InTriggerRegion(AtomicCondition):
 
     """
     This class contains the trigger region (condition) of a scenario
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - min_x, max_x, min_y, max_y: bounding box of the trigger region
+
     The condition terminates with SUCCESS, when the actor reached the target region
     """
 
@@ -543,12 +565,14 @@ class InTriggerDistanceToVehicle(AtomicCondition):
     """
     This class contains the trigger distance (condition) between to actors
     of a scenario
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - reference_actor: Reference CARLA actor
     - name: Name of the condition
     - distance: Trigger distance between the two actors in meters
     - dx, dy, dz: distance to reference_location (location of reference_actor)
+
     The condition terminates with SUCCESS, when the actor reached the target distance to the other actor
     """
 
@@ -589,11 +613,13 @@ class InTriggerDistanceToLocation(AtomicCondition):
     """
     This class contains the trigger (condition) for a distance to a fixed
     location of a scenario
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - target_location: Reference location (carla.location)
     - name: Name of the condition
     - distance: Trigger distance between the actor and the target location in meters
+
     The condition terminates with SUCCESS, when the actor reached the target distance to the given location
     """
 
@@ -639,10 +665,12 @@ class InTriggerDistanceToNextIntersection(AtomicCondition):
     """
     This class contains the trigger (condition) for a distance to the
     next intersection of a scenario
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - distance: Trigger distance between the actor and the next intersection in meters
+
     The condition terminates with SUCCESS, when the actor reached the target distance to the next intersection
     """
 
@@ -684,12 +712,14 @@ class InTriggerDistanceToLocationAlongRoute(AtomicCondition):
     """
     Implementation for a behavior that will check if a given actor
     is within a given distance to a given location considering a given route
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - distance: Trigger distance between the actor and the next intersection in meters
     - route: Route to be checked
     - location: Location on the route to be checked
+
     The condition terminates with SUCCESS, when the actor reached the target distance
     along its route to the given location
     """
@@ -733,11 +763,13 @@ class InTimeToArrivalToLocation(AtomicCondition):
     """
     This class contains a check if a actor arrives within a given time
     at a given location.
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - time: The behavior is successful, if TTA is less than _time_ in seconds
     - location: Location to be checked in this behavior
+
     The condition terminates with SUCCESS, when the actor can reach the target location within the given time
     """
 
@@ -786,11 +818,13 @@ class InTimeToArrivalToVehicle(AtomicCondition):
     """
     This class contains a check if a actor arrives within a given time
     at another actor.
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - time: The behavior is successful, if TTA is less than _time_ in seconds
     - other_actor: Reference actor used in this behavior
+
     The condition terminates with SUCCESS, when the actor can reach the other vehicle within the given time
     """
 
@@ -859,12 +893,15 @@ class InTimeToCollisionToVehicle(AtomicCondition):
 
     """
     This class contains a check of time to collision between two dynamic actors.
+
     The distance calculation is done from edge to edge to the actors.
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - time: The behavior is successful, if TTA is less than _time_ in seconds
     - other_actor: Reference actor used in this behavior
+
     The condition terminates with SUCCESS, when the actor can reach the other vehicle within the given time
     """
 
@@ -938,12 +975,14 @@ class InTimeToArrivalToVehicleSideLane(InTimeToArrivalToLocation):
     """
     This class contains a check if a actor arrives within a given time
     at another actor's side lane. Inherits from InTimeToArrivalToLocation
+
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - name: Name of the condition
     - time: The behavior is successful, if TTA is less than _time_ in seconds
     - cut_in_lane: the lane from where the other_actor will do the cut in
     - other_actor: Reference actor used in this behavior
+
     The condition terminates with SUCCESS, when the actor can reach the other vehicle within the given time
     """
 
@@ -1008,6 +1047,7 @@ class WaitUntilInFront(AtomicCondition):
 
     """
     Behavior that support the creation of cut ins. It waits until the actor has passed another actor
+
     Parameters:
     - actor: the one getting in front of the other actor
     - other_actor: the reference vehicle that the actor will have to get in front of
@@ -1084,9 +1124,11 @@ class DriveDistance(AtomicCondition):
 
     """
     This class contains an atomic behavior to drive a certain distance.
+
     Important parameters:
     - actor: CARLA actor to execute the condition
     - distance: Distance for this condition in meters
+
     The condition terminates with SUCCESS, when the actor drove at least the given distance
     """
 
@@ -1126,8 +1168,10 @@ class AtRightmostLane(AtomicCondition):
 
     """
     This class contains an atomic behavior to check if the actor is at the rightest driving lane.
+
     Important parameters:
     - actor: CARLA actor to execute the condition
+
     The condition terminates with SUCCESS, when the actor enters the rightest lane
     """
 
@@ -1167,9 +1211,11 @@ class WaitForTrafficLightState(AtomicCondition):
     """
     This class contains an atomic behavior to wait for a given traffic light
     to have the desired state.
+
     Args:
         actor (carla.TrafficLight): CARLA traffic light to execute the condition
         state (carla.TrafficLightState): State to be checked in this condition
+
     The condition terminates with SUCCESS, when the traffic light switches to the desired state
     """
 
@@ -1238,6 +1284,7 @@ class WaitForBlackboardVariable(AtomicCondition):
     """
     Atomic behavior that keeps running until the blackboard variable is set to the corresponding value.
     Used to avoid returning FAILURE if the blackboard comparison fails.
+
     It also initially sets the variable to a given value, if given
     """
 
