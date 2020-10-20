@@ -16,6 +16,9 @@
 ### :bug: Bug Fixes
 * Fixed exception when using OSC scenarios without EnvironmentAction inside Storyboard-Init
 * Fixed bug causing the TrafficManager to not be correctly updated at asynchronous simualtions
+### :ghost: Maintenance
+* Added check to ensure OSC names (for story/act/maneuver) are unique
+
 
 
 ## CARLA ScenarioRunner 0.9.10
