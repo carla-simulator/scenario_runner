@@ -13,6 +13,7 @@ It shall be used from the ScenarioManager only.
 from __future__ import print_function
 
 import time
+import json
 from tabulate import tabulate
 
 
@@ -23,20 +24,22 @@ class ResultOutputProvider(object):
     It shall be used from the ScenarioManager only.
     """
 
-    def __init__(self, data, result, stdout=True, filename=None, junit=None):
+    def __init__(self, data, result, stdout=True, filename=None, junitfile=None, jsonfile=None):
         """
         Setup all parameters
         - _data contains all scenario-related information
         - _result is overall pass/fail info
         - _stdout (True/False) is used to (de)activate terminal output
         - _filename is used to (de)activate file output in tabular form
-        - _junit is used to (de)activate file output in _junit form
+        - _junit is used to (de)activate file output in junit form
+        - _json is used to (de)activate file output in json form
         """
         self._data = data
         self._result = result
         self._stdout = stdout
         self._filename = filename
-        self._junit = junit
+        self._junit = junitfile
+        self._json = jsonfile
 
         self._start_time = time.strftime('%Y-%m-%d %H:%M:%S',
                                          time.localtime(self._data.start_system_time))
@@ -49,6 +52,8 @@ class ResultOutputProvider(object):
         """
         if self._junit is not None:
             self._write_to_junit()
+        if self._json is not None:
+            self._write_to_reportjson()
 
         output = self.create_output_text()
         if self._filename is not None:
@@ -131,6 +136,75 @@ class ResultOutputProvider(object):
         output += " " + "=" * end_line_length + "\n"
 
         return output
+
+    def _write_to_reportjson(self):
+        """
+        Write a machine-readable report to JSON
+
+        The resulting report has the following format:
+        {
+            criteria: [
+                {
+                    name: "CheckCollisions",
+                    expected: "0",
+                    actual: "2",
+                    optional: false,
+                    success: false
+                }, ...
+            ]
+        }
+        """
+        json_list = []
+
+        def result_dict(name, actor, optional, expected, actual, success):
+            """
+            Convenience function to convert its arguments into a JSON-ready dict
+            :param name: Name of the test criterion
+            :param actor: Actor ID as string
+            :param optional: If the criterion is optional
+            :param expected: The expected value of the criterion (eg 0 for collisions)
+            :param actual: The actual value
+            :param success: If the test was passed
+            :return: A dict data structure that will be written to JSON
+            """
+            return {
+                "name": name,
+                "actor": actor,
+                "optional": optional,
+                "expected": expected,
+                "actual": actual,
+                "success": success,
+            }
+
+        for criterion in self._data.scenario.get_criteria():
+            json_list.append(
+                result_dict(
+                    criterion.name,
+                    "{}-{}".format(criterion.actor.type_id[8:], criterion.actor.id),
+                    criterion.optional,
+                    criterion.expected_value_success,
+                    criterion.actual_value,
+                    criterion.test_status in ["SUCCESS", "ACCEPTABLE"]
+                )
+            )
+
+        # add one entry for duration
+        timeout = self._data.scenario.timeout
+        duration = self._data.scenario_duration_game
+        json_list.append(
+            result_dict(
+                "Duration", "all", False, timeout, duration, duration <= timeout
+            )
+        )
+
+        result_object = {
+            "scenario": self._data.scenario_tree.name,
+            "success": self._result in ["SUCCESS", "ACCEPTABLE"],
+            "criteria": json_list
+        }
+
+        with open(self._json, "w") as fp:
+            json.dump(result_object, fp, indent=4)
 
     def _write_to_junit(self):
         """
