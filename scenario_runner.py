@@ -170,13 +170,15 @@ class ScenarioRunner(object):
         Remove and destroy all actors
         """
         # Simulation still running and in synchronous mode?
-        if self.manager is not None and self.manager.get_running_status() \
-                and self.world is not None and self._args.sync:
-            # Reset to asynchronous mode
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            settings.fixed_delta_seconds = None
-            self.world.apply_settings(settings)
+        if self.world is not None and self._args.sync:
+            try:
+                # Reset to asynchronous mode
+                settings = self.world.get_settings()
+                settings.synchronous_mode = False
+                settings.fixed_delta_seconds = None
+                self.world.apply_settings(settings)
+            except RuntimeError:
+                sys.exit(-1)
 
         self.manager.cleanup()
 
