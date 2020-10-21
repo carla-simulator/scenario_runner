@@ -207,7 +207,7 @@ contains of submodules, which are not listed, the support status applies to all 
 <td><small><code>LateralAction</code></small><br><code>LaneChangeAction</code></td>
 <td>&#10060;</td>
 <td>&#9989;</td>
-<td>Currently only lane change by one lane to the left or right is supported (RelativeTargetLane).</td>
+<td>Currently all lane changes have a linear dynamicShape, the dynamicDimension is defined as the distance and are relative to the actor itself (RelativeTargetLane).</td>
 <tr>
 <td><small><code>LateralAction</code></small><br><code>LaneOffsetAction</code></td>
 <td>&#10060;</td>

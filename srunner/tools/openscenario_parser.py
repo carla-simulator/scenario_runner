@@ -1022,10 +1022,11 @@ class OpenScenarioParser(object):
                 private_action = private_action.find('LateralAction')
                 if private_action.find('LaneChangeAction') is not None:
                     # Note: LaneChangeActions are currently only supported for RelativeTargetLane
-                    #       with +1 or -1 referring to the action actor
                     lat_maneuver = private_action.find('LaneChangeAction')
                     target_lane_rel = float(lat_maneuver.find("LaneChangeTarget").find(
                         "RelativeTargetLane").attrib.get('value', 0))
+                    direction = "left" if target_lane_rel < 0 else "right"
+                    lane_changes = abs(target_lane_rel)
                     # duration and distance
                     distance = float('inf')
                     duration = float('inf')
@@ -1036,10 +1037,10 @@ class OpenScenarioParser(object):
                     else:
                         duration = float(
                             lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
-                    atomic = ChangeActorLateralMotion(actor,
-                                                      direction="left" if target_lane_rel < 0 else "right",
+                    atomic = ChangeActorLateralMotion(actor, direction=direction,
                                                       distance_lane_change=distance,
                                                       distance_other_lane=1000,
+                                                      lane_changes=lane_changes,
                                                       name=maneuver_name)
                 else:
                     raise AttributeError("Unknown lateral action")

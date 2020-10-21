@@ -61,6 +61,7 @@
     - Added support for AcquirePositionAction
     - Extended FollowLeadingVehicle example to illustrate weather changes
     - Created example scenarios to illustrate usage of controllers and weather changes
+    - Extended LaneChangeAction to allow lane changes of multiple lanes
     - Reworked the handling of Catalogs to make it compliant to the 1.0 version (relative paths have to be relative to the scenario file)
     - The RoadNetwork can be defined as global Parameter
     - Fixed handling of relative positions with negative offset
@@ -88,6 +89,7 @@
     - InTimeToArrivalToVehicle has had its two actor arguments swapped, to match all the other behaviors.
     - Added *along_route* flag to InTimeToArrivalToVehicle, to take into account the topology of the road
     - Changed the inputs to TrafficLightStateSetter to match the other atomics, but the functionality remains unchanged
+    - Improved LaneChange atomic to allow lane changes of multiple lanes
 
 ### :bug: Bug Fixes
 * Fixed bug causing parsing RelativeTargetSpeed tag to fail. 
@@ -111,6 +113,8 @@
 * Fixed bug with ending roads near stop signals to break the simulation
 * Fixed exception bug in spawn function of CarlaDataProvider
 * Fixed access to private member of CARLA LocalPlanner inside OSC NpcVehicleControl
+* Fixed bug causing LaneChange to break the simulation if the asked lane change was impossible, instead of correctly stopping it
+* Fixed bug causing ChangeLane scenarios to never end
 * Fixed handling of OSC LanePosition (#625)
 * Fixed bug causing the route repetitions to spawn different background activity
 * Fixed bug causing the rotate_point function inside RunningRedLightTest to not function properly.
