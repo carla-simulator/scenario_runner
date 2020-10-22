@@ -541,7 +541,8 @@ class ChangeActorWaypoints(AtomicBehavior):
 
     Args:
         actor (carla.Actor): Controlled actor.
-        waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        waypoints (List of OSC elements): List of 'Position' OpenScenario XML elements.
+            waypoints will be converted to Carla transforms.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorWaypoints'.
 
@@ -581,6 +582,13 @@ class ChangeActorWaypoints(AtomicBehavior):
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
 
         self._start_time = GameTime.get_time()
+
+        # Transforming OSC waypoints to Carla waypoints
+        carla_waypoints = []
+        for point in self._waypoints:
+            carla_transforms = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(point)
+            carla_waypoints.append(carla_transforms)
+        self._waypoints = carla_waypoints
 
         actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
 

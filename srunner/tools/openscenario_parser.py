@@ -427,8 +427,9 @@ class OpenScenarioParser(object):
         if route is not None:
             for waypoint in route.iter('Waypoint'):
                 position = waypoint.find('Position')
-                transform = OpenScenarioParser.convert_position_to_transform(position)
-                waypoints.append(transform)
+                waypoints.append(position)
+        else:
+            raise AttributeError("No waypoints has been set")
 
         return waypoints
 
