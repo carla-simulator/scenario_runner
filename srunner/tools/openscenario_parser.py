@@ -9,6 +9,8 @@
 This module provides a parser for scenario configuration files based on OpenSCENARIO
 """
 
+from __future__ import print_function
+
 from distutils.util import strtobool
 import copy
 import datetime
@@ -64,6 +66,19 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                WaitForTrafficLightState)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
+
+
+def oneshot_with_check(variable_name, behaviour, name=None):
+    """
+    Check if the blackboard contains already variable_name and
+    return a oneshot_behavior for behaviour.
+    """
+    blackboard = py_trees.blackboard.Blackboard()
+    # check if the variable_name already exists in the blackboard
+    if blackboard.get(variable_name) is not None:
+        print("Warning: {} is already used before. Check your XOSC for duplicated names".format(variable_name))
+
+    return oneshot_behavior(variable_name, behaviour, name)
 
 
 class OpenScenarioParser(object):
@@ -269,7 +284,12 @@ class OpenScenarioParser(object):
         returns:
            friction (float)
         """
-        set_environment = next(xml_tree.iter("EnvironmentAction"))
+
+        if xml_tree.findall('.//EnvironmentAction'):
+            node = xml_tree.findall('.//EnvironmentAction')[0]
+            set_environment = next(node.iter("EnvironmentAction"))
+        else:
+            return 1.0
 
         if sum(1 for _ in set_environment.iter("Weather")) != 0:
             environment = set_environment.find("Environment")
@@ -298,7 +318,12 @@ class OpenScenarioParser(object):
         returns:
            Weather (srunner.scenariomanager.weather_sim.Weather)
         """
-        set_environment = next(xml_tree.iter("EnvironmentAction"))
+
+        if xml_tree.findall('.//EnvironmentAction'):
+            node = xml_tree.findall('.//EnvironmentAction')[0]
+            set_environment = next(node.iter("EnvironmentAction"))
+        else:
+            return Weather(carla.WeatherParameters())
 
         if sum(1 for _ in set_environment.iter("Weather")) != 0:
             environment = set_environment.find("Environment")
@@ -930,9 +955,9 @@ class OpenScenarioParser(object):
                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=maneuver_name)
 
                 env_behavior.add_child(
-                    oneshot_behavior(variable_name=maneuver_name + ">WeatherUpdate", behaviour=weather_behavior))
+                    oneshot_with_check(variable_name=maneuver_name + ">WeatherUpdate", behaviour=weather_behavior))
                 env_behavior.add_child(
-                    oneshot_behavior(variable_name=maneuver_name + ">FrictionUpdate", behaviour=friction_behavior))
+                    oneshot_with_check(variable_name=maneuver_name + ">FrictionUpdate", behaviour=friction_behavior))
 
                 return env_behavior
 
@@ -998,10 +1023,11 @@ class OpenScenarioParser(object):
                 private_action = private_action.find('LateralAction')
                 if private_action.find('LaneChangeAction') is not None:
                     # Note: LaneChangeActions are currently only supported for RelativeTargetLane
-                    #       with +1 or -1 referring to the action actor
                     lat_maneuver = private_action.find('LaneChangeAction')
                     target_lane_rel = float(lat_maneuver.find("LaneChangeTarget").find(
                         "RelativeTargetLane").attrib.get('value', 0))
+                    direction = "left" if target_lane_rel < 0 else "right"
+                    lane_changes = abs(target_lane_rel)
                     # duration and distance
                     distance = float('inf')
                     duration = float('inf')
@@ -1012,10 +1038,10 @@ class OpenScenarioParser(object):
                     else:
                         duration = float(
                             lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
-                    atomic = ChangeActorLateralMotion(actor,
-                                                      direction="left" if target_lane_rel < 0 else "right",
+                    atomic = ChangeActorLateralMotion(actor, direction=direction,
                                                       distance_lane_change=distance,
                                                       distance_other_lane=1000,
+                                                      lane_changes=lane_changes,
                                                       name=maneuver_name)
                 else:
                     raise AttributeError("Unknown lateral action")

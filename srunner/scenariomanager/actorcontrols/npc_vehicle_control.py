@@ -38,7 +38,7 @@ class NpcVehicleControl(BasicControl):
         self._local_planner = LocalPlanner(  # pylint: disable=undefined-variable
             self._actor, opt_dict={
                 'target_speed': self._target_speed * 3.6,
-                    'lateral_control_dict': self._args})
+                'lateral_control_dict': self._args})
 
         if self._waypoints:
             self._update_plan()
