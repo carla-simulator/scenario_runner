@@ -698,9 +698,6 @@ class OpenScenarioParser(object):
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
                     condition_freespace = strtobool(headtime_condition.attrib.get('freespace', False))
-                    if condition_freespace:
-                        raise NotImplementedError(
-                            "TimeHeadwayCondition: freespace attribute is currently not implemented")
                     condition_along_route = strtobool(headtime_condition.attrib.get('alongRoute', False))
 
                     for actor in actor_list:
@@ -712,7 +709,7 @@ class OpenScenarioParser(object):
                             headtime_condition.attrib.get('entityRef', None)))
 
                     atomic = InTimeToArrivalToVehicle(
-                        trigger_actor, triggered_actor, condition_value,
+                        trigger_actor, triggered_actor, condition_value, condition_freespace,
                         condition_along_route, condition_operator, condition_name
                     )
 
@@ -722,13 +719,11 @@ class OpenScenarioParser(object):
                     condition_rule = ttc_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
-                    condition_value = ttc_condition.attrib.get('value')
+                    condition_value = float(ttc_condition.attrib.get('value'))
                     condition_target = ttc_condition.find('TimeToCollisionConditionTarget')
+                    entity_ref_ = condition_target.find('EntityRef')
 
                     condition_freespace = strtobool(ttc_condition.attrib.get('freespace', False))
-                    if condition_freespace:
-                        raise NotImplementedError(
-                            "TimeToCollisionCondition: freespace attribute is currently not implemented")
                     condition_along_route = strtobool(ttc_condition.attrib.get('alongRoute', False))
 
                     if condition_target.find('Position') is not None:
@@ -737,15 +732,15 @@ class OpenScenarioParser(object):
                             trigger_actor, position, condition_value, condition_along_route, condition_operator)
                     else:
                         for actor in actor_list:
-                            if ttc_condition.attrib.get('EntityRef', None) == actor.attributes['role_name']:
+                            if entity_ref_.attrib.get('entityRef', None) == actor.attributes['role_name']:
                                 triggered_actor = actor
                                 break
                         if triggered_actor is None:
                             raise AttributeError("Cannot find actor '{}' for condition".format(
-                                ttc_condition.attrib.get('EntityRef', None)))
+                                entity_ref_.attrib.get('entityRef', None)))
 
                         atomic = InTimeToArrivalToVehicle(
-                            trigger_actor, triggered_actor, condition_value,
+                            trigger_actor, triggered_actor, condition_value, condition_freespace,
                             condition_along_route, condition_operator, condition_name)
                 elif entity_condition.find('AccelerationCondition') is not None:
                     accel_condition = entity_condition.find('AccelerationCondition')

@@ -321,11 +321,11 @@ The following two tables list the support status for each.
 <tr>
 <td><code>TimeHeadwayCondition</code></td>
 <td>&#9989;</td>
-<td>*freespace* attribute is still not supported</td>
+<td></td>
 <tr>
 <td><code>TimeToCollisionCondition</code></td>
 <td>&#9989;</td>
-<td>*freespace* attribute is still not supported</td>
+<td></td>
 <tr>
 <td><code>TraveledDistanceCondition</code></td>
 <td>&#9989;</td>

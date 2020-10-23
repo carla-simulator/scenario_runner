@@ -550,8 +550,8 @@ class InTriggerRegion(AtomicCondition):
         if location is None:
             return new_status
 
-        not_in_region = (location.x < self._min_x or location.x > self._max_x) or (
-            location.y < self._min_y or location.y > self._max_y)
+        not_in_region = (location.x < self._min_x or location.x > self._max_x) or \
+                        (location.y < self._min_y or location.y > self._max_y)
         if not not_in_region:
             new_status = py_trees.common.Status.SUCCESS
 
@@ -830,8 +830,8 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
     _max_time_to_arrival = float('inf')  # time to arrival in seconds
 
-    def __init__(self, actor, other_actor, time, along_route=False,
-                 comparison_operator=operator.lt, name="TimeToArrival"):
+    def __init__(self, actor, other_actor, time, condition_freespace=False,
+                 along_route=False, comparison_operator=operator.lt, name="TimeToArrival"):
         """
         Setup parameters
         """
@@ -841,6 +841,7 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         self._actor = actor
         self._other_actor = other_actor
         self._time = time
+        self._condition_freespace = condition_freespace
         self._along_route = along_route
         self._comparison_operator = comparison_operator
 
@@ -879,7 +880,11 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         time_to_arrival = self._max_time_to_arrival
 
         if current_velocity > other_velocity:
-            time_to_arrival = 2 * distance / (current_velocity - other_velocity)
+            if self._condition_freespace:
+                time_to_arrival = (distance - self._actor.bounding_box.extent.x -
+                                   self._other_actor.bounding_box.extent.x) / (current_velocity - other_velocity)
+            else:
+                time_to_arrival = distance / (current_velocity - other_velocity)
 
         if self._comparison_operator(time_to_arrival, self._time):
             new_status = py_trees.common.Status.SUCCESS
