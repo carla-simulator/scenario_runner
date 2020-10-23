@@ -122,6 +122,7 @@
     - Added support for TimeOfDay tag
     - Added support for scenarios with no actors
     - Added support for TimeToCollisionCondition with freespace.
+    - Added support for TimeHeadwayCondition with freespace.
 * Scenario updates:
     - Scenarios that are part of RouteScenario have had their triggering condition modified. This will only activate when a certain parameter is set, and if not, the old trigger condition will still be applied.
 * Atomics:

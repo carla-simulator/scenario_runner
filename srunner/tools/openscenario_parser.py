@@ -677,7 +677,7 @@ class OpenScenarioParser(object):
                     condition_rule = headtime_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
-                    condition_freespace = strtobool(headtime_condition.attrib.get('freespace'))
+                    condition_freespace = strtobool(headtime_condition.attrib.get('freespace', False))
                     condition_along_route = strtobool(headtime_condition.attrib.get('alongRoute', False))
 
                     for actor in actor_list:
@@ -703,7 +703,7 @@ class OpenScenarioParser(object):
                     condition_target = ttc_condition.find('TimeToCollisionConditionTarget')
                     entity_ref_ = condition_target.find('EntityRef')
 
-                    condition_freespace = strtobool(ttc_condition.attrib.get('freespace'))
+                    condition_freespace = strtobool(ttc_condition.attrib.get('freespace', False))
                     condition_along_route = strtobool(ttc_condition.attrib.get('alongRoute', False))
 
                     if condition_target.find('Position') is not None:
