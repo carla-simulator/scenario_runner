@@ -1053,7 +1053,8 @@ class OpenScenarioParser(object):
                 module, args = OpenScenarioParser.get_controller(controller_action, catalogs)
                 atomic = ChangeActorControl(actor, control_py_module=module, args=args)
             elif private_action.find('TeleportAction') is not None:
-                position = private_action.find('TeleportAction')
+                teleport_action = private_action.find('TeleportAction')
+                position = teleport_action.find('Position')
                 atomic = ActorTransformSetterToOSCPosition(actor, position, name=maneuver_name)
             elif private_action.find('RoutingAction') is not None:
                 private_action = private_action.find('RoutingAction')
