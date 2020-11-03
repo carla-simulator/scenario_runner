@@ -18,6 +18,7 @@
 * Fixed exception when using OSC scenarios without EnvironmentAction inside Storyboard-Init
 * Fixed bug causing the TrafficManager to not be correctly updated at asynchronous simualtions
 * Fixed shutdown issue in ScenarioRunner causing to not switch to asynchronous mode
+* Fixed OSC TeleportAction within Story
 ### :ghost: Maintenance
 * Added check to ensure OSC names (for story/act/maneuver) are unique
 
