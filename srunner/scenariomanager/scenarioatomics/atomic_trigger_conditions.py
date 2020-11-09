@@ -865,13 +865,13 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
         # Get the bounding boxes
         if self._condition_freespace:
-            if type(self._actor) in [carla.Vehicle, carla.Walker]:
+            if isinstance(self._actor, (carla.Vehicle, carla.Walker)):
                 actor_extent = self._actor.bounding_box.extent.x
             else:
                 # Patch, as currently static objects have no bounding boxes
                 actor_extent = 0
 
-            if type(self._other_actor) in [carla.Vehicle, carla.Walker]:
+            if isinstance(self._other_actor, (carla.Vehicle, carla.Walker)):
                 other_extent = self._other_actor.bounding_box.extent.x
             else:
                 # Patch, as currently static objects have no bounding boxes
