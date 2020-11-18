@@ -252,7 +252,7 @@ contains of submodules, which are not listed, the support status applies to all 
 <td><small><code>RoutingAction</code></small><br><code>AssignRouteAction</code></td>
 <td>&#10060;</td>
 <td>&#9989;</td>
-<td></td>
+<td>Route Options (shortest/fastest/etc) are supported. Shortests means direct path between A and B, all other will use the shortest path along the road network between A and B</td>
 <tr>
 <td><small><code>RoutingAction</code></small><br><code>FollowTrajectoryAction</code></td>
 <td>&#10060;</td>

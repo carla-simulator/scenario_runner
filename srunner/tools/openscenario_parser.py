@@ -411,7 +411,9 @@ class OpenScenarioParser(object):
             catalogs: XML Catalogs that could contain the Route
 
         returns:
-           waypoints: List of route waypoints
+           waypoints: List of route waypoints = (waypoint, routing strategy)
+                      where the strategy is a string indicating if the fastest/shortest/etc.
+                      route should be used.
         """
         route = None
 
@@ -427,7 +429,8 @@ class OpenScenarioParser(object):
         if route is not None:
             for waypoint in route.iter('Waypoint'):
                 position = waypoint.find('Position')
-                waypoints.append(position)
+                routing_option = str(waypoint.attrib.get('routeStrategy'))
+                waypoints.append((position, routing_option))
         else:
             raise AttributeError("No waypoints has been set")
 
