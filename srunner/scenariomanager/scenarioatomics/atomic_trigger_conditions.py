@@ -863,6 +863,20 @@ class InTimeToArrivalToVehicle(AtomicCondition):
         current_location = CarlaDataProvider.get_location(self._actor)
         other_location = CarlaDataProvider.get_location(self._other_actor)
 
+        # Get the bounding boxes
+        if self._condition_freespace:
+            if isinstance(self._actor, (carla.Vehicle, carla.Walker)):
+                actor_extent = self._actor.bounding_box.extent.x
+            else:
+                # Patch, as currently static objects have no bounding boxes
+                actor_extent = 0
+
+            if isinstance(self._other_actor, (carla.Vehicle, carla.Walker)):
+                other_extent = self._other_actor.bounding_box.extent.x
+            else:
+                # Patch, as currently static objects have no bounding boxes
+                other_extent = 0
+
         if current_location is None or other_location is None:
             return new_status
 
@@ -881,8 +895,7 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
         if current_velocity > other_velocity:
             if self._condition_freespace:
-                time_to_arrival = (distance - self._actor.bounding_box.extent.x -
-                                   self._other_actor.bounding_box.extent.x) / (current_velocity - other_velocity)
+                time_to_arrival = (distance - actor_extent - other_extent) / (current_velocity - other_velocity)
             else:
                 time_to_arrival = distance / (current_velocity - other_velocity)
 
