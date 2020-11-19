@@ -570,7 +570,7 @@ class SyncArrivalOSC(AtomicBehavior):
         self._relative_to_master = relative_to_master
         self._relative_type = relative_type
 
-        world = CarlaDataProvider.get_world()
+        self._start_time = None
 
     def initialise(self):
         """
@@ -603,7 +603,7 @@ class SyncArrivalOSC(AtomicBehavior):
         velocity_reference = CarlaDataProvider.get_velocity(self._master_actor)
         if velocity_reference > 0:
             time_reference = distance_reference / velocity_reference
-        else: 
+        else:
             time_reference = float('inf')
 
         # Get the required velocity of the actor
@@ -644,7 +644,7 @@ class SyncArrivalOSC(AtomicBehavior):
         velocity_reference = CarlaDataProvider.get_velocity(self._master_actor)
         if velocity_reference > 0:
             time_reference = distance_reference / velocity_reference
-        else: 
+        else:
             time_reference = float('inf')
 
         # Get the required velocity of the actor

@@ -1064,15 +1064,17 @@ class OpenScenarioParser(object):
                 if sync_action.find("FinalSpeed").find("AbsoluteSpeed") is not None:
                     final_speed = float(sync_action.find("FinalSpeed").find(
                         "AbsoluteSpeed").attrib.get('value', 0))
-                    atomic = SyncArrivalOSC(actor, master_actor, position, master_position, final_speed, name=maneuver_name)
+                    atomic = SyncArrivalOSC(
+                        actor, master_actor, position, master_position, final_speed, name=maneuver_name)
 
                 # relative velocity to given actor
                 elif sync_action.find("FinalSpeed").find("RelativeSpeedToMaster") is not None:
                     relative_speed = sync_action.find("FinalSpeed").find("RelativeSpeedToMaster")
                     final_speed = float(relative_speed.attrib.get('value', 0))
                     relative_type = relative_speed.attrib.get('speedTargetValueType')
-                    atomic = SyncArrivalOSC(actor, master_actor, position, master_position, final_speed,
-                                            relative_to_master=True, relative_type=relative_type, name=maneuver_name)
+                    atomic = SyncArrivalOSC(
+                        actor, master_actor, position, master_position, final_speed,
+                        relative_to_master=True, relative_type=relative_type, name=maneuver_name)
                 else:
                     raise AttributeError("Unknown speed action")
             elif private_action.find('ActivateControllerAction') is not None:
