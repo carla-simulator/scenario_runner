@@ -607,8 +607,12 @@ class ChangeActorWaypoints(AtomicBehavior):
                 if i == 0:
                     mmap = CarlaDataProvider.get_map()
                     ego_location = CarlaDataProvider.get_location(self._actor)
-                    ego_waypoint = mmap.get_waypoint(ego_location).transform.location
-                    waypoint = ego_waypoint
+                    ego_waypoint = mmap.get_waypoint(ego_location)
+                    try:
+                        ego_next_wp = ego_waypoint.next(1)[0]
+                    except IndexError:
+                        ego_next_wp = ego_waypoint
+                    waypoint = ego_next_wp.transform.location
                 else:
                     waypoint = carla_route_elements[i - 1][0].location
                 waypoint_next = carla_route_elements[i][0].location
@@ -627,7 +631,7 @@ class ChangeActorWaypoints(AtomicBehavior):
                         if len(route) > 1:
                             last_heading_vec = route[-1].location - route[-2].location
                         else:
-                            last_heading_vec = route[-1].location - ego_waypoint
+                            last_heading_vec = route[-1].location - ego_next_wp.transform.location
                         last_heading = np.arctan2(last_heading_vec.y, last_heading_vec.x)
 
                         heading_delta = math.fabs(new_heading - last_heading)
