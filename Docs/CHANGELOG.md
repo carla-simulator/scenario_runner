@@ -15,6 +15,7 @@
 * Added an option to produce a machine-readable JSON version of the scenario report.
 * Added a static obstacle evasion OpenSCENARIO scenario
 * Added support for OSC Routing options
+* Added support for OSC SynchronizeAction
 ### :bug: Bug Fixes
 * Fixed exception when using OSC scenarios without EnvironmentAction inside Storyboard-Init
 * Fixed bug causing the TrafficManager to not be correctly updated at asynchronous simualtions
