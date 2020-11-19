@@ -529,6 +529,164 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         return new_status
 
 
+class SyncArrivalOSC(AtomicBehavior):
+
+    """
+    Atomic to make two actors arrive at their corresponding places at the same time
+
+    The behavior is in RUNNING state until the "main" actor has rezached its destination
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        master_actor (carla.Actor): Reference actor to sync up to.
+        actor_target (carla.Transform): Endpoint of the actor after the behavior finishes.
+        master_target (carla.Transform): Endpoint of the master_actor after the behavior finishes.
+        final_speed (float): Speed of the actor after the behavior ends.
+        relative_to_master (boolean): Whether or not the final speed is relative to master_actor.
+            Defaults to False.
+        relative_type (string): Type of relative speed. Either 'delta' or 'factor'.
+            Defaults to ''.
+        name (string): Name of the behavior.
+            Defaults to 'SyncArrivalOSC'.
+    """
+
+    DISTANCE_THRESHOLD = 1
+
+    def __init__(self, actor, master_actor, actor_target, master_target, final_speed,
+                 relative_to_master=False, relative_type='', name="SyncArrivalOSC"):
+        """
+        Setup required parameters
+        """
+        super(SyncArrivalOSC, self).__init__(name, actor)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+        self._actor = actor
+        self._actor_target = actor_target
+        self._master_actor = master_actor
+        self._master_target = master_target
+
+        self._final_speed = final_speed
+        self._final_speed_set = False
+        self._relative_to_master = relative_to_master
+        self._relative_type = relative_type
+
+        world = CarlaDataProvider.get_world()
+
+    def initialise(self):
+        """
+        Set initial parameters and get (actor, controller) pair from Blackboard.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+
+        # Get the distance of the actor to its endpoint
+        distance = calculate_distance(
+            CarlaDataProvider.get_location(self._actor), self._actor_target.location)
+
+        # Get the time to arrival of the reference to its endpoint
+        distance_reference = calculate_distance(
+            CarlaDataProvider.get_location(self._master_actor), self._master_target.location)
+
+        velocity_reference = CarlaDataProvider.get_velocity(self._master_actor)
+        if velocity_reference > 0:
+            time_reference = distance_reference / velocity_reference
+        else: 
+            time_reference = float('inf')
+
+        # Get the required velocity of the actor
+        desired_velocity = distance / time_reference
+        actor_dict[self._actor.id].update_target_speed(desired_velocity, start_time=self._start_time)
+
+    def update(self):
+        """
+        Dynamic control update for actor velocity to ensure that both actors reach their target
+        positions at the same time.
+        """
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_longitudinal_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        new_status = py_trees.common.Status.RUNNING
+
+        # Get the distance of the actor to its endpoint
+        distance = calculate_distance(
+            CarlaDataProvider.get_location(self._actor), self._actor_target.location)
+
+        if distance < self.DISTANCE_THRESHOLD:
+            return py_trees.common.Status.SUCCESS  # Behaviour ends when the actor reaches its endpoint
+
+        # Get the time to arrival of the reference to its endpoint
+        distance_reference = calculate_distance(
+            CarlaDataProvider.get_location(self._master_actor), self._master_target.location)
+
+        velocity_reference = CarlaDataProvider.get_velocity(self._master_actor)
+        if velocity_reference > 0:
+            time_reference = distance_reference / velocity_reference
+        else: 
+            time_reference = float('inf')
+
+        # Get the required velocity of the actor
+        desired_velocity = distance / time_reference
+        actor_dict[self._actor.id].update_target_speed(desired_velocity)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior, set the target speed to its desired one.
+        This function is called several times, so the use of self._final_speed_set
+        is needed to avoid interfering with other running behaviors
+        """
+        if not self._final_speed_set:
+            try:
+                check_actors = operator.attrgetter("ActorsWithController")
+                actor_dict = check_actors(py_trees.blackboard.Blackboard())
+            except AttributeError:
+                pass
+
+            if actor_dict and self._actor.id in actor_dict:
+
+                if self._relative_to_master:
+                    master_speed = CarlaDataProvider.get_velocity(self._master_actor)
+                    if self._relative_type == 'delta':
+                        final_speed = master_speed + self._final_speed
+                    elif self._relative_type == 'factor':
+                        final_speed = master_speed * self._final_speed
+                    else:
+                        print("'relative_type' must be delta or factor")
+                else:
+                    final_speed = self._final_speed
+
+                actor_dict[self._actor.id].update_target_speed(final_speed)
+
+            self._final_speed_set = True
+
+        super(SyncArrivalOSC, self).terminate(new_status)
+
+
 class ChangeActorWaypoints(AtomicBehavior):
 
     """
