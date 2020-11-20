@@ -21,6 +21,7 @@
 * Fixed shutdown issue in ScenarioRunner causing to not switch to asynchronous mode
 * Fixed OSC TeleportAction within Story
 * Fixed bug causing the InTimeToArrivalToVehicle atomic to crash if one of the actors was a a static object
+* Fixed writing result files when using OpenSCENARIO under Windows
 ### :ghost: Maintenance
 * Added check to ensure OSC names (for story/act/maneuver) are unique
 
