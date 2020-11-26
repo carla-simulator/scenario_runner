@@ -190,7 +190,8 @@ class RouteScenario(BasicScenario):
         self.route = route
         CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(self.route))
 
-        config.agent.set_global_plan(gps_route, self.route)
+        if config.agent is not None:
+            config.agent.set_global_plan(gps_route, self.route)
 
         # Sample the scenarios to be used for this route instance.
         self.sampled_scenarios_definitions = self._scenario_sampling(potential_scenarios_definitions)
