@@ -14,12 +14,16 @@
 * Added a sensor barrier for the agents to ensure that the simulation waits for them to render their data.
 * Added an option to produce a machine-readable JSON version of the scenario report.
 * Added a static obstacle evasion OpenSCENARIO scenario
+* Added support for OSC Routing options
 ### :bug: Bug Fixes
+* Fixed metrics-manager.py failing to run with port argument
 * Fixed exception when using OSC scenarios without EnvironmentAction inside Storyboard-Init
 * Fixed bug causing the TrafficManager to not be correctly updated at asynchronous simualtions
 * Fixed shutdown issue in ScenarioRunner causing to not switch to asynchronous mode
 * Fixed OSC TeleportAction within Story
 * Fixed runtime exception on RouteScenario without an agent parameter 
+* Fixed bug causing the InTimeToArrivalToVehicle atomic to crash if one of the actors was a a static object
+
 ### :ghost: Maintenance
 * Added check to ensure OSC names (for story/act/maneuver) are unique
 

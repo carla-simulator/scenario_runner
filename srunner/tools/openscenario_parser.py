@@ -31,7 +31,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeActorTargetSpeed,
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
-                                                                      ChangeActorWaypointsToReachPosition,
                                                                       ChangeActorLateralMotion,
                                                                       Idle)
 # pylint: disable=unused-import
@@ -411,7 +410,9 @@ class OpenScenarioParser(object):
             catalogs: XML Catalogs that could contain the Route
 
         returns:
-           waypoints: List of route waypoints
+           waypoints: List of route waypoints = (waypoint, routing strategy)
+                      where the strategy is a string indicating if the fastest/shortest/etc.
+                      route should be used.
         """
         route = None
 
@@ -427,7 +428,8 @@ class OpenScenarioParser(object):
         if route is not None:
             for waypoint in route.iter('Waypoint'):
                 position = waypoint.find('Position')
-                waypoints.append(position)
+                routing_option = str(waypoint.attrib.get('routeStrategy'))
+                waypoints.append((position, routing_option))
         else:
             raise AttributeError("No waypoints has been set")
 
@@ -1068,8 +1070,8 @@ class OpenScenarioParser(object):
                 elif private_action.find('AcquirePositionAction') is not None:
                     route_action = private_action.find('AcquirePositionAction')
                     osc_position = route_action.find('Position')
-                    position = OpenScenarioParser.convert_position_to_transform(osc_position)
-                    atomic = ChangeActorWaypointsToReachPosition(actor, position=position, name=maneuver_name)
+                    waypoints = [(osc_position, 'fastest')]
+                    atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                 else:
                     raise AttributeError("Unknown private routing action")
             else:

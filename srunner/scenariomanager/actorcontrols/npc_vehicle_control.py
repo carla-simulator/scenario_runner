@@ -47,6 +47,7 @@ class NpcVehicleControl(BasicControl):
         """
         Update the plan (waypoint list) of the LocalPlanner
         """
+        self._local_planner._waypoint_buffer.clear()    # pylint: disable=protected-access
         plan = []
         for transform in self._waypoints:
             waypoint = CarlaDataProvider.get_map().get_waypoint(

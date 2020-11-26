@@ -26,6 +26,7 @@ import subprocess
 import numpy as np
 import py_trees
 from py_trees.blackboard import Blackboard
+import networkx
 
 import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
@@ -536,20 +537,23 @@ class ChangeActorWaypoints(AtomicBehavior):
     The behavior is in RUNNING state until the last waypoint is reached, or if a
     second waypoint related atomic for the same actor is triggered. These are:
     - ChangeActorWaypoints
-    - ChangeActorWaypointsToReachPosition
     - ChangeActorLateralMotion
 
     Args:
         actor (carla.Actor): Controlled actor.
-        waypoints (List of OSC elements): List of 'Position' OpenScenario XML elements.
-            waypoints will be converted to Carla transforms.
+        waypoints (List of (OSC position, OSC route option)): List of (Position, Route Option) as OpenScenario elements.
+            position will be converted to Carla transforms, considering the corresponding
+            route option (e.g. shortest, fastest)
         name (string): Name of the behavior.
             Defaults to 'ChangeActorWaypoints'.
 
     Attributes:
-        _waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        _waypoints (List of (OSC position, OSC route option)): List of (Position, Route Option) as OpenScenario elements
         _start_time (float): Start time of the atomic [s].
             Defaults to None.
+
+    '''Note: When using routing options such as fastest or shortest, it is advisable to run
+             in synchronous mode
     """
 
     def __init__(self, actor, waypoints, name="ChangeActorWaypoints"):
@@ -584,13 +588,59 @@ class ChangeActorWaypoints(AtomicBehavior):
         self._start_time = GameTime.get_time()
 
         # Transforming OSC waypoints to Carla waypoints
-        carla_waypoints = []
-        for point in self._waypoints:
-            carla_transforms = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(point)
-            carla_waypoints.append(carla_transforms)
-        self._waypoints = carla_waypoints
+        carla_route_elements = []
+        for (osc_point, routing_option) in self._waypoints:
+            carla_transforms = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+                osc_point)
+            carla_route_elements.append((carla_transforms, routing_option))
 
-        actor_dict[self._actor.id].update_waypoints(self._waypoints, start_time=self._start_time)
+        # Obtain final route, considering the routing option
+        # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
+        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 2.0)
+        grp = GlobalRoutePlanner(dao)
+        grp.setup()
+        route = []
+        for i, _ in enumerate(carla_route_elements):
+            if carla_route_elements[i][1] == "shortest":
+                route.append(carla_route_elements[i][0])
+            else:
+                if i == 0:
+                    mmap = CarlaDataProvider.get_map()
+                    ego_location = CarlaDataProvider.get_location(self._actor)
+                    ego_waypoint = mmap.get_waypoint(ego_location)
+                    try:
+                        ego_next_wp = ego_waypoint.next(1)[0]
+                    except IndexError:
+                        ego_next_wp = ego_waypoint
+                    waypoint = ego_next_wp.transform.location
+                else:
+                    waypoint = carla_route_elements[i - 1][0].location
+                waypoint_next = carla_route_elements[i][0].location
+                try:
+                    interpolated_trace = grp.trace_route(waypoint, waypoint_next)
+                except networkx.NetworkXNoPath:
+                    print("WARNING: No route from {} to {} - Using direct path instead".format(waypoint, waypoint_next))
+                    route.append(carla_route_elements[i][0])
+                    continue
+                for wp_tuple in interpolated_trace:
+                    # The router sometimes produces points that go backward, or are almost identical
+                    # We have to filter these, to avoid problems
+                    if route and wp_tuple[0].transform.location.distance(route[-1].location) > 1.0:
+                        new_heading_vec = wp_tuple[0].transform.location - route[-1].location
+                        new_heading = np.arctan2(new_heading_vec.y, new_heading_vec.x)
+                        if len(route) > 1:
+                            last_heading_vec = route[-1].location - route[-2].location
+                        else:
+                            last_heading_vec = route[-1].location - ego_next_wp.transform.location
+                        last_heading = np.arctan2(last_heading_vec.y, last_heading_vec.x)
+
+                        heading_delta = math.fabs(new_heading - last_heading)
+                        if math.fabs(heading_delta) < 0.5 or math.fabs(heading_delta) > 5.5:
+                            route.append(wp_tuple[0].transform)
+                    elif not route:
+                        route.append(wp_tuple[0].transform)
+
+        actor_dict[self._actor.id].update_waypoints(route, start_time=self._start_time)
 
         super(ChangeActorWaypoints, self).initialise()
 
@@ -624,68 +674,6 @@ class ChangeActorWaypoints(AtomicBehavior):
         return new_status
 
 
-class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
-
-    """
-    Atomic to change the waypoints for an actor controller in order to reach
-    a given position.
-
-    The behavior is in RUNNING state until the last waypoint is reached, or if a
-    second waypoint related atomic for the same actor is triggered. These are:
-    - ChangeActorWaypoints
-    - ChangeActorWaypointsToReachPosition
-    - ChangeActorLateralMotion
-
-    Args:
-        actor (carla.Actor): Controlled actor.
-        position (carla.Transform): CARLA transform to be reached by the actor.
-        name (string): Name of the behavior.
-            Defaults to 'ChangeActorWaypointsToReachPosition'.
-
-    Attributes:
-        _waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
-        _end_transform (carla.Transform): Final position (CARLA transform).
-        _start_time (float): Start time of the atomic [s].
-            Defaults to None.
-        _grp (GlobalPlanner): global planner instance of the town
-    """
-
-    def __init__(self, actor, position, name="ChangeActorWaypointsToReachPosition"):
-        """
-        Setup parameters
-        """
-        super(ChangeActorWaypointsToReachPosition, self).__init__(actor, [])
-
-        self._end_transform = position
-
-        town_map = CarlaDataProvider.get_map()
-        dao = GlobalRoutePlannerDAO(town_map, 2)
-        self._grp = GlobalRoutePlanner(dao)
-        self._grp.setup()
-
-    def initialise(self):
-        """
-        Set _start_time and get (actor, controller) pair from Blackboard.
-
-        Generate a waypoint list (route) which representes the route. Set
-        this waypoint list for the actor controller.
-
-        May throw if actor is not available as key for the ActorsWithController
-        dictionary from Blackboard.
-        """
-
-        # get start position
-        position_actor = CarlaDataProvider.get_location(self._actor)
-
-        # calculate plan with global_route_planner function
-        plan = self._grp.trace_route(position_actor, self._end_transform.location)
-
-        for elem in plan:
-            self._waypoints.append(elem[0].transform)
-
-        super(ChangeActorWaypointsToReachPosition, self).initialise()
-
-
 class ChangeActorLateralMotion(AtomicBehavior):
 
     """
@@ -694,7 +682,6 @@ class ChangeActorLateralMotion(AtomicBehavior):
     The behavior is in RUNNING state until the last waypoint is reached, or if a
     second waypoint related atomic for the same actor is triggered. These are:
     - ChangeActorWaypoints
-    - ChangeActorWaypointsToReachPosition
     - ChangeActorLateralMotion
 
     If an impossible lane change is asked for (due to the lack of lateral lanes,
