@@ -21,7 +21,9 @@
 * Fixed bug causing the TrafficManager to not be correctly updated at asynchronous simualtions
 * Fixed shutdown issue in ScenarioRunner causing to not switch to asynchronous mode
 * Fixed OSC TeleportAction within Story
+* Fixed runtime exception on RouteScenario without an agent parameter 
 * Fixed bug causing the InTimeToArrivalToVehicle atomic to crash if one of the actors was a a static object
+
 ### :ghost: Maintenance
 * Added check to ensure OSC names (for story/act/maneuver) are unique
 
