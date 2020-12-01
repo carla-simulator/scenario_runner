@@ -18,36 +18,31 @@ CARLA forum</a>
 ---
 
 ## Quick start
-  <p style="padding-left:30px;line-height:1.8">
-    <a href="getting_scenariorunner"><b>Get ScenarioRunner</b></a>
-        — Tutorial on how to download and launch ScenarioRunner.<br>
-    <a href="getting_started"><b>First steps</b></a>
-        — Brief tutorials on how to run different types of scenarios.<br>
-    <a href="creating_new_scenario"><b>Create a new scenario</b></a>
-        — Tutorial on how to create a new scenario using ScenarioRunner.<br>
-    <a href="metrics_module"><b>Metrics module</b></a>
-        — Explanation of the metrics module.<br>
-    <a href="FAQ"><b>F.A.Q.</b></a>
-        — Some of the most frequent installation issues.<br>
-    <a href="CHANGELOG"><b>Release notes</b></a>
-        — Features, fixes and other changes listed per release.<br>
-  </p>
+
+[**Get ScenarioRunner**](<getting_scenariorunner>) — Tutorial on how to download and launch ScenarioRunner.<br>
+
+[**First steps**](<getting_started>) — Brief tutorials on how to run different types of scenarios.<br>
+
+[**Create a new scenario**](<creating_new_scenario>) — Tutorial on how to create a new scenario using ScenarioRunner.<br>
+
+[**Metrics module**](<metrics_module>) — Explanation of the metrics module.<br>
+
+[**F.A.Q.**](<FAQ>) — Some of the most frequent installation issues.<br>
+
+[**Release notes**](<CHANGELOG>) — Features, fixes and other changes listed per release.<br>
+
 
 ## References
-  <p style="padding-left:30px;line-height:1.8">
-    <a href="list_of_scenarios"><b>List of scenarios</b></a>
-        — Example scenarios available in ScenarioRunner.<br>
-    <a href="getting_started"><b>OpenScenario support</b></a>
-        — Support status of OpenSCENARIO features.<br>
-  </p>
+
+[**List of scenarios**](<list_of_scenarios>) — Example scenarios available in ScenarioRunner.<br>
+
+[**OpenScenario support**](<getting_started>) — Support status of OpenSCENARIO features.<br>
+
 
 ## Contributing
-  <p style="padding-left:30px;line-height:1.8">
-    <a href="CODE_OF_CONDUCT"><b>Code of conduct</b></a>
-        — Standard rights and duties for contributors.<br>
-    <a href="coding_standard"><b>Coding standard</b></a>
-        — Guidelines to write proper code.<br>
-    <a href="CONTRIBUTING"><b>Contribution guidelines</b></a>
-        — The different ways to contribute to ScenarioRunner.<br>
-  </p>
+[**Code of conduct**](<CODE_OF_CONDUCT>) — Standard rights and duties for contributors.<br>
+
+[**Coding standard**](<coding_standard>) — Guidelines to write proper code.<br>
+
+[**Contribution guidelines**](<CONTRIBUTING>) — The different ways to contribute to ScenarioRunner.<br>
 
