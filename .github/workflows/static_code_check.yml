@@ -1,0 +1,64 @@
+name: Static Code Analysis
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
+
+jobs:
+  formatJob:
+    name: Check Code Format
+    runs-on: ubuntu-16.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install pep8 python-autopep8 python-pep8 python-pip
+
+    - name: Check Code Format
+      run: |
+        autopep8 srunner/scenariomanager/*.py --in-place --max-line-length=120
+        autopep8 srunner/scenariomanager/scenarioatomics/*.py --in-place --max-line-length=120
+        autopep8 srunner/scenarios/*.py --in-place --max-line-length=120
+        autopep8 srunner/tools/*.py --in-place --max-line-length=120
+        autopep8 srunner/scenarioconfigs/*.py --in-place --max-line-length=120
+        autopep8 scenario_runner.py --in-place --max-line-length=120
+        autopep8 srunner/autoagents/*.py --in-place --max-line-length=120
+        git diff --quiet HEAD --; if [ ! $? -eq 0 ]; then echo "Code is not autopep8 compliant. Please run code_check_and_formatting.sh"; git diff HEAD --; exit 1; fi
+
+  qualityJob:
+    name: Check Code Quality
+    runs-on: ubuntu-16.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install python-pip python-configparser
+        sudo pip2 install isort==4.3.17 pylint==1.9.4 numpy==1.16.2
+        sudo pip2 install matplotlib==1.5.1
+        sudo pip2 install -r requirements.txt
+
+    - name: Check Code Quality with Pylint
+      run: |
+        pylint --version
+        static_code_quality_passed=1
+        pylint --rcfile=.pylintrc --disable=I srunner/scenariomanager
+        pylint --rcfile=.pylintrc --disable=I srunner/scenarios
+        pylint --rcfile=.pylintrc --disable=I srunner/tools
+        pylint --rcfile=.pylintrc --disable=I srunner/scenarioconfigs
+        pylint --rcfile=.pylintrc --disable=I scenario_runner.py
+        pylint --rcfile=.pylintrc --disable=I srunner/autoagents
+        score=`pylint --rcfile=.pylintrc --disable=I srunner/scenariomanager | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        score=`pylint --rcfile=.pylintrc --disable=I srunner/scenarios | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        score=`pylint --rcfile=.pylintrc --disable=I srunner/tools | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        score=`pylint --rcfile=.pylintrc --disable=I srunner/scenarioconfigs | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        score=`pylint --rcfile=.pylintrc --disable=I scenario_runner.py | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        score=`pylint --rcfile=.pylintrc --disable=I srunner/autoagents | grep -i "rated at" | awk '{print $7}'`; if [ "$score" != "10.00/10" ]; then static_code_quality_passed=0; fi
+        if [ $static_code_quality_passed -eq 0 ]; then echo "Code is not pylint compliant. Please run code_check_and_formatting.sh"; exit 1; fi
