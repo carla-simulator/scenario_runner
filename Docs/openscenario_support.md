@@ -231,7 +231,7 @@ contains of submodules, which are not listed, the support status applies to all 
 <tr>
 <td><code>SynchronizeAction</code></td>
 <td>&#10060;</td>
-<td>&#10060;</td>
+<td>&#9989;</td>
 <td></td>
 <tr>
 <td><code>TeleportAction</code></td>

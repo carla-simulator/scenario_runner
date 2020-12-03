@@ -32,6 +32,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
                                                                       ChangeActorLateralMotion,
+                                                                      SyncArrivalOSC,
                                                                       Idle)
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
@@ -915,7 +916,7 @@ class OpenScenarioParser(object):
         return new_atomic
 
     @staticmethod
-    def convert_maneuver_to_atomic(action, actor, catalogs):
+    def convert_maneuver_to_atomic(action, actor, actor_list, catalogs):
         """
         Convert an OpenSCENARIO maneuver action into a Behavior atomic
 
@@ -998,7 +999,7 @@ class OpenScenarioParser(object):
                         value_type = relative_speed.attrib.get('speedTargetValueType')
                         continuous = relative_speed.attrib.get('continuous')
 
-                        for traffic_actor in CarlaDataProvider.get_world().get_actors():
+                        for traffic_actor in actor_list:
                             if 'role_name' in traffic_actor.attributes and traffic_actor.attributes['role_name'] == obj:
                                 obj_actor = traffic_actor
 
@@ -1045,7 +1046,37 @@ class OpenScenarioParser(object):
             elif private_action.find('VisibilityAction') is not None:
                 raise NotImplementedError("Visibility actions are not yet supported")
             elif private_action.find('SynchronizeAction') is not None:
-                raise NotImplementedError("Synchronization actions are not yet supported")
+                sync_action = private_action.find('SynchronizeAction')
+
+                for actor_ins in actor_list:
+                    if sync_action.attrib.get('masterEntityRef', None) == actor_ins.attributes['role_name']:
+                        master_actor = actor_ins
+                        break
+
+                if master_actor is None:
+                    raise AttributeError("Cannot find actor '{}' for condition".format(
+                        sync_action.attrib.get('masterEntityRef', None)))
+
+                master_position = OpenScenarioParser.convert_position_to_transform(
+                    sync_action.find('TargetPositionMaster'))
+                position = OpenScenarioParser.convert_position_to_transform(sync_action.find('TargetPosition'))
+
+                if sync_action.find("FinalSpeed").find("AbsoluteSpeed") is not None:
+                    final_speed = float(sync_action.find("FinalSpeed").find(
+                        "AbsoluteSpeed").attrib.get('value', 0))
+                    atomic = SyncArrivalOSC(
+                        actor, master_actor, position, master_position, final_speed, name=maneuver_name)
+
+                # relative velocity to given actor
+                elif sync_action.find("FinalSpeed").find("RelativeSpeedToMaster") is not None:
+                    relative_speed = sync_action.find("FinalSpeed").find("RelativeSpeedToMaster")
+                    final_speed = float(relative_speed.attrib.get('value', 0))
+                    relative_type = relative_speed.attrib.get('speedTargetValueType')
+                    atomic = SyncArrivalOSC(
+                        actor, master_actor, position, master_position, final_speed,
+                        relative_to_master=True, relative_type=relative_type, name=maneuver_name)
+                else:
+                    raise AttributeError("Unknown speed action")
             elif private_action.find('ActivateControllerAction') is not None:
                 private_action = private_action.find('ActivateControllerAction')
                 activate = strtobool(private_action.attrib.get('longitudinal'))
