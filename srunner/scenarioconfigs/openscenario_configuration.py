@@ -146,6 +146,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.name = header.attrib.get('description', 'Unknown')
 
         if self.name.startswith("CARLA:"):
+            self.name = self.name[6:]
             OpenScenarioParser.set_use_carla_coordinate_system()
 
     def _set_carla_town(self):
