@@ -1049,17 +1049,19 @@ class OpenScenarioParser(object):
 
                     lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
                     if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
-                        absolute_offset = float(lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value', 0))
-                        atomic = ChangeActorLaneOffset(actor, absolute_offset, continuous=continuous, name=maneuver_name)
+                        absolute_offset =
+                            float(lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value', 0))
+                        atomic =
+                            ChangeActorLaneOffset(actor, absolute_offset, continuous=continuous, name=maneuver_name)
 
                     elif lane_target_offset.find('RelativeTargetLaneOffset') is not None:
                         relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
                         relative_offset = float(relative_target_offset.attrib.get('value', 0))
 
                         relative_actor = None
-                        for actor_ins in actor_list:
-                            if relative_target_offset.attrib.get('entityRef', None) == actor_ins.attributes['role_name']:
-                                relative_actor = actor_ins
+                        for _actor in actor_list:
+                            if relative_target_offset.attrib.get('entityRef', None) == _actor.attributes['role_name']:
+                                relative_actor = _actor
                                 break
 
                         if relative_actor is None:
