@@ -42,6 +42,8 @@ class BasicControl(object):
     _actor = None
     _waypoints = []
     _waypoints_updated = False
+    _offset = 0
+    _offset_updated = False
     _target_speed = 0
     _reached_goal = False
     _init_speed = False
@@ -71,6 +73,16 @@ class BasicControl(object):
         """
         self._waypoints = waypoints
         self._waypoints_updated = True
+
+    def update_offset(self, offset, start_time=None):
+        """
+        Update the actor's waypoints
+
+        Args:
+            waypoints (List of carla.Transform): List of new waypoints.
+        """
+        self._offset = offset
+        self._offset_updated = True
 
     def set_init_speed(self):
         """

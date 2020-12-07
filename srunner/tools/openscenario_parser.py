@@ -32,6 +32,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
                                                                       ChangeActorLateralMotion,
+                                                                      ChangeActorLaneOffset,
                                                                       SyncArrivalOSC,
                                                                       Idle)
 # pylint: disable=unused-import
@@ -1041,6 +1042,35 @@ class OpenScenarioParser(object):
                                                       distance_other_lane=1000,
                                                       lane_changes=lane_changes,
                                                       name=maneuver_name)
+                elif private_action.find('LaneOffsetAction') is not None:
+                    lat_maneuver = private_action.find('LaneOffsetAction')
+                    continuous = strtobool(lat_maneuver.attrib.get('continuous', True))
+                    # Parsing of the different Dynamic shapes is missing
+
+                    lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
+                    if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
+                        absolute_offset = float(lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value', 0))
+                        atomic = ChangeActorLaneOffset(actor, absolute_offset, continuous=continuous, name=maneuver_name)
+
+                    elif lane_target_offset.find('RelativeTargetLaneOffset') is not None:
+                        relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
+                        relative_offset = float(relative_target_offset.attrib.get('value', 0))
+
+                        relative_actor = None
+                        for actor_ins in actor_list:
+                            if relative_target_offset.attrib.get('entityRef', None) == actor_ins.attributes['role_name']:
+                                relative_actor = actor_ins
+                                break
+
+                        if relative_actor is None:
+                            raise AttributeError("Cannot find actor '{}' for condition".format(
+                                relative_target_offset.attrib.get('entityRef', None)))
+
+                        atomic = ChangeActorLaneOffset(actor, relative_offset, relative_actor,
+                            continuous=continuous, name=maneuver_name)
+
+                    else:
+                        raise AttributeError("Unknown target offset")
                 else:
                     raise AttributeError("Unknown lateral action")
             elif private_action.find('VisibilityAction') is not None:
@@ -1048,6 +1078,7 @@ class OpenScenarioParser(object):
             elif private_action.find('SynchronizeAction') is not None:
                 sync_action = private_action.find('SynchronizeAction')
 
+                master_actor = None
                 for actor_ins in actor_list:
                     if sync_action.attrib.get('masterEntityRef', None) == actor_ins.attributes['role_name']:
                         master_actor = actor_ins

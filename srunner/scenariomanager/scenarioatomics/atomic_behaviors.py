@@ -696,6 +696,7 @@ class ChangeActorWaypoints(AtomicBehavior):
     second waypoint related atomic for the same actor is triggered. These are:
     - ChangeActorWaypoints
     - ChangeActorLateralMotion
+    - ChangeActorLaneOffset
 
     Args:
         actor (carla.Actor): Controlled actor.
@@ -841,6 +842,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
     second waypoint related atomic for the same actor is triggered. These are:
     - ChangeActorWaypoints
     - ChangeActorLateralMotion
+    - ChangeActorLaneOffset
 
     If an impossible lane change is asked for (due to the lack of lateral lanes,
     next waypoints, continuous line, etc) the atomic will return a plan with the
@@ -974,6 +976,177 @@ class ChangeActorLateralMotion(AtomicBehavior):
             self._pos_before_lane_change = current_position_actor.transform.location
 
         return new_status
+
+class ChangeActorLaneOffset(AtomicBehavior):
+
+    """
+    OpenSCENARIO atomic.
+    Atomic to change the offset of the controller.
+
+    The behavior is in RUNNING state until the offset os reached (if 'continuous' is set to False)
+    or forever (if 'continuous' is True). This behavior will automatically stop if a second waypoint
+    related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorLateralMotion
+    - ChangeActorLaneOffset
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        offset (float): Float determined the distance to the center of the lane. Positive distance imply a
+            displacement to the right, while negative displacements are to the left.
+        relative_actor (carla.Actor): The actor from which the offset is taken from. Defaults to None
+        continuous (bool): If True, the behaviour never ends. If False, the behaviour ends when the lane
+            offset is reached. Defaults to True.
+
+    Attributes:
+        _offset (float): lane offset.
+        _relative_actor (carla.Actor): relative actor.
+        _continuous (bool): stored the value of the 'continuous' argument.
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+        _overwritten (bool): flag to check whether or not this behavior was overwritten by another. Helps 
+            to avoid the missinteraction between two ChangeActorLaneOffsets.
+        _map (carla.Map): instance of the CARLA map.
+    """
+
+    OFFSET_THRESHOLD = 0.1
+
+    def __init__(self, actor, offset, relative_actor=None, continuous=True, name="ChangeActorWaypoints"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorLaneOffset, self).__init__(name, actor)
+
+        self._offset = offset
+        self._relative_actor = relative_actor
+        self._continuous = continuous
+        self._start_time = None
+
+        self._overwritten = False
+        self._map = CarlaDataProvider.get_map()
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Set offset for actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+
+        actor_dict[self._actor.id].update_offset(self._offset, start_time=self._start_time)
+
+        self._current_offset = self._offset
+
+        super(ChangeActorLaneOffset, self).initialise()
+
+    def update(self):
+        """
+        Check the actor's state along the waypoint route.
+
+        returns:
+            py_trees.common.Status.SUCCESS, if the lane offset was reached (and 'continuous' was False), or
+                                            if another waypoint atomic for the same actor was triggered
+            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
+            py_trees.common.Status.RUNNING, else.
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_lane_offset_command() != self._start_time:
+            # Differentiate between lane offset and other lateral commands
+            self._overwritten = True
+            return py_trees.common.Status.SUCCESS
+            
+        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        if self._relative_actor:
+            # Calculate new offset
+            relative_actor_loc = CarlaDataProvider.get_location(self._relative_actor)
+            relative_center_wp = self._map.get_waypoint(relative_actor_loc)
+
+            # Value
+            relative_center_loc = relative_center_wp.transform.location
+            relative_actor_offset = relative_actor_loc.distance(relative_center_loc)
+
+            # Sign
+            f_vec = relative_center_wp.transform.get_forward_vector()
+            d_vec = relative_actor_loc - relative_center_loc
+            cross = f_vec.x * d_vec.y - f_vec.y * d_vec.x
+
+            if cross < 0:
+                relative_actor_offset *= -1.0
+
+            self._current_target_offset = relative_actor_offset + self._offset
+            # Set the new offset
+            actor_dict[self._actor.id].update_offset(self._current_target_offset)
+
+        if not self._continuous:
+            # Calculate new offset
+            actor_loc = CarlaDataProvider.get_location(self._actor)
+            center_wp = self._map.get_waypoint(actor_loc)
+
+            # Value
+            center_loc = center_wp.transform.location
+            actor_offset = actor_loc.distance(center_loc)
+
+            # Sign
+            f_vec = center_wp.transform.get_forward_vector()
+            d_vec = actor_loc - center_loc
+            cross = f_vec.x * d_vec.y - f_vec.y * d_vec.x
+
+            if cross < 0:
+                actor_offset *= -1.0
+
+            # Check if the offset has been reached
+            if abs(actor_offset - self._current_target_offset) < self.OFFSET_THRESHOLD:
+                return py_trees.common.Status.SUCCESS
+
+        # TODO: As their is no way to check the distance to a specific lane, both checks will fail if the
+        # actors are outside its 'route lane' or at an intersection
+
+        new_status = py_trees.common.Status.RUNNING
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior, the offset is set back to zero
+        """
+
+        if not self._overwritten:
+            try:
+                check_actors = operator.attrgetter("ActorsWithController")
+                actor_dict = check_actors(py_trees.blackboard.Blackboard())
+            except AttributeError:
+                pass
+
+            if actor_dict and self._actor.id in actor_dict:
+                actor_dict[self._actor.id].update_offset(0)
+
+            self._overwritten = True
+
+        super(ChangeActorLaneOffset, self).terminate(new_status)
 
 
 class ActorTransformSetterToOSCPosition(AtomicBehavior):
