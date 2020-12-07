@@ -92,7 +92,7 @@ class NpcVehicleControl(BasicControl):
         if self._waypoints_updated:
             self._waypoints_updated = False
             self._update_plan()
-        
+
         if self._offset_updated:
             self._offset_updated = False
             self._update_offset()

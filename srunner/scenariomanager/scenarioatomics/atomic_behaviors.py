@@ -1004,8 +1004,9 @@ class ChangeActorLaneOffset(AtomicBehavior):
         _continuous (bool): stored the value of the 'continuous' argument.
         _start_time (float): Start time of the atomic [s].
             Defaults to None.
-        _overwritten (bool): flag to check whether or not this behavior was overwritten by another. Helps 
+        _overwritten (bool): flag to check whether or not this behavior was overwritten by another. Helps
             to avoid the missinteraction between two ChangeActorLaneOffsets.
+        _current_target_offset (float): stores the value of the offset when dealing with relative distances
         _map (carla.Map): instance of the CARLA map.
     """
 
@@ -1021,6 +1022,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         self._relative_actor = relative_actor
         self._continuous = continuous
         self._start_time = None
+        self._current_target_offset = 0
 
         self._overwritten = False
         self._map = CarlaDataProvider.get_map()
@@ -1049,8 +1051,6 @@ class ChangeActorLaneOffset(AtomicBehavior):
 
         actor_dict[self._actor.id].update_offset(self._offset, start_time=self._start_time)
 
-        self._current_offset = self._offset
-
         super(ChangeActorLaneOffset, self).initialise()
 
     def update(self):
@@ -1076,7 +1076,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
             # Differentiate between lane offset and other lateral commands
             self._overwritten = True
             return py_trees.common.Status.SUCCESS
-            
+
         if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
             return py_trees.common.Status.SUCCESS
 

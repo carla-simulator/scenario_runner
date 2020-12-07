@@ -118,7 +118,7 @@ class ActorControl(object):
     def update_offset(self, offset, start_time=None):
         """
         Update the actor's offset
-        
+
         Args:
             offset (float): Value of the new offset.
             start_time (float): Start time of the new "maneuver" [s].

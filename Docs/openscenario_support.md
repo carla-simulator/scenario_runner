@@ -211,8 +211,8 @@ contains of submodules, which are not listed, the support status applies to all 
 <tr>
 <td><small><code>LateralAction</code></small><br><code>LaneOffsetAction</code></td>
 <td>&#10060;</td>
-<td>&#10060;</td>
-<td></td>
+<td>&#9989;</td>
+<td>Currently all type of dynamicShapes are ignored and depend on the controller. This action might not work as intended if the offset is high enough to make the vehicle exit its lane</td>
 <tr>
 <td><small><code>LateralAction</code></small><br><code>LateralDistanceAction</code></td>
 <td>&#10060;</td>
