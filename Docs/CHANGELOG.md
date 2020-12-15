@@ -15,6 +15,8 @@
 * Added an option to produce a machine-readable JSON version of the scenario report.
 * Added a static obstacle evasion OpenSCENARIO scenario
 * Added support for OSC Routing options
+* Added support for OSC SynchronizeAction
+* Added support to place OSC controller implementation alongside the OSC scenario
 ### :bug: Bug Fixes
 * Fixed metrics-manager.py failing to run with port argument
 * Fixed exception when using OSC scenarios without EnvironmentAction inside Storyboard-Init
