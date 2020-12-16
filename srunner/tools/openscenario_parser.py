@@ -1049,10 +1049,10 @@ class OpenScenarioParser(object):
 
                     lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
                     if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
-                        absolute_offset =
-                            float(lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value', 0))
-                        atomic =
-                            ChangeActorLaneOffset(actor, absolute_offset, continuous=continuous, name=maneuver_name)
+                        absolute_offset = float(
+                            lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value', 0))
+                        atomic = ChangeActorLaneOffset(
+                            actor, absolute_offset, continuous=continuous, name=maneuver_name)
 
                     elif lane_target_offset.find('RelativeTargetLaneOffset') is not None:
                         relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
