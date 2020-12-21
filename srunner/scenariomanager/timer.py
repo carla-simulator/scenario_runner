@@ -49,6 +49,8 @@ class GameTime(object):
         Reset game timer to 0
         """
         GameTime._current_game_time = 0.0
+        GameTime._carla_time = 0.0
+        GameTime._last_frame = 0
         GameTime._init = False
 
     @staticmethod
