@@ -26,6 +26,7 @@
 * Fixed runtime exception on RouteScenario without an agent parameter 
 * Fixed bug causing the InTimeToArrivalToVehicle atomic to crash if one of the actors was a a static object
 * Fixed writing result files when using OpenSCENARIO under Windows (CARLA: prefix is removed from the filename)
+* Fixed bug causing the *GameTime* class at *srunner/scenariomanager/timer.py* to not correctly reset the frame number
 ### :ghost: Maintenance
 * Added check to ensure OSC names (for story/act/maneuver) are unique
 
