@@ -46,6 +46,7 @@ class ActorControl(object):
         actor (carla.Actor): Actor that should be controlled by the controller.
         control_py_module (string): Fully qualified path to the controller python module.
         args (dict): A dictionary containing all parameters of the controller as (key, value) pairs.
+        scenario_file_path (string): Path to search for the controller implementation.
 
     Attributes:
         control_instance: Instance of the user-defined controller.
@@ -60,7 +61,7 @@ class ActorControl(object):
     _last_longitudinal_command = None
     _last_waypoint_command = None
 
-    def __init__(self, actor, control_py_module, args):
+    def __init__(self, actor, control_py_module, args, scenario_file_path):
 
         # use importlib to import the control module
         if not control_py_module:
@@ -72,6 +73,8 @@ class ActorControl(object):
                 # use ExternalControl for all misc objects to handle all actors the same way
                 self.control_instance = ExternalControl(actor)
         else:
+            if scenario_file_path:
+                sys.path.append(scenario_file_path)
             if ".py" in control_py_module:
                 module_name = os.path.basename(control_py_module).split('.')[0]
                 sys.path.append(os.path.dirname(control_py_module))
