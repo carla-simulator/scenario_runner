@@ -593,7 +593,13 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 _spawn_point.rotation = transform.rotation
                 _spawn_point.location.x = transform.location.x
                 _spawn_point.location.y = transform.location.y
-                _spawn_point.location.z = transform.location.z + 0.2
+                if blueprint.has_tag('walker'):
+                    if CarlaDataProvider._map.name.startswith('Town'):
+                        _spawn_point.location.z = transform.location.z + 0.2
+                    else:
+                        _spawn_point.location.z = transform.location.z + 0.8
+                else:
+                    _spawn_point.location.z = transform.location.z + 0.2
 
             # Get the command
             command = SpawnActor(blueprint, _spawn_point)
