@@ -26,12 +26,12 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ActorTransformSetterToOSCPosition,
                                                                       RunScript,
                                                                       ChangeWeather,
-                                                                      ChangeAutoPilot,
                                                                       ChangeRoadFriction,
                                                                       ChangeActorTargetSpeed,
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
                                                                       ChangeActorLateralMotion,
+                                                                      DeActivateActorControlComponents,
                                                                       ChangeActorLaneOffset,
                                                                       SyncArrivalOSC,
                                                                       Idle)
@@ -1149,13 +1149,19 @@ class OpenScenarioParser(object):
                     raise AttributeError("Unknown speed action")
             elif private_action.find('ActivateControllerAction') is not None:
                 private_action = private_action.find('ActivateControllerAction')
-                activate = strtobool(private_action.attrib.get('longitudinal'))
-                atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
+                lon_control = None
+                lat_control = None
+                if 'longitudinal' in private_action.attrib.keys():
+                    lon_control = strtobool(private_action.attrib.get('longitudinal'))
+                if 'lateral' in private_action.attrib.keys():
+                    lat_control = strtobool(private_action.attrib.get('lateral'))
+                atomic = DeActivateActorControlComponents(actor, lon_control, lat_control, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
                 controller_action = private_action.find('ControllerAction')
                 module, args = OpenScenarioParser.get_controller(controller_action, catalogs)
                 atomic = ChangeActorControl(actor, control_py_module=module, args=args,
-                                            scenario_file_path=OpenScenarioParser.osc_filepath)
+                                            scenario_file_path=OpenScenarioParser.osc_filepath,
+                                            name=maneuver_name)
             elif private_action.find('TeleportAction') is not None:
                 teleport_action = private_action.find('TeleportAction')
                 position = teleport_action.find('Position')

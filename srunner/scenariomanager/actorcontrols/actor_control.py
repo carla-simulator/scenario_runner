@@ -173,6 +173,24 @@ class ActorControl(object):
         """
         self.control_instance.set_init_speed()
 
+    def change_lon_control(self, enable):
+        """
+        Enable/Disable longitudinal control component of actor controller
+
+        Args:
+            enable (boolean): Enable/Disable signal
+        """
+        self.control_instance.change_lon_control(enable)
+
+    def change_lat_control(self, enable):
+        """
+        Enable/Disable lateral control component of actor controller
+
+        Args:
+            enable (boolean): Enable/Disable signal
+        """
+        self.control_instance.change_lat_control(enable)
+
     def run_step(self):
         """
         Execute on tick of the controller's control loop

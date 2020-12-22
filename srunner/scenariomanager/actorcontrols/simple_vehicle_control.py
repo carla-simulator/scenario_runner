@@ -70,6 +70,12 @@ class SimpleVehicleControl(BasicControl):
             Defaults to False.
         _proximity_threshold (float): Distance in front of actor in which obstacles are considered
             Defaults to infinity.
+        _consider_trafficlights (boolean): Enable/Disable consideration of red traffic lights
+            Defaults to False.
+        _max_deceleration (float): Deceleration value of the vehicle when braking
+            Defaults to None (infinity).
+        _max_acceleration (float): Acceleration value of the vehicle when accelerating
+            Defaults to None (infinity).
         _cv_image (CV Image): Contains the OpenCV image, in case a debug camera is attached to the actor
             Defaults to None.
         _camera (sensor.camera.rgb): Debug camera attached to actor
@@ -283,7 +289,6 @@ class SimpleVehicleControl(BasicControl):
                 target_speed = 0
 
         if target_speed < current_speed and math.fabs(target_speed - current_speed) > 0.01:
-            print(target_speed, current_speed)
             self._actor.set_light_state(carla.VehicleLightState.Brake)
             if self._max_deceleration is not None:
                 target_speed = max(target_speed, current_speed - (current_time -
