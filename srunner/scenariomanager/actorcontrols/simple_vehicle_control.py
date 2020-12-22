@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020-2021 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -10,7 +10,7 @@ This module provides an example control for vehicles which
 does not use CARLA's vehicle engine.
 
 Limitations:
-- Does not respect any traffic regulation: speed limit, traffic light, priorities, etc.
+- Does not respect any traffic regulation: speed limit, priorities, etc.
 - Can only consider obstacles in forward facing reaching (i.e. in tight corners obstacles may be ignored).
 """
 
@@ -41,14 +41,21 @@ class SimpleVehicleControl(BasicControl):
     which checks for obstacles in the direct forward channel of the vehicle, i.e.
     there are limitation with sideways obstacles and while cornering.
 
+    The controller can also respect red traffic lights, and use a given deceleration
+    value for more realistic behavior. Both behaviors are activated via the corresponding
+    controller arguments.
+
     Args:
         actor (carla.Actor): Vehicle actor that should be controlled.
         args (dictionary): Dictonary of (key, value) arguments to be used by the controller.
-                           May include: (consider_obstacles, true/false) - Enable consideration of obstacles
-                                        (proximity_threshold, distance)  - Distance in front of actor in which
-                                                                           obstacles are considered
-                                        (attach_camera, true/false)      - Attach OpenCV display to actor
-                                                                           (useful for debugging)
+                           May include: (consider_obstacles, true/false)     - Enable consideration of obstacles
+                                        (proximity_threshold, distance)      - Distance in front of actor in which
+                                                                               obstacles are considered
+                                        (consider_trafficlights, true/false) - Enable consideration of traffic lights
+                                        (max_deceleration, float)            - Use a reasonable deceleration value for
+                                                                               this vehicle
+                                        (attach_camera, true/false)          - Attach OpenCV display to actor
+                                                                               (useful for debugging)
 
     Attributes:
 
@@ -77,8 +84,10 @@ class SimpleVehicleControl(BasicControl):
         super(SimpleVehicleControl, self).__init__(actor)
         self._generated_waypoint_list = []
         self._last_update = None
+        self._consider_traffic_lights = False
         self._consider_obstacles = False
         self._proximity_threshold = float('inf')
+        self._max_deceleration = None
 
         self._obstacle_sensor = None
         self._obstacle_distance = float('inf')
@@ -98,6 +107,12 @@ class SimpleVehicleControl(BasicControl):
             self._obstacle_sensor = CarlaDataProvider.get_world().spawn_actor(
                 bp, carla.Transform(carla.Location(x=self._actor.bounding_box.extent.x, z=1.0)), attach_to=self._actor)
             self._obstacle_sensor.listen(lambda event: self._on_obstacle(event))  # pylint: disable=unnecessary-lambda
+
+        if args and 'consider_trafficlights' in args and strtobool(args['consider_trafficlights']):
+            self._consider_traffic_lights = strtobool(args['consider_trafficlights'])
+
+        if args and 'max_deceleration' in args:
+            self._max_deceleration = float(args['max_deceleration'])
 
         if args and 'attach_camera' in args and strtobool(args['attach_camera']):
             self._visualizer = Visualizer(self._actor)
@@ -138,8 +153,7 @@ class SimpleVehicleControl(BasicControl):
         If _waypoints is empty, the vehicle moves in its current direction with
         the given _target_speed.
 
-        If _consider_obstacles is true, the speed is adapted according to the closest
-        obstacle in front of the actor, if it is within the _proximity_threshold distance.
+        For further details see :func:`_set_new_velocity`
         """
 
         if self._reached_goal:
@@ -164,12 +178,17 @@ class SimpleVehicleControl(BasicControl):
             else:
                 map_wp = CarlaDataProvider.get_map().get_waypoint(self._generated_waypoint_list[-1].location)
             while len(self._generated_waypoint_list) < 50:
-                map_wps = map_wp.next(3.0)
+                map_wps = map_wp.next(2.0)
                 if map_wps:
                     self._generated_waypoint_list.append(map_wps[0].transform)
                     map_wp = map_wps[0]
                 else:
                     break
+
+            # Remove all waypoints that are too close to the vehicle
+            while (self._generated_waypoint_list and
+                   self._generated_waypoint_list[0].location.distance(self._actor.get_location()) < 0.5):
+                self._generated_waypoint_list = self._generated_waypoint_list[1:]
 
             direction_norm = self._set_new_velocity(self._offset_waypoint(self._generated_waypoint_list[0]))
             if direction_norm < 2.0:
@@ -182,11 +201,14 @@ class SimpleVehicleControl(BasicControl):
                 self._waypoints = self._waypoints[1:]
 
             self._reached_goal = False
-            direction_norm = self._set_new_velocity(self._offset_waypoint(self._waypoints[0]))
-            if direction_norm < 4.0:
-                self._waypoints = self._waypoints[1:]
-                if not self._waypoints:
-                    self._reached_goal = True
+            if not self._waypoints:
+                self._reached_goal = True
+            else:
+                direction_norm = self._set_new_velocity(self._offset_waypoint(self._waypoints[0]))
+                if direction_norm < 4.0:
+                    self._waypoints = self._waypoints[1:]
+                    if not self._waypoints:
+                        self._reached_goal = True
 
     def _offset_waypoint(self, transform):
         """
@@ -215,6 +237,11 @@ class SimpleVehicleControl(BasicControl):
 
         If _consider_obstacles is true, the speed is adapted according to the closest
         obstacle in front of the actor, if it is within the _proximity_threshold distance.
+        If _consider_trafficlights is true, the vehicle will enforce a stop at a red
+        traffic light.
+        If _max_deceleration is set, the vehicle will reduce its speed according to the
+        given deceleration value.
+        If the vehicle reduces its speed, braking lights will be activated.
 
         Args:
             next_location (carla.Location): Next target location of the actor
@@ -229,12 +256,13 @@ class SimpleVehicleControl(BasicControl):
         if not self._last_update:
             self._last_update = current_time
 
+        current_speed = math.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
+
         if self._consider_obstacles:
             # If distance is less than the proximity threshold, adapt velocity
             if self._obstacle_distance < self._proximity_threshold:
                 distance = max(self._obstacle_distance, 0)
                 if distance > 0:
-                    current_speed = math.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
                     current_speed_other = math.sqrt(
                         self._obstacle_actor.get_velocity().x**2 + self._obstacle_actor.get_velocity().y**2)
                     if current_speed_other < current_speed:
@@ -242,6 +270,19 @@ class SimpleVehicleControl(BasicControl):
                         target_speed = max(acceleration * (current_time - self._last_update) + current_speed, 0)
                 else:
                     target_speed = 0
+
+        if self._consider_traffic_lights:
+            if (self._actor.is_at_traffic_light() and
+                self._actor.get_traffic_light_state() == carla.TrafficLightState.Red):
+                target_speed = 0
+
+        if target_speed < current_speed:
+            self._actor.set_light_state(carla.VehicleLightState.Brake)
+            if self._max_deceleration is not None:
+                target_speed = max(target_speed, current_speed - (current_time -
+                                                                  self._last_update) * self._max_deceleration)
+        else:
+            self._actor.set_light_state(carla.VehicleLightState.NONE)
 
         # set new linear velocity
         velocity = carla.Vector3D(0, 0, 0)
