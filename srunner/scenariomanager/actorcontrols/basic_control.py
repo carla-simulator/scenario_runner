@@ -37,6 +37,12 @@ class BasicControl(object):
             Defaults to False.
         _reached_goal (boolean):
             Defaults to False.
+        _use_lon_control (boolean):
+            Use longitudinal component of controller
+            Defaults to True
+        _use_lat_control (boolean):
+            Use lateral component of controller
+            Defaults to True
     """
 
     _actor = None
@@ -47,6 +53,8 @@ class BasicControl(object):
     _target_speed = 0
     _reached_goal = False
     _init_speed = False
+    _use_lon_control = True
+    _use_lat_control = True
 
     def __init__(self, actor):
         """
@@ -89,6 +97,24 @@ class BasicControl(object):
         Set _init_speed to True
         """
         self._init_speed = True
+
+    def change_lon_control(self, enable):
+        """
+        Enable/Disable longitudinal control component
+
+        Args:
+            enable (boolean): Enable/Disable signal
+        """
+        self._use_lon_control = enable
+
+    def change_lat_control(self, enable):
+        """
+        Enable/Disable lateral control component
+
+        Args:
+            enable (boolean): Enable/Disable signal
+        """
+        self._use_lat_control = enable
 
     def check_reached_waypoint_goal(self):
         """
