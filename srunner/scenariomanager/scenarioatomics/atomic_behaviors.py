@@ -278,7 +278,7 @@ class ChangeActorControl(AtomicBehavior):
     Atomic to change the longitudinal/lateral control logic for an actor.
     The (actor, controller) pair is stored inside the Blackboard.
 
-    The behavior immediately terminates with SUCCESS after the controller.
+    The behavior immediately terminates with SUCCESS after the controller was changed.
 
     Args:
         actor (carla.Actor): Actor that should be controlled by the controller.
@@ -325,6 +325,64 @@ class ChangeActorControl(AtomicBehavior):
 
         actor_dict[self._actor.id] = self._actor_control
         py_trees.blackboard.Blackboard().set("ActorsWithController", actor_dict, overwrite=True)
+
+        return py_trees.common.Status.SUCCESS
+
+
+class DeActivateActorControlComponents(AtomicBehavior):
+
+    """
+    Atomic to enable/disable the longitudinal/lateral control component of an actor controller.
+    The (actor, controller) pair is retrieved from the Blackboard.
+
+    The behavior immediately terminates with SUCCESS.
+
+    Args:
+        actor (carla.Actor): Actor that should be controlled by the controller.
+        control_py_module (string): Name of the python module containing the implementation
+            of the controller.
+        args (dictionary): Additional arguments for the controller.
+        scenario_file_path (string): Additional path to controller implementation.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorControl'.
+
+    Attributes:
+        _actor_control (ActorControl): Instance of the actor control.
+    """
+
+    def __init__(self, actor, lon_control=None, lat_control=None, name="ChangeActorControl"):
+        """
+        Setup actor controller.
+        """
+        super(DeActivateActorControlComponents, self).__init__(name, actor)
+
+        self._lon_control = lon_control
+        self._lat_control = lat_control
+
+    def update(self):
+        """
+        Write (actor, controler) pair to Blackboard, or update the controller
+        if actor already exists as a key.
+
+        returns:
+            py_trees.common.Status.SUCCESS
+        """
+
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if self._actor.id in actor_dict:
+            if self._lon_control is not None:
+                actor_dict[self._actor.id].change_lon_control(self._lon_control)
+            if self._lat_control is not None:
+                actor_dict[self._actor.id].change_lat_control(self._lat_control)
+        else:
+            return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
 

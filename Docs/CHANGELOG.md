@@ -11,11 +11,17 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* OpenSCENARIO Support:
+  * Added controller using CARLA's autopilot (in replacement for ActivateControllerAction)
+  * Added support for storyboards with multiple stories
+  * Added support for ObjectControllers. Note that the controller has to be implemented in Python,
+    or be one of the provided controllers.
+  * Updated ActivateControllerAction to its specified behavior according to OSC 1.0
 ### :ghost: Maintenance
 * Generalized visualizer attached to OSC controllers
-
-
-* Fixed bug at the Getting Started docs which caused an import error
+* Extended SimpleVehicleController
+* Fixed bug at the Getting Started docs which caused an import error  
 
 ## CARLA ScenarioRunner 0.9.11
 ### :rocket: New Features
@@ -24,7 +30,6 @@
 * Added a static obstacle evasion OpenSCENARIO scenario
 * Added support for OSC Routing options
 * Added support for OSC SynchronizeAction
-* Added support for OSC LaneOffsetAction
 * Added support to place OSC controller implementation alongside the OSC scenario
 * Updated *GameTime.restart()* at *srunner/scenariomanager/timer.py* to also reset the frame number
 ### :bug: Bug Fixes
