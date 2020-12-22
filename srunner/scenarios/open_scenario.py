@@ -184,7 +184,7 @@ class OpenScenario(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
 
-        super(OpenScenario, self).__init__("OpenScenario", ego_vehicles=ego_vehicles, config=config,
+        super(OpenScenario, self).__init__(self.config.name, ego_vehicles=ego_vehicles, config=config,
                                            world=world, debug_mode=debug_mode,
                                            terminate_on_failure=False, criteria_enable=criteria_enable)
 
@@ -258,135 +258,140 @@ class OpenScenario(BasicScenario):
         Basic behavior do nothing, i.e. Idle
         """
 
-        story_behavior = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Story")
-
+        stories_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="OSCStories")
         joint_actor_list = self.other_actors + self.ego_vehicles + [None]
 
-        for act in self.config.story.iter("Act"):
+        for story in self.config.stories:
+            story_name = story.get("name")
+            story_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=story_name)
+            for act in story.iter("Act"):
 
-            act_sequence = py_trees.composites.Sequence(
-                name="Act StartConditions and behaviours")
+                act_sequence = py_trees.composites.Sequence(
+                    name="Act StartConditions and behaviours")
 
-            start_conditions = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="StartConditions Group")
+                start_conditions = py_trees.composites.Parallel(
+                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="StartConditions Group")
 
-            parallel_behavior = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Maneuver + EndConditions Group")
+                parallel_behavior = py_trees.composites.Parallel(
+                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Maneuver + EndConditions Group")
 
-            parallel_sequences = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
+                parallel_sequences = py_trees.composites.Parallel(
+                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Maneuvers")
 
-            for sequence in act.iter("ManeuverGroup"):
-                sequence_behavior = py_trees.composites.Sequence(name=sequence.attrib.get('name'))
-                repetitions = sequence.attrib.get('maximumExecutionCount', 1)
+                for sequence in act.iter("ManeuverGroup"):
+                    sequence_behavior = py_trees.composites.Sequence(name=sequence.attrib.get('name'))
+                    repetitions = sequence.attrib.get('maximumExecutionCount', 1)
 
-                for _ in range(int(repetitions)):
+                    for _ in range(int(repetitions)):
 
-                    actor_ids = []
-                    for actor in sequence.iter("Actors"):
-                        for entity in actor.iter("EntityRef"):
-                            entity_name = entity.attrib.get('entityRef', None)
-                            for k, _ in enumerate(joint_actor_list):
-                                if joint_actor_list[k] and entity_name == joint_actor_list[k].attributes['role_name']:
-                                    actor_ids.append(k)
-                                    break
+                        actor_ids = []
+                        for actor in sequence.iter("Actors"):
+                            for entity in actor.iter("EntityRef"):
+                                entity_name = entity.attrib.get('entityRef', None)
+                                for k, _ in enumerate(joint_actor_list):
+                                    if joint_actor_list[k] and entity_name == joint_actor_list[k].attributes['role_name']:
+                                        actor_ids.append(k)
+                                        break
 
-                    if not actor_ids:
-                        print("Warning: Maneuvergroup {} does not use reference actors!".format(
-                            sequence.attrib.get('name')))
-                        actor_ids.append(len(joint_actor_list) - 1)
+                        if not actor_ids:
+                            print("Warning: Maneuvergroup {} does not use reference actors!".format(
+                                sequence.attrib.get('name')))
+                            actor_ids.append(len(joint_actor_list) - 1)
 
-                   # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
-                    catalog_maneuver_list = []
-                    for catalog_reference in sequence.iter("CatalogReference"):
-                        catalog_maneuver = OpenScenarioParser.get_catalog_entry(self.config.catalogs, catalog_reference)
-                        catalog_maneuver_list.append(catalog_maneuver)
-                    all_maneuvers = itertools.chain(iter(catalog_maneuver_list), sequence.iter("Maneuver"))
-                    single_sequence_iteration = py_trees.composites.Parallel(
-                        policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence_behavior.name)
-                    for maneuver in all_maneuvers:  # Iterates through both CatalogReferences and Maneuvers
-                        maneuver_parallel = py_trees.composites.Parallel(
-                            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
-                            name="Maneuver " + maneuver.attrib.get('name'))
-                        for event in maneuver.iter("Event"):
-                            event_sequence = py_trees.composites.Sequence(
-                                name="Event " + event.attrib.get('name'))
-                            parallel_actions = py_trees.composites.Parallel(
-                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Actions")
-                            for child in event.iter():
-                                if child.tag == "Action":
-                                    for actor_id in actor_ids:
-                                        maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
-                                            child, joint_actor_list[actor_id], joint_actor_list, self.config.catalogs)
-                                        maneuver_behavior = StoryElementStatusToBlackboard(
-                                            maneuver_behavior, "ACTION", child.attrib.get('name'))
-                                        parallel_actions.add_child(
-                                            oneshot_with_check(variable_name=# See note in get_xml_path
-                                                               get_xml_path(self.config.story, sequence) + '>' + \
-                                                               get_xml_path(maneuver, child),
-                                                               behaviour=maneuver_behavior))
+                    # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
+                        catalog_maneuver_list = []
+                        for catalog_reference in sequence.iter("CatalogReference"):
+                            catalog_maneuver = OpenScenarioParser.get_catalog_entry(self.config.catalogs, catalog_reference)
+                            catalog_maneuver_list.append(catalog_maneuver)
+                        all_maneuvers = itertools.chain(iter(catalog_maneuver_list), sequence.iter("Maneuver"))
+                        single_sequence_iteration = py_trees.composites.Parallel(
+                            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=sequence_behavior.name)
+                        for maneuver in all_maneuvers:  # Iterates through both CatalogReferences and Maneuvers
+                            maneuver_parallel = py_trees.composites.Parallel(
+                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
+                                name="Maneuver " + maneuver.attrib.get('name'))
+                            for event in maneuver.iter("Event"):
+                                event_sequence = py_trees.composites.Sequence(
+                                    name="Event " + event.attrib.get('name'))
+                                parallel_actions = py_trees.composites.Parallel(
+                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Actions")
+                                for child in event.iter():
+                                    if child.tag == "Action":
+                                        for actor_id in actor_ids:
+                                            maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
+                                                child, joint_actor_list[actor_id], joint_actor_list, self.config.catalogs)
+                                            maneuver_behavior = StoryElementStatusToBlackboard(
+                                                maneuver_behavior, "ACTION", child.attrib.get('name'))
+                                            parallel_actions.add_child(
+                                                oneshot_with_check(variable_name=# See note in get_xml_path
+                                                                get_xml_path(story, sequence) + '>' + \
+                                                                get_xml_path(maneuver, child),
+                                                                behaviour=maneuver_behavior))
 
-                                if child.tag == "StartTrigger":
-                                    # There is always one StartConditions block per Event
-                                    parallel_condition_groups = self._create_condition_container(
-                                        child, "Parallel Condition Groups", sequence, maneuver)
-                                    event_sequence.add_child(
-                                        parallel_condition_groups)
+                                    if child.tag == "StartTrigger":
+                                        # There is always one StartConditions block per Event
+                                        parallel_condition_groups = self._create_condition_container(
+                                            child, story, "Parallel Condition Groups", sequence, maneuver)
+                                        event_sequence.add_child(
+                                            parallel_condition_groups)
 
-                            parallel_actions = StoryElementStatusToBlackboard(
-                                parallel_actions, "EVENT", event.attrib.get('name'))
-                            event_sequence.add_child(parallel_actions)
-                            maneuver_parallel.add_child(
-                                oneshot_with_check(variable_name=get_xml_path(self.config.story, sequence) + '>' +
-                                                   get_xml_path(maneuver, event),  # See get_xml_path
-                                                   behaviour=event_sequence))
-                        maneuver_parallel = StoryElementStatusToBlackboard(
-                            maneuver_parallel, "MANEUVER", maneuver.attrib.get('name'))
-                        single_sequence_iteration.add_child(
-                            oneshot_with_check(variable_name=get_xml_path(self.config.story, sequence) + '>' +
-                                               maneuver.attrib.get('name'),  # See get_xml_path
-                                               behaviour=maneuver_parallel))
+                                parallel_actions = StoryElementStatusToBlackboard(
+                                    parallel_actions, "EVENT", event.attrib.get('name'))
+                                event_sequence.add_child(parallel_actions)
+                                maneuver_parallel.add_child(
+                                    oneshot_with_check(variable_name=get_xml_path(story, sequence) + '>' +
+                                                    get_xml_path(maneuver, event),  # See get_xml_path
+                                                    behaviour=event_sequence))
+                            maneuver_parallel = StoryElementStatusToBlackboard(
+                                maneuver_parallel, "MANEUVER", maneuver.attrib.get('name'))
+                            single_sequence_iteration.add_child(
+                                oneshot_with_check(variable_name=get_xml_path(story, sequence) + '>' +
+                                                maneuver.attrib.get('name'),  # See get_xml_path
+                                                behaviour=maneuver_parallel))
 
-                    # OpenSCENARIO refers to Sequences as Scenes in this instance
-                    single_sequence_iteration = StoryElementStatusToBlackboard(
-                        single_sequence_iteration, "SCENE", sequence.attrib.get('name'))
-                    single_sequence_iteration = repeatable_behavior(
-                        single_sequence_iteration, get_xml_path(self.config.story, sequence))
+                        # OpenSCENARIO refers to Sequences as Scenes in this instance
+                        single_sequence_iteration = StoryElementStatusToBlackboard(
+                            single_sequence_iteration, "SCENE", sequence.attrib.get('name'))
+                        single_sequence_iteration = repeatable_behavior(
+                            single_sequence_iteration, get_xml_path(story, sequence))
 
-                    sequence_behavior.add_child(single_sequence_iteration)
+                        sequence_behavior.add_child(single_sequence_iteration)
 
-                if sequence_behavior.children:
-                    parallel_sequences.add_child(
-                        oneshot_with_check(variable_name=get_xml_path(self.config.story, sequence),
-                                           behaviour=sequence_behavior))
+                    if sequence_behavior.children:
+                        parallel_sequences.add_child(
+                            oneshot_with_check(variable_name=get_xml_path(story, sequence),
+                                            behaviour=sequence_behavior))
 
-            if parallel_sequences.children:
-                parallel_sequences = StoryElementStatusToBlackboard(
-                    parallel_sequences, "ACT", act.attrib.get('name'))
-                parallel_behavior.add_child(parallel_sequences)
+                if parallel_sequences.children:
+                    parallel_sequences = StoryElementStatusToBlackboard(
+                        parallel_sequences, "ACT", act.attrib.get('name'))
+                    parallel_behavior.add_child(parallel_sequences)
 
-            start_triggers = act.find("StartTrigger")
-            if list(start_triggers) is not None:
-                for start_condition in start_triggers:
-                    parallel_start_criteria = self._create_condition_container(start_condition, "StartConditions")
-                    if parallel_start_criteria.children:
-                        start_conditions.add_child(parallel_start_criteria)
-            end_triggers = act.find("StopTrigger")
-            if end_triggers is not None and list(end_triggers) is not None:
-                for end_condition in end_triggers:
-                    parallel_end_criteria = self._create_condition_container(
-                        end_condition, "EndConditions", success_on_all=False)
-                    if parallel_end_criteria.children:
-                        parallel_behavior.add_child(parallel_end_criteria)
+                start_triggers = act.find("StartTrigger")
+                if list(start_triggers) is not None:
+                    for start_condition in start_triggers:
+                        parallel_start_criteria = self._create_condition_container(start_condition, story, "StartConditions")
+                        if parallel_start_criteria.children:
+                            start_conditions.add_child(parallel_start_criteria)
+                end_triggers = act.find("StopTrigger")
+                if end_triggers is not None and list(end_triggers) is not None:
+                    for end_condition in end_triggers:
+                        parallel_end_criteria = self._create_condition_container(
+                            end_condition, story, "EndConditions", success_on_all=False)
+                        if parallel_end_criteria.children:
+                            parallel_behavior.add_child(parallel_end_criteria)
 
-            if start_conditions.children:
-                act_sequence.add_child(start_conditions)
-            if parallel_behavior.children:
-                act_sequence.add_child(parallel_behavior)
+                if start_conditions.children:
+                    act_sequence.add_child(start_conditions)
+                if parallel_behavior.children:
+                    act_sequence.add_child(parallel_behavior)
 
-            if act_sequence.children:
-                story_behavior.add_child(act_sequence)
+                if act_sequence.children:
+                    story_behavior.add_child(act_sequence)
+
+            stories_behavior.add_child(oneshot_with_check(variable_name=get_xml_path(story, story) + '>' +
+                                                story_name,  # See get_xml_path
+                                                behaviour=story_behavior))
 
         # Build behavior tree
         behavior = py_trees.composites.Parallel(
@@ -400,11 +405,11 @@ class OpenScenario(BasicScenario):
         if init_behavior is not None:
             behavior.add_child(oneshot_with_check(variable_name="InitialActorSettings", behaviour=init_behavior))
 
-        behavior.add_child(story_behavior)
+        behavior.add_child(stories_behavior)
 
         return behavior
 
-    def _create_condition_container(self, node, name='Conditions Group', sequence=None,
+    def _create_condition_container(self, node, story, name='Conditions Group', sequence=None,
                                     maneuver=None, success_on_all=True):
         """
         This is a generic function to handle conditions utilising ConditionGroups
@@ -426,10 +431,10 @@ class OpenScenario(BasicScenario):
                 criterion = OpenScenarioParser.convert_condition_to_atomic(
                     condition, self.other_actors + self.ego_vehicles)
                 if sequence is not None and maneuver is not None:
-                    xml_path = get_xml_path(self.config.story, sequence) + '>' + \
+                    xml_path = get_xml_path(story, sequence) + '>' + \
                         get_xml_path(maneuver, condition)  # See note in get_xml_path
                 else:
-                    xml_path = get_xml_path(self.config.story, condition)
+                    xml_path = get_xml_path(story, condition)
                 criterion = oneshot_with_check(variable_name=xml_path, behaviour=criterion)
                 condition_group_sequence.add_child(criterion)
 

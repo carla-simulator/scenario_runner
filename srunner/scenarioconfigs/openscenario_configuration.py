@@ -47,7 +47,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.weather = carla.WeatherParameters()
 
         self.storyboard = self.xml_tree.find("Storyboard")
-        self.story = self.storyboard.find("Story")
+        self.stories = self.storyboard.findall("Story")
         self.init = self.storyboard.find("Init")
 
         logging.basicConfig()
@@ -60,7 +60,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def _validate_openscenario_configuration(self):
         """
-        Validate the given OpenSCENARIO config against the 0.9.1 XSD
+        Validate the given OpenSCENARIO config against the 1.0 XSD
 
         Note: This will throw if the config is not valid. But this is fine here.
         """
@@ -70,7 +70,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def _validate_openscenario_catalog_configuration(self, catalog_xml_tree):
         """
-        Validate the given OpenSCENARIO catalog config against the 0.9.1 XSD
+        Validate the given OpenSCENARIO catalog config against the 1.0 XSD
 
         Note: This will throw if the catalog config is not valid. But this is fine here.
         """
@@ -167,15 +167,25 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         # workaround for relative positions during init
         world = self.client.get_world()
-        if world is None or world.get_map().name != self.town:
-            self.logger.warning(" Wrong OpenDRIVE map in use. Forcing reload of CARLA world")
+        wmap = None
+        if world:
+            wmap = world.get_map()
+
+        if world is None or (wmap is not None and wmap.name != self.town):
             if ".xodr" in self.town:
                 with open(self.town) as od_file:
                     data = od_file.read()
-                self.client.generate_opendrive_world(str(data))
+                old_map = ""
+                if wmap is not None:
+                    old_map = wmap.to_opendrive()
+                if data != old_map:
+                    self.logger.warning(" Wrong OpenDRIVE map in use. Forcing reload of CARLA world")
+                    self.client.generate_opendrive_world(str(data))
+                    world = self.client.get_world()
             else:
+                self.logger.warning(" Wrong map in use. Forcing reload of CARLA world")
                 self.client.load_world(self.town)
-            world = self.client.get_world()
+                world = self.client.get_world()
             CarlaDataProvider.set_world(world)
             world.wait_for_tick()
         else:
