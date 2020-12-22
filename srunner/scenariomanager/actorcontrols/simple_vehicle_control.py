@@ -88,6 +88,7 @@ class SimpleVehicleControl(BasicControl):
         self._consider_obstacles = False
         self._proximity_threshold = float('inf')
         self._max_deceleration = None
+        self._max_acceleration = None
 
         self._obstacle_sensor = None
         self._obstacle_distance = float('inf')
@@ -113,6 +114,9 @@ class SimpleVehicleControl(BasicControl):
 
         if args and 'max_deceleration' in args:
             self._max_deceleration = float(args['max_deceleration'])
+
+        if args and 'max_acceleration' in args:
+            self._max_acceleration = float(args['max_acceleration'])
 
         if args and 'attach_camera' in args and strtobool(args['attach_camera']):
             self._visualizer = Visualizer(self._actor)
@@ -283,6 +287,9 @@ class SimpleVehicleControl(BasicControl):
                                                                   self._last_update) * self._max_deceleration)
         else:
             self._actor.set_light_state(carla.VehicleLightState.NONE)
+            if self._max_acceleration is not None:
+                target_speed = min(target_speed, current_speed + (current_time -
+                                                                  self._last_update) * self._max_acceleration)
 
         # set new linear velocity
         velocity = carla.Vector3D(0, 0, 0)
