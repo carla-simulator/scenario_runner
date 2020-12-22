@@ -54,6 +54,8 @@ class SimpleVehicleControl(BasicControl):
                                         (consider_trafficlights, true/false) - Enable consideration of traffic lights
                                         (max_deceleration, float)            - Use a reasonable deceleration value for
                                                                                this vehicle
+                                        (max_acceleration, float)            - Use a reasonable acceleration value for
+                                                                               this vehicle
                                         (attach_camera, true/false)          - Attach OpenCV display to actor
                                                                                (useful for debugging)
 

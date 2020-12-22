@@ -593,7 +593,15 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 _spawn_point.rotation = transform.rotation
                 _spawn_point.location.x = transform.location.x
                 _spawn_point.location.y = transform.location.y
-                _spawn_point.location.z = transform.location.z + 0.2
+                if blueprint.has_tag('walker'):
+                    # On imported OpenDRIVE maps, spawning of pedestrians can fail.
+                    # By increasing the z-value the chances of success are increased.
+                    if not CarlaDataProvider._map.name.startswith('OpenDrive'):
+                        _spawn_point.location.z = transform.location.z + 0.2
+                    else:
+                        _spawn_point.location.z = transform.location.z + 0.8
+                else:
+                    _spawn_point.location.z = transform.location.z + 0.2
 
             # Get the command
             command = SpawnActor(blueprint, _spawn_point)

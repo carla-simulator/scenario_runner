@@ -14,10 +14,14 @@
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Added `--openscenarioparams` argument to overwrite global `ParameterDeclaration`
+    - Added controller using CARLA's autopilot (in replacement for ActivateControllerAction)
+    - Added support for storyboards with multiple stories
 ### :bug: Bug Fixes
 * Fixed bug at the Getting Started docs which caused an import error
 ### :ghost: Maintenance
+* Extended SimpleVehicleController (OSC) to handle traffic lights
 * Generalized visualizer attached to OSC controllers
+* Fixed bug at the Getting Started docs which caused an import error
 
 ## CARLA ScenarioRunner 0.9.11
 ### :rocket: New Features
