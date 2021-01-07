@@ -285,6 +285,7 @@ class ChangeActorControl(AtomicBehavior):
         control_py_module (string): Name of the python module containing the implementation
             of the controller.
         args (dictionary): Additional arguments for the controller.
+        scenario_file_path (string): Additional path to controller implementation.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorControl'.
 
@@ -292,13 +293,14 @@ class ChangeActorControl(AtomicBehavior):
         _actor_control (ActorControl): Instance of the actor control.
     """
 
-    def __init__(self, actor, control_py_module, args, name="ChangeActorControl"):
+    def __init__(self, actor, control_py_module, args, scenario_file_path=None, name="ChangeActorControl"):
         """
         Setup actor controller.
         """
         super(ChangeActorControl, self).__init__(name, actor)
 
-        self._actor_control = ActorControl(actor, control_py_module=control_py_module, args=args)
+        self._actor_control = ActorControl(actor, control_py_module=control_py_module,
+                                           args=args, scenario_file_path=scenario_file_path)
 
     def update(self):
         """

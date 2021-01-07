@@ -12,6 +12,7 @@ Basic scenario class using the OpenSCENARIO definition
 from __future__ import print_function
 
 import itertools
+import os
 import py_trees
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction
@@ -227,7 +228,8 @@ class OpenScenario(BasicScenario):
                                     module, args = OpenScenarioParser.get_controller(
                                         controller_action, self.config.catalogs)
                                     controller_atomic = ChangeActorControl(
-                                        carla_actor, control_py_module=module, args=args)
+                                        carla_actor, control_py_module=module, args=args,
+                                        scenario_file_path=os.path.dirname(self.config.filename))
 
                     if controller_atomic is None:
                         controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
