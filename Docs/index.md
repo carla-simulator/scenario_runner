@@ -36,7 +36,7 @@ CARLA forum</a>
 
 [**List of scenarios**](<list_of_scenarios>) — Example scenarios available in ScenarioRunner.<br>
 
-[**OpenScenario support**](<getting_started>) — Support status of OpenSCENARIO features.<br>
+[**OpenScenario support**](<openscenario_support>) — Support status of OpenSCENARIO features.<br>
 
 
 ## Contributing
