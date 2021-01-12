@@ -979,6 +979,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
 
         return new_status
 
+
 class ChangeActorLaneOffset(AtomicBehavior):
 
     """

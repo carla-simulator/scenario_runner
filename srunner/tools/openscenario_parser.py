@@ -1069,7 +1069,7 @@ class OpenScenarioParser(object):
                                 relative_target_offset.attrib.get('entityRef', None)))
 
                         atomic = ChangeActorLaneOffset(actor, relative_offset, relative_actor,
-                            continuous=continuous, name=maneuver_name)
+                                                       continuous=continuous, name=maneuver_name)
 
                     else:
                         raise AttributeError("Unknown target offset")

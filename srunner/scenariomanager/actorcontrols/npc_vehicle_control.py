@@ -58,7 +58,7 @@ class NpcVehicleControl(BasicControl):
         """
         Update the plan (waypoint list) of the LocalPlanner
         """
-        self._local_planner._vehicle_controller._lat_controller._offset = self._offset
+        self._local_planner._vehicle_controller._lat_controller._offset = self._offset   # pylint: disable=protected-access
 
     def reset(self):
         """
