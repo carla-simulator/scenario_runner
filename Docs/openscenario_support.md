@@ -92,13 +92,12 @@ contains of submodules, which are not listed, the support status applies to all 
 ###### PrivateAction
 
 
-
 | PrivateAction                          | Init  support                            | Story support                              | Notes                              |
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | `ActivateControllerAction`                          | &#10060;             | &#9989;            | Can be used to activate/deactive the CARLA autopilot.                                             |
 | `ControllerAction`                                  | &#9989;            | &#9989;            | AssignControllerAction is supported, but a Python module has to be provided for the controller implementation, and in OverrideControllerValueAction all values need to be `False`. |
 | `LateralAction`<br> `LaneChangeAction`             | &#10060;             | &#9989;            | Currently all lane changes have a linear dynamicShape, the dynamicDimension is defined as the distance and are relative to the actor itself (RelativeTargetLane).                  |
-| `LateralAction`<br>`LaneOffsetAction`             | &#10060;             | &#10060;             |                  |
+| `LateralAction`<br>`LaneOffsetAction`             | &#9989;             | &#10060;             |  Currently all type of dynamicShapes are ignored and depend on the controller. This action might not work as intended if the offset is high enough to make the vehicle exit its lane  |
 | `LateralAction`<br> `LateralDistanceAction`        | &#10060;             | &#10060;             |                  |
 | `LongitudinalAction`<br> `LongitudinalDistanceAction`                                            | &#10060;             | &#10060;             |                  |
 | `LongitudinalAction`<br> `SpeedAction`             | &#9989;            | &#9989;            |                  |

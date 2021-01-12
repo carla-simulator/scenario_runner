@@ -60,6 +60,7 @@ class ActorControl(object):
 
     _last_longitudinal_command = None
     _last_waypoint_command = None
+    _last_lane_offset_command = None
 
     def __init__(self, actor, control_py_module, args, scenario_file_path):
 
@@ -117,6 +118,19 @@ class ActorControl(object):
         if start_time:
             self._last_waypoint_command = start_time
 
+    def update_offset(self, offset, start_time=None):
+        """
+        Update the actor's offset
+
+        Args:
+            offset (float): Value of the new offset.
+            start_time (float): Start time of the new "maneuver" [s].
+        """
+        self.control_instance.update_offset(offset)
+        if start_time:
+            self._last_waypoint_command = start_time
+            self._last_lane_offset_command = start_time
+
     def check_reached_waypoint_goal(self):
         """
         Check if the actor reached the end of the waypoint list
@@ -143,6 +157,15 @@ class ActorControl(object):
             Timestamp of last waypoint control command
         """
         return self._last_waypoint_command
+
+    def get_last_lane_offset_command(self):
+        """
+        Get timestamp of the last issued lane offset control command
+
+        returns:
+            Timestamp of last lane offset control command
+        """
+        return self._last_lane_offset_command
 
     def set_init_speed(self):
         """

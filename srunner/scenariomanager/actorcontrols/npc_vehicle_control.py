@@ -47,13 +47,18 @@ class NpcVehicleControl(BasicControl):
         """
         Update the plan (waypoint list) of the LocalPlanner
         """
-        self._local_planner._waypoint_buffer.clear()    # pylint: disable=protected-access
         plan = []
         for transform in self._waypoints:
             waypoint = CarlaDataProvider.get_map().get_waypoint(
                 transform.location, project_to_road=True, lane_type=carla.LaneType.Any)
             plan.append((waypoint, RoadOption.LANEFOLLOW))
         self._local_planner.set_global_plan(plan)
+
+    def _update_offset(self):
+        """
+        Update the plan (waypoint list) of the LocalPlanner
+        """
+        self._local_planner._vehicle_controller._lat_controller._offset = self._offset   # pylint: disable=protected-access
 
     def reset(self):
         """
@@ -87,6 +92,10 @@ class NpcVehicleControl(BasicControl):
         if self._waypoints_updated:
             self._waypoints_updated = False
             self._update_plan()
+
+        if self._offset_updated:
+            self._offset_updated = False
+            self._update_offset()
 
         target_speed = self._target_speed
         # If target speed is negavite, raise an exception

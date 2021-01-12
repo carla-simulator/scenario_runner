@@ -16,6 +16,7 @@
 * Added a static obstacle evasion OpenSCENARIO scenario
 * Added support for OSC Routing options
 * Added support for OSC SynchronizeAction
+* Added support for OSC LaneOffsetAction
 * Added support to place OSC controller implementation alongside the OSC scenario
 * Updated *GameTime.restart()* at *srunner/scenariomanager/timer.py* to also reset the frame number
 ### :bug: Bug Fixes
