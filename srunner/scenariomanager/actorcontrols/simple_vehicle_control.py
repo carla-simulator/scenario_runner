@@ -191,7 +191,7 @@ class SimpleVehicleControl(BasicControl):
                 else:
                     break
 
-            direction_norm = self._set_new_velocity(self._generated_waypoint_list[0].location)
+            direction_norm = self._set_new_velocity(self._offset_waypoint(self._generated_waypoint_list[0]))
             if direction_norm < 2.0:
                 self._generated_waypoint_list = self._generated_waypoint_list[1:]
         else:
@@ -202,11 +202,31 @@ class SimpleVehicleControl(BasicControl):
                 self._waypoints = self._waypoints[1:]
 
             self._reached_goal = False
-            direction_norm = self._set_new_velocity(self._waypoints[0].location)
+            direction_norm = self._set_new_velocity(self._offset_waypoint(self._waypoints[0]))
             if direction_norm < 4.0:
                 self._waypoints = self._waypoints[1:]
                 if not self._waypoints:
                     self._reached_goal = True
+
+    def _offset_waypoint(self, transform):
+        """
+        Given a transform (which should be the position of a waypoint), displaces it to the side,
+        according to a given offset
+
+        Args:
+            transform (carla.Transform): Transform to be moved
+
+        returns:
+            offset_location (carla.Transform): Moved transform
+        """
+        if self._offset == 0:
+            offset_location = transform.location
+        else:
+            right_vector = transform.get_right_vector()
+            offset_location = transform.location + carla.Location(x=self._offset*right_vector.x,
+                                                                y=self._offset*right_vector.y)
+
+        return offset_location
 
     def _set_new_velocity(self, next_location):
         """
