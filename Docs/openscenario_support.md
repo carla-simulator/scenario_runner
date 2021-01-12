@@ -29,41 +29,24 @@ This covers all part that are defined outside the OpenSCENARIO Storyboard
 | Attribute                          | Support                            | Notes                              |
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | `FileHeader`                       | &#9989;                              | Use "CARLA:" at the beginning of the description to use the CARLA coordinate system.                                |
-| `CatalogLocations`<br>
-`ControllerCatalog`                                      | &#9989;                              | While the catalog is supported, the reference/usage may not work.                |
-| `CatalogLocations`<br>
-`EnvironmentCatalog`                                     | &#9989;                              |                                    |
-| `CatalogLocations`<br>
-`ManeuverCatalog`                                        | &#9989;                              |                                    |
-| `CatalogLocations`<br>
-`MiscObjectCatalog`                                      | &#9989;                              |                                    |
-| `CatalogLocations`<br>
-`PedestrianCatalog`                                      | &#9989;                              |                                    |
-| `CatalogLocations`<br>
-`RouteCatalog`                                           | &#9989;                              | While the catalog is supported, the reference/usage may not work.                |
-| `CatalogLocations`<br>
-`TrajectoryCatalog`                                      | &#9989;                              | While the catalog is supported, the reference/usage may not work.                |
-| `CatalogLocations`<br>
-`VehicleCatalog`                                         | &#9989;                              |                                    |
+| `CatalogLocations`<br>`ControllerCatalog`                                      | &#9989;                              | While the catalog is supported, the reference/usage may not work.                |
+| `CatalogLocations`<br>`EnvironmentCatalog`                                     | &#9989;                              |                                    |
+| `CatalogLocations`<br>`ManeuverCatalog`                                        | &#9989;                              |                                    |
+| `CatalogLocations`<br>`MiscObjectCatalog`                                      | &#9989;                              |                                    |
+| `CatalogLocations`<br>`PedestrianCatalog`                                      | &#9989;                              |                                    |
+| `CatalogLocations`<br>`RouteCatalog`                                           | &#9989;                              | While the catalog is supported, the reference/usage may not work.                |
+| `CatalogLocations`<br>`TrajectoryCatalog`                                      | &#9989;                              | While the catalog is supported, the reference/usage may not work.                |
+| `CatalogLocations`<br>`VehicleCatalog`                                         | &#9989;                              |                                    |
 | `ParameterDeclarations`            | &#9989;                              |                                    |
-| `RoadNetwork`<br>
-`LogicFile`                                                   | &#9989;                              | The CARLA level can be used directly (e.g. LogicFile=Town01). Also any OpenDRIVE path can be provided.              |
-| `RoadNetwork`<br>
-`SceneGraphFile`                                              | &#10060;                               | The provided information is not used.                                            |
-| `RoadNetwork`<br>
-`TafficSignals`                                               | &#10060;                               | The provided information is not used.                                            |
-| `Entities`<br>
-`EntitySelection`                                                | &#10060;                               | The provided information is not used.                                            |
-| `Entities` `ScenarioObject`<br>
-`CatalogReference`                               | &#9989;                              | The provided information is not used.                                            |
-| `Entities` `ScenarioObject`<br>
-`MiscObject`                                     | &#9989;                              | The name should match a CARLA vehicle model, otherwise a default vehicle based on the vehicleCategory is used. BoundingBox entries are ignored.                   |
-| `Entities` `ScenarioObject`<br>
-`ObjectController`                               | &#10060;                               | The provided information is not used.                                            |
-| `Entities` `ScenarioObject`<br>
-`Pedestrian`                                     | &#9989;                              | The name should match a CARLA vehicle model, otherwise a default vehicle based on the vehicleCategory is used. BoundingBox entries are ignored.                   |
-| `Entities` `ScenarioObject`<br>
-`Vehicle`                                        | &#9989;                              | The name should match a CARLA vehicle model, otherwise a default vehicle based on the vehicleCategory is used. The color can be set via properties ('Property name="color" value="0,0,255"'). Axles, Performance, BoundingBox entries are ignored. |
+| `RoadNetwork`<br>`LogicFile`                                                   | &#9989;                              | The CARLA level can be used directly (e.g. LogicFile=Town01). Also any OpenDRIVE path can be provided.              |
+| `RoadNetwork`<br>`SceneGraphFile`                                              | &#10060;                               | The provided information is not used.                                            |
+| `RoadNetwork`<br>`TafficSignals`                                               | &#10060;                               | The provided information is not used.                                            |
+| `Entities`<br>`EntitySelection`                                                | &#10060;                               | The provided information is not used.                                            |
+| `Entities` `ScenarioObject`<br>`CatalogReference`                               | &#9989;                              | The provided information is not used.                                            |
+| `Entities` `ScenarioObject`<br>`MiscObject`                                     | &#9989;                              | The name should match a CARLA vehicle model, otherwise a default vehicle based on the vehicleCategory is used. BoundingBox entries are ignored.                   |
+| `Entities` `ScenarioObject`<br>`ObjectController`                               | &#10060;                               | The provided information is not used.                                            |
+| `Entities` `ScenarioObject`<br>`Pedestrian`                                     | &#9989;                              | The name should match a CARLA vehicle model, otherwise a default vehicle based on the vehicleCategory is used. BoundingBox entries are ignored.                   |
+| `Entities` `ScenarioObject`<br>`Vehicle`                                        | &#9989;                              | The name should match a CARLA vehicle model, otherwise a default vehicle based on the vehicleCategory is used. The color can be set via properties ('Property name="color" value="0,0,255"'). Axles, Performance, BoundingBox entries are ignored. |
 
 <br>
 
@@ -87,12 +70,9 @@ contains of submodules, which are not listed, the support status applies to all 
 | `EntityAction`                | &#10060;                          | &#10060;                          |                               |
 | `EnvironmentAction`           | &#9989;                         | &#10060;                          |                               |
 | `ParameterAction`             | &#10060;                          | &#10060;                          |                               |
-| `InfrastructureAction` `TrafficSignalAction`<br>
-`TrafficAction`                                               | &#10060;                          | &#10060;                          |                               |
-| `InfrastructureAction` `TrafficSignalAction`<br>
-`TrafficSignalControllerAction`                               | &#10060;                          | &#10060;                          |                               |
-| `InfrastructureAction` `TrafficSignalAction`<br>
-`TrafficSignalStateAction`                                    | &#10060;                          | &#9989;                         | As traffic signals in CARLA towns have no unique ID, they have to be set by providing their position (Example: TrafficSignalStateAction name="pos=x,y" state="green"). The id can also be used for none CARLA town (Example: TrafficSignalStateAction name="id=n" state="green") |
+| `InfrastructureAction` `TrafficSignalAction`<br>`TrafficAction`                                               | &#10060;                          | &#10060;                          |                               |
+| `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalControllerAction`                               | &#10060;                          | &#10060;                          |                               |
+| `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalStateAction`                                    | &#10060;                          | &#9989;                         | As traffic signals in CARLA towns have no unique ID, they have to be set by providing their position (Example: TrafficSignalStateAction name="pos=x,y" state="green"). The id can also be used for none CARLA town (Example: TrafficSignalStateAction name="id=n" state="green") |
 
 <br>
 
