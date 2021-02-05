@@ -1,5 +1,6 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.11](#carla-scenariorunner-0911)
 * [CARLA ScenarioRunner 0.9.10](#carla-scenariorunner-0910)
 * [CARLA ScenarioRunner 0.9.9](#carla-scenariorunner-099)
 * [CARLA ScenarioRunner 0.9.8](#carla-scenariorunner-098)
@@ -10,6 +11,8 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+
+## CARLA ScenarioRunner 0.9.11
 ### :rocket: New Features
 * Added a sensor barrier for the agents to ensure that the simulation waits for them to render their data.
 * Added an option to produce a machine-readable JSON version of the scenario report.
@@ -30,7 +33,6 @@
 * Fixed writing result files when using OpenSCENARIO under Windows (CARLA: prefix is removed from the filename)
 ### :ghost: Maintenance
 * Added check to ensure OSC names (for story/act/maneuver) are unique
-
 
 
 ## CARLA ScenarioRunner 0.9.10
