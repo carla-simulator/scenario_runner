@@ -191,6 +191,25 @@ class OpenScenarioParser(object):
         for parameter in parameters:
             name = parameter.attrib.get('name')
             value = parameter.attrib.get('value')
+            if xml_tree.find("Storyboard") is not None:
+                init_param_actions = xml_tree.find("Storyboard").find("Init").find("Actions")
+                for global_action in init_param_actions.iter("GlobalAction"):
+                    if global_action.find('ParameterAction') is not None:
+                        parameter_ref = global_action.find('ParameterAction').attrib.get('parameterRef')
+                        if name == parameter_ref:
+                            # check if value is reference of a parameter
+                            if '$' in value and value.replace('$', '') in parameter_dict.keys():
+                                value = parameter_dict[value.replace('$', '')]
+                            if global_action.find('ParameterAction').find('ModifyAction') is not None:
+                                rule = global_action.find('ParameterAction').find('ModifyAction').find("Rule")
+                                if rule.find("AddValue") is not None:
+                                    add_value = float(rule.find("AddValue").attrib.get('value'))
+                                    value = str(float(value) + add_value)
+                                else:
+                                    multiply_factor = float(rule.find("MultiplyByValue").attrib.get('value'))
+                                    value = str(float(value) * multiply_factor)
+                            else:
+                                value = global_action.find('ParameterAction').find('SetAction').attrib.get('value')
             parameter_dict[name] = value
 
         for node in xml_tree.iter():
