@@ -191,7 +191,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         _global_params_overwrite = dict()
         if self._global_params_overwrite is not None:
-            _global_params_overwrite = dict([tuple(mn.split(':')) for mn in self._global_params_overwrite.split(',')])
+            _global_params_overwrite = dict([tuple(m.strip() for m in  mn.split(':')) for mn in self._global_params_overwrite.split(',')])
         self.xml_tree, self._global_parameters = OpenScenarioParser.set_parameters(self.xml_tree, _global_params_overwrite)
 
         for elem in self.xml_tree.iter():
