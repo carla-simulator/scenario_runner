@@ -178,8 +178,6 @@ class OpenScenarioParser(object):
         """
 
         parameter_dict = dict()
-        if additional_parameter_dict is not None:
-            parameter_dict = additional_parameter_dict
         parameters = xml_tree.find('ParameterDeclarations')
 
         if parameters is None and not parameter_dict:
@@ -192,6 +190,10 @@ class OpenScenarioParser(object):
             name = parameter.attrib.get('name')
             value = parameter.attrib.get('value')
             parameter_dict[name] = value
+
+        # overwrite parameters in parameters_dict by additional_parameters_dict
+        if additional_parameter_dict is not None:
+            parameter_dict = dict(list(parameter_dict.items()) + list(additional_parameter_dict.items()))
 
         for node in xml_tree.iter():
             for key in node.attrib:

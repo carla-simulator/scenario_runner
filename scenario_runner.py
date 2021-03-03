@@ -479,7 +479,7 @@ class ScenarioRunner(object):
             self._cleanup()
             return False
 
-        config = OpenScenarioConfiguration(self._args.openscenario, self.client)
+        config = OpenScenarioConfiguration(self._args.openscenario, self.client, self._args.openscenarioparams)
 
         result = self._load_and_run_scenario(config)
         self._cleanup()
@@ -529,6 +529,7 @@ def main():
     parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
+    parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
     parser.add_argument(
         '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
 

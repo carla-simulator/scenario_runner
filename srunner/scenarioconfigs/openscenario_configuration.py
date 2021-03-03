@@ -31,10 +31,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
     - Only one Story + Init is supported per Storyboard
     """
 
-    def __init__(self, filename, client):
+    def __init__(self, filename, client, params):
 
         self.xml_tree = ET.parse(filename)
         self.filename = filename
+        self._global_params_overwrite = params
 
         self._validate_openscenario_configuration()
         self.client = client
@@ -188,8 +189,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         Set _global_parameters.
         """
-
-        self.xml_tree, self._global_parameters = OpenScenarioParser.set_parameters(self.xml_tree)
+        _global_params_overwrite = dict()
+        if self._global_params_overwrite is not None:
+            _global_params_overwrite = dict([tuple(mn.split(':')) for mn in self._global_params_overwrite.split(',')])
+        self.xml_tree, self._global_parameters = OpenScenarioParser.set_parameters(self.xml_tree, _global_params_overwrite)
 
         for elem in self.xml_tree.iter():
             if elem.find('ParameterDeclarations') is not None:
