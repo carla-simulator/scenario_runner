@@ -12,6 +12,8 @@
 
 ## Latest Changes
 
+* Fixed bug at the Getting Started docs which caused an import error
+
 ## CARLA ScenarioRunner 0.9.11
 ### :rocket: New Features
 * Added a sensor barrier for the agents to ensure that the simulation waits for them to render their data.
