@@ -479,7 +479,12 @@ class ScenarioRunner(object):
             self._cleanup()
             return False
 
-        config = OpenScenarioConfiguration(self._args.openscenario, self.client, self._args.openscenarioparams)
+        openscenario_params = dict()
+        if self._args.openscenarioparams is not None:
+            for entry in self._args.openscenarioparams.split(','):
+                [key, val] = [m.strip() for m in entry.split(':')]
+                openscenario_params[key] = val
+        config = OpenScenarioConfiguration(self._args.openscenario, self.client, openscenario_params)
 
         result = self._load_and_run_scenario(config)
         self._cleanup()
