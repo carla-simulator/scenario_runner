@@ -50,7 +50,7 @@ class Visualizer(object):
         _video_writer (boolean): Flag to disable/enable writing the image stream into a video
     """
 
-    _video_writer = True
+    _video_writer = False
 
     def __init__(self, actor):
         self._actor = actor
