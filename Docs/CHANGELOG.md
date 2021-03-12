@@ -11,6 +11,9 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :ghost: Maintenance
+* Generalized visualizer attached to OSC controllers
+
 
 * Fixed bug at the Getting Started docs which caused an import error
 

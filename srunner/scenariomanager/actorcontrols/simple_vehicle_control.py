@@ -16,12 +16,11 @@ Limitations:
 
 from distutils.util import strtobool
 import math
-import cv2
-import numpy as np
 
 import carla
 
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
+from srunner.scenariomanager.actorcontrols.visualizer import Visualizer
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 
@@ -81,11 +80,11 @@ class SimpleVehicleControl(BasicControl):
         self._consider_obstacles = False
         self._proximity_threshold = float('inf')
 
-        self._cv_image = None
-        self._camera = None
         self._obstacle_sensor = None
         self._obstacle_distance = float('inf')
         self._obstacle_actor = None
+
+        self._visualizer = None
 
         if args and 'consider_obstacles' in args and strtobool(args['consider_obstacles']):
             self._consider_obstacles = strtobool(args['consider_obstacles'])
@@ -101,10 +100,7 @@ class SimpleVehicleControl(BasicControl):
             self._obstacle_sensor.listen(lambda event: self._on_obstacle(event))  # pylint: disable=unnecessary-lambda
 
         if args and 'attach_camera' in args and strtobool(args['attach_camera']):
-            bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.camera.rgb')
-            self._camera = CarlaDataProvider.get_world().spawn_actor(bp, carla.Transform(
-                carla.Location(x=0.0, z=30.0), carla.Rotation(pitch=-60)), attach_to=self._actor)
-            self._camera.listen(lambda image: self._on_camera_update(image))  # pylint: disable=unnecessary-lambda
+            self._visualizer = Visualizer(self._actor)
 
     def _on_obstacle(self, event):
         """
@@ -118,28 +114,13 @@ class SimpleVehicleControl(BasicControl):
         self._obstacle_distance = event.distance
         self._obstacle_actor = event.other_actor
 
-    def _on_camera_update(self, image):
-        """
-        Callback for the camera sensor
-
-        Sets the OpenCV image (_cv_image). Requires conversion from BGRA to RGB.
-        """
-        if not image:
-            return
-
-        image_data = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
-        np_image = np.reshape(image_data, (image.height, image.width, 4))
-        np_image = np_image[:, :, :3]
-        np_image = np_image[:, :, ::-1]
-        self._cv_image = cv2.cvtColor(np_image, cv2.COLOR_BGR2RGB)
-
     def reset(self):
         """
         Reset the controller
         """
-        if self._camera:
-            self._camera.destroy()
-            self._camera = None
+
+        if self._visualizer:
+            self._visualizer.reset()
         if self._obstacle_sensor:
             self._obstacle_sensor.destroy()
             self._obstacle_sensor = None
@@ -161,15 +142,14 @@ class SimpleVehicleControl(BasicControl):
         obstacle in front of the actor, if it is within the _proximity_threshold distance.
         """
 
-        if self._cv_image is not None:
-            cv2.imshow("", self._cv_image)
-            cv2.waitKey(1)
-
         if self._reached_goal:
             # Reached the goal, so stop
             velocity = carla.Vector3D(0, 0, 0)
             self._actor.set_target_velocity(velocity)
             return
+
+        if self._visualizer:
+            self._visualizer.render()
 
         self._reached_goal = False
 

@@ -346,7 +346,7 @@ class OpenScenarioParser(object):
         carla_weather.precipitation = 0
         carla_weather.precipitation_deposits = 0
         carla_weather.wetness = 0
-        carla_weather.wind_intensity = 0
+        carla_weather.wind_intensity = 30.0
         precepitation = weather.find("Precipitation")
         if precepitation.attrib.get('precipitationType') == "rain":
             carla_weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
