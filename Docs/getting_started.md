@@ -90,6 +90,11 @@ python scenario_runner.py --openscenario <path/to/xosc-file>
 Please note that the OpenSCENARIO support and the OpenSCENARIO format itself are still work in progress.
 More information you can find in [OpenSCENARIO support](openscenario_support.md)
 
+### Running scenarios using the OpenSCENARIO format with Global ParameterDeclaration overwrite
+```
+python scenario_runner.py --openscenario <path/to/xosc-file> --openscenarioparams 'param1: value1, param2: value2'
+```
+
 ## Running route-based scenario (similar to the CARLA AD Challenge)
 To run a route-based scenario, please run the ScenarioRunner as follows:
 ```

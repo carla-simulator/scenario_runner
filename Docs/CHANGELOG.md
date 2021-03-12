@@ -11,11 +11,13 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest Changes
+### :rocket: New Features
+* OpenSCENARIO support:
+    - Added `--openscenarioparams` argument to overwrite global `ParameterDeclaration`
+### :bug: Bug Fixes
+* Fixed bug at the Getting Started docs which caused an import error
 ### :ghost: Maintenance
 * Generalized visualizer attached to OSC controllers
-
-
-* Fixed bug at the Getting Started docs which caused an import error
 
 ## CARLA ScenarioRunner 0.9.11
 ### :rocket: New Features
