@@ -582,7 +582,7 @@ def main():
         print("Agents are currently only compatible with route scenarios'\n\n")
         parser.print_help(sys.stdout)
         return 1
-    
+
     if arguments.openscenarioparams and not arguments.openscenario:
         print("WARN: Ignoring --openscenarioparams when --openscenario is not specified")
 
