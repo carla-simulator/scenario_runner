@@ -175,7 +175,7 @@ set SCENARIO_RUNNER_ROOT=\path\to\your\scenario\runner\installation
 set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla\dist\carla-<VERSION>.egg
 set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla\agents
 set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI\carla
-set PYTHONPATH=%PYTHONPATH%:%CARLA_ROOT%\PythonAPI
+set PYTHONPATH=%PYTHONPATH%;%CARLA_ROOT%\PythonAPI
 ```
 
 !!! Note
