@@ -290,8 +290,11 @@ class SimpleVehicleControl(BasicControl):
         else:
             self._actor.set_light_state(carla.VehicleLightState.NONE)
             if self._max_acceleration is not None:
-                target_speed = min(target_speed, current_speed + (current_time -
-                                                                  self._last_update) * self._max_acceleration)
+                tmp_speed = min(target_speed, current_speed + (current_time -
+                                                               self._last_update) * self._max_acceleration)
+                # If the tmp_speed is < 0.5 the vehicle may not properly accelerate.
+                # Therefore, we bump the speed to 0.5 m/s if target_speed allows.
+                target_speed = max(tmp_speed, min(0.5, target_speed))
 
         # set new linear velocity
         velocity = carla.Vector3D(0, 0, 0)
