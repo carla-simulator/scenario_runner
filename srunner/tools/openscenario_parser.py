@@ -491,7 +491,7 @@ class OpenScenarioParser(object):
                         actor_transform = obj_actor.get_transform()
                         break
 
-            if obj_actor is None:
+            if obj_actor is None or actor_transform is None:
                 raise AttributeError("Object '{}' provided as position reference is not known".format(obj))
 
             # calculate orientation h, p, r
@@ -590,7 +590,8 @@ class OpenScenarioParser(object):
             is_absolute = True
             waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, lane_id, s)
             if waypoint is None:
-                raise AttributeError("Lane position cannot be found")
+                raise AttributeError("Lane position 'roadId={}, laneId={}, s={}, offset={}' does not exist".format(
+                    road_id, lane_id, s, offset))
 
             transform = waypoint.transform
             if lane_pos.find('Orientation') is not None:

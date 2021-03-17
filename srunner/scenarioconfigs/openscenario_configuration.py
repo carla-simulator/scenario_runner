@@ -260,6 +260,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                                     if ref_actor.transform is not None:
                                         raise e
                                     break
+                        else:
+                            raise e
                     if actor.transform is None:
                         all_actor_transforms_set = False
 
