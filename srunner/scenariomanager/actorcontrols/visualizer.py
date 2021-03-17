@@ -115,6 +115,11 @@ class Visualizer(object):
             im_v = cv2.vconcat([self._cv_image_actor, self._cv_image_bird])
             cv2.circle(im_v, (900, 300), 80, (170, 170, 170), -1)
             text = str(int(round((self._actor.get_velocity().x * 3.6))))+" kph"
+
+            speed = np.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
+
+
+            text = str(int(round((speed * 3.6))))+" kph"
             text = ' '*(7-len(text)) + text
             im_v = cv2.putText(im_v, text, (830, 310), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, cv2.LINE_AA)
             cv2.imshow("", im_v)

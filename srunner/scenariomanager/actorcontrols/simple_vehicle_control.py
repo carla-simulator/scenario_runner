@@ -232,7 +232,7 @@ class SimpleVehicleControl(BasicControl):
         else:
             right_vector = transform.get_right_vector()
             offset_location = transform.location + carla.Location(x=self._offset*right_vector.x,
-                                                                y=self._offset*right_vector.y)
+                                                                  y=self._offset*right_vector.y)
 
         return offset_location
 
@@ -279,7 +279,7 @@ class SimpleVehicleControl(BasicControl):
 
         if self._consider_traffic_lights:
             if (self._actor.is_at_traffic_light() and
-                self._actor.get_traffic_light_state() == carla.TrafficLightState.Red):
+                    self._actor.get_traffic_light_state() == carla.TrafficLightState.Red):
                 target_speed = 0
 
         if target_speed < current_speed:
