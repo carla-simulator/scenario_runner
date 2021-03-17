@@ -18,6 +18,7 @@
     - Added support for storyboards with multiple stories
 ### :bug: Bug Fixes
 * Fixed bug at the Getting Started docs which caused an import error
+* Fixed neverending lane change maneuver in OpenSCENARIO
 ### :ghost: Maintenance
 * Extended SimpleVehicleController (OSC) to handle traffic lights
 * Generalized visualizer attached to OSC controllers

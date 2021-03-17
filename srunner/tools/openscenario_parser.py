@@ -1041,7 +1041,7 @@ class OpenScenarioParser(object):
                             lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
                     atomic = ChangeActorLateralMotion(actor, direction=direction,
                                                       distance_lane_change=distance,
-                                                      distance_other_lane=1000,
+                                                      distance_other_lane=10,
                                                       lane_changes=lane_changes,
                                                       name=maneuver_name)
                 elif private_action.find('LaneOffsetAction') is not None:

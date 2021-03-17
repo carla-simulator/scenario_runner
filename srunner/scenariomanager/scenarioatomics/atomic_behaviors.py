@@ -974,6 +974,19 @@ class ChangeActorLateralMotion(AtomicBehavior):
             if distance > self._distance_other_lane:
                 # long enough distance on new lane --> SUCCESS
                 new_status = py_trees.common.Status.SUCCESS
+
+                new_waypoints = []
+                map_wp = current_position_actor
+                while len(new_waypoints) < 200:
+                    map_wps = map_wp.next(2.0)
+                    if map_wps:
+                        new_waypoints.append(map_wps[0].transform)
+                        map_wp = map_wps[0]
+                    else:
+                        break
+
+                actor_dict[self._actor.id].update_waypoints(new_waypoints, start_time=self._start_time)
+
         else:
             self._pos_before_lane_change = current_position_actor.transform.location
 
