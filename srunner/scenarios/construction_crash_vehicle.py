@@ -10,23 +10,14 @@ moving along the road and encountering a cyclist ahead.
 
 from __future__ import print_function
 
-import math
 import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
-                                                                      ActorDestroy,
-                                                                      AccelerateToVelocity,
-                                                                      HandBrakeVehicle,
-                                                                      KeepVelocity,
-                                                                      StopVehicle)
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocationAlongRoute,
-                                                                               InTimeToArrivalToVehicle,
-                                                                               DriveDistance)
+                                                                      ActorDestroy)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenariomanager.timer import TimeOut
-from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing
 
@@ -63,7 +54,9 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         self._create_construction_setup(waypoint.transform, lane_width)
 
     def create_cones_side(self, start_transform, forward_vector, z_inc=0, cone_length=0):
-        i = 0
+        """
+        Creates One Side of the Cones
+        """
         _dist = 0
         _cone_offset = 1
         while _dist < cone_length:
@@ -102,9 +95,9 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
             if key == 'cones':
                 continue
             transform = carla.Transform(start_transform.location, start_transform.rotation)
-            transform.rotation.yaw += _initial_offset[key]['yaw']
-            transform.location += _initial_offset[key]['k'] * transform.rotation.get_forward_vector()
-            transform.location.z += _initial_offset[key]['z']
+            transform.rotation.yaw += value['yaw']
+            transform.location += value['k'] * transform.rotation.get_forward_vector()
+            transform.location.z += value['z']
             transform.rotation.yaw += _perp_angle
             static = CarlaDataProvider.request_new_actor(_prop_names[key], transform)
             static.set_simulate_physics(True)
@@ -114,7 +107,7 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         ############################# Cones ###########################################
         side_transform = carla.Transform(start_transform.location, start_transform.rotation)
         side_transform.rotation.yaw += _perp_angle
-        side_transform.location +=  _initial_offset['cones']['k'] * side_transform.rotation.get_forward_vector()
+        side_transform.location += _initial_offset['cones']['k'] * side_transform.rotation.get_forward_vector()
         side_transform.rotation.yaw += _initial_offset['cones']['yaw']
 
         for i in range(_n_sides):
@@ -156,4 +149,3 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         scenario_sequence.add_child(end_condition)
 
         return root
-
