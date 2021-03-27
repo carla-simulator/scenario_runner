@@ -5,7 +5,7 @@
 """
 Object crash without prior vehicle action scenario:
 The scenario realizes the user controlled ego vehicle
-moving along the road and encountering a cyclist ahead.
+moving along the road and encountering a construction setup.
 """
 
 from __future__ import print_function
