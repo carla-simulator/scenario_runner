@@ -72,15 +72,15 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
             start_transform,
             forward_vector,
             z_inc=0,
-            cone_length=0):
+            cone_length=0,
+            cone_offset=0):
         """
         Creates One Side of the Cones
         """
         _dist = 0
-        _cone_offset = 1
-        while _dist < cone_length:
+        while _dist < (cone_length * cone_offset):
             # Move forward
-            _dist += _cone_offset
+            _dist += cone_offset
             forward_dist = carla.Vector3D(0, 0, 0) + forward_vector * _dist
 
             location = start_transform.location + forward_dist
@@ -105,9 +105,8 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         _prop_names = {'warning_sign': 'static.prop.trafficwarning',
                        'debris': 'static.prop.dirtdebris02'}
 
-        _n_sides = 3
         _perp_angle = 90
-        _side_lengths = [4, 6, 3]
+        _setup = {'lengths': [0, 6, 3], 'offsets': [0, 2, 1]}
         _z_increment = 0.1
 
         ############################# Traffic Warning and Debris ##############
@@ -133,53 +132,41 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
             start_transform.location,
             start_transform.rotation)
         side_transform.rotation.yaw += _perp_angle
-        side_transform.location += _initial_offset['cones']['k'] * \
+        side_transform.location -= _initial_offset['cones']['k'] * \
             side_transform.rotation.get_forward_vector()
         side_transform.rotation.yaw += _initial_offset['cones']['yaw']
 
-        for i in range(_n_sides):
+        for i in range(len(_setup['lengths'])):
             self.create_cones_side(
                 side_transform,
                 forward_vector=side_transform.rotation.get_forward_vector(),
                 z_inc=_z_increment,
-                cone_length=_side_lengths[i])
+                cone_length=_setup['lengths'][i],
+                cone_offset=_setup['offsets'][i])
             side_transform.location += side_transform.get_forward_vector() * \
-                _side_lengths[i]
+                _setup['lengths'][i] * _setup['offsets'][i]
             side_transform.rotation.yaw += _perp_angle
 
     def _create_behavior(self):
         """
         Only behavior here is to wait
         """
-        lane_width = self.ego_vehicles[0].get_world().get_map().get_waypoint(
-            self.ego_vehicles[0].get_location()).lane_width
-        lane_width = lane_width + (1.25 * lane_width)
-
         # leaf nodes
         actor_stand = TimeOut(15)
 
-        actors_removed = []
-        for i, _ in enumerate(self.other_actors):
-            actors_removed.append(ActorDestroy(self.other_actors[i]))
+
         end_condition = DriveDistance(
             self.ego_vehicles[0],
             self._ego_vehicle_distance_driven)
 
         # non leaf nodes
-        root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
 
         # building tree
-        root.add_child(scenario_sequence)
-        for i, _ in enumerate(self.other_actors):
-            scenario_sequence.add_child(
-                ActorTransformSetter(
-                    self.other_actors[i],
-                    self.transforms[i]))
         scenario_sequence.add_child(actor_stand)
-        for actor_removed in actors_removed:
-            scenario_sequence.add_child(actor_removed)
+
+        for i, _ in enumerate(self.other_actors):
+            scenario_sequence.add_child(ActorDestroy(self.other_actors[i]))
         scenario_sequence.add_child(end_condition)
 
-        return root
+        return scenario_sequence
