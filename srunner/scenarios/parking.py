@@ -53,7 +53,8 @@ class ParkingScenario(BasicScenario):
         self._ego_vehicle_distance_driven = 40
 
         # other vehicle parameters
-        self._other_actor_target_velocity = 10
+        self._other_actor_target_velocity = 4
+        self._other_actor_max_brake = 1.0
 
         # Timeout of scenario in seconds
         self.timeout = timeout
@@ -70,10 +71,9 @@ class ParkingScenario(BasicScenario):
         Custom initialization
         """
 
-        actors_info = {'static.prop.container': {'yaw': 90, 'k': 20, 'j': 5, 'z': 0},
-                       'static.prop.shoppingcart': {'yaw': 0, 'k': 10, 'j': 20, 'z': 2},
-                       'static.prop.shoppingcart': {'yaw': 0, 'k': 7, 'j': 20, 'z': 2},
-                        'walker.*': {'yaw': 270, 'k': 10, 'j': 5, 'z':0}}
+        actors_info = {'walker.*': {'yaw': 270, 'k': 10, 'j': 5, 'z':0},
+                       'static.prop.container': {'yaw': 90, 'k': 20, 'j': 5, 'z': 0},
+                       'static.prop.shoppingcart': {'yaw': 0, 'k': 2, 'j': 15, 'z': 2}}
 
         for actor_name, actor_transform in actors_info.items():
             self.spawn_actor(actor_name, actor_transform, self._reference_transform)
@@ -104,14 +104,41 @@ class ParkingScenario(BasicScenario):
         """
         Only behavior here is to wait
         """
-        actor_stand = Idle(15)
+        actor_stand = Idle(60)
 
-        # non leaf nodes
+        _dist_to_trigger = 5
+        _dist_actor_travel = 10
+        _time_to_reach = 5
+
         scenario_sequence = py_trees.composites.Sequence()
 
-        # building tree
-        scenario_sequence.add_child(actor_stand)
+        # leaf nodes
+        start_condition = InTimeToArrivalToVehicle(self.ego_vehicles[0],
+                                                   self.other_actors[0],
+                                                   _time_to_reach)
 
+        actor_velocity = KeepVelocity(self.other_actors[0],
+                                      self._other_actor_target_velocity,
+                                      name="walker velocity")
+        actor_drive = DriveDistance(self.other_actors[0],
+                                    _dist_actor_travel,
+                                    name="walker drive distance")
+        actor_stop_crossed_lane = StopVehicle(self.other_actors[0],
+                                              self._other_actor_max_brake,
+                                              name="walker stop")
+
+        # non leaf nodes
+
+        scenario_sequence = py_trees.composites.Sequence()
+        keep_velocity = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="keep velocity other")
+
+        # building tree
+        scenario_sequence.add_child(start_condition)
+        scenario_sequence.add_child(actor_velocity)
+        scenario_sequence.add_child(actor_drive)
+        scenario_sequence.add_child(actor_stop_crossed_lane)
+        scenario_sequence.add_child(actor_stand)
         return scenario_sequence
 
     def _create_test_criteria(self):
