@@ -42,17 +42,19 @@ class ParkingScenario(BasicScenario):
     """
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=60):
+                 timeout=200):
         """
         Setup all relevant parameters and create scenario
         """
         self._wmap = CarlaDataProvider.get_map()
-        self._reference_waypoint = self._wmap.get_waypoint(config.trigger_points[0].location)
+        self._reference_transform = ego_vehicles[0].get_transform()
+
         # ego vehicle parameters
         self._ego_vehicle_distance_driven = 40
 
         # other vehicle parameters
         self._other_actor_target_velocity = 10
+
         # Timeout of scenario in seconds
         self.timeout = timeout
 
@@ -67,27 +69,35 @@ class ParkingScenario(BasicScenario):
         """
         Custom initialization
         """
-        _start_distance = 40
-        location, _ = get_location_in_distance_from_wp(
-                        self._reference_waypoint, _start_distance
-        )
-        waypoint = self._wmap.get_waypoint(location)
 
-        self.spawn_adversary(waypoint.transform)
+        actors_info = {'static.prop.container': {'yaw': 90, 'k': 20, 'j': 5, 'z': 0},
+                       'static.prop.shoppingcart': {'yaw': 0, 'k': 10, 'j': 20, 'z': 2},
+                       'static.prop.shoppingcart': {'yaw': 0, 'k': 7, 'j': 20, 'z': 2},
+                        'walker.*': {'yaw': 270, 'k': 10, 'j': 5, 'z':0}}
 
-        blockers = {'':, }
+        for actor_name, actor_transform in actors_info.items():
+            self.spawn_actor(actor_name, actor_transform, self._reference_transform)
 
-        for blocker_name, blocker in blockers.items():
-            self.spawn_blocker(blocker_name, blocker_transform, waypoint.transform)
+    def spawn_actor(self, actor_name, actor_transform, start_transform):
+        """
+        Spawn Pedestrian and Obstacles
+        """
+        transform = carla.Transform(
+                start_transform.location,
+                start_transform.rotation)
 
-    def spawn_adversary(self, start_transform):
+        _perp_angle = 90
 
-        pass
+        transform.location += actor_transform['k'] * transform.rotation.get_forward_vector()
+        transform.rotation.yaw += _perp_angle
+        transform.location += actor_transform['j'] * transform.rotation.get_forward_vector()
+        transform.rotation.yaw = start_transform.rotation.yaw + actor_transform["yaw"]
+        transform.location.z += actor_transform['z']
 
-    def spawn_blocker(self, prop_name, prop_transform, start_transform):
-        pass
-
-        self.world.get_blueprint_library().filter('static.prop.container')[0]
+        actor = CarlaDataProvider.request_new_actor(
+                actor_name, transform)
+        actor.set_simulate_physics(True)
+        self.other_actors.append(actor)
 
 
     def _create_behavior(self):
@@ -96,20 +106,11 @@ class ParkingScenario(BasicScenario):
         """
         actor_stand = Idle(15)
 
-        end_condition = DriveDistance(
-            self.ego_vehicles[0],
-            self._ego_vehicle_distance_driven)
-
         # non leaf nodes
         scenario_sequence = py_trees.composites.Sequence()
 
         # building tree
         scenario_sequence.add_child(actor_stand)
-
-        for i, _ in enumerate(self.other_actors):
-            scenario_sequence.add_child(ActorDestroy(self.other_actors[i]))
-
-        scenario_sequence.add_child(end_condition)
 
         return scenario_sequence
 

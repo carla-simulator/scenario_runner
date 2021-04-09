@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <scenarios>
     <scenario name="Parking_1" type="ParkingScenario" town="Town10HD">
-        <ego_vehicle x="-41.192497" y="170.875381" z="0.143441" yaw="82.364563" model="vehicle.lincoln.mkz2017" />
+        <ego_vehicle x="-41.19" y="157.94" z="0.14" yaw="82.36" model="vehicle.lincoln.mkz2017" />
     </scenario>
 </scenarios>
