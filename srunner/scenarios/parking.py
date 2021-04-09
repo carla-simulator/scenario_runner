@@ -72,7 +72,7 @@ class ParkingScenario(BasicScenario):
         """
 
         actors_info = {'walker.*': {'yaw': 270, 'k': 10, 'j': 5, 'z':0},
-                       'static.prop.container': {'yaw': 90, 'k': 20, 'j': 5, 'z': 0},
+                       'static.prop.container': {'yaw': 90, 'k': 25, 'j': 0, 'z': 0},
                        'static.prop.shoppingcart': {'yaw': 0, 'k': 2, 'j': 15, 'z': 2}}
 
         for actor_name, actor_transform in actors_info.items():
@@ -104,7 +104,7 @@ class ParkingScenario(BasicScenario):
         """
         Only behavior here is to wait
         """
-        actor_stand = Idle(60)
+        ego_stand = Idle(60)
 
         _dist_to_trigger = 5
         _dist_actor_travel = 10
@@ -138,7 +138,7 @@ class ParkingScenario(BasicScenario):
         scenario_sequence.add_child(actor_velocity)
         scenario_sequence.add_child(actor_drive)
         scenario_sequence.add_child(actor_stop_crossed_lane)
-        scenario_sequence.add_child(actor_stand)
+        scenario_sequence.add_child(ego_stand)
         return scenario_sequence
 
     def _create_test_criteria(self):
