@@ -45,7 +45,6 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         """
         Setup all relevant parameters and create scenario
         """
-        self.transforms = []
 
         super(
             ConstructionSetupCrossing,
@@ -92,7 +91,6 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
                 'static.prop.constructioncone', transform)
             cone.set_simulate_physics(True)
 
-            self.transforms.append(transform)
             self.other_actors.append(cone)
 
     def _create_construction_setup(self, start_transform, lane_width):
@@ -125,7 +123,6 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
             static = CarlaDataProvider.request_new_actor(
                 _prop_names[key], transform)
             static.set_simulate_physics(True)
-            self.transforms.append(transform)
             self.other_actors.append(static)
 
         ############################# Cones ###################################
