@@ -45,7 +45,6 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         """
         Setup all relevant parameters and create scenario
         """
-
         super(
             ConstructionSetupCrossing,
             self).__init__(
@@ -90,7 +89,6 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
             cone = CarlaDataProvider.request_new_actor(
                 'static.prop.constructioncone', transform)
             cone.set_simulate_physics(True)
-
             self.other_actors.append(cone)
 
     def _create_construction_setup(self, start_transform, lane_width):
@@ -151,7 +149,6 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         """
         # leaf nodes
         actor_stand = Idle(15)
-
 
         end_condition = DriveDistance(
             self.ego_vehicles[0],
