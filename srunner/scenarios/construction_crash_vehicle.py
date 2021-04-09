@@ -14,11 +14,9 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
-    ActorTransformSetter, ActorDestroy)
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
-from srunner.scenariomanager.timer import TimeOut
 from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing
 
