@@ -117,7 +117,7 @@
           <PrivateAction>
             <TeleportAction>
               <Position>
-                <WorldPosition x="-8.2" y="29.2" z="0.5" h="1.57079632679"/>
+                <WorldPosition x="-8.2" y="60.2" z="0.5" h="1.57079632679"/>
               </Position>
             </TeleportAction>
           </PrivateAction>
@@ -136,7 +136,7 @@
                 <PrivateAction>
                   <LongitudinalAction>
                     <SpeedAction>
-                      <SpeedActionDynamics dynamicsShape="step" value="50" dynamicsDimension="distance"/>
+                      <SpeedActionDynamics dynamicsShape="step" value="20" dynamicsDimension="distance"/>
                       <SpeedActionTarget>
                         <AbsoluteTargetSpeed value="5.0"/>
                       </SpeedActionTarget>
@@ -162,14 +162,38 @@
             <Event name="AdversaryChangesLane" priority="overwrite">
               <Action name="AdversaryChangesLane">
                 <PrivateAction>
-                  <LateralAction>
-                    <LaneChangeAction>
-                      <LaneChangeActionDynamics dynamicsShape="linear" value="25" dynamicsDimension="distance"/>
-                      <LaneChangeTarget>
-                        <RelativeTargetLane entityRef="adversary" value="-1"/>
-                      </LaneChangeTarget>
-                    </LaneChangeAction>
-                  </LateralAction>
+                  <RoutingAction>
+                    <FollowTrajectoryAction>
+                      <Trajectory name="test" closed="false">
+                        <Shape>
+                          <Polyline>
+                            <Vertex time="0">
+                              <Position>
+                                <WorldPosition x="-16" y="2" z="0" h="1.57"/>
+                              </Position>
+                            </Vertex>
+                            <Vertex time="0">
+                              <Position>
+                                <WorldPosition x="-7" y="37" z="0" h="1.57"/>
+                              </Position>
+                            </Vertex>
+                            <Vertex time="0">
+                              <Position>
+                                <WorldPosition x="-10" y="49" z="0" h="3.14"/>
+                              </Position>
+                            </Vertex>
+                            <Vertex time="0">
+                              <Position>
+                                <WorldPosition x="-16" y="45" z="0" h="4.71"/>
+                              </Position>
+                            </Vertex>
+                          </Polyline>
+                        </Shape>
+                      </Trajectory>
+                      <TimeReference/>
+                      <TrajectoryFollowingMode followingMode="follow"/>
+                    </FollowTrajectoryAction>
+                  </RoutingAction>
                 </PrivateAction>
               </Action>
               <StartTrigger>
