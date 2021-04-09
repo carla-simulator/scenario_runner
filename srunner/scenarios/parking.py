@@ -10,25 +10,19 @@ and encountering a pedestrian and other static obstacles.
 
 from __future__ import print_function
 
-import math
 import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
-                                                                      ActorDestroy,
-                                                                      AccelerateToVelocity,
-                                                                      HandBrakeVehicle,
-                                                                      KeepVelocity,
-                                                                      StopVehicle)
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
+    ActorDestroy,
+    KeepVelocity,
+    StopVehicle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocationAlongRoute,
-                                                                               InTimeToArrivalToVehicle,
-                                                                               DriveDistance)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
+    InTimeToArrivalToVehicle, DriveDistance)
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
-from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 
 
 class ParkingScenario(BasicScenario):
@@ -41,8 +35,15 @@ class ParkingScenario(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=200):
+    def __init__(
+            self,
+            world,
+            ego_vehicles,
+            config,
+            randomize=False,
+            debug_mode=False,
+            criteria_enable=True,
+            timeout=200):
         """
         Setup all relevant parameters and create scenario
         """
@@ -60,45 +61,50 @@ class ParkingScenario(BasicScenario):
         self.timeout = timeout
 
         super(ParkingScenario, self).__init__("ParkingScenario",
-                                                       ego_vehicles,
-                                                       config,
-                                                       world,
-                                                       debug_mode,
-                                                       criteria_enable=criteria_enable)
+                                              ego_vehicles,
+                                              config,
+                                              world,
+                                              debug_mode,
+                                              criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
         Custom initialization
         """
 
-        actors_info = {'walker.*': {'yaw': 270, 'k': 10, 'j': 5, 'z':0},
+        actors_info = {'walker.*': {'yaw': 270, 'k': 10, 'j': 5, 'z': 0},
                        'static.prop.container': {'yaw': 90, 'k': 25, 'j': 0, 'z': 0},
                        'static.prop.shoppingcart': {'yaw': 0, 'k': 2, 'j': 15, 'z': 2}}
 
         for actor_name, actor_transform in actors_info.items():
-            self.spawn_actor(actor_name, actor_transform, self._reference_transform)
+            self.spawn_actor(
+                actor_name,
+                actor_transform,
+                self._reference_transform)
 
     def spawn_actor(self, actor_name, actor_transform, start_transform):
         """
         Spawn Pedestrian and Obstacles
         """
         transform = carla.Transform(
-                start_transform.location,
-                start_transform.rotation)
+            start_transform.location,
+            start_transform.rotation)
 
         _perp_angle = 90
 
-        transform.location += actor_transform['k'] * transform.rotation.get_forward_vector()
+        transform.location += actor_transform['k'] * \
+            transform.rotation.get_forward_vector()
         transform.rotation.yaw += _perp_angle
-        transform.location += actor_transform['j'] * transform.rotation.get_forward_vector()
-        transform.rotation.yaw = start_transform.rotation.yaw + actor_transform["yaw"]
+        transform.location += actor_transform['j'] * \
+            transform.rotation.get_forward_vector()
+        transform.rotation.yaw = start_transform.rotation.yaw + \
+            actor_transform["yaw"]
         transform.location.z += actor_transform['z']
 
         actor = CarlaDataProvider.request_new_actor(
-                actor_name, transform)
+            actor_name, transform)
         actor.set_simulate_physics(True)
         self.other_actors.append(actor)
-
 
     def _create_behavior(self):
         """
@@ -130,8 +136,6 @@ class ParkingScenario(BasicScenario):
         # non leaf nodes
 
         scenario_sequence = py_trees.composites.Sequence()
-        keep_velocity = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="keep velocity other")
 
         # building tree
         scenario_sequence.add_child(start_condition)
@@ -139,6 +143,10 @@ class ParkingScenario(BasicScenario):
         scenario_sequence.add_child(actor_drive)
         scenario_sequence.add_child(actor_stop_crossed_lane)
         scenario_sequence.add_child(ego_stand)
+
+        for i, _ in enumerate(self.other_actors):
+            scenario_sequence.add_child(ActorDestroy(self.other_actors[i]))
+
         return scenario_sequence
 
     def _create_test_criteria(self):
