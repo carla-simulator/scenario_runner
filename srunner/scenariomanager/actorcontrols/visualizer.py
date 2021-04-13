@@ -22,6 +22,7 @@ import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
+
 class Visualizer(object):
 
     """
@@ -64,14 +65,16 @@ class Visualizer(object):
         bp.set_attribute('image_size_y', '400')
         self._camera_bird = CarlaDataProvider.get_world().spawn_actor(bp, carla.Transform(
             carla.Location(x=20.0, z=50.0), carla.Rotation(pitch=-90, yaw=-90)), attach_to=self._actor)
-        self._camera_bird.listen(lambda image: self._on_camera_update(image, birdseye=True))  # pylint: disable=unnecessary-lambda
+        self._camera_bird.listen(lambda image: self._on_camera_update(
+            image, birdseye=True))  # pylint: disable=unnecessary-lambda
 
         bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.camera.rgb')
         bp.set_attribute('image_size_x', '1000')
         bp.set_attribute('image_size_y', '400')
         self._camera_actor = CarlaDataProvider.get_world().spawn_actor(bp, carla.Transform(
             carla.Location(x=2.3, z=1.0)), attach_to=self._actor)
-        self._camera_actor.listen(lambda image: self._on_camera_update(image, birdseye=False))  # pylint: disable=unnecessary-lambda
+        self._camera_actor.listen(lambda image: self._on_camera_update(
+            image, birdseye=False))  # pylint: disable=unnecessary-lambda
 
         if self._video_writer:
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -106,7 +109,6 @@ class Visualizer(object):
         else:
             self._cv_image_bird = cv2.cvtColor(np_image, cv2.COLOR_BGR2RGB)
 
-
     def render(self):
         """
         Render images in an OpenCV window (has to be called on a regular basis)
@@ -117,7 +119,6 @@ class Visualizer(object):
             text = str(int(round((self._actor.get_velocity().x * 3.6))))+" kph"
 
             speed = np.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
-
 
             text = str(int(round((speed * 3.6))))+" kph"
             text = ' '*(7-len(text)) + text
