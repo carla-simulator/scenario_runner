@@ -585,7 +585,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     print("No more spawn points to use")
                     break
                 else:
-                    _spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
+                    _spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]  # pylint: disable=unsubscriptable-object
                     CarlaDataProvider._spawn_index += 1
 
             else:
@@ -657,7 +657,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     print("No more spawn points to use. Spawned {} actors out of {}".format(i + 1, amount))
                     break
                 else:
-                    spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
+                    spawn_point = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]  # pylint: disable=unsubscriptable-object
                     CarlaDataProvider._spawn_index += 1
             else:
                 try:
