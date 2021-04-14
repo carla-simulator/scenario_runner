@@ -165,7 +165,7 @@ class ScenarioManager(object):
             CarlaDataProvider.on_carla_tick()
 
             if self._agent is not None:
-                ego_action = self._agent()
+                ego_action = self._agent()  # pylint: disable=not-callable
 
             if self._agent is not None:
                 self.ego_vehicles[0].apply_control(ego_action)

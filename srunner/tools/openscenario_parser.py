@@ -928,7 +928,7 @@ class OpenScenarioParser(object):
                 state = state_condition.attrib.get('state')
                 if state == "startTransition":
                     atomic = OSCStartEndCondition(element_type, element_name, rule="START", name=state + "Condition")
-                elif state == "stopTransition" or state == "endTransition" or state == "completeState":
+                elif state in ["stopTransition", "endTransition", "completeState"]:
                     atomic = OSCStartEndCondition(element_type, element_name, rule="END", name=state + "Condition")
                 else:
                     raise NotImplementedError(
