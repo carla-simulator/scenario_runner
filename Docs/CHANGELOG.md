@@ -16,6 +16,7 @@
     - Added `--openscenarioparams` argument to overwrite global `ParameterDeclaration`
     - Added controller using CARLA's autopilot (in replacement for ActivateControllerAction)
     - Added support for storyboards with multiple stories
+    - Added basic support for FollowTrajectoryAction. Currently only Polylines are supported
 ### :bug: Bug Fixes
 * Fixed bug at the Getting Started docs which caused an import error
 * Fixed neverending lane change maneuver in OpenSCENARIO
