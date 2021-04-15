@@ -16,6 +16,7 @@
     - Added `--openscenarioparams` argument to overwrite global `ParameterDeclaration`
     - Added controller using CARLA's autopilot (in replacement for ActivateControllerAction)
     - Added support for storyboards with multiple stories
+    - Eliminated unnecessary reloads of OpenDRIVE maps
 * Additional Scenarios:
     - Added Construction setup scenario.
 ### :bug: Bug Fixes
