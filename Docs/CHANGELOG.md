@@ -26,6 +26,8 @@
 * Extended SimpleVehicleController (OSC) to handle traffic lights
 * Generalized visualizer attached to OSC controllers
 * Fixed bug at the Getting Started docs which caused an import error
+* Improved the watchdog. It can now be paused, resumed and uses the same thread, instead of opening and closing new ones each frame.
+* Added `simple-watchdog-timer` library to the requirements, as it is used by the new watchdog.
 
 ## CARLA ScenarioRunner 0.9.11
 ### :rocket: New Features

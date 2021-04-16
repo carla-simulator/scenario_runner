@@ -195,6 +195,8 @@ class ScenarioManager(object):
         """
         This function is used by the overall signal handler to terminate the scenario execution
         """
+        if self._watchdog and not self._watchdog.get_status():
+            self._watchdog.stop()
         self._running = False
 
     def analyze_scenario(self, stdout, filename, junit, json):
