@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2019-2020 Intel Corporation
+# Copyright (c) 2019-2021 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -1004,7 +1004,8 @@ class OpenScenarioParser(object):
                         continuous = relative_speed.attrib.get('continuous')
 
                         for traffic_actor in actor_list:
-                            if 'role_name' in traffic_actor.attributes and traffic_actor.attributes['role_name'] == obj:
+                            if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
+                                    traffic_actor.attributes['role_name'] == obj):
                                 obj_actor = traffic_actor
 
                         atomic = ChangeActorTargetSpeed(actor,
@@ -1062,14 +1063,14 @@ class OpenScenarioParser(object):
                         relative_offset = float(relative_target_offset.attrib.get('value', 0))
 
                         relative_actor = None
+                        relative_actor_name = relative_target_offset.attrib.get('entityRef', None)
                         for _actor in actor_list:
-                            if relative_target_offset.attrib.get('entityRef', None) == _actor.attributes['role_name']:
-                                relative_actor = _actor
-                                break
-
+                            if _actor is not None and 'role_name' in _actor.attributes:
+                                if relative_actor_name == _actor.attributes['role_name']:
+                                    relative_actor = _actor
+                                    break
                         if relative_actor is None:
-                            raise AttributeError("Cannot find actor '{}' for condition".format(
-                                relative_target_offset.attrib.get('entityRef', None)))
+                            raise AttributeError("Cannot find actor '{}' for condition".format(relative_actor_name))
 
                         atomic = ChangeActorLaneOffset(actor, relative_offset, relative_actor,
                                                        continuous=continuous, name=maneuver_name)
@@ -1085,9 +1086,10 @@ class OpenScenarioParser(object):
 
                 master_actor = None
                 for actor_ins in actor_list:
-                    if sync_action.attrib.get('masterEntityRef', None) == actor_ins.attributes['role_name']:
-                        master_actor = actor_ins
-                        break
+                    if actor_ins is not None and 'role_name' in actor_ins.attributes:
+                        if sync_action.attrib.get('masterEntityRef', None) == actor_ins.attributes['role_name']:
+                            master_actor = actor_ins
+                            break
 
                 if master_actor is None:
                     raise AttributeError("Cannot find actor '{}' for condition".format(
