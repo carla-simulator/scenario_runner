@@ -1480,7 +1480,7 @@ class ChangeAutoPilot(AtomicBehavior):
         """
         De/activate autopilot
         """
-        self._actor.set_autopilot(self._activate)
+        self._actor.set_autopilot(self._activate, CarlaDataProvider.get_traffic_manager_port())
 
         if self._parameters is not None:
             if "auto_lane_change" in self._parameters:
