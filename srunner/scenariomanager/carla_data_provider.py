@@ -620,6 +620,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
         for actor in actors:
+            if actor is None:
+                continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
             CarlaDataProvider.register_actor(actor)
 
@@ -672,6 +674,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
         for actor in actors:
+            if actor is None:
+                continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
             CarlaDataProvider.register_actor(actor)
 

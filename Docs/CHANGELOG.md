@@ -22,6 +22,7 @@
 ### :bug: Bug Fixes
 * Fixed bug at the Getting Started docs which caused an import error
 * Fixed neverending lane change maneuver in OpenSCENARIO
+* Fixed bug causing the spawning of an actor with `request_new_actor` to never activate the autopilot.
 ### :ghost: Maintenance
 * Extended SimpleVehicleController (OSC) to handle traffic lights
 * Generalized visualizer attached to OSC controllers
