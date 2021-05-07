@@ -36,7 +36,7 @@ class Watchdog(object):
         """Class constructor"""
         self._watchdog = None
         self._timeout = timeout + 1.0
-        self._interval = interval if interval is not None else self._timeout / 100
+        self._interval = min(interval if interval is not None else self._timeout / 100, 1.0)
         self._failed = False
 
     def start(self):
