@@ -11,9 +11,9 @@ weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 """
 
-from six.moves.queue import Queue   # pylint: disable=relative-import
+from six.moves.queue import Queue   # pylint: disable=relative-import,bad-option-value
 
-import math
+import math  # pylint: disable=wrong-import-order
 import py_trees
 import carla
 

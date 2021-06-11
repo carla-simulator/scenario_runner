@@ -165,7 +165,7 @@ class ScenarioManager(object):
             CarlaDataProvider.on_carla_tick()
 
             if self._agent is not None:
-                ego_action = self._agent()
+                ego_action = self._agent()  # pylint: disable=not-callable
 
             if self._agent is not None:
                 self.ego_vehicles[0].apply_control(ego_action)
@@ -195,6 +195,8 @@ class ScenarioManager(object):
         """
         This function is used by the overall signal handler to terminate the scenario execution
         """
+        if self._watchdog and not self._watchdog.get_status():
+            self._watchdog.stop()
         self._running = False
 
     def analyze_scenario(self, stdout, filename, junit, json):
