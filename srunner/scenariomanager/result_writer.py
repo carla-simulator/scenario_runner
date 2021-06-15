@@ -227,28 +227,28 @@ class ResultOutputProvider(object):
             junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
             test_suites_string = ("<testsuites tests=\"%d\" failures=\"%d\" disabled=\"0\" "
-                                "errors=\"0\" timestamp=\"%s\" time=\"%5.2f\" "
-                                "name=\"Simulation\" package=\"Scenarios\">\n" %
-                                (test_count,
-                                failure_count,
-                                self._start_time,
-                                self._data.scenario_duration_system))
+                                  "errors=\"0\" timestamp=\"%s\" time=\"%5.2f\" "
+                                  "name=\"Simulation\" package=\"Scenarios\">\n" %
+                                  (test_count,
+                                   failure_count,
+                                   self._start_time,
+                                   self._data.scenario_duration_system))
             junit_file.write(test_suites_string)
 
             test_suite_string = ("  <testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" "
-                                "disabled=\"0\" errors=\"0\" time=\"%5.2f\">\n" %
-                                (self._data.scenario_tree.name,
-                                test_count,
-                                failure_count,
-                                self._data.scenario_duration_system))
+                                 "disabled=\"0\" errors=\"0\" time=\"%5.2f\">\n" %
+                                 (self._data.scenario_tree.name,
+                                  test_count,
+                                  failure_count,
+                                  self._data.scenario_duration_system))
             junit_file.write(test_suite_string)
 
             for criterion in self._data.scenario.get_criteria():
                 testcase_name = criterion.name + "_" + \
                     criterion.actor.type_id[8:] + "_" + str(criterion.actor.id)
                 result_string = ("    <testcase name=\"{}\" status=\"run\" "
-                                "time=\"0\" classname=\"Scenarios.{}\">\n".format(
-                                    testcase_name, self._data.scenario_tree.name))
+                                 "time=\"0\" classname=\"Scenarios.{}\">\n".format(
+                                     testcase_name, self._data.scenario_tree.name))
                 if criterion.test_status != "SUCCESS":
                     result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
                         criterion.name)
@@ -267,9 +267,9 @@ class ResultOutputProvider(object):
 
             # Handle timeout separately
             result_string = ("    <testcase name=\"Duration\" status=\"run\" time=\"{}\" "
-                            "classname=\"Scenarios.{}\">\n".format(
-                                self._data.scenario_duration_system,
-                                self._data.scenario_tree.name))
+                             "classname=\"Scenarios.{}\">\n".format(
+                                 self._data.scenario_duration_system,
+                                 self._data.scenario_tree.name))
             if self._data.scenario_duration_game >= self._data.scenario.timeout:
                 result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
                     "Duration")
