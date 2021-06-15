@@ -222,70 +222,69 @@ class ResultOutputProvider(object):
         if self._data.scenario_duration_game >= self._data.scenario.timeout:
             failure_count += 1
 
-        junit_file = open(self._junit, "w")
+        with open(self._junit, "w") as junit_file:
 
-        junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+            junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
-        test_suites_string = ("<testsuites tests=\"%d\" failures=\"%d\" disabled=\"0\" "
-                              "errors=\"0\" timestamp=\"%s\" time=\"%5.2f\" "
-                              "name=\"Simulation\" package=\"Scenarios\">\n" %
-                              (test_count,
-                               failure_count,
-                               self._start_time,
-                               self._data.scenario_duration_system))
-        junit_file.write(test_suites_string)
+            test_suites_string = ("<testsuites tests=\"%d\" failures=\"%d\" disabled=\"0\" "
+                                  "errors=\"0\" timestamp=\"%s\" time=\"%5.2f\" "
+                                  "name=\"Simulation\" package=\"Scenarios\">\n" %
+                                  (test_count,
+                                   failure_count,
+                                   self._start_time,
+                                   self._data.scenario_duration_system))
+            junit_file.write(test_suites_string)
 
-        test_suite_string = ("  <testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" "
-                             "disabled=\"0\" errors=\"0\" time=\"%5.2f\">\n" %
-                             (self._data.scenario_tree.name,
-                              test_count,
-                              failure_count,
-                              self._data.scenario_duration_system))
-        junit_file.write(test_suite_string)
+            test_suite_string = ("  <testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" "
+                                 "disabled=\"0\" errors=\"0\" time=\"%5.2f\">\n" %
+                                 (self._data.scenario_tree.name,
+                                  test_count,
+                                  failure_count,
+                                  self._data.scenario_duration_system))
+            junit_file.write(test_suite_string)
 
-        for criterion in self._data.scenario.get_criteria():
-            testcase_name = criterion.name + "_" + \
-                criterion.actor.type_id[8:] + "_" + str(criterion.actor.id)
-            result_string = ("    <testcase name=\"{}\" status=\"run\" "
-                             "time=\"0\" classname=\"Scenarios.{}\">\n".format(
-                                 testcase_name, self._data.scenario_tree.name))
-            if criterion.test_status != "SUCCESS":
+            for criterion in self._data.scenario.get_criteria():
+                testcase_name = criterion.name + "_" + \
+                    criterion.actor.type_id[8:] + "_" + str(criterion.actor.id)
+                result_string = ("    <testcase name=\"{}\" status=\"run\" "
+                                 "time=\"0\" classname=\"Scenarios.{}\">\n".format(
+                                     testcase_name, self._data.scenario_tree.name))
+                if criterion.test_status != "SUCCESS":
+                    result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
+                        criterion.name)
+                    result_string += "  Actual:   {}\n".format(
+                        criterion.actual_value)
+                    result_string += "  Expected: {}\n".format(
+                        criterion.expected_value_success)
+                    result_string += "\n"
+                    result_string += "  Exact Value: {} = {}\]\]></failure>\n".format(
+                        criterion.name, criterion.actual_value)
+                else:
+                    result_string += "  Exact Value: {} = {}\n".format(
+                        criterion.name, criterion.actual_value)
+                result_string += "    </testcase>\n"
+                junit_file.write(result_string)
+
+            # Handle timeout separately
+            result_string = ("    <testcase name=\"Duration\" status=\"run\" time=\"{}\" "
+                             "classname=\"Scenarios.{}\">\n".format(
+                                 self._data.scenario_duration_system,
+                                 self._data.scenario_tree.name))
+            if self._data.scenario_duration_game >= self._data.scenario.timeout:
                 result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
-                    criterion.name)
+                    "Duration")
                 result_string += "  Actual:   {}\n".format(
-                    criterion.actual_value)
+                    self._data.scenario_duration_game)
                 result_string += "  Expected: {}\n".format(
-                    criterion.expected_value_success)
+                    self._data.scenario.timeout)
                 result_string += "\n"
                 result_string += "  Exact Value: {} = {}\]\]></failure>\n".format(
-                    criterion.name, criterion.actual_value)
+                    "Duration", self._data.scenario_duration_game)
             else:
                 result_string += "  Exact Value: {} = {}\n".format(
-                    criterion.name, criterion.actual_value)
+                    "Duration", self._data.scenario_duration_game)
             result_string += "    </testcase>\n"
             junit_file.write(result_string)
 
-        # Handle timeout separately
-        result_string = ("    <testcase name=\"Duration\" status=\"run\" time=\"{}\" "
-                         "classname=\"Scenarios.{}\">\n".format(
-                             self._data.scenario_duration_system,
-                             self._data.scenario_tree.name))
-        if self._data.scenario_duration_game >= self._data.scenario.timeout:
-            result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
-                "Duration")
-            result_string += "  Actual:   {}\n".format(
-                self._data.scenario_duration_game)
-            result_string += "  Expected: {}\n".format(
-                self._data.scenario.timeout)
-            result_string += "\n"
-            result_string += "  Exact Value: {} = {}\]\]></failure>\n".format(
-                "Duration", self._data.scenario_duration_game)
-        else:
-            result_string += "  Exact Value: {} = {}\n".format(
-                "Duration", self._data.scenario_duration_game)
-        result_string += "    </testcase>\n"
-        junit_file.write(result_string)
-
-        junit_file.write("  </testsuite>\n")
-        junit_file.write("</testsuites>\n")
-        junit_file.close()
+            junit_file.write("  </testsuite>\n")
+            junit_file.write("</testsuites>\n")
