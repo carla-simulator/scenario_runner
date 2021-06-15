@@ -43,8 +43,7 @@ documentation.
 Challenge Evaluation
 ---------------------
 
-You can evaluate your own agents using a reproduction
-of the CARLA Challenge by following [this tutorial](Docs/challenge_evaluation.md)
+The CARLA Challenge has moved to the [CARLA Autonomous Driving Leaderboard](https://leaderboard.carla.org/). Please see the [leaderboard repository](https://github.com/carla-simulator/leaderboard) and the [getting started guide](https://leaderboard.carla.org/get_started/) for more information.
 
 Contributing
 ------------
