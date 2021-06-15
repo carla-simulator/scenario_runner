@@ -250,14 +250,14 @@ class ResultOutputProvider(object):
                                  "time=\"0\" classname=\"Scenarios.{}\">\n".format(
                                      testcase_name, self._data.scenario_tree.name))
                 if criterion.test_status != "SUCCESS":
-                    result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
+                    result_string += "      <failure message=\"{}\"  type=\"\"><![CDATA[\n".format(
                         criterion.name)
                     result_string += "  Actual:   {}\n".format(
                         criterion.actual_value)
                     result_string += "  Expected: {}\n".format(
                         criterion.expected_value_success)
                     result_string += "\n"
-                    result_string += "  Exact Value: {} = {}\]\]></failure>\n".format(
+                    result_string += "  Exact Value: {} = {}]]></failure>\n".format(
                         criterion.name, criterion.actual_value)
                 else:
                     result_string += "  Exact Value: {} = {}\n".format(
@@ -271,14 +271,14 @@ class ResultOutputProvider(object):
                                  self._data.scenario_duration_system,
                                  self._data.scenario_tree.name))
             if self._data.scenario_duration_game >= self._data.scenario.timeout:
-                result_string += "      <failure message=\"{}\"  type=\"\"><!\[CDATA\[\n".format(
+                result_string += "      <failure message=\"{}\"  type=\"\"><![CDATA[\n".format(
                     "Duration")
                 result_string += "  Actual:   {}\n".format(
                     self._data.scenario_duration_game)
                 result_string += "  Expected: {}\n".format(
                     self._data.scenario.timeout)
                 result_string += "\n"
-                result_string += "  Exact Value: {} = {}\]\]></failure>\n".format(
+                result_string += "  Exact Value: {} = {}]]></failure>\n".format(
                     "Duration", self._data.scenario_duration_game)
             else:
                 result_string += "  Exact Value: {} = {}\n".format(
