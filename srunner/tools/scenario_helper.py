@@ -502,7 +502,11 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
 
     return is_hazard
 
+
 def get_offset_transform(transform, offset):
+    """
+    This function adjusts the give transform by offset and returns the new transform.
+    """
     if offset != 0:
         forward_vector = transform.rotation.get_forward_vector()
         orthogonal_vector = carla.Vector3D(x=-forward_vector.y, y=forward_vector.x, z=forward_vector.z)
@@ -512,6 +516,9 @@ def get_offset_transform(transform, offset):
 
 
 def get_troad_from_transform(actor_transform):
+    """
+    This function finds the lateral road position (t) from actor_transform
+    """
     actor_loc = actor_transform.location
     c_wp = CarlaDataProvider.get_map().get_waypoint(actor_loc)
     left_lanes, right_lanes = [], []
@@ -560,6 +567,10 @@ def get_troad_from_transform(actor_transform):
 
 def get_distance_between_actors(target, current, distance_type="euclidianDistance", freespace=False,
                                 confirm_ahead=False):
+    """
+    This function finds the distance between actors for different use cases described by distance_type and freespace
+    attributes
+    """
     if confirm_ahead:
         target_transform = CarlaDataProvider.get_transform(target)
         current_transform = CarlaDataProvider.get_transform(current)
@@ -571,7 +582,7 @@ def get_distance_between_actors(target, current, distance_type="euclidianDistanc
         fwd = current_transform.get_forward_vector()
         forward_vector = np.array([fwd.x, fwd.y])
         dot_product = np.dot(forward_vector, target_vector)
-        val = np.clip(dot_product / norm_target, -1., 1.) if not norm_target < 0.001 else np.clip(dot_product, -1., 1.)
+        val = np.clip(dot_product / norm_target, -1., 1.) if norm_target >= 0.001 else np.clip(dot_product, -1., 1.)
         d_angle = math.degrees(math.acos(val))
         is_ahead = d_angle < 90
 
@@ -585,7 +596,7 @@ def get_distance_between_actors(target, current, distance_type="euclidianDistanc
 
     extent_sum_x, extent_sum_y = 0, 0
     if freespace:
-        if isinstance(target, carla.Vehicle) or isinstance(target, carla.Walker):
+        if isinstance(target, (carla.Vehicle, carla.Walker)):
             extent_sum_x = target.bounding_box.extent.x + current.bounding_box.extent.x
             extent_sum_y = target.bounding_box.extent.y + current.bounding_box.extent.y
     # TODO: overlaping condition in feeespace should be handled
@@ -618,7 +629,6 @@ def get_distance_between_actors(target, current, distance_type="euclidianDistanc
             distance = distance - extent_sum_x if distance > 0.0 else distance
 
     return distance
-
 
 
 class RotatedRectangle(object):

@@ -559,8 +559,10 @@ class OpenScenarioParser(object):
                 target_lane_id, target_s = int(ref_lane_id + dlane), ref_s + ds
                 waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, target_lane_id, target_s)
                 if waypoint is None:
-                    raise AttributeError("RelativeLanePosition 'roadId={} with s={} and lane_id={}' does not exist".format(
-                        road_id, target_s, target_lane_id))
+                    raise AttributeError("RelativeLanePosition " +
+                                         "'roadId={} with s={} and lane_id={}' does not exist".format(road_id,
+                                                                                                      target_s,
+                                                                                                      target_lane_id))
 
                 transform = waypoint.transform
                 transform.rotation.yaw = yaw
@@ -868,8 +870,7 @@ class OpenScenarioParser(object):
                     distance_condition = entity_condition.find('RelativeDistanceCondition')
                     distance_value = float(distance_condition.attrib.get('value'))
 
-                    distance_freespace = False if "false" == distance_condition.attrib.get('freespace', "false") \
-                        else True
+                    distance_freespace = distance_condition.attrib.get('freespace', "false") == "true"
                     rel_dis_type = distance_condition.attrib.get('relativeDistanceType')
                     for actor in actor_list:
                         if distance_condition.attrib.get('entityRef', None) == actor.attributes['role_name']:
