@@ -609,8 +609,6 @@ class InTriggerDistanceToVehicle(AtomicCondition):
                                                                         distance_type=self._distance_type,
                                                                         freespace=self._freespace)
 
-        print(self.name, distance)
-
         if self._comparison_operator(distance, self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
