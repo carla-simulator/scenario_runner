@@ -129,7 +129,7 @@ The following two tables list the support status for each.
 | `EndOfRoadCondition`                           | &#9989;                                          |                                                |
 | `OffroadCondition`                             | &#9989;                                          |                                                |
 | `ReachPositionCondition`                       | &#9989;                                          |                                                |
-| `RelativeDistanceCondition`                    | &#9989;                                          | \*freespace\* attribute is still not supported |
+| `RelativeDistanceCondition`                    | &#9989;                                          |                                                |
 | `RelativeSpeedCondition`                       | &#9989;                                          |                                                |
 | `SpeedCondition`                               | &#9989;                                          |                                                |
 | `StandStillCondition`                          | &#9989;                                          |                                                |
@@ -179,9 +179,9 @@ current support status for each definition format.
 | `LanePosition`           | &#9989;                    |                          |
 | `RelativeLanePosition`   | &#9989;                    |                          |
 | `RelativeObjectPosition` | &#9989;                    |                          |
-| `RelativeRoadPosition`   | &#10060;                     |                          |
+| `RelativeRoadPosition`   | &#9989;                     |                          |
 | `RelativeWorldPosition`  | &#9989;                    |                          |
-| `RoadPosition`           | &#10060;                     |                          |
+| `RoadPosition`           | &#9989;                     |                          |
 | `RoutePosition`          | &#10060;                     |                          |
 | `WorldPosition`          | &#9989;                    |                          |
 

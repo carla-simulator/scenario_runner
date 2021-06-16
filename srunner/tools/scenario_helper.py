@@ -503,6 +503,134 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
     return is_hazard
 
 
+def get_offset_transform(transform, offset):
+    """
+    This function adjusts the give transform by offset and returns the new transform.
+    """
+    if offset != 0:
+        forward_vector = transform.rotation.get_forward_vector()
+        orthogonal_vector = carla.Vector3D(x=-forward_vector.y, y=forward_vector.x, z=forward_vector.z)
+        transform.location.x = transform.location.x + offset * orthogonal_vector.x
+        transform.location.y = transform.location.y + offset * orthogonal_vector.y
+    return transform
+
+
+def get_troad_from_transform(actor_transform):
+    """
+    This function finds the lateral road position (t) from actor_transform
+    """
+    actor_loc = actor_transform.location
+    c_wp = CarlaDataProvider.get_map().get_waypoint(actor_loc)
+    left_lanes, right_lanes = [], []
+    # opendrive standard: (left ==> +ve lane_id) and (right ==> -ve lane_id)
+    ref_lane = CarlaDataProvider.get_map().get_waypoint_xodr(c_wp.road_id, 0, c_wp.s)
+    for i in range(-50, 50):
+        _wp = CarlaDataProvider.get_map().get_waypoint_xodr(c_wp.road_id, i, c_wp.s)
+        if _wp:
+            if i < 0:
+                left_lanes.append(_wp)
+            elif i > 0:
+                right_lanes.append(_wp)
+
+    if left_lanes:
+        left_lane_ids = [ln.lane_id for ln in left_lanes]
+        lm_id = min(left_lane_ids)
+        lm_lane = left_lanes[left_lane_ids.index(lm_id)]
+        lm_lane_offset = lm_lane.lane_width / 2
+    else:
+        lm_lane, lm_lane_offset = ref_lane, 0
+    lm_tr = get_offset_transform(carla.Transform(lm_lane.transform.location, lm_lane.transform.rotation),
+                                 lm_lane_offset)
+    distance_from_lm_lane_edge = lm_tr.location.distance(actor_loc)
+    distance_from_lm_lane_ref_lane = lm_tr.location.distance(ref_lane.transform.location)
+    if right_lanes:
+        right_lane_ids = [ln.lane_id for ln in right_lanes]
+        rm_id = max(right_lane_ids)
+        rm_lane = right_lanes[right_lane_ids.index(rm_id)]
+        rm_lane_offset = -rm_lane.lane_width / 2
+    else:
+        rm_lane, rm_lane_offset = ref_lane, -distance_from_lm_lane_ref_lane
+    distance_from_rm_lane_edge = get_offset_transform(carla.Transform(rm_lane.transform.location,
+                                                                      rm_lane.transform.rotation),
+                                                      rm_lane_offset).location.distance(actor_loc)
+    t_road = ref_lane.transform.location.distance(actor_loc)
+    if right_lanes == [] or left_lanes == []:
+        closest_road_edge = min(distance_from_lm_lane_edge, distance_from_rm_lane_edge)
+        if closest_road_edge == distance_from_lm_lane_edge:
+            t_road = -1*t_road
+    else:
+        if c_wp.lane_id < 0:
+            t_road = -1*t_road
+
+    return t_road
+
+
+def get_distance_between_actors(target, current, distance_type="euclidianDistance", freespace=False,
+                                confirm_ahead=False):
+    """
+    This function finds the distance between actors for different use cases described by distance_type and freespace
+    attributes
+    """
+    if confirm_ahead:
+        target_transform = CarlaDataProvider.get_transform(target)
+        current_transform = CarlaDataProvider.get_transform(current)
+
+        target_vector = np.array([target_transform.location.x - current_transform.location.x,
+                                  target_transform.location.y - current_transform.location.y])
+        norm_target = np.linalg.norm(target_vector)
+
+        fwd = current_transform.get_forward_vector()
+        forward_vector = np.array([fwd.x, fwd.y])
+        dot_product = np.dot(forward_vector, target_vector)
+        val = np.clip(dot_product / norm_target, -1., 1.) if norm_target >= 0.001 else np.clip(dot_product, -1., 1.)
+        d_angle = math.degrees(math.acos(val))
+        is_ahead = d_angle < 90
+
+        if not is_ahead:  # swap
+            current, target = target, current
+
+    target_transform = CarlaDataProvider.get_transform(target)
+    current_transform = CarlaDataProvider.get_transform(current)
+    target_wp = CarlaDataProvider.get_map().get_waypoint(target_transform.location)
+    current_wp = CarlaDataProvider.get_map().get_waypoint(current_transform.location)
+
+    extent_sum_x, extent_sum_y = 0, 0
+    if freespace:
+        if isinstance(target, (carla.Vehicle, carla.Walker)):
+            extent_sum_x = target.bounding_box.extent.x + current.bounding_box.extent.x
+            extent_sum_y = target.bounding_box.extent.y + current.bounding_box.extent.y
+    # TODO: overlaping condition in feeespace should be handled
+    if distance_type == "longitudinal":
+        extra_distnace = 0
+        next_wp = current_wp
+        if not current_wp.road_id == target_wp.road_id:
+            for _ in range(200):
+                wps = next_wp.next(1)
+                if next_wp:
+                    next_wp = wps[-1]
+                    if next_wp.road_id == target_wp.road_id:
+                        break
+                    extra_distnace += 1
+            distance = abs(extra_distnace + target_wp.s)
+        else:
+            distance = abs(current_wp.s - target_wp.s)
+        if freespace:
+            distance = distance - extent_sum_x if distance > 0.0 else distance
+    elif distance_type == "lateral":
+        target_t = get_troad_from_transform(target_transform)
+        current_t = get_troad_from_transform(current_transform)
+        distance = abs(target_t - current_t)
+        if freespace:
+            distance = distance - extent_sum_y if distance > 0.0 else distance
+
+    elif distance_type in ["cartesianDistance", "euclidianDistance"]:
+        distance = target_transform.location.distance(current_transform.location)
+        if freespace:
+            distance = distance - extent_sum_x if distance > 0.0 else distance
+
+    return distance
+
+
 class RotatedRectangle(object):
 
     """
