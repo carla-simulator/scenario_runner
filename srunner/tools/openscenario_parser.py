@@ -448,10 +448,7 @@ class OpenScenarioParser(object):
         """
         Convert an OpenScenario position into a CARLA transform
 
-        Not supported: Road, RelativeRoad, Lane, RelativeLane as the PythonAPI currently
-                       does not provide sufficient access to OpenDrive information
-                       Also not supported is Route. This can be added by checking additional
-                       route information
+        Not supported: RoutePosition
         """
 
         if position.find('WorldPosition') is not None:
