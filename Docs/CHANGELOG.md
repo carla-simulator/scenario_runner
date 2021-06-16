@@ -13,6 +13,9 @@
 ## Latest Changes
 ### :rocket: New Features
 * OpenSCENARIO support:
+    - Extended RelativeDistanceCondition with support for 'longitudinal' and 'lateral' distance along with freespace.
+    - Added support for RelativeRoadPosition
+    - Added support for RoadPosition
     - Added `--openscenarioparams` argument to overwrite global `ParameterDeclaration`
     - Added controller using CARLA's autopilot (in replacement for ActivateControllerAction)
     - Added support for storyboards with multiple stories

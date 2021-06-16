@@ -67,6 +67,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                WaitForTrafficLightState)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
+from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
 
 
 def oneshot_with_check(variable_name, behaviour, name=None):
@@ -90,7 +91,10 @@ class OpenScenarioParser(object):
     operators = {
         "greaterThan": operator.gt,
         "lessThan": operator.lt,
-        "equalTo": operator.eq
+        "equalTo": operator.eq,
+        "greaterOrEqual": operator.ge,
+        "lessOrEqual": operator.le,
+        "notEqualTo": operator.ne
     }
 
     actor_types = {
@@ -465,7 +469,8 @@ class OpenScenarioParser(object):
 
         elif ((position.find('RelativeWorldPosition') is not None) or
               (position.find('RelativeObjectPosition') is not None) or
-              (position.find('RelativeLanePosition') is not None)):
+              (position.find('RelativeLanePosition') is not None) or
+              (position.find('RelativeRoadPosition') is not None)):
 
             if position.find('RelativeWorldPosition') is not None:
                 rel_pos = position.find('RelativeWorldPosition')
@@ -473,6 +478,8 @@ class OpenScenarioParser(object):
                 rel_pos = position.find('RelativeObjectPosition')
             if position.find('RelativeLanePosition') is not None:
                 rel_pos = position.find('RelativeLanePosition')
+            if position.find('RelativeRoadPosition') is not None:
+                rel_pos = position.find('RelativeRoadPosition')
 
             # get relative object and relative position
             obj = rel_pos.attrib.get('entityRef')
@@ -537,7 +544,9 @@ class OpenScenarioParser(object):
                 y = actor_transform.location.y + dy
                 z = actor_transform.location.z + dz
 
-            # dLane, ds, offset
+                transform = carla.Transform(carla.Location(x=x, y=y, z=z),
+                                            carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
+
             elif position.find('RelativeLanePosition') is not None:
                 dlane = float(rel_pos.attrib.get('dLane'))
                 ds = float(rel_pos.attrib.get('ds'))
@@ -546,39 +555,80 @@ class OpenScenarioParser(object):
                 carla_map = CarlaDataProvider.get_map()
                 relative_waypoint = carla_map.get_waypoint(actor_transform.location)
 
-                if dlane == 0:
-                    wp = relative_waypoint
-                elif dlane == -1:
-                    wp = relative_waypoint.get_left_lane()
-                elif dlane == 1:
-                    wp = relative_waypoint.get_right_lane()
-                if wp is None:
-                    raise AttributeError("Object '{}' position with dLane={} is not valid".format(obj, dlane))
+                road_id, ref_lane_id, ref_s = relative_waypoint.road_id, relative_waypoint.lane_id, relative_waypoint.s
+                target_lane_id, target_s = int(ref_lane_id + dlane), ref_s + ds
+                waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, target_lane_id, target_s)
+                if waypoint is None:
+                    raise AttributeError("RelativeLanePosition 'roadId={} with s={} and lane_id={}' does not exist".format(
+                        road_id, target_s, target_lane_id))
 
-                if ds < 0:
-                    ds = (-1.0) * ds
-                    wp = wp.previous(ds)[-1]
-                else:
-                    wp = wp.next(ds)[-1]
+                transform = waypoint.transform
+                transform.rotation.yaw = yaw
+                transform.rotation.pitch = pitch
+                transform.rotation.roll = roll
 
                 # Adapt transform according to offset
-                h = math.radians(wp.transform.rotation.yaw)
-                x_offset = math.sin(h) * offset
-                y_offset = math.cos(h) * offset
+                if abs(offset) == waypoint.lane_width:
+                    # if the offset position is exactly on lane edge its difficult to find out which lane its on.
+                    # so, when offset is on lane edge/corner adjust it to stay inside the lane
+                    # if user wants to offset out of lane then make sure offset > waypoint.lane_width
+                    if offset > 0:
+                        offset = offset - 0.05
+                    elif offset < 0:
+                        offset = offset + 0.05
+                transform = get_offset_transform(transform, offset)
+            elif position.find('RelativeRoadPosition') is not None:
+                ds = float(rel_pos.attrib.get('ds'))
+                dt = float(rel_pos.attrib.get('dt', 0.0))
+                troad = get_troad_from_transform
 
-                if OpenScenarioParser.use_carla_coordinate_system:
-                    x_offset = x_offset * (-1.0)
-                    y_offset = y_offset * (-1.0)
+                carla_map = CarlaDataProvider.get_map()
+                relative_waypoint = carla_map.get_waypoint(actor_transform.location)
 
-                x = wp.transform.location.x + x_offset
-                y = wp.transform.location.y + y_offset
-                z = wp.transform.location.z
+                road_id, ref_lane_id, ref_s = relative_waypoint.road_id, relative_waypoint.lane_id, relative_waypoint.s
+                target_t, target_s = troad(relative_waypoint.transform) - troad(actor_transform) + dt, ref_s + ds
+                waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, ref_lane_id, target_s)
+                if waypoint is None:
+                    raise AttributeError("RelativeRoadPosition 'roadId={} with s={} and t={}' does not exist".format(
+                        road_id, target_s, target_t))
 
-            return carla.Transform(carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
+                transform = waypoint.transform
+                transform.rotation.yaw = yaw
+                transform.rotation.pitch = pitch
+                transform.rotation.roll = roll
+                transform = get_offset_transform(waypoint.transform, target_t)
 
-        # Not implemented
+            return transform
+
         elif position.find('RoadPosition') is not None:
-            raise NotImplementedError("Road positions are not yet supported")
+            road_pos = position.find('RoadPosition')
+            road_id = int(road_pos.attrib.get('roadId', 0))
+            t = float(road_pos.attrib.get('t', 0))
+            s = float(road_pos.attrib.get('s', 0))
+
+            waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, 0, s)
+            if waypoint is None:
+                raise AttributeError("RoadPosition 'roadId={} with s={} and t={}' does not exist".format(road_id, s, t))
+
+            transform = waypoint.transform
+
+            if road_pos.find('Orientation') is not None:
+                orientation = road_pos.find('Orientation')
+                dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
+                dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
+                droll = math.degrees(float(orientation.attrib.get('r', 0)))
+
+                if not OpenScenarioParser.use_carla_coordinate_system:
+                    dyaw = dyaw * (-1.0)
+
+                transform.rotation.yaw = transform.rotation.yaw + dyaw
+                transform.rotation.pitch = transform.rotation.pitch + dpitch
+                transform.rotation.roll = transform.rotation.roll + droll
+            if t < 0:
+                # multiply -1 because unlike offset t road is -ve for right side
+                t = -1*t
+            transform = get_offset_transform(transform, t)
+            return transform
         elif position.find('RelativeRoadPosition') is not None:
             raise NotImplementedError("RelativeRoad positions are not yet supported")
         elif position.find('LanePosition') is not None:
@@ -587,10 +637,9 @@ class OpenScenarioParser(object):
             lane_id = int(lane_pos.attrib.get('laneId', 0))
             offset = float(lane_pos.attrib.get('offset', 0))
             s = float(lane_pos.attrib.get('s', 0))
-            is_absolute = True
             waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, lane_id, s)
             if waypoint is None:
-                raise AttributeError("Lane position 'roadId={}, laneId={}, s={}, offset={}' does not exist".format(
+                raise AttributeError("LanePosition 'roadId={}, laneId={}, s={}, offset={}' does not exist".format(
                     road_id, lane_id, s, offset))
 
             transform = waypoint.transform
@@ -819,27 +868,23 @@ class OpenScenarioParser(object):
                     distance_condition = entity_condition.find('RelativeDistanceCondition')
                     distance_value = float(distance_condition.attrib.get('value'))
 
-                    distance_freespace = strtobool(distance_condition.attrib.get('freespace', False))
-                    if distance_freespace:
-                        raise NotImplementedError(
-                            "RelativeDistanceCondition: freespace attribute is currently not implemented")
-                    if distance_condition.attrib.get('relativeDistanceType') == "cartesianDistance":
-                        for actor in actor_list:
-                            if distance_condition.attrib.get('entityRef', None) == actor.attributes['role_name']:
-                                triggered_actor = actor
-                                break
+                    distance_freespace = False if "false" == distance_condition.attrib.get('freespace', "false") \
+                        else True
+                    rel_dis_type = distance_condition.attrib.get('relativeDistanceType')
+                    for actor in actor_list:
+                        if distance_condition.attrib.get('entityRef', None) == actor.attributes['role_name']:
+                            triggered_actor = actor
+                            break
 
-                        if triggered_actor is None:
-                            raise AttributeError("Cannot find actor '{}' for condition".format(
-                                distance_condition.attrib.get('entityRef', None)))
+                    if triggered_actor is None:
+                        raise AttributeError("Cannot find actor '{}' for condition".format(
+                            distance_condition.attrib.get('entityRef', None)))
 
-                        condition_rule = distance_condition.attrib.get('rule')
-                        condition_operator = OpenScenarioParser.operators[condition_rule]
-                        atomic = InTriggerDistanceToVehicle(
-                            triggered_actor, trigger_actor, distance_value, condition_operator, name=condition_name)
-                    else:
-                        raise NotImplementedError(
-                            "RelativeDistance condition with the given specification is not yet supported")
+                    condition_rule = distance_condition.attrib.get('rule')
+                    condition_operator = OpenScenarioParser.operators[condition_rule]
+                    atomic = InTriggerDistanceToVehicle(triggered_actor, trigger_actor, distance_value,
+                                                        condition_operator, distance_type=rel_dis_type,
+                                                        freespace=distance_freespace, name=condition_name)
         elif condition.find('ByValueCondition') is not None:
             value_condition = condition.find('ByValueCondition')
             if value_condition.find('ParameterCondition') is not None:
