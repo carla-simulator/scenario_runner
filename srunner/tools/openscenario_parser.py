@@ -628,8 +628,7 @@ class OpenScenarioParser(object):
                 t = -1*t
             transform = get_offset_transform(transform, t)
             return transform
-        elif position.find('RelativeRoadPosition') is not None:
-            raise NotImplementedError("RelativeRoad positions are not yet supported")
+
         elif position.find('LanePosition') is not None:
             lane_pos = position.find('LanePosition')
             road_id = int(lane_pos.attrib.get('roadId', 0))
