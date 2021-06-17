@@ -19,11 +19,11 @@ import copy
 import math
 import operator
 import os
-import random
 import time
 import subprocess
 
 import numpy as np
+import numpy.random as random
 import py_trees
 from py_trees.blackboard import Blackboard
 import networkx
@@ -33,6 +33,7 @@ from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
+from agents.navigation.controller import PIDLongitudinalController
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -1590,39 +1591,36 @@ class SyncArrival(AtomicBehavior):
         self._target_location = target_location
         self._gain = gain
 
+        self._controller = PIDLongitudinalController(self._actor)
         self._control.steering = 0
-
+    
     def update(self):
         """
         Dynamic control update for actor velocity
         """
         new_status = py_trees.common.Status.RUNNING
 
-        distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
-                                                self._target_location)
-        distance = calculate_distance(CarlaDataProvider.get_location(self._actor),
-                                      self._target_location)
-
+        # Get the time until the reference actor reaches the target location
+        distance_reference = calculate_distance(
+            CarlaDataProvider.get_location(self._actor_reference), self._target_location)
         velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
         time_reference = float('inf')
         if velocity_reference > 0:
             time_reference = distance_reference / velocity_reference
 
-        velocity_current = CarlaDataProvider.get_velocity(self._actor)
-        time_current = float('inf')
-        if velocity_current > 0:
-            time_current = distance / velocity_current
-
-        control_value = (self._gain) * (time_current - time_reference)
-
+        # Get the synchronization velocity of the actor and apply it
+        distance = calculate_distance(
+            CarlaDataProvider.get_location(self._actor), self._target_location)
+        sync_velocity = 3.6 * distance / time_reference
+        control_value = self._controller.run_step(sync_velocity)
         if control_value > 0:
-            self._control.throttle = min([control_value, 1])
+            self._control.throttle = control_value
             self._control.brake = 0
         else:
             self._control.throttle = 0
-            self._control.brake = min([abs(control_value), 1])
-
+            self._control.brake = control_value
         self._actor.apply_control(self._control)
+
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
@@ -1702,7 +1700,7 @@ class ChangeNoiseParameters(AtomicBehavior):
         self._dynamic_mean_for_steer = dynamic_mean_for_steer
         self._dynamic_mean_for_throttle = dynamic_mean_for_throttle
 
-        self._noise_to_apply = abs(random.gauss(self._noise_mean, self._noise_std))
+        self._noise_to_apply = abs(random.normal(self._noise_mean, self._noise_std))
 
     def update(self):
         """
@@ -1728,24 +1726,40 @@ class BasicAgentBehavior(AtomicBehavior):
     - actor: CARLA actor to execute the behavior
     - target_location: Is the desired target location (carla.location),
                        the actor should move to
+    - plan: List of [carla.Waypoint, RoadOption] to pass to the controller
+    - target_speed: Desired speed of the actor
 
     The behavior terminates after reaching the target_location (within 2 meters)
     """
 
     _acceptable_target_distance = 2
 
-    def __init__(self, actor, target_location, name="BasicAgentBehavior"):
+    def __init__(self, actor, target_location=None, plan=None, target_speed=None, name="BasicAgentBehavior"):
         """
-        Setup actor and maximum steer value
+        Set up actor and local planner
         """
         super(BasicAgentBehavior, self).__init__(name, actor)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._agent = BasicAgent(actor)  # pylint: disable=undefined-variable
-        self._agent.set_destination((target_location.x, target_location.y, target_location.z))
-        self._control = carla.VehicleControl()
+        self._target_speed = target_speed
+        if target_location and plan:
+            raise ValueError('Choose either a target_location or a plan, but not both')
+        self._plan = plan
         self._target_location = target_location
+        self._control = carla.VehicleControl()
+
+    def initialise(self):
+        """Initialises the agent"""
+        self._agent = BasicAgent(self._actor, self._target_speed)
+        if self._target_location:
+            start_wp = self._map.get_waypoint(CarlaDataProvider.get_location(self._actor))
+            end_wp = self._map.get_waypoint(self._target_location)
+            self._plan = self._agent._trace_route(start_wp, end_wp)  # pylint: disable=protected-access
+        self._agent._local_planner.set_global_plan(self._plan, False)  # pylint: disable=protected-access
+
+        if not self._target_location:
+            self._target_location = self._plan[-1][0].transform.location
 
     def update(self):
+        """Moves the actor and waits for it to finish the plan"""
         new_status = py_trees.common.Status.RUNNING
 
         self._control = self._agent.run_step()
@@ -2352,7 +2366,7 @@ class ActorSource(AtomicBehavior):
             if not spawn_point_blocked:
                 try:
                     new_actor = CarlaDataProvider.request_new_actor(
-                        np.random.choice(self._actor_types), self._spawn_point)
+                        random.choice(self._actor_types), self._spawn_point)
                     self._actor_limit -= 1
                     self._queue.put(new_actor)
                 except:                             # pylint: disable=bare-except
@@ -2386,6 +2400,145 @@ class ActorSink(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
         CarlaDataProvider.remove_actors_in_surrounding(self._sink_location, self._threshold)
         return new_status
+
+
+class ActorSourceSinkPair(AtomicBehavior):
+    """
+    Behavior that indefinitely creates actors at a location,
+    controls them until another location, and then destroys them.
+    Therefore, a parallel termination behavior has to be used.
+
+    Important parameters:
+    - source_transform (carla.Transform): Transform at which actors will be spawned
+    - sink_wlocation (carla.Location): Location at which actors will be deleted
+    - spawn_distance: Distance between spawned actors
+    - sink_distance: Actors closer to the sink than this distance will be deleted
+    """
+
+    def __init__(self, source_transform, sink_location, spawn_dist_interval,
+                 sink_dist=2, name="ActorSourceSinkPair"):
+        """
+        Setup class members
+        """
+        super(ActorSourceSinkPair, self).__init__(name)
+        self._rng = random.RandomState(2000)
+
+        self._source_transform = source_transform
+        self._sink_location = sink_location
+        self._sink_dist = sink_dist
+
+        self._min_spawn_dist = spawn_dist_interval[0]
+        self._max_spawn_dist = spawn_dist_interval[1]
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+        self._actor_agent_list = []
+        self._route = []
+        self._grp = None
+
+    def initialise(self):
+        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 2.0)
+        self._grp = GlobalRoutePlanner(dao)
+        self._grp.setup()
+        self._route = self._grp.trace_route(self._source_transform.location, self._sink_location)
+
+    def update(self):
+        """Controls the created actors and creaes / removes other when needed"""
+
+        for actor_info in list(self._actor_agent_list):
+            actor, agent = actor_info
+            sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
+            if sink_distance < self._sink_dist:
+                # Destroy the actor
+                actor.destroy()
+                self._actor_agent_list.remove(actor_info)
+            else:
+                # Control the actor
+                control = agent.run_step()
+                actor.apply_control(control)
+
+        if len(self._actor_agent_list) == 0:
+            distance = self._spawn_dist + 1
+        else:
+            actor_location = CarlaDataProvider.get_location(self._actor_agent_list[-1][0])
+            distance = self._source_transform.location.distance(actor_location)
+
+        if distance > self._spawn_dist:
+            # Create a new actor
+            spawn_transform = carla.Transform(
+                self._source_transform.location + carla.Location(z=0.2),
+                self._source_transform.rotation
+            )
+            actor = CarlaDataProvider.request_new_actor(
+                'vehicle.*', spawn_transform, rolename='scenario', safe_blueprint=True, tick=False
+            )
+            if actor is not None:
+                actor_agent = BasicAgent(actor)
+                actor_agent._local_planner.set_global_plan(self._route, False)  # pylint: disable=protected-access
+                self._actor_agent_list.append([actor, actor_agent])
+                self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+        return py_trees.common.Status.RUNNING
+
+    def terminate(self, new_status):
+        """
+        Default terminate. Can be extended in derived class
+        """
+        for actor, _ in self._actor_agent_list:
+            actor.destroy()
+
+
+class TrafficLightFreezer(AtomicBehavior):
+    """
+    Behavior that freezes a group of traffic lights for a specific amount of time,
+    returning them to their original state after ending it
+
+    Important parameters:
+    - traffic_lights_dict dict{carla.TrafficLight: carla.TrafficLightState}
+    - timeout: Amount of time the traffic lights are frozen
+    """
+
+    def __init__(self, traffic_lights_dict, duration=10000, name="ActorSourceSinkPair"):
+        """Setup class members"""
+        super(TrafficLightFreezer, self).__init__(name)
+        self._traffic_lights_dict = traffic_lights_dict
+        self._duration = duration
+        self._previous_traffic_light_info = {}
+        self._start_time = None
+
+    def initialise(self):
+        """
+        Sets the traffic lights to the desired states and remembers their previous one.
+        These should technically be frozen, but that freezes all tls in the town
+        """
+        self._start_time = GameTime.get_time()
+        for tl in self._traffic_lights_dict:
+            elapsed_time = tl.get_elapsed_time()
+            self._previous_traffic_light_info[tl] ={
+                'state': tl.get_state(),
+                'green_time': tl.get_green_time(),
+                'red_time': tl.get_red_time(),
+                'yellow_time': tl.get_yellow_time()
+            }
+            tl.set_state(self._traffic_lights_dict[tl])
+            tl.set_green_time(self._duration + elapsed_time)
+            tl.set_red_time(self._duration + elapsed_time)
+            tl.set_yellow_time(self._duration + elapsed_time)
+
+    def update(self):
+        """Waits until the adequate time has passed"""
+        if GameTime.get_time() - self._start_time > self._duration:
+            return py_trees.common.Status.SUCCESS
+        else:
+            return py_trees.common.Status.RUNNING
+
+    def terminate(self, new_status):
+        """Reset all traffic lights back to their previous states"""
+        if self._previous_traffic_light_info:
+            for tl in self._traffic_lights_dict:
+                tl.set_state(self._previous_traffic_light_info[tl]['state'])
+                tl.set_green_time(self._previous_traffic_light_info[tl]['green_time'])
+                tl.set_red_time(self._previous_traffic_light_info[tl]['red_time'])
+                tl.set_yellow_time(self._previous_traffic_light_info[tl]['yellow_time'])
 
 
 class StartRecorder(AtomicBehavior):

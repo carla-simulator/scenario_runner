@@ -29,6 +29,8 @@ from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
+from leaderboard.utils.background_manager import Scenario4Manager
+
 
 def get_opponent_transform(added_dist, waypoint, trigger_location):
     """
@@ -523,6 +525,7 @@ class VehicleTurningRoute(BasicScenario):
         first_vehicle.set_transform(actor_transform)
         first_vehicle.set_simulate_physics(enabled=False)
         self.other_actors.append(first_vehicle)
+        self._spawn_dist = added_dist + start_distance
 
     def _create_behavior(self):
         """
@@ -570,6 +573,7 @@ class VehicleTurningRoute(BasicScenario):
 
         # building the tree
         root.add_child(scenario_sequence)
+        scenario_sequence.add_child(Scenario4Manager(self._spawn_dist))
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._other_actor_transform,
                                                          name='TransformSetterTS4'))
         scenario_sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
