@@ -34,6 +34,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeActorLateralMotion,
                                                                       ChangeActorLaneOffset,
                                                                       SyncArrivalOSC,
+                                                                      KeepLongitudinalGap,
                                                                       Idle)
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
@@ -1061,7 +1062,28 @@ class OpenScenarioParser(object):
                                                         name=maneuver_name)
 
                 elif private_action.find('LongitudinalDistanceAction') is not None:
-                    raise NotImplementedError("Longitudinal distance actions are not yet supported")
+                    long_dist_action = private_action.find("LongitudinalDistanceAction")
+                    obj = long_dist_action.attrib.get('entityRef')
+                    for traffic_actor in actor_list:
+                        if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
+                                traffic_actor.attributes['role_name'] == obj):
+                            obj_actor = traffic_actor
+
+                    if "distance" in long_dist_action.attrib and "timeGap" not in long_dist_action.attrib:
+                        gap_type, gap = 'distance', float(long_dist_action.attrib.get('distance', 0))
+                    elif "timeGap" in long_dist_action.attrib and "distance" not in long_dist_action.attrib:
+                        raise NotImplementedError("LongitudinalDistanceAction: timeGap is not implemented")
+                    else:
+                        raise ValueError("LongitudinalDistanceAction: " +
+                                         "Please specify any one attribute of [distance, timeGap]")
+
+                    constraints = long_dist_action.find('DynamicConstraints')
+                    max_speed = constraints.attrib.get('maxSpeed', None) if constraints is not None else None
+                    continues = bool(strtobool(long_dist_action.attrib.get('continuous')))
+                    freespace = bool(strtobool(long_dist_action.attrib.get('freespace')))
+                    atomic = KeepLongitudinalGap(actor, reference_actor=obj_actor, gap=gap, gap_type=gap_type,
+                                                 max_speed=max_speed, continues=continues, freespace=freespace,
+                                                 name=maneuver_name)
                 else:
                     raise AttributeError("Unknown longitudinal action")
             elif private_action.find('LateralAction') is not None:

@@ -99,7 +99,7 @@ contains of submodules, which are not listed, the support status applies to all 
 | `LateralAction`<br> `LaneChangeAction`             | &#10060;             | &#9989;            | Currently all lane changes have a linear dynamicShape, the dynamicDimension is defined as the distance and are relative to the actor itself (RelativeTargetLane).                  |
 | `LateralAction`<br>`LaneOffsetAction`             | &#10060;             | &#9989;             |  Currently all type of dynamicShapes are ignored and depend on the controller. This action might not work as intended if the offset is high enough to make the vehicle exit its lane  |
 | `LateralAction`<br> `LateralDistanceAction`        | &#10060;             | &#10060;             |                  |
-| `LongitudinalAction`<br> `LongitudinalDistanceAction`                                            | &#10060;             | &#10060;             |                  |
+| `LongitudinalAction`<br> `LongitudinalDistanceAction`| &#10060;             | &#9989;              |`timeGap` attribute is not supported              |
 | `LongitudinalAction`<br> `SpeedAction`             | &#9989;            | &#9989;            |                  |
 | `SynchronizeAction`                                 | &#10060;             | &#10060;             |                  |
 | `TeleportAction`                                    | &#9989;            | &#9989;            |                  |
