@@ -630,6 +630,10 @@ def get_distance_between_actors(current, target, distance_type="euclidianDistanc
 
 
 def same_road_info(ego_waypoint, traffic_waypoint):
+    """
+    This function finds if the actors on same lane(even when their road_id does not match) and provides some additional
+    information.
+    """
     same_road = True
     same_lane = False
     adjacent_lane = None
