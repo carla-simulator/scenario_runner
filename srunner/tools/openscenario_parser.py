@@ -1070,7 +1070,7 @@ class OpenScenarioParser(object):
                             obj_actor = traffic_actor
 
                     if "distance" in long_dist_action.attrib and "timeGap" not in long_dist_action.attrib:
-                        gap_type, gap = 'distance', float(long_dist_action.attrib.get('distance', 0))
+                        gap_type, gap = 'distance', float(long_dist_action.attrib.get('distance'))
                     elif "timeGap" in long_dist_action.attrib and "distance" not in long_dist_action.attrib:
                         raise NotImplementedError("LongitudinalDistanceAction: timeGap is not implemented")
                     else:

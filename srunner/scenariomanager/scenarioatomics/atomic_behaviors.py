@@ -2849,6 +2849,7 @@ class KeepLongitudinalGap(AtomicBehavior):
         self._gap_type = gap_type
         self._continues = continues
         self._freespace = freespace
+        self._global_rp = None
         max_speed_limit = 100
         self.max_speed = max_speed_limit if max_speed is None else float(max_speed)
         if freespace and self._gap_type == "distance":
@@ -2870,6 +2871,10 @@ class KeepLongitudinalGap(AtomicBehavior):
 
         self._start_time = GameTime.get_time()
         actor_dict[self._actor.id].update_target_speed(self.max_speed, start_time=self._start_time)
+
+        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 1.0)
+        self._global_rp = GlobalRoutePlanner(dao)
+        self._global_rp.setup()
 
         super(KeepLongitudinalGap, self).initialise()
 
@@ -2896,22 +2901,20 @@ class KeepLongitudinalGap(AtomicBehavior):
 
         gap = sr_tools.scenario_helper.get_distance_between_actors(self._actor, self._reference_actor,
                                                                    distance_type="longitudinal",
-                                                                   freespace=self._freespace)
+                                                                   freespace=self._freespace,
+                                                                   global_planner=self._global_rp)
         actor_transform = CarlaDataProvider.get_transform(self._actor)
         ref_actor_transform = CarlaDataProvider.get_transform(self._reference_actor)
-        actor_wp = CarlaDataProvider.get_map().get_waypoint(actor_transform.location)
-        ref_actor_wp = CarlaDataProvider.get_map().get_waypoint(ref_actor_transform.location)
-        same_lane, _, _ = sr_tools.scenario_helper.same_road_info(actor_wp, ref_actor_wp)
-        if is_within_distance_ahead(ref_actor_transform, actor_transform, self._gap) and same_lane:
-            if operator.ge(gap, self._gap):
-                try:
-                    factor = abs(actor_velocity - reference_velocity)/actor_velocity
-                    if actor_velocity > reference_velocity:
-                        actor_velocity = actor_velocity - (factor*actor_velocity)
-                    elif actor_velocity < reference_velocity:
-                        actor_velocity = actor_velocity + (factor*actor_velocity)
-                except ZeroDivisionError:
-                    pass
+        if is_within_distance_ahead(ref_actor_transform, actor_transform, float('inf')) and \
+                operator.le(gap, self._gap):
+            try:
+                factor = abs(actor_velocity - reference_velocity)/actor_velocity
+                if actor_velocity > reference_velocity:
+                    actor_velocity = actor_velocity - (factor*actor_velocity)
+                elif actor_velocity < reference_velocity and operator.gt(gap, self._gap):
+                    actor_velocity = actor_velocity + (factor*actor_velocity)
+            except ZeroDivisionError:
+                pass
             actor_dict[self._actor.id].update_target_speed(actor_velocity)
 
             if not self._continues:
@@ -2919,8 +2922,6 @@ class KeepLongitudinalGap(AtomicBehavior):
                     new_status = py_trees.common.Status.SUCCESS
         else:
             actor_dict[self._actor.id].update_target_speed(self.max_speed)
-
-        # print(gap, actor_velocity, self._gap, same_lane)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status

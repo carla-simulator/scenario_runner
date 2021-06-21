@@ -18,7 +18,6 @@ import numpy as np
 import carla
 from agents.tools.misc import vector
 from agents.navigation.local_planner import RoadOption
-from agents.tools.misc import is_within_distance_ahead
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
@@ -567,18 +566,11 @@ def get_troad_from_transform(actor_transform):
 
 
 def get_distance_between_actors(current, target, distance_type="euclidianDistance", freespace=False,
-                                confirm_ahead=False):
+                                global_planner=None):
     """
     This function finds the distance between actors for different use cases described by distance_type and freespace
     attributes
     """
-    if confirm_ahead:
-        target_transform = CarlaDataProvider.get_transform(target)
-        current_transform = CarlaDataProvider.get_transform(current)
-        is_ahead = is_within_distance_ahead(target_transform, current_transform, float('inf'))
-
-        if not is_ahead:  # swap, because target should always be in front.
-            current, target = target, current
 
     target_transform = CarlaDataProvider.get_transform(target)
     current_transform = CarlaDataProvider.get_transform(current)
@@ -590,96 +582,39 @@ def get_distance_between_actors(current, target, distance_type="euclidianDistanc
         if isinstance(target, (carla.Vehicle, carla.Walker)):
             extent_sum_x = target.bounding_box.extent.x + current.bounding_box.extent.x
             extent_sum_y = target.bounding_box.extent.y + current.bounding_box.extent.y
-    # TODO: overlaping condition in feeespace should be handled
     if distance_type == "longitudinal":
-        # longitudinal doesnt produce proper distance for all junction situations
-        # might have to use GlobalRoutePlannerDAO only for such cases.
-        extra_distnace = 0
-        next_wp = current_wp
         if not current_wp.road_id == target_wp.road_id:
-            for _ in range(2000):
-                wps = next_wp.next(1)
-                if next_wp:
-                    try:
-                        next_wp = wps[0]
-                    except IndexError:
-                        break
-                    if next_wp.road_id == target_wp.road_id:
-                        break
-                    extra_distnace += 1
-            distance = abs(extra_distnace + target_wp.s)
+            distance = 0
+            # Get the route
+            route = global_planner.trace_route(current_transform.location, target_transform.location)
+            # Get the distance of the route
+            for i in range(1, len(route)):
+                curr_loc = route[i][0].transform.location
+                prev_loc = route[i - 1][0].transform.location
+                distance += curr_loc.distance(prev_loc)
         else:
             distance = abs(current_wp.s - target_wp.s)
         if freespace:
-            distance = distance - extent_sum_x if distance > 0.0 else distance
+            distance = distance - extent_sum_x
     elif distance_type == "lateral":
         target_t = get_troad_from_transform(target_transform)
         current_t = get_troad_from_transform(current_transform)
         distance = abs(target_t - current_t)
         if freespace:
-            distance = distance - extent_sum_y if distance > 0.0 else distance
+            distance = distance - extent_sum_y
 
     elif distance_type in ["cartesianDistance", "euclidianDistance"]:
         distance = target_transform.location.distance(current_transform.location)
         if freespace:
-            distance = distance - extent_sum_x if distance > 0.0 else distance
+            distance = distance - extent_sum_x
     else:
         raise TypeError("unknown distance_type: {}".format(distance_type))
 
+    # distance will be negative for feeespace when there is overlap condition
+    # truncate to 0.0 when this happens
+    distance = 0.0 if distance < 0.0 else distance
+
     return distance
-
-
-def same_road_info(ego_waypoint, traffic_waypoint):
-    """
-    This function finds if the actors on same lane(even when their road_id does not match) and provides some additional
-    information.
-    """
-    same_road = True
-    same_lane = False
-    adjacent_lane = None
-    extension = 0
-
-    if traffic_waypoint.road_id != ego_waypoint.road_id:
-        same_road = False
-        next_wp = ego_waypoint
-        while True:
-            next_wps = next_wp.next(2)
-            try:
-                next_wp = next_wps[0]
-                extension += 2
-            except IndexError:
-                break
-
-            if next_wp.road_id == traffic_waypoint.road_id:
-                same_road = True
-                break
-    if same_road:
-        same_lane = True
-        if traffic_waypoint.lane_id != ego_waypoint.lane_id:
-            same_lane = False
-            next_wp = ego_waypoint
-            while True:
-                ego_left = next_wp.get_left_lane()
-                ego_right = next_wp.get_right_lane()
-                next_wps = next_wp.next(2)
-                if len(next_wps) > 1:  # at intersection
-                    break
-                try:
-                    next_wp = next_wps[0]
-                except IndexError:
-                    break
-
-                if next_wp.lane_id == traffic_waypoint.lane_id:
-                    same_lane = True
-                    break
-                if ego_left.lane_id == traffic_waypoint.lane_id:
-                    adjacent_lane = "left"
-                    break
-                elif ego_right.lane_id == traffic_waypoint.lane_id:
-                    adjacent_lane = "right"
-                    break
-
-    return [same_lane, adjacent_lane, [same_road, extension]]
 
 
 class RotatedRectangle(object):
