@@ -24,6 +24,7 @@
 * Additional Scenarios:
     - Added Construction setup scenario.
 ### :bug: Bug Fixes
+* Fixed LaneOffset (+ vs. -) for OpenSCENARIO
 * Fixed bug at the Getting Started docs which caused an import error
 * Fixed neverending lane change maneuver in OpenSCENARIO
 * Fixed bug causing the spawning of an actor with `request_new_actor` to never activate the autopilot.
@@ -32,7 +33,7 @@
 * Generalized visualizer attached to OSC controllers
 * Fixed bug at the Getting Started docs which caused an import error
 * Improved the watchdog. It can now be paused, resumed and uses the same thread, instead of opening and closing new ones each frame.
-* Added `simple-watchdog-timer` library to the requirements, as it is used by the new watchdog.
+* Added `simple-watchdog-timer` library to the requirements, as it is used by the new watchdog. This requires Python 3.x from now on!
 * Extended CarlaDataProvider's spawning functions to allow filtering the safer blueprint, and optionally tick the server
 
 ## CARLA ScenarioRunner 0.9.11

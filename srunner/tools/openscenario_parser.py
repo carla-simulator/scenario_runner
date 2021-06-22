@@ -624,7 +624,8 @@ class OpenScenarioParser(object):
                 transform.rotation.yaw = transform.rotation.yaw + dyaw
                 transform.rotation.pitch = transform.rotation.pitch + dpitch
                 transform.rotation.roll = transform.rotation.roll + droll
-            if t < 0:
+
+            if not OpenScenarioParser.use_carla_coordinate_system:
                 # multiply -1 because unlike offset t road is -ve for right side
                 t = -1*t
             transform = get_offset_transform(transform, t)
@@ -1093,7 +1094,7 @@ class OpenScenarioParser(object):
                     lat_maneuver = private_action.find('LaneChangeAction')
                     target_lane_rel = float(lat_maneuver.find("LaneChangeTarget").find(
                         "RelativeTargetLane").attrib.get('value', 0))
-                    direction = "left" if target_lane_rel < 0 else "right"
+                    direction = "left" if target_lane_rel > 0 else "right"
                     lane_changes = abs(target_lane_rel)
                     # duration and distance
                     distance = float('inf')
