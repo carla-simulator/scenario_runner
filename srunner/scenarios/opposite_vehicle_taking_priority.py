@@ -106,7 +106,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                 raise ValueError("Couldn't find a lane in the {} direction".format(self._direction))
         else:
             # Outside routes, test different directions
-            for direction in ['right', 'left', 'opposite']:
+            for direction in ['right', 'left']:
                 entry_wps, _ = get_junction_topology(junction)
                 source_entry_wps = filter_junction_wp_direction(starting_wp, entry_wps, direction)
                 if source_entry_wps:
@@ -116,18 +116,18 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                 raise ValueError("Trying to find a lane to spawn the opposite actor but none was found")
 
         # Get the source transform
-        source_entry_wp = source_entry_wps[0]
-        while True:
-            right_wp = source_entry_wp.get_right_lane()
-            if not right_wp or right_wp.lane_type != carla.LaneType.Driving:
-                break
-            source_entry_wp = right_wp
+        self._entry_plan = []
+        source_wp = source_entry_wps[0]
+        added_dist = self._source_dist
+        while added_dist > 0:
+            source_wps = source_wp.previous(1.0)
+            if len(source_wps) == 0:
+                raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
+            source_wp = source_wps[0]
+            self._entry_plan.insert(0, ([source_wp, RoadOption.LANEFOLLOW]))
+            added_dist -=1
 
-        source_wps = source_entry_wp.previous(self._source_dist)
-        if len(source_wps) == 0:
-            raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
-        source_transform = source_wps[0].transform
-
+        source_transform = source_wp.transform
         self._spawn_location = carla.Transform(
             source_transform.location + carla.Location(z=0.1),
             source_transform.rotation
@@ -159,7 +159,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             added_dist -= 1
 
         self._collision_location = get_geometric_linear_intersection(
-            ego_location, source_transform.location)
+            starting_wp.transform.location, source_entry_wp.transform.location)
+        collision_waypoint = self._map.get_waypoint(self._collision_location)
+        self._entry_plan.append([collision_waypoint, RoadOption.LANEFOLLOW])
 
         # Get the relevant traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
@@ -196,6 +198,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # Behavior tree
         sequence = py_trees.composites.Sequence()
+        sync_arrival.add_child(
+            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._collision_location, self._entry_plan))
         sequence.add_child(sync_arrival)
         sequence.add_child(move_actor_exit)
 

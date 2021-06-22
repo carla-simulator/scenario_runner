@@ -1580,7 +1580,7 @@ class SyncArrival(AtomicBehavior):
           certain distance, etc.
     """
 
-    def __init__(self, actor, actor_reference, target_location, gain=1, name="SyncArrival"):
+    def __init__(self, actor, actor_reference, target_location, plan=[], name="SyncArrival"):
         """
         Setup required parameters
         """
@@ -1589,11 +1589,21 @@ class SyncArrival(AtomicBehavior):
         self._control = carla.VehicleControl()
         self._actor_reference = actor_reference
         self._target_location = target_location
-        self._gain = gain
+        self._use_agent = True if plan else False
+        self._plan = plan
+        self._agent = None
 
-        self._controller = PIDLongitudinalController(self._actor)
         self._control.steering = 0
-    
+
+    def initialise(self):
+        """Initialises the agents, if needed"""
+        if self._use_agent:
+            self._agent = BasicAgent(self._actor)
+            self._agent.set_global_plan(self._plan)
+            self._agent.ignore_traffic_lights(True)
+        else:
+            self._agent = PIDLongitudinalController(self._actor)
+
     def update(self):
         """
         Dynamic control update for actor velocity
@@ -1612,13 +1622,20 @@ class SyncArrival(AtomicBehavior):
         distance = calculate_distance(
             CarlaDataProvider.get_location(self._actor), self._target_location)
         sync_velocity = 3.6 * distance / time_reference
-        control_value = self._controller.run_step(sync_velocity)
-        if control_value > 0:
-            self._control.throttle = control_value
-            self._control.brake = 0
+
+        # Get the actor control
+        if self._use_agent:
+            self._agent.set_target_speed(sync_velocity)
+            self._control = self._agent.run_step()
         else:
-            self._control.throttle = 0
-            self._control.brake = control_value
+            control_value = self._agent.run_step(sync_velocity)
+            if control_value > 0:
+                self._control.throttle = control_value
+                self._control.brake = 0
+            else:
+                self._control.throttle = 0
+                self._control.brake = control_value
+
         self._actor.apply_control(self._control)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -1750,12 +1767,14 @@ class BasicAgentBehavior(AtomicBehavior):
         """Initialises the agent"""
         self._agent = BasicAgent(self._actor, self._target_speed)
         if self._target_location:
+            # If a target location is given, get the plan
             start_wp = self._map.get_waypoint(CarlaDataProvider.get_location(self._actor))
             end_wp = self._map.get_waypoint(self._target_location)
-            self._plan = self._agent._trace_route(start_wp, end_wp)  # pylint: disable=protected-access
-        self._agent._local_planner.set_global_plan(self._plan, False)  # pylint: disable=protected-access
+            self._plan = self._agent.trace_route(start_wp, end_wp)
+        self._agent.set_global_plan(self._plan, False)
 
         if not self._target_location:
+            # If a plan is given, get the target location
             self._target_location = self._plan[-1][0].transform.location
 
     def update(self):
@@ -2416,7 +2435,7 @@ class ActorSourceSinkPair(AtomicBehavior):
     """
 
     def __init__(self, source_transform, sink_location, spawn_dist_interval,
-                 sink_dist=2, name="ActorSourceSinkPair"):
+                 sink_dist=2, actors_speed=20,  name="ActorSourceSinkPair"):
         """
         Setup class members
         """
@@ -2426,6 +2445,7 @@ class ActorSourceSinkPair(AtomicBehavior):
         self._source_transform = source_transform
         self._sink_location = sink_location
         self._sink_dist = sink_dist
+        self._speed = actors_speed
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2472,8 +2492,8 @@ class ActorSourceSinkPair(AtomicBehavior):
                 'vehicle.*', spawn_transform, rolename='scenario', safe_blueprint=True, tick=False
             )
             if actor is not None:
-                actor_agent = BasicAgent(actor)
-                actor_agent._local_planner.set_global_plan(self._route, False)  # pylint: disable=protected-access
+                actor_agent = BasicAgent(actor, self._speed)
+                actor_agent.get_local_planner().set_global_plan(self._route, False)  # pylint: disable=protected-access
                 self._actor_agent_list.append([actor, actor_agent])
                 self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 

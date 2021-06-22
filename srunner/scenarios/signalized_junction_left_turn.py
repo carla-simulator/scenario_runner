@@ -48,6 +48,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._source_dist = 20
         self._source_dist_interval = [15, 25]
         self._sink_dist = 20
+        self._opposite_speed = 30  # Km / h
         self._rng = random.RandomState(2000)
         self._direction = 'opposite'
         self.timeout = timeout
@@ -115,7 +116,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         root.add_child(ActorSourceSinkPair(
-            self._source_transform, self._sink_location, self._source_dist_interval, 2))
+            self._source_transform, self._sink_location, self._source_dist_interval, 2, self._opposite_speed))
         root.add_child(TrafficLightFreezer(self._tl_dict))
 
         sequence = py_trees.composites.Sequence("Sequence Behavior")

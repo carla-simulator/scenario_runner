@@ -88,7 +88,7 @@ class NpcAgent(AutonomousAgent):
                     wp = CarlaDataProvider.get_map().get_waypoint(transform.location)
                     plan.append((wp, road_option))
 
-                self._agent._local_planner.set_global_plan(plan)  # pylint: disable=protected-access
+                self._agent.get_local_planner().set_global_plan(plan)  # pylint: disable=protected-access
                 self._route_assigned = True
 
         else:
