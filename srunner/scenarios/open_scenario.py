@@ -216,7 +216,8 @@ class OpenScenario(BasicScenario):
 
         for actor in self.config.other_actors + self.config.ego_vehicles:
             for carla_actor in self.other_actors + self.ego_vehicles:
-                if 'role_name' in carla_actor.attributes and carla_actor.attributes['role_name'] == actor.rolename:
+                if (carla_actor is not None and 'role_name' in carla_actor.attributes and
+                        carla_actor.attributes['role_name'] == actor.rolename):
                     actor_init_behavior = py_trees.composites.Sequence(name="InitActor{}".format(actor.rolename))
 
                     controller_atomic = None
@@ -321,7 +322,8 @@ class OpenScenario(BasicScenario):
                                             parallel_actions.add_child(
                                                 oneshot_with_check(variable_name=  # See note in get_xml_path
                                                                    get_xml_path(story, sequence) + '>' + \
-                                                                   get_xml_path(maneuver, child),
+                                                                   get_xml_path(maneuver, child) + '>' + \
+                                                                   str(actor_id),
                                                                    behaviour=maneuver_behavior))
 
                                     if child.tag == "StartTrigger":

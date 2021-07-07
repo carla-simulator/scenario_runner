@@ -14,7 +14,7 @@ from __future__ import print_function
 
 import math
 import re
-import numpy.random as random
+from numpy import random
 from six import iteritems
 
 import carla
@@ -507,6 +507,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             CarlaDataProvider._world.wait_for_tick()
 
         actor_ids = [r.actor_id for r in responses if not r.error]
+        for r in responses:
+            if r.error:
+                print("WARNING: Not all actors were spawned")
+                break
         actors = list(CarlaDataProvider._world.get_actors(actor_ids))
         return actors
 
@@ -535,6 +539,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             actor = CarlaDataProvider._world.try_spawn_actor(blueprint, _spawn_point)
 
         if actor is None:
+            print("WARNING: Cannot spawn actor {} at position {}".format(model, spawn_point.location))
             return None
 
         # De/activate the autopilot of the actor if it belongs to vehicle
@@ -772,7 +777,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         for actor_id in CarlaDataProvider._carla_actor_pool.copy():
             actor = CarlaDataProvider._carla_actor_pool[actor_id]
-            if actor.is_alive:
+            if actor is not None and actor.is_alive:
                 batch.append(DestroyActor(actor))
 
         if CarlaDataProvider._client:

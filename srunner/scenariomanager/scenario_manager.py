@@ -82,6 +82,8 @@ class ScenarioManager(object):
         This function triggers a proper termination of a scenario
         """
 
+        self._watchdog.stop()
+
         if self.scenario is not None:
             self.scenario.terminate()
 
@@ -195,8 +197,6 @@ class ScenarioManager(object):
         """
         This function is used by the overall signal handler to terminate the scenario execution
         """
-        if self._watchdog and not self._watchdog.get_status():
-            self._watchdog.stop()
         self._running = False
 
     def analyze_scenario(self, stdout, filename, junit, json):

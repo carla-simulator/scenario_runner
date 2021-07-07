@@ -35,6 +35,7 @@
 * Improved the watchdog. It can now be paused, resumed and uses the same thread, instead of opening and closing new ones each frame.
 * Added `simple-watchdog-timer` library to the requirements, as it is used by the new watchdog. This requires Python 3.x from now on!
 * Extended CarlaDataProvider's spawning functions to allow filtering the safer blueprint, and optionally tick the server
+* Improved cleanup handling to resolve memory leak issues and resolve timeouts
 
 ## CARLA ScenarioRunner 0.9.11
 ### :rocket: New Features
