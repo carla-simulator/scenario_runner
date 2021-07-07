@@ -32,7 +32,6 @@ import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 from agents.navigation.controller import PIDLongitudinalController
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -758,9 +757,7 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         # Obtain final route, considering the routing option
         # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
-        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 2.0)
-        grp = GlobalRoutePlanner(dao)
-        grp.setup()
+        grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
         route = []
         for i, _ in enumerate(carla_route_elements):
             if carla_route_elements[i][1] == "shortest":
@@ -1623,8 +1620,12 @@ class SyncArrival(AtomicBehavior):
             CarlaDataProvider.get_location(self._actor), self._target_location)
         sync_velocity = 3.6 * distance / time_reference
 
-        # Get the actor control
-        if self._use_agent:
+        current_speed = CarlaDataProvider.get_velocity(self._actor)
+        if abs(sync_velocity - current_speed) > 3:
+            yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
+            self._actor.set_target_velocity(
+                carla.Vector3D(math.cos(yaw) * target_speed, math.sin(yaw) * target_speed, 0))
+        elif self._use_agent:
             self._agent.set_target_speed(sync_velocity)
             self._control = self._agent.run_step()
         else:
@@ -2429,12 +2430,12 @@ class ActorSourceSinkPair(AtomicBehavior):
 
     Important parameters:
     - source_transform (carla.Transform): Transform at which actors will be spawned
-    - sink_wlocation (carla.Location): Location at which actors will be deleted
+    - sink_location (carla.Location): Location at which actors will be deleted
     - spawn_distance: Distance between spawned actors
     - sink_distance: Actors closer to the sink than this distance will be deleted
     """
 
-    def __init__(self, source_transform, sink_location, spawn_dist_interval,
+    def __init__(self, source_wp, sink_wp, spawn_dist_interval,
                  sink_dist=2, actors_speed=20,  name="ActorSourceSinkPair"):
         """
         Setup class members
@@ -2442,8 +2443,12 @@ class ActorSourceSinkPair(AtomicBehavior):
         super(ActorSourceSinkPair, self).__init__(name)
         self._rng = random.RandomState(2000)
 
-        self._source_transform = source_transform
-        self._sink_location = sink_location
+        self._source_wp = source_wp
+        self._sink_wp = sink_wp
+
+        self._sink_location = self._sink_wp.transform.location
+        self._source_transform = self._source_wp.transform
+
         self._sink_dist = sink_dist
         self._speed = actors_speed
 
@@ -2456,14 +2461,11 @@ class ActorSourceSinkPair(AtomicBehavior):
         self._grp = None
 
     def initialise(self):
-        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 2.0)
-        self._grp = GlobalRoutePlanner(dao)
-        self._grp.setup()
-        self._route = self._grp.trace_route(self._source_transform.location, self._sink_location)
+        self._grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
+        self._route = self._grp.trace_route(self._source_wp, self._sink_wp)
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
-
         for actor_info in list(self._actor_agent_list):
             actor, agent = actor_info
             sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
@@ -2493,7 +2495,7 @@ class ActorSourceSinkPair(AtomicBehavior):
             )
             if actor is not None:
                 actor_agent = BasicAgent(actor, self._speed)
-                actor_agent.get_local_planner().set_global_plan(self._route, False)  # pylint: disable=protected-access
+                actor_agent.set_global_plan(self._route, False)
                 self._actor_agent_list.append([actor, actor_agent])
                 self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 

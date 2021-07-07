@@ -27,7 +27,6 @@ import py_trees
 import carla
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -108,10 +107,7 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
 
         if self._along_route:
             # Get the global route planner, used to calculate the route
-            dao = GlobalRoutePlannerDAO(self._map, 0.5)
-            grp = GlobalRoutePlanner(dao)
-            grp.setup()
-            self._grp = grp
+            self._grp = GlobalRoutePlanner(self._map, 0.5)
         else:
             self._grp = None
 
@@ -176,10 +172,7 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
 
         if self._along_route:
             # Get the global route planner, used to calculate the route
-            dao = GlobalRoutePlannerDAO(self._map, 0.5)
-            grp = GlobalRoutePlanner(dao)
-            grp.setup()
-            self._grp = grp
+            self._grp = GlobalRoutePlanner(self._map, 0.5)
         else:
             self._grp = None
 
@@ -856,10 +849,7 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
         if self._along_route:
             # Get the global route planner, used to calculate the route
-            dao = GlobalRoutePlannerDAO(self._map, 0.5)
-            grp = GlobalRoutePlanner(dao)
-            grp.setup()
-            self._grp = grp
+            self._grp = GlobalRoutePlanner(self._map, 0.5)
         else:
             self._grp = None
 

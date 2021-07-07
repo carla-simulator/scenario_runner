@@ -52,11 +52,11 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         """
         self._world = world
         self._map = CarlaDataProvider.get_map()
-        self._source_dist = 20
+        self._source_dist = 10
         self._exit_speed = 30
         self._sink_dist = 20
         self._sync_stop_dist = 10
-        self._direction = self._get_other_actor_direction(config)
+        self._direction = None
         self._opposite_bp_wildcards = ['*firetruck*', '*ambulance*', '*police*']  #Wildcard patterns of the blueprints
         self.timeout = timeout
         self._rng = random.RandomState(2000)
@@ -67,19 +67,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                                                              world,
                                                              debug_mode,
                                                              criteria_enable=criteria_enable)
-
-    def _get_other_actor_direction(self, config):
-        """Returns the direction the other actor will come through"""
-        if not CarlaDataProvider.get_ego_vehicle_route():
-            return None
-        subtype = config.subtype.lower()
-        if 'left' in subtype:
-            return 'left'
-        if 'right' in subtype:
-            return 'right'
-        if 'opposite' in subtype:
-            return 'opposite'
-        raise ValueError("Unknown scenario subtype")
 
     def _initialize_actors(self, config):
         """
@@ -98,22 +85,16 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         junction = starting_wp.get_junction()
 
         # Get the opposite entry lane wp
-        if self._direction:
-            # At routes, use the given subtype
+        possible_directions = ['right', 'left']
+        self._rng.shuffle(possible_directions)
+        for direction in possible_directions:
             entry_wps, _ = get_junction_topology(junction)
-            source_entry_wps = filter_junction_wp_direction(starting_wp, entry_wps, self._direction)
-            if not source_entry_wps:
-                raise ValueError("Couldn't find a lane in the {} direction".format(self._direction))
-        else:
-            # Outside routes, test different directions
-            for direction in ['right', 'left']:
-                entry_wps, _ = get_junction_topology(junction)
-                source_entry_wps = filter_junction_wp_direction(starting_wp, entry_wps, direction)
-                if source_entry_wps:
-                    self._direction = direction
-                    break
-            if not self._direction:
-                raise ValueError("Trying to find a lane to spawn the opposite actor but none was found")
+            source_entry_wps = filter_junction_wp_direction(starting_wp, entry_wps, direction)
+            if source_entry_wps:
+                self._direction = direction
+                break
+        if not self._direction:
+            raise ValueError("Trying to find a lane to spawn the opposite actor but none was found")
 
         # Get the source transform
         self._entry_plan = []
@@ -159,7 +140,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             added_dist -= 1
 
         self._collision_location = get_geometric_linear_intersection(
-            starting_wp.transform.location, source_entry_wp.transform.location)
+            starting_wp.transform.location, source_entry_wps[0].transform.location)
+        if not self._collision_location:
+            raise ValueError("Couldn't find an intersection point")
         collision_waypoint = self._map.get_waypoint(self._collision_location)
         self._entry_plan.append([collision_waypoint, RoadOption.LANEFOLLOW])
 

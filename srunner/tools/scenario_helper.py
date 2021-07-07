@@ -163,7 +163,7 @@ def get_geometric_linear_intersection(ego_location, other_location):
     line2 = np.cross(h[2], h[3])
     x, y, z = np.cross(line1, line2)
     if z == 0:
-        return (float('inf'), float('inf'))
+        return None
 
     return carla.Location(x=x/z, y=y/z, z=0)
 

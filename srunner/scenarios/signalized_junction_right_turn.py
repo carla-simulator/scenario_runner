@@ -53,7 +53,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         """
         self._world = world
         self._map = CarlaDataProvider.get_map()
-        self._source_dist = 20
+        self._source_dist = 10
         self._sink_dist = 10
         self._exit_speed = 30
         self._sync_stop_dist = 10
