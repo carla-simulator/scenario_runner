@@ -695,7 +695,7 @@ class OpenScenarioParser(object):
             for triggering_entities in condition.find('ByEntityCondition').iter('TriggeringEntities'):
                 for entity in triggering_entities.iter('EntityRef'):
                     for actor in actor_list:
-                        if entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
+                        if actor is not None and entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
                             trigger_actor = actor
                             break
 
