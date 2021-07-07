@@ -13,6 +13,7 @@
 ## Latest Changes
 ### :rocket: New Features
 * OpenSCENARIO support:
+    - Added support for LongitudinalDistanceAction
     - Extended RelativeDistanceCondition with support for 'longitudinal' and 'lateral' distance along with freespace.
     - Added support for RelativeRoadPosition
     - Added support for RoadPosition

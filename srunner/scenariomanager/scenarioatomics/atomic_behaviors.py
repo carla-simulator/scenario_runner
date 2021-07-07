@@ -33,6 +33,7 @@ from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
+from agents.tools.misc import is_within_distance_ahead
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -41,7 +42,7 @@ from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
 
 
-import srunner.tools
+import srunner.tools as sr_tools
 
 EPSILON = 0.001
 
@@ -751,7 +752,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         # Transforming OSC waypoints to Carla waypoints
         carla_route_elements = []
         for (osc_point, routing_option) in self._waypoints:
-            carla_transforms = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            carla_transforms = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
                 osc_point)
             carla_route_elements.append((carla_transforms, routing_option))
 
@@ -1209,7 +1210,7 @@ class ActorTransformSetterToOSCPosition(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         # calculate transform with method in openscenario_parser.py
-        self._osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+        self._osc_transform = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
             self._osc_position)
         self._actor.set_transform(self._osc_transform)
 
@@ -2820,4 +2821,107 @@ class ScenarioTriggerer(AtomicBehavior):
                         life_time=1000
                     )
 
+        return new_status
+
+
+class KeepLongitudinalGap(AtomicBehavior):
+    """
+    This class contains an atomic behavior to maintain a set gap with leading/adjacent vehicle.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - reference_actor: Reference actor the distance shall be kept to.
+    - distance: target gap between the two actors in meters
+    - distance_type: Specifies how distance should be calculated between the two actors
+
+    The behavior terminates after overwritten by other events / when target distance is reached(if continues).
+    """
+
+    def __init__(self, actor, reference_actor, gap, gap_type="distance", max_speed=None, continues=False,
+                 freespace=False, name="AutoKeepDistance"):
+        """
+        Setup parameters
+        """
+        super(KeepLongitudinalGap, self).__init__(name, actor)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._reference_actor = reference_actor
+        self._gap = gap
+        self._gap_type = gap_type
+        self._continues = continues
+        self._freespace = freespace
+        self._global_rp = None
+        max_speed_limit = 100
+        self.max_speed = max_speed_limit if max_speed is None else float(max_speed)
+        if freespace and self._gap_type == "distance":
+            self._gap += self._reference_actor.bounding_box.extent.x + self._actor.bounding_box.extent.x
+
+        self._start_time = None
+
+    def initialise(self):
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or self._actor.id not in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+        actor_dict[self._actor.id].update_target_speed(self.max_speed, start_time=self._start_time)
+
+        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 1.0)
+        self._global_rp = GlobalRoutePlanner(dao)
+        self._global_rp.setup()
+
+        super(KeepLongitudinalGap, self).initialise()
+
+    def update(self):
+        """
+        keeps track of gap and update the controller accordingly
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or self._actor.id not in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_longitudinal_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        new_status = py_trees.common.Status.RUNNING
+
+        actor_velocity = CarlaDataProvider.get_velocity(self._actor)
+        reference_velocity = CarlaDataProvider.get_velocity(self._reference_actor)
+
+        gap = sr_tools.scenario_helper.get_distance_between_actors(self._actor, self._reference_actor,
+                                                                   distance_type="longitudinal",
+                                                                   freespace=self._freespace,
+                                                                   global_planner=self._global_rp)
+        actor_transform = CarlaDataProvider.get_transform(self._actor)
+        ref_actor_transform = CarlaDataProvider.get_transform(self._reference_actor)
+        if is_within_distance_ahead(ref_actor_transform, actor_transform, float('inf')) and \
+                operator.le(gap, self._gap):
+            try:
+                factor = abs(actor_velocity - reference_velocity)/actor_velocity
+                if actor_velocity > reference_velocity:
+                    actor_velocity = actor_velocity - (factor*actor_velocity)
+                elif actor_velocity < reference_velocity and operator.gt(gap, self._gap):
+                    actor_velocity = actor_velocity + (factor*actor_velocity)
+            except ZeroDivisionError:
+                pass
+            actor_dict[self._actor.id].update_target_speed(actor_velocity)
+
+            if not self._continues:
+                if operator.le(gap, self._gap):
+                    new_status = py_trees.common.Status.SUCCESS
+        else:
+            actor_dict[self._actor.id].update_target_speed(self.max_speed)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
