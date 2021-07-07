@@ -12,7 +12,7 @@ bad road conditions, etc. and checks to see if the vehicle
 regains control and corrects it's course.
 """
 
-import numpy.random as random
+from numpy import random
 import py_trees
 import carla
 
