@@ -124,7 +124,7 @@ class OpenScenarioParser(object):
 
         # Given by id
         if name.startswith("id="):
-            tl_id = name[3:]
+            tl_id = int(name[3:])
             for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
                 if carla_tl.id == tl_id:
                     traffic_light = carla_tl
