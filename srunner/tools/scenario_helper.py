@@ -501,15 +501,14 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
 
     return is_hazard
 
-def get_lane_key(wp):
-    """Returns a key corresponding to the lane the waypoint is at"""
-    return str(wp.road_id) + '*' + str(wp.lane_id)
 
 def get_junction_topology(junction):
     """
     Given a junction, returns a two list of waypoints corresponding to the entry
     and exit lanes of the junction
     """
+    def get_lane_key(wp):
+        return str(wp.road_id) + '*' + str(wp.lane_id)
     def get_junction_entry_wp(entry_wp):
         while entry_wp.is_junction:
             entry_wps = entry_wp.previous(0.2)

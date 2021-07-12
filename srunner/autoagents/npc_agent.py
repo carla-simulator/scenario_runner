@@ -29,8 +29,6 @@ class NpcAgent(AutonomousAgent):
         """
         Setup the agent parameters
         """
-
-        self._route_assigned = False
         self._agent = None
 
     def sensors(self):
@@ -48,8 +46,7 @@ class NpcAgent(AutonomousAgent):
 
             {'type': 'sensor.lidar.ray_cast', 'x': 0.7, 'y': 0.0, 'z': 1.60, 'yaw': 0.0, 'pitch': 0.0, 'roll': 0.0,
              'id': 'LIDAR'}
-
-
+        ]
         """
 
         sensors = [
@@ -64,10 +61,6 @@ class NpcAgent(AutonomousAgent):
         Execute one step of navigation.
         """
         control = carla.VehicleControl()
-        control.steer = 0.0
-        control.throttle = 0.0
-        control.brake = 0.0
-        control.hand_brake = False
 
         if not self._agent:
             hero_actor = None
@@ -76,20 +69,26 @@ class NpcAgent(AutonomousAgent):
                     hero_actor = actor
                     break
             if hero_actor:
-                self._agent = BasicAgent(hero_actor)
+                self._agent = BasicAgent(hero_actor, 30)
+                global_planner = self._agent.get_global_planner()
 
-            return control
-
-        if not self._route_assigned:
-            if self._global_plan:
-                plan = []
-
-                for transform, road_option in self._global_plan_world_coord:
+                route = []
+                just_lane_changed = False
+                prev_wp, prev_option = (None, None)
+                for transform, option in self._global_plan_world_coord:
                     wp = CarlaDataProvider.get_map().get_waypoint(transform.location)
-                    plan.append((wp, road_option))
+                    if not just_lane_changed and option.value in (5, 6) and prev_option == option:
+                        just_lane_changed = True  # Ignore the lane change parts
+                    elif prev_wp:
+                        just_lane_changed = False
+                        route.extend(global_planner.trace_route(prev_wp, wp, with_options=False))
+                    prev_wp, prev_option = (wp, option)
 
-                self._agent.get_local_planner().set_global_plan(plan)  # pylint: disable=protected-access
-                self._route_assigned = True
+                route_with_options = global_planner.add_options_to_route(route)
+                self._agent.set_global_plan(route_with_options)
+
+                for w in route_with_options:
+                    wp = w[0].transform.location + carla.Location(z=0.2)
 
         else:
             control = self._agent.run_step()
