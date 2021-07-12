@@ -574,22 +574,29 @@ def filter_junction_wp_direction(reference_wp, wp_list, direction='opposite'):
     return filtered_wps
 
 
-def get_traffic_light_in_lane(waypoint, traffic_lights=None):
+def get_closest_traffic_light(waypoint, traffic_lights=None):
     """
-    Returns the traffic light affecting that waypoint lane. Checks all traffic lights
-    part of 'traffic_lights', or all the ones available at the town, if None are passed.
+    Returns the traffic light closest to the waypoint. The distance is computed between the
+    waypoint and the traffic light's bounding box.
+    Checks all traffic lights part of 'traffic_lights', or all the town ones, if None are passed.
     """
     if not traffic_lights:
         traffic_lights = CarlaDataProvider.get_world().get_actors().filter('*traffic_light*')
 
+    world = CarlaDataProvider.get_world()
+    closest_dist = float('inf')
+    closest_tl = None
+
+    wp_location = waypoint.transform.location
     for tl in traffic_lights:
         tl_waypoints = tl.get_stop_waypoints()
         for tl_waypoint in tl_waypoints:
-            if get_lane_key(waypoint) == get_lane_key(tl_waypoint):
-                return tl
+            distance = wp_location.distance(tl_waypoint.transform.location)
+            if distance < closest_dist:
+                closest_dist = distance
+                closest_tl = tl
 
-    return None
-
+    return closest_tl
 
 def get_offset_transform(transform, offset):
     """

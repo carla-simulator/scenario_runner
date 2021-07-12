@@ -29,7 +29,7 @@ from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
-from leaderboard.utils.background_manager import Scenario4Manager
+from srunner.tools.background_manager import Scenario4Manager
 
 
 def get_opponent_transform(added_dist, waypoint, trigger_location):

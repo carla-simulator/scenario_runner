@@ -1595,11 +1595,36 @@ class SyncArrival(AtomicBehavior):
     def initialise(self):
         """Initialises the agents, if needed"""
         if self._use_agent:
-            self._agent = BasicAgent(self._actor)
+            opt_dict = {
+                'max_brake': 1,
+                'max_steering': 1,
+                'max_throttle': 1
+            }
+            self._agent = BasicAgent(self._actor, opt_dict=opt_dict)
             self._agent.set_global_plan(self._plan)
             self._agent.ignore_traffic_lights(True)
         else:
             self._agent = PIDLongitudinalController(self._actor)
+
+        # First tick sets the actor speed to a
+        distance_reference = calculate_distance(
+            CarlaDataProvider.get_location(self._actor_reference), self._target_location)
+        velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
+
+        if velocity_reference > 0:
+            time_reference = distance_reference / velocity_reference
+        else:
+            time_reference = float('inf')
+
+        distance = calculate_distance(
+            CarlaDataProvider.get_location(self._actor), self._target_location)
+        sync_velocity = 3.6 * distance / time_reference
+
+        starting_velocity = max(0, sync_velocity - 5)
+
+        yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
+        self._actor.set_target_velocity(
+            carla.Vector3D(math.cos(yaw) * starting_velocity, math.sin(yaw) * starting_velocity, 0))
 
     def update(self):
         """
@@ -1620,12 +1645,7 @@ class SyncArrival(AtomicBehavior):
             CarlaDataProvider.get_location(self._actor), self._target_location)
         sync_velocity = 3.6 * distance / time_reference
 
-        current_speed = CarlaDataProvider.get_velocity(self._actor)
-        if abs(sync_velocity - current_speed) > 3:
-            yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
-            self._actor.set_target_velocity(
-                carla.Vector3D(math.cos(yaw) * target_speed, math.sin(yaw) * target_speed, 0))
-        elif self._use_agent:
+        if self._use_agent:
             self._agent.set_target_speed(sync_velocity)
             self._control = self._agent.run_step()
         else:
@@ -1635,7 +1655,7 @@ class SyncArrival(AtomicBehavior):
                 self._control.brake = 0
             else:
                 self._control.throttle = 0
-                self._control.brake = control_value
+                self._control.brake = abs(control_value)
 
         self._actor.apply_control(self._control)
 
@@ -2505,8 +2525,11 @@ class ActorSourceSinkPair(AtomicBehavior):
         """
         Default terminate. Can be extended in derived class
         """
-        for actor, _ in self._actor_agent_list:
-            actor.destroy()
+        try:
+            for actor, _ in self._actor_agent_list:
+                actor.destroy()
+        except RuntimeError:
+            pass  # Actor was already destroyed
 
 
 class TrafficLightFreezer(AtomicBehavior):

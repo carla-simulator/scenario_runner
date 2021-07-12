@@ -21,9 +21,9 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology, 
                                            filter_junction_wp_direction,
-                                           get_traffic_light_in_lane)
+                                           get_closest_traffic_light)
 
-from leaderboard.utils.background_manager import Scenario8Manager
+from srunner.tools.background_manager import Scenario8Manager
 
 
 class SignalizedJunctionLeftTurn(BasicScenario):
@@ -46,7 +46,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 20
-        self._source_dist_interval = [15, 25]
+        self._source_dist_interval = [10, 20]
         self._sink_dist = 20
         self._opposite_speed = 30  # Km / h
         self._rng = random.RandomState(2000)
@@ -99,8 +99,8 @@ class SignalizedJunctionLeftTurn(BasicScenario):
 
         # get traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
-        ego_tl = get_traffic_light_in_lane(ego_wp, tls)
-        source_tl = get_traffic_light_in_lane(self._source_wp, tls)
+        ego_tl = get_closest_traffic_light(ego_wp, tls)
+        source_tl = get_closest_traffic_light(self._source_wp, tls)
         self._tl_dict = {}
         for tl in tls:
             if tl == ego_tl or tl == source_tl:

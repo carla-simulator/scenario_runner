@@ -18,6 +18,7 @@ from py_trees.meta import timeout
 
 import carla
 from agents.navigation.local_planner import RoadOption
+from agents.navigation.global_route_planner import GlobalRoutePlanner
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
@@ -34,9 +35,9 @@ from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
                                            generate_target_waypoint,
                                            get_junction_topology,
                                            filter_junction_wp_direction,
-                                           get_traffic_light_in_lane)
+                                           get_closest_traffic_light)
 
-from leaderboard.utils.background_manager import Scenario9Manager
+from srunner.tools.background_manager import Scenario9Manager
 
 
 class SignalizedJunctionRightTurn(BasicScenario):
@@ -56,9 +57,9 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._source_dist = 10
         self._sink_dist = 10
         self._exit_speed = 30
-        self._sync_stop_dist = 10
         self._direction = 'left'
         self.timeout = timeout
+        self._route_planner = GlobalRoutePlanner(self._map, 2.0)
         super(SignalizedJunctionRightTurn, self).__init__("SignalizedJunctionRightTurn",
                                                           ego_vehicles,
                                                           config,
@@ -82,13 +83,13 @@ class SignalizedJunctionRightTurn(BasicScenario):
             starting_wp = starting_wps[0]
         junction = starting_wp.get_junction()
 
-        # Get the opposite entry lane wp
+        # Get the source entry lane wp
         entry_wps, _ = get_junction_topology(junction)
         source_entry_wps = filter_junction_wp_direction(starting_wp, entry_wps, self._direction)
         if not source_entry_wps:
             raise ValueError("Trying to find a lane in the {} direction but none was found".format(self._direction))
 
-        # Get the source transform
+        # GEt the rightmost lane
         source_entry_wp = source_entry_wps[0]
         while True:
             right_wp = source_entry_wp.get_right_lane()
@@ -108,6 +109,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
             self._entry_plan.insert(0, ([source_wp, RoadOption.LANEFOLLOW]))
             added_dist -=1
 
+        # Spawn the actor and move it underground
         source_transform = source_wp.transform
         self._spawn_location = carla.Transform(
             source_transform.location + carla.Location(z=0.1),
@@ -139,15 +141,21 @@ class SignalizedJunctionRightTurn(BasicScenario):
             self._exit_plan.append([next_wp, RoadOption.LANEFOLLOW])
             added_dist -= 1
 
-        self._collision_location = get_geometric_linear_intersection(
+        # Add the junction part to the entry plan
+        middle_plan = self._route_planner.trace_route(self._entry_plan[-1][0], self._exit_plan[0][0])
+        self._entry_plan.extend(middle_plan)
+        self._target_location = self._entry_plan[-1][0].transform.location
+
+        # Get the distance at which the synchronization stops
+        straight_collision_location = get_geometric_linear_intersection(
             starting_wp.transform.location, source_entry_wp.transform.location)
-        collision_waypoint = self._map.get_waypoint(self._collision_location)
-        self._entry_plan.append([collision_waypoint, RoadOption.LANEFOLLOW])
+        self._sync_stop_dist = straight_collision_location.distance(self._entry_plan[-1][0].transform.location)
+        self._sync_stop_dist += straight_collision_location.distance(starting_wp.transform.location)
 
         # Get the relevant traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
-        ego_tl = get_traffic_light_in_lane(ego_wp, tls)
-        source_tl = get_traffic_light_in_lane(source_wps[0], tls)
+        ego_tl = get_closest_traffic_light(ego_wp, tls)
+        source_tl = get_closest_traffic_light(source_wps[0], tls)
         self._tl_dict = {}
         for tl in tls:
             if tl == ego_tl or tl == source_tl:
@@ -160,13 +168,13 @@ class SignalizedJunctionRightTurn(BasicScenario):
         Hero vehicle is turning right in an urban area, at a signalized intersection,
         while other actor coming straight from the left. The ego has to avoid colliding with it
         """
-        # First part of the behavior, synchronize the actors
+        # First part of the behavior, synchronize the actors. Stops when close to the target location
         sync_arrival = py_trees.composites.Parallel("Synchronize actors",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         sync_arrival.add_child(
-            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._collision_location))
+            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._target_location, self._entry_plan))
         sync_arrival.add_child(
-            InTriggerDistanceToLocation(self.other_actors[0], self._collision_location, self._sync_stop_dist))
+            InTriggerDistanceToLocation(self.other_actors[0], self._target_location, self._sync_stop_dist))
 
         # Second part, move the other actor out of the way
         move_actor_exit = py_trees.composites.Parallel(
@@ -179,11 +187,10 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
         # Behavior tree
         sequence = py_trees.composites.Sequence()
-        sync_arrival.add_child(
-            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._collision_location, self._entry_plan))
         sequence.add_child(sync_arrival)
         sequence.add_child(move_actor_exit)
 
+        # Parallel behavior to freeze the traffic lights
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         main_behavior.add_child(TrafficLightFreezer(self._tl_dict))
         main_behavior.add_child(sequence)

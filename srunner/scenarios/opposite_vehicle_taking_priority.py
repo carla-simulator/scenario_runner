@@ -33,9 +33,9 @@ from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
                                            generate_target_waypoint,
                                            get_junction_topology,
                                            filter_junction_wp_direction,
-                                           get_traffic_light_in_lane)
+                                           get_closest_traffic_light)
 
-from leaderboard.utils.background_manager import Scenario7Manager
+from srunner.tools.background_manager import Scenario7Manager
 
 class OppositeVehicleRunningRedLight(BasicScenario):
     """
@@ -55,7 +55,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._source_dist = 10
         self._exit_speed = 30
         self._sink_dist = 20
-        self._sync_stop_dist = 10
         self._direction = None
         self._opposite_bp_wildcards = ['*firetruck*', '*ambulance*', '*police*']  #Wildcard patterns of the blueprints
         self.timeout = timeout
@@ -117,6 +116,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         opposite_actor = CarlaDataProvider.request_new_actor(opposite_bp_wildcard, self._spawn_location)
         if not opposite_actor:
             raise Exception("Couldn't spawn the actor")
+        opposite_actor.set_light_state(carla.VehicleLightState(
+            carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2))
         self.other_actors.append(opposite_actor)
 
         opposite_transform = carla.Transform(
@@ -146,10 +147,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         collision_waypoint = self._map.get_waypoint(self._collision_location)
         self._entry_plan.append([collision_waypoint, RoadOption.LANEFOLLOW])
 
+        # Get synchronization stop distance (it stops when the ego enters the junction)
+        self._sync_stop_dist = self._collision_location.distance(starting_wp.transform.location)
+
         # Get the relevant traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
-        ego_tl = get_traffic_light_in_lane(ego_wp, tls)
-        source_tl = get_traffic_light_in_lane(source_wps[0], tls)
+        ego_tl = get_closest_traffic_light(ego_wp, tls)
+        source_tl = get_closest_traffic_light(source_wps[0], tls,)
         self._tl_dict = {}
         for tl in tls:
             if tl == ego_tl or tl == source_tl:
@@ -166,7 +170,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sync_arrival = py_trees.composites.Parallel("Synchronize actors",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         sync_arrival.add_child(
-            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._collision_location))
+            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._collision_location, self._entry_plan))
         sync_arrival.add_child(
             InTriggerDistanceToLocation(self.other_actors[0], self._collision_location, self._sync_stop_dist))
 
@@ -181,8 +185,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # Behavior tree
         sequence = py_trees.composites.Sequence()
-        sync_arrival.add_child(
-            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._collision_location, self._entry_plan))
         sequence.add_child(sync_arrival)
         sequence.add_child(move_actor_exit)
 
