@@ -235,6 +235,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._world = CarlaDataProvider.get_world()
         self._tm = CarlaDataProvider.get_client().get_trafficmanager(
             CarlaDataProvider.get_traffic_manager_port())
+        self._tm.global_percentage_speed_difference(0.0)
         self._night_mode = night_mode
 
         # Global variables
@@ -862,13 +863,16 @@ class BackgroundBehavior(AtomicBehavior):
         Additionally, activates some flags to ensure the junction is empty at all times
         """
         self._direction = direction.lower()
+        self._remove_entries = remove_entries
+        self._remove_exits = remove_exits
+        self._remove_middle = remove_middle
+
         if self._active_junctions:
             scenario_junction = self._active_junctions[0]
             entry_direction_keys = scenario_junction.entry_directions[direction]
             actor_dict = scenario_junction.actor_dict
 
-            if remove_entries:
-                self._remove_entries = True
+            if self._remove_entries:
                 for entry_source in scenario_junction.entry_sources:
                     if get_lane_key(entry_source.entry_lane_wp) in entry_direction_keys:
                         # Source is affected
@@ -878,14 +882,12 @@ class BackgroundBehavior(AtomicBehavior):
                                 # Actor is at the entry lane
                                 self._destroy_actor(actor)
 
-            if remove_exits:
-                self._remove_exits = True
+            if self._remove_exits:
                 for exit in scenario_junction.exit_directions[direction]:
                     for actor in list(scenario_junction.exit_dict[exit]['actors']):
                         self._destroy_actor(actor)
 
-            if remove_middle:
-                self._remove_middle = True
+            if self._remove_middle:
                 actor_dict = scenario_junction.actor_dict
                 for actor in list(actor_dict):
                     if actor_dict[actor]['state'] == 'junction_middle':
@@ -1271,8 +1273,12 @@ class BackgroundBehavior(AtomicBehavior):
         to ensure the spawned actors always move towards the activated one
         """
         for wp in junction.entry_wps:
-            if get_lane_key(wp) in junction.route_entry_keys:
+            entry_lane_key = get_lane_key(wp)
+            if entry_lane_key in junction.route_entry_keys:
                 continue  # Ignore the road from which the route enters
+
+            if self._remove_entries and entry_lane_key in junction.entry_directions[self._direction]:
+                continue  # Ignore entries that are part of active junction scenarios
 
             moved_dist = 0
             prev_wp = wp
@@ -1342,8 +1348,9 @@ class BackgroundBehavior(AtomicBehavior):
         for junction in self._active_junctions:
             actor_dict = junction.actor_dict
             for source in junction.entry_sources:
-                draw_point(self._world, source.wp.transform.location, 'small', 'junction', False)
-                draw_string(self._world, source.wp.transform.location, str(len(source.actors)), 'junction', False)
+                if self.debug:
+                    draw_point(self._world, source.wp.transform.location, 'small', 'junction', False)
+                    draw_string(self._world, source.wp.transform.location, str(len(source.actors)), 'junction', False)
 
                 entry_lane_key = get_lane_key(source.entry_lane_wp)
                 at_oppo_entry_lane = entry_lane_key in junction.opposite_entry_keys

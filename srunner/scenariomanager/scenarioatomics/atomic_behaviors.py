@@ -2456,7 +2456,7 @@ class ActorSourceSinkPair(AtomicBehavior):
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval,
-                 sink_dist=2, actors_speed=20,  name="ActorSourceSinkPair"):
+                 sink_dist=2, actors_speed=20, name="ActorSourceSinkPair"):
         """
         Setup class members
         """

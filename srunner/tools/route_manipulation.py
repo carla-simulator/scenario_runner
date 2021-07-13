@@ -130,11 +130,10 @@ def downsample_route(route, sample_factor):
 
 def interpolate_trajectory(trajectory, hop_resolution=1.0):
     """
-        Given some raw keypoints interpolate a full dense trajectory to be used by the user.
-    :param world: an reference to the CARLA world so we can use the planner
-    :param waypoints_trajectory: the current coarse trajectory
-    :param hop_resolution: is the resolution, how dense is the provided trajectory going to be made
-    :return: the full interpolated route both in GPS coordinates and also in its original form.
+    Given some raw keypoints interpolate a full dense trajectory to be used by the user.
+    returns the full interpolated route both in GPS coordinates and also in its original form.
+    :param trajectory: the current coarse trajectory, as a list of carla.Location
+    :param hop_resolution: distance between points in the provided trajectory
     """
     interpolated_trace = []
     route = []
@@ -151,5 +150,5 @@ def interpolate_trajectory(trajectory, hop_resolution=1.0):
     for wp_tuple in route_with_options:
         route.append((wp_tuple[0].transform, wp_tuple[1]))
 
-    lat_ref, lon_ref = _get_latlon_ref(world)
+    lat_ref, lon_ref = _get_latlon_ref(CarlaDataProvider.get_world())
     return location_route_to_gps(route, lat_ref, lon_ref), route
