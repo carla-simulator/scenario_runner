@@ -142,7 +142,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
             added_dist -= 1
 
         # Add the junction part to the entry plan
-        middle_plan = self._route_planner.trace_route(self._entry_plan[-1][0], self._exit_plan[0][0])
+        middle_plan = self._route_planner.trace_route(
+            self._entry_plan[-1][0].transform.location, self._exit_plan[0][0].transform.location,)
         self._entry_plan.extend(middle_plan)
         self._target_location = self._entry_plan[-1][0].transform.location
 

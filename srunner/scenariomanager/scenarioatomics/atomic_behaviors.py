@@ -2482,7 +2482,7 @@ class ActorSourceSinkPair(AtomicBehavior):
 
     def initialise(self):
         self._grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
-        self._route = self._grp.trace_route(self._source_wp, self._sink_wp)
+        self._route = self._grp.trace_route(self._source_wp.transform.location, self._sink_wp.transform.location)
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
