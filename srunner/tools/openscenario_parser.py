@@ -124,7 +124,7 @@ class OpenScenarioParser(object):
 
         # Given by id
         if name.startswith("id="):
-            tl_id = name[3:]
+            tl_id = int(name[3:])
             for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
                 if carla_tl.id == tl_id:
                     traffic_light = carla_tl
@@ -695,7 +695,7 @@ class OpenScenarioParser(object):
             for triggering_entities in condition.find('ByEntityCondition').iter('TriggeringEntities'):
                 for entity in triggering_entities.iter('EntityRef'):
                     for actor in actor_list:
-                        if entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
+                        if actor is not None and entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
                             trigger_actor = actor
                             break
 

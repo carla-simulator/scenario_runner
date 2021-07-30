@@ -67,6 +67,8 @@ class ScenarioRunner(object):
     world = None
     manager = None
 
+    finished = False
+
     additional_scenario_module = None
 
     agent_instance = None
@@ -132,9 +134,6 @@ class ScenarioRunner(object):
         self._shutdown_requested = True
         if self.manager:
             self.manager.stop_scenario()
-            self._cleanup()
-            if not self.manager.get_running_status():
-                raise RuntimeError("Timeout occured during scenario execution")
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -168,6 +167,11 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
+        if self.finished:
+            return
+
+        self.finished = True
+
         # Simulation still running and in synchronous mode?
         if self.world is not None and self._args.sync:
             try:
@@ -186,7 +190,7 @@ class ScenarioRunner(object):
 
         for i, _ in enumerate(self.ego_vehicles):
             if self.ego_vehicles[i]:
-                if not self._args.waitForEgo:
+                if not self._args.waitForEgo and self.ego_vehicles[i] is not None and self.ego_vehicles[i].is_alive:
                     print("Destroying ego vehicle {}".format(self.ego_vehicles[i].id))
                     self.ego_vehicles[i].destroy()
                 self.ego_vehicles[i] = None

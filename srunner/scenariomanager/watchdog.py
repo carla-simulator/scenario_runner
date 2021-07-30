@@ -38,6 +38,7 @@ class Watchdog(object):
         self._timeout = timeout + 1.0
         self._interval = min(interval if interval is not None else self._timeout / 100, 1.0)
         self._failed = False
+        self._watchdog_stopped = False
 
     def start(self):
         """Start the watchdog"""
@@ -49,9 +50,10 @@ class Watchdog(object):
 
     def stop(self):
         """Stop the watchdog"""
-        if self._watchdog is not None:
+        if self._watchdog is not None and not self._watchdog_stopped:
             self.resume()  # If not resumed, the stop will block. Does nothing if already resumed
             self._watchdog.stop()
+            self._watchdog_stopped = True
 
     def pause(self):
         """Pause the watchdog"""
@@ -65,6 +67,9 @@ class Watchdog(object):
 
     def update(self):
         """Reset the watchdog."""
+        if self._watchdog_stopped:
+            return
+
         if self._watchdog is not None:
             self._watchdog.update()
 
