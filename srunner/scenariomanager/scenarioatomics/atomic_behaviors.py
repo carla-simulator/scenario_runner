@@ -189,6 +189,42 @@ class RunScript(AtomicBehavior):
         return new_status
 
 
+class ChangeParameter(AtomicBehavior):
+    """
+    This is an atomic behavior to change the osc parameter value.
+
+    Args:
+        parameter_ref (str): parameter name
+        value (any): ParameterRef or number
+    """
+
+    def __init__(self, parameter_ref, value, rule=None, name="ChangeParameter"):
+        super(ChangeParameter, self).__init__(name)
+        self.logger.debug("%s.__init__()" % self.__class__.__name__)
+        self._parameter_ref = parameter_ref
+        self._rule = rule
+        self._value = value
+
+    def update(self):
+        """
+        update value of global osc parameter.
+        """
+        old_value = CarlaDataProvider.get_osc_global_param_value(self._parameter_ref)
+
+        if self._rule == '+':
+            new_value = self._value + float(old_value)
+        elif self._rule == '*':
+            new_value = self._value * float(old_value)
+        else:
+            new_value = self._value
+
+        CarlaDataProvider.update_osc_global_params({self._parameter_ref: new_value})
+        new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+
 class ChangeWeather(AtomicBehavior):
 
     """

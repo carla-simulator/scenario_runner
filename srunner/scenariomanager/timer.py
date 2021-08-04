@@ -11,6 +11,7 @@ timeout behavior using the CARLA game time
 """
 
 import datetime
+import operator
 import py_trees
 
 
@@ -89,11 +90,10 @@ class SimulationTimeCondition(py_trees.behaviour.Behaviour):
     It uses the CARLA game time, not the system time which is used by
     the py_trees timer.
 
-    Returns, if the provided success_rule (greaterThan, lessThan, equalTo)
-    was successfully evaluated
+    Returns, if the provided rule was successfully evaluated
     """
 
-    def __init__(self, timeout, success_rule="greaterThan", name="SimulationTimeCondition"):
+    def __init__(self, timeout, comparison_operator=operator.gt, name="SimulationTimeCondition"):
         """
         Setup timeout
         """
@@ -101,10 +101,7 @@ class SimulationTimeCondition(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._timeout_value = timeout
         self._start_time = 0.0
-        self._success_rule = success_rule
-        self._ops = {"greaterThan": (lambda x, y: x > y),
-                     "equalTo": (lambda x, y: x == y),
-                     "lessThan": (lambda x, y: x < y)}
+        self._comparison_operator = comparison_operator
 
     def initialise(self):
         """
@@ -116,13 +113,13 @@ class SimulationTimeCondition(py_trees.behaviour.Behaviour):
     def update(self):
         """
         Get current game time, and compare it to the timeout value
-        Upon successfully comparison using the provided success_rule operator,
+        Upon successfully comparison using the provided comparison_operator,
         the status changes to SUCCESS
         """
 
         elapsed_time = GameTime.get_time() - self._start_time
 
-        if not self._ops[self._success_rule](elapsed_time, self._timeout_value):
+        if not self._comparison_operator(elapsed_time, self._timeout_value):
             new_status = py_trees.common.Status.RUNNING
         else:
             new_status = py_trees.common.Status.SUCCESS
