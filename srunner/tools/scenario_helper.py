@@ -659,29 +659,12 @@ def get_troad_from_transform(actor_transform):
     return t_road
 
 
-def get_distance_between_actors(target, current, distance_type="euclidianDistance", freespace=False,
-                                confirm_ahead=False):
+def get_distance_between_actors(current, target, distance_type="euclidianDistance", freespace=False,
+                                global_planner=None):
     """
     This function finds the distance between actors for different use cases described by distance_type and freespace
     attributes
     """
-    if confirm_ahead:
-        target_transform = CarlaDataProvider.get_transform(target)
-        current_transform = CarlaDataProvider.get_transform(current)
-
-        target_vector = np.array([target_transform.location.x - current_transform.location.x,
-                                  target_transform.location.y - current_transform.location.y])
-        norm_target = np.linalg.norm(target_vector)
-
-        fwd = current_transform.get_forward_vector()
-        forward_vector = np.array([fwd.x, fwd.y])
-        dot_product = np.dot(forward_vector, target_vector)
-        val = np.clip(dot_product / norm_target, -1., 1.) if norm_target >= 0.001 else np.clip(dot_product, -1., 1.)
-        d_angle = math.degrees(math.acos(val))
-        is_ahead = d_angle < 90
-
-        if not is_ahead:  # swap
-            current, target = target, current
 
     target_transform = CarlaDataProvider.get_transform(target)
     current_transform = CarlaDataProvider.get_transform(current)
@@ -693,34 +676,37 @@ def get_distance_between_actors(target, current, distance_type="euclidianDistanc
         if isinstance(target, (carla.Vehicle, carla.Walker)):
             extent_sum_x = target.bounding_box.extent.x + current.bounding_box.extent.x
             extent_sum_y = target.bounding_box.extent.y + current.bounding_box.extent.y
-    # TODO: overlaping condition in feeespace should be handled
     if distance_type == "longitudinal":
-        extra_distnace = 0
-        next_wp = current_wp
         if not current_wp.road_id == target_wp.road_id:
-            for _ in range(200):
-                wps = next_wp.next(1)
-                if next_wp:
-                    next_wp = wps[-1]
-                    if next_wp.road_id == target_wp.road_id:
-                        break
-                    extra_distnace += 1
-            distance = abs(extra_distnace + target_wp.s)
+            distance = 0
+            # Get the route
+            route = global_planner.trace_route(current_transform.location, target_transform.location)
+            # Get the distance of the route
+            for i in range(1, len(route)):
+                curr_loc = route[i][0].transform.location
+                prev_loc = route[i - 1][0].transform.location
+                distance += curr_loc.distance(prev_loc)
         else:
             distance = abs(current_wp.s - target_wp.s)
         if freespace:
-            distance = distance - extent_sum_x if distance > 0.0 else distance
+            distance = distance - extent_sum_x
     elif distance_type == "lateral":
         target_t = get_troad_from_transform(target_transform)
         current_t = get_troad_from_transform(current_transform)
         distance = abs(target_t - current_t)
         if freespace:
-            distance = distance - extent_sum_y if distance > 0.0 else distance
+            distance = distance - extent_sum_y
 
     elif distance_type in ["cartesianDistance", "euclidianDistance"]:
         distance = target_transform.location.distance(current_transform.location)
         if freespace:
-            distance = distance - extent_sum_x if distance > 0.0 else distance
+            distance = distance - extent_sum_x
+    else:
+        raise TypeError("unknown distance_type: {}".format(distance_type))
+
+    # distance will be negative for feeespace when there is overlap condition
+    # truncate to 0.0 when this happens
+    distance = 0.0 if distance < 0.0 else distance
 
     return distance
 

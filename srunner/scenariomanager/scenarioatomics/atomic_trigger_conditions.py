@@ -585,6 +585,11 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         self._freespace = freespace
         self._comparison_operator = comparison_operator
 
+        if distance_type == "longitudinal":
+            self._global_rp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 1.0)
+        else:
+            self._global_rp = None
+
     def update(self):
         """
         Check if the ego vehicle is within trigger distance to other actor
@@ -600,7 +605,8 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         distance = sr_tools.scenario_helper.get_distance_between_actors(self._actor,
                                                                         self._reference_actor,
                                                                         distance_type=self._distance_type,
-                                                                        freespace=self._freespace)
+                                                                        freespace=self._freespace,
+                                                                        global_planner=self._global_rp)
 
         if self._comparison_operator(distance, self._distance):
             new_status = py_trees.common.Status.SUCCESS

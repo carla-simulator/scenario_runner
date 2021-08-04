@@ -67,6 +67,8 @@ class ScenarioRunner(object):
     world = None
     manager = None
 
+    finished = False
+
     additional_scenario_module = None
 
     agent_instance = None
@@ -87,7 +89,6 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-        CarlaDataProvider.set_client(self.client)
 
         dist = pkg_resources.get_distribution("carla")
         if LooseVersion(dist.version) < LooseVersion('0.9.11'):
@@ -132,9 +133,6 @@ class ScenarioRunner(object):
         self._shutdown_requested = True
         if self.manager:
             self.manager.stop_scenario()
-            self._cleanup()
-            if not self.manager.get_running_status():
-                raise RuntimeError("Timeout occured during scenario execution")
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -168,6 +166,11 @@ class ScenarioRunner(object):
         """
         Remove and destroy all actors
         """
+        if self.finished:
+            return
+
+        self.finished = True
+
         # Simulation still running and in synchronous mode?
         if self.world is not None and self._args.sync:
             try:
@@ -186,7 +189,7 @@ class ScenarioRunner(object):
 
         for i, _ in enumerate(self.ego_vehicles):
             if self.ego_vehicles[i]:
-                if not self._args.waitForEgo:
+                if not self._args.waitForEgo and self.ego_vehicles[i] is not None and self.ego_vehicles[i].is_alive:
                     print("Destroying ego vehicle {}".format(self.ego_vehicles[i].id))
                     self.ego_vehicles[i].destroy()
                 self.ego_vehicles[i] = None
@@ -326,6 +329,8 @@ class ScenarioRunner(object):
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
+
+        CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
@@ -334,8 +339,9 @@ class ScenarioRunner(object):
         else:
             self.world.wait_for_tick()
 
-        if CarlaDataProvider.get_map().name != town and CarlaDataProvider.get_map().name != "OpenDriveMap":
-            print("The CARLA server uses the wrong map: {}".format(CarlaDataProvider.get_map().name))
+        map_name = CarlaDataProvider.get_map().name.split('/')[-1]
+        if map_name not in (town, "OpenDriveMap"):
+            print("The CARLA server uses the wrong map: {}".format(map_name))
             print("This scenario requires to use map: {}".format(town))
             return False
 
