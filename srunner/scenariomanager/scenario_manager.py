@@ -55,11 +55,11 @@ class ScenarioManager(object):
         self._debug_mode = debug_mode
         self._agent = None
         self._sync_mode = sync_mode
+        self._watchdog = None
+        self._timeout = timeout
+
         self._running = False
         self._timestamp_last_run = 0.0
-        self._timeout = timeout
-        self._watchdog = Watchdog(float(self._timeout))
-
         self.scenario_duration_system = 0.0
         self.scenario_duration_game = 0.0
         self.start_system_time = None
@@ -82,7 +82,9 @@ class ScenarioManager(object):
         This function triggers a proper termination of a scenario
         """
 
-        self._watchdog.stop()
+        if self._watchdog is not None:
+            self._watchdog.stop()
+            self._watchdog = None
 
         if self.scenario is not None:
             self.scenario.terminate()
@@ -121,6 +123,7 @@ class ScenarioManager(object):
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
 
+        self._watchdog = Watchdog(float(self._timeout))
         self._watchdog.start()
         self._running = True
 
@@ -133,8 +136,6 @@ class ScenarioManager(object):
                     timestamp = snapshot.timestamp
             if timestamp:
                 self._tick_scenario(timestamp)
-
-        self._watchdog.stop()
 
         self.cleanup()
 
