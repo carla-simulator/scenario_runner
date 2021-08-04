@@ -119,6 +119,11 @@ class WorldSR(World):
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
 
+        if self.sync:
+            self.world.tick()
+        else:
+            self.world.wait_for_tick()
+
     def tick(self, clock):
         if len(self.world.get_actors().filter(self.player_name)) < 1:
             return False
@@ -150,7 +155,7 @@ def game_loop(args):
         clock = pygame.time.Clock()
         while True:
             clock.tick_busy_loop(60)
-            if controller.parse_events(client, world, clock):
+            if controller.parse_events(client, world, clock, args.sync):
                 return
             if not world.tick(clock):
                 return
@@ -201,11 +206,29 @@ def main():
         metavar='WIDTHxHEIGHT',
         default='1280x720',
         help='window resolution (default: 1280x720)')
+    argparser.add_argument(
+        '--generation',
+        metavar='G',
+        default='2',
+        help='restrict to certain actor generation (values: "1","2","All" - default: "2")')
+    argparser.add_argument(
+        '--gamma',
+        default=2.2,
+        type=float,
+        help='Gamma correction of the camera (default: 2.2)')
+    argparser.add_argument(
+        '-s', '--seed',
+        help='Set seed for repeating executions (default: None)',
+        default=None,
+        type=int)
+    argparser.add_argument(
+        '--sync',
+        action='store_true',
+        help='Activate synchronous mode execution')
     args = argparser.parse_args()
 
     args.rolename = 'hero'      # Needed for CARLA version
     args.filter = "vehicle.*"   # Needed for CARLA version
-    args.gamma = 2.2   # Needed for CARLA version
     args.width, args.height = [int(x) for x in args.res.split('x')]
 
     log_level = logging.DEBUG if args.debug else logging.INFO

@@ -32,8 +32,7 @@ import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
-from agents.tools.misc import is_within_distance_ahead
+from agents.tools.misc import is_within_distance
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -758,9 +757,7 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         # Obtain final route, considering the routing option
         # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
-        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 2.0)
-        grp = GlobalRoutePlanner(dao)
-        grp.setup()
+        grp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 2.0)
         route = []
         for i, _ in enumerate(carla_route_elements):
             if carla_route_elements[i][1] == "shortest":
@@ -2872,9 +2869,7 @@ class KeepLongitudinalGap(AtomicBehavior):
         self._start_time = GameTime.get_time()
         actor_dict[self._actor.id].update_target_speed(self.max_speed, start_time=self._start_time)
 
-        dao = GlobalRoutePlannerDAO(CarlaDataProvider.get_world().get_map(), 1.0)
-        self._global_rp = GlobalRoutePlanner(dao)
-        self._global_rp.setup()
+        self._global_rp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 1.0)
 
         super(KeepLongitudinalGap, self).initialise()
 
@@ -2905,7 +2900,7 @@ class KeepLongitudinalGap(AtomicBehavior):
                                                                    global_planner=self._global_rp)
         actor_transform = CarlaDataProvider.get_transform(self._actor)
         ref_actor_transform = CarlaDataProvider.get_transform(self._reference_actor)
-        if is_within_distance_ahead(ref_actor_transform, actor_transform, float('inf')) and \
+        if is_within_distance(ref_actor_transform, actor_transform, float('inf'), [0, 90]) and \
                 operator.le(gap, self._gap):
             try:
                 factor = abs(actor_velocity - reference_velocity)/actor_velocity

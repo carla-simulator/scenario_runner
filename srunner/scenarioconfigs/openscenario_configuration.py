@@ -173,7 +173,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world.get_settings()
             wmap = world.get_map()
 
-        if world is None or (wmap is not None and wmap.name != self.town):
+        if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):
             if ".xodr" in self.town:
                 with open(self.town) as od_file:
                     data = od_file.read()

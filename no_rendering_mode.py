@@ -954,7 +954,7 @@ class ModuleWorld(object):
             'Server:  % 16s FPS' % self.server_fps,
             'Client:  % 16s FPS' % round(clock.get_fps()),
             'Simulation Time: % 12s' % datetime.timedelta(seconds=int(self.simulation_time)),
-            'Map Name:          %10s' % self.town_map.name,
+            'Map Name:          %10s' % self.town_map.name.split('/')[-1],
         ]
 
         module_info_text = module_info_text
