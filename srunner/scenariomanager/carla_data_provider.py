@@ -605,7 +605,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 if blueprint.has_tag('walker'):
                     # On imported OpenDRIVE maps, spawning of pedestrians can fail.
                     # By increasing the z-value the chances of success are increased.
-                    if not CarlaDataProvider._map.name.startswith('OpenDrive'):
+                    map_name = CarlaDataProvider._map.name.split("/")[-1]
+                    if not map_name.startswith('OpenDrive'):
                         _spawn_point.location.z = transform.location.z + 0.2
                     else:
                         _spawn_point.location.z = transform.location.z + 0.8
