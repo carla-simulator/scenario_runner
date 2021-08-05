@@ -17,22 +17,14 @@ import numpy as np
 from py_trees.meta import timeout
 
 import carla
-from agents.navigation.local_planner import RoadOption
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
-                                                                      ActorDestroy,
-                                                                      Idle,
-                                                                      SyncArrival,
-                                                                      BasicAgentBehavior,
-                                                                      TrafficLightFreezer)
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorSourceSinkPair, TrafficLightFreezer
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (WaitEndIntersection,
-                                                                               InTriggerDistanceToLocation)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
-                                           generate_target_waypoint,
+from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
                                            filter_junction_wp_direction,
                                            get_closest_traffic_light)
@@ -56,7 +48,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 10
         self._sink_dist = 10
-        self._exit_speed = 30
+        self._source_dist_interval = [5, 12]
+        self._opposite_speed = 30  # Km / h
         self._direction = 'left'
         self.timeout = timeout
         self._route_planner = GlobalRoutePlanner(self._map, 2.0)
@@ -89,7 +82,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         if not source_entry_wps:
             raise ValueError("Trying to find a lane in the {} direction but none was found".format(self._direction))
 
-        # GEt the rightmost lane
+        # Get the rightmost lane
         source_entry_wp = source_entry_wps[0]
         while True:
             right_wp = source_entry_wp.get_right_lane()
@@ -98,60 +91,18 @@ class SignalizedJunctionRightTurn(BasicScenario):
             source_entry_wp = right_wp
 
         # Get the source transform
-        self._entry_plan = []
-        source_wp = source_entry_wp
-        added_dist = self._source_dist
-        while added_dist > 0:
-            source_wps = source_wp.previous(1.0)
-            if len(source_wps) == 0:
-                raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
-            source_wp = source_wps[0]
-            self._entry_plan.insert(0, ([source_wp, RoadOption.LANEFOLLOW]))
-            added_dist -=1
+        source_wps = source_entry_wp.previous(self._source_dist)
+        if len(source_wps) == 0:
+            raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
+        self._source_wp = source_wps[0]
+        source_transform = self._source_wp.transform
 
-        # Spawn the actor and move it underground
-        source_transform = source_wp.transform
-        self._spawn_location = carla.Transform(
-            source_transform.location + carla.Location(z=0.1),
-            source_transform.rotation
-        )
-        opposite_actor = CarlaDataProvider.request_new_actor(
-            '*vehicle*', self._spawn_location, safe_blueprint=True)
-        if not opposite_actor:
-            raise Exception("Couldn't spawn the actor")
-        self.other_actors.append(opposite_actor)
-
-        opposite_transform = carla.Transform(
-            source_transform.location - carla.Location(z=500),
-            source_transform.rotation
-        )
-        opposite_actor.set_transform(opposite_transform)
-        opposite_actor.set_simulate_physics(enabled=False)
-
-        # Get the out of junction plan
+        # Get the sink location
         sink_exit_wp = generate_target_waypoint(self._map.get_waypoint(source_transform.location), 0)
-        self._exit_plan = []
-        next_wp = sink_exit_wp
-        added_dist = self._sink_dist
-        while added_dist > 0:
-            next_wps = next_wp.next(1.0)
-            if len(next_wps) == 0:
-                break
-            next_wp = next_wps[0]
-            self._exit_plan.append([next_wp, RoadOption.LANEFOLLOW])
-            added_dist -= 1
-
-        # Add the junction part to the entry plan
-        middle_plan = self._route_planner.trace_route(
-            self._entry_plan[-1][0].transform.location, self._exit_plan[0][0].transform.location,)
-        self._entry_plan.extend(middle_plan)
-        self._target_location = self._entry_plan[-1][0].transform.location
-
-        # Get the distance at which the synchronization stops
-        straight_collision_location = get_geometric_linear_intersection(
-            starting_wp.transform.location, source_entry_wp.transform.location)
-        self._sync_stop_dist = straight_collision_location.distance(self._entry_plan[-1][0].transform.location)
-        self._sync_stop_dist += straight_collision_location.distance(starting_wp.transform.location)
+        sink_wps = sink_exit_wp.next(self._sink_dist)
+        if len(sink_wps) == 0:
+            raise ValueError("Failed to find a sink location as a waypoint with no next was detected")
+        self._sink_wp = sink_wps[0]
 
         # Get the relevant traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
@@ -169,42 +120,18 @@ class SignalizedJunctionRightTurn(BasicScenario):
         Hero vehicle is turning right in an urban area, at a signalized intersection,
         while other actor coming straight from the left. The ego has to avoid colliding with it
         """
-        # First part of the behavior, synchronize the actors. Stops when close to the target location
-        sync_arrival = py_trees.composites.Parallel("Synchronize actors",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sync_arrival.add_child(
-            SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._target_location, self._entry_plan))
-        sync_arrival.add_child(
-            InTriggerDistanceToLocation(self.other_actors[0], self._target_location, self._sync_stop_dist))
-
-        # Second part, move the other actor out of the way
-        move_actor_exit = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        move_actor_exit.add_child(
-            BasicAgentBehavior(self.other_actors[0], plan=self._exit_plan, target_speed=self._exit_speed))
-        move_actor_exit.add_child(
-            WaitEndIntersection(self.other_actors[0]))
-        move_actor_exit.add_child(Idle(15))  # In case both actors crash and get stuck
-
-        # Behavior tree
-        sequence = py_trees.composites.Sequence()
-        sequence.add_child(sync_arrival)
-        sequence.add_child(move_actor_exit)
-
-        # Parallel behavior to freeze the traffic lights
-        main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        main_behavior.add_child(TrafficLightFreezer(self._tl_dict))
-        main_behavior.add_child(sequence)
-
-        root = py_trees.composites.Sequence()
-        if CarlaDataProvider.get_ego_vehicle_route():
-            root.add_child(Scenario9Manager(self._direction))
-        root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
-        root.add_child(main_behavior)
-        root.add_child(ActorDestroy(self.other_actors[0]))
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
+        root.add_child(ActorSourceSinkPair(
+            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._opposite_speed))
+        root.add_child(TrafficLightFreezer(self._tl_dict))
 
-        return root
+        sequence = py_trees.composites.Sequence("Sequence Behavior")
+        if CarlaDataProvider.get_ego_vehicle_route():
+            sequence.add_child(Scenario9Manager(self._direction))
+        sequence.add_child(root)
+
+        return sequence
 
     def _create_test_criteria(self):
         """
