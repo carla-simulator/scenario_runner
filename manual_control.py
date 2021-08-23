@@ -101,7 +101,7 @@ class WorldSR(World):
             time.sleep(1)
             possible_vehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in possible_vehicles:
-                if vehicle.attributes['role_name'] == "hero":
+                if vehicle.attributes['role_name'] == self.actor_role_name:
                     print("Ego vehicle found")
                     self.player = vehicle
                     break
@@ -201,9 +201,13 @@ def main():
         metavar='WIDTHxHEIGHT',
         default='1280x720',
         help='window resolution (default: 1280x720)')
+    argparser.add_argument(
+        '--rolename',
+        metavar='NAME',
+        default='hero',
+        help='role name of ego vehicle to control (default: "hero")')
     args = argparser.parse_args()
 
-    args.rolename = 'hero'      # Needed for CARLA version
     args.filter = "vehicle.*"   # Needed for CARLA version
     args.gamma = 2.2   # Needed for CARLA version
     args.width, args.height = [int(x) for x in args.res.split('x')]
