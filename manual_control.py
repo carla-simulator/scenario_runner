@@ -163,6 +163,9 @@ def game_loop(args):
             client.stop_recorder()
 
         if world is not None:
+            # prevent destruction of ego vehicle
+            if args.keep_ego_vehicle:
+                world.player = None
             world.destroy()
 
         pygame.quit()
@@ -206,6 +209,10 @@ def main():
         metavar='NAME',
         default='hero',
         help='role name of ego vehicle to control (default: "hero")')
+    argparser.add_argument(
+        '--keep_ego_vehicle',
+        action='store_true',
+        help='do not destroy ego vehicle on exit')
     args = argparser.parse_args()
 
     args.filter = "vehicle.*"   # Needed for CARLA version
