@@ -283,12 +283,16 @@ class SimpleVehicleControl(BasicControl):
                 target_speed = 0
 
         if target_speed < current_speed:
-            self._actor.set_light_state(carla.VehicleLightState.Brake)
+            light_state = self._actor.get_light_state()
+            light_state |= carla.VehicleLightState.Brake
+            self._actor.set_light_state(carla.VehicleLightState(light_state))
             if self._max_deceleration is not None:
                 target_speed = max(target_speed, current_speed - (current_time -
                                                                   self._last_update) * self._max_deceleration)
         else:
-            self._actor.set_light_state(carla.VehicleLightState.NONE)
+            light_state = self._actor.get_light_state()
+            light_state &= ~carla.VehicleLightState.Brake
+            self._actor.set_light_state(carla.VehicleLightState(light_state))
             if self._max_acceleration is not None:
                 tmp_speed = min(target_speed, current_speed + (current_time -
                                                                self._last_update) * self._max_acceleration)
