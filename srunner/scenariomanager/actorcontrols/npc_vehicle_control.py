@@ -111,8 +111,9 @@ class NpcVehicleControl(BasicControl):
 
         self._actor.apply_control(control)
 
+        current_speed = math.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
+
         if self._init_speed:
-            current_speed = math.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
 
             # If _init_speed is set, and the PID controller is not yet up to the point to take over,
             # we manually set the vehicle to drive with the correct velocity
@@ -121,3 +122,11 @@ class NpcVehicleControl(BasicControl):
                 vx = math.cos(yaw) * target_speed
                 vy = math.sin(yaw) * target_speed
                 self._actor.set_target_velocity(carla.Vector3D(vx, vy, 0))
+
+        light_state = self._actor.get_light_state()
+        if current_speed >= target_speed:
+            light_state |= carla.VehicleLightState.Brake
+        else:
+            light_state &= ~carla.VehicleLightState.Brake
+
+        self._actor.set_light_state(carla.VehicleLightState(light_state))

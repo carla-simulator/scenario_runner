@@ -571,11 +571,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         - actor_list: list of ActorConfigurationData
         """
 
-        SpawnActor = carla.command.SpawnActor               # pylint: disable=invalid-name
-        PhysicsCommand = carla.command.SetSimulatePhysics   # pylint: disable=invalid-name
-        FutureActor = carla.command.FutureActor             # pylint: disable=invalid-name
-        ApplyTransform = carla.command.ApplyTransform       # pylint: disable=invalid-name
-        SetAutopilot = carla.command.SetAutopilot           # pylint: disable=invalid-name
+        SpawnActor = carla.command.SpawnActor                      # pylint: disable=invalid-name
+        PhysicsCommand = carla.command.SetSimulatePhysics          # pylint: disable=invalid-name
+        FutureActor = carla.command.FutureActor                    # pylint: disable=invalid-name
+        ApplyTransform = carla.command.ApplyTransform              # pylint: disable=invalid-name
+        SetAutopilot = carla.command.SetAutopilot                  # pylint: disable=invalid-name
+        SetVehicleLightState = carla.command.SetVehicleLightState  # pylint: disable=invalid-name
 
         batch = []
 
@@ -616,10 +617,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             command = SpawnActor(blueprint, _spawn_point)
             command.then(SetAutopilot(FutureActor, actor.autopilot, CarlaDataProvider._traffic_manager_port))
 
-            if actor.category == 'misc':
-                command.then(PhysicsCommand(FutureActor, True))
-            elif actor.args is not None and 'physics' in actor.args and actor.args['physics'] == "off":
+            if actor.args is not None and 'physics' in actor.args and actor.args['physics'] == "off":
                 command.then(ApplyTransform(FutureActor, _spawn_point)).then(PhysicsCommand(FutureActor, False))
+            elif actor.category == 'misc':
+                command.then(PhysicsCommand(FutureActor, True))
+            if actor.args is not None and 'lights' in actor.args and actor.args['lights'] == "on":
+                command.then(SetVehicleLightState(FutureActor, carla.VehicleLightState.All))
 
             batch.append(command)
 
