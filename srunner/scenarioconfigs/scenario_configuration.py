@@ -19,7 +19,7 @@ class ActorConfigurationData(object):
     """
 
     def __init__(self, model, transform, rolename='other', speed=0, autopilot=False,
-                 random=False, color=None, category="car", args=None):
+                 random=False, color=None, category="car", args=None, controller=None):
         self.model = model
         self.rolename = rolename
         self.transform = transform
@@ -29,6 +29,7 @@ class ActorConfigurationData(object):
         self.color = color
         self.category = category
         self.args = args
+        self.controller = controller
 
     @staticmethod
     def parse_from_node(node, rolename):

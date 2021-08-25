@@ -26,12 +26,12 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ActorTransformSetterToOSCPosition,
                                                                       RunScript,
                                                                       ChangeWeather,
-                                                                      ChangeAutoPilot,
                                                                       ChangeRoadFriction,
                                                                       ChangeActorTargetSpeed,
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
                                                                       ChangeActorLateralMotion,
+                                                                      DeActivateActorControlComponents,
                                                                       ChangeActorLaneOffset,
                                                                       SyncArrivalOSC,
                                                                       KeepLongitudinalGap,
@@ -370,7 +370,7 @@ class OpenScenarioParser(object):
         return Weather(carla_weather, dtime, weather_animation)
 
     @staticmethod
-    def get_controller(xml_tree, catalogs):
+    def get_controller_from_action(xml_tree, catalogs):
         """
         Extract the object controller from the OSC XML or a catalog
 
@@ -405,6 +405,38 @@ class OpenScenarioParser(object):
         for child in override_action:
             if strtobool(child.attrib.get('active')):
                 raise NotImplementedError("Controller override actions are not yet supported")
+
+        return module, args
+
+    @staticmethod
+    def get_controller(xml_tree, catalogs):
+        """
+        Extract the object controller from the OSC XML or a catalog
+
+        Args:
+            xml_tree: Containing the controller information,
+                or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the EnvironmentAction
+
+        returns:
+           module: Python module containing the controller implementation
+           args: Dictonary with (key, value) parameters for the controller
+        """
+
+        properties = None
+        if xml_tree.find('Controller') is not None:
+            properties = xml_tree.find('Controller').find('Properties')
+        elif xml_tree.find("CatalogReference") is not None:
+            catalog_reference = xml_tree.find("CatalogReference")
+            properties = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference).find('Properties')
+
+        module = None
+        args = {}
+        for prop in properties:
+            if prop.attrib.get('name') == "module":
+                module = prop.attrib.get('value')
+            else:
+                args[prop.attrib.get('name')] = prop.attrib.get('value')
 
         return module, args
 
@@ -1189,13 +1221,19 @@ class OpenScenarioParser(object):
                     raise AttributeError("Unknown speed action")
             elif private_action.find('ActivateControllerAction') is not None:
                 private_action = private_action.find('ActivateControllerAction')
-                activate = strtobool(private_action.attrib.get('longitudinal'))
-                atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
+                lon_control = None
+                lat_control = None
+                if 'longitudinal' in private_action.attrib.keys():
+                    lon_control = strtobool(private_action.attrib.get('longitudinal'))
+                if 'lateral' in private_action.attrib.keys():
+                    lat_control = strtobool(private_action.attrib.get('lateral'))
+                atomic = DeActivateActorControlComponents(actor, lon_control, lat_control, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
                 controller_action = private_action.find('ControllerAction')
                 module, args = OpenScenarioParser.get_controller(controller_action, catalogs)
                 atomic = ChangeActorControl(actor, control_py_module=module, args=args,
-                                            scenario_file_path=OpenScenarioParser.osc_filepath)
+                                            scenario_file_path=OpenScenarioParser.osc_filepath,
+                                            name=maneuver_name)
             elif private_action.find('TeleportAction') is not None:
                 teleport_action = private_action.find('TeleportAction')
                 position = teleport_action.find('Position')
