@@ -685,13 +685,20 @@ class OpenScenarioParser(object):
                 relative_waypoint = carla_map.get_waypoint(actor_transform.location)
 
                 road_id, ref_lane_id, ref_s = relative_waypoint.road_id, relative_waypoint.lane_id, relative_waypoint.s
-                target_lane_id, target_s = int(ref_lane_id + dlane), ref_s + ds
-                waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, target_lane_id, target_s)
+                target_lane_id = int(ref_lane_id + dlane)
+                waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, target_lane_id, ref_s)
+                if waypoint is not None:
+                    if ds < 0:
+                        ds = (-1.0) * ds
+                        waypoint = waypoint.previous(ds)[-1]
+                    else:
+                        waypoint = waypoint.next(ds)[-1]
+
                 if waypoint is None:
                     raise AttributeError("RelativeLanePosition " +
-                                         "'roadId={} with s={} and lane_id={}' does not exist".format(road_id,
-                                                                                                      target_s,
-                                                                                                      target_lane_id))
+                                         "'roadId={} with ds={} and lane_id={}' does not exist".format(road_id,
+                                                                                                       ds,
+                                                                                                       target_lane_id))
 
                 transform = waypoint.transform
                 transform.rotation.yaw = yaw

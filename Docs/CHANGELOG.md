@@ -27,6 +27,7 @@
     - Added Construction setup scenario.
 ### :bug: Bug Fixes
 * Fixed LaneOffset (+ vs. -) for OpenSCENARIO
+* Fixed RelativeLanePosition for OpenSCENARIO causing exception when using ds != 0
 * Fixed bug at the Getting Started docs which caused an import error
 * Fixed neverending lane change maneuver in OpenSCENARIO
 * Fixed bug causing the spawning of an actor with `request_new_actor` to never activate the autopilot.
