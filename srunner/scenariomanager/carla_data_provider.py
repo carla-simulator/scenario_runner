@@ -46,11 +46,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     In addition it provides access to the map and the transform of all traffic lights
     """
 
-    _actor_velocity_map = dict()
-    _actor_location_map = dict()
-    _actor_transform_map = dict()
-    _traffic_light_map = dict()
-    _carla_actor_pool = dict()
+    _actor_velocity_map = {}
+    _actor_location_map = {}
+    _actor_transform_map = {}
+    _traffic_light_map = {}
+    _carla_actor_pool = {}
     _client = None
     _world = None
     _map = None
@@ -797,7 +797,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._world = None
         CarlaDataProvider._sync_flag = False
         CarlaDataProvider._ego_vehicle_route = None
-        CarlaDataProvider._carla_actor_pool = dict()
+        CarlaDataProvider._carla_actor_pool = {}
         CarlaDataProvider._client = None
         CarlaDataProvider._spawn_points = None
         CarlaDataProvider._spawn_index = 0

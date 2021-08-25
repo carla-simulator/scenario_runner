@@ -111,7 +111,7 @@ class OpenScenarioParser(object):
         "OFF": carla.TrafficLightState.Off,
     }
 
-    global_osc_parameters = dict()
+    global_osc_parameters = {}
     use_carla_coordinate_system = False
     osc_filepath = None
 
@@ -182,7 +182,7 @@ class OpenScenarioParser(object):
             updated xml_tree, dictonary containing all parameters and their values
         """
 
-        parameter_dict = dict()
+        parameter_dict = {}
         parameters = xml_tree.find('ParameterDeclarations')
 
         if parameters is None and not parameter_dict:
@@ -254,7 +254,7 @@ class OpenScenarioParser(object):
             updated entry_instance with updated parameter values
         """
 
-        parameter_dict = dict()
+        parameter_dict = {}
         for elem in entry_instance.iter():
             if elem.find('ParameterDeclarations') is not None:
                 parameters = elem.find('ParameterDeclarations')
@@ -690,7 +690,7 @@ class OpenScenarioParser(object):
         delay_atomic = None
         condition_name = condition.attrib.get('name')
 
-        if condition.attrib.get('delay') is not None and str(condition.attrib.get('delay')) != '0':
+        if condition.attrib.get('delay') is not None and float(condition.attrib.get('delay')) != 0:
             delay = float(condition.attrib.get('delay'))
             delay_atomic = TimeOut(delay)
 

@@ -34,7 +34,7 @@ class RouteParser(object):
         :return:
         """
 
-        with open(annotation_filename, 'r') as f:
+        with open(annotation_filename, 'r', encoding='utf-8') as f:
             annotation_dict = json.loads(f.read())
 
         final_dict = {}

@@ -414,7 +414,7 @@ def choose_at_junction(current_waypoint, next_choices, direction=0):
             y=math.sin(math.radians(current_transform.rotation.yaw)))
     current_vector = vector(current_location, projected_location)
     cross_list = []
-    cross_to_waypoint = dict()
+    cross_to_waypoint = {}
     for waypoint in next_choices:
         waypoint = waypoint.next(10)[0]
         select_vector = vector(current_location, waypoint.transform.location)

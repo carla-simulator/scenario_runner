@@ -276,7 +276,7 @@ class ScenarioRunner(object):
         file_name = name[:-4] + ".json"
 
         # Filter the attributes that aren't JSON serializable
-        with open('temp.json', 'w') as fp:
+        with open('temp.json', 'w', encoding='utf-8') as fp:
 
             criteria_dict = {}
             for criterion in criteria:
@@ -296,7 +296,7 @@ class ScenarioRunner(object):
         os.remove('temp.json')
 
         # Save the criteria dictionary into a .json file
-        with open(file_name, 'w') as fp:
+        with open(file_name, 'w', encoding='utf-8') as fp:
             json.dump(criteria_dict, fp, sort_keys=False, indent=4)
 
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
@@ -484,7 +484,7 @@ class ScenarioRunner(object):
             self._cleanup()
             return False
 
-        openscenario_params = dict()
+        openscenario_params = {}
         if self._args.openscenarioparams is not None:
             for entry in self._args.openscenarioparams.split(','):
                 [key, val] = [m.strip() for m in entry.split(':')]
