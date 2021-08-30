@@ -41,7 +41,7 @@ from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
-VERSION = '0.9.11'
+VERSION = '0.9.12'
 
 
 class ScenarioRunner(object):
@@ -91,8 +91,8 @@ class ScenarioRunner(object):
         self.client.set_timeout(self.client_timeout)
 
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.11'):
-            raise ImportError("CARLA version 0.9.11 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
+            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)

@@ -1,5 +1,6 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.12](#carla-scenariorunner-0912)
 * [CARLA ScenarioRunner 0.9.11](#carla-scenariorunner-0911)
 * [CARLA ScenarioRunner 0.9.10](#carla-scenariorunner-0910)
 * [CARLA ScenarioRunner 0.9.9](#carla-scenariorunner-099)
@@ -10,7 +11,9 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
-## Latest Changes
+## Latest changes
+
+## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Added support for LongitudinalDistanceAction
