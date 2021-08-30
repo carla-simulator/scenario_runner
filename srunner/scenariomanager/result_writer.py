@@ -57,7 +57,7 @@ class ResultOutputProvider(object):
 
         output = self.create_output_text()
         if self._filename is not None:
-            with open(self._filename, 'w') as fd:
+            with open(self._filename, 'w', encoding='utf-8') as fd:
                 fd.write(output)
         if self._stdout:
             print(output)
@@ -203,7 +203,7 @@ class ResultOutputProvider(object):
             "criteria": json_list
         }
 
-        with open(self._json, "w") as fp:
+        with open(self._json, "w", encoding='utf-8') as fp:
             json.dump(result_object, fp, indent=4)
 
     def _write_to_junit(self):
@@ -222,7 +222,7 @@ class ResultOutputProvider(object):
         if self._data.scenario_duration_game >= self._data.scenario.timeout:
             failure_count += 1
 
-        with open(self._junit, "w") as junit_file:
+        with open(self._junit, "w", encoding='utf-8') as junit_file:
 
             junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
