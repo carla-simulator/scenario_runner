@@ -172,7 +172,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sync_arrival.add_child(
             SyncArrival(self.other_actors[0], self.ego_vehicles[0], self._collision_location, self._entry_plan))
         sync_arrival.add_child(
-            InTriggerDistanceToLocation(self.other_actors[0], self._collision_location, self._sync_stop_dist))
+            InTriggerDistanceToLocation(self.ego_vehicles[0], self._collision_location, self._sync_stop_dist))
 
         # Second part, move the other actor out of the way
         move_actor_exit = py_trees.composites.Parallel(

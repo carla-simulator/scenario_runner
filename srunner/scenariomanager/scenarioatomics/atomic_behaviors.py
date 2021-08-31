@@ -1578,24 +1578,83 @@ class SyncArrival(AtomicBehavior):
           certain distance, etc.
     """
 
-    def __init__(self, actor, actor_reference, target_location, plan=[], name="SyncArrival"):
+    def __init__(self, actor, actor_reference, target_location, plan=[], use_front=[], name="SyncArrival"):
         """
         Setup required parameters
         """
         super(SyncArrival, self).__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._control = carla.VehicleControl()
         self._actor_reference = actor_reference
         self._target_location = target_location
-        self._use_agent = True if plan else False
+        self._threshold = 0.1
+        self._use_front = use_front
         self._plan = plan
-        self._agent = None
 
-        self._control.steering = 0
+        if isinstance(self._actor, carla.Vehicle):
+            if plan:
+                self._plan = plan
+            else:
+                # Create a plan with only the target waypoint
+                target_waypoint = CarlaDataProvider.get_map().get_waypoint(target_location)
+                self._plan = [[target_waypoint, RoadOption.LANEFOLLOW]]
+
+            self._control = carla.VehicleControl()
+
+        elif isinstance(self._actor, carla.Walker):
+            if plan:
+                raise ValueError("SyncArrival doesn't support controlling walkers with a plan")
+
+            self._control = carla.WalkerControl()
+            heading_direction = target_location - self._actor.get_location()
+            heading_direction.z = 0
+            self._control.direction = heading_direction.make_unit_vector()
+
+    def _get_actor_location(self, actor):
+        if self._use_front:
+            heading_vector = CarlaDataProvider.get_transform(actor).get_forward_vector()
+            extent = actor.bounding_box.extent.x
+            offset_location = carla.Location(extent * heading_vector.x, extent * heading_vector.y)
+            return CarlaDataProvider.get_location(actor) + offset_location
+        else:
+            return CarlaDataProvider.get_location(actor)
+
+    def _get_sync_speed(self):
+        """Calculates the sync velocity of the actor"""
+        # Get the reference parameters
+        ref_loc = self._get_actor_location(self._actor_reference)
+        distance_ref = calculate_distance(ref_loc, self._target_location)
+        velocity_ref = CarlaDataProvider.get_velocity(self._actor_reference)
+        time_ref = distance_ref / velocity_ref if velocity_ref > 0 else float('inf')
+
+        # Get the actor speed
+        actor_loc = self._get_actor_location(self._actor)
+        sync_velocity = calculate_distance(actor_loc, self._target_location) / time_ref
+        return sync_velocity
+
+    def _apply_sync_speed(self, sync_velocity, force_speed=False):
+        """
+        Applies the necessary commands to move at that speed.
+        By default the control is used but if a high speed difference is detected,
+        the velocity is hardcoded overwriting the physics constraints
+        """
+        # actor_speed = CarlaDataProvider.get_velocity(self._actor)
+        # speed_diff = abs(actor_speed - sync_velocity) / sync_velocity if sync_velocity != 0 else 0
+
+        if force_speed:
+            yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
+            self._actor.set_target_velocity(carla.Vector3D(
+                math.cos(yaw) * sync_velocity, math.sin(yaw) * sync_velocity, 0))
+        else:
+            if isinstance(self._actor, carla.Vehicle):
+                self._agent.set_target_speed(3.6 * sync_velocity)  # Agents use Km / h
+                self._control = self._agent.run_step()
+            elif isinstance(self._actor, carla.Walker):
+                self._control.speed = sync_velocity
+            self._actor.apply_control(self._control)
 
     def initialise(self):
-        """Initialises the agents, if needed"""
-        if self._use_agent:
+        """Initialises the agent, if needed"""
+        if isinstance(self._actor, carla.Vehicle):
             opt_dict = {
                 'max_brake': 1,
                 'max_steering': 1,
@@ -1604,28 +1663,9 @@ class SyncArrival(AtomicBehavior):
             self._agent = BasicAgent(self._actor, opt_dict=opt_dict)
             self._agent.set_global_plan(self._plan)
             self._agent.ignore_traffic_lights(True)
-        else:
-            self._agent = PIDLongitudinalController(self._actor)
 
-        # First tick sets the actor speed to a
-        distance_reference = calculate_distance(
-            CarlaDataProvider.get_location(self._actor_reference), self._target_location)
-        velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
-
-        if velocity_reference > 0:
-            time_reference = distance_reference / velocity_reference
-        else:
-            time_reference = float('inf')
-
-        distance = calculate_distance(
-            CarlaDataProvider.get_location(self._actor), self._target_location)
-        sync_velocity = 3.6 * distance / time_reference
-
-        starting_velocity = max(0, sync_velocity - 5)
-
-        yaw = self._actor.get_transform().rotation.yaw * (math.pi / 180)
-        self._actor.set_target_velocity(
-            carla.Vector3D(math.cos(yaw) * starting_velocity, math.sin(yaw) * starting_velocity, 0))
+        sync_velocity = self._get_sync_speed()
+        self._apply_sync_speed(sync_velocity, force_speed=True)
 
     def update(self):
         """
@@ -1633,32 +1673,9 @@ class SyncArrival(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        # Get the time until the reference actor reaches the target location
-        distance_reference = calculate_distance(
-            CarlaDataProvider.get_location(self._actor_reference), self._target_location)
-        velocity_reference = CarlaDataProvider.get_velocity(self._actor_reference)
-        time_reference = float('inf')
-        if velocity_reference > 0:
-            time_reference = distance_reference / velocity_reference
-
-        # Get the synchronization velocity of the actor and apply it
-        distance = calculate_distance(
-            CarlaDataProvider.get_location(self._actor), self._target_location)
-        sync_velocity = 3.6 * distance / time_reference
-
-        if self._use_agent:
-            self._agent.set_target_speed(sync_velocity)
-            self._control = self._agent.run_step()
-        else:
-            control_value = self._agent.run_step(sync_velocity)
-            if control_value > 0:
-                self._control.throttle = control_value
-                self._control.brake = 0
-            else:
-                self._control.throttle = 0
-                self._control.brake = abs(control_value)
-
-        self._actor.apply_control(self._control)
+        # Get the speed needed to synchronize the actors
+        sync_velocity = self._get_sync_speed()
+        self._apply_sync_speed(sync_velocity)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
@@ -1669,8 +1686,11 @@ class SyncArrival(AtomicBehavior):
         to avoid further acceleration.
         """
         if self._actor is not None and self._actor.is_alive:
-            self._control.throttle = 0.0
-            self._control.brake = 0.0
+            if isinstance(self._actor, carla.Vehicle):
+                self._control.throttle = 0.0
+                self._control.brake = 0.0
+            elif isinstance(self._actor, carla.Walker):
+                self._control.speed = 0
             self._actor.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
 
@@ -2508,7 +2528,7 @@ class ActorSourceSinkPair(AtomicBehavior):
         if distance > self._spawn_dist:
             # Create a new actor
             spawn_transform = carla.Transform(
-                self._source_transform.location + carla.Location(z=0.2),
+                self._source_transform.location + carla.Location(z=0.5),
                 self._source_transform.rotation
             )
             actor = CarlaDataProvider.request_new_actor(

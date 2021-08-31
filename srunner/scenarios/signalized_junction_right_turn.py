@@ -48,7 +48,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 10
         self._sink_dist = 10
-        self._source_dist_interval = [5, 12]
+        self._source_dist_interval = [10, 20]
         self._opposite_speed = 30  # Km / h
         self._direction = 'left'
         self.timeout = timeout
