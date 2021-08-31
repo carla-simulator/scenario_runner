@@ -41,7 +41,7 @@ from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
-VERSION = '0.9.11'
+VERSION = '0.9.12'
 
 
 class ScenarioRunner(object):
@@ -89,11 +89,10 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-        CarlaDataProvider.set_client(self.client)
 
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.11'):
-            raise ImportError("CARLA version 0.9.11 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
+            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -330,6 +329,8 @@ class ScenarioRunner(object):
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
+
+        CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
 
         # Wait for the world to be ready
@@ -338,8 +339,9 @@ class ScenarioRunner(object):
         else:
             self.world.wait_for_tick()
 
-        if CarlaDataProvider.get_map().name != town and CarlaDataProvider.get_map().name != "OpenDriveMap":
-            print("The CARLA server uses the wrong map: {}".format(CarlaDataProvider.get_map().name))
+        map_name = CarlaDataProvider.get_map().name.split('/')[-1]
+        if map_name not in (town, "OpenDriveMap"):
+            print("The CARLA server uses the wrong map: {}".format(map_name))
             print("This scenario requires to use map: {}".format(town))
             return False
 
