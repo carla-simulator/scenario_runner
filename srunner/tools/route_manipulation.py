@@ -137,6 +137,9 @@ def interpolate_trajectory(trajectory, hop_resolution=1.0):
     :return: the full interpolated route both in GPS coordinates and also in its original form.
     """
     interpolated_trace = []
+
+    grp = GlobalRoutePlanner(world.get_map(), hop_resolution)
+    # Obtain route plan
     route = []
 
     prev_wp = None

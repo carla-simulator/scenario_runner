@@ -1,5 +1,6 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.12](#carla-scenariorunner-0912)
 * [CARLA ScenarioRunner 0.9.11](#carla-scenariorunner-0911)
 * [CARLA ScenarioRunner 0.9.10](#carla-scenariorunner-0910)
 * [CARLA ScenarioRunner 0.9.9](#carla-scenariorunner-099)
@@ -10,7 +11,9 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
-## Latest Changes
+## Latest changes
+
+## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Added support for LongitudinalDistanceAction
@@ -25,9 +28,11 @@
     - Added Construction setup scenario.
 ### :bug: Bug Fixes
 * Fixed LaneOffset (+ vs. -) for OpenSCENARIO
+* Fixed RelativeLanePosition for OpenSCENARIO causing exception when using ds != 0
 * Fixed bug at the Getting Started docs which caused an import error
 * Fixed neverending lane change maneuver in OpenSCENARIO
 * Fixed bug causing the spawning of an actor with `request_new_actor` to never activate the autopilot.
+* Fixed handling of evaluation criteria in OpenSCENARIO (using a delay value of .0 caused an exception)
 ### :ghost: Maintenance
 * Extended SimpleVehicleController (OSC) to handle traffic lights
 * Generalized visualizer attached to OSC controllers

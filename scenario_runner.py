@@ -41,7 +41,7 @@ from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
-VERSION = '0.9.11'
+VERSION = '0.9.12'
 
 
 class ScenarioRunner(object):
@@ -91,8 +91,8 @@ class ScenarioRunner(object):
         self.client.set_timeout(self.client_timeout)
 
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.11'):
-            raise ImportError("CARLA version 0.9.11 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
+            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -275,7 +275,7 @@ class ScenarioRunner(object):
         file_name = name[:-4] + ".json"
 
         # Filter the attributes that aren't JSON serializable
-        with open('temp.json', 'w') as fp:
+        with open('temp.json', 'w', encoding='utf-8') as fp:
 
             criteria_dict = {}
             for criterion in criteria:
@@ -295,7 +295,7 @@ class ScenarioRunner(object):
         os.remove('temp.json')
 
         # Save the criteria dictionary into a .json file
-        with open(file_name, 'w') as fp:
+        with open(file_name, 'w', encoding='utf-8') as fp:
             json.dump(criteria_dict, fp, sort_keys=False, indent=4)
 
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
@@ -486,7 +486,7 @@ class ScenarioRunner(object):
             self._cleanup()
             return False
 
-        openscenario_params = dict()
+        openscenario_params = {}
         if self._args.openscenarioparams is not None:
             for entry in self._args.openscenarioparams.split(','):
                 [key, val] = [m.strip() for m in entry.split(':')]

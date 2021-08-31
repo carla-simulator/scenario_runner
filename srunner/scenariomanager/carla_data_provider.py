@@ -46,11 +46,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     In addition it provides access to the map and the transform of all traffic lights
     """
 
-    _actor_velocity_map = dict()
-    _actor_location_map = dict()
-    _actor_transform_map = dict()
-    _traffic_light_map = dict()
-    _carla_actor_pool = dict()
+    _actor_velocity_map = {}
+    _actor_location_map = {}
+    _actor_transform_map = {}
+    _traffic_light_map = {}
+    _carla_actor_pool = {}
     _client = None
     _world = None
     _map = None
@@ -571,11 +571,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         - actor_list: list of ActorConfigurationData
         """
 
-        SpawnActor = carla.command.SpawnActor               # pylint: disable=invalid-name
-        PhysicsCommand = carla.command.SetSimulatePhysics   # pylint: disable=invalid-name
-        FutureActor = carla.command.FutureActor             # pylint: disable=invalid-name
-        ApplyTransform = carla.command.ApplyTransform       # pylint: disable=invalid-name
-        SetAutopilot = carla.command.SetAutopilot           # pylint: disable=invalid-name
+        SpawnActor = carla.command.SpawnActor                      # pylint: disable=invalid-name
+        PhysicsCommand = carla.command.SetSimulatePhysics          # pylint: disable=invalid-name
+        FutureActor = carla.command.FutureActor                    # pylint: disable=invalid-name
+        ApplyTransform = carla.command.ApplyTransform              # pylint: disable=invalid-name
+        SetAutopilot = carla.command.SetAutopilot                  # pylint: disable=invalid-name
+        SetVehicleLightState = carla.command.SetVehicleLightState  # pylint: disable=invalid-name
 
         batch = []
 
@@ -617,10 +618,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             command = SpawnActor(blueprint, _spawn_point)
             command.then(SetAutopilot(FutureActor, actor.autopilot, CarlaDataProvider._traffic_manager_port))
 
-            if actor.category == 'misc':
-                command.then(PhysicsCommand(FutureActor, True))
-            elif actor.args is not None and 'physics' in actor.args and actor.args['physics'] == "off":
+            if actor.args is not None and 'physics' in actor.args and actor.args['physics'] == "off":
                 command.then(ApplyTransform(FutureActor, _spawn_point)).then(PhysicsCommand(FutureActor, False))
+            elif actor.category == 'misc':
+                command.then(PhysicsCommand(FutureActor, True))
+            if actor.args is not None and 'lights' in actor.args and actor.args['lights'] == "on":
+                command.then(SetVehicleLightState(FutureActor, carla.VehicleLightState.All))
 
             batch.append(command)
 
@@ -798,7 +801,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._world = None
         CarlaDataProvider._sync_flag = False
         CarlaDataProvider._ego_vehicle_route = None
-        CarlaDataProvider._carla_actor_pool = dict()
+        CarlaDataProvider._carla_actor_pool = {}
         CarlaDataProvider._client = None
         CarlaDataProvider._spawn_points = None
         CarlaDataProvider._spawn_index = 0

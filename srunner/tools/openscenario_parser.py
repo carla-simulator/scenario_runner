@@ -111,7 +111,7 @@ class OpenScenarioParser(object):
         "OFF": carla.TrafficLightState.Off,
     }
 
-    global_osc_parameters = dict()
+    global_osc_parameters = {}
     use_carla_coordinate_system = False
     osc_filepath = None
 
@@ -182,7 +182,7 @@ class OpenScenarioParser(object):
             updated xml_tree, dictonary containing all parameters and their values
         """
 
-        parameter_dict = dict()
+        parameter_dict = {}
         parameters = xml_tree.find('ParameterDeclarations')
 
         if parameters is None and not parameter_dict:
@@ -254,7 +254,7 @@ class OpenScenarioParser(object):
             updated entry_instance with updated parameter values
         """
 
-        parameter_dict = dict()
+        parameter_dict = {}
         for elem in entry_instance.iter():
             if elem.find('ParameterDeclarations') is not None:
                 parameters = elem.find('ParameterDeclarations')
@@ -554,13 +554,20 @@ class OpenScenarioParser(object):
                 relative_waypoint = carla_map.get_waypoint(actor_transform.location)
 
                 road_id, ref_lane_id, ref_s = relative_waypoint.road_id, relative_waypoint.lane_id, relative_waypoint.s
-                target_lane_id, target_s = int(ref_lane_id + dlane), ref_s + ds
-                waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, target_lane_id, target_s)
+                target_lane_id = int(ref_lane_id + dlane)
+                waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, target_lane_id, ref_s)
+                if waypoint is not None:
+                    if ds < 0:
+                        ds = (-1.0) * ds
+                        waypoint = waypoint.previous(ds)[-1]
+                    else:
+                        waypoint = waypoint.next(ds)[-1]
+
                 if waypoint is None:
                     raise AttributeError("RelativeLanePosition " +
-                                         "'roadId={} with s={} and lane_id={}' does not exist".format(road_id,
-                                                                                                      target_s,
-                                                                                                      target_lane_id))
+                                         "'roadId={} with ds={} and lane_id={}' does not exist".format(road_id,
+                                                                                                       ds,
+                                                                                                       target_lane_id))
 
                 transform = waypoint.transform
                 transform.rotation.yaw = yaw
@@ -683,7 +690,7 @@ class OpenScenarioParser(object):
         delay_atomic = None
         condition_name = condition.attrib.get('name')
 
-        if condition.attrib.get('delay') is not None and str(condition.attrib.get('delay')) != '0':
+        if condition.attrib.get('delay') is not None and float(condition.attrib.get('delay')) != 0:
             delay = float(condition.attrib.get('delay'))
             delay_atomic = TimeOut(delay)
 

@@ -101,7 +101,7 @@ class WorldSR(World):
             time.sleep(1)
             possible_vehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in possible_vehicles:
-                if vehicle.attributes['role_name'] == "hero":
+                if vehicle.attributes['role_name'] == self.actor_role_name:
                     print("Ego vehicle found")
                     self.player = vehicle
                     break
@@ -168,6 +168,9 @@ def game_loop(args):
             client.stop_recorder()
 
         if world is not None:
+            # prevent destruction of ego vehicle
+            if args.keep_ego_vehicle:
+                world.player = None
             world.destroy()
 
         pygame.quit()
@@ -225,9 +228,17 @@ def main():
         '--sync',
         action='store_true',
         help='Activate synchronous mode execution')
+    argparser.add_argument(
+        '--rolename',
+        metavar='NAME',
+        default='hero',
+        help='role name of ego vehicle to control (default: "hero")')
+    argparser.add_argument(
+        '--keep_ego_vehicle',
+        action='store_true',
+        help='do not destroy ego vehicle on exit')
     args = argparser.parse_args()
 
-    args.rolename = 'hero'      # Needed for CARLA version
     args.filter = "vehicle.*"   # Needed for CARLA version
     args.width, args.height = [int(x) for x in args.res.split('x')]
 

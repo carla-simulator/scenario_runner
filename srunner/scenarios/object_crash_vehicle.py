@@ -221,7 +221,6 @@ class DynamicObjectCrossing(BasicScenario):
             self._adversary_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
             adversary = CarlaDataProvider.request_new_actor(self._adversary_type, self._adversary_transform)
             if adversary is None:
-                print("Failed (walker)")
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
                 continue
@@ -232,7 +231,6 @@ class DynamicObjectCrossing(BasicScenario):
             self._blocker_transform = self._get_sidewalk_transform(blocker_wp, offset)
             blocker = CarlaDataProvider.request_new_actor(self._blocker_type, self._blocker_transform)
             if not blocker:
-                print("Failed (blocker)")
                 adversary.destroy()
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
