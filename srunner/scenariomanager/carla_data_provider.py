@@ -410,7 +410,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
 
     @staticmethod
-    def create_blueprint(model, rolename='scenario', color=None, actor_category="car", safe=False):
+    def create_blueprint(model, rolename='scenario', color=None, actor_category="car", actor_args={}, safe=False):
         """
         Function to setup the blueprint of an actor given its model and other relevant parameters
         """
@@ -474,9 +474,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 color = CarlaDataProvider._rng.choice(blueprint.get_attribute('color').recommended_values)
                 blueprint.set_attribute('color', color)
 
-        # Make pedestrians mortal
+        # Make actor mortal or invincible
         if blueprint.has_attribute('is_invincible'):
-            blueprint.set_attribute('is_invincible', 'false')
+            if 'invincible' in actor_args and actor_args['invincible'] == "on":
+                blueprint.set_attribute('is_invincible', 'true')
+            else:
+                blueprint.set_attribute('is_invincible', 'false')
 
         # Set the rolename
         if blueprint.has_attribute('role_name'):
@@ -521,7 +524,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         This method tries to create a new actor, returning it if successful (None otherwise).
         """
-        blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, safe_blueprint)
+        blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, safe=safe_blueprint)
 
         if random_location:
             actor = None
@@ -586,7 +589,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             # Get the blueprint
             blueprint = CarlaDataProvider.create_blueprint(
-                actor.model, actor.rolename, actor.color, actor.category, safe_blueprint)
+                actor.model, actor.rolename, actor.color, actor.category, actor.args, safe_blueprint)
 
             # Get the spawn point
             transform = actor.transform
