@@ -9,6 +9,7 @@
 This module provides an example control for vehicles
 """
 
+from distutils.util import strtobool
 import math
 
 import carla
@@ -43,7 +44,37 @@ class NpcVehicleControl(BasicControl):
         if self._waypoints:
             self._update_plan()
 
+        self._obstacle_sensor = None
+        self._obstacle_distance = float('inf')
+        self._obstacle_actor = None
+        self._consider_obstacles = False
+        self._proximity_threshold = float('inf')
         self._brake_lights_active = False
+
+        if args and 'consider_obstacles' in args and strtobool(args['consider_obstacles']):
+            self._consider_obstacles = strtobool(args['consider_obstacles'])
+            bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.other.obstacle')
+            bp.set_attribute('distance', '250')
+            if args and 'proximity_threshold' in args:
+                self._proximity_threshold = float(args['proximity_threshold'])
+                bp.set_attribute('distance', str(max(float(args['proximity_threshold']), 250)))
+            bp.set_attribute('hit_radius', '1')
+            bp.set_attribute('only_dynamics', 'True')
+            self._obstacle_sensor = CarlaDataProvider.get_world().spawn_actor(
+                bp, carla.Transform(carla.Location(x=self._actor.bounding_box.extent.x, z=1.0)), attach_to=self._actor)
+            self._obstacle_sensor.listen(lambda event: self._on_obstacle(event))  # pylint: disable=unnecessary-lambda
+
+    def _on_obstacle(self, event):
+        """
+        Callback for the obstacle sensor
+
+        Sets _obstacle_distance and _obstacle_actor according to the closest obstacle
+        found by the sensor.
+        """
+        if not event:
+            return
+        self._obstacle_distance = event.distance
+        self._obstacle_actor = event.other_actor
 
     def _update_plan(self):
         """
@@ -103,6 +134,10 @@ class NpcVehicleControl(BasicControl):
         # If target speed is negavite, raise an exception
         if target_speed < 0:
             raise NotImplementedError("Negative target speeds are not yet supported")
+
+        # If distance is less than the proximity threshold, adapt velocity
+        if self._obstacle_distance < self._proximity_threshold:
+            target_speed = 0
 
         self._local_planner.set_speed(target_speed * 3.6)
         control = self._local_planner.run_step(debug=False)
