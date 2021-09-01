@@ -81,7 +81,13 @@ class PedestrianControl(BasicControl):
             # It may happen that a pedestrian gets stuck when stepping on a sidewalk
             # Use an upwards direction to improve behavior
             if self._colliding_actor is not None and self._colliding_actor.type_id == "static.sidewalk":
-                direction = direction + carla.Location(z=0.3)
+                current_transform = self._actor.get_transform()
+                new_transform = current_transform
+                new_transform.location = new_transform.location + carla.Location(z=0.3)
+                self._actor.set_transform(new_transform)
+                self._colliding_actor = None
+                return
+                #direction = direction + carla.Location(z=0.3)
             control.direction = direction / direction_norm
             self._actor.apply_control(control)
             if direction_norm < 1.0:
