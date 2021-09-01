@@ -137,7 +137,10 @@ class NpcVehicleControl(BasicControl):
 
         # If distance is less than the proximity threshold, adapt velocity
         if self._obstacle_distance < self._proximity_threshold:
-            target_speed = 0
+            if "vehicle" in self._obstacle_actor.type_id:
+                self._obstacle_distance = float('inf')
+                self._obstacle_actor = None
+                target_speed = 0
 
         self._local_planner.set_speed(target_speed * 3.6)
         control = self._local_planner.run_step(debug=False)
