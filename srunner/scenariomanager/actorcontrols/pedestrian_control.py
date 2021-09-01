@@ -89,11 +89,11 @@ class PedestrianControl(BasicControl):
                 if not self._waypoints:
                     self._reached_goal = True
 
-            for wpt in self._waypoints:
-                begin = wpt.location + carla.Location(z=1.0)
-                angle = math.radians(wpt.rotation.yaw)
-                end = begin + carla.Location(x=math.cos(angle), y=math.sin(angle))
-                CarlaDataProvider.get_world().debug.draw_arrow(begin, end, arrow_size=0.3, life_time=1.0)
+            #for wpt in self._waypoints:
+            #    begin = wpt.location + carla.Location(z=1.0)
+            #    angle = math.radians(wpt.rotation.yaw)
+            #    end = begin + carla.Location(x=math.cos(angle), y=math.sin(angle))
+            #    CarlaDataProvider.get_world().debug.draw_arrow(begin, end, arrow_size=0.3, life_time=1.0)
 
         else:
             control.direction = self._actor.get_transform().rotation.get_forward_vector()
