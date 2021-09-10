@@ -208,6 +208,13 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return CarlaDataProvider._map
 
     @staticmethod
+    def get_random_seed():
+        """
+        @return true if syncronuous mode is used
+        """
+        return CarlaDataProvider._rng
+
+    @staticmethod
     def is_sync_mode():
         """
         @return true if syncronuous mode is used

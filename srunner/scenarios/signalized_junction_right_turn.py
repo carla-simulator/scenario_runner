@@ -20,7 +20,7 @@ import carla
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorSourceSinkPair, TrafficLightFreezer
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -46,10 +46,10 @@ class SignalizedJunctionRightTurn(BasicScenario):
         """
         self._world = world
         self._map = CarlaDataProvider.get_map()
-        self._source_dist = 10
+        self._source_dist = 40
         self._sink_dist = 10
-        self._source_dist_interval = [10, 20]
-        self._opposite_speed = 30  # Km / h
+        self._source_dist_interval = [20, 40]
+        self._opposite_speed = 35 / 3.6
         self._direction = 'left'
         self.timeout = timeout
         self._route_planner = GlobalRoutePlanner(self._map, 2.0)
@@ -122,7 +122,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         """
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
-        root.add_child(ActorSourceSinkPair(
+        root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._opposite_speed))
         root.add_child(TrafficLightFreezer(self._tl_dict))
 

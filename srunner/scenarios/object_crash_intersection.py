@@ -17,17 +17,15 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
-                                                                      ActorDestroy,
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       HandBrakeVehicle,
                                                                       KeepVelocity,
-                                                                      SyncArrival)
+                                                                      StartEngine)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocationAlongRoute,
-                                                                               InTriggerDistanceToLocation,
-                                                                               InTimeToArrivalToVehicle,
-                                                                               DriveDistance,
-                                                                               WaitEndIntersection)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
+                                                                               InTimeToArrivalToLocation,
+                                                                               WaitEndIntersection,
+                                                                               DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
@@ -80,18 +78,17 @@ class BaseVehicleTurning(BasicScenario):
         self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
 
         self._start_distance = 10
+        self._spawn_dist = self._start_distance
         self._number_of_attempts = 6
         self._retry_dist = 0.4
 
         self._adversary_transform = None
 
         self._collision_wp = None
-        self._adversary_exit_speed = 3
-        self._exit_duration = 5
-        self._exit_distance = 20
+        self._adversary_speed = 4.0  # Speed of the adversary [m/s]
+        self._reaction_time = 0.7  # Time the agent has to react to avoid the collision [s]
+        self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
-        self._spawn_dist = self._start_distance
-        self._stop_sync_dist = 7
 
         self.timeout = timeout
         super(BaseVehicleTurning, self).__init__(
@@ -146,11 +143,8 @@ class BaseVehicleTurning(BasicScenario):
         if self._number_of_attempts == 0:
             raise Exception("Couldn't find viable position for the adversary actor")
 
-        # Move the actors underground
-        adversary_transform = adversary.get_transform()
-        adversary_transform.location.z -= 500
-        adversary.set_transform(adversary_transform)
-        adversary.set_simulate_physics(enabled=False)
+        if isinstance(adversary, carla.Vehicle):
+            adversary.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(adversary)
 
     def _create_behavior(self):
@@ -163,32 +157,39 @@ class BaseVehicleTurning(BasicScenario):
         within 90 seconds, a timeout stops the scenario.
         """
         sequence = py_trees.composites.Sequence()
+        collision_location = self._collision_wp.transform.location
+        collision_distance = collision_location.distance(self._adversary_transform.location)
+        collision_duration = collision_distance / self._adversary_speed
+        collision_time_trigger = collision_duration + self._reaction_time
 
         # On trigger behavior
         if self._ego_route is not None:
             sequence.add_child(Scenario4Manager(self._spawn_dist))
-        sequence.add_child(ActorTransformSetter(
-            self.other_actors[0], self._adversary_transform, name='AdversaryTransformSetter'))
-        sequence.add_child(HandBrakeVehicle(self.other_actors[0], True))
 
-        # Waiting behavior
-        sequence.add_child(InTriggerDistanceToLocation(
-            self.ego_vehicles[0], self._collision_wp.transform.location, 2.0 * self._spawn_dist))
+        # First waiting behavior
+        wait = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="WaitForEgo")
+        wait.add_child(WaitEndIntersection(self.ego_vehicles[0]))
+        wait.add_child(StartEngine(self.other_actors[0]))
+        sequence.add_child(wait)
+
+        # Adversary trigger behavior
+        trigger_adversary = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+        trigger_adversary.add_child(InTimeToArrivalToLocation(
+            self.ego_vehicles[0], collision_time_trigger, collision_location))
+        trigger_adversary.add_child(InTriggerDistanceToLocation(
+            self.ego_vehicles[0], collision_location, self._min_trigger_dist))
+        sequence.add_child(trigger_adversary)
         sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
 
-        # Synchronization behavior
-        sync_walker = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="SyncWalkerArrival")
-        collision_location = self._collision_wp.transform.location
-        sync_walker.add_child(SyncArrival(self.other_actors[0], self.ego_vehicles[0], collision_location))
-        sync_walker.add_child(InTriggerDistanceToLocation(
-            self.ego_vehicles[0], collision_location, self._stop_sync_dist))
-        sequence.add_child(sync_walker)
+        # Move the adversary. Duration and speed are twice their value to avoid the adversary dissapearing mid-lane
+        speed_duration = 2.0 * collision_duration
+        speed_distance = 2.0 * collision_distance
+        sequence.add_child(KeepVelocity(
+            self.other_actors[0], self._adversary_speed, speed_duration, speed_distance, name="AdversaryCrossing"))
 
-        # End behavior
-        sequence.add_child(
-            KeepVelocity(self.other_actors[0], self._adversary_exit_speed,
-            duration=self._exit_duration, distance=self._exit_distance, name="AdversaryExit"))
+        # Remove everything
         sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
         sequence.add_child(DriveDistance(self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))
 

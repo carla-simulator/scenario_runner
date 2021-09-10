@@ -18,10 +18,10 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       KeepVelocity,
-                                                                      SyncArrival,
                                                                       Idle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
+                                                                               InTimeToArrivalToLocation,
                                                                                DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_location_in_distance_from_wp
@@ -147,6 +147,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._wmap = CarlaDataProvider.get_map()
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
+        self._num_lane_changes = 0
 
         self._start_distance = 12
         self._blocker_shift = 0.9
@@ -156,16 +157,16 @@ class DynamicObjectCrossing(BasicScenario):
         self._blocker_type = blocker_type  # blueprint filter of the blocker
         self._adversary_transform = None
         self._blocker_transform = None
-
         self._collision_wp = None
-        self._adversary_exit_speed = 3.0  # Speed at which the walker keeps moving afte the possible collision
-        self._exit_duration = 5  # Time after the possible collsion before the walker is destroyed
-        self._exit_distance = 20  # Distance after the possible collsion before the walker is destroyed
+
+        self._adversary_speed = 4.0  # Speed of the adversary [m/s]
+        self._reaction_time = 0.8  # Time the agent has to react to avoid the collision [s]
+        self._reaction_ratio = 0.1  # The higehr the number of lane changes, the smaller the reaction time
+        self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
-        self._stop_sync_dist = 7  # Distance at which the synchronization stops
         self.timeout = timeout
 
-        self._number_of_attempts = 20
+        self._number_of_attempts = 6
 
         super(DynamicObjectCrossing, self).__init__("DynamicObjectCrossing",
                                                     ego_vehicles,
@@ -203,6 +204,8 @@ class DynamicObjectCrossing(BasicScenario):
         move_dist = self._start_distance
         waypoint = self._reference_waypoint
         while self._number_of_attempts > 0:
+            self._num_lane_changes = 0
+
             # Move to the front
             location, _ = get_location_in_distance_from_wp(waypoint, move_dist, False)
             waypoint = self._wmap.get_waypoint(location)
@@ -215,6 +218,7 @@ class DynamicObjectCrossing(BasicScenario):
                 if right_wp is None:
                     break  # No more right lanes
                 sidewalk_waypoint = right_wp
+                self._num_lane_changes += 1
 
             # Get the adversary transform and spawn it
             offset = {"yaw": 270, "z": 0.5, "k": 1.0}
@@ -227,7 +231,7 @@ class DynamicObjectCrossing(BasicScenario):
 
             # Get the blocker transform and spawn it
             blocker_wp = sidewalk_waypoint.previous(self._blocker_shift)[0]
-            offset = {"yaw": 90, "z": 0.5, "k": 1.0}
+            offset = {"yaw": 90, "z": 0.0, "k": 1.0}
             self._blocker_transform = self._get_sidewalk_transform(blocker_wp, offset)
             blocker = CarlaDataProvider.request_new_actor(self._blocker_type, self._blocker_transform)
             if not blocker:
@@ -242,17 +246,10 @@ class DynamicObjectCrossing(BasicScenario):
         if self._number_of_attempts == 0:
             raise Exception("Couldn't find viable position for the adversary and blocker actors")
 
-        # Move the actors underground
-        adversary_transform = adversary.get_transform()
-        adversary_transform.location.z -= 500
-        adversary.set_transform(adversary_transform)
-        adversary.set_simulate_physics(enabled=False)
-        self.other_actors.append(adversary)
-
-        blocker_transform = blocker.get_transform()
-        blocker_transform.location.z -= 500
-        blocker.set_transform(blocker_transform)
+        if isinstance(adversary, carla.Vehicle):
+            adversary.apply_control(carla.VehicleControl(hand_brake=True))
         blocker.set_simulate_physics(enabled=False)
+        self.other_actors.append(adversary)
         self.other_actors.append(blocker)
 
     def _create_behavior(self):
@@ -263,23 +260,28 @@ class DynamicObjectCrossing(BasicScenario):
         then after 60 seconds, a timeout stops the scenario
         """
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ActorTransformSetter(
-            self.other_actors[0], self._adversary_transform, name='AdversaryTransformSetter'))
-        sequence.add_child(ActorTransformSetter(
-            self.other_actors[1], self._blocker_transform, physics=False, name='BlockerTransformSetter'))
-
-        sync_walker = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="SyncWalkerArrival")
         collision_location = self._collision_wp.transform.location
+        collision_distance = collision_location.distance(self._adversary_transform.location)
+        collision_duration = collision_distance / self._adversary_speed
+        reaction_time = self._reaction_time - self._reaction_ratio * self._num_lane_changes
+        collision_time_trigger = collision_duration + reaction_time
 
-        sync_walker.add_child(SyncArrival(self.other_actors[0], self.ego_vehicles[0], collision_location))
-        sync_walker.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], collision_location, self._stop_sync_dist))
-        sequence.add_child(sync_walker)
+        # Wait until ego is close to the adversary
+        trigger_adversary = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+        trigger_adversary.add_child(InTimeToArrivalToLocation(
+            self.ego_vehicles[0], collision_time_trigger, collision_location))
+        trigger_adversary.add_child(InTriggerDistanceToLocation(
+            self.ego_vehicles[0], collision_location, self._min_trigger_dist))
+        sequence.add_child(trigger_adversary)
 
-        sequence.add_child(
-            KeepVelocity(self.other_actors[0], self._adversary_exit_speed,
-            duration=self._exit_duration, distance=self._exit_distance, name="AdversaryExit"))
+        # Move the adversary. Duration and speed are twice their value to avoid the adversary dissapearing mid-lane
+        speed_duration = 2.0 * collision_duration
+        speed_distance = 2.0 * collision_distance
+        sequence.add_child(KeepVelocity(
+            self.other_actors[0], self._adversary_speed, speed_duration, speed_distance, name="AdversaryCrossing"))
 
+        # Remove everything
         sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
         sequence.add_child(ActorDestroy(self.other_actors[1], name="DestroyBlocker"))
         sequence.add_child(DriveDistance(self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))

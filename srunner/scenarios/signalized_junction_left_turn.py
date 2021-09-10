@@ -14,7 +14,7 @@ import py_trees
 import numpy.random as random
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorSourceSinkPair, TrafficLightFreezer
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -45,10 +45,10 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         """
         self._world = world
         self._map = CarlaDataProvider.get_map()
-        self._source_dist = 20
-        self._source_dist_interval = [10, 20]
+        self._source_dist = 40
         self._sink_dist = 20
-        self._opposite_speed = 30  # Km / h
+        self._source_dist_interval = [20, 45]
+        self._opposite_speed = 35 / 3.6
         self._rng = random.RandomState(2000)
         self._direction = 'opposite'
         self.timeout = timeout
@@ -116,7 +116,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
-        root.add_child(ActorSourceSinkPair(
+        root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._opposite_speed))
         root.add_child(TrafficLightFreezer(self._tl_dict))
 
