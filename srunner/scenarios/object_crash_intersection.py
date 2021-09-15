@@ -19,7 +19,7 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       HandBrakeVehicle,
-                                                                      KeepVelocity,
+                                                                      KeepVelocityFromStart,
                                                                       StartEngine)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
@@ -85,8 +85,8 @@ class BaseVehicleTurning(BasicScenario):
         self._adversary_transform = None
 
         self._collision_wp = None
-        self._adversary_speed = 4.0  # Speed of the adversary [m/s]
-        self._reaction_time = 0.7  # Time the agent has to react to avoid the collision [s]
+        self._adversary_speed = 4.0 # Speed of the adversary [m/s]
+        self._reaction_time = 0.5  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
 
@@ -186,8 +186,8 @@ class BaseVehicleTurning(BasicScenario):
         # Move the adversary. Duration and speed are twice their value to avoid the adversary dissapearing mid-lane
         speed_duration = 2.0 * collision_duration
         speed_distance = 2.0 * collision_distance
-        sequence.add_child(KeepVelocity(
-            self.other_actors[0], self._adversary_speed, speed_duration, speed_distance, name="AdversaryCrossing"))
+        sequence.add_child(KeepVelocityFromStart(
+            self.other_actors[0], self._adversary_speed, True, speed_duration, speed_distance, name="AdversaryCrossing"))
 
         # Remove everything
         sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))

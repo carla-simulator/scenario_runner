@@ -1408,22 +1408,21 @@ class StartEngine(AtomicBehavior):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
+
 class KeepVelocity(AtomicBehavior):
 
     """
     This class contains an atomic behavior to keep the provided velocity.
     The controlled traffic participant will accelerate as fast as possible
     until reaching a given _target_velocity_, which is then maintained for
-    as long as this behavior is active.
-
-    This only works for vehicles (bikes included), pedestrians are unaffected
+    as long as this behavior is active. If you want to have a behavior that
+    keeps the velocity from the start, use KeepVelocityFromStart.
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - target_velocity: The target velocity the actor should reach
     - duration[optional]: Duration in seconds of this behavior
     - distance[optional]: Maximum distance in meters covered by the actor during this behavior
-    - initial_speed_duration[optional]: For this duration, the speed is forced, instead of controlled
 
     A termination can be enforced by providing distance or duration values.
     Alternatively, a parallel termination behavior has to be used.
@@ -1451,7 +1450,6 @@ class KeepVelocity(AtomicBehavior):
     def initialise(self):
         self._location = CarlaDataProvider.get_location(self._actor)
         self._start_time = GameTime.get_time()
-        self._controller = PIDLongitudinalController(self._actor, 1.0, 0.05, 0.0, 0.05)
 
         # In case of walkers, we have to extract the current heading
         if self._type == 'walker':
@@ -1460,85 +1458,21 @@ class KeepVelocity(AtomicBehavior):
         elif self._type == 'vehicle':
             self._control.hand_brake = False
 
-        # Initialise the speed by force
-        yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-        self._actor.set_target_velocity(carla.Vector3D(
-            math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
-
         super(KeepVelocity, self).initialise()
 
     def update(self):
         """
         As long as the stop condition (duration or distance) is not violated, set a new vehicle control
-
         For vehicles: set throttle to throttle_value, as long as velocity is < target_velocity
         For walkers: simply apply the given self._control
         """
         new_status = py_trees.common.Status.RUNNING
 
-        # if self._type == 'vehicle':
-        #     if GameTime.get_time() - self._start_time < self._initial_speed_duration:
-
-        #         print("- " + str(CarlaDataProvider.get_velocity(self._actor)))
-        #         # Force the speed to the desired value, but keep the control active,
-        #         # starting the engine and allowing higher accelerations after this ends
-        #         self._control.throttle = 1.0
-        #         self._control.brake = 1.0
-
-        #         yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-        #         self._actor.set_target_velocity(carla.Vector3D(
-        #             math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
-
-        #     else:
-        #         print("+ " + str(CarlaDataProvider.get_velocity(self._actor)))
-        #         speed = CarlaDataProvider.get_velocity(self._actor)
-        #         if speed < self._target_velocity:
-        #             self._control.throttle = 1.0
-        #             self._control.brake = 0.0
-        #             self._control.manual_gear_shift = True
-        #             self._control.gear = 4
-        #         else:
-        #             self._control.throttle = 0.0
-        #             self._control.brake = 1.0
-        #             self._control.manual_gear_shift = True
-        #             self._control.gear = 4
-
-        # speed = CarlaDataProvider.get_velocity(self._actor)
-        # if speed < self._target_velocity:
-        #     self._control.throttle = 1.0
-        #     self._control.brake = 0.0
-        # else:
-        #     self._control.throttle = 0.0
-        #     self._control.brake = 1.0
-
         if self._type == 'vehicle':
-            control_value = self._controller.run_step(self._target_velocity * 3.6)
-            if control_value >= 0.0:
-                self._control.throttle = control_value
-                self._control.brake = 0.0
+            if CarlaDataProvider.get_velocity(self._actor) < self._target_velocity:
+                self._control.throttle = 1.0
             else:
                 self._control.throttle = 0.0
-                self._control.brake = control_value
-
-        # print(CarlaDataProvider.get_velocity(self._actor))
-        # if self._type == 'vehicle':
-        #     speed = CarlaDataProvider.get_velocity(self._actor)
-        #     if abs(speed - self._target_velocity) / self._target_velocity < 0.05:
-        #         print("+ " + str(speed))
-        #         control_value = self._controller.run_step(self._target_velocity * 3.6)
-        #         if control_value >= 0.0:
-        #             self._control.throttle = control_value
-        #             self._control.brake = 0.0
-        #         else:
-        #             self._control.throttle = 0.0
-        #             self._control.brake = control_value
-        #     else:
-        #         print("- " + str(speed))
-        #         # Behavior is deviating from the target speed, so force it again
-        #         yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
-        #         self._actor.set_target_velocity(carla.Vector3D(
-        #             math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
-
         self._actor.apply_control(self._control)
 
         new_location = CarlaDataProvider.get_location(self._actor)
@@ -1568,6 +1502,132 @@ class KeepVelocity(AtomicBehavior):
         if self._actor is not None and self._actor.is_alive:
             self._actor.apply_control(self._control)
         super(KeepVelocity, self).terminate(new_status)
+
+
+class KeepVelocityFromStart(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior similar to KeepVelocity but here some 'hacks'
+    are used in order make the actor reach the target velocity as soon as possible.
+    This 'hacks' only work for vehicles (bikes included), pedestrians are unaffected.
+
+    If the actor starts stopped, it would be ideal to combine it with StartEngine, so that the
+    behavior starts with the engine started, improving its velocity control
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - target_velocity: The target velocity the actor should reach
+    - forced_speed[optional]: Uses the set_target_velocity to move the vehicle. Works better for
+      keeping the speed but collision are pretty bad.
+    - duration[optional]: Duration in seconds of this behavior
+    - distance[optional]: Maximum distance in meters covered by the actor during this behavior
+    - initial_speed_duration[optional]: For this duration, the speed is forced, instead of controlled
+
+    A termination can be enforced by providing distance or duration values.
+    Alternatively, a parallel termination behavior has to be used.
+    """
+
+    def __init__(self, actor, target_velocity, forced_speed=False, duration=float("inf"),
+                 distance=float("inf"), name="KeepVelocityFromStart"):
+        """
+        Setup parameters including acceleration value (via throttle_value)
+        and target velocity
+        """
+        super(KeepVelocityFromStart, self).__init__(name, actor)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._target_velocity = target_velocity
+
+        self._control, self._type = get_actor_control(actor)
+        if self._type == 'walker':
+            self._forced_speed = False  # Same behavior as with the control, so no need to distinguish it
+        elif self._type == 'vehicle':
+            self._forced_speed = forced_speed
+        self._map = self._actor.get_world().get_map()
+        self._waypoint = self._map.get_waypoint(self._actor.get_location())
+
+        self._duration = duration
+        self._target_distance = distance
+        self._distance = 0
+        self._start_time = 0
+        self._location = None
+
+    def initialise(self):
+        self._location = CarlaDataProvider.get_location(self._actor)
+        self._start_time = GameTime.get_time()
+        self._controller = PIDLongitudinalController(self._actor, 1.0, 0.05, 0.0, 0.05)
+
+        # In case of walkers, we have to extract the current heading
+        if self._type == 'walker':
+            self._control.speed = self._target_velocity
+            self._control.direction = CarlaDataProvider.get_transform(self._actor).get_forward_vector()
+
+        # For vehicles, set the hand brake to off. The 4th gear is set to have the max acceleration
+        elif self._type == 'vehicle':
+            self._control.hand_brake = False
+            self._control.manual_gear_shift = True
+            self._control.gear = 4
+
+        # Initialise the speed by force
+        yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
+        self._actor.set_target_velocity(carla.Vector3D(
+            math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
+
+        super(KeepVelocityFromStart, self).initialise()
+
+    def update(self):
+        """
+        As long as the stop condition (duration or distance) is not violated, set a new vehicle control
+
+        For vehicles: use a controller to maintain the speed
+        For walkers: simply apply the given self._control
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._type == 'vehicle':
+            if not self._forced_speed:
+                control_value = self._controller.run_step(3.6 * self._target_velocity)
+                if control_value >= 0.0:
+                    self._control.throttle = control_value
+                    self._control.brake = 0.0
+                else:
+                    self._control.throttle = 0.0
+                    self._control.brake = control_value
+                self._actor.apply_control(self._control)
+            else:
+                yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw * (math.pi / 180)
+                self._actor.set_target_velocity(carla.Vector3D(
+                    math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
+
+        # print(self._actor.get_velocity().length())
+
+        new_location = CarlaDataProvider.get_location(self._actor)
+        self._distance += calculate_distance(self._location, new_location)
+        self._location = new_location
+
+        if self._distance > self._target_distance:
+            new_status = py_trees.common.Status.SUCCESS
+
+        if GameTime.get_time() - self._start_time > self._duration:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior, the throttle should be set back to 0.,
+        to avoid further acceleration.
+        """
+
+        if self._type == 'vehicle':
+            self._control.throttle = 0.0
+            self._control.manual_gear_shift = False
+        elif self._type == 'walker':
+            self._control.speed = 0.0
+        if self._actor is not None and self._actor.is_alive:
+            self._actor.apply_control(self._control)
+        super(KeepVelocityFromStart, self).terminate(new_status)
 
 
 class ChangeAutoPilot(AtomicBehavior):

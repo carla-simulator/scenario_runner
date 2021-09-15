@@ -22,7 +22,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       TrafficLightFreezer,
-                                                                      KeepVelocity,
+                                                                      KeepVelocityFromStart,
                                                                       StartEngine)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
@@ -59,9 +59,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._opposite_bp_wildcards = ['*firetruck*', '*ambulance*', '*police*']  # Wildcard patterns of the blueprints
         self.timeout = timeout
 
-        self._adversary_speed = 35.0  # Speed of the adversary [m/s]
-        self._reaction_time = 0.5  # Time the agent has to react to avoid the collision [s]
-        self._min_trigger_dist = 7.0  # Min distance to the collision location that triggers the adversary [m]
+        self._adversary_speed = 50 / 3.6  # Speed of the adversary [m/s]
+        self._reaction_time = 0.3  # Time the agent has to react to avoid the collision [s]
+        self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
         self._speed_duration_ratio = 2.0
         self._speed_distance_ratio = 1.5
 
@@ -195,9 +195,10 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         # Move the adversary. Duration and speed are twice their value to avoid the adversary dissapearing mid-junction
         speed_duration = self._speed_duration_ratio * collision_duration
         speed_distance = self._speed_distance_ratio * collision_distance
-        sequence.add_child(KeepVelocity(
+        sequence.add_child(KeepVelocityFromStart(
             self.other_actors[0],
             self._adversary_speed,
+            False,
             speed_duration,
             speed_distance,
             name="AdversaryCrossing"))

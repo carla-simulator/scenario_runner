@@ -161,7 +161,7 @@ class DynamicObjectCrossing(BasicScenario):
 
         self._adversary_speed = 4.0  # Speed of the adversary [m/s]
         self._reaction_time = 0.8  # Time the agent has to react to avoid the collision [s]
-        self._reaction_ratio = 0.1  # The higehr the number of lane changes, the smaller the reaction time
+        self._reaction_ratio = 0.12  # The higehr the number of lane changes, the smaller the reaction time
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
