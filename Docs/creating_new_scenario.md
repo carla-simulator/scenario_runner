@@ -41,7 +41,7 @@ follows:
              config,
              world,
              debug_mode,
-             criteria_enable=criteria_enable))
+             criteria_enable=criteria_enable)
 
 
        def _create_behavior(self):
