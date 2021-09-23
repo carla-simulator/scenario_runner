@@ -603,7 +603,7 @@ class OpenScenarioParser(object):
                 transform.rotation.yaw = yaw
                 transform.rotation.pitch = pitch
                 transform.rotation.roll = roll
-                transform = get_offset_transform(waypoint.transform, target_t)
+                transform = get_offset_transform(transform, target_t)
 
             return transform
 
