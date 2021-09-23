@@ -44,12 +44,12 @@ follows:
              criteria_enable=criteria_enable))
 
 
-       def create_behavior(self):
+       def _create_behavior(self):
            """
            Setup the behavior for NewScenario
            """
 
-       def create_test_criteria(self):
+       def _create_test_criteria(self):
            """
            Setup the evaluation criteria for NewScenario
            """
