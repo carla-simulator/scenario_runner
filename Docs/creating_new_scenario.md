@@ -36,7 +36,7 @@ follows:
 
            # Call constructor of BasicScenario
            super(NewScenario, self).__init__(
-             name="NewScenario",
+             "NewScenario",
              ego_vehicles,
              config,
              world,
