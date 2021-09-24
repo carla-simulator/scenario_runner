@@ -12,6 +12,10 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest changes
+### :rocket: New Features
+* OpenSCENARIO support:
+    - Added support for `ParameterAction`
+    - Extended `ParameterCondition` support to use as an event trigger condition
 
 ## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
