@@ -43,6 +43,8 @@ class NpcVehicleControl(BasicControl):
         if self._waypoints:
             self._update_plan()
 
+        self._brake_lights_active = False
+
     def _update_plan(self):
         """
         Update the plan (waypoint list) of the LocalPlanner
@@ -111,8 +113,9 @@ class NpcVehicleControl(BasicControl):
 
         self._actor.apply_control(control)
 
+        current_speed = math.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
+
         if self._init_speed:
-            current_speed = math.sqrt(self._actor.get_velocity().x**2 + self._actor.get_velocity().y**2)
 
             # If _init_speed is set, and the PID controller is not yet up to the point to take over,
             # we manually set the vehicle to drive with the correct velocity
@@ -121,3 +124,16 @@ class NpcVehicleControl(BasicControl):
                 vx = math.cos(yaw) * target_speed
                 vy = math.sin(yaw) * target_speed
                 self._actor.set_target_velocity(carla.Vector3D(vx, vy, 0))
+
+        # Change Brake light state
+        if (current_speed > target_speed or target_speed < 0.2) and not self._brake_lights_active:
+            light_state = self._actor.get_light_state()
+            light_state |= carla.VehicleLightState.Brake
+            self._actor.set_light_state(carla.VehicleLightState(light_state))
+            self._brake_lights_active = True
+
+        if self._brake_lights_active and current_speed < target_speed:
+            self._brake_lights_active = False
+            light_state = self._actor.get_light_state()
+            light_state &= ~carla.VehicleLightState.Brake
+            self._actor.set_light_state(carla.VehicleLightState(light_state))

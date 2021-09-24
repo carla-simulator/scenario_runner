@@ -103,7 +103,7 @@ def get_distance_along_route(route, target_location):
             wp = wmap.get_waypoint(location)
 
             if prev_wp and curr_wp and wp:
-                if wp.road_id == prev_wp.road_id or wp.road_id == curr_wp.road_id:
+                if wp.road_id in (prev_wp.road_id, curr_wp.road_id):
                     # Roads match, now compare the sign of the lane ids
                     if (np.sign(wp.lane_id) == np.sign(prev_wp.lane_id) or
                             np.sign(wp.lane_id) == np.sign(curr_wp.lane_id)):
@@ -414,7 +414,7 @@ def choose_at_junction(current_waypoint, next_choices, direction=0):
             y=math.sin(math.radians(current_transform.rotation.yaw)))
     current_vector = vector(current_location, projected_location)
     cross_list = []
-    cross_to_waypoint = dict()
+    cross_to_waypoint = {}
     for waypoint in next_choices:
         waypoint = waypoint.next(10)[0]
         select_vector = vector(current_location, waypoint.transform.location)

@@ -36,20 +36,20 @@ follows:
 
            # Call constructor of BasicScenario
            super(NewScenario, self).__init__(
-             name="NewScenario",
+             "NewScenario",
              ego_vehicles,
              config,
              world,
              debug_mode,
-             criteria_enable=criteria_enable))
+             criteria_enable=criteria_enable)
 
 
-       def create_behavior(self):
+       def _create_behavior(self):
            """
            Setup the behavior for NewScenario
            """
 
-       def create_test_criteria(self):
+       def _create_test_criteria(self):
            """
            Setup the evaluation criteria for NewScenario
            """
@@ -88,7 +88,7 @@ If you want to add multiple ego vehicles for a scenario, make sure that they use
 role names, e.g.
 ```
     <scenario name="MultiEgoTown03" type="FreeRide" town="Town03">
-        <ego_vehicle x="207" y="59" z="0" yaw="180" model="vehicle.lincoln.mkz2017" rolename="hero"/>
+        <ego_vehicle x="207" y="59" z="0" yaw="180" model="vehicle.lincoln.mkz_2017" rolename="hero"/>
         <ego_vehicle x="237" y="-95.0754252474" z="0" yaw="90" model="vehicle.tesla.model3" rolename="hero2"/>
     </scenario>
 ```

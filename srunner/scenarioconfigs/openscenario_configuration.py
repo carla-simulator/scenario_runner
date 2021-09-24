@@ -35,7 +35,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         self.xml_tree = ET.parse(filename)
         self.filename = filename
-        self._custom_params = custom_params if custom_params is not None else dict()
+        self._custom_params = custom_params if custom_params is not None else {}
 
         self._validate_openscenario_configuration()
         self.client = client
@@ -173,9 +173,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world.get_settings()
             wmap = world.get_map()
 
-        if world is None or (wmap is not None and wmap.name != self.town):
+        if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):
             if ".xodr" in self.town:
-                with open(self.town) as od_file:
+                with open(self.town, 'r', encoding='utf-8') as od_file:
                     data = od_file.read()
                 index = data.find('<OpenDRIVE>')
                 data = data[index:]
@@ -236,7 +236,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for entity in self.xml_tree.iter("Entities"):
             for obj in entity.iter("ScenarioObject"):
                 rolename = obj.attrib.get('name', 'simulation')
-                args = dict()
+                args = {}
                 for prop in obj.iter("Property"):
                     key = prop.get('name')
                     value = prop.get('value')
