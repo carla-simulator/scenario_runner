@@ -12,12 +12,14 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest changes
-
-## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Added support for `ParameterAction`
     - Extended `ParameterCondition` support to use as an event trigger condition
+
+## CARLA ScenarioRunner 0.9.12
+### :rocket: New Features
+* OpenSCENARIO support:
     - Added support for LongitudinalDistanceAction
     - Extended RelativeDistanceCondition with support for 'longitudinal' and 'lateral' distance along with freespace.
     - Added support for RelativeRoadPosition
