@@ -392,7 +392,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     for speed in longitudinal_action.iter('SpeedAction'):
                         for target in speed.iter('SpeedActionTarget'):
                             for absolute in target.iter('AbsoluteTargetSpeed'):
-                                speed = ParameterRef(absolute.attrib.get('value', 0))
+                                speed = float(ParameterRef(absolute.attrib.get('value', 0)))
                                 if speed >= 0:
                                     actor_speed = speed
                                 else:

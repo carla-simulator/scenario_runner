@@ -51,6 +51,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _actor_transform_map = {}
     _traffic_light_map = {}
     _carla_actor_pool = {}
+    _global_osc_parameters = {}
     _client = None
     _world = None
     _map = None
