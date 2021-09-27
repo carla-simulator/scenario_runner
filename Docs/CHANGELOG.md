@@ -13,6 +13,9 @@
 
 ## Latest changes
 
+### :bug: Bug Fixes
+* Fixed a bug with repetitions / scenario groups causing the simulation to crash after the second one.
+
 ## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
 * OpenSCENARIO support:
