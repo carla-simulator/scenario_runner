@@ -1191,7 +1191,7 @@ class OpenScenarioParser(object):
                         target_speed = ParameterRef(long_maneuver.find("SpeedActionTarget").find(
                             "AbsoluteTargetSpeed").attrib.get('value', 0))
                         atomic = ChangeActorTargetSpeed(
-                            actor, target_speed, distance=distance, duration=duration, name=maneuver_name)
+                            actor, float(target_speed), distance=distance, duration=duration, name=maneuver_name)
 
                     # relative velocity to given actor
                     if long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed") is not None:
