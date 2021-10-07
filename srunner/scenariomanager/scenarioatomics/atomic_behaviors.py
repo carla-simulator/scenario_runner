@@ -1538,10 +1538,7 @@ class KeepVelocityFromStart(AtomicBehavior):
         self._target_velocity = target_velocity
 
         self._control, self._type = get_actor_control(actor)
-        if self._type == 'walker':
-            self._forced_speed = False  # Same behavior as with the control, so no need to distinguish it
-        elif self._type == 'vehicle':
-            self._forced_speed = forced_speed
+        self._forced_speed = forced_speed
         self._map = self._actor.get_world().get_map()
         self._waypoint = self._map.get_waypoint(self._actor.get_location())
 

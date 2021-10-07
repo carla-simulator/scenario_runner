@@ -33,7 +33,7 @@ from srunner.tools.route_manipulation import interpolate_trajectory
 from srunner.tools.py_trees_port import oneshot_behavior
 
 from srunner.scenarios.control_loss import ControlLoss
-from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicle
+from srunner.scenarios.follow_leading_vehicle import FollowLeadingVehicleRoute
 from srunner.scenarios.object_crash_vehicle import DynamicObjectCrossing
 from srunner.scenarios.object_crash_intersection import VehicleTurningRoute
 from srunner.scenarios.other_leading_vehicle import OtherLeadingVehicle
@@ -56,7 +56,7 @@ SECONDS_GIVEN_PER_METERS = 0.4
 
 NUMBER_CLASS_TRANSLATION = {
     "Scenario1": ControlLoss,
-    "Scenario2": FollowLeadingVehicle,
+    "Scenario2": FollowLeadingVehicleRoute,
     "Scenario3": DynamicObjectCrossing,
     "Scenario4": VehicleTurningRoute,
     "Scenario5": OtherLeadingVehicle,
