@@ -19,7 +19,7 @@ import weakref
 import math
 import numpy as np
 import py_trees
-import shapely
+import shapely.geometry
 
 import carla
 
