@@ -13,6 +13,9 @@
 
 ## Latest changes
 
+### :ghost: Maintenance
+* Removed CARLA example dependencies
+
 ## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
 * OpenSCENARIO support:
