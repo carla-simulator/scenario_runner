@@ -15,8 +15,7 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
-                                                                      ActorDestroy,
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       KeepVelocity,
                                                                       Idle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
@@ -101,7 +100,6 @@ class StationaryObjectCrossing(BasicScenario):
 
         # building tree
         root.add_child(scenario_sequence)
-        scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self.transform))
         scenario_sequence.add_child(actor_stand)
         scenario_sequence.add_child(actor_removed)
         scenario_sequence.add_child(end_condition)

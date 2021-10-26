@@ -41,6 +41,7 @@ class BasicScenario(object):
 
         self.criteria_list = []  # List of evaluation criteria
         self.scenario = None
+        self.world = world
 
         self.ego_vehicles = ego_vehicles
         self.name = name
