@@ -51,6 +51,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _actor_transform_map = {}
     _traffic_light_map = {}
     _carla_actor_pool = {}
+    _global_osc_parameters = {}
     _client = None
     _world = None
     _map = None
@@ -86,6 +87,20 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
         else:
             CarlaDataProvider._actor_transform_map[actor] = None
+
+    @staticmethod
+    def update_osc_global_params(parameters):
+        """
+        updates/initializes global osc parameters.
+        """
+        CarlaDataProvider._global_osc_parameters.update(parameters)
+
+    @staticmethod
+    def get_osc_global_param_value(ref):
+        """
+        returns updated global osc parameter value.
+        """
+        return CarlaDataProvider._global_osc_parameters.get(ref.replace("$", ""))
 
     @staticmethod
     def register_actors(actors):

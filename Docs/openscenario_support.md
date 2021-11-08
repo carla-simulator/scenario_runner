@@ -69,7 +69,7 @@ contains of submodules, which are not listed, the support status applies to all 
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | `EntityAction`                | &#10060;                          | &#10060;                          |                               |
 | `EnvironmentAction`           | &#9989;                         | &#10060;                          |                               |
-| `ParameterAction`             | &#10060;                          | &#10060;                          |                               |
+| `ParameterAction`             | &#9989;                          | &#9989;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficAction`                                               | &#10060;                          | &#10060;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalControllerAction`                               | &#10060;                          | &#10060;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalStateAction`                                    | &#10060;                          | &#9989;                         | As traffic signals in CARLA towns have no unique ID, they have to be set by providing their position (Example: TrafficSignalStateAction name="pos=x,y" state="green"). The id can also be used for none CARLA town (Example: TrafficSignalStateAction name="id=n" state="green") |

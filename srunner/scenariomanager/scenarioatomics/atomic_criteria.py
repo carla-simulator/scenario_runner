@@ -74,7 +74,7 @@ class Criterion(py_trees.behaviour.Behaviour):
         """
         Terminate the criterion. Can be extended by the user-derived class
         """
-        if (self.test_status == "RUNNING") or (self.test_status == "INIT"):
+        if self.test_status in ('RUNNING', 'INIT'):
             self.test_status = "SUCCESS"
 
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -835,8 +835,7 @@ class OnSidewalkTest(Criterion):
                 self._sidewalk_start_location = current_loc
 
         # Case 2) Not inside allowed zones (Driving and Parking)
-        elif current_wp.lane_type != carla.LaneType.Driving \
-                and current_wp.lane_type != carla.LaneType.Parking:
+        elif current_wp.lane_type not in (carla.LaneType.Driving, carla.LaneType.Parking):
 
             # Get the vertices of the vehicle
             heading_vec = current_tra.get_forward_vector()
@@ -860,6 +859,8 @@ class OnSidewalkTest(Criterion):
                 self._map.get_waypoint(bbox[2], lane_type=carla.LaneType.Any),
                 self._map.get_waypoint(bbox[3], lane_type=carla.LaneType.Any)]
 
+            lane_type_list = [bbox_wp[0].lane_type, bbox_wp[1].lane_type, bbox_wp[2].lane_type, bbox_wp[3].lane_type]
+
             # Case 2.1) Not quite outside yet
             if bbox_wp[0].lane_type == (carla.LaneType.Driving or carla.LaneType.Parking) \
                 or bbox_wp[1].lane_type == (carla.LaneType.Driving or carla.LaneType.Parking) \
@@ -870,11 +871,7 @@ class OnSidewalkTest(Criterion):
                 self._outside_lane_active = False
 
             # Case 2.2) At the mini Shoulders between Driving and Sidewalk
-            elif bbox_wp[0].lane_type == carla.LaneType.Sidewalk \
-                or bbox_wp[1].lane_type == carla.LaneType.Sidewalk \
-                or bbox_wp[2].lane_type == carla.LaneType.Sidewalk \
-                    or bbox_wp[3].lane_type == carla.LaneType.Sidewalk:
-
+            elif carla.LaneType.Sidewalk in lane_type_list:
                 if not self._onsidewalk_active:
                     self._onsidewalk_active = True
                     self._sidewalk_start_location = current_loc
@@ -1519,7 +1516,7 @@ class InRouteTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        elif self.test_status == "RUNNING" or self.test_status == "INIT":
+        elif self.test_status in ('RUNNING', 'INIT'):
 
             off_route = True
 
@@ -1641,7 +1638,7 @@ class RouteCompletionTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        elif self.test_status == "RUNNING" or self.test_status == "INIT":
+        elif self.test_status in ('RUNNING', 'INIT'):
 
             for index in range(self._current_index, min(self._current_index + self._wsize + 1, self._route_length)):
                 # Get the dot product to know if it has passed this location

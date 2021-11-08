@@ -12,6 +12,7 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 from __future__ import print_function
 
 from distutils.util import strtobool
+import re
 import copy
 import datetime
 import math
@@ -35,7 +36,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeActorLaneOffset,
                                                                       SyncArrivalOSC,
                                                                       KeepLongitudinalGap,
-                                                                      Idle)
+                                                                      Idle,
+                                                                      ChangeParameter)
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTest,
@@ -65,7 +67,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                RelativeVelocityToOtherActor,
                                                                                TimeOfDayComparison,
                                                                                TriggerVelocity,
-                                                                               WaitForTrafficLightState)
+                                                                               WaitForTrafficLightState,
+                                                                               CheckParameter)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
@@ -82,6 +85,139 @@ def oneshot_with_check(variable_name, behaviour, name=None):
         print("Warning: {} is already used before. Check your XOSC for duplicated names".format(variable_name))
 
     return oneshot_behavior(variable_name, behaviour, name)
+
+
+class ParameterRef:
+    """
+    This class stores osc parameter reference in its original form.
+    Returns the converted value whenever it is used.
+    """
+
+    def __init__(self, reference_text) -> None:
+        # TODO: (for OSC1.1) add methods(lexer and math_interpreter) to
+        #  recognize and interpret math expression from reference_text
+        self.reference_text = str(reference_text)
+
+    def is_literal(self) -> bool:
+        """
+        Returns: True when text is a literal/number
+        """
+        return self._is_matching(pattern=r"(-)?\d+(\.\d*)?")
+
+    def is_parameter(self) -> bool:
+        """
+        Returns: True when text is a parameter
+        """
+        return self._is_matching(pattern=r"[$][A-Za-z_][\w]*")
+
+    def _is_matching(self, pattern: str) -> bool:
+        """
+        Returns: True when pattern is matching with text
+        """
+        match = re.search(pattern, self.reference_text)
+        if match is not None:
+            matching_string = match.group()
+            return matching_string == self.reference_text
+        return False
+
+    def get_interpreted_value(self):
+        """
+        Returns: interpreted value from reference_text
+        """
+        if self.is_literal():
+            value = self.reference_text
+        elif self.is_parameter():
+            value = CarlaDataProvider.get_osc_global_param_value(self.reference_text)
+            if value is None:
+                raise Exception("Parameter '{}' is not defined".format(self.reference_text[1:]))
+        else:
+            value = None
+        return value
+
+    def __float__(self) -> float:
+        value = self.get_interpreted_value()
+        if value is not None:
+            return float(value)
+        else:
+            raise Exception("could not convert '{}' to float".format(self.reference_text))
+
+    def __int__(self) -> int:
+        value = self.get_interpreted_value()
+        if value is not None:
+            return int(float(value))
+        else:
+            raise Exception("could not convert '{}' to int".format(self.reference_text))
+
+    def __str__(self) -> str:
+        value = self.get_interpreted_value()
+        return str(value) if value is not None else self.reference_text
+
+    def __repr__(self):
+        value = self.get_interpreted_value()
+        return value if value is not None else self.reference_text
+
+    def __radd__(self, other) -> bool:
+        return other + self.__float__()
+
+    def __add__(self, other) -> bool:
+        return other + self.__float__()
+
+    def __rsub__(self, other) -> bool:
+        return other - self.__float__()
+
+    def __sub__(self, other) -> bool:
+        return self.__float__() - other
+
+    def __rmul__(self, other) -> bool:
+        return other * self.__float__()
+
+    def __mul__(self, other) -> bool:
+        return other * self.__float__()
+
+    def __truediv__(self, other) -> bool:
+        return self.__float__() / other
+
+    def __rtruediv__(self, other) -> bool:
+        return other / self.__float__()
+
+    def __eq__(self, other) -> bool:
+        return other == self.__float__()
+
+    def __ne__(self, other) -> bool:
+        return other != self.__float__()
+
+    def __ge__(self, other) -> bool:
+        return self.__float__() >= other
+
+    def __le__(self, other) -> bool:
+        return self.__float__() <= other
+
+    def __gt__(self, other) -> bool:
+        return self.__float__() > other
+
+    def __lt__(self, other) -> bool:
+        return self.__float__() < other
+
+    def __GE__(self, other) -> bool:  # pylint: disable=invalid-name
+        return self.__float__() >= other
+
+    def __LE__(self, other) -> bool:  # pylint: disable=invalid-name
+        return self.__float__() <= other
+
+    def __GT__(self, other) -> bool:  # pylint: disable=invalid-name
+        return self.__float__() > other
+
+    def __LT__(self, other) -> bool:  # pylint: disable=invalid-name
+        return self.__float__() < other
+
+    def __iadd__(self, other) -> bool:
+        return self.__float__() + other
+
+    def __isub__(self, other) -> bool:
+        return self.__float__() - other
+
+    def __abs__(self):
+        return abs(self.__float__())
 
 
 class OpenScenarioParser(object):
@@ -200,12 +336,6 @@ class OpenScenarioParser(object):
         if additional_parameter_dict is not None:
             parameter_dict = dict(list(parameter_dict.items()) + list(additional_parameter_dict.items()))
 
-        for node in xml_tree.iter():
-            for key in node.attrib:
-                for param in sorted(parameter_dict, key=len, reverse=True):
-                    if "$" + param in node.attrib[key]:
-                        node.attrib[key] = node.attrib[key].replace("$" + param, parameter_dict[param])
-
         return xml_tree, parameter_dict
 
     @staticmethod
@@ -217,6 +347,7 @@ class OpenScenarioParser(object):
             parameter_dict (Dictionary): Input for global_osc_parameter
         """
         OpenScenarioParser.global_osc_parameters = parameter_dict
+        CarlaDataProvider.update_osc_global_params(parameter_dict)
 
     @staticmethod
     def get_catalog_entry(catalogs, catalog_reference):
@@ -454,12 +585,12 @@ class OpenScenarioParser(object):
 
         if position.find('WorldPosition') is not None:
             world_pos = position.find('WorldPosition')
-            x = float(world_pos.attrib.get('x', 0))
-            y = float(world_pos.attrib.get('y', 0))
-            z = float(world_pos.attrib.get('z', 0))
-            yaw = math.degrees(float(world_pos.attrib.get('h', 0)))
-            pitch = math.degrees(float(world_pos.attrib.get('p', 0)))
-            roll = math.degrees(float(world_pos.attrib.get('r', 0)))
+            x = float(ParameterRef(world_pos.attrib.get('x', 0)))
+            y = float(ParameterRef(world_pos.attrib.get('y', 0)))
+            z = float(ParameterRef(world_pos.attrib.get('z', 0)))
+            yaw = math.degrees(float(ParameterRef(world_pos.attrib.get('h', 0))))
+            pitch = math.degrees(float(ParameterRef(world_pos.attrib.get('p', 0))))
+            roll = math.degrees(float(ParameterRef(world_pos.attrib.get('r', 0))))
             if not OpenScenarioParser.use_carla_coordinate_system:
                 y = y * (-1.0)
                 yaw = yaw * (-1.0)
@@ -507,9 +638,9 @@ class OpenScenarioParser(object):
             if rel_pos.find('Orientation') is not None:
                 orientation = rel_pos.find('Orientation')
                 is_absolute = (orientation.attrib.get('type') == "absolute")
-                dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
-                dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
-                droll = math.degrees(float(orientation.attrib.get('r', 0)))
+                dyaw = math.degrees(float(ParameterRef(orientation.attrib.get('h', 0))))
+                dpitch = math.degrees(float(ParameterRef(orientation.attrib.get('p', 0))))
+                droll = math.degrees(float(ParameterRef(orientation.attrib.get('r', 0))))
 
             if not OpenScenarioParser.use_carla_coordinate_system:
                 dyaw = dyaw * (-1.0)
@@ -531,9 +662,9 @@ class OpenScenarioParser(object):
             # dx, dy, dz
             if ((position.find('RelativeWorldPosition') is not None) or
                     (position.find('RelativeObjectPosition') is not None)):
-                dx = float(rel_pos.attrib.get('dx', 0))
-                dy = float(rel_pos.attrib.get('dy', 0))
-                dz = float(rel_pos.attrib.get('dz', 0))
+                dx = float(ParameterRef(rel_pos.attrib.get('dx', 0)))
+                dy = float(ParameterRef(rel_pos.attrib.get('dy', 0)))
+                dz = float(ParameterRef(rel_pos.attrib.get('dz', 0)))
 
                 if not OpenScenarioParser.use_carla_coordinate_system:
                     dy = dy * (-1.0)
@@ -546,9 +677,9 @@ class OpenScenarioParser(object):
                                             carla.Rotation(yaw=yaw, pitch=pitch, roll=roll))
 
             elif position.find('RelativeLanePosition') is not None:
-                dlane = float(rel_pos.attrib.get('dLane'))
-                ds = float(rel_pos.attrib.get('ds'))
-                offset = float(rel_pos.attrib.get('offset', 0.0))
+                dlane = float(ParameterRef(rel_pos.attrib.get('dLane')))
+                ds = float(ParameterRef(rel_pos.attrib.get('ds')))
+                offset = float(ParameterRef(rel_pos.attrib.get('offset', 0.0)))
 
                 carla_map = CarlaDataProvider.get_map()
                 relative_waypoint = carla_map.get_waypoint(actor_transform.location)
@@ -585,8 +716,8 @@ class OpenScenarioParser(object):
                         offset = offset + 0.05
                 transform = get_offset_transform(transform, offset)
             elif position.find('RelativeRoadPosition') is not None:
-                ds = float(rel_pos.attrib.get('ds'))
-                dt = float(rel_pos.attrib.get('dt', 0.0))
+                ds = float(ParameterRef(rel_pos.attrib.get('ds')))
+                dt = float(ParameterRef(rel_pos.attrib.get('dt', 0.0)))
                 troad = get_troad_from_transform
 
                 carla_map = CarlaDataProvider.get_map()
@@ -603,15 +734,15 @@ class OpenScenarioParser(object):
                 transform.rotation.yaw = yaw
                 transform.rotation.pitch = pitch
                 transform.rotation.roll = roll
-                transform = get_offset_transform(waypoint.transform, target_t)
+                transform = get_offset_transform(transform, target_t)
 
             return transform
 
         elif position.find('RoadPosition') is not None:
             road_pos = position.find('RoadPosition')
-            road_id = int(road_pos.attrib.get('roadId', 0))
-            t = float(road_pos.attrib.get('t', 0))
-            s = float(road_pos.attrib.get('s', 0))
+            road_id = int(ParameterRef(road_pos.attrib.get('roadId', 0)))
+            t = float(ParameterRef(road_pos.attrib.get('t', 0)))
+            s = float(ParameterRef(road_pos.attrib.get('s', 0)))
 
             waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, 0, s)
             if waypoint is None:
@@ -621,9 +752,9 @@ class OpenScenarioParser(object):
 
             if road_pos.find('Orientation') is not None:
                 orientation = road_pos.find('Orientation')
-                dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
-                dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
-                droll = math.degrees(float(orientation.attrib.get('r', 0)))
+                dyaw = math.degrees(float(ParameterRef(orientation.attrib.get('h', 0))))
+                dpitch = math.degrees(float(ParameterRef(orientation.attrib.get('p', 0))))
+                droll = math.degrees(float(ParameterRef(orientation.attrib.get('r', 0))))
 
                 if not OpenScenarioParser.use_carla_coordinate_system:
                     dyaw = dyaw * (-1.0)
@@ -640,10 +771,10 @@ class OpenScenarioParser(object):
 
         elif position.find('LanePosition') is not None:
             lane_pos = position.find('LanePosition')
-            road_id = int(lane_pos.attrib.get('roadId', 0))
-            lane_id = int(lane_pos.attrib.get('laneId', 0))
-            offset = float(lane_pos.attrib.get('offset', 0))
-            s = float(lane_pos.attrib.get('s', 0))
+            road_id = int(ParameterRef(lane_pos.attrib.get('roadId', 0)))
+            lane_id = int(ParameterRef(lane_pos.attrib.get('laneId', 0)))
+            offset = float(ParameterRef(lane_pos.attrib.get('offset', 0)))
+            s = float(ParameterRef(lane_pos.attrib.get('s', 0)))
             waypoint = CarlaDataProvider.get_map().get_waypoint_xodr(road_id, lane_id, s)
             if waypoint is None:
                 raise AttributeError("LanePosition 'roadId={}, laneId={}, s={}, offset={}' does not exist".format(
@@ -652,9 +783,9 @@ class OpenScenarioParser(object):
             transform = waypoint.transform
             if lane_pos.find('Orientation') is not None:
                 orientation = lane_pos.find('Orientation')
-                dyaw = math.degrees(float(orientation.attrib.get('h', 0)))
-                dpitch = math.degrees(float(orientation.attrib.get('p', 0)))
-                droll = math.degrees(float(orientation.attrib.get('r', 0)))
+                dyaw = math.degrees(float(ParameterRef(orientation.attrib.get('h', 0))))
+                dpitch = math.degrees(float(ParameterRef(orientation.attrib.get('p', 0))))
+                droll = math.degrees(float(ParameterRef(orientation.attrib.get('r', 0))))
 
                 if not OpenScenarioParser.use_carla_coordinate_system:
                     dyaw = dyaw * (-1.0)
@@ -709,10 +840,10 @@ class OpenScenarioParser(object):
             for entity_condition in condition.find('ByEntityCondition').iter('EntityCondition'):
                 if entity_condition.find('EndOfRoadCondition') is not None:
                     end_road_condition = entity_condition.find('EndOfRoadCondition')
-                    condition_duration = float(end_road_condition.attrib.get('duration'))
+                    condition_duration = ParameterRef(end_road_condition.attrib.get('duration'))
                     atomic_cls = py_trees.meta.inverter(EndofRoadTest)
-                    atomic = atomic_cls(
-                        trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
+                    atomic = atomic_cls(trigger_actor, condition_duration, terminate_on_failure=True,
+                                        name=condition_name)
                 elif entity_condition.find('CollisionCondition') is not None:
 
                     collision_condition = entity_condition.find('CollisionCondition')
@@ -730,8 +861,8 @@ class OpenScenarioParser(object):
                                 collision_condition.attrib.get('entityRef', None)))
 
                         atomic_cls = py_trees.meta.inverter(CollisionTest)
-                        atomic = atomic_cls(trigger_actor, other_actor=triggered_actor,
-                                            terminate_on_failure=True, name=condition_name)
+                        atomic = atomic_cls(trigger_actor, other_actor=triggered_actor, terminate_on_failure=True,
+                                            name=condition_name)
 
                     elif collision_condition.find('ByType') is not None:
                         collision_type = collision_condition.find('ByType').attrib.get('type', None)
@@ -739,8 +870,8 @@ class OpenScenarioParser(object):
                         triggered_type = OpenScenarioParser.actor_types[collision_type]
 
                         atomic_cls = py_trees.meta.inverter(CollisionTest)
-                        atomic = atomic_cls(trigger_actor, other_actor_type=triggered_type,
-                                            terminate_on_failure=True, name=condition_name)
+                        atomic = atomic_cls(trigger_actor, other_actor_type=triggered_type, terminate_on_failure=True,
+                                            name=condition_name)
 
                     else:
                         atomic_cls = py_trees.meta.inverter(CollisionTest)
@@ -748,14 +879,14 @@ class OpenScenarioParser(object):
 
                 elif entity_condition.find('OffroadCondition') is not None:
                     off_condition = entity_condition.find('OffroadCondition')
-                    condition_duration = float(off_condition.attrib.get('duration'))
+                    condition_duration = ParameterRef(off_condition.attrib.get('duration'))
                     atomic_cls = py_trees.meta.inverter(OffRoadTest)
-                    atomic = atomic_cls(
-                        trigger_actor, condition_duration, terminate_on_failure=True, name=condition_name)
+                    atomic = atomic_cls(trigger_actor, condition_duration, terminate_on_failure=True,
+                                        name=condition_name)
                 elif entity_condition.find('TimeHeadwayCondition') is not None:
                     headtime_condition = entity_condition.find('TimeHeadwayCondition')
 
-                    condition_value = float(headtime_condition.attrib.get('value'))
+                    condition_value = ParameterRef(headtime_condition.attrib.get('value'))
 
                     condition_rule = headtime_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
@@ -782,7 +913,7 @@ class OpenScenarioParser(object):
                     condition_rule = ttc_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
-                    condition_value = float(ttc_condition.attrib.get('value'))
+                    condition_value = ParameterRef(ttc_condition.attrib.get('value'))
                     condition_target = ttc_condition.find('TimeToCollisionConditionTarget')
                     entity_ref_ = condition_target.find('EntityRef')
 
@@ -807,18 +938,18 @@ class OpenScenarioParser(object):
                             condition_along_route, condition_operator, condition_name)
                 elif entity_condition.find('AccelerationCondition') is not None:
                     accel_condition = entity_condition.find('AccelerationCondition')
-                    condition_value = float(accel_condition.attrib.get('value'))
+                    condition_value = ParameterRef(accel_condition.attrib.get('value'))
                     condition_rule = accel_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
                     atomic = TriggerAcceleration(
                         trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('StandStillCondition') is not None:
                     ss_condition = entity_condition.find('StandStillCondition')
-                    duration = float(ss_condition.attrib.get('duration'))
+                    duration = ParameterRef(ss_condition.attrib.get('duration'))
                     atomic = StandStill(trigger_actor, condition_name, duration)
                 elif entity_condition.find('SpeedCondition') is not None:
                     spd_condition = entity_condition.find('SpeedCondition')
-                    condition_value = float(spd_condition.attrib.get('value'))
+                    condition_value = ParameterRef(spd_condition.attrib.get('value'))
                     condition_rule = spd_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
@@ -826,7 +957,7 @@ class OpenScenarioParser(object):
                         trigger_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('RelativeSpeedCondition') is not None:
                     relspd_condition = entity_condition.find('RelativeSpeedCondition')
-                    condition_value = float(relspd_condition.attrib.get('value'))
+                    condition_value = ParameterRef(relspd_condition.attrib.get('value'))
                     condition_rule = relspd_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
 
@@ -843,18 +974,18 @@ class OpenScenarioParser(object):
                         trigger_actor, triggered_actor, condition_value, condition_operator, condition_name)
                 elif entity_condition.find('TraveledDistanceCondition') is not None:
                     distance_condition = entity_condition.find('TraveledDistanceCondition')
-                    distance_value = float(distance_condition.attrib.get('value'))
+                    distance_value = ParameterRef(distance_condition.attrib.get('value'))
                     atomic = DriveDistance(trigger_actor, distance_value, name=condition_name)
                 elif entity_condition.find('ReachPositionCondition') is not None:
                     rp_condition = entity_condition.find('ReachPositionCondition')
-                    distance_value = float(rp_condition.attrib.get('tolerance'))
+                    distance_value = ParameterRef(rp_condition.attrib.get('tolerance'))
                     position = rp_condition.find('Position')
                     atomic = InTriggerDistanceToOSCPosition(
                         trigger_actor, position, distance_value, name=condition_name)
                 elif entity_condition.find('DistanceCondition') is not None:
                     distance_condition = entity_condition.find('DistanceCondition')
 
-                    distance_value = float(distance_condition.attrib.get('value'))
+                    distance_value = ParameterRef(distance_condition.attrib.get('value'))
 
                     distance_rule = distance_condition.attrib.get('rule')
                     distance_operator = OpenScenarioParser.operators[distance_rule]
@@ -873,7 +1004,7 @@ class OpenScenarioParser(object):
 
                 elif entity_condition.find('RelativeDistanceCondition') is not None:
                     distance_condition = entity_condition.find('RelativeDistanceCondition')
-                    distance_value = float(distance_condition.attrib.get('value'))
+                    distance_value = ParameterRef(distance_condition.attrib.get('value'))
 
                     distance_freespace = distance_condition.attrib.get('freespace', "false") == "true"
                     rel_dis_type = distance_condition.attrib.get('relativeDistanceType')
@@ -896,30 +1027,33 @@ class OpenScenarioParser(object):
             if value_condition.find('ParameterCondition') is not None:
                 parameter_condition = value_condition.find('ParameterCondition')
                 arg_name = parameter_condition.attrib.get('parameterRef')
-                value = parameter_condition.attrib.get('value')
-                if value != '':
-                    arg_value = float(value)
-                else:
-                    arg_value = 0
-                parameter_condition.attrib.get('rule')
-
-                if condition_name in globals():
-                    criterion_instance = globals()[condition_name]
-                else:
-                    raise AttributeError(
-                        "The condition {} cannot be mapped to a criterion atomic".format(condition_name))
-
-                atomic = py_trees.composites.Parallel("Evaluation Criteria for multiple ego vehicles")
-                for triggered_actor in actor_list:
-                    if arg_name != '':
-                        atomic.add_child(criterion_instance(triggered_actor, arg_value))
+                value = ParameterRef(parameter_condition.attrib.get('value'))
+                rule = parameter_condition.attrib.get('rule')
+                if condition_name.startswith('criteria_'):
+                    if str(value) != '':
+                        arg_value = float(value)
                     else:
-                        atomic.add_child(criterion_instance(triggered_actor))
+                        arg_value = 0
+                    class_name = condition_name[9:]
+                    if class_name in globals():
+                        criterion_instance = globals()[class_name]
+                    else:
+                        raise AttributeError(
+                            "The condition {} cannot be mapped to a criterion atomic".format(class_name))
+
+                    atomic = py_trees.composites.Parallel("Evaluation Criteria for multiple ego vehicles")
+                    for triggered_actor in actor_list:
+                        if arg_name != '':
+                            atomic.add_child(criterion_instance(triggered_actor, arg_value))
+                        else:
+                            atomic.add_child(criterion_instance(triggered_actor))
+                else:
+                    atomic = CheckParameter(arg_name, value, OpenScenarioParser.operators[rule], name=condition_name)
             elif value_condition.find('SimulationTimeCondition') is not None:
                 simtime_condition = value_condition.find('SimulationTimeCondition')
-                value = float(simtime_condition.attrib.get('value'))
-                rule = simtime_condition.attrib.get('rule')
-                atomic = SimulationTimeCondition(value, success_rule=rule)
+                value = ParameterRef(simtime_condition.attrib.get('value'))
+                rule = OpenScenarioParser.operators[simtime_condition.attrib.get('rule')]
+                atomic = SimulationTimeCondition(value, comparison_operator=rule)
             elif value_condition.find('TimeOfDayCondition') is not None:
                 tod_condition = value_condition.find('TimeOfDayCondition')
                 condition_date = tod_condition.attrib.get('dateTime')
@@ -1013,7 +1147,18 @@ class OpenScenarioParser(object):
                     oneshot_with_check(variable_name=maneuver_name + ">FrictionUpdate", behaviour=friction_behavior))
 
                 return env_behavior
-
+            elif global_action.find('ParameterAction') is not None:
+                parameter_action = global_action.find('ParameterAction')
+                parameter_ref = parameter_action.attrib.get('parameterRef')
+                if parameter_action.find('ModifyAction') is not None:
+                    action_rule = parameter_action.find('ModifyAction').find("Rule")
+                    if action_rule.find("AddValue") is not None:
+                        rule, value = '+', action_rule.find("AddValue").attrib.get('value')
+                    else:
+                        rule, value = '*', action_rule.find("MultiplyByValue").attrib.get('value')
+                else:
+                    rule, value = None, parameter_action.find('SetAction').attrib.get('value')
+                atomic = ChangeParameter(parameter_ref, value=ParameterRef(value), rule=rule, name=maneuver_name)
             else:
                 raise NotImplementedError("Global actions are not yet supported")
         elif action.find('UserDefinedAction') is not None:
@@ -1035,24 +1180,26 @@ class OpenScenarioParser(object):
                     duration = float('inf')
                     dimension = long_maneuver.find("SpeedActionDynamics").attrib.get('dynamicsDimension')
                     if dimension == "distance":
-                        distance = float(long_maneuver.find("SpeedActionDynamics").attrib.get('value', float("inf")))
+                        distance = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
+                            'value', float("inf")))
                     else:
-                        duration = float(long_maneuver.find("SpeedActionDynamics").attrib.get('value', float("inf")))
+                        duration = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
+                            'value', float("inf")))
 
                     # absolute velocity with given target speed
                     if long_maneuver.find("SpeedActionTarget").find("AbsoluteTargetSpeed") is not None:
-                        target_speed = float(long_maneuver.find("SpeedActionTarget").find(
+                        target_speed = ParameterRef(long_maneuver.find("SpeedActionTarget").find(
                             "AbsoluteTargetSpeed").attrib.get('value', 0))
                         atomic = ChangeActorTargetSpeed(
-                            actor, target_speed, distance=distance, duration=duration, name=maneuver_name)
+                            actor, float(target_speed), distance=distance, duration=duration, name=maneuver_name)
 
                     # relative velocity to given actor
                     if long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed") is not None:
                         relative_speed = long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed")
                         obj = relative_speed.attrib.get('entityRef')
-                        value = float(relative_speed.attrib.get('value', 0))
+                        value = ParameterRef(relative_speed.attrib.get('value', 0))
                         value_type = relative_speed.attrib.get('speedTargetValueType')
-                        continuous = relative_speed.attrib.get('continuous')
+                        continuous = bool(strtobool(relative_speed.attrib.get('continuous')))
 
                         for traffic_actor in actor_list:
                             if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
@@ -1078,7 +1225,7 @@ class OpenScenarioParser(object):
                             obj_actor = traffic_actor
 
                     if "distance" in long_dist_action.attrib and "timeGap" not in long_dist_action.attrib:
-                        gap_type, gap = 'distance', float(long_dist_action.attrib.get('distance'))
+                        gap_type, gap = 'distance', ParameterRef(long_dist_action.attrib.get('distance'))
                     elif "timeGap" in long_dist_action.attrib and "distance" not in long_dist_action.attrib:
                         raise NotImplementedError("LongitudinalDistanceAction: timeGap is not implemented")
                     else:
@@ -1099,7 +1246,7 @@ class OpenScenarioParser(object):
                 if private_action.find('LaneChangeAction') is not None:
                     # Note: LaneChangeActions are currently only supported for RelativeTargetLane
                     lat_maneuver = private_action.find('LaneChangeAction')
-                    target_lane_rel = float(lat_maneuver.find("LaneChangeTarget").find(
+                    target_lane_rel = ParameterRef(lat_maneuver.find("LaneChangeTarget").find(
                         "RelativeTargetLane").attrib.get('value', 0))
                     direction = "left" if target_lane_rel > 0 else "right"
                     lane_changes = abs(target_lane_rel)
@@ -1108,10 +1255,10 @@ class OpenScenarioParser(object):
                     duration = float('inf')
                     dimension = lat_maneuver.find("LaneChangeActionDynamics").attrib.get('dynamicsDimension')
                     if dimension == "distance":
-                        distance = float(
+                        distance = ParameterRef(
                             lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
                     else:
-                        duration = float(
+                        duration = ParameterRef(
                             lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
                     atomic = ChangeActorLateralMotion(actor, direction=direction,
                                                       distance_lane_change=distance,
@@ -1120,19 +1267,19 @@ class OpenScenarioParser(object):
                                                       name=maneuver_name)
                 elif private_action.find('LaneOffsetAction') is not None:
                     lat_maneuver = private_action.find('LaneOffsetAction')
-                    continuous = strtobool(lat_maneuver.attrib.get('continuous', True))
+                    continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "true")))
                     # Parsing of the different Dynamic shapes is missing
 
                     lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
                     if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
-                        absolute_offset = float(
+                        absolute_offset = ParameterRef(
                             lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value', 0))
                         atomic = ChangeActorLaneOffset(
                             actor, absolute_offset, continuous=continuous, name=maneuver_name)
 
                     elif lane_target_offset.find('RelativeTargetLaneOffset') is not None:
                         relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
-                        relative_offset = float(relative_target_offset.attrib.get('value', 0))
+                        relative_offset = ParameterRef(relative_target_offset.attrib.get('value', 0))
 
                         relative_actor = None
                         relative_actor_name = relative_target_offset.attrib.get('entityRef', None)
@@ -1172,7 +1319,7 @@ class OpenScenarioParser(object):
                 position = OpenScenarioParser.convert_position_to_transform(sync_action.find('TargetPosition'))
 
                 if sync_action.find("FinalSpeed").find("AbsoluteSpeed") is not None:
-                    final_speed = float(sync_action.find("FinalSpeed").find(
+                    final_speed = ParameterRef(sync_action.find("FinalSpeed").find(
                         "AbsoluteSpeed").attrib.get('value', 0))
                     atomic = SyncArrivalOSC(
                         actor, master_actor, position, master_position, final_speed, name=maneuver_name)
@@ -1180,7 +1327,7 @@ class OpenScenarioParser(object):
                 # relative velocity to given actor
                 elif sync_action.find("FinalSpeed").find("RelativeSpeedToMaster") is not None:
                     relative_speed = sync_action.find("FinalSpeed").find("RelativeSpeedToMaster")
-                    final_speed = float(relative_speed.attrib.get('value', 0))
+                    final_speed = ParameterRef(relative_speed.attrib.get('value', 0))
                     relative_type = relative_speed.attrib.get('speedTargetValueType')
                     atomic = SyncArrivalOSC(
                         actor, master_actor, position, master_position, final_speed,
