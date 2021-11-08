@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import py_trees
 import numpy as np
+from py_trees.composites import Parallel
 from py_trees.meta import timeout
 
 import carla
@@ -48,8 +49,9 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 40
         self._sink_dist = 10
-        self._source_dist_interval = [20, 40]
+        self._source_dist_interval = [20, 50]
         self._opposite_speed = 35 / 3.6
+        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green. Used to initialize the actor flow
         self._direction = 'left'
         self.timeout = timeout
         self._route_planner = GlobalRoutePlanner(self._map, 2.0)
@@ -91,10 +93,18 @@ class SignalizedJunctionRightTurn(BasicScenario):
             source_entry_wp = right_wp
 
         # Get the source transform
-        source_wps = source_entry_wp.previous(self._source_dist)
-        if len(source_wps) == 0:
-            raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
-        self._source_wp = source_wps[0]
+        source_wp = source_entry_wp
+        accum_dist = 0
+        while accum_dist < self._source_dist:
+            source_wps = source_wp.previous(5)
+            if len(source_wps) == 0:
+                raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
+            if source_wps[0].is_junction:
+                break
+            source_wp = source_wps[0]
+            accum_dist += 5
+
+        self._source_wp = source_wp
         source_transform = self._source_wp.transform
 
         # Get the sink location
@@ -108,12 +118,18 @@ class SignalizedJunctionRightTurn(BasicScenario):
         tls = self._world.get_traffic_lights_in_junction(junction.id)
         ego_tl = get_closest_traffic_light(ego_wp, tls)
         source_tl = get_closest_traffic_light(source_wps[0], tls)
-        self._tl_dict = {}
+        self._flow_tl_dict = {}
+        self._init_tl_dict = {}
         for tl in tls:
-            if tl == ego_tl or tl == source_tl:
-                self._tl_dict[tl] = carla.TrafficLightState.Green
+            if tl == ego_tl:
+                self._flow_tl_dict[tl] = carla.TrafficLightState.Green
+                self._init_tl_dict[tl] = carla.TrafficLightState.Red
+            elif tl == source_tl:
+                self._flow_tl_dict[tl] = carla.TrafficLightState.Green
+                self._init_tl_dict[tl] = carla.TrafficLightState.Green
             else:
-                self._tl_dict[tl] = carla.TrafficLightState.Red
+                self._flow_tl_dict[tl] = carla.TrafficLightState.Red
+                self._init_tl_dict[tl] = carla.TrafficLightState.Red
 
     def _create_behavior(self):
         """
@@ -124,9 +140,13 @@ class SignalizedJunctionRightTurn(BasicScenario):
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._opposite_speed))
-        root.add_child(TrafficLightFreezer(self._tl_dict))
 
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
+        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
+        tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
+        tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
+        root.add_child(tl_freezer_sequence)
+
+        sequence = py_trees.composites.Sequence("Sequence")
         if CarlaDataProvider.get_ego_vehicle_route():
             sequence.add_child(Scenario9Manager(self._direction))
         sequence.add_child(root)

@@ -11,19 +11,15 @@ priority, e.g. by running a red traffic light.
 """
 
 from __future__ import print_function
-import sys
 
 import py_trees
 import carla
-import numpy.random as random
-from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       TrafficLightFreezer,
-                                                                      KeepVelocityFromStart,
-                                                                      StartEngine)
+                                                                      ConstantVelocityAgentBehavior)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -55,18 +51,17 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._source_dist = 30
         self._sink_dist = 20
         self._direction = None
-        self._adversary_transform = None
         self._opposite_bp_wildcards = ['*firetruck*', '*ambulance*', '*police*']  # Wildcard patterns of the blueprints
         self.timeout = timeout
 
-        self._adversary_speed = 50 / 3.6  # Speed of the adversary [m/s]
-        self._reaction_time = 0.3  # Time the agent has to react to avoid the collision [s]
+        self._adversary_speed = 70 / 3.6  # Speed of the adversary [m/s]
+        self._sync_time = 2.2  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
         self._speed_duration_ratio = 2.0
         self._speed_distance_ratio = 1.5
 
         # Get the CDP seed or at routes, all copies of the scenario will have the same configuration
-        self._rng = CarlaDataProvider.get_random_seed()  
+        self._rng = CarlaDataProvider.get_random_seed()
 
         super(OppositeVehicleRunningRedLight, self).__init__("OppositeVehicleRunningRedLight",
                                                              ego_vehicles,
@@ -104,22 +99,25 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             raise ValueError("Trying to find a lane to spawn the opposite actor but none was found")
 
         # Get the source transform
-        self._entry_plan = []
-        source_wp = source_entry_wps[0]
-        added_dist = self._source_dist
-        while added_dist > 0:
-            source_wps = source_wp.previous(1.0)
-            if len(source_wps) == 0:
+        spawn_wp = source_entry_wps[0]
+        added_dist = 0
+        while added_dist < self._source_dist:
+            spawn_wps = spawn_wp.previous(1.0)
+            if len(spawn_wps) == 0:
                 raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
-            source_wp = source_wps[0]
-            self._entry_plan.insert(0, ([source_wp, RoadOption.LANEFOLLOW]))
-            added_dist -=1
+            if spawn_wps[0].is_junction:
+                break
+            spawn_wp = spawn_wps[0]
+            added_dist += 1
+        self._spawn_wp = spawn_wp
 
-        source_transform = source_wp.transform
+        source_transform = spawn_wp.transform
         self._spawn_location = carla.Transform(
             source_transform.location + carla.Location(z=0.1),
             source_transform.rotation
         )
+
+        # Spawn the actor and move it below ground
         opposite_bp_wildcard = self._rng.choice(self._opposite_bp_wildcards)
         opposite_actor = CarlaDataProvider.request_new_actor(opposite_bp_wildcard, self._spawn_location)
         if not opposite_actor:
@@ -127,7 +125,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         opposite_actor.set_light_state(carla.VehicleLightState(
             carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2))
         self.other_actors.append(opposite_actor)
-        self._adversary_transform = opposite_actor.get_transform()
 
         opposite_transform = carla.Transform(
             source_transform.location - carla.Location(z=500),
@@ -136,33 +133,23 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         opposite_actor.set_transform(opposite_transform)
         opposite_actor.set_simulate_physics(enabled=False)
 
-        # Get the out of junction plan
+        # Get the sink location
         sink_exit_wp = generate_target_waypoint(self._map.get_waypoint(source_transform.location), 0)
-        self._exit_plan = []
-        next_wp = sink_exit_wp
-        added_dist = self._sink_dist
-        while added_dist > 0:
-            next_wps = next_wp.next(1.0)
-            if len(next_wps) == 0:
-                break
-            next_wp = next_wps[0]
-            self._exit_plan.append([next_wp, RoadOption.LANEFOLLOW])
-            added_dist -= 1
+        sink_wps = sink_exit_wp.next(self._sink_dist)
+        if len(sink_wps) == 0:
+            raise ValueError("Failed to find a sink location as a waypoint with no next was detected")
+        self._sink_wp = sink_wps[0]
 
+        # get the collision location
         self._collision_location = get_geometric_linear_intersection(
             starting_wp.transform.location, source_entry_wps[0].transform.location)
         if not self._collision_location:
             raise ValueError("Couldn't find an intersection point")
-        collision_waypoint = self._map.get_waypoint(self._collision_location)
-        self._entry_plan.append([collision_waypoint, RoadOption.LANEFOLLOW])
-
-        # Get synchronization stop distance (it stops when the ego enters the junction)
-        self._sync_stop_dist = self._collision_location.distance(starting_wp.transform.location)
 
         # Get the relevant traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
         ego_tl = get_closest_traffic_light(ego_wp, tls)
-        source_tl = get_closest_traffic_light(source_wps[0], tls,)
+        source_tl = get_closest_traffic_light(self._spawn_wp, tls,)
         self._tl_dict = {}
         for tl in tls:
             if tl == ego_tl or tl == source_tl:
@@ -175,33 +162,20 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         Hero vehicle is entering a junction in an urban area, at a signalized intersection,
         while another actor runs a red lift, forcing the ego to break.
         """
-
-        collision_distance = self._collision_location.distance(self._adversary_transform.location)
-        collision_duration = collision_distance / self._adversary_speed
-        collision_time_trigger = collision_duration + self._reaction_time
-
         sequence = py_trees.composites.Sequence()
 
         # Wait until ego is close to the adversary
         trigger_adversary = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
-            self.ego_vehicles[0], collision_time_trigger, self._collision_location))
+            self.ego_vehicles[0], self._sync_time, self._collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._collision_location, self._min_trigger_dist))
-        trigger_adversary.add_child(StartEngine(self.other_actors[0]))
-        sequence.add_child(trigger_adversary)
 
-        # Move the adversary. Duration and speed are twice their value to avoid the adversary dissapearing mid-junction
-        speed_duration = self._speed_duration_ratio * collision_duration
-        speed_distance = self._speed_distance_ratio * collision_distance
-        sequence.add_child(KeepVelocityFromStart(
-            self.other_actors[0],
-            self._adversary_speed,
-            False,
-            speed_duration,
-            speed_distance,
-            name="AdversaryCrossing"))
+        sequence.add_child(trigger_adversary)
+        sequence.add_child(ConstantVelocityAgentBehavior(
+            self.other_actors[0], target_location=self._sink_wp.transform.location,
+            target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True}, name="AdversaryCrossing"))
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         main_behavior.add_child(TrafficLightFreezer(self._tl_dict))

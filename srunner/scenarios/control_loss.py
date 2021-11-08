@@ -83,9 +83,9 @@ class ControlLoss(BasicScenario):
         self.third_transform = carla.Transform(self.third_loc_prev, third_wp.transform.rotation)
 
         # Spawn the debris
-        first_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.first_transform, 'prop')
-        second_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.second_transform, 'prop')
-        third_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.third_transform, 'prop')
+        first_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.first_transform, rolename='prop')
+        second_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.second_transform, rolename='prop')
+        third_debris = CarlaDataProvider.request_new_actor('static.prop.dirtdebris01', self.third_transform, rolename='prop')
 
         first_debris.set_transform(self.first_transform)
         second_debris.set_transform(self.second_transform)
