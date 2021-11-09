@@ -120,6 +120,20 @@ class ParameterRef:
             return matching_string == self.reference_text
         return False
 
+    def _cast_type(self, other):
+        try:
+            if isinstance(other, str):
+                return self.__str__()
+            elif isinstance(other, float):
+                return self.__float__()
+            elif isinstance(other, int):
+                return self.__int__()
+            else:
+                raise Exception("Type conversion for type {} not implemented".format(type(other)))
+        except ValueError:
+            # If the parameter value can't be converted into type of 'other'
+            return None
+
     def get_interpreted_value(self):
         """
         Returns: interpreted value from reference_text
@@ -156,6 +170,10 @@ class ParameterRef:
         value = self.get_interpreted_value()
         return value if value is not None else self.reference_text
 
+    def __hash__(self):
+        value = self.get_interpreted_value()
+        return hash(value) if value is not None else hash(self.reference_text)
+
     def __radd__(self, other) -> bool:
         return other + self.__float__()
 
@@ -181,34 +199,44 @@ class ParameterRef:
         return other / self.__float__()
 
     def __eq__(self, other) -> bool:
-        return other == self.__float__()
+        value = self._cast_type(other)
+        return other == value
 
     def __ne__(self, other) -> bool:
-        return other != self.__float__()
+        value = self._cast_type(other)
+        return other != value
 
     def __ge__(self, other) -> bool:
-        return self.__float__() >= other
+        value = self._cast_type(other)
+        return value >= other
 
     def __le__(self, other) -> bool:
-        return self.__float__() <= other
+        value = self._cast_type(other)
+        return value <= other
 
     def __gt__(self, other) -> bool:
-        return self.__float__() > other
+        value = self._cast_type(other)
+        return value > other
 
     def __lt__(self, other) -> bool:
-        return self.__float__() < other
+        value = self._cast_type(other)
+        return value < other
 
     def __GE__(self, other) -> bool:  # pylint: disable=invalid-name
-        return self.__float__() >= other
+        value = self._cast_type(other)
+        return value >= other
 
     def __LE__(self, other) -> bool:  # pylint: disable=invalid-name
-        return self.__float__() <= other
+        value = self._cast_type(other)
+        return value <= other
 
     def __GT__(self, other) -> bool:  # pylint: disable=invalid-name
-        return self.__float__() > other
+        value = self._cast_type(other)
+        return value > other
 
     def __LT__(self, other) -> bool:  # pylint: disable=invalid-name
-        return self.__float__() < other
+        value = self._cast_type(other)
+        return value < other
 
     def __iadd__(self, other) -> bool:
         return self.__float__() + other
@@ -361,7 +389,7 @@ class OpenScenarioParser(object):
         returns:
             Catalog entry (XML ElementTree)
         """
-        entry = catalogs[catalog_reference.attrib.get("catalogName")][ParameterRef(catalog_reference.attrib.get("entryName"))]
+        entry = catalogs[ParameterRef(catalog_reference.attrib.get("catalogName"))][ParameterRef(catalog_reference.attrib.get("entryName"))]
         entry_copy = copy.deepcopy(entry)
         catalog_copy = copy.deepcopy(catalog_reference)
         entry = OpenScenarioParser.assign_catalog_parameters(entry_copy, catalog_copy)
@@ -439,7 +467,7 @@ class OpenScenarioParser(object):
 
         road_condition = environment.iter("RoadCondition")
         for condition in road_condition:
-            friction = condition.attrib.get('frictionScaleFactor')
+            friction = float(ParameterRef(condition.attrib.get('frictionScaleFactor')))
 
         return friction
 
@@ -473,11 +501,11 @@ class OpenScenarioParser(object):
         sun = weather.find("Sun")
 
         carla_weather = carla.WeatherParameters()
-        carla_weather.sun_azimuth_angle = math.degrees(float(sun.attrib.get('azimuth', 0)))
-        carla_weather.sun_altitude_angle = math.degrees(float(sun.attrib.get('elevation', 0)))
-        carla_weather.cloudiness = 100 - float(sun.attrib.get('intensity', 0)) * 100
+        carla_weather.sun_azimuth_angle = math.degrees(float(ParameterRef(sun.attrib.get('azimuth', 0))))
+        carla_weather.sun_altitude_angle = math.degrees(float(ParameterRef(sun.attrib.get('elevation', 0))))
+        carla_weather.cloudiness = 100 - float(ParameterRef(sun.attrib.get('intensity', 0))) * 100
         fog = weather.find("Fog")
-        carla_weather.fog_distance = float(fog.attrib.get('visualRange', 'inf'))
+        carla_weather.fog_distance = float(ParameterRef(fog.attrib.get('visualRange', 'inf')))
         if carla_weather.fog_distance < 1000:
             carla_weather.fog_density = 100
         carla_weather.precipitation = 0
@@ -485,16 +513,16 @@ class OpenScenarioParser(object):
         carla_weather.wetness = 0
         carla_weather.wind_intensity = 30.0
         precepitation = weather.find("Precipitation")
-        if precepitation.attrib.get('precipitationType') == "rain":
-            carla_weather.precipitation = float(precepitation.attrib.get('intensity')) * 100
+        if ParameterRef(precepitation.attrib.get('precipitationType')) == "rain":
+            carla_weather.precipitation = float(ParameterRef(precepitation.attrib.get('intensity'))) * 100
             carla_weather.precipitation_deposits = 100  # if it rains, make the road wet
             carla_weather.wetness = carla_weather.precipitation
-        elif precepitation.attrib.get('type') == "snow":
+        elif ParameterRef(precepitation.attrib.get('type')) == "snow":
             raise AttributeError("CARLA does not support snow precipitation")
 
         time_of_day = environment.find("TimeOfDay")
-        weather_animation = strtobool(time_of_day.attrib.get("animation"))
-        time = time_of_day.attrib.get("dateTime")
+        weather_animation = strtobool(str(ParameterRef(time_of_day.attrib.get("animation"))))
+        time = str(ParameterRef(time_of_day.attrib.get("dateTime")))
         dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
 
         return Weather(carla_weather, dtime, weather_animation)
@@ -526,14 +554,14 @@ class OpenScenarioParser(object):
         module = None
         args = {}
         for prop in properties:
-            if prop.attrib.get('name') == "module":
-                module = prop.attrib.get('value')
+            if ParameterRef(prop.attrib.get('name')) == "module":
+                module = str(ParameterRef(prop.attrib.get('value')))
             else:
-                args[prop.attrib.get('name')] = prop.attrib.get('value')
+                args[str(ParameterRef(prop.attrib.get('name')))] = str(ParameterRef(prop.attrib.get('value')))
 
         override_action = xml_tree.find('OverrideControllerValueAction')
         for child in override_action:
-            if strtobool(child.attrib.get('active')):
+            if strtobool(str(ParameterRef(child.attrib.get('active')))):
                 raise NotImplementedError("Controller override actions are not yet supported")
 
         return module, args
@@ -567,7 +595,7 @@ class OpenScenarioParser(object):
         if route is not None:
             for waypoint in route.iter('Waypoint'):
                 position = waypoint.find('Position')
-                routing_option = str(waypoint.attrib.get('routeStrategy'))
+                routing_option = str(ParameterRef(waypoint.attrib.get('routeStrategy')))
                 waypoints.append((position, routing_option))
         else:
             raise AttributeError("No waypoints has been set")
@@ -1110,7 +1138,7 @@ class OpenScenarioParser(object):
 
         Note not all OpenSCENARIO actions are currently supported
         """
-        maneuver_name = action.attrib.get('name', 'unknown')
+        maneuver_name = str(ParameterRef(action.attrib.get('name', 'unknown')))
 
         if action.find('GlobalAction') is not None:
             global_action = action.find('GlobalAction')
@@ -1163,7 +1191,7 @@ class OpenScenarioParser(object):
         elif action.find('UserDefinedAction') is not None:
             user_defined_action = action.find('UserDefinedAction')
             if user_defined_action.find('CustomCommandAction') is not None:
-                command = user_defined_action.find('CustomCommandAction').attrib.get('type')
+                command = str(ParameterRef(user_defined_action.find('CustomCommandAction').attrib.get('type')))
                 atomic = RunScript(command, base_path=OpenScenarioParser.osc_filepath, name=maneuver_name)
         elif action.find('PrivateAction') is not None:
             private_action = action.find('PrivateAction')
