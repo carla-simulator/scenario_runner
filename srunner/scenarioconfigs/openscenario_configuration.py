@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2021 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -21,8 +21,8 @@ import carla
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
-from srunner.tools.openscenario_parser import OpenScenarioParser, ParameterRef
-
+from srunner.tools.openscenario_parser import OpenScenarioParser
+from srunner.tools.scenario_param_ref import ParameterRef
 
 class OpenScenarioConfiguration(ScenarioConfiguration):
 
@@ -351,7 +351,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_found = False
 
         for private_action in self.init.iter("Private"):
-            if private_action.attrib.get('entityRef', None) == actor_name:
+            if str(ParameterRef(private_action.attrib.get('entityRef', None))) == actor_name:
                 if actor_found:
                     # pylint: disable=line-too-long
                     self.logger.warning(
@@ -380,7 +380,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_found = False
 
         for private_action in self.init.iter("Private"):
-            if private_action.attrib.get('entityRef', None) == actor_name:
+            if str(ParameterRef(private_action.attrib.get('entityRef', None))) == actor_name:
                 if actor_found:
                     # pylint: disable=line-too-long
                     self.logger.warning(

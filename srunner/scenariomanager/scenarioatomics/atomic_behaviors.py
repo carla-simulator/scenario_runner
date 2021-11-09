@@ -39,6 +39,7 @@ from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
+from srunner.tools.scenario_param_ref import ParameterRef
 
 
 import srunner.tools as sr_tools
@@ -172,6 +173,13 @@ class RunScript(AtomicBehavior):
         """
         path = None
         script_components = self._script.split(' ')
+
+        interpreted_components = []
+        for component in script_components:
+            interpreted_components.append( str(ParameterRef(component)) )
+        script_components = interpreted_components
+        interpreted_script = ' '.join(script_components)
+
         if len(script_components) > 1:
             path = script_components[1]
 
@@ -181,7 +189,7 @@ class RunScript(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
             print("Script file does not exists {}".format(path))
         else:
-            subprocess.Popen(self._script, shell=True, cwd=self._base_path)  # pylint: disable=consider-using-with
+            subprocess.Popen(interpreted_script, shell=True, cwd=self._base_path)  # pylint: disable=consider-using-with
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
