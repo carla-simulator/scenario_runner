@@ -21,7 +21,7 @@ import carla
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
-from srunner.tools.openscenario_parser import OpenScenarioParser
+from srunner.tools.openscenario_parser import OpenScenarioParser, ParameterRef
 
 
 class OpenScenarioConfiguration(ScenarioConfiguration):
@@ -392,7 +392,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     for speed in longitudinal_action.iter('SpeedAction'):
                         for target in speed.iter('SpeedActionTarget'):
                             for absolute in target.iter('AbsoluteTargetSpeed'):
-                                speed = float(absolute.attrib.get('value', 0))
+                                speed = float(ParameterRef(absolute.attrib.get('value', 0)))
                                 if speed >= 0:
                                     actor_speed = speed
                                 else:
