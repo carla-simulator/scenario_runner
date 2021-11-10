@@ -963,7 +963,12 @@ def main():
     argparser.add_argument(
         '-a', '--autopilot',
         action='store_true',
-        help='enable autopilot')
+        help='enable autopilot. This does not autocomplete the scenario')
+    argparser.add_argument(
+        '--rolename',
+        metavar='NAME',
+        default='hero',
+        help='role name of ego vehicle to control (default: "hero")')
     argparser.add_argument(
         '--res',
         metavar='WIDTHxHEIGHT',
