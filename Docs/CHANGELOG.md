@@ -21,6 +21,9 @@
 * Fixed a bug with repetitions / scenario groups causing the simulation to crash after the second one.
 * Fixed use of OSC Parameters as entry names for catalogs
 
+### :ghost: Maintenance
+* Removed CARLA example dependencies
+
 ## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
 * OpenSCENARIO support:
