@@ -1,0 +1,28 @@
+name: Static Code Analysis
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
+
+jobs:
+  formatJob:
+    name: Run UnitTests
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install pep8 python3-autopep8 python3-pep8 python-is-python3
+        sudo apt-get install python3-pip pep8 python3-autopep8 python3-pep8 python-is-python3 libgeos-dev
+        sudo pip3 install pylint --upgrade
+        sudo pip3 install -r requirements.txt
+
+    - name: Check Code Format
+      run: |
+        export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/srunner/tests/carla_mocks
+        python3 -m unittest srunner/tests/test_xosc_load.py
