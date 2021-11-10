@@ -361,8 +361,8 @@ class OpenScenarioParser(object):
         returns:
             Catalog entry (XML ElementTree)
         """
-
-        entry = catalogs[catalog_reference.attrib.get("catalogName")][catalog_reference.attrib.get("entryName")]
+        entry_name = str(ParameterRef(catalog_reference.attrib.get("entryName")))
+        entry = catalogs[catalog_reference.attrib.get("catalogName")][entry_name]
         entry_copy = copy.deepcopy(entry)
         catalog_copy = copy.deepcopy(catalog_reference)
         entry = OpenScenarioParser.assign_catalog_parameters(entry_copy, catalog_copy)
