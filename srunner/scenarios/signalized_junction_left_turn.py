@@ -47,7 +47,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 40
         self._sink_dist = 20
-        self._source_dist_interval = [20, 50]
+        self._source_dist_interval = [25, 50]
         self._opposite_speed = 35 / 3.6
         self._rng = random.RandomState(2000)
         self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green. Used to initialize the actor flow

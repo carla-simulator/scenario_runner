@@ -1967,7 +1967,10 @@ class BackgroundBehavior(AtomicBehavior):
     def _destroy_actor(self, actor):
         """Destroy the actor and all its references"""
         self._remove_actor_info(actor)
-        actor.destroy()
+        try:
+            actor.destroy()
+        except RuntimeError:
+            pass
 
     def _update_ego_route_location(self, location):
         """Returns the closest route location to the ego"""

@@ -2797,7 +2797,7 @@ class ActorFlow(AtomicBehavior):
                 ground_loc = self._world.ground_projection(self._source_transform.location, 2)
                 if ground_loc.location:
                     initial_location = ground_loc.location
-                    initial_location.z += 0.1
+                    initial_location.z += 0.05
                     actor.set_location(initial_location)
 
         return py_trees.common.Status.RUNNING
