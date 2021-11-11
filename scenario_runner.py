@@ -447,6 +447,7 @@ class ScenarioRunner(object):
         # Execute each configuration
         for config in scenario_configurations:
             for _ in range(self._args.repetitions):
+                self.finished = False
                 result = self._load_and_run_scenario(config)
 
             self._cleanup()

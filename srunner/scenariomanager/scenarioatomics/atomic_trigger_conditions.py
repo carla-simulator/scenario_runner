@@ -1254,3 +1254,28 @@ class WaitForBlackboardVariable(AtomicCondition):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+
+class CheckParameter(AtomicCondition):
+    """
+    Atomic behavior that keeps checking global osc parameter value with the given value.
+    The condition terminates with SUCCESS, when the comparison_operator is evaluated successfully.
+    """
+
+    def __init__(self, parameter_ref, value, comparison_operator, debug=False, name="CheckParameter"):
+        super(CheckParameter, self).__init__(name)
+        self._parameter_ref = parameter_ref
+        self._value = value
+        self._comparison_operator = comparison_operator
+        self._debug = debug
+
+    def update(self):
+        """
+        keeps comparing global osc value with given value till it is successful.
+        """
+        new_status = py_trees.common.Status.RUNNING
+        current_value = CarlaDataProvider.get_osc_global_param_value(self._parameter_ref)
+        if self._comparison_operator(current_value, self._value):
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status

@@ -12,6 +12,17 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest changes
+### :rocket: New Features
+* OpenSCENARIO support:
+    - Added support for `ParameterAction`
+    - Extended `ParameterCondition` support to use as an event trigger condition
+
+### :bug: Bug Fixes
+* Fixed a bug with repetitions / scenario groups causing the simulation to crash after the second one.
+* Fixed use of OSC Parameters as entry names for catalogs
+
+### :ghost: Maintenance
+* Removed CARLA example dependencies
 
 ## CARLA ScenarioRunner 0.9.12
 ### :rocket: New Features
