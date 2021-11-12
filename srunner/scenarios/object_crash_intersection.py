@@ -19,8 +19,7 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       HandBrakeVehicle,
-                                                                      KeepVelocityFromStart,
-                                                                      StartEngine)
+                                                                      KeepVelocityFromStart)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -167,11 +166,7 @@ class BaseVehicleTurning(BasicScenario):
             sequence.add_child(Scenario4Manager(self._spawn_dist))
 
         # First waiting behavior
-        wait = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="WaitForEgo")
-        wait.add_child(WaitEndIntersection(self.ego_vehicles[0]))
-        wait.add_child(StartEngine(self.other_actors[0]))
-        sequence.add_child(wait)
+        sequence.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
         # Adversary trigger behavior
         trigger_adversary = py_trees.composites.Parallel(
