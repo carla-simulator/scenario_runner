@@ -13,6 +13,9 @@
 
 ## Latest changes
 ### :rocket: New Features
+* Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
+* SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
+* The BackgroundActivity has been readded to the routes, which the objective of creating the sensation of traffic around the ego
 * OpenSCENARIO support:
     - Added support for `ParameterAction`
     - Extended `ParameterCondition` support to use as an event trigger condition
@@ -20,6 +23,8 @@
 ### :bug: Bug Fixes
 * Fixed a bug with repetitions / scenario groups causing the simulation to crash after the second one.
 * Fixed use of OSC Parameters as entry names for catalogs
+* Fixed bug at OtherLeadingVehicle scenario causing the vehicles to move faster than intended
+* Fixed bug causing some debris at ControlLoss scenario to be floating, instead of at ground level
 
 ### :ghost: Maintenance
 * Removed CARLA example dependencies
