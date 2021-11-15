@@ -511,8 +511,9 @@ def get_junction_topology(junction):
     Given a junction, returns a two list of waypoints corresponding to the entry
     and exit lanes of the junction
     """
-    def get_lane_key(wp):
-        return str(wp.road_id) + '*' + str(wp.lane_id)
+    def get_lane_key(waypoint):
+        return str(waypoint.road_id) + '*' + str(waypoint.lane_id)
+
     def get_junction_entry_wp(entry_wp):
         while entry_wp.is_junction:
             entry_wps = entry_wp.previous(0.2)
@@ -520,6 +521,7 @@ def get_junction_topology(junction):
                 return None
             entry_wp = entry_wps[0]
         return entry_wp
+
     def get_junction_exit_wp(exit_wp):
         while exit_wp.is_junction:
             exit_wps = exit_wp.next(0.2)
@@ -532,7 +534,7 @@ def get_junction_topology(junction):
     used_exit_lanes = []
     entry_wps = []
     exit_wps = []
-    for entry_wp, exit_wp in junction.get_waypoints(carla.LaneType.Driving): 
+    for entry_wp, exit_wp in junction.get_waypoints(carla.LaneType.Driving):
         entry_wp = get_junction_entry_wp(entry_wp)
         if not entry_wp:
             continue
@@ -548,6 +550,7 @@ def get_junction_topology(junction):
             exit_wps.append(exit_wp)
 
     return entry_wps, exit_wps
+
 
 def filter_junction_wp_direction(reference_wp, wp_list, direction='opposite'):
     """
@@ -599,6 +602,7 @@ def get_closest_traffic_light(waypoint, traffic_lights=None):
                 closest_tl = tl
 
     return closest_tl
+
 
 def get_offset_transform(transform, offset):
     """

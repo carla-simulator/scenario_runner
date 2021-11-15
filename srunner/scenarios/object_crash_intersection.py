@@ -11,7 +11,6 @@ moving along the road and encounters a cyclist ahead after taking a right or lef
 
 from __future__ import print_function
 
-import math
 import py_trees
 
 import carla
@@ -82,9 +81,10 @@ class BaseVehicleTurning(BasicScenario):
         self._retry_dist = 0.4
 
         self._adversary_transform = None
+        self._subtype = None
 
         self._collision_wp = None
-        self._adversary_speed = 4.0 # Speed of the adversary [m/s]
+        self._adversary_speed = 4.0  # Speed of the adversary [m/s]
         self._reaction_time = 0.5  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
@@ -182,7 +182,13 @@ class BaseVehicleTurning(BasicScenario):
         speed_duration = 2.0 * collision_duration
         speed_distance = 2.0 * collision_distance
         sequence.add_child(KeepVelocity(
-            self.other_actors[0], self._adversary_speed, True, speed_duration, speed_distance, name="AdversaryCrossing"))
+            self.other_actors[0],
+            self._adversary_speed,
+            True,
+            speed_duration,
+            speed_distance,
+            name="AdversaryCrossing")
+        )
 
         # Remove everything
         sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))

@@ -33,6 +33,7 @@ from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
 
 from srunner.tools.background_manager import Scenario7Manager
 
+
 class OppositeVehicleRunningRedLight(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
@@ -152,7 +153,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         source_tl = get_closest_traffic_light(self._spawn_wp, tls,)
         self._tl_dict = {}
         for tl in tls:
-            if tl == ego_tl or tl == source_tl:
+            if tl in (ego_tl, source_tl):
                 self._tl_dict[tl] = carla.TrafficLightState.Green
             else:
                 self._tl_dict[tl] = carla.TrafficLightState.Red
@@ -202,5 +203,4 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         """
         Remove all actors and traffic lights upon deletion
         """
-        self._traffic_light = None
         self.remove_all_actors()

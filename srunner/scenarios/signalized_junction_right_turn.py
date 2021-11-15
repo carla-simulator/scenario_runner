@@ -11,11 +11,7 @@ is making a right turn
 
 from __future__ import print_function
 
-
 import py_trees
-import numpy as np
-from py_trees.composites import Parallel
-from py_trees.meta import timeout
 
 import carla
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -37,7 +33,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
     """
     Scenario where the vehicle is turning right at an intersection an has to avoid
-    colliding with a vehicle coming from its left 
+    colliding with a vehicle coming from its left
     """
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
@@ -51,9 +47,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._sink_dist = 10
         self._source_dist_interval = [25, 50]
         self._opposite_speed = 35 / 3.6
-        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green. Used to initialize the actor flow
+        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
         self._direction = 'left'
-        self.timeout = timeout
         self._route_planner = GlobalRoutePlanner(self._map, 2.0)
         super(SignalizedJunctionRightTurn, self).__init__("SignalizedJunctionRightTurn",
                                                           ego_vehicles,
@@ -161,5 +156,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
-        self._traffic_light = None
+        """
+        Remove all actors upon deletion
+        """
         self.remove_all_actors()

@@ -23,17 +23,16 @@ import time
 import subprocess
 
 import numpy as np
-import numpy.random as random
+from numpy import random
 import py_trees
 from py_trees.blackboard import Blackboard
 import networkx
 
 import carla
-from agents.navigation.basic_agent import BasicAgent, LocalPlanner
+from agents.navigation.basic_agent import BasicAgent
 from agents.navigation.constant_velocity_agent import ConstantVelocityAgent
-from agents.navigation.local_planner import RoadOption
+from agents.navigation.local_planner import RoadOption, LocalPlanner
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.controller import PIDLongitudinalController
 from agents.tools.misc import is_within_distance
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -1391,6 +1390,7 @@ class AccelerateToCatchUp(AtomicBehavior):
 
         return new_status
 
+
 class KeepVelocity(AtomicBehavior):
 
     """
@@ -1604,6 +1604,7 @@ class StopVehicle(AtomicBehavior):
 
         return new_status
 
+
 class SyncArrival(AtomicBehavior):
 
     """
@@ -1678,6 +1679,7 @@ class SyncArrival(AtomicBehavior):
             self._control.brake = 0.0
             self._actor.apply_control(self._control)
         super(SyncArrival, self).terminate(new_status)
+
 
 class AddNoiseToVehicle(AtomicBehavior):
 
@@ -1757,6 +1759,7 @@ class ChangeNoiseParameters(AtomicBehavior):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
+
 class BasicAgentBehavior(AtomicBehavior):
 
     """
@@ -1778,6 +1781,8 @@ class BasicAgentBehavior(AtomicBehavior):
         self._map = CarlaDataProvider.get_map()
         self._target_location = target_location
         self._control = carla.VehicleControl()
+        self._agent = None
+        self._plan = None
 
     def initialise(self):
         """Initialises the agent"""
@@ -1824,7 +1829,7 @@ class ConstantVelocityAgentBehavior(AtomicBehavior):
     """
 
     def __init__(self, actor, target_location, target_speed=None,
-                 opt_dict={}, name="ConstantVelocityAgentBehavior"):
+                 opt_dict=None, name="ConstantVelocityAgentBehavior"):
         """
         Set up actor and local planner
         """
@@ -1832,8 +1837,10 @@ class ConstantVelocityAgentBehavior(AtomicBehavior):
         self._target_speed = target_speed
         self._map = CarlaDataProvider.get_map()
         self._target_location = target_location
-        self._opt_dict = opt_dict
+        self._opt_dict = opt_dict if opt_dict else {}
         self._control = carla.VehicleControl()
+        self._agent = None
+        self._plan = None
 
     def initialise(self):
         """Initialises the agent"""
@@ -2500,7 +2507,7 @@ class ActorFlow(AtomicBehavior):
     - sink_distance: Actors closer to the sink than this distance will be deleted
     """
 
-    def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2, actors_speed= 30/3.6, name="ActorFlow"):
+    def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2, actors_speed=30/3.6, name="ActorFlow"):
         """
         Setup class members
         """
@@ -2610,7 +2617,7 @@ class TrafficLightFreezer(AtomicBehavior):
         self._start_time = GameTime.get_time()
         for tl in self._traffic_lights_dict:
             elapsed_time = tl.get_elapsed_time()
-            self._previous_traffic_light_info[tl] ={
+            self._previous_traffic_light_info[tl] = {
                 'state': tl.get_state(),
                 'green_time': tl.get_green_time(),
                 'red_time': tl.get_red_time(),

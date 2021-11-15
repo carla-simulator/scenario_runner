@@ -60,37 +60,32 @@ class NpcAgent(AutonomousAgent):
         """
         Execute one step of navigation.
         """
-        control = carla.VehicleControl()
-
         if not self._agent:
+
+            # Search for the ego actor
             hero_actor = None
             for actor in CarlaDataProvider.get_world().get_actors():
                 if 'role_name' in actor.attributes and actor.attributes['role_name'] == 'hero':
                     hero_actor = actor
                     break
-            if hero_actor:
-                self._agent = BasicAgent(hero_actor, 30)
-                global_planner = self._agent.get_global_planner()
 
-                route = []
-                just_lane_changed = False
-                prev_wp, prev_option = (None, None)
-                for transform, option in self._global_plan_world_coord:
-                    wp = CarlaDataProvider.get_map().get_waypoint(transform.location)
-                    if not just_lane_changed and option.value in (5, 6) and prev_option == option:
-                        just_lane_changed = True  # Ignore the lane change parts
-                    elif prev_wp:
-                        just_lane_changed = False
-                        route.extend(global_planner.trace_route(prev_wp, wp, with_options=False))
-                    prev_wp, prev_option = (wp, option)
+            if not hero_actor:
+                return carla.VehicleControl()
 
-                route_with_options = global_planner.add_options_to_route(route)
-                self._agent.set_global_plan(route_with_options)
+            # Add an agent that follows the route to the ego
+            self._agent = BasicAgent(hero_actor, 30)
 
-                for w in route_with_options:
-                    wp = w[0].transform.location + carla.Location(z=0.2)
+            plan = []
+            prev_wp = None
+            for transform, _ in self._global_plan_world_coord:
+                wp = CarlaDataProvider.get_map().get_waypoint(transform.location)
+                if prev_wp:
+                    plan.extend(self._agent.trace_route(prev_wp, wp))
+                prev_wp = wp
+
+            self._agent.set_global_plan(plan)
+
+            return carla.VehicleControl()
 
         else:
-            control = self._agent.run_step()
-
-        return control
+            return self._agent.run_step()

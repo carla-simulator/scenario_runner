@@ -9,9 +9,10 @@ Collection of traffic scenarios where the ego vehicle (hero)
 is making a left turn
 """
 
-import carla
 import py_trees
 import numpy.random as random
+
+import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer
@@ -19,7 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Wa
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import (generate_target_waypoint,
-                                           get_junction_topology, 
+                                           get_junction_topology,
                                            filter_junction_wp_direction,
                                            get_closest_traffic_light)
 
@@ -50,9 +51,8 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._source_dist_interval = [25, 50]
         self._opposite_speed = 35 / 3.6
         self._rng = random.RandomState(2000)
-        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green. Used to initialize the actor flow
+        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
         self._direction = 'opposite'
-        self.timeout = timeout
         super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
                                                          ego_vehicles,
                                                          config,
@@ -136,7 +136,6 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._opposite_speed))
 
-
         tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
@@ -157,6 +156,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
-        self._traffic_light = None
+        """
+        Remove all actors upon deletion
+        """
         self.remove_all_actors()
-
