@@ -586,7 +586,6 @@ def get_closest_traffic_light(waypoint, traffic_lights=None):
     if not traffic_lights:
         traffic_lights = CarlaDataProvider.get_world().get_actors().filter('*traffic_light*')
 
-    world = CarlaDataProvider.get_world()
     closest_dist = float('inf')
     closest_tl = None
 

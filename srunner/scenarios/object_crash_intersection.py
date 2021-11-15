@@ -19,7 +19,7 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       HandBrakeVehicle,
-                                                                      KeepVelocityFromStart)
+                                                                      KeepVelocity)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -178,10 +178,10 @@ class BaseVehicleTurning(BasicScenario):
         sequence.add_child(trigger_adversary)
         sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
 
-        # Move the adversary. Duration and speed are twice their value to avoid the adversary dissapearing mid-lane
+        # Move the adversary.
         speed_duration = 2.0 * collision_duration
         speed_distance = 2.0 * collision_distance
-        sequence.add_child(KeepVelocityFromStart(
+        sequence.add_child(KeepVelocity(
             self.other_actors[0], self._adversary_speed, True, speed_duration, speed_distance, name="AdversaryCrossing"))
 
         # Remove everything

@@ -273,11 +273,12 @@ class DynamicObjectCrossing(BasicScenario):
             self.ego_vehicles[0], collision_location, self._min_trigger_dist))
         sequence.add_child(trigger_adversary)
 
-        # Move the adversary. Duration and speed are twice their value to avoid the adversary dissapearing mid-lane
+        # Move the adversary
         speed_duration = 2.0 * collision_duration
         speed_distance = 2.0 * collision_distance
         sequence.add_child(KeepVelocity(
-            self.other_actors[0], self._adversary_speed, speed_duration, speed_distance, name="AdversaryCrossing"))
+            self.other_actors[0], self._adversary_speed,
+            duration=speed_duration, distance=speed_distance, name="AdversaryCrossing"))
 
         # Remove everything
         sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
