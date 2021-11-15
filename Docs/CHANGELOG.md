@@ -21,6 +21,7 @@
     - Extended `ParameterCondition` support to use as an event trigger condition
 
 ### :bug: Bug Fixes
+* Fixed metrics parsing
 * Fixed a bug with repetitions / scenario groups causing the simulation to crash after the second one.
 * Fixed use of OSC Parameters as entry names for catalogs
 * Fixed bug at OtherLeadingVehicle scenario causing the vehicles to move faster than intended
