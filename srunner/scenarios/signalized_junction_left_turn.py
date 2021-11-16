@@ -10,7 +10,7 @@ is making a left turn
 """
 
 import py_trees
-import numpy.random as random
+from numpy import random
 
 import carla
 

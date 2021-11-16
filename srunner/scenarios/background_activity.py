@@ -112,16 +112,16 @@ def get_opposite_dir_lanes(waypoint):
     return other_dir_wps
 
 
-def get_lane_key(wp):
+def get_lane_key(waypoint):
     """Returns a key corresponding to the waypoint lane. Equivalent to a 'Lane'
     object and used to compare waypoint lanes"""
-    return '' if wp is None else get_road_key(wp) + '*' + str(wp.lane_id)
+    return '' if waypoint is None else get_road_key(waypoint) + '*' + str(waypoint.lane_id)
 
 
-def get_road_key(wp):
+def get_road_key(waypoint):
     """Returns a key corresponding to the waypoint road. Equivalent to a 'Road'
     object and used to compare waypoint roads"""
-    return '' if wp is None else str(wp.road_id)
+    return '' if waypoint is None else str(waypoint.road_id)
 
 
 class Source(object):
@@ -130,8 +130,8 @@ class Source(object):
     Source object to store its position and its responsible actors
     """
 
-    def __init__(self, wp, actors, entry_lane_wp=''):
-        self.wp = wp
+    def __init__(self, wp, actors, entry_lane_wp=''):  # pylint: disable=invalid-name
+        self.wp = wp  # pylint: disable=invalid-name
         self.actors = actors
 
         # For road sources
@@ -151,7 +151,7 @@ class Junction(object):
     def __init__(self, junction, junction_id, route_entry_index=None, route_exit_index=None):
         # Topology
         self.junctions = [junction]
-        self.id = junction_id
+        self.id = junction_id  # pylint: disable=invalid-name
         self.route_entry_index = route_entry_index
         self.route_exit_index = route_exit_index
         self.exit_road_length = 0
@@ -680,26 +680,27 @@ class BackgroundBehavior(AtomicBehavior):
             exit_wp = exit_wps[0]
         return exit_wp
 
-    def _get_closest_junction_waypoint(self, wp, junction_wps):
-        """matches a given wp to another one inside the list. This is first donw by checking its key,
-        and if this fails, the closest wp is chosen"""
-
+    def _get_closest_junction_waypoint(self, waypoint, junction_wps):
+        """
+        Matches a given wp to another one inside the list.
+        This is first done by checking its key, and if this fails, the closest wp is chosen
+        """
         # Check the lane keys
-        junction_keys = [get_lane_key(wp_) for wp_ in junction_wps]
-        if get_lane_key(wp) in junction_keys:
-            return wp
+        junction_keys = [get_lane_key(waypoint_) for waypoint_ in junction_wps]
+        if get_lane_key(waypoint) in junction_keys:
+            return waypoint
 
         # Get the closest one
         closest_dist = float('inf')
-        junction_wp = None
-        route_location = wp.transform.location
-        for wp_ in junction_wps:
-            distance = wp_.transform.location.distance(route_location)
+        closest_junction_wp = None
+        route_location = waypoint.transform.location
+        for junction_wp in junction_wps:
+            distance = junction_wp.transform.location.distance(route_location)
             if distance < closest_dist:
                 closest_dist = distance
-                junction_wp = wp_
+                closest_junction_wp = junction_wp
 
-        return junction_wp
+        return closest_junction_wp
 
     def _is_route_wp_behind_junction_wp(self, route_wp, junction_wp):
         """Checks if an actor is behind the ego. Uses the route transform"""
@@ -870,8 +871,8 @@ class BackgroundBehavior(AtomicBehavior):
     ## Waypoint related functions ##
     ################################
 
-    def _is_junction(self, wp):
-        if not wp.is_junction or wp.junction_id in self._fake_junction_ids:
+    def _is_junction(self, waypoint):
+        if not waypoint.is_junction or waypoint.junction_id in self._fake_junction_ids:
             return False
         return True
 
