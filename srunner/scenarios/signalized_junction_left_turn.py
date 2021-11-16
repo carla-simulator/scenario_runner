@@ -53,6 +53,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._rng = random.RandomState(2000)
         self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
         self._direction = 'opposite'
+        self.timeout = timeout
         super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
                                                          ego_vehicles,
                                                          config,

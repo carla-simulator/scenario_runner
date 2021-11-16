@@ -50,6 +50,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
         self._direction = 'left'
         self._route_planner = GlobalRoutePlanner(self._map, 2.0)
+        self.timeout = timeout
         super(SignalizedJunctionRightTurn, self).__init__("SignalizedJunctionRightTurn",
                                                           ego_vehicles,
                                                           config,

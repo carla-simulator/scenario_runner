@@ -63,6 +63,7 @@ class BaseVehicleTurning(BasicScenario):
 
     This is a single ego vehicle scenario
     """
+    _subtype = None
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60, name="BaseVehicleTurning"):
@@ -81,7 +82,6 @@ class BaseVehicleTurning(BasicScenario):
         self._retry_dist = 0.4
 
         self._adversary_transform = None
-        self._subtype = None
 
         self._collision_wp = None
         self._adversary_speed = 4.0  # Speed of the adversary [m/s]
