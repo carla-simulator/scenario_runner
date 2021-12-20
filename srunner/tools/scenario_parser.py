@@ -8,6 +8,7 @@
 """
 This module provides access to a scenario configuration parser
 """
+import carla
 
 import glob
 import os
@@ -61,40 +62,6 @@ class ScenarioConfigurationParser(object):
                 elif scenario_group and scenario_config_type != scenario_name:  
                     continue
 
-                new_config = ScenarioConfiguration()
-                new_config.town = scenario.attrib.get('town', None)
-                new_config.name = scenario_config_name
-                new_config.type = scenario_config_type
-                new_config.other_actors = []
-                new_config.ego_vehicles = []
-                new_config.trigger_points = []
-
-                for weather in scenario.iter("weather"):
-                    new_config.weather.cloudiness = float(weather.attrib.get("cloudiness", 0))
-                    new_config.weather.precipitation = float(weather.attrib.get("precipitation", 0))
-                    new_config.weather.precipitation_deposits = float(weather.attrib.get("precipitation_deposits", 0))
-                    new_config.weather.wind_intensity = float(weather.attrib.get("wind_intensity", 0.35))
-                    new_config.weather.sun_azimuth_angle = float(weather.attrib.get("sun_azimuth_angle", 0.0))
-                    new_config.weather.sun_altitude_angle = float(weather.attrib.get("sun_altitude_angle", 15.0))
-                    new_config.weather.fog_density = float(weather.attrib.get("fog_density", 0.0))
-                    new_config.weather.fog_distance = float(weather.attrib.get("fog_distance", 0.0))
-                    new_config.weather.wetness = float(weather.attrib.get("wetness", 0.0))
-
-                for ego_vehicle in scenario.iter("ego_vehicle"):
-
-                    new_config.ego_vehicles.append(ActorConfigurationData.parse_from_node(ego_vehicle, 'hero'))
-                    new_config.trigger_points.append(new_config.ego_vehicles[-1].transform)
-
-                for route in scenario.iter("route"):
-                    route_conf = RouteConfiguration()
-                    route_conf.parse_xml(route)
-                    new_config.route = route_conf
-
-                for other_actor in scenario.iter("other_actor"):
-                    new_config.other_actors.append(ActorConfigurationData.parse_from_node(other_actor, 'scenario'))
-
-                scenario_configurations.append(new_config)
-
                 config = ScenarioConfiguration()
                 config.town = scenario.attrib.get('town')
                 config.name = scenario_config_name
@@ -127,7 +94,7 @@ class ScenarioConfigurationParser(object):
                         route_conf.parse_xml(elem)
                         config.route = route_conf
 
-                    # Any other possible element, add it as a config attribute 
+                    # Any other possible element, add it as a config attribute
                     else:
                         config.other_parameters[elem.tag] = elem.attrib
 
