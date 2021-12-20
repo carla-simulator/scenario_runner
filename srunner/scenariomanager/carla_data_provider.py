@@ -223,6 +223,13 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return CarlaDataProvider._map
 
     @staticmethod
+    def get_random_seed():
+        """
+        @return true if syncronuous mode is used
+        """
+        return CarlaDataProvider._rng
+
+    @staticmethod
     def is_sync_mode():
         """
         @return true if syncronuous mode is used
@@ -251,7 +258,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Parse all traffic lights
         CarlaDataProvider._traffic_light_map.clear()
         for traffic_light in CarlaDataProvider._world.get_actors().filter('*traffic_light*'):
-            if traffic_light not in CarlaDataProvider._traffic_light_map.keys():
+            if traffic_light not in list(CarlaDataProvider._traffic_light_map):
                 CarlaDataProvider._traffic_light_map[traffic_light] = traffic_light.get_transform()
             else:
                 raise KeyError(
