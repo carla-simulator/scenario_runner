@@ -10,7 +10,7 @@
         "actual_value": 100,
         "optional": false,
         "_wsize": 2,
-        "_current_index": 759,
+        "_current_index": 754,
         "_route_length": 762,
         "_accum_meters": [
             0.0,
@@ -787,14 +787,14 @@
         "test_status": "FAILURE",
         "expected_value_success": 0,
         "expected_value_acceptable": null,
-        "actual_value": 5,
+        "actual_value": 11,
         "optional": false,
         "_collision_sensor": null,
         "other_actor": null,
         "other_actor_type": null,
         "registered_collisions": [],
-        "last_id": null,
-        "collision_time": 70.1000010445714,
+        "last_id": 437,
+        "collision_time": 97.15000144764781,
         "terminate_on_failure": false
     },
     "InRouteTest": {
@@ -811,7 +811,7 @@
         "_offroad_max": 30,
         "_offroad_min": 15.0,
         "_route_length": 762,
-        "_current_index": 760,
+        "_current_index": 754,
         "_out_route_distance": 0,
         "_in_safe_route": true,
         "_accum_meters": [
@@ -1588,15 +1588,15 @@
         "test_status": "FAILURE",
         "expected_value_success": 0,
         "expected_value_acceptable": null,
-        "actual_value": 35.22,
+        "actual_value": 20.91,
         "optional": false,
-        "_current_index": 760,
+        "_current_index": 754,
         "_route_length": 762,
-        "_outside_lane_active": true,
-        "_wrong_lane_active": true,
+        "_outside_lane_active": false,
+        "_wrong_lane_active": false,
         "_last_road_id": 15,
-        "_last_lane_id": -1,
-        "_total_distance": 759.2815870046616,
+        "_last_lane_id": 1,
+        "_total_distance": 753.2815870046616,
         "_wrong_distance": 0,
         "terminate_on_failure": false
     },
@@ -1608,9 +1608,9 @@
         "test_status": "FAILURE",
         "expected_value_success": 0,
         "expected_value_acceptable": null,
-        "actual_value": 3,
+        "actual_value": 1,
         "optional": false,
-        "_last_red_light_id": 288,
+        "_last_red_light_id": 211,
         "debug": false,
         "terminate_on_failure": false
     },
@@ -1644,7 +1644,7 @@
         "list_traffic_events": [],
         "_speed_threshold": 0.1,
         "_below_threshold_max_time": 90.0,
-        "_time_last_valid_state": 70.80000105500221,
+        "_time_last_valid_state": 101.05000150576234,
         "terminate_on_failure": false
     }
 }

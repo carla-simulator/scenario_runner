@@ -18,6 +18,7 @@ from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
+
 def _location_to_gps(lat_ref, lon_ref, location):
     """
     Convert from world coordinates to GPS coordinates
