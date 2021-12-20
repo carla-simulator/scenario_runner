@@ -655,7 +655,7 @@ def get_troad_from_transform(actor_transform):
                                                                       rm_lane.transform.rotation),
                                                       rm_lane_offset).location.distance(actor_loc)
     t_road = ref_lane.transform.location.distance(actor_loc)
-    if right_lanes == [] or left_lanes == []:
+    if not right_lanes or not left_lanes:
         closest_road_edge = min(distance_from_lm_lane_edge, distance_from_rm_lane_edge)
         if closest_road_edge == distance_from_lm_lane_edge:
             t_road = -1*t_road
