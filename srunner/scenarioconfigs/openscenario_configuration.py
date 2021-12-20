@@ -33,6 +33,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def __init__(self, filename, client, custom_params):
 
+        super(OpenScenarioConfiguration, self).__init__()
+
         self.xml_tree = ET.parse(filename)
         self.filename = filename
         self._custom_params = custom_params if custom_params is not None else {}
