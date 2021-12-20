@@ -1,5 +1,6 @@
 ## Table of Contents
 * [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.13](#carla-scenariorunner-0913)
 * [CARLA ScenarioRunner 0.9.12](#carla-scenariorunner-0912)
 * [CARLA ScenarioRunner 0.9.11](#carla-scenariorunner-0911)
 * [CARLA ScenarioRunner 0.9.10](#carla-scenariorunner-0910)
@@ -12,6 +13,9 @@
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
 ## Latest changes
+
+
+## CARLA ScenarioRunner 0.9.13
 ### :rocket: New Features
 * OpenSCENARIO support:
     - Added support for `ParameterAction`
@@ -19,7 +23,7 @@
     - Added basic support for FollowTrajectoryAction. Currently only Polylines are supported
 
 ### :bug: Bug Fixes
-* Fixed metrics parsing
+* Fixed metrics parsing and remade the example recordings
 * Fixed a bug with repetitions / scenario groups causing the simulation to crash after the second one.
 * Fixed use of OSC Parameters as entry names for catalogs
 

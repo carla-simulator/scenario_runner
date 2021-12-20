@@ -128,18 +128,27 @@ def parse_scene_lights(info):
     return scene_light
 
 def parse_bounding_box(info):
-    """Parses a list into a carla.BoundingBox"""
-    location = carla.Location(
-        x=float(info[3][1:-1])/100,
-        y=float(info[4][:-1])/100,
-        z=float(info[5][:-1])/100,
-    )
+    """
+    Parses a list into a carla.BoundingBox.
+    Some actors like sensors might have 'nan' location and 'inf' extent, so filter those.
+    """
+    if 'nan' in info[3]:
+        location = carla.Location()
+    else:
+        location = carla.Location(
+            float(info[3][1:-1])/100,
+            float(info[4][:-1])/100,
+            float(info[5][:-1])/100,
+        )
 
-    extent = carla.Vector3D(
-        x=float(info[7][1:-1])/100,
-        y=float(info[8][:-1])/100,
-        z=float(info[9][:-1])/100,
-    )
+    if 'inf' in info[7]:
+        extent = carla.Vector3D()
+    else:
+        extent = carla.Vector3D(
+            float(info[7][1:-1])/100,
+            float(info[8][:-1])/100,
+            float(info[9][:-1])/100,
+        )
 
     bbox = carla.BoundingBox(location, extent)
 
