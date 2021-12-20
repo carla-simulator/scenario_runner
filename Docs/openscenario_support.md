@@ -69,7 +69,7 @@ contains of submodules, which are not listed, the support status applies to all 
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | `EntityAction`                | &#10060;                          | &#10060;                          |                               |
 | `EnvironmentAction`           | &#9989;                         | &#10060;                          |                               |
-| `ParameterAction`             | &#10060;                          | &#10060;                          |                               |
+| `ParameterAction`             | &#9989;                          | &#9989;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficAction`                                               | &#10060;                          | &#10060;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalControllerAction`                               | &#10060;                          | &#10060;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalStateAction`                                    | &#10060;                          | &#9989;                         | As traffic signals in CARLA towns have no unique ID, they have to be set by providing their position (Example: TrafficSignalStateAction name="pos=x,y" state="green"). The id can also be used for none CARLA town (Example: TrafficSignalStateAction name="id=n" state="green") |
@@ -99,7 +99,7 @@ contains of submodules, which are not listed, the support status applies to all 
 | `LateralAction`<br> `LaneChangeAction`             | &#10060;             | &#9989;            | Currently all lane changes have a linear dynamicShape, the dynamicDimension is defined as the distance and are relative to the actor itself (RelativeTargetLane).                  |
 | `LateralAction`<br>`LaneOffsetAction`             | &#10060;             | &#9989;             |  Currently all type of dynamicShapes are ignored and depend on the controller. This action might not work as intended if the offset is high enough to make the vehicle exit its lane  |
 | `LateralAction`<br> `LateralDistanceAction`        | &#10060;             | &#10060;             |                  |
-| `LongitudinalAction`<br> `LongitudinalDistanceAction`                                            | &#10060;             | &#10060;             |                  |
+| `LongitudinalAction`<br> `LongitudinalDistanceAction`| &#10060;             | &#9989;              |`timeGap` attribute is not supported              |
 | `LongitudinalAction`<br> `SpeedAction`             | &#9989;            | &#9989;            |                  |
 | `SynchronizeAction`                                 | &#10060;             | &#10060;             |                  |
 | `TeleportAction`                                    | &#9989;            | &#9989;            |                  |
@@ -129,7 +129,7 @@ The following two tables list the support status for each.
 | `EndOfRoadCondition`                           | &#9989;                                          |                                                |
 | `OffroadCondition`                             | &#9989;                                          |                                                |
 | `ReachPositionCondition`                       | &#9989;                                          |                                                |
-| `RelativeDistanceCondition`                    | &#9989;                                          | \*freespace\* attribute is still not supported |
+| `RelativeDistanceCondition`                    | &#9989;                                          |                                                |
 | `RelativeSpeedCondition`                       | &#9989;                                          |                                                |
 | `SpeedCondition`                               | &#9989;                                          |                                                |
 | `StandStillCondition`                          | &#9989;                                          |                                                |
@@ -179,9 +179,9 @@ current support status for each definition format.
 | `LanePosition`           | &#9989;                    |                          |
 | `RelativeLanePosition`   | &#9989;                    |                          |
 | `RelativeObjectPosition` | &#9989;                    |                          |
-| `RelativeRoadPosition`   | &#10060;                     |                          |
+| `RelativeRoadPosition`   | &#9989;                     |                          |
 | `RelativeWorldPosition`  | &#9989;                    |                          |
-| `RoadPosition`           | &#10060;                     |                          |
+| `RoadPosition`           | &#9989;                     |                          |
 | `RoutePosition`          | &#10060;                     |                          |
 | `WorldPosition`          | &#9989;                    |                          |
 

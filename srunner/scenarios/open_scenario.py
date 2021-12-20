@@ -15,11 +15,11 @@ import itertools
 import os
 import py_trees
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction, ChangeParameter
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorControl, ChangeActorTargetSpeed
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check
+from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, ParameterRef
 from srunner.tools.py_trees_port import Decorator
 
 
@@ -188,6 +188,32 @@ class OpenScenario(BasicScenario):
                                            world=world, debug_mode=debug_mode,
                                            terminate_on_failure=False, criteria_enable=criteria_enable)
 
+    def _initialize_parameters(self):
+        """
+        Parse ParameterAction from Init and update global osc parameters.
+        """
+        param_behavior = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="ParametersInit")
+        for i, global_action in enumerate(self.config.init.find('Actions').iter('GlobalAction')):
+            maneuver_name = 'InitParams'
+            if global_action.find('ParameterAction') is not None:
+                parameter_action = global_action.find('ParameterAction')
+                parameter_ref = parameter_action.attrib.get('parameterRef')
+                if parameter_action.find('ModifyAction') is not None:
+                    action_rule = parameter_action.find('ModifyAction').find("Rule")
+                    if action_rule.find("AddValue") is not None:
+                        rule, value = '+', action_rule.find("AddValue").attrib.get('value')
+                    else:
+                        rule, value = '*', action_rule.find("MultiplyByValue").attrib.get('value')
+                else:
+                    rule, value = None, parameter_action.find('SetAction').attrib.get('value')
+                parameter_update = ChangeParameter(parameter_ref, value=ParameterRef(value), rule=rule,
+                                                   name=maneuver_name + '_%d' % i)
+                param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % i,
+                                                            behaviour=parameter_update))
+
+        return param_behavior
+
     def _initialize_environment(self, world):
         """
         Initialization of weather and road friction.
@@ -216,7 +242,8 @@ class OpenScenario(BasicScenario):
 
         for actor in self.config.other_actors + self.config.ego_vehicles:
             for carla_actor in self.other_actors + self.ego_vehicles:
-                if 'role_name' in carla_actor.attributes and carla_actor.attributes['role_name'] == actor.rolename:
+                if (carla_actor is not None and 'role_name' in carla_actor.attributes and
+                        carla_actor.attributes['role_name'] == actor.rolename):
                     actor_init_behavior = py_trees.composites.Sequence(name="InitActor{}".format(actor.rolename))
 
                     controller_atomic = None
@@ -321,7 +348,8 @@ class OpenScenario(BasicScenario):
                                             parallel_actions.add_child(
                                                 oneshot_with_check(variable_name=  # See note in get_xml_path
                                                                    get_xml_path(story, sequence) + '>' + \
-                                                                   get_xml_path(maneuver, child),
+                                                                   get_xml_path(maneuver, child) + '>' + \
+                                                                   str(actor_id),
                                                                    behaviour=maneuver_behavior))
 
                                     if child.tag == "StartTrigger":
@@ -395,6 +423,10 @@ class OpenScenario(BasicScenario):
         behavior = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="behavior")
 
+        init_parameters = self._initialize_parameters()
+        if init_parameters is not None:
+            behavior.add_child(oneshot_with_check(variable_name="InitialParameterSettings", behaviour=init_parameters))
+
         env_behavior = self._create_environment_behavior()
         if env_behavior is not None:
             behavior.add_child(oneshot_with_check(variable_name="InitialEnvironmentSettings", behaviour=env_behavior))
@@ -453,7 +485,6 @@ class OpenScenario(BasicScenario):
         for endcondition in self.config.storyboard.iter("StopTrigger"):
             for condition in endcondition.iter("Condition"):
                 if condition.attrib.get('name').startswith('criteria_'):
-                    condition.set('name', condition.attrib.get('name')[9:])
                     criteria.append(condition)
 
         for condition in criteria:

@@ -11,7 +11,7 @@
   </RoadNetwork>
   <Entities>
     <ScenarioObject name="hero">
-      <Vehicle name="vehicle.lincoln.mkz2017" vehicleCategory="car">
+      <Vehicle name="vehicle.lincoln.mkz_2017" vehicleCategory="car">
         <ParameterDeclarations/>
         <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
         <BoundingBox>
@@ -67,7 +67,8 @@
           <PrivateAction>
             <TeleportAction>
               <Position>
-                <LanePosition roadId="4" laneId="-1" offset="1.0" s="48.58"/>
+                <RoadPosition roadId="4" s="48.58" t="2.75"/>
+<!--                <LanePosition roadId="4" laneId="-1" offset="1.0" s="48.58"/>-->
               </Position>
             </TeleportAction>
           </PrivateAction>
@@ -95,7 +96,8 @@
           <PrivateAction>
             <TeleportAction>
               <Position>
-                <WorldPosition x="190" y="133" z="0" h="0"/>
+                <RelativeRoadPosition entityRef="hero" ds="50" dt="-1.0"/>
+<!--                <WorldPosition x="190" y="133" z="0" h="0"/>-->
               </Position>
             </TeleportAction>
           </PrivateAction>
@@ -130,7 +132,8 @@
                         <EntityRef entityRef="hero"/>
                       </TriggeringEntities>
                       <EntityCondition>
-                        <RelativeDistanceCondition entityRef="adversary" relativeDistanceType="cartesianDistance" value="40.0" freespace="false" rule="lessThan"/>
+<!--                        <RelativeDistanceCondition entityRef="adversary" relativeDistanceType="cartesianDistance" value="40.0" freespace="false" rule="lessThan"/>-->
+                        <RelativeDistanceCondition entityRef="adversary" relativeDistanceType="longitudinal" value="40.0" freespace="true" rule="lessThan"/>
                       </EntityCondition>
                     </ByEntityCondition>
                   </Condition>

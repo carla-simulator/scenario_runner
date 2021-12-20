@@ -27,14 +27,13 @@ import py_trees
 import carla
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import get_distance_along_route
 
-import srunner.tools
+import srunner.tools as sr_tools
 
 EPSILON = 0.001
 
@@ -108,10 +107,7 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
 
         if self._along_route:
             # Get the global route planner, used to calculate the route
-            dao = GlobalRoutePlannerDAO(self._map, 0.5)
-            grp = GlobalRoutePlanner(dao)
-            grp.setup()
-            self._grp = grp
+            self._grp = GlobalRoutePlanner(self._map, 0.5)
         else:
             self._grp = None
 
@@ -126,7 +122,7 @@ class InTriggerDistanceToOSCPosition(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         # calculate transform with method in openscenario_parser.py
-        osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+        osc_transform = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
             self._osc_position)
 
         if osc_transform is not None:
@@ -176,10 +172,7 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
 
         if self._along_route:
             # Get the global route planner, used to calculate the route
-            dao = GlobalRoutePlannerDAO(self._map, 0.5)
-            grp = GlobalRoutePlanner(dao)
-            grp.setup()
-            self._grp = grp
+            self._grp = GlobalRoutePlanner(self._map, 0.5)
         else:
             self._grp = None
 
@@ -195,7 +188,7 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
 
         # calculate transform with method in openscenario_parser.py
         try:
-            osc_transform = srunner.tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            osc_transform = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
                 self._osc_position)
         except AttributeError:
             return py_trees.common.Status.FAILURE
@@ -571,13 +564,15 @@ class InTriggerDistanceToVehicle(AtomicCondition):
     - reference_actor: Reference CARLA actor
     - name: Name of the condition
     - distance: Trigger distance between the two actors in meters
+    - distance_type: Specifies how distance should be calculated between the two actors
+    - freespace: if True distance is calculated between closest boundary points else it will be from center-center
     - dx, dy, dz: distance to reference_location (location of reference_actor)
 
     The condition terminates with SUCCESS, when the actor reached the target distance to the other actor
     """
 
     def __init__(self, reference_actor, actor, distance, comparison_operator=operator.lt,
-                 name="TriggerDistanceToVehicle"):
+                 distance_type="cartesianDistance", freespace=False, name="TriggerDistanceToVehicle"):
         """
         Setup trigger distance
         """
@@ -586,7 +581,14 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         self._reference_actor = reference_actor
         self._actor = actor
         self._distance = distance
+        self._distance_type = distance_type
+        self._freespace = freespace
         self._comparison_operator = comparison_operator
+
+        if distance_type == "longitudinal":
+            self._global_rp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 1.0)
+        else:
+            self._global_rp = None
 
     def update(self):
         """
@@ -600,7 +602,13 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         if location is None or reference_location is None:
             return new_status
 
-        if self._comparison_operator(calculate_distance(location, reference_location), self._distance):
+        distance = sr_tools.scenario_helper.get_distance_between_actors(self._actor,
+                                                                        self._reference_actor,
+                                                                        distance_type=self._distance_type,
+                                                                        freespace=self._freespace,
+                                                                        global_planner=self._global_rp)
+
+        if self._comparison_operator(distance, self._distance):
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -847,10 +855,7 @@ class InTimeToArrivalToVehicle(AtomicCondition):
 
         if self._along_route:
             # Get the global route planner, used to calculate the route
-            dao = GlobalRoutePlannerDAO(self._map, 0.5)
-            grp = GlobalRoutePlanner(dao)
-            grp.setup()
-            self._grp = grp
+            self._grp = GlobalRoutePlanner(self._map, 0.5)
         else:
             self._grp = None
 
@@ -1246,6 +1251,31 @@ class WaitForBlackboardVariable(AtomicCondition):
         if value == self._variable_value:
             if self._debug:
                 print("Blackboard variable {} set to True".format(self._variable_name))
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
+class CheckParameter(AtomicCondition):
+    """
+    Atomic behavior that keeps checking global osc parameter value with the given value.
+    The condition terminates with SUCCESS, when the comparison_operator is evaluated successfully.
+    """
+
+    def __init__(self, parameter_ref, value, comparison_operator, debug=False, name="CheckParameter"):
+        super(CheckParameter, self).__init__(name)
+        self._parameter_ref = parameter_ref
+        self._value = value
+        self._comparison_operator = comparison_operator
+        self._debug = debug
+
+    def update(self):
+        """
+        keeps comparing global osc value with given value till it is successful.
+        """
+        new_status = py_trees.common.Status.RUNNING
+        current_value = CarlaDataProvider.get_osc_global_param_value(self._parameter_ref)
+        if self._comparison_operator(current_value, self._value):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status

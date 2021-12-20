@@ -21,7 +21,7 @@ import carla
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
-from srunner.tools.openscenario_parser import OpenScenarioParser
+from srunner.tools.openscenario_parser import OpenScenarioParser, ParameterRef
 
 
 class OpenScenarioConfiguration(ScenarioConfiguration):
@@ -35,7 +35,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         self.xml_tree = ET.parse(filename)
         self.filename = filename
-        self._custom_params = custom_params if custom_params is not None else dict()
+        self._custom_params = custom_params if custom_params is not None else {}
 
         self._validate_openscenario_configuration()
         self.client = client
@@ -170,25 +170,45 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         world = self.client.get_world()
         wmap = None
         if world:
+            world.get_settings()
             wmap = world.get_map()
 
-        if world is None or (wmap is not None and wmap.name != self.town):
+        if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):
             if ".xodr" in self.town:
-                with open(self.town) as od_file:
+                with open(self.town, 'r', encoding='utf-8') as od_file:
                     data = od_file.read()
+                index = data.find('<OpenDRIVE>')
+                data = data[index:]
+
                 old_map = ""
                 if wmap is not None:
                     old_map = wmap.to_opendrive()
+                    index = old_map.find('<OpenDRIVE>')
+                    old_map = old_map[index:]
+
                 if data != old_map:
                     self.logger.warning(" Wrong OpenDRIVE map in use. Forcing reload of CARLA world")
-                    self.client.generate_opendrive_world(str(data))
-                    world = self.client.get_world()
+
+                    vertex_distance = 2.0  # in meters
+                    wall_height = 1.0      # in meters
+                    extra_width = 0.6      # in meters
+                    world = self.client.generate_opendrive_world(str(data),
+                                                                 carla.OpendriveGenerationParameters(
+                                                                 vertex_distance=vertex_distance,
+                                                                 wall_height=wall_height,
+                                                                 additional_width=extra_width,
+                                                                 smooth_junctions=True,
+                                                                 enable_mesh_visibility=True))
             else:
                 self.logger.warning(" Wrong map in use. Forcing reload of CARLA world")
                 self.client.load_world(self.town)
                 world = self.client.get_world()
+
             CarlaDataProvider.set_world(world)
-            world.wait_for_tick()
+            if CarlaDataProvider.is_sync_mode():
+                world.tick()
+            else:
+                world.wait_for_tick()
         else:
             CarlaDataProvider.set_world(world)
 
@@ -216,7 +236,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for entity in self.xml_tree.iter("Entities"):
             for obj in entity.iter("ScenarioObject"):
                 rolename = obj.attrib.get('name', 'simulation')
-                args = dict()
+                args = {}
                 for prop in obj.iter("Property"):
                     key = prop.get('name')
                     value = prop.get('value')
@@ -372,7 +392,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     for speed in longitudinal_action.iter('SpeedAction'):
                         for target in speed.iter('SpeedActionTarget'):
                             for absolute in target.iter('AbsoluteTargetSpeed'):
-                                speed = float(absolute.attrib.get('value', 0))
+                                speed = float(ParameterRef(absolute.attrib.get('value', 0)))
                                 if speed >= 0:
                                     actor_speed = speed
                                 else:
