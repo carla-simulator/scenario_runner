@@ -92,7 +92,7 @@ class RouteScenario(BasicScenario):
         """
 
         self.config = config
-        self.route = self._get_route(world, config)
+        self.route = self._get_route(config)
         sampled_scenario_definitions = self._get_scenarios(config)
         ego_vehicle = self._spawn_ego_vehicle()
         self.timeout = self._estimate_route_timeout()
@@ -110,6 +110,9 @@ class RouteScenario(BasicScenario):
         self.list_scenarios.append(BackgroundActivity(
             world, ego_vehicle, self.config, self.route, timeout=self.timeout))
 
+        self.list_scenarios.append(BackgroundActivity(
+            world, ego_vehicle, self.config, self.route, timeout=self.timeout))
+
         super(RouteScenario, self).__init__(name=config.name,
                                             ego_vehicles=[ego_vehicle],
                                             config=config,
@@ -118,7 +121,7 @@ class RouteScenario(BasicScenario):
                                             terminate_on_failure=False,
                                             criteria_enable=criteria_enable)
 
-    def _get_route(self, world, config):
+    def _get_route(self, config):
         """
         Gets the route from the configuration, interpolating it to the desired density,
         saving it to the CarlaDataProvider and sending it to the agent
@@ -129,7 +132,8 @@ class RouteScenario(BasicScenario):
         - debug_mode: boolean to decide whether or not the route poitns are printed
         """
         # prepare route's trajectory (interpolate and add the GPS route)
-        gps_route, route = interpolate_trajectory(config.trajectory)
+        _, route = interpolate_trajectory(config.trajectory)
+        CarlaDataProvider.set_ego_vehicle_route(route)
 
         return route
 
