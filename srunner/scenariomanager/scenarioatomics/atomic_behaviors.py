@@ -190,7 +190,13 @@ class RunScript(AtomicBehavior):
             print("Script file does not exists {}".format(path))
         else:
             process = subprocess.Popen(interpreted_script, shell=True, cwd=self._base_path)  # pylint: disable=consider-using-with
-            process.wait(timeout=10)
+
+            while process.poll() is None:
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    print("Waiting for user defined command to complete...")
+
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
