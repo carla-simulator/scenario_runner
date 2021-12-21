@@ -189,7 +189,8 @@ class RunScript(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
             print("Script file does not exists {}".format(path))
         else:
-            subprocess.Popen(interpreted_script, shell=True, cwd=self._base_path)  # pylint: disable=consider-using-with
+            process = subprocess.Popen(interpreted_script, shell=True, cwd=self._base_path)  # pylint: disable=consider-using-with
+            process.wait(timeout=10)
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
