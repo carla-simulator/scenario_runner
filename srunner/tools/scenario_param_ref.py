@@ -1,7 +1,15 @@
+#!/usr/bin/env python
+
+"""
+This module provides a class for retrieving parameter values of
+scenario configuration files based on OpenSCENARIO
+"""
+
 import re
-import math
+from distutils.util import strtobool
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+
 
 class ParameterRef:
     """
@@ -44,6 +52,8 @@ class ParameterRef:
                 return self.__float__()
             elif isinstance(other, int):
                 return self.__int__()
+            elif isinstance(other, bool):
+                return self.__bool__()
             else:
                 raise Exception("Type conversion for type {} not implemented".format(type(other)))
         except ValueError:
@@ -81,6 +91,12 @@ class ParameterRef:
     def __str__(self) -> str:
         value = self.get_interpreted_value()
         return str(value) if value is not None else self.reference_text
+
+    def __bool__(self) -> bool:
+        try:
+            return bool(strtobool(self.__str__()))
+        except ValueError:
+            raise Exception("could not convert '{}' to bool".format(self.__str__()))
 
     def __repr__(self):
         value = self.get_interpreted_value()

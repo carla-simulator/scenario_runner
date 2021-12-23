@@ -12,7 +12,6 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 from __future__ import print_function
 
 from distutils.util import strtobool
-import re
 import copy
 import datetime
 import math
@@ -86,9 +85,6 @@ def oneshot_with_check(variable_name, behaviour, name=None):
         print("Warning: {} is already used before. Check your XOSC for duplicated names".format(variable_name))
 
     return oneshot_behavior(variable_name, behaviour, name)
-
-
-
 
 
 class OpenScenarioParser(object):
@@ -678,7 +674,6 @@ class OpenScenarioParser(object):
         else:
             raise AttributeError("Unknown position")
 
-    
     @staticmethod
     def convert_condition_to_atomic(condition, actor_list):
         """
@@ -1056,46 +1051,39 @@ class OpenScenarioParser(object):
                 if private_action.find('SpeedAction') is not None:
                     long_maneuver = private_action.find('SpeedAction')
 
-                    # duration and distance
-                    distance = float('inf')
-                    duration = float('inf')
-                    dimension = str(ParameterRef(long_maneuver.find(
-                        "SpeedActionDynamics").attrib.get('dynamicsDimension')))
-                    if dimension == "distance":
-                        distance = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
-                            'value', float("inf")))
-                    else:
-                        duration = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
-                            'value', float("inf")))
+                    dimension_ref = ParameterRef(long_maneuver.find(
+                        "SpeedActionDynamics").attrib.get('dynamicsDimension'))
+
+                    dimension_value_ref = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
+                        'value', float("inf")))
 
                     # absolute velocity with given target speed
                     if long_maneuver.find("SpeedActionTarget").find("AbsoluteTargetSpeed") is not None:
                         target_speed = ParameterRef(long_maneuver.find("SpeedActionTarget").find(
                             "AbsoluteTargetSpeed").attrib.get('value', 0))
+
                         atomic = ChangeActorTargetSpeed(
-                            actor, float(target_speed), distance=distance, duration=duration, name=maneuver_name)
+                            actor, target_speed, dimension=dimension_ref,
+                            dimension_value=dimension_value_ref, name=maneuver_name)
 
                     # relative velocity to given actor
                     if long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed") is not None:
                         relative_speed = long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed")
-                        obj = str(ParameterRef(relative_speed.attrib.get('entityRef')))
-                        value = ParameterRef(relative_speed.attrib.get('value', 0))
-                        value_type = str(ParameterRef(relative_speed.attrib.get('speedTargetValueType')))
-                        continuous = bool(strtobool(str(ParameterRef(relative_speed.attrib.get('continuous')))))
 
-                        for traffic_actor in actor_list:
-                            if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
-                                    traffic_actor.attributes['role_name'] == obj):
-                                obj_actor = traffic_actor
+                        obj_ref = ParameterRef(relative_speed.attrib.get('entityRef'))
+                        value_ref = ParameterRef(relative_speed.attrib.get('value', 0))
+                        value_type_ref = ParameterRef(relative_speed.attrib.get('speedTargetValueType'))
+                        continuous_ref = ParameterRef(relative_speed.attrib.get('continuous'))
 
                         atomic = ChangeActorTargetSpeed(actor,
                                                         target_speed=0.0,
-                                                        relative_actor=obj_actor,
-                                                        value=value,
-                                                        value_type=value_type,
-                                                        continuous=continuous,
-                                                        distance=distance,
-                                                        duration=duration,
+                                                        relative_actor_name=obj_ref,
+                                                        value=value_ref,
+                                                        value_type=value_type_ref,
+                                                        continuous=continuous_ref,
+                                                        dimension=dimension_ref,
+                                                        dimension_value=dimension_value_ref,
+                                                        actor_list=actor_list,
                                                         name=maneuver_name)
 
                 elif private_action.find('LongitudinalDistanceAction') is not None:

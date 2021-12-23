@@ -24,6 +24,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # wor
 from srunner.tools.openscenario_parser import OpenScenarioParser
 from srunner.tools.scenario_param_ref import ParameterRef
 
+
 class OpenScenarioConfiguration(ScenarioConfiguration):
 
     """
@@ -124,7 +125,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             if catalog is None:
                 continue
 
-            catalog_path = str(ParameterRef(catalog.find("Directory").attrib.get('path'))) + "/" + catalog_type + "Catalog.xosc"
+            catalog_path = str(ParameterRef(catalog.find("Directory").attrib.get('path'))) + \
+                "/" + catalog_type + "Catalog.xosc"
             if not os.path.isabs(catalog_path) and "xosc" in self.filename:
                 catalog_path = os.path.dirname(os.path.abspath(self.filename)) + "/" + catalog_path
 

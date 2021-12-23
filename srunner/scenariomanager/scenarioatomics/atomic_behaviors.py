@@ -41,7 +41,6 @@ from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
 from srunner.tools.scenario_param_ref import ParameterRef
 
-
 import srunner.tools as sr_tools
 
 EPSILON = 0.001
@@ -86,6 +85,16 @@ def get_actor_control(actor):
         control.speed = 0
 
     return control, actor_type
+
+
+def get_param_value(param_ref, param_type):
+    """
+    Method to retrieve the value of an OSC parameter from ParameterRef
+    """
+    if param_ref is None:
+        return None
+    else:
+        return param_type(param_ref)
 
 
 class AtomicBehavior(py_trees.behaviour.Behaviour):
@@ -176,7 +185,7 @@ class RunScript(AtomicBehavior):
 
         interpreted_components = []
         for component in script_components:
-            interpreted_components.append( str(ParameterRef(component)) )
+            interpreted_components.append(str(ParameterRef(component)))
         script_components = interpreted_components
         interpreted_script = ' '.join(script_components)
 
@@ -189,7 +198,8 @@ class RunScript(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
             print("Script file does not exists {}".format(path))
         else:
-            process = subprocess.Popen(interpreted_script, shell=True, cwd=self._base_path)  # pylint: disable=consider-using-with
+            process = subprocess.Popen(interpreted_script, shell=True,  # pylint: disable=consider-using-with
+                                       cwd=self._base_path)  # pylint: disable=consider-using-with
 
             while process.poll() is None:
                 try:
@@ -430,50 +440,86 @@ class ChangeActorTargetSpeed(AtomicBehavior):
     for the same actor is triggered.
 
     Args:
-        actor (carla.Actor): Controlled actor.
-        target_speed (float): New target speed [m/s].
-        init_speed (boolean): Flag to indicate if the speed is the initial actor speed.
+        actor (carla.Actor):
+            Controlled actor.
+        target_speed (float | ParameterRef(float)):
+            New target speed [m/s].
+        init_speed (boolean):
+            Flag to indicate if the speed is the initial actor speed.
             Defaults to False.
-        duration (float): Duration of the maneuver [s].
+        dimension (string | ParameterRef(string)):
+            'distance' or 'duration': if maneuver length is specified by its distance or duration.
             Defaults to None.
-        distance (float): Distance of the maneuver [m].
+        dimension_value (float | ParameterRef(float)):
+            Duration [s] or distance [m] of the maneuver.
             Defaults to None.
-        relative_actor (carla.Actor): If the target speed setting should be relative to another actor.
+        relative_actor_name (string | ParameterRef(string)):
+            If the target speed setting should be relative to another actor.
             Defaults to None.
-        value (float): Offset, if the target speed setting should be relative to another actor.
+        value (float | ParameterRef(float)):
+            Offset, if the target speed setting should be relative to another actor.
             Defaults to None.
-        value_type (string): Either 'Delta' or 'Factor' influencing how the offset to the reference actors
-            velocity is applied. Defaults to None.
-        continuous (boolean): If True, the atomic remains in RUNNING, independent of duration or distance.
+        value_type (string | ParameterRef(string)):
+            Either 'Delta' or 'Factor' influencing how the offset to the reference actors velocity is applied.
+            Defaults to None.
+        continuous (boolean | ParameterRef(boolean)):
+            If True, the atomic remains in RUNNING, independent of duration or distance.
             Defaults to False.
-        name (string): Name of the behavior.
+        actor_list (list(carla.Actor)):
+            List of current carla actors
+            Defaults to None
+        name (string):
+            Name of the behavior.
             Defaults to 'ChangeActorTargetSpeed'.
 
     Attributes:
-        _target_speed (float): New target speed [m/s].
-        _init_speed (boolean): Flag to indicate if the speed is the initial actor speed.
+        _target_speed (float):
+            New target speed [m/s].
+        _init_speed (boolean):
+            Flag to indicate if the speed is the initial actor speed.
             Defaults to False.
-        _start_time (float): Start time of the atomic [s].
+        _start_time (float):
+            Start time of the atomic [s].
             Defaults to None.
-        _start_location (carla.Location): Start location of the atomic.
+        _start_location (carla.Location):
+            Start location of the atomic.
             Defaults to None.
-        _duration (float): Duration of the maneuver [s].
+        _duration (float):
+            Duration of the maneuver [s].
             Defaults to None.
-        _distance (float): Distance of the maneuver [m].
+        _distance (float):
+            Distance of the maneuver [m].
             Defaults to None.
-        _relative_actor (carla.Actor): If the target speed setting should be relative to another actor.
+        _relative_actor (carla.Actor):
+            If the target speed setting should be relative to another actor.
             Defaults to None.
-        _value (float): Offset, if the target speed setting should be relative to another actor.
+        _dimension (string | ParameterRef(string)):
+            'distance' or 'duration': if maneuver length is specified by its distance or duration.
             Defaults to None.
-        _value_type (string): Either 'Delta' or 'Factor' influencing how the offset to the reference actors
+        _dimension_value (float | ParameterRef(float)):
+            Duration [s] or distance [m] of the maneuver.
+            Defaults to None.
+        _relative_actor_name (string | ParameterRef(string)):
+            If the target speed setting should be relative to another actor.
+            Defaults to None.
+        _value (float | ParameterRef(float)):
+            Offset, if the target speed setting should be relative to another actor.
+            Defaults to None.
+        _value_type (string | ParameterRef(string)):
+            Either 'Delta' or 'Factor' influencing how the offset to the reference actors
             velocity is applied. Defaults to None.
-        _continuous (boolean): If True, the atomic remains in RUNNING, independent of duration or distance.
+        _continuous (boolean | ParameterRef(boolean)):
+            If True, the atomic remains in RUNNING, independent of duration or distance.
             Defaults to False.
+        _actor_list (list(carla.Actor)):
+            List of current carla actors
+            Defaults to None
     """
 
     def __init__(self, actor, target_speed, init_speed=False,
-                 duration=None, distance=None, relative_actor=None,
-                 value=None, value_type=None, continuous=False, name="ChangeActorTargetSpeed"):
+                 dimension=None, dimension_value=None, relative_actor_name=None,
+                 value=None, value_type=None, continuous=False,
+                 actor_list=None, name="ChangeActorTargetSpeed"):
         """
         Setup parameters
         """
@@ -484,13 +530,17 @@ class ChangeActorTargetSpeed(AtomicBehavior):
 
         self._start_time = None
         self._start_location = None
+        self._duration = None
+        self._distance = None
+        self._relative_actor = None
 
-        self._relative_actor = relative_actor
+        self._dimension = dimension
+        self._dimension_value = dimension_value
+        self._relative_actor_name = relative_actor_name
         self._value = value
         self._value_type = value_type
         self._continuous = continuous
-        self._duration = duration
-        self._distance = distance
+        self._actor_list = actor_list
 
     def initialise(self):
         """
@@ -500,6 +550,7 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
@@ -531,6 +582,35 @@ class ChangeActorTargetSpeed(AtomicBehavior):
             actor_dict[self._actor.id].set_init_speed()
 
         super(ChangeActorTargetSpeed, self).initialise()
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._target_speed = get_param_value(self._target_speed, float)
+        self._value = get_param_value(self._value, float)
+        self._value_type = get_param_value(self._value_type, str)
+        self._continuous = get_param_value(self._continuous, bool)
+
+        dimension = get_param_value(self._dimension, str)
+        if dimension == "distance":
+            self._distance = get_param_value(self._dimension_value, float)
+            self._duration = float('inf')
+        elif dimension == "duration":
+            self._distance = float('inf')
+            self._duration = get_param_value(self._dimension_value, float)
+        elif dimension is None:
+            pass
+        else:
+            raise ValueError("SpeedActionDynamics:" +
+                             "Please specify any one attribute of: [distance, duration]")
+
+        obj = get_param_value(self._relative_actor_name, str)
+        if obj is not None:
+            for traffic_actor in self._actor_list:
+                if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
+                        traffic_actor.attributes['role_name'] == obj):
+                    self._relative_actor = traffic_actor
 
     def update(self):
         """
