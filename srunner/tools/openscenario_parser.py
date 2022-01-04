@@ -1070,14 +1070,10 @@ class OpenScenarioParser(object):
 
                 elif private_action.find('LongitudinalDistanceAction') is not None:
                     long_dist_action = private_action.find("LongitudinalDistanceAction")
-                    obj = str(ParameterRef(long_dist_action.attrib.get('entityRef')))
-                    for traffic_actor in actor_list:
-                        if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
-                                traffic_actor.attributes['role_name'] == obj):
-                            obj_actor = traffic_actor
 
+                    obj_ref = ParameterRef(long_dist_action.attrib.get('entityRef'))
                     if "distance" in long_dist_action.attrib and "timeGap" not in long_dist_action.attrib:
-                        gap_type, gap = 'distance', ParameterRef(long_dist_action.attrib.get('distance'))
+                        gap_type, gap_ref = 'distance', ParameterRef(long_dist_action.attrib.get('distance'))
                     elif "timeGap" in long_dist_action.attrib and "distance" not in long_dist_action.attrib:
                         raise NotImplementedError("LongitudinalDistanceAction: timeGap is not implemented")
                     else:
@@ -1085,13 +1081,21 @@ class OpenScenarioParser(object):
                                          "Please specify any one attribute of [distance, timeGap]")
 
                     constraints = long_dist_action.find('DynamicConstraints')
-                    max_speed = float(ParameterRef(constraints.attrib.get('maxSpeed', None))
-                                      ) if constraints is not None else None
-                    continues = bool(strtobool(str(ParameterRef(long_dist_action.attrib.get('continuous')))))
-                    freespace = bool(strtobool(str(ParameterRef(long_dist_action.attrib.get('freespace')))))
-                    atomic = KeepLongitudinalGap(actor, reference_actor=obj_actor, gap=gap, gap_type=gap_type,
-                                                 max_speed=max_speed, continues=continues, freespace=freespace,
-                                                 name=maneuver_name)
+                    
+                    max_speed_ref = ParameterRef(constraints.attrib.get('maxSpeed', None)
+                                                ) if constraints is not None else None
+                    continues_ref = ParameterRef(long_dist_action.attrib.get('continuous'))
+                    freespace_ref = ParameterRef(long_dist_action.attrib.get('freespace'))
+
+                    atomic = KeepLongitudinalGap(actor,
+                                                reference_actor=obj_ref,
+                                                gap=gap_ref,
+                                                gap_type=gap_type,
+                                                max_speed=max_speed_ref,
+                                                continues=continues_ref,
+                                                freespace=freespace_ref,
+                                                actor_list=actor_list,
+                                                name=maneuver_name)
                 else:
                     raise AttributeError("Unknown longitudinal action")
             elif private_action.find('LateralAction') is not None:

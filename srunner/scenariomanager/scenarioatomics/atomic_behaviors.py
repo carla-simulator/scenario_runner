@@ -3222,7 +3222,7 @@ class KeepLongitudinalGap(AtomicBehavior):
     """
 
     def __init__(self, actor, reference_actor, gap, gap_type="distance", max_speed=None, continues=False,
-                 freespace=False, name="AutoKeepDistance"):
+                 freespace=False, actor_list=None, name="AutoKeepDistance"):
         """
         Setup parameters
         """
@@ -3233,15 +3233,35 @@ class KeepLongitudinalGap(AtomicBehavior):
         self._gap_type = gap_type
         self._continues = continues
         self._freespace = freespace
+        self._actor_list = actor_list
         self._global_rp = None
         max_speed_limit = 100
-        self.max_speed = max_speed_limit if max_speed is None else float(max_speed)
-        if freespace and self._gap_type == "distance":
-            self._gap += self._reference_actor.bounding_box.extent.x + self._actor.bounding_box.extent.x
-
+        self.max_speed = max_speed_limit if max_speed is None else max_speed
         self._start_time = None
 
+    def _get_parameter_values(self):
+        """
+        Get the current values of OSC parameters.
+        Type cast fetches the value.
+        """
+
+        obj = get_param_value(self._reference_actor, str)
+        for traffic_actor in self._actor_list:
+            if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
+                    traffic_actor.attributes['role_name'] == obj):
+                obj_actor = traffic_actor
+
+        self._reference_actor = obj_actor
+        self._gap = get_param_value(self._gap, float)
+        self._continues = get_param_value(self._continues, bool)
+        self._freespace = get_param_value(self._freespace, bool)
+        self.max_speed = get_param_value(self.max_speed, float)
+
+        if self._freespace and self._gap_type == "distance":
+            self._gap += self._reference_actor.bounding_box.extent.x + self._actor.bounding_box.extent.x
+
     def initialise(self):
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
