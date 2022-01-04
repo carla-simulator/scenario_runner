@@ -1081,7 +1081,7 @@ class OpenScenarioParser(object):
                                          "Please specify any one attribute of [distance, timeGap]")
 
                     constraints = long_dist_action.find('DynamicConstraints')
-                    
+
                     max_speed_ref = ParameterRef(constraints.attrib.get('maxSpeed', None)
                                                 ) if constraints is not None else None
                     continues_ref = ParameterRef(long_dist_action.attrib.get('continuous'))
@@ -1099,30 +1099,31 @@ class OpenScenarioParser(object):
                 else:
                     raise AttributeError("Unknown longitudinal action")
             elif private_action.find('LateralAction') is not None:
+
                 private_action = private_action.find('LateralAction')
                 if private_action.find('LaneChangeAction') is not None:
-                    # Note: LaneChangeActions are currently only supported for RelativeTargetLane
                     lat_maneuver = private_action.find('LaneChangeAction')
-                    target_lane_rel = ParameterRef(lat_maneuver.find("LaneChangeTarget").find(
-                        "RelativeTargetLane").attrib.get('value', 0))
-                    direction = "left" if target_lane_rel > 0 else "right"
-                    lane_changes = abs(target_lane_rel)
-                    # duration and distance
-                    distance = float('inf')
-                    duration = float('inf')
-                    dimension = str(ParameterRef(lat_maneuver.find(
-                        "LaneChangeActionDynamics").attrib.get('dynamicsDimension')))
-                    if dimension == "distance":
-                        distance = ParameterRef(
-                            lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
-                    else:
-                        duration = ParameterRef(
-                            lat_maneuver.find("LaneChangeActionDynamics").attrib.get('value', float("inf")))
-                    atomic = ChangeActorLateralMotion(actor, direction=direction,
-                                                      distance_lane_change=distance,
-                                                      distance_other_lane=10,
-                                                      lane_changes=lane_changes,
-                                                      name=maneuver_name)
+
+                    if lat_maneuver.find("LaneChangeTarget").find("RelativeTargetLane") is not None:
+                        
+                        target_lane_rel_ref = ParameterRef(lat_maneuver.find("LaneChangeTarget").find(
+                            "RelativeTargetLane").attrib.get('value', 0))
+                        dimension_ref = ParameterRef(lat_maneuver.find(
+                            "LaneChangeActionDynamics").attrib.get('dynamicsDimension'))
+                        dimension_value_ref = ParameterRef(lat_maneuver.find(
+                            "LaneChangeActionDynamics").attrib.get('value', float("inf")))
+
+                        # Note: dimension == duration is currently not implemented
+                        atomic = ChangeActorLateralMotion(actor, 
+                                                        target_lane_rel=target_lane_rel_ref,
+                                                        dimension=dimension_ref,
+                                                        dimension_value=dimension_value_ref,
+                                                        distance_other_lane=10,
+                                                        name=maneuver_name)
+
+                    elif lat_maneuver.find("LaneChangeTarget").find("AbsoluteTargetLane") is not None:
+                        raise NotImplementedError("LaneChangeTarget: AbsoluteTargetLane is not implemented")
+
                 elif private_action.find('LaneOffsetAction') is not None:
                     lat_maneuver = private_action.find('LaneOffsetAction')
                     continuous = bool(strtobool(str(ParameterRef(lat_maneuver.attrib.get('continuous', "true")))))

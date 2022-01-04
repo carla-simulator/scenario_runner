@@ -1035,50 +1035,98 @@ class ChangeActorLateralMotion(AtomicBehavior):
     waypoints until such impossibility is found.
 
     Args:
-        actor (carla.Actor): Controlled actor.
-        direction (string): Lane change direction ('left' or 'right').
-            Defaults to 'left'.
-        distance_lane_change (float): Distance of the lance change [meters].
+        actor (carla.Actor):
+            Controlled actor.
+        target_lane_rel (int | ParameterRef(int)):
+            Number of lane changes to perform relative to current lane. Negative integers to
+            switch left, positive to switch right.
+            Defaults to 1.
+        dimension (string | ParameterRef(string)):
+            The dimension along which to control dynamics of the lane change. 'direction' or 'duration'.
+            'duration' currently not implemented.
+            Defaults to 'direction'
+        dimension_value (float | ParameterRef(float)):
+            The distance (m) or duration (s) of the lane change.
             Defaults to 25.
-        distance_other_lane (float): Driven distance after the lange change [meters].
+        distance_other_lane (float):
+            Driven distance after the lange change [meters].
             Defaults to 100.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorLateralMotion'.
 
     Attributes:
         _waypoints (List of carla.Transform): List of waypoints representing the lane change (CARLA transforms).
-        _direction (string): Lane change direction ('left' or 'right').
-        _distance_same_lane (float): Distance on the same lane before the lane change starts [meters]
+        _dimension (string | ParameterRef(string)):
+            The dimension along which to control dynamics of the lane change. 'direction' or 'duration'.
+            'duration' currently not implemented.
+            Defaults to 'direction'
+        _dimension_value (float | ParameterRef(float)):
+            The distance (m) or duration (s) of the lane change.
+            Defaults to 25.
+        _direction (string):
+            Lane change direction ('left' or 'right').
+        _distance_same_lane (float):
+            Distance on the same lane before the lane change starts [meters]
             Constant to 5.
-        _distance_other_lane (float): Max. distance on the target lane after the lance change [meters]
+        _distance_other_lane (float):
+            Max. distance on the target lane after the lane change [meters]
             Constant to 100.
-        _distance_lane_change (float): Max. total distance of the lane change [meters].
-        _pos_before_lane_change: carla.Location of the actor before the lane change.
+        _distance_lane_change (float):
+            Max. total distance of the lane change [meters].
+        _duration_lane_change (float):
+            Max. total duration of the lane change [s].
+        _pos_before_lane_change:
+            carla.Location of the actor before the lane change.
             Defaults to None.
-        _target_lane_id (int): Id of the target lane
+        _target_lane_id (int):
+            Id of the target lane
             Defaults to None.
-        _start_time (float): Start time of the atomic [s].
+        _start_time (float):
+            Start time of the atomic [s].
             Defaults to None.
     """
 
-    def __init__(self, actor, direction='left', distance_lane_change=25, distance_other_lane=100,
-                 lane_changes=1, name="ChangeActorLateralMotion"):
+    def __init__(self, actor, target_lane_rel=1, dimension="distance", dimension_value=25, distance_other_lane=100,
+                name="ChangeActorLateralMotion"):
         """
         Setup parameters
         """
         super(ChangeActorLateralMotion, self).__init__(name, actor)
 
         self._waypoints = []
-        self._direction = direction
-        self._distance_same_lane = 5
+        self._target_lane_rel = target_lane_rel
+        self._dimension = dimension
+        self._dimension_value = dimension_value
         self._distance_other_lane = distance_other_lane
-        self._distance_lane_change = distance_lane_change
-        self._lane_changes = lane_changes
+
+        self._distance_same_lane = 5
+        self._distance_lane_change = float('inf')
+        self._duration_lane_change = float('inf')
+        
+        self._direction = None
+        self._lane_changes = None
         self._pos_before_lane_change = None
         self._target_lane_id = None
         self._plan = None
 
         self._start_time = None
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._direction = "left" if self._target_lane_rel > 0 else "right"
+        self._lane_changes = abs(self._target_lane_rel)
+        
+        # duration and distance
+        dimension = str(self._dimension)
+        if dimension == "distance":
+            self._distance_lane_change = float(self._dimension_value)
+        elif dimension == "duration":
+            self._duration_lane_change = float(self._dimension_value)
+            raise NotImplementedError("LaneChangeActionDynamics: duration is not implemented")
+        else:
+            raise ValueError("Dimension has to be one of ['distance', 'duration']")
 
     def initialise(self):
         """
@@ -1090,6 +1138,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
