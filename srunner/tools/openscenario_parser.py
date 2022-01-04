@@ -963,7 +963,7 @@ class OpenScenarioParser(object):
                         name_condition_ref, tl_state_ref, name=maneuver_name + "_" + str(traffic_light_action.attrib.get('name')))
                 else:
                     raise NotImplementedError("TrafficLights can only be influenced via TrafficSignalStateAction")
-                    
+
             elif global_action.find('EnvironmentAction') is not None:
 
                 sun_azimuth_angle_ref, \
@@ -1014,7 +1014,15 @@ class OpenScenarioParser(object):
             user_defined_action = action.find('UserDefinedAction')
             if user_defined_action.find('CustomCommandAction') is not None:
                 command = user_defined_action.find('CustomCommandAction').attrib.get('type')
-                atomic = RunScript(command, base_path=OpenScenarioParser.osc_filepath, name=maneuver_name)
+
+                # treat each part of the command string, separated by whitespaces,
+                # as possible OSC parameter variables
+                script_components = command.split(' ')
+                script_component_refs = []
+                for component in script_components:
+                    script_component_refs.append(ParameterRef(component))
+
+                atomic = RunScript(script_component_refs, base_path=OpenScenarioParser.osc_filepath, name=maneuver_name)
 
         elif action.find('PrivateAction') is not None:
             private_action = action.find('PrivateAction')

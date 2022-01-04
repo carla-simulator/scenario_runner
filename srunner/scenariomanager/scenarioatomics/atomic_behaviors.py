@@ -41,8 +41,6 @@ from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.weather_sim import Weather
 from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
-from srunner.tools.scenario_param_ref import ParameterRef
-
 
 import srunner.tools as sr_tools
 
@@ -156,13 +154,13 @@ class RunScript(AtomicBehavior):
     This is an atomic behavior to start execution of an additional script.
 
     Args:
-        script (str): String containing the interpreter, scriptpath and arguments
-            Example: "python /path/to/script.py --arg1"
+        script (list(str)): A list of String elements that contain the interpreter, scriptpath and arguments
+            Example: ['python', '/path/to/script.py', '--arg1', '$parameter_arg']
         base_path (str): String containing the base path of for the script
 
     Attributes:
-        _script (str): String containing the interpreter, scriptpath and arguments
-            Example: "python /path/to/script.py --arg1"
+        _script (list(str)): A list of String elements that contain the interpreter, scriptpath and arguments
+            Example: ['python', '/path/to/script.py', '--arg1', '$parameter_arg']
         _base_path (str): String containing the base path of for the script
             Example: "/path/to/"
 
@@ -184,16 +182,14 @@ class RunScript(AtomicBehavior):
         Start script
         """
         path = None
-        script_components = self._script.split(' ')
 
         interpreted_components = []
-        for component in script_components:
-            interpreted_components.append(str(ParameterRef(component)))
-        script_components = interpreted_components
-        interpreted_script = ' '.join(script_components)
+        for component in self._script:
+            interpreted_components.append(str(component))
+        interpreted_script = ' '.join(interpreted_components)
 
-        if len(script_components) > 1:
-            path = script_components[1]
+        if len(interpreted_components) > 1:
+            path = interpreted_components[1]
 
         if not os.path.isfile(path):
             path = os.path.join(self._base_path, path)
