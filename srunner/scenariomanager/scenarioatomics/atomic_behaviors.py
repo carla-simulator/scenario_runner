@@ -270,17 +270,17 @@ class ChangeWeather(AtomicBehavior):
         weather_animation (bool | ParameterRef(bool)): If the weather should follow time of the day.
         time (string | ParameterRef(string)): Time of the day at the beginning of simulation.
         name (string): Name of the behavior.
-            Defaults to 'UpdateWeather'.
+            Defaults to 'ChangeWeather'.
 
     Attributes:
-        _sun_azimuth_angle (float | ParameterRef(float)): Azimuth of the sun in radians.
-        _sun_altitude_angle (float | ParameterRef(float)): Elevation of the sun in radians.
-        _sun_intensity (float | ParameterRef(float)): Intensity of sun illumination.
-        _fog_distance (float | ParameterRef(float)): Distance of the beginning fog from vehicle.
-        _precepitation_type (string | ParameterRef(string)): Dry or rain.
-        _precepitation_intensity (float | ParameterRef(float)): Intensity of rain.
-        _weather_animation (bool | ParameterRef(bool)): If the weather should follow time of the day.
-        _time (string | ParameterRef(string)): Time of the day at the beginning of simulation.
+        _sun_azimuth_angle_ref (float | ParameterRef(float)): Azimuth of the sun in radians.
+        _sun_altitude_angle_ref (float | ParameterRef(float)): Elevation of the sun in radians.
+        _sun_intensity_ref (float | ParameterRef(float)): Intensity of sun illumination.
+        _fog_distance_ref (float | ParameterRef(float)): Distance of the beginning fog from vehicle.
+        _precepitation_type_ref (string | ParameterRef(string)): Dry or rain.
+        _precepitation_intensity_ref (float | ParameterRef(float)): Intensity of rain.
+        _weather_animation_ref (bool | ParameterRef(bool)): If the weather should follow time of the day.
+        _time_ref (string | ParameterRef(string)): Time of the day at the beginning of simulation.
     """
 
     def __init__(self, 
@@ -2469,11 +2469,17 @@ class TrafficLightStateSetter(AtomicBehavior):
     This class contains an atomic behavior to set the state of a given traffic light
 
     Args:
-        actor (carla.TrafficLight): ID of the traffic light that shall be changed
-        state (carla.TrafficLightState): New target state
+        actor (ParameterRef(string)): ID of the traffic light that shall be changed
+        state (ParameterRef(string)): New target state
 
     The behavior terminates after trying to set the new state
     """
+    tl_states = {
+    "GREEN": carla.TrafficLightState.Green,
+    "YELLOW": carla.TrafficLightState.Yellow,
+    "RED": carla.TrafficLightState.Red,
+    "OFF": carla.TrafficLightState.Off,
+    }
 
     def __init__(self, actor, state, name="TrafficLightStateSetter"):
         """
@@ -2481,7 +2487,7 @@ class TrafficLightStateSetter(AtomicBehavior):
         """
         super(TrafficLightStateSetter, self).__init__(name)
 
-        self._actor = actor if "traffic_light" in actor.type_id else None
+        self._actor = actor
         self._state = state
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -2489,18 +2495,58 @@ class TrafficLightStateSetter(AtomicBehavior):
         """
         Change the state of the traffic light
         """
-        if self._actor is None:
+        actor = TrafficLightStateSetter.get_traffic_light_from_osc_name(str(self._actor))
+        traffic_light = actor if "traffic_light" in actor.type_id else None
+
+        tl_state = str(self._state).upper()
+        if tl_state not in TrafficLightStateSetter.tl_states:
+            raise KeyError("CARLA only supports Green, Red, Yellow or Off")
+        traffic_light_state = TrafficLightStateSetter.tl_states[tl_state]
+
+        if traffic_light is None:
             return py_trees.common.Status.FAILURE
 
         new_status = py_trees.common.Status.RUNNING
-        if self._actor.is_alive:
-            self._actor.set_state(self._state)
+        if traffic_light.is_alive:
+            traffic_light.set_state(traffic_light_state)
             new_status = py_trees.common.Status.SUCCESS
         else:
             # For some reason the actor is gone...
             new_status = py_trees.common.Status.FAILURE
 
         return new_status
+
+    @staticmethod
+    def get_traffic_light_from_osc_name(name):
+        """
+        Returns a carla.TrafficLight instance that matches the name given
+        """
+        traffic_light = None
+
+        # Given by id
+        if name.startswith("id="):
+            tl_id = int(name[3:])
+            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+                if carla_tl.id == tl_id:
+                    traffic_light = carla_tl
+                    break
+        # Given by position
+        elif name.startswith("pos="):
+            tl_pos = name[4:]
+            pos = tl_pos.split(",")
+            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+                carla_tl_location = carla_tl.get_transform().location
+                distance = carla_tl_location.distance(carla.Location(float(pos[0]),
+                                                                     float(pos[1]),
+                                                                     carla_tl_location.z))
+                if distance < 2.0:
+                    traffic_light = carla_tl
+                    break
+
+        if traffic_light is None:
+            raise AttributeError("Unknown  traffic light {}".format(name))
+
+        return traffic_light
 
 
 class ActorSource(AtomicBehavior):

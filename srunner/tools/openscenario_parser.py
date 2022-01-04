@@ -108,48 +108,10 @@ class OpenScenarioParser(object):
         "miscellaneous": "miscellaneous"
     }
 
-    tl_states = {
-        "GREEN": carla.TrafficLightState.Green,
-        "YELLOW": carla.TrafficLightState.Yellow,
-        "RED": carla.TrafficLightState.Red,
-        "OFF": carla.TrafficLightState.Off,
-    }
-
     global_osc_parameters = {}
     use_carla_coordinate_system = False
     osc_filepath = None
 
-    @staticmethod
-    def get_traffic_light_from_osc_name(name):
-        """
-        Returns a carla.TrafficLight instance that matches the name given
-        """
-        traffic_light = None
-
-        # Given by id
-        if name.startswith("id="):
-            tl_id = int(name[3:])
-            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                if carla_tl.id == tl_id:
-                    traffic_light = carla_tl
-                    break
-        # Given by position
-        elif name.startswith("pos="):
-            tl_pos = name[4:]
-            pos = tl_pos.split(",")
-            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                carla_tl_location = carla_tl.get_transform().location
-                distance = carla_tl_location.distance(carla.Location(float(pos[0]),
-                                                                     float(pos[1]),
-                                                                     carla_tl_location.z))
-                if distance < 2.0:
-                    traffic_light = carla_tl
-                    break
-
-        if traffic_light is None:
-            raise AttributeError("Unknown  traffic light {}".format(name))
-
-        return traffic_light
 
     @staticmethod
     def set_osc_filepath(filepath):
@@ -290,7 +252,7 @@ class OpenScenarioParser(object):
             catalogs: XML Catalogs that could contain the EnvironmentAction
 
         returns:
-           friction (float)
+           friction (ParameterRef(float))
         """
 
         if xml_tree.findall('.//EnvironmentAction'):
@@ -307,7 +269,6 @@ class OpenScenarioParser(object):
 
         road_condition = environment.find("RoadCondition")
         friction_ref = ParameterRef(road_condition.attrib.get('frictionScaleFactor'))
-
         return friction_ref
 
 
@@ -322,7 +283,14 @@ class OpenScenarioParser(object):
             catalogs: XML Catalogs that could contain the EnvironmentAction
 
         returns:
-           Weather (srunner.scenariomanager.weather_sim.Weather)
+            sun_azimuth_angle_ref (ParameterRef(float)): Azimuth of the sun in radians.
+            sun_altitude_angle_ref (ParameterRef(float)): Elevation of the sun in radians.
+            sun_intensity_ref (ParameterRef(float)): Intensity of sun illumination.
+            fog_distance_ref (ParameterRef(float)): Distance of the beginning fog from vehicle.
+            precepitation_type_ref (ParameterRef(string)): Dry or rain.
+            precepitation_intensity_ref (ParameterRef(float)): Intensity of rain.
+            weather_animation_ref (ParameterRef(bool)): If the weather should follow time of the day.
+            time_ref (ParameterRef(string)): Time of the day at the beginning of simulation.
         """
 
         if xml_tree.findall('.//EnvironmentAction'):
@@ -947,12 +915,12 @@ class OpenScenarioParser(object):
                 tl_condition = value_condition.find('TrafficSignalCondition')
 
                 name_condition = str(ParameterRef(tl_condition.attrib.get('name')))
-                traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(name_condition)
+                traffic_light = TrafficLightStateSetter.get_traffic_light_from_osc_name(name_condition)
 
                 tl_state = str(ParameterRef(tl_condition.attrib.get('state'))).upper()
-                if tl_state not in OpenScenarioParser.tl_states:
+                if tl_state not in TrafficLightStateSetter.tl_states:
                     raise KeyError("CARLA only supports Green, Red, Yellow or Off")
-                state_condition = OpenScenarioParser.tl_states[tl_state]
+                state_condition = TrafficLightStateSetter.tl_states[tl_state]
 
                 atomic = WaitForTrafficLightState(
                     traffic_light, state_condition, name=condition_name)
@@ -988,18 +956,14 @@ class OpenScenarioParser(object):
                 if infrastructure_action.find('TrafficSignalStateAction') is not None:
                     traffic_light_action = infrastructure_action.find('TrafficSignalStateAction')
 
-                    name_condition = str(ParameterRef(traffic_light_action.attrib.get('name')))
-                    traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(name_condition)
-
-                    tl_state = str(ParameterRef(traffic_light_action.attrib.get('state'))).upper()
-                    if tl_state not in OpenScenarioParser.tl_states:
-                        raise KeyError("CARLA only supports Green, Red, Yellow or Off")
-                    traffic_light_state = OpenScenarioParser.tl_states[tl_state]
+                    name_condition_ref = ParameterRef(traffic_light_action.attrib.get('name'))
+                    tl_state_ref = ParameterRef(traffic_light_action.attrib.get('state'))
 
                     atomic = TrafficLightStateSetter(
-                        traffic_light, traffic_light_state, name=maneuver_name + "_" + str(traffic_light.id))
+                        name_condition_ref, tl_state_ref, name=maneuver_name + "_" + str(traffic_light_action.attrib.get('name')))
                 else:
                     raise NotImplementedError("TrafficLights can only be influenced via TrafficSignalStateAction")
+                    
             elif global_action.find('EnvironmentAction') is not None:
 
                 sun_azimuth_angle_ref, \
