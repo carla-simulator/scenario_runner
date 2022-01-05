@@ -1241,16 +1241,24 @@ class ChangeActorLaneOffset(AtomicBehavior):
 
     Args:
         actor (carla.Actor): Controlled actor.
-        offset (float): Float determined the distance to the center of the lane. Positive distance imply a
+        offset (float | ParameterRef(float)): Float determined the distance to the center of the lane. Positive distance imply a
             displacement to the right, while negative displacements are to the left.
-        relative_actor (carla.Actor): The actor from which the offset is taken from. Defaults to None
-        continuous (bool): If True, the behaviour never ends. If False, the behaviour ends when the lane
+        relative_actor_name (string | ParameterRef(string)): Name of the actor from which the offset is taken.
+            Defaults to None.
+        continuous (bool | ParameterRef(bool)): If True, the behaviour never ends. If False, the behaviour ends when the lane
             offset is reached. Defaults to True.
+        actor_list (list(carla.Actor)): List of current carla actors
+            Defaults to None
 
     Attributes:
-        _offset (float): lane offset.
-        _relative_actor (carla.Actor): relative actor.
-        _continuous (bool): stored the value of the 'continuous' argument.
+        _offset (float | ParameterRef(float)): lane offset.
+        _relative_actor_name (string | ParameterRef(string)): stored value of the relative_actor_name argument.
+            Defaults to None.
+        _continuous (bool | ParameterRef(bool)): stored the value of the 'continuous' argument.
+        _relative_actor (carla.Actor): The actor from which the offset is taken from. 
+            Defaults to None
+        _actor_list (list(carla.Actor)): List of current carla actors
+            Defaults to None
         _start_time (float): Start time of the atomic [s].
             Defaults to None.
         _overwritten (bool): flag to check whether or not this behavior was overwritten by another. Helps
@@ -1261,20 +1269,41 @@ class ChangeActorLaneOffset(AtomicBehavior):
 
     OFFSET_THRESHOLD = 0.1
 
-    def __init__(self, actor, offset, relative_actor=None, continuous=True, name="ChangeActorWaypoints"):
+    def __init__(self, actor, offset, relative_actor_name=None, continuous=True, actor_list=None,
+                name="ChangeActorWaypoints"):
         """
         Setup parameters
         """
         super(ChangeActorLaneOffset, self).__init__(name, actor)
 
         self._offset = offset
-        self._relative_actor = relative_actor
+        self._relative_actor_name = relative_actor_name
         self._continuous = continuous
+        self._relative_actor = None
+        self._actor_list = actor_list
         self._start_time = None
         self._current_target_offset = 0
 
         self._overwritten = False
         self._map = CarlaDataProvider.get_map()
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._offset = get_param_value(self._offset, float)
+        self._continuous = get_param_value(self._continuous, bool)
+        self._relative_actor_name = get_param_value(self._relative_actor_name, str)
+
+        if self._relative_actor_name is not None:
+            for _actor in self._actor_list:
+                if _actor is not None and 'role_name' in _actor.attributes:
+                    if self._relative_actor_name == _actor.attributes['role_name']:
+                        relative_actor = _actor
+                        break
+            if relative_actor is None:
+                raise AttributeError("Cannot find actor '{}' for condition".format(relative_actor_name))
+            self._relative_actor = relative_actor
 
     def initialise(self):
         """
@@ -1285,6 +1314,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:

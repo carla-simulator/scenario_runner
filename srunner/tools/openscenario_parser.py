@@ -1125,34 +1125,30 @@ class OpenScenarioParser(object):
                         raise NotImplementedError("LaneChangeTarget: AbsoluteTargetLane is not implemented")
 
                 elif private_action.find('LaneOffsetAction') is not None:
+
                     lat_maneuver = private_action.find('LaneOffsetAction')
-                    continuous = bool(strtobool(str(ParameterRef(lat_maneuver.attrib.get('continuous', "true")))))
+                    continuous_ref = ParameterRef(lat_maneuver.attrib.get('continuous', "true"))
                     # Parsing of the different Dynamic shapes is missing
 
                     lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
                     if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
-                        absolute_offset = ParameterRef(
+                        absolute_offset_ref = ParameterRef(
                             lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value', 0))
                         atomic = ChangeActorLaneOffset(
-                            actor, absolute_offset, continuous=continuous, name=maneuver_name)
+                            actor, absolute_offset_ref, continuous=continuous_ref, name=maneuver_name)
 
                     elif lane_target_offset.find('RelativeTargetLaneOffset') is not None:
                         relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
-                        relative_offset = ParameterRef(relative_target_offset.attrib.get('value', 0))
 
-                        relative_actor = None
-                        relative_actor_name = str(ParameterRef(relative_target_offset.attrib.get('entityRef', None)))
-                        for _actor in actor_list:
-                            if _actor is not None and 'role_name' in _actor.attributes:
-                                if relative_actor_name == _actor.attributes['role_name']:
-                                    relative_actor = _actor
-                                    break
-                        if relative_actor is None:
-                            raise AttributeError("Cannot find actor '{}' for condition".format(relative_actor_name))
+                        relative_offset_ref = ParameterRef(relative_target_offset.attrib.get('value', 0))
+                        relative_actor_name_ref = ParameterRef(relative_target_offset.attrib.get('entityRef', None))
 
-                        atomic = ChangeActorLaneOffset(actor, relative_offset, relative_actor,
-                                                       continuous=continuous, name=maneuver_name)
-
+                        atomic = ChangeActorLaneOffset(actor,
+                                                    relative_offset_ref,
+                                                    relative_actor_name_ref,
+                                                    continuous=continuous_ref,
+                                                    actor_list=actor_list,
+                                                    name=maneuver_name)
                     else:
                         raise AttributeError("Unknown target offset")
                 else:
