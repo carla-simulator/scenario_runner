@@ -108,10 +108,48 @@ class OpenScenarioParser(object):
         "miscellaneous": "miscellaneous"
     }
 
+    tl_states = {
+    "GREEN": carla.TrafficLightState.Green,
+    "YELLOW": carla.TrafficLightState.Yellow,
+    "RED": carla.TrafficLightState.Red,
+    "OFF": carla.TrafficLightState.Off,
+    }
+
     global_osc_parameters = {}
     use_carla_coordinate_system = False
     osc_filepath = None
 
+    @staticmethod
+    def get_traffic_light_from_osc_name(name):
+        """
+        Returns a carla.TrafficLight instance that matches the name given
+        """
+        traffic_light = None
+
+        # Given by id
+        if name.startswith("id="):
+            tl_id = int(name[3:])
+            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+                if carla_tl.id == tl_id:
+                    traffic_light = carla_tl
+                    break
+        # Given by position
+        elif name.startswith("pos="):
+            tl_pos = name[4:]
+            pos = tl_pos.split(",")
+            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+                carla_tl_location = carla_tl.get_transform().location
+                distance = carla_tl_location.distance(carla.Location(float(pos[0]),
+                                                                     float(pos[1]),
+                                                                     carla_tl_location.z))
+                if distance < 2.0:
+                    traffic_light = carla_tl
+                    break
+
+        if traffic_light is None:
+            raise AttributeError("Unknown  traffic light {}".format(name))
+
+        return traffic_light
 
     @staticmethod
     def set_osc_filepath(filepath):
@@ -1157,37 +1195,29 @@ class OpenScenarioParser(object):
                 raise NotImplementedError("Visibility actions are not yet supported")
             elif private_action.find('SynchronizeAction') is not None:
                 sync_action = private_action.find('SynchronizeAction')
+                master_actor_name_ref = ParameterRef(sync_action.attrib.get('masterEntityRef', None))
 
-                master_actor = None
-                for actor_ins in actor_list:
-                    if actor_ins is not None and 'role_name' in actor_ins.attributes:
-                        if (str(ParameterRef(sync_action.attrib.get('masterEntityRef', None)))
-                                == actor_ins.attributes['role_name']):
-                            master_actor = actor_ins
-                            break
-
-                if master_actor is None:
-                    raise AttributeError("Cannot find actor '{}' for condition".format(
-                        str(ParameterRef(sync_action.attrib.get('masterEntityRef', None)))))
-
-                master_position = OpenScenarioParser.convert_position_to_transform(
-                    sync_action.find('TargetPositionMaster'))
-                position = OpenScenarioParser.convert_position_to_transform(sync_action.find('TargetPosition'))
+                master_position = sync_action.find('TargetPositionMaster')
+                position = sync_action.find('TargetPosition')
 
                 if sync_action.find("FinalSpeed").find("AbsoluteSpeed") is not None:
-                    final_speed = ParameterRef(sync_action.find("FinalSpeed").find(
+                    final_speed_ref = ParameterRef(sync_action.find("FinalSpeed").find(
                         "AbsoluteSpeed").attrib.get('value', 0))
+
                     atomic = SyncArrivalOSC(
-                        actor, master_actor, position, master_position, final_speed, name=maneuver_name)
+                        actor, master_actor_name_ref, position, master_position, final_speed_ref,
+                        actor_list=actor_list, name=maneuver_name)
 
                 # relative velocity to given actor
                 elif sync_action.find("FinalSpeed").find("RelativeSpeedToMaster") is not None:
                     relative_speed = sync_action.find("FinalSpeed").find("RelativeSpeedToMaster")
-                    final_speed = ParameterRef(relative_speed.attrib.get('value', 0))
-                    relative_type = float(ParameterRef(relative_speed.attrib.get('speedTargetValueType')))
+                    final_speed_ref = ParameterRef(relative_speed.attrib.get('value', 0))
+                    relative_type_ref = ParameterRef(relative_speed.attrib.get('speedTargetValueType'))
+
                     atomic = SyncArrivalOSC(
-                        actor, master_actor, position, master_position, final_speed,
-                        relative_to_master=True, relative_type=relative_type, name=maneuver_name)
+                        actor, master_actor_name_ref, position, master_position, final_speed_ref,
+                        relative_to_master=True, relative_type=relative_type_ref,
+                        actor_list=actor_list, name=maneuver_name)
                 else:
                     raise AttributeError("Unknown speed action")
             elif private_action.find('ActivateControllerAction') is not None:

@@ -726,22 +726,24 @@ class SyncArrivalOSC(AtomicBehavior):
 
     Args:
         actor (carla.Actor): Controlled actor.
-        master_actor (carla.Actor): Reference actor to sync up to.
-        actor_target (carla.Transform): Endpoint of the actor after the behavior finishes.
-        master_target (carla.Transform): Endpoint of the master_actor after the behavior finishes.
-        final_speed (float): Speed of the actor after the behavior ends.
+        master_actor_name (string | ParameterRef(string)): Name of the reference actor to sync up to.
+        actor_target (OSC position): Endpoint of the actor after the behavior finishes.
+        master_target (OSC position): Endpoint of the master_actor after the behavior finishes.
+        final_speed (float | ParameterRef(float)): Speed of the actor after the behavior ends.
         relative_to_master (boolean): Whether or not the final speed is relative to master_actor.
             Defaults to False.
-        relative_type (string): Type of relative speed. Either 'delta' or 'factor'.
+        relative_type (string | ParameterRef(string)): Type of relative speed. Either 'delta' or 'factor'.
             Defaults to ''.
+        actor_list (list(carla.Actor)): List of the current Carla actors.
+            Defaults to None.
         name (string): Name of the behavior.
             Defaults to 'SyncArrivalOSC'.
     """
 
     DISTANCE_THRESHOLD = 1
 
-    def __init__(self, actor, master_actor, actor_target, master_target, final_speed,
-                 relative_to_master=False, relative_type='', name="SyncArrivalOSC"):
+    def __init__(self, actor, master_actor_name, actor_target, master_target, final_speed,
+                 relative_to_master=False, relative_type='', actor_list=None, name="SyncArrivalOSC"):
         """
         Setup required parameters
         """
@@ -749,16 +751,43 @@ class SyncArrivalOSC(AtomicBehavior):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         self._actor = actor
-        self._actor_target = actor_target
-        self._master_actor = master_actor
-        self._master_target = master_target
+        self._master_actor_name = master_actor_name
+        self._master_actor = None
+
+        self._actor_target_osc = actor_target
+        self._actor_target = None
+        self._master_target_osc = master_target
+        self._master_target = None
 
         self._final_speed = final_speed
         self._final_speed_set = False
         self._relative_to_master = relative_to_master
         self._relative_type = relative_type
+        self._actor_list = actor_list
 
         self._start_time = None
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._relative_type = get_param_value(self._relative_type, str)
+        self._final_speed = get_param_value(self._final_speed, float)
+
+        master_actor_name = get_param_value(self._master_actor_name, str)
+        for actor_ins in self._actor_list:
+            if actor_ins is not None and 'role_name' in actor_ins.attributes:
+                if (master_actor_name == actor_ins.attributes['role_name']):
+                    self._master_actor = actor_ins
+                    break
+        if self._master_actor is None:
+            raise AttributeError("Cannot find actor '{}' for condition".format(
+                master_actor_name))
+
+        self._actor_target = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            self._actor_target_osc)
+        self._master_target = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            self._master_target_osc)
 
     def initialise(self):
         """
@@ -767,6 +796,7 @@ class SyncArrivalOSC(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
@@ -1867,6 +1897,8 @@ class SyncArrival(AtomicBehavior):
         """
         Dynamic control update for actor velocity
         """
+        raise AttributeError("Are we even there")
+
         new_status = py_trees.common.Status.RUNNING
 
         distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
@@ -2549,13 +2581,6 @@ class TrafficLightStateSetter(AtomicBehavior):
 
     The behavior terminates after trying to set the new state
     """
-    tl_states = {
-    "GREEN": carla.TrafficLightState.Green,
-    "YELLOW": carla.TrafficLightState.Yellow,
-    "RED": carla.TrafficLightState.Red,
-    "OFF": carla.TrafficLightState.Off,
-    }
-
     def __init__(self, actor, state, name="TrafficLightStateSetter"):
         """
         Init
@@ -2570,13 +2595,14 @@ class TrafficLightStateSetter(AtomicBehavior):
         """
         Change the state of the traffic light
         """
-        actor = TrafficLightStateSetter.get_traffic_light_from_osc_name(str(self._actor))
+        actor = sr_tools.openscenario_parser.OpenScenarioParser.get_traffic_light_from_osc_name(
+                                                                                str(self._actor))
         traffic_light = actor if "traffic_light" in actor.type_id else None
 
         tl_state = str(self._state).upper()
-        if tl_state not in TrafficLightStateSetter.tl_states:
+        if tl_state not in sr_tools.openscenario_parser.OpenScenarioParser.tl_states:
             raise KeyError("CARLA only supports Green, Red, Yellow or Off")
-        traffic_light_state = TrafficLightStateSetter.tl_states[tl_state]
+        traffic_light_state = sr_tools.openscenario_parser.OpenScenarioParser.tl_states[tl_state]
 
         if traffic_light is None:
             return py_trees.common.Status.FAILURE
@@ -2590,39 +2616,6 @@ class TrafficLightStateSetter(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
 
         return new_status
-
-    @staticmethod
-    def get_traffic_light_from_osc_name(name):
-        """
-        Returns a carla.TrafficLight instance that matches the name given
-        """
-        traffic_light = None
-
-        # Given by id
-        if name.startswith("id="):
-            tl_id = int(name[3:])
-            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                if carla_tl.id == tl_id:
-                    traffic_light = carla_tl
-                    break
-        # Given by position
-        elif name.startswith("pos="):
-            tl_pos = name[4:]
-            pos = tl_pos.split(",")
-            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
-                carla_tl_location = carla_tl.get_transform().location
-                distance = carla_tl_location.distance(carla.Location(float(pos[0]),
-                                                                     float(pos[1]),
-                                                                     carla_tl_location.z))
-                if distance < 2.0:
-                    traffic_light = carla_tl
-                    break
-
-        if traffic_light is None:
-            raise AttributeError("Unknown  traffic light {}".format(name))
-
-        return traffic_light
-
 
 class ActorSource(AtomicBehavior):
 
