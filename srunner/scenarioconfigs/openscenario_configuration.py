@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2021 Intel Corporation
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
@@ -98,7 +98,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         Ensure correct OpenSCENARIO version is used
         """
         header = self.xml_tree.find("FileHeader")
-        if not (header.attrib.get('revMajor') == "1" and header.attrib.get('revMinor') == "0"):
+        if not (str(ParameterRef(header.attrib.get('revMajor'))) == "1" and
+                str(ParameterRef(header.attrib.get('revMinor'))) == "0"):
             raise AttributeError("Only OpenSCENARIO 1.0 is supported")
 
     def _load_catalogs(self):
@@ -124,7 +125,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             if catalog is None:
                 continue
 
-            catalog_path = catalog.find("Directory").attrib.get('path') + "/" + catalog_type + "Catalog.xosc"
+            catalog_path = str(ParameterRef(catalog.find("Directory").attrib.get('path'))) + \
+                "/" + catalog_type + "Catalog.xosc"
             if not os.path.isabs(catalog_path) and "xosc" in self.filename:
                 catalog_path = os.path.dirname(os.path.abspath(self.filename)) + "/" + catalog_path
 
@@ -134,17 +136,17 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 xml_tree = ET.parse(catalog_path)
                 self._validate_openscenario_catalog_configuration(xml_tree)
                 catalog = xml_tree.find("Catalog")
-                catalog_name = catalog.attrib.get("name")
+                catalog_name = str(ParameterRef(catalog.attrib.get("name")))
                 self.catalogs[catalog_name] = {}
                 for entry in catalog:
-                    self.catalogs[catalog_name][entry.attrib.get("name")] = entry
+                    self.catalogs[catalog_name][str(ParameterRef(entry.attrib.get("name")))] = entry
 
     def _set_scenario_name(self):
         """
         Extract the scenario name from the OpenSCENARIO header information
         """
         header = self.xml_tree.find("FileHeader")
-        self.name = header.attrib.get('description', 'Unknown')
+        self.name = str(ParameterRef(header.attrib.get('description', 'Unknown')))
 
         if self.name.startswith("CARLA:"):
             self.name = self.name[6:]
@@ -158,7 +160,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
               Hence, there can be multiple towns specified. We just use the _last_ one.
         """
         for logic in self.xml_tree.find("RoadNetwork").findall("LogicFile"):
-            self.town = logic.attrib.get('filepath', None)
+            self.town = str(ParameterRef(logic.attrib.get('filepath', None)))
 
         if self.town is not None and ".xodr" in self.town:
             if not os.path.isabs(self.town):
@@ -235,7 +237,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         for entity in self.xml_tree.iter("Entities"):
             for obj in entity.iter("ScenarioObject"):
-                rolename = obj.attrib.get('name', 'simulation')
+                rolename = str(ParameterRef(obj.attrib.get('name', 'simulation')))
                 args = {}
                 for prop in obj.iter("Property"):
                     key = prop.get('name')
@@ -290,8 +292,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         Helper function to _set_actor_information for getting vehicle information from XML tree
         """
         color = None
-        model = vehicle.attrib.get('name', "vehicle.*")
-        category = vehicle.attrib.get('vehicleCategory', "car")
+        model = str(ParameterRef(vehicle.attrib.get('name', "vehicle.*")))
+        category = str(ParameterRef(vehicle.attrib.get('vehicleCategory', "car")))
         ego_vehicle = False
         for prop in obj.iter("Property"):
             if prop.get('name', '') == 'type':
@@ -312,7 +314,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Helper function to _set_actor_information for getting pedestrian information from XML tree
         """
-        model = pedestrian.attrib.get('model', "walker.*")
+        model = str(ParameterRef(pedestrian.attrib.get('model', "walker.*")))
 
         speed = self._get_actor_speed(rolename)
         new_actor = ActorConfigurationData(model, None, rolename, speed, category="pedestrian", args=args)
@@ -323,13 +325,13 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Helper function to _set_actor_information for getting vehicle information from XML tree
         """
-        category = misc.attrib.get('miscObjectCategory')
+        category = str(ParameterRef(misc.attrib.get('miscObjectCategory')))
         if category == "barrier":
             model = "static.prop.streetbarrier"
         elif category == "guardRail":
             model = "static.prop.chainbarrier"
         else:
-            model = misc.attrib.get('name')
+            model = str(ParameterRef(misc.attrib.get('name')))
         new_actor = ActorConfigurationData(model, None, rolename, category="misc", args=args)
 
         self.other_actors.append(new_actor)
@@ -351,7 +353,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_found = False
 
         for private_action in self.init.iter("Private"):
-            if private_action.attrib.get('entityRef', None) == actor_name:
+            if str(ParameterRef(private_action.attrib.get('entityRef', None))) == actor_name:
                 if actor_found:
                     # pylint: disable=line-too-long
                     self.logger.warning(
@@ -380,7 +382,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_found = False
 
         for private_action in self.init.iter("Private"):
-            if private_action.attrib.get('entityRef', None) == actor_name:
+            if str(ParameterRef(private_action.attrib.get('entityRef', None))) == actor_name:
                 if actor_found:
                     # pylint: disable=line-too-long
                     self.logger.warning(

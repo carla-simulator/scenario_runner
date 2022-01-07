@@ -226,10 +226,9 @@ class OpenScenario(BasicScenario):
         env_behavior = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="EnvironmentBehavior")
 
-        weather_update = ChangeWeather(
-            OpenScenarioParser.get_weather_from_env_action(self.config.init, self.config.catalogs))
-        road_friction = ChangeRoadFriction(
-            OpenScenarioParser.get_friction_from_env_action(self.config.init, self.config.catalogs))
+        weather_update = ChangeWeather(self.config.init, self.config.catalogs)
+        road_friction = ChangeRoadFriction(self.config.init, self.config.catalogs)
+
         env_behavior.add_child(oneshot_with_check(variable_name="InitialWeather", behaviour=weather_update))
         env_behavior.add_child(oneshot_with_check(variable_name="InitRoadFriction", behaviour=road_friction))
 
@@ -252,14 +251,15 @@ class OpenScenario(BasicScenario):
                         if private.attrib.get('entityRef', None) == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
                                 for controller_action in private_action.iter('ControllerAction'):
-                                    module, args = OpenScenarioParser.get_controller(
-                                        controller_action, self.config.catalogs)
+
                                     controller_atomic = ChangeActorControl(
-                                        carla_actor, control_py_module=module, args=args,
+                                        carla_actor,
+                                        osc_controller_action=controller_action,
+                                        catalogs=self.config.catalogs,
                                         scenario_file_path=os.path.dirname(self.config.filename))
 
                     if controller_atomic is None:
-                        controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
+                        controller_atomic = ChangeActorControl(carla_actor)
 
                     actor_init_behavior.add_child(controller_atomic)
 

@@ -21,6 +21,9 @@
 ### :bug: Bug Fixes
 * Fixed bug at OtherLeadingVehicle scenario causing the vehicles to move faster than intended
 * Fixed bug causing some debris at ControlLoss scenario to be floating, instead of at ground level
+* Fixed bug causing OpenSCENARIO UserDefinedCommand subprocess runner to exit before executing script
+* Fixed retrieval of OpenSCENARIO parameter values
+* Fixed bug causing effects of OpenSCENARIO ParameterAction to be ignored in the execution of maneuvers
 
 ## CARLA ScenarioRunner 0.9.13
 ### :rocket: New Features

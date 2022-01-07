@@ -40,7 +40,6 @@ from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
 
-
 import srunner.tools as sr_tools
 
 EPSILON = 0.001
@@ -85,6 +84,16 @@ def get_actor_control(actor):
         control.speed = 0
 
     return control, actor_type
+
+
+def get_param_value(param_ref, param_type):
+    """
+    Method to retrieve the value of an OSC parameter from ParameterRef
+    """
+    if param_ref is None:
+        return None
+    else:
+        return param_type(param_ref)
 
 
 class AtomicBehavior(py_trees.behaviour.Behaviour):
@@ -143,13 +152,13 @@ class RunScript(AtomicBehavior):
     This is an atomic behavior to start execution of an additional script.
 
     Args:
-        script (str): String containing the interpreter, scriptpath and arguments
-            Example: "python /path/to/script.py --arg1"
+        script (list(str)): A list of String elements that contain the interpreter, scriptpath and arguments
+            Example: ['python', '/path/to/script.py', '--arg1', '$parameter_arg']
         base_path (str): String containing the base path of for the script
 
     Attributes:
-        _script (str): String containing the interpreter, scriptpath and arguments
-            Example: "python /path/to/script.py --arg1"
+        _script (list(str)): A list of String elements that contain the interpreter, scriptpath and arguments
+            Example: ['python', '/path/to/script.py', '--arg1', '$parameter_arg']
         _base_path (str): String containing the base path of for the script
             Example: "/path/to/"
 
@@ -171,9 +180,14 @@ class RunScript(AtomicBehavior):
         Start script
         """
         path = None
-        script_components = self._script.split(' ')
-        if len(script_components) > 1:
-            path = script_components[1]
+
+        interpreted_components = []
+        for component in self._script:
+            interpreted_components.append(str(component))
+        interpreted_script = ' '.join(interpreted_components)
+
+        if len(interpreted_components) > 1:
+            path = interpreted_components[1]
 
         if not os.path.isfile(path):
             path = os.path.join(self._base_path, path)
@@ -181,7 +195,15 @@ class RunScript(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
             print("Script file does not exists {}".format(path))
         else:
-            subprocess.Popen(self._script, shell=True, cwd=self._base_path)  # pylint: disable=consider-using-with
+            process = subprocess.Popen(interpreted_script, shell=True,  # pylint: disable=consider-using-with
+                                       cwd=self._base_path)  # pylint: disable=consider-using-with
+
+            while process.poll() is None:
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    print("Waiting for user defined command to complete...")
+
             new_status = py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -229,29 +251,34 @@ class ChangeWeather(AtomicBehavior):
     """
     Atomic to write a new weather configuration into the blackboard.
     Used in combination with WeatherBehavior() to have a continuous weather simulation.
-
     The behavior immediately terminates with SUCCESS after updating the blackboard.
-
     Args:
-        weather (srunner.scenariomanager.weather_sim.Weather): New weather settings.
         name (string): Name of the behavior.
             Defaults to 'UpdateWeather'.
-
+        global_action (OSC GlobalAction xml): An OSC global action containing the EnvironmentAction,
+            or the reference to the catalog it is defined in.
+        catalogs: XML Catalogs that could contain the EnvironmentAction
     Attributes:
         _weather (srunner.scenariomanager.weather_sim.Weather): Weather settings.
     """
 
-    def __init__(self, weather, name="ChangeWeather"):
+    def __init__(self, global_action, catalogs, name="ChangeWeather"):
         """
         Setup parameters
         """
         super(ChangeWeather, self).__init__(name)
-        self._weather = weather
+        self._global_action = global_action
+        self._catalogs = catalogs
+        self._weather = None
+
+    def initialise(self):
+        if self._weather is None:
+            self._weather = sr_tools.openscenario_parser.OpenScenarioParser.get_weather_from_env_action(
+                self._global_action, self._catalogs)
 
     def update(self):
         """
         Write weather into blackboard and exit with success
-
         returns:
             py_trees.common.Status.SUCCESS
         """
@@ -267,20 +294,28 @@ class ChangeRoadFriction(AtomicBehavior):
     The behavior immediately terminates with SUCCESS after updating the friction.
 
     Args:
-        friction (float): New friction coefficient.
         name (string): Name of the behavior.
             Defaults to 'UpdateRoadFriction'.
-
+        global_action (OSC GlobalAction xml): An OSC global action containing the EnvironmentAction,
+                or the reference to the catalog it is defined in.
+        catalogs: XML Catalogs that could contain the EnvironmentAction
     Attributes:
-        _friction (float): Friction coefficient.
+        _friction (float | ParameterRef(float)): Friction coefficient.
     """
 
-    def __init__(self, friction, name="ChangeRoadFriction"):
+    def __init__(self, global_action, catalogs, name="ChangeRoadFriction"):
         """
         Setup parameters
         """
         super(ChangeRoadFriction, self).__init__(name)
-        self._friction = friction
+        self._global_action = global_action
+        self._catalogs = catalogs
+        self._friction = None
+
+    def initialise(self):
+        if self._friction is None:
+            self._friction = sr_tools.openscenario_parser.OpenScenarioParser.get_friction_from_env_action(
+                self._global_action, self._catalogs)
 
     def update(self):
         """
@@ -329,14 +364,32 @@ class ChangeActorControl(AtomicBehavior):
         _actor_control (ActorControl): Instance of the actor control.
     """
 
-    def __init__(self, actor, control_py_module, args, scenario_file_path=None, name="ChangeActorControl"):
+    def __init__(self, actor, osc_controller_action=None, catalogs=None, scenario_file_path=None,
+                 name="ChangeActorControl"):
         """
         Setup actor controller.
         """
         super(ChangeActorControl, self).__init__(name, actor)
 
-        self._actor_control = ActorControl(actor, control_py_module=control_py_module,
-                                           args=args, scenario_file_path=scenario_file_path)
+        self._actor = actor
+        self._actor_control = None
+        self._controller_action = osc_controller_action
+        self._catalogs = catalogs
+        self._scenario_file_path = scenario_file_path
+
+    def initialise(self):
+
+        if self._controller_action is not None:
+            control_py_module, args = sr_tools.openscenario_parser.OpenScenarioParser.get_controller(
+                self._controller_action, self._catalogs)
+        else:
+            control_py_module = None
+            args = {}
+
+        self._actor_control = ActorControl(self._actor, control_py_module=control_py_module,
+                                           args=args, scenario_file_path=self._scenario_file_path)
+
+        super(ChangeActorControl, self).initialise()
 
     def update(self):
         """
@@ -415,50 +468,86 @@ class ChangeActorTargetSpeed(AtomicBehavior):
     for the same actor is triggered.
 
     Args:
-        actor (carla.Actor): Controlled actor.
-        target_speed (float): New target speed [m/s].
-        init_speed (boolean): Flag to indicate if the speed is the initial actor speed.
+        actor (carla.Actor):
+            Controlled actor.
+        target_speed (float | ParameterRef(float)):
+            New target speed [m/s].
+        init_speed (boolean):
+            Flag to indicate if the speed is the initial actor speed.
             Defaults to False.
-        duration (float): Duration of the maneuver [s].
+        dimension (string | ParameterRef(string)):
+            'distance' or 'duration': if maneuver length is specified by its distance or duration.
             Defaults to None.
-        distance (float): Distance of the maneuver [m].
+        dimension_value (float | ParameterRef(float)):
+            Duration [s] or distance [m] of the maneuver.
             Defaults to None.
-        relative_actor (carla.Actor): If the target speed setting should be relative to another actor.
+        relative_actor_name (string | ParameterRef(string)):
+            If the target speed setting should be relative to another actor.
             Defaults to None.
-        value (float): Offset, if the target speed setting should be relative to another actor.
+        value (float | ParameterRef(float)):
+            Offset, if the target speed setting should be relative to another actor.
             Defaults to None.
-        value_type (string): Either 'Delta' or 'Factor' influencing how the offset to the reference actors
-            velocity is applied. Defaults to None.
-        continuous (boolean): If True, the atomic remains in RUNNING, independent of duration or distance.
+        value_type (string | ParameterRef(string)):
+            Either 'Delta' or 'Factor' influencing how the offset to the reference actors velocity is applied.
+            Defaults to None.
+        continuous (boolean | ParameterRef(boolean)):
+            If True, the atomic remains in RUNNING, independent of duration or distance.
             Defaults to False.
-        name (string): Name of the behavior.
+        actor_list (list(carla.Actor)):
+            List of current carla actors
+            Defaults to None
+        name (string):
+            Name of the behavior.
             Defaults to 'ChangeActorTargetSpeed'.
 
     Attributes:
-        _target_speed (float): New target speed [m/s].
-        _init_speed (boolean): Flag to indicate if the speed is the initial actor speed.
+        _target_speed (float):
+            New target speed [m/s].
+        _init_speed (boolean):
+            Flag to indicate if the speed is the initial actor speed.
             Defaults to False.
-        _start_time (float): Start time of the atomic [s].
+        _start_time (float):
+            Start time of the atomic [s].
             Defaults to None.
-        _start_location (carla.Location): Start location of the atomic.
+        _start_location (carla.Location):
+            Start location of the atomic.
             Defaults to None.
-        _duration (float): Duration of the maneuver [s].
+        _duration (float):
+            Duration of the maneuver [s].
             Defaults to None.
-        _distance (float): Distance of the maneuver [m].
+        _distance (float):
+            Distance of the maneuver [m].
             Defaults to None.
-        _relative_actor (carla.Actor): If the target speed setting should be relative to another actor.
+        _relative_actor (carla.Actor):
+            If the target speed setting should be relative to another actor.
             Defaults to None.
-        _value (float): Offset, if the target speed setting should be relative to another actor.
+        _dimension (string | ParameterRef(string)):
+            'distance' or 'duration': if maneuver length is specified by its distance or duration.
             Defaults to None.
-        _value_type (string): Either 'Delta' or 'Factor' influencing how the offset to the reference actors
+        _dimension_value (float | ParameterRef(float)):
+            Duration [s] or distance [m] of the maneuver.
+            Defaults to None.
+        _relative_actor_name (string | ParameterRef(string)):
+            If the target speed setting should be relative to another actor.
+            Defaults to None.
+        _value (float | ParameterRef(float)):
+            Offset, if the target speed setting should be relative to another actor.
+            Defaults to None.
+        _value_type (string | ParameterRef(string)):
+            Either 'Delta' or 'Factor' influencing how the offset to the reference actors
             velocity is applied. Defaults to None.
-        _continuous (boolean): If True, the atomic remains in RUNNING, independent of duration or distance.
+        _continuous (boolean | ParameterRef(boolean)):
+            If True, the atomic remains in RUNNING, independent of duration or distance.
             Defaults to False.
+        _actor_list (list(carla.Actor)):
+            List of current carla actors
+            Defaults to None
     """
 
     def __init__(self, actor, target_speed, init_speed=False,
-                 duration=None, distance=None, relative_actor=None,
-                 value=None, value_type=None, continuous=False, name="ChangeActorTargetSpeed"):
+                 dimension=None, dimension_value=None, relative_actor_name=None,
+                 value=None, value_type=None, continuous=False,
+                 actor_list=None, name="ChangeActorTargetSpeed"):
         """
         Setup parameters
         """
@@ -469,13 +558,17 @@ class ChangeActorTargetSpeed(AtomicBehavior):
 
         self._start_time = None
         self._start_location = None
+        self._duration = None
+        self._distance = None
+        self._relative_actor = None
 
-        self._relative_actor = relative_actor
+        self._dimension = dimension
+        self._dimension_value = dimension_value
+        self._relative_actor_name = relative_actor_name
         self._value = value
         self._value_type = value_type
         self._continuous = continuous
-        self._duration = duration
-        self._distance = distance
+        self._actor_list = actor_list
 
     def initialise(self):
         """
@@ -485,6 +578,7 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
@@ -516,6 +610,35 @@ class ChangeActorTargetSpeed(AtomicBehavior):
             actor_dict[self._actor.id].set_init_speed()
 
         super(ChangeActorTargetSpeed, self).initialise()
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._target_speed = get_param_value(self._target_speed, float)
+        self._value = get_param_value(self._value, float)
+        self._value_type = get_param_value(self._value_type, str)
+        self._continuous = get_param_value(self._continuous, bool)
+
+        dimension = get_param_value(self._dimension, str)
+        if dimension == "distance":
+            self._distance = get_param_value(self._dimension_value, float)
+            self._duration = float('inf')
+        elif dimension == "duration":
+            self._distance = float('inf')
+            self._duration = get_param_value(self._dimension_value, float)
+        elif dimension is None:
+            pass
+        else:
+            raise ValueError("SpeedActionDynamics:" +
+                             "Please specify any one attribute of: [distance, duration]")
+
+        obj = get_param_value(self._relative_actor_name, str)
+        if obj is not None:
+            for traffic_actor in self._actor_list:
+                if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
+                        traffic_actor.attributes['role_name'] == obj):
+                    self._relative_actor = traffic_actor
 
     def update(self):
         """
@@ -576,22 +699,24 @@ class SyncArrivalOSC(AtomicBehavior):
 
     Args:
         actor (carla.Actor): Controlled actor.
-        master_actor (carla.Actor): Reference actor to sync up to.
-        actor_target (carla.Transform): Endpoint of the actor after the behavior finishes.
-        master_target (carla.Transform): Endpoint of the master_actor after the behavior finishes.
-        final_speed (float): Speed of the actor after the behavior ends.
+        master_actor_name (string | ParameterRef(string)): Name of the reference actor to sync up to.
+        actor_target (OSC position): Endpoint of the actor after the behavior finishes.
+        master_target (OSC position): Endpoint of the master_actor after the behavior finishes.
+        final_speed (float | ParameterRef(float)): Speed of the actor after the behavior ends.
         relative_to_master (boolean): Whether or not the final speed is relative to master_actor.
             Defaults to False.
-        relative_type (string): Type of relative speed. Either 'delta' or 'factor'.
+        relative_type (string | ParameterRef(string)): Type of relative speed. Either 'delta' or 'factor'.
             Defaults to ''.
+        actor_list (list(carla.Actor)): List of the current Carla actors.
+            Defaults to None.
         name (string): Name of the behavior.
             Defaults to 'SyncArrivalOSC'.
     """
 
     DISTANCE_THRESHOLD = 1
 
-    def __init__(self, actor, master_actor, actor_target, master_target, final_speed,
-                 relative_to_master=False, relative_type='', name="SyncArrivalOSC"):
+    def __init__(self, actor, master_actor_name, actor_target, master_target, final_speed,
+                 relative_to_master=False, relative_type='', actor_list=None, name="SyncArrivalOSC"):
         """
         Setup required parameters
         """
@@ -599,16 +724,43 @@ class SyncArrivalOSC(AtomicBehavior):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         self._actor = actor
-        self._actor_target = actor_target
-        self._master_actor = master_actor
-        self._master_target = master_target
+        self._master_actor_name = master_actor_name
+        self._master_actor = None
+
+        self._actor_target_osc = actor_target
+        self._actor_target = None
+        self._master_target_osc = master_target
+        self._master_target = None
 
         self._final_speed = final_speed
         self._final_speed_set = False
         self._relative_to_master = relative_to_master
         self._relative_type = relative_type
+        self._actor_list = actor_list
 
         self._start_time = None
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._relative_type = get_param_value(self._relative_type, str)
+        self._final_speed = get_param_value(self._final_speed, float)
+
+        master_actor_name = get_param_value(self._master_actor_name, str)
+        for actor_ins in self._actor_list:
+            if actor_ins is not None and 'role_name' in actor_ins.attributes:
+                if master_actor_name == actor_ins.attributes['role_name']:
+                    self._master_actor = actor_ins
+                    break
+        if self._master_actor is None:
+            raise AttributeError("Cannot find actor '{}' for condition".format(
+                master_actor_name))
+
+        self._actor_target = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            self._actor_target_osc)
+        self._master_target = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            self._master_target_osc)
 
     def initialise(self):
         """
@@ -617,6 +769,7 @@ class SyncArrivalOSC(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
@@ -741,11 +894,20 @@ class ChangeActorWaypoints(AtomicBehavior):
         waypoints (List of (OSC position, OSC route option)): List of (Position, Route Option) as OpenScenario elements.
             position will be converted to Carla transforms, considering the corresponding
             route option (e.g. shortest, fastest)
+            Defaults to None. Optional with osc_route_action and catalogs.
+        osc_route_action (OSC RoutingAction xml): An OSC routing action definition.
+            Defaults to None. Optional with waypoints.
+        catalogs: XML Catalogs that could contain the route.
+            Defaults to None. Optional with waypoints.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorWaypoints'.
 
     Attributes:
         _waypoints (List of (OSC position, OSC route option)): List of (Position, Route Option) as OpenScenario elements
+        _osc_route_action (OSC RoutingAction xml): An OSC routing action definition.
+            Defaults to None. Optional with waypoints.
+        _catalogs: XML Catalogs that could contain the route.
+            Defaults to None. Optional with waypoints.
         _start_time (float): Start time of the atomic [s].
             Defaults to None.
 
@@ -753,14 +915,21 @@ class ChangeActorWaypoints(AtomicBehavior):
              in synchronous mode
     """
 
-    def __init__(self, actor, waypoints, name="ChangeActorWaypoints"):
+    def __init__(self, actor, waypoints=None, osc_route_action=None, catalogs=None, name="ChangeActorWaypoints"):
         """
         Setup parameters
         """
         super(ChangeActorWaypoints, self).__init__(name, actor)
 
+        self._route_action = osc_route_action
+        self._catalogs = catalogs
         self._waypoints = waypoints
         self._start_time = None
+
+    def _get_parameter_values(self):
+        if self._waypoints is None:
+            self._waypoints = sr_tools.openscenario_parser.OpenScenarioParser.get_route(
+                self._route_action, self._catalogs)
 
     def initialise(self):
         """
@@ -771,6 +940,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
@@ -885,50 +1055,98 @@ class ChangeActorLateralMotion(AtomicBehavior):
     waypoints until such impossibility is found.
 
     Args:
-        actor (carla.Actor): Controlled actor.
-        direction (string): Lane change direction ('left' or 'right').
-            Defaults to 'left'.
-        distance_lane_change (float): Distance of the lance change [meters].
+        actor (carla.Actor):
+            Controlled actor.
+        target_lane_rel (int | ParameterRef(int)):
+            Number of lane changes to perform relative to current lane. Negative integers to
+            switch left, positive to switch right.
+            Defaults to 1.
+        dimension (string | ParameterRef(string)):
+            The dimension along which to control dynamics of the lane change. 'direction' or 'duration'.
+            'duration' currently not implemented.
+            Defaults to 'direction'
+        dimension_value (float | ParameterRef(float)):
+            The distance (m) or duration (s) of the lane change.
             Defaults to 25.
-        distance_other_lane (float): Driven distance after the lange change [meters].
+        distance_other_lane (float):
+            Driven distance after the lange change [meters].
             Defaults to 100.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorLateralMotion'.
 
     Attributes:
         _waypoints (List of carla.Transform): List of waypoints representing the lane change (CARLA transforms).
-        _direction (string): Lane change direction ('left' or 'right').
-        _distance_same_lane (float): Distance on the same lane before the lane change starts [meters]
+        _dimension (string | ParameterRef(string)):
+            The dimension along which to control dynamics of the lane change. 'direction' or 'duration'.
+            'duration' currently not implemented.
+            Defaults to 'direction'
+        _dimension_value (float | ParameterRef(float)):
+            The distance (m) or duration (s) of the lane change.
+            Defaults to 25.
+        _direction (string):
+            Lane change direction ('left' or 'right').
+        _distance_same_lane (float):
+            Distance on the same lane before the lane change starts [meters]
             Constant to 5.
-        _distance_other_lane (float): Max. distance on the target lane after the lance change [meters]
+        _distance_other_lane (float):
+            Max. distance on the target lane after the lane change [meters]
             Constant to 100.
-        _distance_lane_change (float): Max. total distance of the lane change [meters].
-        _pos_before_lane_change: carla.Location of the actor before the lane change.
+        _distance_lane_change (float):
+            Max. total distance of the lane change [meters].
+        _duration_lane_change (float):
+            Max. total duration of the lane change [s].
+        _pos_before_lane_change:
+            carla.Location of the actor before the lane change.
             Defaults to None.
-        _target_lane_id (int): Id of the target lane
+        _target_lane_id (int):
+            Id of the target lane
             Defaults to None.
-        _start_time (float): Start time of the atomic [s].
+        _start_time (float):
+            Start time of the atomic [s].
             Defaults to None.
     """
 
-    def __init__(self, actor, direction='left', distance_lane_change=25, distance_other_lane=100,
-                 lane_changes=1, name="ChangeActorLateralMotion"):
+    def __init__(self, actor, target_lane_rel=1, dimension="distance", dimension_value=25, distance_other_lane=100,
+                 name="ChangeActorLateralMotion"):
         """
         Setup parameters
         """
         super(ChangeActorLateralMotion, self).__init__(name, actor)
 
         self._waypoints = []
-        self._direction = direction
-        self._distance_same_lane = 5
+        self._target_lane_rel = target_lane_rel
+        self._dimension = dimension
+        self._dimension_value = dimension_value
         self._distance_other_lane = distance_other_lane
-        self._distance_lane_change = distance_lane_change
-        self._lane_changes = lane_changes
+
+        self._distance_same_lane = 5
+        self._distance_lane_change = float('inf')
+        self._duration_lane_change = float('inf')
+
+        self._direction = None
+        self._lane_changes = None
         self._pos_before_lane_change = None
         self._target_lane_id = None
         self._plan = None
 
         self._start_time = None
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._direction = "left" if self._target_lane_rel > 0 else "right"
+        self._lane_changes = abs(self._target_lane_rel)
+
+        # duration and distance
+        dimension = str(self._dimension)
+        if dimension == "distance":
+            self._distance_lane_change = float(self._dimension_value)
+        elif dimension == "duration":
+            self._duration_lane_change = float(self._dimension_value)
+            raise NotImplementedError("LaneChangeActionDynamics: duration is not implemented")
+        else:
+            raise ValueError("Dimension has to be one of ['distance', 'duration']")
 
     def initialise(self):
         """
@@ -940,6 +1158,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
@@ -1042,16 +1261,24 @@ class ChangeActorLaneOffset(AtomicBehavior):
 
     Args:
         actor (carla.Actor): Controlled actor.
-        offset (float): Float determined the distance to the center of the lane. Positive distance imply a
-            displacement to the right, while negative displacements are to the left.
-        relative_actor (carla.Actor): The actor from which the offset is taken from. Defaults to None
-        continuous (bool): If True, the behaviour never ends. If False, the behaviour ends when the lane
-            offset is reached. Defaults to True.
+        offset (float | ParameterRef(float)): Float determined the distance to the center of the lane.
+            Positive distance imply a displacement to the right, negative displacements are to the left.
+        relative_actor_name (string | ParameterRef(string)): Name of the actor from which the offset is taken.
+            Defaults to None.
+        continuous (bool | ParameterRef(bool)): If True, the behaviour never ends. If False, the behaviour
+            ends when the lane offset is reached. Defaults to True.
+        actor_list (list(carla.Actor)): List of current carla actors
+            Defaults to None
 
     Attributes:
-        _offset (float): lane offset.
-        _relative_actor (carla.Actor): relative actor.
-        _continuous (bool): stored the value of the 'continuous' argument.
+        _offset (float | ParameterRef(float)): lane offset.
+        _relative_actor_name (string | ParameterRef(string)): stored value of the relative_actor_name argument.
+            Defaults to None.
+        _continuous (bool | ParameterRef(bool)): stored the value of the 'continuous' argument.
+        _relative_actor (carla.Actor): The actor from which the offset is taken from.
+            Defaults to None
+        _actor_list (list(carla.Actor)): List of current carla actors
+            Defaults to None
         _start_time (float): Start time of the atomic [s].
             Defaults to None.
         _overwritten (bool): flag to check whether or not this behavior was overwritten by another. Helps
@@ -1062,20 +1289,40 @@ class ChangeActorLaneOffset(AtomicBehavior):
 
     OFFSET_THRESHOLD = 0.1
 
-    def __init__(self, actor, offset, relative_actor=None, continuous=True, name="ChangeActorWaypoints"):
+    def __init__(self, actor, offset, relative_actor_name=None, continuous=True, actor_list=None,
+                 name="ChangeActorWaypoints"):
         """
         Setup parameters
         """
         super(ChangeActorLaneOffset, self).__init__(name, actor)
 
         self._offset = offset
-        self._relative_actor = relative_actor
+        self._relative_actor_name = relative_actor_name
         self._continuous = continuous
+        self._relative_actor = None
+        self._actor_list = actor_list
         self._start_time = None
         self._current_target_offset = 0
 
         self._overwritten = False
         self._map = CarlaDataProvider.get_map()
+
+    def _get_parameter_values(self):
+        """
+        Get the current OSC parameter values from ParameterRef's
+        """
+        self._offset = get_param_value(self._offset, float)
+        self._continuous = get_param_value(self._continuous, bool)
+        self._relative_actor_name = get_param_value(self._relative_actor_name, str)
+
+        if self._relative_actor_name is not None:
+            for _actor in self._actor_list:
+                if _actor is not None and 'role_name' in _actor.attributes:
+                    if self._relative_actor_name == _actor.attributes['role_name']:
+                        self._relative_actor = _actor
+                        break
+            if self._relative_actor is None:
+                raise AttributeError("Cannot find actor '{}' for condition".format(self._relative_actor_name))
 
     def initialise(self):
         """
@@ -1086,6 +1333,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
@@ -1500,7 +1748,7 @@ class ChangeAutoPilot(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - activate: True (=enable autopilot) or False (=disable autopilot)
+    - activate (bool | ParameterRef(bool)): True (=enable autopilot) or False (=disable autopilot)
     - lane_change: Traffic Manager parameter. True (=enable lane changes) or False (=disable lane changes)
     - distance_between_vehicles: Traffic Manager parameter
     - max_speed: Traffic Manager parameter. Max speed of the actor. This will only work for road segments
@@ -1524,7 +1772,7 @@ class ChangeAutoPilot(AtomicBehavior):
         """
         De/activate autopilot
         """
-        self._actor.set_autopilot(self._activate, CarlaDataProvider.get_traffic_manager_port())
+        self._actor.set_autopilot(bool(self._activate), CarlaDataProvider.get_traffic_manager_port())
 
         if self._parameters is not None:
             if "auto_lane_change" in self._parameters:
@@ -2315,8 +2563,8 @@ class TrafficLightStateSetter(AtomicBehavior):
     This class contains an atomic behavior to set the state of a given traffic light
 
     Args:
-        actor (carla.TrafficLight): ID of the traffic light that shall be changed
-        state (carla.TrafficLightState): New target state
+        actor (ParameterRef(string)): ID of the traffic light that shall be changed
+        state (ParameterRef(string)): New target state
 
     The behavior terminates after trying to set the new state
     """
@@ -2327,7 +2575,7 @@ class TrafficLightStateSetter(AtomicBehavior):
         """
         super(TrafficLightStateSetter, self).__init__(name)
 
-        self._actor = actor if "traffic_light" in actor.type_id else None
+        self._actor = actor
         self._state = state
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
@@ -2335,12 +2583,21 @@ class TrafficLightStateSetter(AtomicBehavior):
         """
         Change the state of the traffic light
         """
-        if self._actor is None:
+        actor = sr_tools.openscenario_parser.OpenScenarioParser.get_traffic_light_from_osc_name(
+            str(self._actor))
+        traffic_light = actor if "traffic_light" in actor.type_id else None
+
+        tl_state = str(self._state).upper()
+        if tl_state not in sr_tools.openscenario_parser.OpenScenarioParser.tl_states:
+            raise KeyError("CARLA only supports Green, Red, Yellow or Off")
+        traffic_light_state = sr_tools.openscenario_parser.OpenScenarioParser.tl_states[tl_state]
+
+        if traffic_light is None:
             return py_trees.common.Status.FAILURE
 
         new_status = py_trees.common.Status.RUNNING
-        if self._actor.is_alive:
-            self._actor.set_state(self._state)
+        if traffic_light.is_alive:
+            traffic_light.set_state(traffic_light_state)
             new_status = py_trees.common.Status.SUCCESS
         else:
             # For some reason the actor is gone...
@@ -3026,7 +3283,7 @@ class KeepLongitudinalGap(AtomicBehavior):
     """
 
     def __init__(self, actor, reference_actor, gap, gap_type="distance", max_speed=None, continues=False,
-                 freespace=False, name="AutoKeepDistance"):
+                 freespace=False, actor_list=None, name="AutoKeepDistance"):
         """
         Setup parameters
         """
@@ -3037,15 +3294,35 @@ class KeepLongitudinalGap(AtomicBehavior):
         self._gap_type = gap_type
         self._continues = continues
         self._freespace = freespace
+        self._actor_list = actor_list
         self._global_rp = None
         max_speed_limit = 100
-        self.max_speed = max_speed_limit if max_speed is None else float(max_speed)
-        if freespace and self._gap_type == "distance":
-            self._gap += self._reference_actor.bounding_box.extent.x + self._actor.bounding_box.extent.x
-
+        self.max_speed = max_speed_limit if max_speed is None else max_speed
         self._start_time = None
 
+    def _get_parameter_values(self):
+        """
+        Get the current values of OSC parameters.
+        Type cast fetches the value.
+        """
+
+        obj = get_param_value(self._reference_actor, str)
+        for traffic_actor in self._actor_list:
+            if (traffic_actor is not None and 'role_name' in traffic_actor.attributes and
+                    traffic_actor.attributes['role_name'] == obj):
+                obj_actor = traffic_actor
+
+        self._reference_actor = obj_actor
+        self._gap = get_param_value(self._gap, float)
+        self._continues = get_param_value(self._continues, bool)
+        self._freespace = get_param_value(self._freespace, bool)
+        self.max_speed = get_param_value(self.max_speed, float)
+
+        if self._freespace and self._gap_type == "distance":
+            self._gap += self._reference_actor.bounding_box.extent.x + self._actor.bounding_box.extent.x
+
     def initialise(self):
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
