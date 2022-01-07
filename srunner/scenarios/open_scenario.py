@@ -227,7 +227,7 @@ class OpenScenario(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="EnvironmentBehavior")
 
         weather_update = ChangeWeather(self.config.init, self.config.catalogs)
-        road_friction = ChangeRoadFriction( self.config.init, self.config.catalogs )
+        road_friction = ChangeRoadFriction(self.config.init, self.config.catalogs)
 
         env_behavior.add_child(oneshot_with_check(variable_name="InitialWeather", behaviour=weather_update))
         env_behavior.add_child(oneshot_with_check(variable_name="InitRoadFriction", behaviour=road_friction))

@@ -21,7 +21,6 @@ import operator
 import os
 import time
 import subprocess
-import datetime
 
 import numpy as np
 from numpy import random
@@ -38,7 +37,6 @@ from agents.tools.misc import is_within_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
 from srunner.scenariomanager.timer import GameTime
-from srunner.scenariomanager.weather_sim import Weather
 from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
 
@@ -248,7 +246,6 @@ class ChangeParameter(AtomicBehavior):
         return new_status
 
 
-
 class ChangeWeather(AtomicBehavior):
 
     """
@@ -314,7 +311,7 @@ class ChangeRoadFriction(AtomicBehavior):
         self._global_action = global_action
         self._catalogs = catalogs
         self._friction = None
-    
+
     def initialise(self):
         if self._friction is None:
             self._friction = sr_tools.openscenario_parser.OpenScenarioParser.get_friction_from_env_action(
@@ -367,7 +364,8 @@ class ChangeActorControl(AtomicBehavior):
         _actor_control (ActorControl): Instance of the actor control.
     """
 
-    def __init__(self, actor, osc_controller_action=None, catalogs=None, scenario_file_path=None, name="ChangeActorControl"):
+    def __init__(self, actor, osc_controller_action=None, catalogs=None, scenario_file_path=None,
+                 name="ChangeActorControl"):
         """
         Setup actor controller.
         """
@@ -392,7 +390,6 @@ class ChangeActorControl(AtomicBehavior):
                                            args=args, scenario_file_path=self._scenario_file_path)
 
         super(ChangeActorControl, self).initialise()
-
 
     def update(self):
         """
@@ -753,7 +750,7 @@ class SyncArrivalOSC(AtomicBehavior):
         master_actor_name = get_param_value(self._master_actor_name, str)
         for actor_ins in self._actor_list:
             if actor_ins is not None and 'role_name' in actor_ins.attributes:
-                if (master_actor_name == actor_ins.attributes['role_name']):
+                if master_actor_name == actor_ins.attributes['role_name']:
                     self._master_actor = actor_ins
                     break
         if self._master_actor is None:
@@ -931,7 +928,8 @@ class ChangeActorWaypoints(AtomicBehavior):
 
     def _get_parameter_values(self):
         if self._waypoints is None:
-            self._waypoints = sr_tools.openscenario_parser.OpenScenarioParser.get_route(self._route_action, self._catalogs)
+            self._waypoints = sr_tools.openscenario_parser.OpenScenarioParser.get_route(
+                self._route_action, self._catalogs)
 
     def initialise(self):
         """
@@ -1109,7 +1107,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
     """
 
     def __init__(self, actor, target_lane_rel=1, dimension="distance", dimension_value=25, distance_other_lane=100,
-                name="ChangeActorLateralMotion"):
+                 name="ChangeActorLateralMotion"):
         """
         Setup parameters
         """
@@ -1124,7 +1122,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         self._distance_same_lane = 5
         self._distance_lane_change = float('inf')
         self._duration_lane_change = float('inf')
-        
+
         self._direction = None
         self._lane_changes = None
         self._pos_before_lane_change = None
@@ -1139,7 +1137,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         """
         self._direction = "left" if self._target_lane_rel > 0 else "right"
         self._lane_changes = abs(self._target_lane_rel)
-        
+
         # duration and distance
         dimension = str(self._dimension)
         if dimension == "distance":
@@ -1263,12 +1261,12 @@ class ChangeActorLaneOffset(AtomicBehavior):
 
     Args:
         actor (carla.Actor): Controlled actor.
-        offset (float | ParameterRef(float)): Float determined the distance to the center of the lane. Positive distance imply a
-            displacement to the right, while negative displacements are to the left.
+        offset (float | ParameterRef(float)): Float determined the distance to the center of the lane.
+            Positive distance imply a displacement to the right, negative displacements are to the left.
         relative_actor_name (string | ParameterRef(string)): Name of the actor from which the offset is taken.
             Defaults to None.
-        continuous (bool | ParameterRef(bool)): If True, the behaviour never ends. If False, the behaviour ends when the lane
-            offset is reached. Defaults to True.
+        continuous (bool | ParameterRef(bool)): If True, the behaviour never ends. If False, the behaviour
+            ends when the lane offset is reached. Defaults to True.
         actor_list (list(carla.Actor)): List of current carla actors
             Defaults to None
 
@@ -1277,7 +1275,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         _relative_actor_name (string | ParameterRef(string)): stored value of the relative_actor_name argument.
             Defaults to None.
         _continuous (bool | ParameterRef(bool)): stored the value of the 'continuous' argument.
-        _relative_actor (carla.Actor): The actor from which the offset is taken from. 
+        _relative_actor (carla.Actor): The actor from which the offset is taken from.
             Defaults to None
         _actor_list (list(carla.Actor)): List of current carla actors
             Defaults to None
@@ -1292,7 +1290,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
     OFFSET_THRESHOLD = 0.1
 
     def __init__(self, actor, offset, relative_actor_name=None, continuous=True, actor_list=None,
-                name="ChangeActorWaypoints"):
+                 name="ChangeActorWaypoints"):
         """
         Setup parameters
         """
@@ -1321,11 +1319,10 @@ class ChangeActorLaneOffset(AtomicBehavior):
             for _actor in self._actor_list:
                 if _actor is not None and 'role_name' in _actor.attributes:
                     if self._relative_actor_name == _actor.attributes['role_name']:
-                        relative_actor = _actor
+                        self._relative_actor = _actor
                         break
-            if relative_actor is None:
-                raise AttributeError("Cannot find actor '{}' for condition".format(relative_actor_name))
-            self._relative_actor = relative_actor
+            if self._relative_actor is None:
+                raise AttributeError("Cannot find actor '{}' for condition".format(self._relative_actor_name))
 
     def initialise(self):
         """
@@ -1889,8 +1886,6 @@ class SyncArrival(AtomicBehavior):
         """
         Dynamic control update for actor velocity
         """
-        raise AttributeError("Are we even there")
-
         new_status = py_trees.common.Status.RUNNING
 
         distance_reference = calculate_distance(CarlaDataProvider.get_location(self._actor_reference),
@@ -2573,6 +2568,7 @@ class TrafficLightStateSetter(AtomicBehavior):
 
     The behavior terminates after trying to set the new state
     """
+
     def __init__(self, actor, state, name="TrafficLightStateSetter"):
         """
         Init
@@ -2588,7 +2584,7 @@ class TrafficLightStateSetter(AtomicBehavior):
         Change the state of the traffic light
         """
         actor = sr_tools.openscenario_parser.OpenScenarioParser.get_traffic_light_from_osc_name(
-                                                                                str(self._actor))
+            str(self._actor))
         traffic_light = actor if "traffic_light" in actor.type_id else None
 
         tl_state = str(self._state).upper()
@@ -2608,6 +2604,7 @@ class TrafficLightStateSetter(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
 
         return new_status
+
 
 class ActorSource(AtomicBehavior):
 

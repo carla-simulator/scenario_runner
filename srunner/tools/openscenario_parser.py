@@ -17,6 +17,7 @@ import datetime
 import math
 import operator
 from os import environ
+import re
 
 import py_trees
 import carla
@@ -72,7 +73,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
-from srunner.tools.scenario_param_ref import ParameterRef
 
 
 def oneshot_with_check(variable_name, behaviour, name=None):
@@ -86,6 +86,175 @@ def oneshot_with_check(variable_name, behaviour, name=None):
         print("Warning: {} is already used before. Check your XOSC for duplicated names".format(variable_name))
 
     return oneshot_behavior(variable_name, behaviour, name)
+
+
+class ParameterRef:
+    """
+    This class stores osc parameter reference in its original form.
+    Returns the converted value whenever it is used.
+    """
+
+    def __init__(self, reference_text) -> None:
+        # TODO: (for OSC1.1) add methods(lexer and math_interpreter) to
+        #  recognize and interpret math expression from reference_text
+        self.reference_text = str(reference_text)
+
+    def is_literal(self) -> bool:
+        """
+        Returns: True when text is a literal/number
+        """
+        return self._is_matching(pattern=r"(-)?\d+(\.\d*)?")
+
+    def is_parameter(self) -> bool:
+        """
+        Returns: True when text is a parameter
+        """
+        return self._is_matching(pattern=r"[$][A-Za-z_][\w]*")
+
+    def _is_matching(self, pattern: str) -> bool:
+        """
+        Returns: True when pattern is matching with text
+        """
+        match = re.search(pattern, self.reference_text)
+        if match is not None:
+            matching_string = match.group()
+            return matching_string == self.reference_text
+        return False
+
+    def _cast_type(self, other):
+        try:
+            if isinstance(other, str):
+                return self.__str__()
+            elif isinstance(other, float):
+                return self.__float__()
+            elif isinstance(other, int):
+                return self.__int__()
+            elif isinstance(other, bool):
+                return self.__bool__()
+            else:
+                raise Exception("Type conversion for type {} not implemented".format(type(other)))
+        except ValueError:
+            # If the parameter value can't be converted into type of 'other'
+            return None
+
+    def get_interpreted_value(self):
+        """
+        Returns: interpreted value from reference_text
+        """
+        if self.is_literal():
+            value = self.reference_text
+        elif self.is_parameter():
+            value = CarlaDataProvider.get_osc_global_param_value(self.reference_text)
+            if value is None:
+                raise Exception("Parameter '{}' is not defined".format(self.reference_text[1:]))
+        else:
+            value = None
+        return value
+
+    def __float__(self) -> float:
+        value = self.get_interpreted_value()
+        if value is not None:
+            return float(value)
+        else:
+            raise Exception("could not convert '{}' to float".format(self.reference_text))
+
+    def __int__(self) -> int:
+        value = self.get_interpreted_value()
+        if value is not None:
+            return int(float(value))
+        else:
+            raise Exception("could not convert '{}' to int".format(self.reference_text))
+
+    def __str__(self) -> str:
+        value = self.get_interpreted_value()
+        return str(value) if value is not None else self.reference_text
+
+    def __bool__(self) -> bool:
+        try:
+            return bool(strtobool(self.__str__()))
+        except ValueError:
+            raise Exception("could not convert '{}' to bool".format(self.__str__()))
+
+    def __repr__(self):
+        value = self.get_interpreted_value()
+        return value if value is not None else self.reference_text
+
+    def __hash__(self):
+        value = self.get_interpreted_value()
+        return hash(value) if value is not None else hash(self.reference_text)
+
+    def __radd__(self, other) -> bool:
+        return other + self.__float__()
+
+    def __add__(self, other) -> bool:
+        return other + self.__float__()
+
+    def __rsub__(self, other) -> bool:
+        return other - self.__float__()
+
+    def __sub__(self, other) -> bool:
+        return self.__float__() - other
+
+    def __rmul__(self, other) -> bool:
+        return other * self.__float__()
+
+    def __mul__(self, other) -> bool:
+        return other * self.__float__()
+
+    def __truediv__(self, other) -> bool:
+        return self.__float__() / other
+
+    def __rtruediv__(self, other) -> bool:
+        return other / self.__float__()
+
+    def __eq__(self, other) -> bool:
+        value = self._cast_type(other)
+        return other == value
+
+    def __ne__(self, other) -> bool:
+        value = self._cast_type(other)
+        return other != value
+
+    def __ge__(self, other) -> bool:
+        value = self._cast_type(other)
+        return value >= other
+
+    def __le__(self, other) -> bool:
+        value = self._cast_type(other)
+        return value <= other
+
+    def __gt__(self, other) -> bool:
+        value = self._cast_type(other)
+        return value > other
+
+    def __lt__(self, other) -> bool:
+        value = self._cast_type(other)
+        return value < other
+
+    def __GE__(self, other) -> bool:  # pylint: disable=invalid-name
+        value = self._cast_type(other)
+        return value >= other
+
+    def __LE__(self, other) -> bool:  # pylint: disable=invalid-name
+        value = self._cast_type(other)
+        return value <= other
+
+    def __GT__(self, other) -> bool:  # pylint: disable=invalid-name
+        value = self._cast_type(other)
+        return value > other
+
+    def __LT__(self, other) -> bool:  # pylint: disable=invalid-name
+        value = self._cast_type(other)
+        return value < other
+
+    def __iadd__(self, other) -> bool:
+        return self.__float__() + other
+
+    def __isub__(self, other) -> bool:
+        return self.__float__() - other
+
+    def __abs__(self):
+        return abs(self.__float__())
 
 
 class OpenScenarioParser(object):
@@ -109,10 +278,10 @@ class OpenScenarioParser(object):
     }
 
     tl_states = {
-    "GREEN": carla.TrafficLightState.Green,
-    "YELLOW": carla.TrafficLightState.Yellow,
-    "RED": carla.TrafficLightState.Red,
-    "OFF": carla.TrafficLightState.Off,
+        "GREEN": carla.TrafficLightState.Green,
+        "YELLOW": carla.TrafficLightState.Yellow,
+        "RED": carla.TrafficLightState.Red,
+        "OFF": carla.TrafficLightState.Off,
     }
 
     global_osc_parameters = {}
@@ -364,7 +533,7 @@ class OpenScenarioParser(object):
         dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
 
         return Weather(carla_weather, dtime, weather_animation)
-        
+
     @staticmethod
     def get_controller(xml_tree, catalogs):
         """
@@ -951,12 +1120,12 @@ class OpenScenarioParser(object):
                 tl_condition = value_condition.find('TrafficSignalCondition')
 
                 name_condition = str(ParameterRef(tl_condition.attrib.get('name')))
-                traffic_light = TrafficLightStateSetter.get_traffic_light_from_osc_name(name_condition)
+                traffic_light = OpenScenarioParser.get_traffic_light_from_osc_name(name_condition)
 
                 tl_state = str(ParameterRef(tl_condition.attrib.get('state'))).upper()
-                if tl_state not in TrafficLightStateSetter.tl_states:
+                if tl_state not in OpenScenarioParser.tl_states:
                     raise KeyError("CARLA only supports Green, Red, Yellow or Off")
-                state_condition = TrafficLightStateSetter.tl_states[tl_state]
+                state_condition = OpenScenarioParser.tl_states[tl_state]
 
                 atomic = WaitForTrafficLightState(
                     traffic_light, state_condition, name=condition_name)
@@ -996,7 +1165,8 @@ class OpenScenarioParser(object):
                     tl_state_ref = ParameterRef(traffic_light_action.attrib.get('state'))
 
                     atomic = TrafficLightStateSetter(
-                        name_condition_ref, tl_state_ref, name=maneuver_name + "_" + str(traffic_light_action.attrib.get('name')))
+                        name_condition_ref, tl_state_ref, name=maneuver_name + "_" + str(
+                            traffic_light_action.attrib.get('name')))
                 else:
                     raise NotImplementedError("TrafficLights can only be influenced via TrafficSignalStateAction")
 
@@ -1101,19 +1271,19 @@ class OpenScenarioParser(object):
                     constraints = long_dist_action.find('DynamicConstraints')
 
                     max_speed_ref = ParameterRef(constraints.attrib.get('maxSpeed', None)
-                                                ) if constraints is not None else None
+                                                 ) if constraints is not None else None
                     continues_ref = ParameterRef(long_dist_action.attrib.get('continuous'))
                     freespace_ref = ParameterRef(long_dist_action.attrib.get('freespace'))
 
                     atomic = KeepLongitudinalGap(actor,
-                                                reference_actor=obj_ref,
-                                                gap=gap_ref,
-                                                gap_type=gap_type,
-                                                max_speed=max_speed_ref,
-                                                continues=continues_ref,
-                                                freespace=freespace_ref,
-                                                actor_list=actor_list,
-                                                name=maneuver_name)
+                                                 reference_actor=obj_ref,
+                                                 gap=gap_ref,
+                                                 gap_type=gap_type,
+                                                 max_speed=max_speed_ref,
+                                                 continues=continues_ref,
+                                                 freespace=freespace_ref,
+                                                 actor_list=actor_list,
+                                                 name=maneuver_name)
                 else:
                     raise AttributeError("Unknown longitudinal action")
             elif private_action.find('LateralAction') is not None:
@@ -1123,7 +1293,7 @@ class OpenScenarioParser(object):
                     lat_maneuver = private_action.find('LaneChangeAction')
 
                     if lat_maneuver.find("LaneChangeTarget").find("RelativeTargetLane") is not None:
-                        
+
                         target_lane_rel_ref = ParameterRef(lat_maneuver.find("LaneChangeTarget").find(
                             "RelativeTargetLane").attrib.get('value', 0))
                         dimension_ref = ParameterRef(lat_maneuver.find(
@@ -1132,12 +1302,12 @@ class OpenScenarioParser(object):
                             "LaneChangeActionDynamics").attrib.get('value', float("inf")))
 
                         # Note: dimension == duration is currently not implemented
-                        atomic = ChangeActorLateralMotion(actor, 
-                                                        target_lane_rel=target_lane_rel_ref,
-                                                        dimension=dimension_ref,
-                                                        dimension_value=dimension_value_ref,
-                                                        distance_other_lane=10,
-                                                        name=maneuver_name)
+                        atomic = ChangeActorLateralMotion(actor,
+                                                          target_lane_rel=target_lane_rel_ref,
+                                                          dimension=dimension_ref,
+                                                          dimension_value=dimension_value_ref,
+                                                          distance_other_lane=10,
+                                                          name=maneuver_name)
 
                     elif lat_maneuver.find("LaneChangeTarget").find("AbsoluteTargetLane") is not None:
                         raise NotImplementedError("LaneChangeTarget: AbsoluteTargetLane is not implemented")
@@ -1162,11 +1332,11 @@ class OpenScenarioParser(object):
                         relative_actor_name_ref = ParameterRef(relative_target_offset.attrib.get('entityRef', None))
 
                         atomic = ChangeActorLaneOffset(actor,
-                                                    relative_offset_ref,
-                                                    relative_actor_name_ref,
-                                                    continuous=continuous_ref,
-                                                    actor_list=actor_list,
-                                                    name=maneuver_name)
+                                                       relative_offset_ref,
+                                                       relative_actor_name_ref,
+                                                       continuous=continuous_ref,
+                                                       actor_list=actor_list,
+                                                       name=maneuver_name)
                     else:
                         raise AttributeError("Unknown target offset")
                 else:
@@ -1221,7 +1391,7 @@ class OpenScenarioParser(object):
                     # @TODO: How to handle relative positions here? This might chance at runtime?!
                     route_action = private_action.find('AssignRouteAction')
                     atomic = ChangeActorWaypoints(actor, osc_route_action=route_action, catalogs=catalogs,
-                                                name=maneuver_name)
+                                                  name=maneuver_name)
                 elif private_action.find('FollowTrajectoryAction') is not None:
                     raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
                 elif private_action.find('AcquirePositionAction') is not None:
