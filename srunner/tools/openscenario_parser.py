@@ -1240,8 +1240,8 @@ class OpenScenarioParser(object):
                 if private_action.find('AssignRouteAction') is not None:
                     # @TODO: How to handle relative positions here? This might chance at runtime?!
                     route_action = private_action.find('AssignRouteAction')
-                    waypoints = OpenScenarioParser.get_route(route_action, catalogs)
-                    atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
+                    atomic = ChangeActorWaypoints(actor, osc_route_action=route_action, catalogs=catalogs,
+                                                name=maneuver_name)
                 elif private_action.find('FollowTrajectoryAction') is not None:
                     raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
                 elif private_action.find('AcquirePositionAction') is not None:

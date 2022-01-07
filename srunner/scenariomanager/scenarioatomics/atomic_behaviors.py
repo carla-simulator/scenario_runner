@@ -939,11 +939,20 @@ class ChangeActorWaypoints(AtomicBehavior):
         waypoints (List of (OSC position, OSC route option)): List of (Position, Route Option) as OpenScenario elements.
             position will be converted to Carla transforms, considering the corresponding
             route option (e.g. shortest, fastest)
+            Defaults to None. Optional with osc_route_action and catalogs.
+        osc_route_action (OSC RoutingAction xml): An OSC routing action definition.
+            Defaults to None. Optional with waypoints.
+        catalogs: XML Catalogs that could contain the route.
+            Defaults to None. Optional with waypoints.
         name (string): Name of the behavior.
             Defaults to 'ChangeActorWaypoints'.
 
     Attributes:
         _waypoints (List of (OSC position, OSC route option)): List of (Position, Route Option) as OpenScenario elements
+        _osc_route_action (OSC RoutingAction xml): An OSC routing action definition.
+            Defaults to None. Optional with waypoints.
+        _catalogs: XML Catalogs that could contain the route.
+            Defaults to None. Optional with waypoints.
         _start_time (float): Start time of the atomic [s].
             Defaults to None.
 
@@ -951,14 +960,20 @@ class ChangeActorWaypoints(AtomicBehavior):
              in synchronous mode
     """
 
-    def __init__(self, actor, waypoints, name="ChangeActorWaypoints"):
+    def __init__(self, actor, waypoints=None, osc_route_action=None, catalogs=None, name="ChangeActorWaypoints"):
         """
         Setup parameters
         """
         super(ChangeActorWaypoints, self).__init__(name, actor)
 
+        self._route_action = osc_route_action
+        self._catalogs = catalogs
         self._waypoints = waypoints
         self._start_time = None
+
+    def _get_parameter_values(self):
+        if self._waypoints is None:
+            self._waypoints = sr_tools.openscenario_parser.OpenScenarioParser.get_route(self._route_action, self._catalogs)
 
     def initialise(self):
         """
@@ -969,6 +984,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         May throw if actor is not available as key for the ActorsWithController
         dictionary from Blackboard.
         """
+        self._get_parameter_values()
         actor_dict = {}
 
         try:
