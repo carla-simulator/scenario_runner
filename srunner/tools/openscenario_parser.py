@@ -1220,9 +1220,11 @@ class OpenScenarioParser(object):
                         actor_list=actor_list, name=maneuver_name)
                 else:
                     raise AttributeError("Unknown speed action")
+
             elif private_action.find('ActivateControllerAction') is not None:
+                # No action implemented for the 'lateral' attribute
                 private_action = private_action.find('ActivateControllerAction')
-                activate = strtobool(str(ParameterRef(private_action.attrib.get('longitudinal'))))
+                activate = ParameterRef(private_action.attrib.get('longitudinal'))
                 atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
                 controller_action = private_action.find('ControllerAction')

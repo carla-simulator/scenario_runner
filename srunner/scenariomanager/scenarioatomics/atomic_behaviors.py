@@ -1759,7 +1759,7 @@ class ChangeAutoPilot(AtomicBehavior):
 
     Important parameters:
     - actor: CARLA actor to execute the behavior
-    - activate: True (=enable autopilot) or False (=disable autopilot)
+    - activate (bool | ParameterRef(bool)): True (=enable autopilot) or False (=disable autopilot)
     - lane_change: Traffic Manager parameter. True (=enable lane changes) or False (=disable lane changes)
     - distance_between_vehicles: Traffic Manager parameter
     - max_speed: Traffic Manager parameter. Max speed of the actor. This will only work for road segments
@@ -1783,7 +1783,7 @@ class ChangeAutoPilot(AtomicBehavior):
         """
         De/activate autopilot
         """
-        self._actor.set_autopilot(self._activate, CarlaDataProvider.get_traffic_manager_port())
+        self._actor.set_autopilot(bool(self._activate), CarlaDataProvider.get_traffic_manager_port())
 
         if self._parameters is not None:
             if "auto_lane_change" in self._parameters:
