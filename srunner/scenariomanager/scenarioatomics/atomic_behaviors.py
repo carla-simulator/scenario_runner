@@ -409,14 +409,32 @@ class ChangeActorControl(AtomicBehavior):
         _actor_control (ActorControl): Instance of the actor control.
     """
 
-    def __init__(self, actor, control_py_module, args, scenario_file_path=None, name="ChangeActorControl"):
+    def __init__(self, actor, osc_controller_action=None, catalogs=None, scenario_file_path=None, name="ChangeActorControl"):
         """
         Setup actor controller.
         """
         super(ChangeActorControl, self).__init__(name, actor)
 
-        self._actor_control = ActorControl(actor, control_py_module=control_py_module,
-                                           args=args, scenario_file_path=scenario_file_path)
+        self._actor = actor
+        self._actor_control = None
+        self._controller_action = osc_controller_action
+        self._catalogs = catalogs
+        self._scenario_file_path = scenario_file_path
+
+    def initialise(self):
+
+        if self._controller_action is not None:
+            control_py_module, args = sr_tools.openscenario_parser.OpenScenarioParser.get_controller(
+                self._controller_action, self._catalogs)
+        else:
+            control_py_module = None
+            args = {}
+
+        self._actor_control = ActorControl(self._actor, control_py_module=control_py_module,
+                                           args=args, scenario_file_path=self._scenario_file_path)
+
+        super(ChangeActorControl, self).initialise()
+
 
     def update(self):
         """
