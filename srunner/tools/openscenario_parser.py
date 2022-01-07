@@ -280,17 +280,15 @@ class OpenScenarioParser(object):
         return entry_instance
 
     @staticmethod
-    def get_friction_refs_from_env_action(xml_tree, catalogs):
+    def get_friction_from_env_action(xml_tree, catalogs):
         """
         Extract the CARLA road friction coefficient from an OSC EnvironmentAction
-
         Args:
             xml_tree: Containing the EnvironmentAction,
                 or the reference to the catalog it is defined in.
             catalogs: XML Catalogs that could contain the EnvironmentAction
-
         returns:
-           friction (ParameterRef(float))
+           friction (float)
         """
 
         if xml_tree.findall('.//EnvironmentAction'):
@@ -305,30 +303,24 @@ class OpenScenarioParser(object):
             catalog_reference = set_environment.find("CatalogReference")
             environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
 
-        road_condition = environment.find("RoadCondition")
-        friction_ref = ParameterRef(road_condition.attrib.get('frictionScaleFactor'))
-        return friction_ref
+        friction = 1.0
 
+        road_condition = environment.iter("RoadCondition")
+        for condition in road_condition:
+            friction = float(ParameterRef(condition.attrib.get('frictionScaleFactor')))
+
+        return friction
 
     @staticmethod
-    def get_weather_refs_from_env_action(xml_tree, catalogs):
+    def get_weather_from_env_action(xml_tree, catalogs):
         """
         Extract the CARLA weather parameters from an OSC EnvironmentAction
-
         Args:
             xml_tree: Containing the EnvironmentAction,
                 or the reference to the catalog it is defined in.
             catalogs: XML Catalogs that could contain the EnvironmentAction
-
         returns:
-            sun_azimuth_angle_ref (ParameterRef(float)): Azimuth of the sun in radians.
-            sun_altitude_angle_ref (ParameterRef(float)): Elevation of the sun in radians.
-            sun_intensity_ref (ParameterRef(float)): Intensity of sun illumination.
-            fog_distance_ref (ParameterRef(float)): Distance of the beginning fog from vehicle.
-            precepitation_type_ref (ParameterRef(string)): Dry or rain.
-            precepitation_intensity_ref (ParameterRef(float)): Intensity of rain.
-            weather_animation_ref (ParameterRef(bool)): If the weather should follow time of the day.
-            time_ref (ParameterRef(string)): Time of the day at the beginning of simulation.
+           Weather (srunner.scenariomanager.weather_sim.Weather)
         """
 
         if xml_tree.findall('.//EnvironmentAction'):
@@ -343,29 +335,35 @@ class OpenScenarioParser(object):
             catalog_reference = set_environment.find("CatalogReference")
             environment = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
 
-        time_of_day = environment.find("TimeOfDay")
         weather = environment.find("Weather")
         sun = weather.find("Sun")
+
+        carla_weather = carla.WeatherParameters()
+        carla_weather.sun_azimuth_angle = math.degrees(float(ParameterRef(sun.attrib.get('azimuth', 0))))
+        carla_weather.sun_altitude_angle = math.degrees(float(ParameterRef(sun.attrib.get('elevation', 0))))
+        carla_weather.cloudiness = 100 - float(ParameterRef(sun.attrib.get('intensity', 0))) * 100
         fog = weather.find("Fog")
+        carla_weather.fog_distance = float(ParameterRef(fog.attrib.get('visualRange', 'inf')))
+        if carla_weather.fog_distance < 1000:
+            carla_weather.fog_density = 100
+        carla_weather.precipitation = 0
+        carla_weather.precipitation_deposits = 0
+        carla_weather.wetness = 0
+        carla_weather.wind_intensity = 30.0
         precepitation = weather.find("Precipitation")
+        if ParameterRef(precepitation.attrib.get('precipitationType')) == "rain":
+            carla_weather.precipitation = float(ParameterRef(precepitation.attrib.get('intensity'))) * 100
+            carla_weather.precipitation_deposits = 100  # if it rains, make the road wet
+            carla_weather.wetness = carla_weather.precipitation
+        elif ParameterRef(precepitation.attrib.get('type')) == "snow":
+            raise AttributeError("CARLA does not support snow precipitation")
 
-        sun_azimuth_angle_ref = ParameterRef(sun.attrib.get('azimuth', 0))
-        sun_altitude_angle_ref = ParameterRef(sun.attrib.get('elevation', 0))
-        sun_intensity_ref = ParameterRef(sun.attrib.get('intensity', 0))
-        fog_distance_ref = ParameterRef(fog.attrib.get('visualRange', 'inf'))
-        precepitation_type_ref = ParameterRef(precepitation.attrib.get('precipitationType'))
-        precepitation_intensity_ref = ParameterRef(precepitation.attrib.get('intensity'))
-        weather_animation_ref = ParameterRef(time_of_day.attrib.get("animation"))
-        time_ref = ParameterRef(time_of_day.attrib.get("dateTime"))
+        time_of_day = environment.find("TimeOfDay")
+        weather_animation = strtobool(str(ParameterRef(time_of_day.attrib.get("animation"))))
+        time = str(ParameterRef(time_of_day.attrib.get("dateTime")))
+        dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
 
-        return sun_azimuth_angle_ref, \
-               sun_altitude_angle_ref, \
-               sun_intensity_ref, \
-               fog_distance_ref, \
-               precepitation_type_ref, \
-               precepitation_intensity_ref, \
-               weather_animation_ref, \
-               time_ref
+        return Weather(carla_weather, dtime, weather_animation)
         
     @staticmethod
     def get_controller(xml_tree, catalogs):
@@ -1004,26 +1002,8 @@ class OpenScenarioParser(object):
 
             elif global_action.find('EnvironmentAction') is not None:
 
-                sun_azimuth_angle_ref, \
-                sun_altitude_angle_ref, \
-                cloudiness_ref, \
-                fog_distance_ref, \
-                precepitation_type_ref, \
-                precepitation_intensity_ref, \
-                weather_animation_ref, \
-                time_ref = OpenScenarioParser.get_weather_refs_from_env_action(global_action, catalogs)
-
-                weather_behavior = ChangeWeather(sun_azimuth_angle_ref,
-                                                 sun_altitude_angle_ref,
-                                                 cloudiness_ref,
-                                                 fog_distance_ref,
-                                                 precepitation_type_ref,
-                                                 precepitation_intensity_ref,
-                                                 weather_animation_ref,
-                                                 time_ref)
-
-                friction_ref = OpenScenarioParser.get_friction_refs_from_env_action(global_action, catalogs)
-                friction_behavior = ChangeRoadFriction(friction_ref)
+                weather_behavior = ChangeWeather(global_action, catalogs)
+                friction_behavior = ChangeRoadFriction(global_action, catalogs)
 
                 env_behavior = py_trees.composites.Parallel(
                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=maneuver_name)

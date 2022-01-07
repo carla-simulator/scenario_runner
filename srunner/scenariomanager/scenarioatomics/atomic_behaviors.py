@@ -248,94 +248,44 @@ class ChangeParameter(AtomicBehavior):
         return new_status
 
 
+
 class ChangeWeather(AtomicBehavior):
 
     """
     Atomic to write a new weather configuration into the blackboard.
     Used in combination with WeatherBehavior() to have a continuous weather simulation.
-
     The behavior immediately terminates with SUCCESS after updating the blackboard.
-
     Args:
-        sun_azimuth_angle (float | ParameterRef(float)): Azimuth of the sun in radians.
-        sun_altitude_angle (float | ParameterRef(float)): Elevation of the sun in radians.
-        sun_intensity (float | ParameterRef(float)): Intensity of sun illumination.
-        fog_distance (float | ParameterRef(float)): Distance of the beginning fog from vehicle.
-        precepitation_type (string | ParameterRef(string)): Dry or rain.
-        precepitation_intensity (float | ParameterRef(float)): Intensity of rain.
-        weather_animation (bool | ParameterRef(bool)): If the weather should follow time of the day.
-        time (string | ParameterRef(string)): Time of the day at the beginning of simulation.
         name (string): Name of the behavior.
-            Defaults to 'ChangeWeather'.
-
+            Defaults to 'UpdateWeather'.
+        global_action (OSC GlobalAction xml): An OSC global action containing the EnvironmentAction,
+            or the reference to the catalog it is defined in.
+        catalogs: XML Catalogs that could contain the EnvironmentAction
     Attributes:
-        _sun_azimuth_angle_ref (float | ParameterRef(float)): Azimuth of the sun in radians.
-        _sun_altitude_angle_ref (float | ParameterRef(float)): Elevation of the sun in radians.
-        _sun_intensity_ref (float | ParameterRef(float)): Intensity of sun illumination.
-        _fog_distance_ref (float | ParameterRef(float)): Distance of the beginning fog from vehicle.
-        _precepitation_type_ref (string | ParameterRef(string)): Dry or rain.
-        _precepitation_intensity_ref (float | ParameterRef(float)): Intensity of rain.
-        _weather_animation_ref (bool | ParameterRef(bool)): If the weather should follow time of the day.
-        _time_ref (string | ParameterRef(string)): Time of the day at the beginning of simulation.
+        _weather (srunner.scenariomanager.weather_sim.Weather): Weather settings.
     """
 
-    def __init__(self, 
-                sun_azimuth_angle,
-                sun_altitude_angle,
-                sun_intensity,
-                fog_distance,
-                precepitation_type,
-                precepitation_intensity,
-                weather_animation,
-                time,
-                name="ChangeWeather"):
+    def __init__(self, global_action, catalogs, name="ChangeWeather"):
         """
         Setup parameters
         """
         super(ChangeWeather, self).__init__(name)
+        self._global_action = global_action
+        self._catalogs = catalogs
+        self._weather = None
 
-        self._sun_azimuth_angle_ref = sun_azimuth_angle
-        self._sun_altitude_angle_ref = sun_altitude_angle
-        self._sun_intensity_ref = sun_intensity
-        self._fog_distance_ref = fog_distance
-        self._precepitation_type_ref = precepitation_type
-        self._precepitation_intensity_ref = precepitation_intensity
-        self._weather_animation_ref = weather_animation
-        self._time_ref = time
+    def initialise(self):
+        if self._weather is None:
+            self._weather = sr_tools.openscenario_parser.OpenScenarioParser.get_weather_from_env_action(
+                self._global_action, self._catalogs)
 
     def update(self):
         """
         Write weather into blackboard and exit with success
-
         returns:
             py_trees.common.Status.SUCCESS
         """
-
-        carla_weather = carla.WeatherParameters()
-        carla_weather.sun_azimuth_angle = math.degrees(float(self._sun_azimuth_angle_ref))
-        carla_weather.sun_altitude_angle = math.degrees(float(self._sun_altitude_angle_ref))
-        carla_weather.cloudiness = 100 - float(self._sun_intensity_ref) * 100
-        carla_weather.fog_distance = float(self._fog_distance_ref)
-        if carla_weather.fog_distance < 1000:
-            carla_weather.fog_density = 100
-        carla_weather.precipitation = 0
-        carla_weather.precipitation_deposits = 0
-        carla_weather.wetness = 0
-        carla_weather.wind_intensity = 30.0
-        if self._precepitation_type_ref == "rain":
-            carla_weather.precipitation = float(self._precepitation_intensity_ref) * 100
-            carla_weather.precipitation_deposits = 100  # if it rains, make the road wet
-            carla_weather.wetness = carla_weather.precipitation
-        elif self._precepitation_type_ref == "snow":
-            raise AttributeError("CARLA does not support snow precipitation")
-
-        weather_animation = bool(self._weather_animation_ref)
-        time = str(self._time_ref)
-        dtime = datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
-
-        weather = Weather(carla_weather, dtime, weather_animation)
-
-        py_trees.blackboard.Blackboard().set("CarlaWeather", weather, overwrite=True)
+        py_trees.blackboard.Blackboard().set("CarlaWeather", self._weather, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -347,20 +297,28 @@ class ChangeRoadFriction(AtomicBehavior):
     The behavior immediately terminates with SUCCESS after updating the friction.
 
     Args:
-        friction (float | ParameterRef(float)): New friction coefficient.
         name (string): Name of the behavior.
             Defaults to 'UpdateRoadFriction'.
-
+        global_action (OSC GlobalAction xml): An OSC global action containing the EnvironmentAction,
+                or the reference to the catalog it is defined in.
+        catalogs: XML Catalogs that could contain the EnvironmentAction
     Attributes:
         _friction (float | ParameterRef(float)): Friction coefficient.
     """
 
-    def __init__(self, friction_ref, name="ChangeRoadFriction"):
+    def __init__(self, global_action, catalogs, name="ChangeRoadFriction"):
         """
         Setup parameters
         """
         super(ChangeRoadFriction, self).__init__(name)
-        self._friction_ref = friction_ref
+        self._global_action = global_action
+        self._catalogs = catalogs
+        self._friction = None
+    
+    def initialise(self):
+        if self._friction is None:
+            self._friction = sr_tools.openscenario_parser.OpenScenarioParser.get_friction_from_env_action(
+                self._global_action, self._catalogs)
 
     def update(self):
         """
@@ -375,7 +333,7 @@ class ChangeRoadFriction(AtomicBehavior):
 
         friction_bp = CarlaDataProvider.get_world().get_blueprint_library().find('static.trigger.friction')
         extent = carla.Location(1000000.0, 1000000.0, 1000000.0)
-        friction_bp.set_attribute('friction', str(self._friction_ref))
+        friction_bp.set_attribute('friction', str(self._friction))
         friction_bp.set_attribute('extent_x', str(extent.x))
         friction_bp.set_attribute('extent_y', str(extent.y))
         friction_bp.set_attribute('extent_z', str(extent.z))
