@@ -76,13 +76,9 @@ class ActorConfigurationData(object):
         transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw))
 
         rolename = actor_dict['rolename'] if 'rolename' in actor_dict else rolename
-
         speed = actor_dict['speed'] if 'speed' in actor_dict else 0
-
         autopilot = actor_dict['autopilot'] if 'autopilot' in actor_dict else False
-
         random_location = actor_dict['random_location'] if 'random_location' in actor_dict else False
-
         color = actor_dict['color'] if 'color' in actor_dict else None
 
         return ActorConfigurationData(model, transform, rolename, speed, autopilot, random_location, color)

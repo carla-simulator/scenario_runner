@@ -21,11 +21,11 @@ TRIGGER_THRESHOLD = 2.0  # Threshold to say if a trigger position is new or repe
 TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
 
 
-def convert_dict_to_transform(dictionary):
+def convert_dict_to_transform(scenario_dict):
     """Convert a JSON dict to a CARLA transform"""
     return carla.Transform(
-        carla.Location(float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])),
-        carla.Rotation(roll=0.0, pitch=0.0, yaw=float(dictionary['yaw']))
+        carla.Location(float(scenario_dict['x']), float(scenario_dict['y']), float(scenario_dict['z'])),
+        carla.Rotation(roll=0.0, pitch=0.0, yaw=float(scenario_dict['yaw']))
     )
 
 class RouteParser(object):
@@ -240,8 +240,6 @@ class RouteParser(object):
         Returns a dictionary where each item is a list of all the scenarios that are close to each other
         """
         possible_scenarios = {}
-        import pprint
-        pp = pprint.PrettyPrinter(indent=4)
 
         for town_name in world_annotations.keys():
             if town_name != route_name:

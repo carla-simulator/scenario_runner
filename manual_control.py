@@ -168,6 +168,8 @@ class World(object):
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
 
+        self.world.wait_for_tick()
+
     def tick(self, clock, wait_for_repetitions):
         if len(self.world.get_actors().filter(self.player_name)) < 1:
             if not wait_for_repetitions:

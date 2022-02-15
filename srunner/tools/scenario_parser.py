@@ -55,11 +55,11 @@ class ScenarioConfigurationParser(object):
                 scenario_config_name = scenario.attrib.get('name', None)
                 scenario_config_type = scenario.attrib.get('type', None)
 
-                # Check the scenario is the correct one
+                # Check that the scenario is the correct one
                 if not scenario_group and scenario_config_name != scenario_name:
                     continue
-                # Check the scenario is of the correct type
-                elif scenario_group and scenario_config_type != scenario_name:  
+                # Check that the scenario is of the correct type
+                elif scenario_group and scenario_config_type != scenario_name:
                     continue
 
                 config = ScenarioConfiguration()
