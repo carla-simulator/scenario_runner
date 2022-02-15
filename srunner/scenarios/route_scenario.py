@@ -20,9 +20,7 @@ import carla
 
 from agents.navigation.local_planner import RoadOption
 
-# pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData
-# pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -130,8 +128,10 @@ class RouteScenario(BasicScenario):
         - debug_mode: boolean to decide whether or not the route poitns are printed
         """
         # prepare route's trajectory (interpolate and add the GPS route)
-        _, route = interpolate_trajectory(config.trajectory)
-        CarlaDataProvider.set_ego_vehicle_route(route)
+        gps_route, route = interpolate_trajectory(config.trajectory)
+        CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(route))
+        if config.agent is not None:
+            config.agent.set_global_plan(gps_route, route)
 
         return route
 
