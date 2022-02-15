@@ -8,11 +8,12 @@
 """
 This module provides access to a scenario configuration parser
 """
-import carla
 
 import glob
 import os
 import xml.etree.ElementTree as ET
+
+import carla
 
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration
@@ -87,7 +88,8 @@ class ScenarioConfigurationParser(object):
                         config.weather.fog_falloff = float(elem.attrib.get("fog_falloff", 0.0))
                         config.weather.scattering_intensity = float(elem.attrib.get("scattering_intensity", 0.0))
                         config.weather.mie_scattering_scale = float(elem.attrib.get("mie_scattering_scale", 0.0))
-                        config.weather.rayleigh_scattering_scale = float(elem.attrib.get("rayleigh_scattering_scale",0.0331))
+                        config.weather.rayleigh_scattering_scale = float(
+                            elem.attrib.get("rayleigh_scattering_scale", 0.0331))
 
                     elif elem.tag == 'route':
                         route_conf = RouteConfiguration()

@@ -28,6 +28,7 @@ def convert_dict_to_transform(scenario_dict):
         carla.Rotation(roll=0.0, pitch=0.0, yaw=float(scenario_dict['yaw']))
     )
 
+
 class RouteParser(object):
 
     """
@@ -123,8 +124,6 @@ class RouteParser(object):
                     weather.fog_density = float(weather_attrib.attrib['fog_density'])
                 if 'scattering_intensity' in weather_attrib.attrib:
                     weather.scattering_intensity = float(weather_attrib.attrib['scattering_intensity'])
-                if 'scattering_intensity' in weather_attrib.attrib:
-                    weather.scattering_intensity = float(weather_attrib.attrib['scattering_intensity'])
                 if 'mie_scattering_scale' in weather_attrib.attrib:
                     weather.mie_scattering_scale = float(weather_attrib.attrib['mie_scattering_scale'])
                 if 'rayleigh_scattering_scale' in weather_attrib.attrib:
@@ -138,7 +137,7 @@ class RouteParser(object):
         Check if this trigger position already exists or if it is a new one.
         :param scenario_trigger: position to be checked
         :param existing_triggers: list with all the already found position
-        :return: 
+        :return:
         """
         for trigger in existing_triggers:
             dx = trigger.location.x - scenario_trigger.location.x
@@ -271,7 +270,7 @@ class RouteParser(object):
                     scenario_config.type = scenario_name
                     scenario_config.subtype = subtype
                     scenario_config.trigger_points = [trigger_point]
-                    for other in scenario.pop('other_actors', list()):
+                    for other in scenario.pop('other_actors', []):
                         scenario_config.other_actors.append(ActorConfigurationData.parse_from_dict(other, 'scenario'))
                     scenario_config.other_parameters.update(scenario)
 

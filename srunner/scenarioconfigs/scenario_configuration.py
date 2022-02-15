@@ -93,6 +93,7 @@ class ScenarioConfiguration(object):
     - name of the scenario (e.g. ControlLoss_1)
     - type is the class of scenario (e.g. ControlLoss)
     """
+
     def __init__(self):
         self.trigger_points = []
         self.ego_vehicles = []

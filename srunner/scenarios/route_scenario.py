@@ -11,14 +11,12 @@ This module provides Challenge routes as standalone scenarios
 
 from __future__ import print_function
 
-import math
 import traceback
-import xml.etree.ElementTree as ET
 
 import py_trees
 
-import carla
 from numpy import random
+import carla
 
 from agents.navigation.local_planner import RoadOption
 
@@ -28,7 +26,7 @@ from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationDat
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle, ScenarioTriggerer
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.route_parser import RouteParser, TRIGGER_THRESHOLD, TRIGGER_ANGLE_THRESHOLD
+from srunner.tools.route_parser import RouteParser
 from srunner.tools.route_manipulation import interpolate_trajectory
 from srunner.tools.py_trees_port import oneshot_behavior
 
@@ -220,7 +218,7 @@ class RouteScenario(BasicScenario):
                          scenarios_per_tick=5, timeout=300, debug_mode=False):
         """
         Initializes the class of all the scenarios that will be present in the route.
-        If a class fails to be initialized, a warning is printed but the route execution isn't stopped 
+        If a class fails to be initialized, a warning is printed but the route execution isn't stopped
         """
         scenario_instance_vec = []
 
