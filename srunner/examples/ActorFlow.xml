@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="HighwayEntry_EU_Slow_1" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="-556.3" y="1056.10" z="0" yaw="180" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="-601.80" y="1085.10" z="0" yaw="240"/>
+        <end_actor_flow x="-713.6" y="841.5" z="0" yaw="250"/>
+        <flow_speed value="10"/>
+        <source_dist_interval from="25" to="40"/>
+    </scenario>
+    <scenario name="HighwayEntry_EU_Fast_1" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="-556.3" y="1056.10" z="0" yaw="180" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="-601.80" y="1085.10" z="0" yaw="240"/>
+        <end_actor_flow x="-713.6" y="841.5" z="0" yaw="250"/>
+        <flow_speed value="30"/>
+        <source_dist_interval from="25" to="40"/>
+    </scenario>
+    <scenario name="HighwayEntry_EU_Fast_2" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="-556.3" y="1056.10" z="0" yaw="180" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="-601.80" y="1085.10" z="0" yaw="240"/>
+        <end_actor_flow x="-713.6" y="841.5" z="0" yaw="250"/>
+        <flow_speed value="30"/>
+        <source_dist_interval from="40" to="70"/>
+    </scenario>
+    <scenario name="HighwayEntry_USA_Fast_1" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="-356.60" y="2641.10" z="0" yaw="-160" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="-443.40" y="2679.60" z="0" yaw="95"/>
+        <end_actor_flow x="-425.70" y="2474.80" z="0" yaw="95"/>
+        <flow_speed value="30"/>
+        <source_dist_interval from="25" to="40"/>
+    </scenario>
+    <scenario name="HighwayEntry_USA_Fast_2" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="-356.60" y="2641.10" z="0" yaw="-160" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="-443.40" y="2679.60" z="0" yaw="95"/>
+        <end_actor_flow x="-425.70" y="2474.80" z="0" yaw="95"/>
+        <flow_speed value="30"/>
+        <source_dist_interval from="40" to="70"/>
+    </scenario>
+   <scenario name="HighwayEntry_USA_2" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="176.10" y="-648.50" z="0" yaw="-50" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="166.0" y="-692.40" z="0" yaw="180"/>
+        <end_actor_flow x="484.0" y="-639.20" z="0" yaw="195"/>
+        <flow_speed value="30"/>
+        <source_dist_interval from="40" to="70"/>
+    </scenario>
+    <scenario name="HighwayExit_EU" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="-411.30" y="1430.00" z="0" yaw="245" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="-408.0" y="1429.20" z="0" yaw="65"/>
+        <end_actor_flow x="-554.40" y="1164.50" z="0" yaw="60"/>
+        <flow_speed value="20"/>
+        <source_dist_interval from="40" to="70"/>
+    </scenario>
+    <scenario name="HighwayExit_USA" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="176.70" y="-692.10" z="0" yaw="0" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="180.30" y="-654.10" z="0" yaw="230"/>
+        <end_actor_flow x="449.50" y="-634.20" z="0" yaw="210"/>
+        <flow_speed value="20"/>
+        <source_dist_interval from="40" to="70"/>
+    </scenario>
+    <scenario name="InterurbanLeftTurn_1" type="EnterActorFlow" town="Highway">
+        <ego_vehicle x="-31.30" y="-503.3" z="0" yaw="350" model="vehicle.lincoln.mkz_2017" />
+        <start_actor_flow x="98.6" y="-518.60" z="0" yaw="175"/>
+        <end_actor_flow x="-65.40" y="-499.7" z="0" yaw="170"/>
+        <flow_speed value="20"/>
+        <source_dist_interval from="30" to="55"/>
+    </scenario>
+</scenarios>

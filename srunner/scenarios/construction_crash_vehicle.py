@@ -31,27 +31,17 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
     This is a single ego vehicle scenario
     """
 
-    def __init__(
-            self,
-            world,
-            ego_vehicles,
-            config,
-            randomize=False,
-            debug_mode=False,
-            criteria_enable=True,
-            timeout=60):
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False,
+                 criteria_enable=True, timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
-        super(
-            ConstructionSetupCrossing,
-            self).__init__(
-            world,
-            ego_vehicles=ego_vehicles,
-            config=config,
-            randomize=randomize,
-            debug_mode=debug_mode,
-            criteria_enable=criteria_enable)
+        super(ConstructionSetupCrossing, self).__init__(world,
+                                                        ego_vehicles=ego_vehicles,
+                                                        config=config,
+                                                        randomize=randomize,
+                                                        debug_mode=debug_mode,
+                                                        criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """

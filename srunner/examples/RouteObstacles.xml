@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="BycicleGroup_1" type="BycicleGroup" town="Highway">
+        <ego_vehicle x="-362.60" y="86.9" z="0" yaw="180" model="vehicle.lincoln.mkz_2017" />
+        <other_actor x="-409.70" y="36.2" z="0" yaw="270" model="vehicle.diamondback.century"/>
+        <bycicle_speed value="10"/>   <!--m/s-->
+        <bycicle_offset value="0.6"/>  <!--This is between 0 and 1, being 1 the max offset of the lane-->
+    </scenario>
+    <scenario name="Accident_1" type="Accident" town="Highway">
+        <weather cloudiness="70" precipitation="40" precipitation_deposits="0" wind_intensity="0" sun_azimuth_angle="110" sun_altitude_angle="-40" />
+        <ego_vehicle x="-367.80" y="-166.60" z="0" yaw="-70" model="vehicle.lincoln.mkz_2017" />
+    </scenario>
+    <scenario name="Construction_1" type="ConstructionSetupCrossing" town="Highway">
+        <weather cloudiness="70" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth_angle="0" sun_altitude_angle="40" />
+        <ego_vehicle x="-367.80" y="-166.60" z="0" yaw="-70" model="vehicle.lincoln.mkz_2017" />
+    </scenario>
+</scenarios>

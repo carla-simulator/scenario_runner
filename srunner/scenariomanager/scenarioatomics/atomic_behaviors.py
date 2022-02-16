@@ -1962,7 +1962,8 @@ class WaypointFollower(AtomicBehavior):
             local_planner = LocalPlanner(  # pylint: disable=undefined-variable
                 actor, opt_dict={
                     'target_speed': self._target_speed * 3.6,
-                    'lateral_control_dict': self._args_lateral_dict})
+                    'lateral_control_dict': self._args_lateral_dict,
+                    'max_throttle': 1.0})
 
             if self._plan is not None:
                 if isinstance(self._plan[0], carla.Location):
