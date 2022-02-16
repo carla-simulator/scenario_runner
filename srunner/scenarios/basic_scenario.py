@@ -50,6 +50,9 @@ class BasicScenario(object):
 
         self._initialize_environment(world)
 
+        is_route_scenario = CarlaDataProvider.get_ego_vehicle_route() is not None
+        self._initialize_other_parameters(config, is_route_scenario)
+
         # Initializing adversarial actors
         self._initialize_actors(config)
         if CarlaDataProvider.is_sync_mode():
@@ -118,6 +121,15 @@ class BasicScenario(object):
 
             for new_actor in new_actors:
                 self.other_actors.append(new_actor)
+
+    def _initialize_other_parameters(self, config, is_route_scenario):
+        """
+        Initializes other parameters part of the config file.
+        As routes and scenarios are parsed differently, use 'is_route_scenario'
+        to know if the scenario is being triggered as part of a route.
+        Override this method in child class to provide custom initialization.
+        """
+        pass
 
     def _setup_scenario_trigger(self, config):
         """

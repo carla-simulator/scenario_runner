@@ -14,6 +14,8 @@
 
 ## Latest changes
 ### :rocket: New Features
+* Scenarios can now parse and use all parameters present at the configuration file.
+* Improved overall parsing of routes and scenarios.
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
 * The BackgroundActivity has been readded to the routes, which the objective of creating the sensation of traffic around the ego
