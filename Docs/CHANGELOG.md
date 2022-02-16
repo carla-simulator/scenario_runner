@@ -14,6 +14,7 @@
 
 ## Latest changes
 ### :rocket: New Features
+* Actor Flows are now more consistent
 * Scenarios can now parse and use all parameters present at the configuration file.
 * Improved overall parsing of routes and scenarios.
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
