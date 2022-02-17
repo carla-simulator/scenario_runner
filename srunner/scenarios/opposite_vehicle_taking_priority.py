@@ -19,7 +19,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       TrafficLightFreezer,
-                                                                      BasicAgentBehavior)
+                                                                      ConstantVelocityAgentBehavior)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -174,7 +174,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             self.ego_vehicles[0], self._collision_location, self._min_trigger_dist))
 
         sequence.add_child(trigger_adversary)
-        sequence.add_child(BasicAgentBehavior(
+        sequence.add_child(ConstantVelocityAgentBehavior(
             self.other_actors[0], target_location=self._sink_wp.transform.location,
             target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True}, name="AdversaryCrossing"))
 
