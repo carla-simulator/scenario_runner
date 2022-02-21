@@ -274,6 +274,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._road_sources = []
         self._road_checker_index = 0
         self._road_ego_key = ""
+        self._road_sources_active = True
 
         self._road_front_vehicles = 3  # Amount of vehicles in front of the ego
         self._road_back_vehicles = 3  # Amount of vehicles behind the ego
@@ -313,15 +314,15 @@ class BackgroundBehavior(AtomicBehavior):
         self._opposite_sources_max_actors = 8  # Maximum vehicles alive at the same time per source
 
         # Scenario 2 variables
-        self._is_scenario_2_active = False
-        self._scenario_2_actors = []
+        self._is_hard_break_scenario_active = False
+        self._hard_break_scenario_actors = []
         self._activate_break_scenario = False
         self._break_duration = 7  # Duration of the scenario
         self._next_scenario_time = float('inf')
 
         # Scenario 4 variables
-        self._is_scenario_4_active = False
-        self._scenario_4_actors = []
+        self._is_crossing_scenario_active = False
+        self._crossing_scenario_actors = []
         self._ego_exitted_junction = False
         self._crossing_dist = None  # Distance between the crossing object and the junction exit
         self._start_ego_wp = None
@@ -412,7 +413,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._update_opposite_actors(ego_transform)
         self._update_road_sources(ego_transform.location)
 
-        self._monitor_scenario_4_end(ego_transform.location)
+        self._monitor_crossing_scenario_end(ego_transform.location)
 
         return new_status
 
@@ -894,7 +895,7 @@ class BackgroundBehavior(AtomicBehavior):
         for actor in list(self._road_actors):
             self._add_actor_dict_element(junction.actor_dict, actor)
             self._road_actors.remove(actor)
-            if not self._is_scenario_2_active:
+            if not self._is_hard_break_scenario_active:
                 self._tm.vehicle_percentage_speed_difference(actor, 0)
 
         self._road_back_actors.clear()
@@ -938,6 +939,14 @@ class BackgroundBehavior(AtomicBehavior):
                     if actor_dict[actor]['state'] == 'junction_middle':
                         self._destroy_actor(actor)
 
+        elif self._junctions:
+            self._junctions[0].scenario_info = {
+                'direction': direction,
+                'remove_entries': remove_entries,
+                'remove_middle': remove_middle,
+                'remove_exits': remove_exits,
+            }
+
     def _handle_junction_scenario_end(self, junction):
         """Ends the junction scenario interaction. This is pretty much useless as the junction
         scenario ends at the same time as the active junction, but in the future it might not"""
@@ -948,24 +957,24 @@ class BackgroundBehavior(AtomicBehavior):
             'remove_exits': False,
         }
 
-    def _monitor_scenario_4_end(self, ego_location):
+    def _monitor_crossing_scenario_end(self, ego_location):
         """Monitors the ego distance to the junction to know if the scenario 4 has ended"""
         if self._ego_exitted_junction:
             ref_location = self._start_ego_wp.transform.location
             if ego_location.distance(ref_location) > self._crossing_dist:
-                for actor in self._scenario_4_actors:
+                for actor in self._crossing_scenario_actors:
                     self._tm.vehicle_percentage_speed_difference(actor, 0)
-                self._is_scenario_4_active = False
-                self._scenario_4_actors.clear()
+                self._is_crossing_scenario_active = False
+                self._crossing_scenario_actors.clear()
                 self._ego_exitted_junction = False
                 self._crossing_dist = None
 
-    def _handle_scenario_4_interaction(self, junction, ego_wp):
+    def _handle_crossing_scenario_interaction(self, junction, ego_wp):
         """
         Handles the interation between the scenario 4 of the Leaderboard and the background activity.
         This removes all vehicles near the bycicle path, and stops the others so that they don't interfere
         """
-        if not self._is_scenario_4_active:
+        if not self._is_crossing_scenario_active:
             return
 
         self._ego_exitted_junction = True
@@ -999,7 +1008,7 @@ class BackgroundBehavior(AtomicBehavior):
                     self._destroy_actor(actor)
                     continue  # Actor at the ego lane and between the ego and scenario
 
-                self._scenario_4_actors.append(actor)
+                self._crossing_scenario_actors.append(actor)
 
         # Actor entering the junction
         for entry_source in junction.entry_sources:
@@ -1020,7 +1029,7 @@ class BackgroundBehavior(AtomicBehavior):
                         self._destroy_actor(actor)
                         continue  # Actors blocking the path of the crossing obstacle
 
-                    self._scenario_4_actors.append(actor)
+                    self._crossing_scenario_actors.append(actor)
 
         # Actors entering the next junction
         if len(self._active_junctions) > 1:
@@ -1049,10 +1058,10 @@ class BackgroundBehavior(AtomicBehavior):
                     self._destroy_actor(actor)
                     continue  # Actor at the ego lane and between the ego and scenario
 
-                self._scenario_4_actors.append(actor)
+                self._crossing_scenario_actors.append(actor)
 
         # Immediately freeze the actors
-        for actor in self._scenario_4_actors:
+        for actor in self._crossing_scenario_actors:
             try:
                 actor.set_target_velocity(carla.Vector3D(0, 0, 0))
                 self._tm.vehicle_percentage_speed_difference(actor, 100)
@@ -1087,7 +1096,7 @@ class BackgroundBehavior(AtomicBehavior):
 
             self._destroy_actor(actor)
 
-        self._handle_scenario_4_interaction(junction, ego_wp)
+        self._handle_crossing_scenario_interaction(junction, ego_wp)
         self._handle_junction_scenario_end(junction)
         self._switch_junction_road_sources(junction)
 
@@ -1195,6 +1204,9 @@ class BackgroundBehavior(AtomicBehavior):
         Manages the sources that spawn actors behind the ego.
         Sources are destroyed after their actors are spawned
         """
+        if not self._road_sources_active:
+            return
+
         for source in list(self._road_sources):
             if self.debug:
                 draw_point(self._world, source.wp.transform.location, 'small', self._ego_state, False)
@@ -1236,6 +1248,9 @@ class BackgroundBehavior(AtomicBehavior):
         """Initialises the road behavior, consisting on several vehicle in front of the ego,
         and several on the back. The ones on the back are spawned only outside junctions,
         and if not enough are spawned, sources are created that will do so later on"""
+        # Needed in case this is manually triggered by some scenario
+        self._road_sources = []
+
         spawn_wps = []
         # Vehicles in front
         for wp in road_wps:
@@ -1628,37 +1643,54 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _update_parameters(self):
         """Changes the parameters depending on the blackboard variables and / or the speed of the ego"""
-        road_behavior_data = py_trees.blackboard.Blackboard().get("BA_RoadBehavior")
-        if road_behavior_data:
-            num_front_vehicles, num_back_vehicles, vehicle_dist, spawn_dist = road_behavior_data
-            if num_front_vehicles:
-                self._road_front_vehicles = num_front_vehicles
-            if num_back_vehicles:
-                self._road_back_vehicles = num_back_vehicles
-            if vehicle_dist:
-                self._road_vehicle_dist = vehicle_dist
-            if spawn_dist:
-                self._road_spawn_dist = spawn_dist
-            self._get_road_radius()
-            py_trees.blackboard.Blackboard().set("BA_RoadBehavior", None, True)
 
-        opposite_behavior_data = py_trees.blackboard.Blackboard().get("BA_OppositeBehavior")
+        # Road behavior
+        road_behavior_data = py_trees.blackboard.Blackboard().get("BA_ChangeRoadBehavior")
+        if road_behavior_data:
+            num_front_vehicles, num_back_vehicles, vehicle_dist, spawn_dist, sources_active = road_behavior_data
+            if num_front_vehicles is not None:
+                self._road_front_vehicles = num_front_vehicles
+            if num_back_vehicles is not None:
+                self._road_back_vehicles = num_back_vehicles
+            if vehicle_dist is not None:
+                self._road_vehicle_dist = vehicle_dist
+            if spawn_dist is not None:
+                self._road_spawn_dist = spawn_dist
+            if sources_active is not None:
+                self._road_sources_active = sources_active
+            self._get_road_radius()
+            py_trees.blackboard.Blackboard().set("BA_ChangeRoadBehavior", None, True)
+
+        # Reinitialise the road behavior.
+        # TODO: Add some velocity to the vehicles or others to avoid weird behaviors on spawn
+        road_initialiser_data = py_trees.blackboard.Blackboard().get("BA_RoadInitialiser")
+        if road_initialiser_data:
+            if self._active_junctions:
+                print("WARNING: Road behavior is not active. Ignoring its reset")
+            else:
+                ego_wp = self._route[self._route_index]
+                self._initialise_road_behavior(get_same_dir_lanes(ego_wp), ego_wp)
+                py_trees.blackboard.Blackboard().set("BA_RoadInitialiser", None, True)
+
+        # Opposite behavior
+        opposite_behavior_data = py_trees.blackboard.Blackboard().get("BA_ChangeOppositeBehavior")
         if opposite_behavior_data:
             source_dist, vehicle_dist, spawn_dist, max_actors = road_behavior_data
-            if source_dist:
+            if source_dist is not None:
                 if source_dist < self._junction_sources_dist:
                     print("WARNING: Opposite sources distance is lower than the junction ones. Ignoring it")
                 else:
                     self._opposite_sources_dist = source_dist
-            if vehicle_dist:
+            if vehicle_dist is not None:
                 self._opposite_vehicle_dist = vehicle_dist
-            if spawn_dist:
+            if spawn_dist is not None:
                 self._opposite_spawn_dist = spawn_dist
-            if max_actors:
+            if max_actors is not None:
                 self._opposite_sources_max_actors = max_actors
-            py_trees.blackboard.Blackboard().set("BA_OppositeBehavior", None, True)
+            py_trees.blackboard.Blackboard().set("BA_ChangeOppositeBehavior", None, True)
 
-        junction_behavior_data = py_trees.blackboard.Blackboard().get("BA_JunctionBehavior")
+        # Junction behavior
+        junction_behavior_data = py_trees.blackboard.Blackboard().get("BA_ChangeJunctionBehavior")
         if junction_behavior_data:
             source_dist, vehicle_dist, spawn_dist, max_actors = road_behavior_data
             if source_dist:
@@ -1672,39 +1704,31 @@ class BackgroundBehavior(AtomicBehavior):
                 self._junction_spawn_dist = spawn_dist
             if max_actors:
                 self._junction_sources_max_actors = max_actors
-            py_trees.blackboard.Blackboard().set("BA_JunctionBehavior", None, True)
+            py_trees.blackboard.Blackboard().set("BA_ChangeJunctionBehavior", None, True)
 
-        break_duration = py_trees.blackboard.Blackboard().get("BA_Scenario2")
+        # Activate Hard Break scenario
+        break_duration = py_trees.blackboard.Blackboard().get("BA_ActivateHardBreakScenario")
         if break_duration:
-            if self._is_scenario_2_active:
+            if self._is_hard_break_scenario_active:
                 print("WARNING: A break scenario was requested but another one is already being triggered.")
             else:
                 self._activate_break_scenario = True
                 self._break_duration = break_duration
-            py_trees.blackboard.Blackboard().set("BA_Scenario2", None, True)
+            py_trees.blackboard.Blackboard().set("BA_ActivateHardBreakScenario", None, True)
 
-        crossing_dist = py_trees.blackboard.Blackboard().get("BA_Scenario4")
+        # Handles crossing actor scenarios. This currently only works for Scenario4
+        crossing_dist = py_trees.blackboard.Blackboard().get("BA_HandleCrossingActor")
         if crossing_dist:
-            self._is_scenario_4_active = True
+            self._is_crossing_scenario_active = True
             self._crossing_dist = crossing_dist
-            py_trees.blackboard.Blackboard().set("BA_Scenario4", None, True)
+            py_trees.blackboard.Blackboard().set("BA_HandleCrossingActor", None, True)
 
-        direction = py_trees.blackboard.Blackboard().get("BA_Scenario7")
-        if direction:
-            self._initialise_junction_scenario(direction, True, True, True)
-            py_trees.blackboard.Blackboard().set("BA_Scenario7", None, True)
-        direction = py_trees.blackboard.Blackboard().get("BA_Scenario8")
-        if direction:
-            self._initialise_junction_scenario(direction, True, True, True)
-            py_trees.blackboard.Blackboard().set("BA_Scenario8", None, True)
-        direction = py_trees.blackboard.Blackboard().get("BA_Scenario9")
-        if direction:
-            self._initialise_junction_scenario(direction, True, False, True)
-            py_trees.blackboard.Blackboard().set("BA_Scenario9", None, True)
-        direction = py_trees.blackboard.Blackboard().get("BA_Scenario10")
-        if direction:
-            self._initialise_junction_scenario(direction, False, False, False)
-            py_trees.blackboard.Blackboard().set("BA_Scenario10", None, True)
+        # Handles junction scenarios (scenarios 7 to 10)
+        junction_scenario_data = py_trees.blackboard.Blackboard().get("BA_JunctionScenario")
+        if junction_scenario_data:
+            direction, remove_entries, remove_exits, remove_middle = junction_scenario_data
+            self._initialise_junction_scenario(direction, remove_entries, remove_exits, remove_middle)
+            py_trees.blackboard.Blackboard().set("BA_JunctionScenario", None, True)
 
         self._compute_parameters()
 
@@ -1716,7 +1740,7 @@ class BackgroundBehavior(AtomicBehavior):
         # Partially avoid this by adding an extra distance to the radius when the vehicle is stopped
         # in the middle of the road and unaffected by any object such as traffic lights or stops.
         if ego_speed == 0 \
-                and not self._is_scenario_2_active \
+                and not self._is_hard_break_scenario_active \
                 and not self._ego_actor.is_at_traffic_light() \
                 and len(self._active_junctions) <= 0:
             self._extra_radius = min(self._extra_radius + self._extra_radius_increase_ratio, self._max_extra_radius)
@@ -1734,29 +1758,29 @@ class BackgroundBehavior(AtomicBehavior):
         Manages the break scenario, where all road vehicles in front of the ego suddenly stop,
         wait for a bit, and start moving again. This will never trigger unless done so from outside.
         """
-        if self._is_scenario_2_active:
+        if self._is_hard_break_scenario_active:
             self._next_scenario_time -= self._world.get_snapshot().timestamp.delta_seconds
             if self._next_scenario_time <= 0:
-                for actor in self._scenario_2_actors:
+                for actor in self._hard_break_scenario_actors:
                     self._tm.vehicle_percentage_speed_difference(actor, 0)
                     lights = actor.get_light_state()
                     lights &= ~carla.VehicleLightState.Brake
                     actor.set_light_state(carla.VehicleLightState(lights))
-                self._scenario_2_actors = []
+                self._hard_break_scenario_actors = []
 
-                self._is_scenario_2_active = False
+                self._is_hard_break_scenario_active = False
 
         elif self._activate_break_scenario:
             for actor in self._road_actors:
                 location = CarlaDataProvider.get_location(actor)
                 if location and not self._is_location_behind_ego(location):
-                    self._scenario_2_actors.append(actor)
+                    self._hard_break_scenario_actors.append(actor)
                     self._tm.vehicle_percentage_speed_difference(actor, 100)
                     lights = actor.get_light_state()
                     lights |= carla.VehicleLightState.Brake
                     actor.set_light_state(carla.VehicleLightState(lights))
 
-            self._is_scenario_2_active = True
+            self._is_hard_break_scenario_active = True
             self._activate_break_scenario = False
             self._next_scenario_time = self._break_duration
 
@@ -1855,7 +1879,7 @@ class BackgroundBehavior(AtomicBehavior):
         Not applied to those behind it so that they can catch up it
         """
         route_wp = self._route[current_ego_index]
-        scenario_actors = self._scenario_4_actors + self._scenario_2_actors
+        scenario_actors = self._crossing_scenario_actors + self._hard_break_scenario_actors
         for actor in self._road_actors:
             location = CarlaDataProvider.get_location(actor)
             if not location:
@@ -2079,10 +2103,10 @@ class BackgroundBehavior(AtomicBehavior):
             self._road_actors.remove(actor)
         if actor in self._opposite_actors:
             self._opposite_actors.remove(actor)
-        if actor in self._scenario_2_actors:
-            self._scenario_2_actors.remove(actor)
-        if actor in self._scenario_4_actors:
-            self._scenario_4_actors.remove(actor)
+        if actor in self._hard_break_scenario_actors:
+            self._hard_break_scenario_actors.remove(actor)
+        if actor in self._crossing_scenario_actors:
+            self._crossing_scenario_actors.remove(actor)
 
         for road_source in self._road_sources:
             if actor in road_source.actors:
