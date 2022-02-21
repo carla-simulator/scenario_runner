@@ -38,7 +38,7 @@ from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
 
-from srunner.tools.background_manager import Scenario2Manager
+from srunner.tools.background_manager import ActivateHardBreakScenario
 
 
 class FollowLeadingVehicle(BasicScenario):
@@ -351,7 +351,7 @@ class FollowLeadingVehicleRoute(BasicScenario):
         then waits for a bit to check if the actor has collided.
         """
         sequence = py_trees.composites.Sequence("FollowLeadingVehicleRoute")
-        sequence.add_child(Scenario2Manager(self._stop_duration))
+        sequence.add_child(ActivateHardBreakScenario(self._stop_duration))
         sequence.add_child(Idle(self._end_time_condition))
 
         return sequence

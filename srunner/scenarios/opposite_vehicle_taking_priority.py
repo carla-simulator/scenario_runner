@@ -31,7 +31,7 @@ from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
                                            filter_junction_wp_direction,
                                            get_closest_traffic_light)
 
-from srunner.tools.background_manager import Scenario7Manager
+from srunner.tools.background_manager import JunctionScenarioManager
 
 
 class OppositeVehicleRunningRedLight(BasicScenario):
@@ -184,7 +184,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         root = py_trees.composites.Sequence()
         if CarlaDataProvider.get_ego_vehicle_route():
-            root.add_child(Scenario7Manager(self._direction))
+            root.add_child(JunctionScenarioManager(self._direction, True, True, True))
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)
         root.add_child(ActorDestroy(self.other_actors[0]))

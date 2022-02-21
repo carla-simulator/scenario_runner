@@ -24,7 +24,7 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            filter_junction_wp_direction,
                                            get_closest_traffic_light)
 
-from srunner.tools.background_manager import Scenario8Manager
+from srunner.tools.background_manager import JunctionScenarioManager
 
 
 class SignalizedJunctionLeftTurn(BasicScenario):
@@ -144,7 +144,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
 
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         if CarlaDataProvider.get_ego_vehicle_route():
-            sequence.add_child(Scenario8Manager(self._direction))
+            sequence.add_child(JunctionScenarioManager(self._direction, True, True, True))
         sequence.add_child(root)
 
         return sequence

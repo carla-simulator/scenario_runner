@@ -18,8 +18,10 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation
 from srunner.scenarios.basic_scenario import BasicScenario
+
+from srunner.tools.background_manager import ChangeRoadBehavior, JunctionScenarioManager, RoadInitialiser
 
 def convert_dict_to_transform(actor_dict):
     """
@@ -53,10 +55,25 @@ class EnterActorFlow(BasicScenario):
         """
         self._world = world
         self._map = CarlaDataProvider.get_map()
-        self._flow_speed = 10 # m/s
-        self._source_dist_interval = [5, 7] # m
         self.timeout = timeout
-        self._drive_distance = 100
+
+        self._start_actor_flow = convert_dict_to_transform(config.other_parameters['start_actor_flow'])
+        self._end_actor_flow = convert_dict_to_transform(config.other_parameters['end_actor_flow'])
+        self._sink_distance = 2
+
+
+        if 'flow_speed' in config.other_parameters:
+            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
+        else:
+            self._flow_speed = 10 # m/s
+
+        if 'source_dist_interval' in config.other_parameters:
+            self._source_dist_interval = [
+                float(config.other_parameters['source_dist_interval']['from']),
+                float(config.other_parameters['source_dist_interval']['to'])
+            ]
+        else:
+            self._source_dist_interval = [5, 7] # m
 
         super(EnterActorFlow, self).__init__("EnterActorFlow",
                                              ego_vehicles,
@@ -64,19 +81,6 @@ class EnterActorFlow(BasicScenario):
                                              world,
                                              debug_mode,
                                              criteria_enable=criteria_enable)
-
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-        self._start_actor_flow = convert_dict_to_transform(config.other_parameters['start_actor_flow'])
-        self._end_actor_flow = convert_dict_to_transform(config.other_parameters['end_actor_flow'])
-        self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        self._source_dist_interval = [
-            float(config.other_parameters['source_dist_interval']['from']),
-            float(config.other_parameters['source_dist_interval']['to'])
-        ]
-        self._drive_distance = 1.1 * self._start_actor_flow.location.distance(self._end_actor_flow.location)
 
     def _create_behavior(self):
         """
@@ -86,12 +90,25 @@ class EnterActorFlow(BasicScenario):
         self._source_wp = self._map.get_waypoint(self._start_actor_flow.location)
         self._sink_wp = self._map.get_waypoint(self._end_actor_flow.location)
 
+        self.world.debug.draw_point(self._source_wp.transform.location + carla.Location(z=3))
+        self.world.debug.draw_point(self._sink_wp.transform.location + carla.Location(z=3))
+
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(ActorFlow(
-            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        return root
+            self._source_wp, self._sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed))
+        root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], self._sink_wp.transform.location, self._sink_distance))
+
+        sequence = py_trees.composites.Sequence()
+        if CarlaDataProvider.get_ego_vehicle_route():
+            sequence.add_child(JunctionScenarioManager('left', True, True, True))
+            sequence.add_child(ChangeRoadBehavior(switch_source=False))
+        sequence.add_child(root)
+        if CarlaDataProvider.get_ego_vehicle_route():
+            sequence.add_child(RoadInitialiser())
+            sequence.add_child(ChangeRoadBehavior(switch_source=True))
+
+        return sequence
 
     def _create_test_criteria(self):
         """
