@@ -168,3 +168,17 @@ class RoadInitialiser(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_RoadInitialiser", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
+
+class HandleAccidentScenario(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    """
+    def __init__(self, accident_wp, distance, name="HandleAccidentScenario"):
+        self._accident_wp = accident_wp
+        self._distance = distance
+        super(HandleAccidentScenario, self).__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_HandleAccidentScenario", [self._accident_wp, self._distance], overwrite=True)
+        return py_trees.common.Status.SUCCESS

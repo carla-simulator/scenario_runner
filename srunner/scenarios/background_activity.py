@@ -269,7 +269,6 @@ class BackgroundBehavior(AtomicBehavior):
         # Road variables
         self._road_actors = []
         self._road_back_actors = {}  # Dictionary mapping the actors behind the ego to their lane
-        self._road_ego_key = None
         self._road_extra_front_actors = 0
         self._road_sources = []
         self._road_checker_index = 0
@@ -1730,6 +1729,13 @@ class BackgroundBehavior(AtomicBehavior):
             self._initialise_junction_scenario(direction, remove_entries, remove_exits, remove_middle)
             py_trees.blackboard.Blackboard().set("BA_JunctionScenario", None, True)
 
+        # Handles road accident scenario (Accident and Construction)
+        handle_accident_data = py_trees.blackboard.Blackboard().get("BA_HandleAccidentScenario")
+        if handle_accident_data:
+            accident_wp, distance = handle_accident_data
+            self._handle_lanechange_scenario(accident_wp, distance)
+            py_trees.blackboard.Blackboard().set("BA_HandleAccidentScenario", None, True)
+
         self._compute_parameters()
 
     def _compute_parameters(self):
@@ -1781,8 +1787,27 @@ class BackgroundBehavior(AtomicBehavior):
                     actor.set_light_state(carla.VehicleLightState(lights))
 
             self._is_hard_break_scenario_active = True
-            self._activate_break_scenario = False
+            self._activate_break_scenario = False 
             self._next_scenario_time = self._break_duration
+
+    def _handle_lanechange_scenario(self, accident_wp, distance):
+        """
+        Handles the scenario in which the BA has to change lane.
+        """
+        ego_wp = self._route[self._route_index]
+
+        for actor in self._road_actors:
+            location = CarlaDataProvider.get_location(actor)
+            if location and not self._is_location_behind_ego(location):
+                actor_wp = self._map.get_waypoint(location)
+                if get_lane_key(actor_wp) == get_lane_key(ego_wp):
+                    lanechange_wp = accident_wp.get_left_lane().next(distance/4)[0]
+                    end_lanechange_wp = lanechange_wp.next(distance/2)[0]
+                    vehicle_path = [lanechange_wp.transform.location,
+                                        end_lanechange_wp.transform.location,
+                                        end_lanechange_wp.get_right_lane().next(distance/4)[0].transform.location]
+                    self._tm.set_path(actor, vehicle_path)
+                    ## maybe check here to activate lane changing lights
 
     #############################
     ##     Actor functions     ##
