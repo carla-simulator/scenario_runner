@@ -1191,14 +1191,16 @@ class WaitEndIntersection(AtomicCondition):
 
     """
     Atomic behavior that waits until the vehicles has gone outside the junction.
-    If currently inside no intersection, it will wait until one is found
+    If currently inside no intersection, it will wait until one is found.
+    If 'junction_id' is given, it will wait until that specific junction has finished
     """
 
-    def __init__(self, actor, debug=False, name="WaitEndIntersection"):
+    def __init__(self, actor, junction_id=None, debug=False, name="WaitEndIntersection"):
         super(WaitEndIntersection, self).__init__(name)
         self.actor = actor
         self.debug = debug
-        self.inside_junction = False
+        self._junction_id = junction_id
+        self._inside_junction = False
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def update(self):
@@ -1208,12 +1210,16 @@ class WaitEndIntersection(AtomicCondition):
         location = CarlaDataProvider.get_location(self.actor)
         waypoint = CarlaDataProvider.get_map().get_waypoint(location)
 
-        # Wait for the actor to enter a junction
-        if not self.inside_junction and waypoint.is_junction:
-            self.inside_junction = True
+        # Wait for the actor to enter a / the junction
+        if not self._inside_junction:
+            junction = waypoint.get_junction()
+            if not junction:
+                return new_status
+            if not self._junction_id or junction.id == self._junction_id:
+                self._inside_junction = True
 
         # And to leave it
-        if self.inside_junction and not waypoint.is_junction:
+        elif self._inside_junction and not waypoint.is_junction:
             if self.debug:
                 print("--- Leaving the junction")
             new_status = py_trees.common.Status.SUCCESS

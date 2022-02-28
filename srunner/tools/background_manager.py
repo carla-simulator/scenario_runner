@@ -117,6 +117,33 @@ class ActivateHardBreakScenario(AtomicBehavior):
         py_trees.blackboard.Blackboard().set("BA_ActivateHardBreakScenario", self._stop_duration, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
+class StopFrontVehicles(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that a HardBreak scenario has to be triggered.
+    'stop_duration' is the amount of time, in seconds, the vehicles will be stopped
+    """
+
+    def __init__(self, name="StopFrontVehicles"):
+        super(StopFrontVehicles, self).__init__(name)
+
+    def update(self):
+        py_trees.blackboard.Blackboard().set("BA_StopFrontVehicles", True, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class StartFrontVehicles(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that a HardBreak scenario has to be triggered.
+    'stop_duration' is the amount of time, in seconds, the vehicles will be stopped
+    """
+
+    def __init__(self, name="StartFrontVehicles"):
+        super(StartFrontVehicles, self).__init__(name)
+
+    def update(self):
+        py_trees.blackboard.Blackboard().set("BA_StartFrontVehicles", True, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
 
 class HandleCrossingActor(AtomicBehavior):
     """
@@ -157,28 +184,56 @@ class JunctionScenarioManager(AtomicBehavior):
         )
         return py_trees.common.Status.SUCCESS
 
-class RoadInitialiser(AtomicBehavior):
+
+class ExtentExitRoadSpace(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    Updates the blackboard to tell the background activity that an exit road needs more space
     """
-    def __init__(self, name="RoadInitialiser"):
-        super(RoadInitialiser, self).__init__(name)
+    def __init__(self, distance, direction, name="ExtentExitRoadSpace"):
+        self._distance = distance
+        self._direction = direction
+        super(ExtentExitRoadSpace, self).__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RoadInitialiser", True, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", [self._distance, self._direction], overwrite=True)
         return py_trees.common.Status.SUCCESS
 
-class HandleAccidentScenario(AtomicBehavior):
+
+class StopEntries(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    Updates the blackboard to tell the background activity that an exit road needs more space
     """
-    def __init__(self, accident_wp, distance, name="HandleAccidentScenario"):
-        self._accident_wp = accident_wp
-        self._distance = distance
-        super(HandleAccidentScenario, self).__init__(name)
+    def __init__(self, name="StopEntries"):
+        super(StopEntries, self).__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_HandleAccidentScenario", [self._accident_wp, self._distance], overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_StopEntries", True, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+class HandleStartAccidentScenario(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    """
+    def __init__(self, accident_wp, distance, name="HandleStartAccidentScenario"):
+        self._accident_wp = accident_wp
+        self._distance = distance
+        super(HandleStartAccidentScenario, self).__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_HandleStartAccidentScenario", [self._accident_wp, self._distance], overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+class HandleEndAccidentScenario(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    """
+    def __init__(self, name="HandleEndAccidentScenario"):
+        super(HandleEndAccidentScenario, self).__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
         return py_trees.common.Status.SUCCESS

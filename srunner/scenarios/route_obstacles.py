@@ -17,11 +17,11 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, BasicAgentBehavior
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import HandleAccidentScenario
+from srunner.tools.background_manager import HandleStartAccidentScenario, HandleEndAccidentScenario
 
 def convert_dict_to_transform(actor_dict):
     """
@@ -56,7 +56,7 @@ class Accident(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._drive_distance = 150
+        self._drive_distance = 120
         self._distance_to_accident = 100
         self._offset = 0.75
         self._first_distance = 10
@@ -130,8 +130,10 @@ class Accident(BasicScenario):
         """
         root = py_trees.composites.Sequence()
         if CarlaDataProvider.get_ego_vehicle_route():
-            root.add_child(HandleAccidentScenario(self._accident_wp, self._distance_to_accident))
+            root.add_child(HandleStartAccidentScenario(self._accident_wp, self._distance_to_accident))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        if CarlaDataProvider.get_ego_vehicle_route():
+            root.add_child(HandleEndAccidentScenario())
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))

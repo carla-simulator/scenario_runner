@@ -2503,15 +2503,16 @@ class ActorFlow(AtomicBehavior):
     - sink_location (carla.Location): Location at which actors will be deleted
     - spawn_distance: Distance between spawned actors
     - sink_distance: Actors closer to the sink than this distance will be deleted
+    - actors_speed: Speed of the actors part of the flow [m/s]
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
-                 actors_speed=30 / 3.6, name="ActorFlow"):
+                 actor_speed=20 / 3.6, acceleration=float('inf'), name="ActorFlow"):
         """
         Setup class members
         """
         super(ActorFlow, self).__init__(name)
-        self._rng = random.RandomState(2000)
+        self._rng = CarlaDataProvider.get_random_seed()
         self._world = CarlaDataProvider.get_world()
 
         self._source_wp = source_wp
@@ -2521,7 +2522,7 @@ class ActorFlow(AtomicBehavior):
         self._source_transform = self._source_wp.transform
 
         self._sink_dist = sink_dist
-        self._speed = actors_speed
+        self._speed = actor_speed
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2539,20 +2540,22 @@ class ActorFlow(AtomicBehavior):
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
         # To avoid multiple collisions, activate collision detection if one vehicle has already collided
-        stopped_actors = []
+        collision_found = False
         for actor, agent, _ in list(self._actor_agent_list):
             if not agent.is_constant_velocity_active:
-                stopped_actors.append(actor)
-        if stopped_actors:
+                collision_found = True
+                break
+        if collision_found:
             for actor, agent, _ in list(self._actor_agent_list):
                 agent.ignore_vehicles(False)
+                agent.stop_constant_velocity()
 
         # Control the vehicles, removing them when needed
         for actor_info in list(self._actor_agent_list):
             actor, agent, just_spawned = actor_info
-            if just_spawned:  # Move the vehicle to the ground. Importnat if flow starts at turns
+            if just_spawned:  # Move the vehicle to the ground. Important if flow starts at turns
                 ground_loc = self._world.ground_projection(actor.get_location(), 2)
-                if ground_loc.location:
+                if ground_loc:
                     initial_location = ground_loc.location
                     actor.set_location(initial_location)
                     actor_info[2] = False
