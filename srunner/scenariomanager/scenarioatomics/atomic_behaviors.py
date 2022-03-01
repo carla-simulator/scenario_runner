@@ -2018,7 +2018,8 @@ class WaypointFollower(AtomicBehavior):
             local_planner = LocalPlanner(  # pylint: disable=undefined-variable
                 actor, opt_dict={
                     'target_speed': self._target_speed * 3.6,
-                    'lateral_control_dict': self._args_lateral_dict})
+                    'lateral_control_dict': self._args_lateral_dict,
+                    'max_throttle': 1.0})
 
             if self._plan is not None:
                 if isinstance(self._plan[0], carla.Location):
@@ -2502,14 +2503,16 @@ class ActorFlow(AtomicBehavior):
     - sink_location (carla.Location): Location at which actors will be deleted
     - spawn_distance: Distance between spawned actors
     - sink_distance: Actors closer to the sink than this distance will be deleted
+    - actors_speed: Speed of the actors part of the flow [m/s]
     """
 
-    def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2, actors_speed=30/3.6, name="ActorFlow"):
+    def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
+                 actor_speed=20 / 3.6, acceleration=float('inf'), name="ActorFlow"):
         """
         Setup class members
         """
         super(ActorFlow, self).__init__(name)
-        self._rng = random.RandomState(2000)
+        self._rng = CarlaDataProvider.get_random_seed()
         self._world = CarlaDataProvider.get_world()
 
         self._source_wp = source_wp
@@ -2519,7 +2522,7 @@ class ActorFlow(AtomicBehavior):
         self._source_transform = self._source_wp.transform
 
         self._sink_dist = sink_dist
-        self._speed = actors_speed
+        self._speed = actor_speed
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2530,23 +2533,33 @@ class ActorFlow(AtomicBehavior):
         self._grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
         self._route = self._grp.trace_route(self._source_wp.transform.location, self._sink_wp.transform.location)
         self._opt_dict = {
-            "ignore_vehicles": True,
+            'ignore_vehicles': True,
+            'use_basic_behavior': True,
         }
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
         # To avoid multiple collisions, activate collision detection if one vehicle has already collided
-        stopped_actors = []
-        for actor, agent in list(self._actor_agent_list):
+        collision_found = False
+        for actor, agent, _ in list(self._actor_agent_list):
             if not agent.is_constant_velocity_active:
-                stopped_actors.append(actor)
-        if stopped_actors:
-            for actor, agent in list(self._actor_agent_list):
+                collision_found = True
+                break
+        if collision_found:
+            for actor, agent, _ in list(self._actor_agent_list):
                 agent.ignore_vehicles(False)
+                agent.stop_constant_velocity()
 
         # Control the vehicles, removing them when needed
         for actor_info in list(self._actor_agent_list):
-            actor, agent = actor_info
+            actor, agent, just_spawned = actor_info
+            if just_spawned:  # Move the vehicle to the ground. Important if flow starts at turns
+                ground_loc = self._world.ground_projection(actor.get_location(), 2)
+                if ground_loc:
+                    initial_location = ground_loc.location
+                    actor.set_location(initial_location)
+                    actor_info[2] = False
+
             sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
             if sink_distance < self._sink_dist:
                 actor.destroy()
@@ -2569,14 +2582,8 @@ class ActorFlow(AtomicBehavior):
             if actor is not None:
                 actor_agent = ConstantVelocityAgent(actor, 3.6 * self._speed, opt_dict=self._opt_dict)
                 actor_agent.set_global_plan(self._route, False)
-                self._actor_agent_list.append([actor, actor_agent])
+                self._actor_agent_list.append([actor, actor_agent, True])
                 self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
-
-                ground_loc = self._world.ground_projection(self._source_transform.location, 2)
-                if ground_loc.location:
-                    initial_location = ground_loc.location
-                    initial_location.z += 0.06
-                    actor.set_location(initial_location)
 
         return py_trees.common.Status.RUNNING
 
@@ -2585,7 +2592,7 @@ class ActorFlow(AtomicBehavior):
         Default terminate. Can be extended in derived class
         """
         try:
-            for actor, _ in self._actor_agent_list:
+            for actor, _, _ in self._actor_agent_list:
                 actor.destroy()
         except RuntimeError:
             pass  # Actor was already destroyed

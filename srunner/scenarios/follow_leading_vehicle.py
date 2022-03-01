@@ -38,7 +38,7 @@ from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
 
-from srunner.tools.background_manager import Scenario2Manager
+from srunner.tools.background_manager import StopFrontVehicles, StartFrontVehicles
 
 
 class FollowLeadingVehicle(BasicScenario):
@@ -330,7 +330,7 @@ class FollowLeadingVehicleRoute(BasicScenario):
         """
         self.timeout = timeout
         self._stop_duration = 15
-        self._end_time_condition = 30
+        self.end_distance = 15
 
         super(FollowLeadingVehicleRoute, self).__init__("FollowLeadingVehicleRoute",
                                                         ego_vehicles,
@@ -351,8 +351,10 @@ class FollowLeadingVehicleRoute(BasicScenario):
         then waits for a bit to check if the actor has collided.
         """
         sequence = py_trees.composites.Sequence("FollowLeadingVehicleRoute")
-        sequence.add_child(Scenario2Manager(self._stop_duration))
-        sequence.add_child(Idle(self._end_time_condition))
+        sequence.add_child(StopFrontVehicles())
+        sequence.add_child(Idle(self._stop_duration))
+        sequence.add_child(StartFrontVehicles())
+        sequence.add_child(DriveDistance(self.ego_vehicles[0], self.end_distance))
 
         return sequence
 

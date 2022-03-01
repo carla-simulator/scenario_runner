@@ -27,7 +27,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
-from srunner.tools.background_manager import Scenario4Manager
+from srunner.tools.background_manager import HandleCrossingActor
 
 
 def get_sidewalk_transform(waypoint):
@@ -163,7 +163,7 @@ class BaseVehicleTurning(BasicScenario):
 
         # On trigger behavior
         if self._ego_route is not None:
-            sequence.add_child(Scenario4Manager(self._spawn_dist))
+            sequence.add_child(HandleCrossingActor(self._spawn_dist))
 
         # First waiting behavior
         sequence.add_child(WaitEndIntersection(self.ego_vehicles[0]))

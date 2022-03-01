@@ -371,6 +371,7 @@ def generate_target_waypoint_in_route(waypoint, route):
     This method follow waypoints to a junction
     @returns a waypoint list according to turn input
     """
+    target_waypoint = None
     wmap = CarlaDataProvider.get_map()
     reached_junction = False
 
@@ -388,11 +389,9 @@ def generate_target_waypoint_in_route(waypoint, route):
     route_location = route[closest_index][0]
     index = closest_index
 
-    while True:
-        # Get the next route location
-        index = min(index + 1, len(route))
-        route_location = route[index][0]
-        road_option = route[index][1]
+    for i in range(index, len(route)):
+        route_location = route[i][0]
+        road_option = route[i][1]
 
         # Enter the junction
         if not reached_junction and (road_option in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
@@ -400,9 +399,10 @@ def generate_target_waypoint_in_route(waypoint, route):
 
         # End condition for the behavior, at the end of the junction
         if reached_junction and (road_option not in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
+            target_waypoint = route_location
             break
 
-    return wmap.get_waypoint(route_location)
+    return wmap.get_waypoint(target_waypoint)
 
 
 def choose_at_junction(current_waypoint, next_choices, direction=0):
@@ -716,6 +716,65 @@ def get_distance_between_actors(current, target, distance_type="euclidianDistanc
     distance = 0.0 if distance < 0.0 else distance
 
     return distance
+
+
+def get_same_dir_lanes(waypoint):
+    """Gets all the lanes with the same direction of the road of a wp"""
+    same_dir_wps = [waypoint]
+
+    # Check roads on the right
+    right_wp = waypoint
+    while True:
+        possible_right_wp = right_wp.get_right_lane()
+        if possible_right_wp is None or possible_right_wp.lane_type != carla.LaneType.Driving:
+            break
+        right_wp = possible_right_wp
+        same_dir_wps.append(right_wp)
+
+    # Check roads on the left
+    left_wp = waypoint
+    while True:
+        possible_left_wp = left_wp.get_left_lane()
+        if possible_left_wp is None or possible_left_wp.lane_type != carla.LaneType.Driving:
+            break
+        if possible_left_wp.lane_id * left_wp.lane_id < 0:
+            break
+        left_wp = possible_left_wp
+        same_dir_wps.insert(0, left_wp)
+
+    return same_dir_wps
+
+
+def get_opposite_dir_lanes(waypoint):
+    """Gets all the lanes with opposite direction of the road of a wp"""
+    other_dir_wps = []
+    other_dir_wp = None
+
+    # Get the first lane of the opposite direction
+    left_wp = waypoint
+    while True:
+        possible_left_wp = left_wp.get_left_lane()
+        if possible_left_wp is None:
+            break
+        if possible_left_wp.lane_id * left_wp.lane_id < 0:
+            other_dir_wp = possible_left_wp
+            break
+        left_wp = possible_left_wp
+
+    if not other_dir_wp:
+        return other_dir_wps
+
+    # Check roads on the right
+    right_wp = other_dir_wp
+    while True:
+        if right_wp.lane_type == carla.LaneType.Driving:
+            other_dir_wps.append(right_wp)
+        possible_right_wp = right_wp.get_right_lane()
+        if possible_right_wp is None:
+            break
+        right_wp = possible_right_wp
+
+    return other_dir_wps
 
 
 class RotatedRectangle(object):

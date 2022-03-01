@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="BycicleGroup_1" type="BycicleGroup" town="Town04">
+        <ego_vehicle x="-362.60" y="86.9" z="0" yaw="180" model="vehicle.lincoln.mkz_2017" />
+        <other_actor x="-409.70" y="36.2" z="0" yaw="270" model="vehicle.diamondback.century"/>
+        <bycicle_speed value="10"/> 
+        <bycicle_offset value="0.6"/>
+    </scenario>
+    <scenario name="Accident_1" type="Accident" town="Town04">
+        <ego_vehicle x="30.39" y="-285.92" z="2.8" yaw="-70" model="vehicle.lincoln.mkz_2017" />
+    </scenario>
+    <scenario name="Construction_1" type="ConstructionSetupCrossing" town="Town04">
+        <ego_vehicle x="30.39" y="-285.92" z="2.8" yaw="-70" model="vehicle.lincoln.mkz_2017" />
+    </scenario>
+</scenarios>

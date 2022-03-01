@@ -13,36 +13,38 @@ import py_trees
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior
 
 
-class RoadBehaviorManager(AtomicBehavior):
+class ChangeRoadBehavior(AtomicBehavior):
     """
     Updates the blackboard to change the parameters of the road behavior.
-    None values imply that these values won't be changed
+    None values imply that these values won't be changed.
 
     Args:
         num_front_vehicles (int): Amount of vehicles in front of the ego. Can't be negative
         num_back_vehicles (int): Amount of vehicles behind it. Can't be negative
         vehicle_dist (float): Minimum distance between the road vehicles. Must between 0 and 'spawn_dist'
         spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
+        switch_source (bool): (De)activatea the road sources.
     """
 
     def __init__(self, num_front_vehicles=None, num_back_vehicles=None,
-                 vehicle_dist=None, spawn_dist=None, name="RoadBehaviorManager"):
+                 vehicle_dist=None, spawn_dist=None, switch_source=None, name="ChangeRoadBehavior"):
         self._num_front_vehicles = num_front_vehicles
         self._num_back_vehicles = num_back_vehicles
         self._vehicle_dist = vehicle_dist
         self._spawn_dist = spawn_dist
-        super(RoadBehaviorManager, self).__init__(name)
+        self._switch_source = switch_source
+        super(ChangeRoadBehavior, self).__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_RoadBehavior",
-            [self._num_front_vehicles, self._num_back_vehicles, self._vehicle_dist, self._spawn_dist],
+            "BA_ChangeRoadBehavior",
+            [self._num_front_vehicles, self._num_back_vehicles, self._vehicle_dist, self._spawn_dist, self._switch_source],
             overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
 
-class OppositeBehaviorManager(AtomicBehavior):
+class ChangeOppositeBehavior(AtomicBehavior):
     """
     Updates the blackboard to change the parameters of the opposite road behavior.
     None values imply that these values won't be changed
@@ -55,23 +57,23 @@ class OppositeBehaviorManager(AtomicBehavior):
     """
 
     def __init__(self, source_dist=None, vehicle_dist=None, spawn_dist=None,
-                 max_actors=None, name="OppositeBehaviorManager"):
+                 max_actors=None, name="ChangeOppositeBehavior"):
         self._source_dist = source_dist
         self._vehicle_dist = vehicle_dist
         self._spawn_dist = spawn_dist
         self._max_actors = max_actors
-        super(OppositeBehaviorManager, self).__init__(name)
+        super(ChangeOppositeBehavior, self).__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_OppositeBehavior",
+            "BA_ChangeOppositeBehavior",
             [self._source_dist, self._vehicle_dist, self._spawn_dist, self._max_actors],
             overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
 
-class JunctionBehaviorManager(AtomicBehavior):
+class ChangeJunctionBehavior(AtomicBehavior):
     """
     Updates the blackboard to change the parameters of the junction behavior.
     None values imply that these values won't be changed
@@ -85,116 +87,153 @@ class JunctionBehaviorManager(AtomicBehavior):
     """
 
     def __init__(self, source_dist=None, vehicle_dist=None, spawn_dist=None,
-                 max_actors=None, name="JunctionBehaviorManager"):
+                 max_actors=None, name="ChangeJunctionBehavior"):
         self._source_dist = source_dist
         self._vehicle_dist = vehicle_dist
         self._spawn_dist = spawn_dist
         self._max_actors = max_actors
-        super(JunctionBehaviorManager, self).__init__(name)
+        super(ChangeJunctionBehavior, self).__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_JunctionBehavior",
+            "BA_ChangeJunctionBehavior",
             [self._source_dist, self._vehicle_dist, self._spawn_dist, self._max_actors],
             overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
 
-class Scenario2Manager(AtomicBehavior):
+class ActivateHardBreakScenario(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a Scenario2 has to be triggered.
+    Updates the blackboard to tell the background activity that a HardBreak scenario has to be triggered.
     'stop_duration' is the amount of time, in seconds, the vehicles will be stopped
     """
 
-    def __init__(self, stop_duration=10, name="Scenario2Manager"):
+    def __init__(self, stop_duration=10, name="ActivateHardBreakScenario"):
         self._stop_duration = stop_duration
-        super(Scenario2Manager, self).__init__(name)
+        super(ActivateHardBreakScenario, self).__init__(name)
 
     def update(self):
-        py_trees.blackboard.Blackboard().set("BA_Scenario2", self._stop_duration, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_ActivateHardBreakScenario", self._stop_duration, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+class StopFrontVehicles(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that a HardBreak scenario has to be triggered.
+    'stop_duration' is the amount of time, in seconds, the vehicles will be stopped
+    """
+
+    def __init__(self, name="StopFrontVehicles"):
+        super(StopFrontVehicles, self).__init__(name)
+
+    def update(self):
+        py_trees.blackboard.Blackboard().set("BA_StopFrontVehicles", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class Scenario4Manager(AtomicBehavior):
+class StartFrontVehicles(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a Scenario4 has been triggered.
+    Updates the blackboard to tell the background activity that a HardBreak scenario has to be triggered.
+    'stop_duration' is the amount of time, in seconds, the vehicles will be stopped
+    """
+
+    def __init__(self, name="StartFrontVehicles"):
+        super(StartFrontVehicles, self).__init__(name)
+
+    def update(self):
+        py_trees.blackboard.Blackboard().set("BA_StartFrontVehicles", True, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class HandleCrossingActor(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that a crossing actor has been triggered.
     'crossing_dist' is the distance between the crossing actor and the junction
     """
 
-    def __init__(self, crossing_dist=10, name="Scenario4Manager"):
+    def __init__(self, crossing_dist=10, name="HandleCrossingActor"):
         self._crossing_dist = crossing_dist
-        super(Scenario4Manager, self).__init__(name)
+        super(HandleCrossingActor, self).__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_Scenario4", self._crossing_dist, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_HandleCrossingActor", self._crossing_dist, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class Scenario7Manager(AtomicBehavior):
+class JunctionScenarioManager(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a Scenario7 has been triggered
+    Updates the blackboard to tell the background activity that a JunctionScenarioManager has been triggered
     'entry_direction' is the direction from which the incoming traffic enters the junction. It should be
     something like 'left', 'right' or 'opposite'
     """
 
-    def __init__(self, entry_direction, name="Scenario7Manager"):
+    def __init__(self, entry_direction, remove_entry, remove_exit, remove_middle, name="Scenario7Manager"):
         self._entry_direction = entry_direction
-        super(Scenario7Manager, self).__init__(name)
+        self._remove_entry = remove_entry
+        self._remove_exit = remove_exit
+        self._remove_middle = remove_middle
+        super(JunctionScenarioManager, self).__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_Scenario7", self._entry_direction, overwrite=True)
+        py_trees.blackboard.Blackboard().set(
+            "BA_JunctionScenario",
+            [self._entry_direction, self._remove_entry, self._remove_exit, self._remove_middle],
+            overwrite=True
+        )
         return py_trees.common.Status.SUCCESS
 
 
-class Scenario8Manager(AtomicBehavior):
+class ExtentExitRoadSpace(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a Scenario8 has been triggered
-    'entry_direction' is the direction from which the incoming traffic enters the junction. It should be
-    something like 'left', 'right' or 'opposite'
+    Updates the blackboard to tell the background activity that an exit road needs more space
     """
-
-    def __init__(self, entry_direction, name="Scenario8Manager"):
-        self._entry_direction = entry_direction
-        super(Scenario8Manager, self).__init__(name)
+    def __init__(self, distance, direction, name="ExtentExitRoadSpace"):
+        self._distance = distance
+        self._direction = direction
+        super(ExtentExitRoadSpace, self).__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_Scenario8", self._entry_direction, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", [self._distance, self._direction], overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class Scenario9Manager(AtomicBehavior):
+class StopEntries(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a Scenario9 has been triggered
-    'entry_direction' is the direction from which the incoming traffic enters the junction. It should be
-    something like 'left', 'right' or 'opposite'
+    Updates the blackboard to tell the background activity that an exit road needs more space
     """
-
-    def __init__(self, entry_direction, name="Scenario9Manager"):
-        self._entry_direction = entry_direction
-        super(Scenario9Manager, self).__init__(name)
+    def __init__(self, name="StopEntries"):
+        super(StopEntries, self).__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_Scenario9", self._entry_direction, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_StopEntries", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
-
-class Scenario10Manager(AtomicBehavior):
+class HandleStartAccidentScenario(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a Scenario10 has been triggered
-    'entry_direction' is the direction from which the incoming traffic enters the junction. It should be
-    something like 'left', 'right' or 'opposite'
+    Updates the blackboard to tell the background activity that the road behavior has to be initialized
     """
-
-    def __init__(self, entry_direction, name="Scenario10Manager"):
-        self._entry_direction = entry_direction
-        super(Scenario10Manager, self).__init__(name)
+    def __init__(self, accident_wp, distance, name="HandleStartAccidentScenario"):
+        self._accident_wp = accident_wp
+        self._distance = distance
+        super(HandleStartAccidentScenario, self).__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_Scenario10", self._entry_direction, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_HandleStartAccidentScenario", [self._accident_wp, self._distance], overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+class HandleEndAccidentScenario(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    """
+    def __init__(self, name="HandleEndAccidentScenario"):
+        super(HandleEndAccidentScenario, self).__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
         return py_trees.common.Status.SUCCESS

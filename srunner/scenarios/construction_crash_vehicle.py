@@ -16,10 +16,27 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
-from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing
+from srunner.tools.background_manager import HandleStartAccidentScenario, HandleEndAccidentScenario
 
+def convert_dict_to_transform(actor_dict):
+    """
+    Convert a JSON string to a CARLA transform
+    """
+    return carla.Transform(
+        carla.Location(
+            x=float(actor_dict['x']),
+            y=float(actor_dict['y']),
+            z=float(actor_dict['z'])
+        ),
+        carla.Rotation(
+            roll=0.0,
+            pitch=0.0,
+            yaw=float(actor_dict['yaw'])
+        )
+    )
 
 class ConstructionSetupCrossing(StationaryObjectCrossing):
 
@@ -31,49 +48,46 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
     This is a single ego vehicle scenario
     """
 
-    def __init__(
-            self,
-            world,
-            ego_vehicles,
-            config,
-            randomize=False,
-            debug_mode=False,
-            criteria_enable=True,
-            timeout=60):
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False,
+                 criteria_enable=True, timeout=60):
         """
         Setup all relevant parameters and create scenario
+        and instantiate scenario manager
         """
-        super(
-            ConstructionSetupCrossing,
-            self).__init__(
-            world,
-            ego_vehicles=ego_vehicles,
-            config=config,
-            randomize=randomize,
-            debug_mode=debug_mode,
-            criteria_enable=criteria_enable)
+        self._world = world
+        self._map = CarlaDataProvider.get_map()
+        self.timeout = timeout
+        self._drive_distance = 150
+        self._distance_to_construction = 100
+        self.construction_wp = None
+
+        super(ConstructionSetupCrossing, self).__init__(world,
+                                                        ego_vehicles,
+                                                        config,
+                                                        randomize,
+                                                        debug_mode,
+                                                        criteria_enable)
 
     def _initialize_actors(self, config):
         """
         Custom initialization
         """
-        _start_distance = 40
         lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance_from_wp(
-            self._reference_waypoint, _start_distance)
-        waypoint = self._wmap.get_waypoint(location)
-        self._create_construction_setup(waypoint.transform, lane_width)
+        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
+        construction_wps = starting_wp.next(self._distance_to_construction)
+        if not construction_wps: 
+            raise ValueError("Couldn't find a viable position to set up the accident actors")
+        self.construction_wp = construction_wps[0]
 
-    def create_cones_side(
-            self,
-            start_transform,
-            forward_vector,
-            z_inc=0,
-            cone_length=0,
-            cone_offset=0):
-        """
-        Creates One Side of the Cones
-        """
+        self._create_construction_setup(self.construction_wp.transform, lane_width)
+        pre_accident_wps = starting_wp.next(self._distance_to_construction/2)
+        if not construction_wps: 
+            raise ValueError("Couldn't find a viable position to set up the accident actors")
+        self.construction_wp = pre_accident_wps[0]
+
+    def create_cones_side(self, start_transform, forward_vector, z_inc=0, 
+                          cone_length=0, cone_offset=0):
+        
         _dist = 0
         while _dist < (cone_length * cone_offset):
             # Move forward
@@ -104,7 +118,7 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         _setup = {'lengths': [0, 6, 3], 'offsets': [0, 2, 1]}
         _z_increment = 0.1
 
-        ############################# Traffic Warning and Debris ##############
+        # Traffic warning and debris 
         for key, value in _initial_offset.items():
             if key == 'cones':
                 continue
@@ -121,7 +135,7 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
             static.set_simulate_physics(True)
             self.other_actors.append(static)
 
-        ############################# Cones ###################################
+        # Cones
         side_transform = carla.Transform(
             start_transform.location,
             start_transform.rotation)
@@ -145,21 +159,27 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         """
         Only behavior here is to wait
         """
-        # leaf nodes
-        actor_stand = Idle(15)
-
-        end_condition = DriveDistance(
-            self.ego_vehicles[0],
-            self._ego_vehicle_distance_driven)
-
-        # non leaf nodes
-        scenario_sequence = py_trees.composites.Sequence()
-
-        # building tree
-        scenario_sequence.add_child(actor_stand)
-
+        root = py_trees.composites.Sequence()
+        if CarlaDataProvider.get_ego_vehicle_route():
+            root.add_child(HandleStartAccidentScenario(self.construction_wp, self._distance_to_construction))
+        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        if CarlaDataProvider.get_ego_vehicle_route():
+            root.add_child(HandleEndAccidentScenario())
+        root.add_child(Idle(15))
         for i, _ in enumerate(self.other_actors):
-            scenario_sequence.add_child(ActorDestroy(self.other_actors[i]))
-        scenario_sequence.add_child(end_condition)
+            root.add_child(ActorDestroy(self.other_actors[i]))
+        return root
 
-        return scenario_sequence
+
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        return [CollisionTest(self.ego_vehicles[0])]
+
+    def __del__(self):
+        """
+        Remove all actors and traffic lights upon deletion
+        """
+        self.remove_all_actors()
