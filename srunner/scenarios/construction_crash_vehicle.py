@@ -18,8 +18,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestro
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
-from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing
+from srunner.tools.background_manager import HandleStartAccidentScenario, HandleEndAccidentScenario
 
 def convert_dict_to_transform(actor_dict):
     """
@@ -58,7 +58,8 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
         self._drive_distance = 150
-        self._distance_to_construction = 50
+        self._distance_to_construction = 100
+        self.construction_wp = None
 
         super(ConstructionSetupCrossing, self).__init__(world,
                                                         ego_vehicles,
@@ -72,20 +73,17 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         Custom initialization
         """
         lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance_from_wp(
-            self._reference_waypoint, self._distance_to_construction)
-        starting_wp = self._map.get_waypoint(location)
+        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
         construction_wps = starting_wp.next(self._distance_to_construction)
         if not construction_wps: 
             raise ValueError("Couldn't find a viable position to set up the accident actors")
-        construction_wp = construction_wps[0]
-        while construction_wp.is_junction:
-            construction_wps.pop(0)
-            if not construction_wps:
-                raise ValueError("Couldn't find a viable position to set up the accident actors")
-            construction_wp = construction_wps[0]
+        self.construction_wp = construction_wps[0]
 
-        self._create_construction_setup(construction_wp.transform, lane_width)
+        self._create_construction_setup(self.construction_wp.transform, lane_width)
+        pre_accident_wps = starting_wp.next(self._distance_to_construction/2)
+        if not construction_wps: 
+            raise ValueError("Couldn't find a viable position to set up the accident actors")
+        self.construction_wp = pre_accident_wps[0]
 
     def create_cones_side(self, start_transform, forward_vector, z_inc=0, 
                           cone_length=0, cone_offset=0):
@@ -162,7 +160,11 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         Only behavior here is to wait
         """
         root = py_trees.composites.Sequence()
+        if CarlaDataProvider.get_ego_vehicle_route():
+            root.add_child(HandleStartAccidentScenario(self.construction_wp, self._distance_to_construction))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        if CarlaDataProvider.get_ego_vehicle_route():
+            root.add_child(HandleEndAccidentScenario())
         root.add_child(Idle(15))
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))

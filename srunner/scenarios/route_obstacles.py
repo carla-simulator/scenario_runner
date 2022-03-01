@@ -67,6 +67,7 @@ class Accident(BasicScenario):
                                        ego_vehicles,
                                        config,
                                        world,
+                                       randomize,
                                        debug_mode,
                                        criteria_enable=criteria_enable)
 

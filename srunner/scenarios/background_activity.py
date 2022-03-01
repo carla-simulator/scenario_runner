@@ -1836,6 +1836,8 @@ class BackgroundBehavior(AtomicBehavior):
                 self._tm.set_path(actor, vehicle_path)
                 ## maybe check here to activate lane changing lights
                 self._road_extra_front_actors += 1
+            else:
+                self._tm.vehicle_percentage_speed_difference(actor, 100)
 
     #############################
     ##     Actor functions     ##
