@@ -2507,19 +2507,24 @@ class ActorFlow(AtomicBehavior):
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, acceleration=float('inf'), name="ActorFlow"):
+                 actor_speed=20 / 3.6, name="ActorFlow"):
         """
         Setup class members
         """
         super(ActorFlow, self).__init__(name)
         self._rng = CarlaDataProvider.get_random_seed()
         self._world = CarlaDataProvider.get_world()
+        self._tm = CarlaDataProvider.get_client().get_trafficmanager(CarlaDataProvider.get_traffic_manager_port())
+
+        self._collision_bp = self._world.get_blueprint_library().find('sensor.other.collision')
+        self._is_constant_velocity_active = True
 
         self._source_wp = source_wp
         self._sink_wp = sink_wp
 
         self._sink_location = self._sink_wp.transform.location
         self._source_transform = self._source_wp.transform
+        self._source_location = self._source_transform.location
 
         self._sink_dist = sink_dist
         self._speed = actor_speed
@@ -2528,74 +2533,72 @@ class ActorFlow(AtomicBehavior):
         self._max_spawn_dist = spawn_dist_interval[1]
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
-        self._actor_agent_list = []
-        self._route = []
-        self._grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
-        self._route = self._grp.trace_route(self._source_wp.transform.location, self._sink_wp.transform.location)
-        self._opt_dict = {
-            'ignore_vehicles': True,
-            'use_basic_behavior': True,
-        }
+        self._actor_list = []
+        self._collision_sensor_list = []
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
-        # To avoid multiple collisions, activate collision detection if one vehicle has already collided
-        collision_found = False
-        for actor, agent, _ in list(self._actor_agent_list):
-            if not agent.is_constant_velocity_active:
-                collision_found = True
-                break
-        if collision_found:
-            for actor, agent, _ in list(self._actor_agent_list):
-                agent.ignore_vehicles(False)
-                agent.stop_constant_velocity()
-
         # Control the vehicles, removing them when needed
-        for actor_info in list(self._actor_agent_list):
-            actor, agent, just_spawned = actor_info
-            if just_spawned:  # Move the vehicle to the ground. Important if flow starts at turns
-                ground_loc = self._world.ground_projection(actor.get_location(), 2)
-                if ground_loc:
-                    initial_location = ground_loc.location
-                    actor.set_location(initial_location)
-                    actor_info[2] = False
+        for actor in list(self._actor_list):
+
+            # TODO: Hack as hybrid mode overwrites the set target velocity
+            speed_limit = actor.get_speed_limit()
+            speed_perc = (speed_limit - 3.6 * self._speed) / speed_limit * 100
+            self._tm.vehicle_percentage_speed_difference(actor, speed_perc)
 
             sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
             if sink_distance < self._sink_dist:
                 actor.destroy()
-                self._actor_agent_list.remove(actor_info)
-            else:
-                control = agent.run_step()
-                actor.apply_control(control)
+                self._actor_list.remove(actor)
 
         # Spawn new actors if needed
-        if len(self._actor_agent_list) == 0:
+        if len(self._actor_list) == 0:
             distance = self._spawn_dist + 1
         else:
-            actor_location = CarlaDataProvider.get_location(self._actor_agent_list[-1][0])
+            actor_location = CarlaDataProvider.get_location(self._actor_list[-1])
             distance = self._source_transform.location.distance(actor_location)
 
         if distance > self._spawn_dist:
             actor = CarlaDataProvider.request_new_actor(
                 'vehicle.*', self._source_transform, rolename='scenario', safe_blueprint=True, tick=False
             )
-            if actor is not None:
-                actor_agent = ConstantVelocityAgent(actor, 3.6 * self._speed, opt_dict=self._opt_dict)
-                actor_agent.set_global_plan(self._route, False)
-                self._actor_agent_list.append([actor, actor_agent, True])
-                self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+            if actor is None:
+                return py_trees.common.Status.RUNNING
+
+            actor.set_autopilot(True)
+            self._tm.set_path(actor, [self._source_location, self._sink_location])
+
+            if self._is_constant_velocity_active:
+                self._tm.ignore_vehicles_percentage(actor, 100)
+                self._tm.auto_lane_change(actor, False)
+
+                # TODO: Hack as the TM doesn't allow a set target velocity
+                actor.enable_constant_velocity(carla.Vector3D(self._speed, 0, 0))
+            self._actor_list.append(actor)
+            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+            sensor = self._world.spawn_actor(self._collision_bp, carla.Transform(), attach_to=actor)
+            sensor.listen(lambda _: self.stop_constant_velocity())
+            self._collision_sensor_list.append(sensor)
 
         return py_trees.common.Status.RUNNING
+
+    def stop_constant_velocity(self):
+        """Stops the constant velocity behavior"""
+        self._is_constant_velocity_active = False
+        for actor in self._actor_list:
+            actor.disable_constant_velocity()
+            self._tm.ignore_vehicles_percentage(actor, 0)
 
     def terminate(self, new_status):
         """
         Default terminate. Can be extended in derived class
         """
-        try:
-            for actor, _, _ in self._actor_agent_list:
+        for actor in self._actor_list:
+            try:
                 actor.destroy()
-        except RuntimeError:
-            pass  # Actor was already destroyed
+            except RuntimeError:
+                pass  # Actor was already destroyed
 
 
 class TrafficLightFreezer(AtomicBehavior):

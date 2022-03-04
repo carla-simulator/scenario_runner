@@ -27,18 +27,17 @@ class ChangeRoadBehavior(AtomicBehavior):
     """
 
     def __init__(self, num_front_vehicles=None, num_back_vehicles=None,
-                 vehicle_dist=None, spawn_dist=None, switch_source=None, name="ChangeRoadBehavior"):
+                 vehicle_dist=None, spawn_dist=None, name="ChangeRoadBehavior"):
         self._num_front_vehicles = num_front_vehicles
         self._num_back_vehicles = num_back_vehicles
         self._vehicle_dist = vehicle_dist
         self._spawn_dist = spawn_dist
-        self._switch_source = switch_source
         super(ChangeRoadBehavior, self).__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
             "BA_ChangeRoadBehavior",
-            [self._num_front_vehicles, self._num_back_vehicles, self._vehicle_dist, self._spawn_dist, self._switch_source],
+            [self._num_front_vehicles, self._num_back_vehicles, self._vehicle_dist, self._spawn_dist],
             overwrite=True
         )
         return py_trees.common.Status.SUCCESS
@@ -102,20 +101,6 @@ class ChangeJunctionBehavior(AtomicBehavior):
         )
         return py_trees.common.Status.SUCCESS
 
-
-class ActivateHardBreakScenario(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that a HardBreak scenario has to be triggered.
-    'stop_duration' is the amount of time, in seconds, the vehicles will be stopped
-    """
-
-    def __init__(self, stop_duration=10, name="ActivateHardBreakScenario"):
-        self._stop_duration = stop_duration
-        super(ActivateHardBreakScenario, self).__init__(name)
-
-    def update(self):
-        py_trees.blackboard.Blackboard().set("BA_ActivateHardBreakScenario", self._stop_duration, overwrite=True)
-        return py_trees.common.Status.SUCCESS
 
 class StopFrontVehicles(AtomicBehavior):
     """
@@ -202,7 +187,7 @@ class ExtentExitRoadSpace(AtomicBehavior):
 
 class StopEntries(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that an exit road needs more space
+    Updates the blackboard to tell the background activity to stop all junction entries
     """
     def __init__(self, name="StopEntries"):
         super(StopEntries, self).__init__(name)
@@ -211,6 +196,21 @@ class StopEntries(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_StopEntries", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
+
+
+class SwitchRouteSources(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to (de)activate all route sources
+    """
+    def __init__(self, enabled=True, name="SwitchRouteSources"):
+        self._enabled = enabled
+        super(SwitchRouteSources, self).__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_SwitchRouteSources", self._enabled, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
 
 class HandleStartAccidentScenario(AtomicBehavior):
     """
@@ -225,6 +225,7 @@ class HandleStartAccidentScenario(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_HandleStartAccidentScenario", [self._accident_wp, self._distance], overwrite=True)
         return py_trees.common.Status.SUCCESS
+
 
 class HandleEndAccidentScenario(AtomicBehavior):
     """
