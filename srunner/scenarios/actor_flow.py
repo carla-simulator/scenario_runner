@@ -23,7 +23,10 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation, WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import ChangeRoadBehavior, JunctionScenarioManager, ExtentExitRoadSpace, StopEntries
+from srunner.tools.background_manager import (SwitchRouteSources,
+                                              JunctionScenarioManager,
+                                              ExtentExitRoadSpace,
+                                              StopEntries)
 from srunner.tools.scenario_helper import get_same_dir_lanes
 
 def convert_dict_to_location(actor_dict):
@@ -112,10 +115,10 @@ class EnterActorFlow(BasicScenario):
                     sequence.add_child(ExtentExitRoadSpace(distance=extra_space, direction='left'))
                     break
 
-            sequence.add_child(ChangeRoadBehavior(switch_source=False))
+            sequence.add_child(SwitchRouteSources(False))
         sequence.add_child(root)
         if CarlaDataProvider.get_ego_vehicle_route():
-            sequence.add_child(ChangeRoadBehavior(switch_source=True))
+            sequence.add_child(SwitchRouteSources(True))
 
         return sequence
 
