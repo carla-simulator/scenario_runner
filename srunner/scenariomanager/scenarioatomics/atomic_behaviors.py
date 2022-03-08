@@ -753,7 +753,7 @@ class ChangeActorWaypoints(AtomicBehavior):
              in synchronous mode
     """
 
-    def __init__(self, actor, waypoints, name="ChangeActorWaypoints"):
+    def __init__(self, actor, waypoints, times=None, name="ChangeActorWaypoints"):
         """
         Setup parameters
         """
@@ -761,6 +761,14 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         self._waypoints = waypoints
         self._start_time = None
+        self._times = times
+        self._speeds = None
+
+    def _compute_speeds(self, locations):
+        distances = np.array([calculate_distance(location, next_location)
+                              for location, next_location in zip(locations[:-1], locations[1:])])
+        delta_times = np.diff(self._times)
+        self._speeds = distances / delta_times
 
     def initialise(self):
         """
@@ -790,6 +798,9 @@ class ChangeActorWaypoints(AtomicBehavior):
             carla_transforms = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
                 osc_point)
             carla_route_elements.append((carla_transforms, routing_option))
+
+        if self._times is not None:
+            self._compute_speeds([carla_route_element[0].location for carla_route_element in carla_route_elements])
 
         # Obtain final route, considering the routing option
         # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
@@ -861,12 +872,15 @@ class ChangeActorWaypoints(AtomicBehavior):
         if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
             return py_trees.common.Status.SUCCESS
 
-        new_status = py_trees.common.Status.RUNNING
-
         if actor_dict[self._actor.id].check_reached_waypoint_goal():
-            new_status = py_trees.common.Status.SUCCESS
+            return py_trees.common.Status.SUCCESS
 
-        return new_status
+        if self._times is not None:
+            current_relative_time = GameTime.get_time() - self._start_time
+            speed = np.interp(current_relative_time, np.array(self._times[1:]) - self._times[0], self._speeds)
+            actor_dict[self._actor.id].update_target_speed(speed)
+
+        return py_trees.common.Status.RUNNING
 
 
 class ChangeActorLateralMotion(AtomicBehavior):
