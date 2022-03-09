@@ -74,7 +74,7 @@ class BaseVehicleTurning(BasicScenario):
         self._wmap = CarlaDataProvider.get_map()
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
-        self._ego_route = CarlaDataProvider.get_ego_vehicle_route()
+        self._ego_route = config.route
 
         self._start_distance = 10
         self._spawn_dist = self._start_distance
@@ -155,14 +155,14 @@ class BaseVehicleTurning(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence(name="CrossingActorIntersection")
         collision_location = self._collision_wp.transform.location
         collision_distance = collision_location.distance(self._adversary_transform.location)
         collision_duration = collision_distance / self._adversary_speed
         collision_time_trigger = collision_duration + self._reaction_time
 
         # On trigger behavior
-        if self._ego_route is not None:
+        if self.route_mode:
             sequence.add_child(HandleCrossingActor(self._spawn_dist))
 
         # First waiting behavior
@@ -201,11 +201,7 @@ class BaseVehicleTurning(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        criteria = []
-        collision_criterion = CollisionTest(self.ego_vehicles[0])
-
-        criteria.append(collision_criterion)
-        return criteria
+        return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
         """
@@ -260,3 +256,9 @@ class VehicleTurningRoute(BaseVehicleTurning):
         self._subtype = 'route'
         super(VehicleTurningRoute, self).__init__(
             world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout, "VehicleTurningRoute")
+
+    def _create_test_criteria(self):
+        """
+        Empty, the route already has a collision criteria
+        """
+        return []

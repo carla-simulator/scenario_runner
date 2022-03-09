@@ -113,9 +113,9 @@ class ControlLoss(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        criteria = []
-        criteria.append(CollisionTest(self.ego_vehicles[0]))
-        return criteria
+        if self.route_mode:
+            return []
+        return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
         """

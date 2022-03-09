@@ -189,7 +189,7 @@ class BackgroundActivity(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        pass
+        return []
 
     def __del__(self):
         """
@@ -203,7 +203,7 @@ class BackgroundBehavior(AtomicBehavior):
     Handles the background activity
     """
 
-    def __init__(self, ego_actor, route, night_mode=False, debug=True, name="BackgroundBehavior"):
+    def __init__(self, ego_actor, route, night_mode=False, debug=False, name="BackgroundBehavior"):
         """
         Setup class members
         """

@@ -405,23 +405,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return relevant_traffic_light
 
     @staticmethod
-    def set_ego_vehicle_route(route):
-        """
-        Set the route of the ego vehicle
-
-        @todo extend ego_vehicle_route concept to support multi ego_vehicle scenarios
-        """
-        CarlaDataProvider._ego_vehicle_route = route
-
-    @staticmethod
-    def get_ego_vehicle_route():
-        """
-        returns the currently set route of the ego vehicle
-        Note: Can be None
-        """
-        return CarlaDataProvider._ego_vehicle_route
-
-    @staticmethod
     def generate_spawn_points():
         """
         Generate spawn points for the current map

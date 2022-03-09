@@ -160,22 +160,23 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         Only behavior here is to wait
         """
         root = py_trees.composites.Sequence()
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             root.add_child(HandleStartAccidentScenario(self.construction_wp, self._distance_to_construction))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             root.add_child(HandleEndAccidentScenario())
         root.add_child(Idle(15))
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
         return root
 
-
     def _create_test_criteria(self):
         """
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
+        if self.route_mode:
+            return []
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):

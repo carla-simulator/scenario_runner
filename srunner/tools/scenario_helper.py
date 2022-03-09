@@ -378,19 +378,19 @@ def generate_target_waypoint_in_route(waypoint, route):
     # Get the route location
     shortest_distance = float('inf')
     for index, route_pos in enumerate(route):
-        wp = route_pos[0]
+        route_location = route_pos[0].location
         trigger_location = waypoint.transform.location
 
-        dist_to_route = trigger_location.distance(wp)
+        dist_to_route = trigger_location.distance(route_location)
         if dist_to_route <= shortest_distance:
             closest_index = index
             shortest_distance = dist_to_route
 
-    route_location = route[closest_index][0]
+    route_location = route[closest_index][0].location
     index = closest_index
 
     for i in range(index, len(route)):
-        route_location = route[i][0]
+        route_location = route[i][0].location
         road_option = route[i][1]
 
         # Enter the junction
