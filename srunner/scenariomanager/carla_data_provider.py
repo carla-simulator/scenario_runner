@@ -456,10 +456,13 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             blueprints = CarlaDataProvider._blueprint_library.filter(model)
             blueprints_ = []
             if safe:
+                # Safe vehicles are those that can move through all roads.
+                # This means that big vehicles such as ambulance and trucks are removed,
+                # as well as 2-wheeled ones as they can go through highways
                 for bp in blueprints:
                     if bp.id.endswith('firetruck') or bp.id.endswith('ambulance') \
+                            or bp.id.endswith('carlacola') or bp.id.endswith('cybertruck') \
                             or int(bp.get_attribute('number_of_wheels')) != 4:
-                        # Two wheeled vehicles take much longer to render + bicicles shouldn't behave like cars
                         continue
                     blueprints_.append(bp)
             else:
