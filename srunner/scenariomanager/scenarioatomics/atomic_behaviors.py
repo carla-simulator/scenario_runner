@@ -2540,12 +2540,6 @@ class ActorFlow(AtomicBehavior):
         """Controls the created actors and creaes / removes other when needed"""
         # Control the vehicles, removing them when needed
         for actor in list(self._actor_list):
-
-            # TODO: Hack as hybrid mode overwrites the set target velocity
-            speed_limit = actor.get_speed_limit()
-            speed_perc = (speed_limit - 3.6 * self._speed) / speed_limit * 100
-            self._tm.vehicle_percentage_speed_difference(actor, speed_perc)
-
             sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
             if sink_distance < self._sink_dist:
                 actor.destroy()
@@ -2571,9 +2565,8 @@ class ActorFlow(AtomicBehavior):
             if self._is_constant_velocity_active:
                 self._tm.ignore_vehicles_percentage(actor, 100)
                 self._tm.auto_lane_change(actor, False)
-
-                # TODO: Hack as the TM doesn't allow a set target velocity
-                actor.enable_constant_velocity(carla.Vector3D(self._speed, 0, 0))
+                self._tm.set_desired_speed(actor, 3.6 * self._speed)
+                actor.enable_constant_velocity(carla.Vector3D(self._speed, 0, 0))  # For when physics are active
             self._actor_list.append(actor)
             self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
