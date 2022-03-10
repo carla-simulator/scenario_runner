@@ -587,10 +587,8 @@ class OpenScenarioParser(object):
             catalogs: XML Catalogs that could contain the trajectory
 
         returns:
-           waypoints: List of trajectory waypoints = (waypoint, routing strategy) and times
-                      where the strategy is a string indicating if the fastest/shortest/etc.
-                      route should be used. For now, it will always be "shortest",
-                      as only polylines are supported
+           waypoints: List of trajectory waypoints and times.
+                      Only polylines are supported
         """
         trajectory = None
         waypoints = []
@@ -610,8 +608,7 @@ class OpenScenarioParser(object):
                 line = shape.find('Polyline')
                 for vertex in line.iter('Vertex'):
                     times.append(float(vertex.get('time')))
-                    position = vertex.find('Position')
-                    waypoints.append((position, "shortest"))  # use shortest routing strategy as
+                    waypoints.append(vertex.find('Position'))
             elif shape.find('Clothoid') is not None:
                 raise AttributeError("Clothoid shapes are currently unsupported")
             elif shape.find('Nurbs') is not None:
@@ -1405,7 +1402,8 @@ class OpenScenarioParser(object):
                 elif private_action.find('FollowTrajectoryAction') is not None:
                     trajectory_action = private_action.find('FollowTrajectoryAction')
                     waypoints, times = OpenScenarioParser.get_trajectory(trajectory_action, catalogs)
-                    atomic = ChangeActorWaypoints(actor, waypoints=waypoints, times=times, name=maneuver_name)
+                    atomic = ChangeActorWaypoints(actor, waypoints=list(zip(waypoints, ['shortest'] * len(waypoints))),
+                                                  times=times, name=maneuver_name)
                 elif private_action.find('AcquirePositionAction') is not None:
                     route_action = private_action.find('AcquirePositionAction')
                     osc_position = route_action.find('Position')
