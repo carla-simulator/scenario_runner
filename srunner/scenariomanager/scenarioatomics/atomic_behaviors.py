@@ -885,7 +885,7 @@ class ChangeActorWaypoints(AtomicBehavior):
             remaining_dist = calculate_distance(CarlaDataProvider.get_location(self._actor), target_location)
             target_time = self._times[waypoint_idx]
             current_relative_time = GameTime.get_time() - self._start_time
-            remaining_time = max(target_time - current_relative_time, 0.05)
+            remaining_time = max(target_time - current_relative_time, 0.01)
             target_speed = remaining_dist / remaining_time
             actor.update_target_speed(target_speed)
 
