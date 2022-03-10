@@ -93,7 +93,6 @@ class NpcVehicleControl(BasicControl):
 
         if self._waypoints_updated:
             self._waypoints_updated = False
-            self._local_planner.num_reached_waypoints = 0
             self._update_plan()
 
         if self._offset_updated:

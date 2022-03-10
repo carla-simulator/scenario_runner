@@ -1944,16 +1944,6 @@ class WaypointFollower(AtomicBehavior):
         """
         super(WaypointFollower, self).initialise()
         self._unique_id = int(round(time.time() * 1e9))
-
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
-        if actor_dict is not None and self._actor.id in actor_dict:
-            actor_dict.pop(self._actor.id)
-            py_trees.blackboard.Blackboard().set("ActorsWithController", actor_dict, overwrite=True)
-
         try:
             # check whether WF for this actor is already running and add new WF to running_WF list
             check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
