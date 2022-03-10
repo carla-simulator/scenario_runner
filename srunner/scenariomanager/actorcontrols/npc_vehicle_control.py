@@ -93,6 +93,7 @@ class NpcVehicleControl(BasicControl):
 
         if self._waypoints_updated:
             self._waypoints_updated = False
+            self._local_planner.num_reached_waypoints = 0
             self._update_plan()
 
         if self._offset_updated:
@@ -137,3 +138,6 @@ class NpcVehicleControl(BasicControl):
             light_state = self._actor.get_light_state()
             light_state &= ~carla.VehicleLightState.Brake
             self._actor.set_light_state(carla.VehicleLightState(light_state))
+
+    def get_waypoints(self):
+        return self._local_planner._waypoints_queue

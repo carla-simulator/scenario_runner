@@ -762,13 +762,6 @@ class ChangeActorWaypoints(AtomicBehavior):
         self._waypoints = waypoints
         self._start_time = None
         self._times = times
-        self._speeds = None
-
-    def _compute_speeds(self, locations):
-        distances = np.array([calculate_distance(location, next_location)
-                              for location, next_location in zip(locations[:-1], locations[1:])])
-        delta_times = np.diff(self._times)
-        self._speeds = distances / delta_times
 
     def initialise(self):
         """
@@ -795,12 +788,8 @@ class ChangeActorWaypoints(AtomicBehavior):
         # Transforming OSC waypoints to Carla waypoints
         carla_route_elements = []
         for (osc_point, routing_option) in self._waypoints:
-            carla_transforms = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
-                osc_point)
+            carla_transforms = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(osc_point)
             carla_route_elements.append((carla_transforms, routing_option))
-
-        if self._times is not None:
-            self._compute_speeds([carla_route_element[0].location for carla_route_element in carla_route_elements])
 
         # Obtain final route, considering the routing option
         # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
@@ -869,18 +858,36 @@ class ChangeActorWaypoints(AtomicBehavior):
         if not actor_dict or not self._actor.id in actor_dict:
             return py_trees.common.Status.FAILURE
 
-        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
+        actor = actor_dict[self._actor.id]
+
+        if actor.get_last_waypoint_command() != self._start_time:
             return py_trees.common.Status.SUCCESS
 
-        if actor_dict[self._actor.id].check_reached_waypoint_goal():
+        if actor.check_reached_waypoint_goal():
             return py_trees.common.Status.SUCCESS
 
         if self._times is not None:
-            current_relative_time = GameTime.get_time() - self._start_time
-            speed = np.interp(current_relative_time, np.array(self._times[1:]) - self._times[0], self._speeds)
-            actor_dict[self._actor.id].update_target_speed(speed)
+            self._update_speed(actor)
 
         return py_trees.common.Status.RUNNING
+
+    def _update_speed(self, actor):
+        remaining_waypoints = actor.get_waypoints()
+        waypoint_idx = len(self._times) - len(remaining_waypoints)
+        if 0 <= waypoint_idx < len(self._times):
+            target_waypoint = remaining_waypoints[0]
+            if isinstance(target_waypoint, carla.Transform):
+                target_location = target_waypoint.location
+            elif isinstance(target_waypoint, tuple) and isinstance(target_waypoint[0], carla.Waypoint):
+                target_location = target_waypoint[0].transform.location
+            else:
+                raise RuntimeError(f'Unexpected waypoint type: {type(target_waypoint)}')
+            remaining_dist = calculate_distance(CarlaDataProvider.get_location(self._actor), target_location)
+            target_time = self._times[waypoint_idx]
+            current_relative_time = GameTime.get_time() - self._start_time
+            remaining_time = max(target_time - current_relative_time, 0.05)
+            target_speed = remaining_dist / remaining_time
+            actor.update_target_speed(target_speed)
 
 
 class ChangeActorLateralMotion(AtomicBehavior):
@@ -1937,6 +1944,16 @@ class WaypointFollower(AtomicBehavior):
         """
         super(WaypointFollower, self).initialise()
         self._unique_id = int(round(time.time() * 1e9))
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+        if actor_dict is not None and self._actor.id in actor_dict:
+            actor_dict.pop(self._actor.id)
+            py_trees.blackboard.Blackboard().set("ActorsWithController", actor_dict, overwrite=True)
+
         try:
             # check whether WF for this actor is already running and add new WF to running_WF list
             check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))

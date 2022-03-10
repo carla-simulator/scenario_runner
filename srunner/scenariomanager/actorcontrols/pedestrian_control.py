@@ -75,3 +75,6 @@ class PedestrianControl(BasicControl):
         else:
             control.direction = self._actor.get_transform().rotation.get_forward_vector()
             self._actor.apply_control(control)
+
+    def get_waypoints(self):
+        return self._waypoints
