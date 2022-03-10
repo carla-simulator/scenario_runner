@@ -203,7 +203,7 @@ class BackgroundBehavior(AtomicBehavior):
     Handles the background activity
     """
 
-    def __init__(self, ego_actor, route, night_mode=False, debug=True, name="BackgroundBehavior"):
+    def __init__(self, ego_actor, route, night_mode=False, debug=False, name="BackgroundBehavior"):
         """
         Setup class members
         """
@@ -1799,7 +1799,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._min_radius = self._base_min_radius + self._radius_increase_ratio * ego_speed + self._extra_radius
         self._max_radius = self._base_max_radius + self._radius_increase_ratio * ego_speed + self._extra_radius
-        self._junction_detection_dist = self._max_radius - 20
+        self._junction_detection_dist = self._max_radius
 
     def _stop_road_front_vehicles(self):
         """
