@@ -464,13 +464,10 @@ class ScenarioRunner(object):
 
         if self._args.route:
             routes = self._args.route[0]
-            scenario_file = self._args.route[1]
-            single_route = None
-            if len(self._args.route) > 2:
-                single_route = self._args.route[2]
+            single_route = self._args.route[1] if len(self._args.route) > 1 else None
 
         # retrieve routes
-        route_configurations = RouteParser.parse_routes_file(routes, scenario_file, single_route)
+        route_configurations = RouteParser.parse_routes_file(routes, single_route)
 
         for config in route_configurations:
             for _ in range(self._args.repetitions):
@@ -547,7 +544,7 @@ def main():
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
     parser.add_argument(
-        '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
+        '--route', help='Run a route as a scenario (input: (route_file, [route id]))', nargs='+', type=str)
 
     parser.add_argument(
         '--agent', help="Agent used to execute the scenario. Currently only compatible with route-based scenarios.")

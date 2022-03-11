@@ -10,7 +10,6 @@ This module provide BasicScenario, the basic class of all the scenarios.
 """
 
 from __future__ import print_function
-from ast import NameConstant
 
 import operator
 import py_trees
@@ -104,7 +103,8 @@ class BasicScenario(object):
                 self.criteria_tree.setup(timeout=1)
 
             else:
-                raise ValueError("The scenario criteria is neither a list nor a py_trees.composites.Composite")
+                raise ValueError("WARNING: Scenario {} couldn't be setup, make sure the criteria is either "
+                                 "a list or a py_trees.composites.Composite".format(self.name))
 
             self.scenario_tree.add_child(self.criteria_tree)
 
