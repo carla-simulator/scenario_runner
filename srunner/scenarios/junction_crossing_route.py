@@ -180,9 +180,7 @@ class NoSignalJunctionCrossingRoute(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        criteria = []
-        criteria.append(CollisionTest(self.ego_vehicles[0]))
-        return criteria
+        return []
 
     def __del__(self):
         """

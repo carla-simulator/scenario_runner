@@ -38,7 +38,7 @@ class TrafficEvent(object):
     TrafficEvent definition
     """
 
-    def __init__(self, event_type, message=None, dictionary=None):
+    def __init__(self, event_type, message="", dictionary=None):
         """
         Initialize object
 
@@ -51,34 +51,21 @@ class TrafficEvent(object):
         self._dict = dictionary
 
     def get_type(self):
-        """
-        @return type
-        """
+        """return the type"""
         return self._type
 
-    def get_message(self):
-        """
-        @return message
-        """
-        if self._message:
-            return self._message
-
-        return ""
-
     def set_message(self, message):
-        """
-        Set message
-        """
+        """Set message"""
         self._message = message
 
-    def get_dict(self):
-        """
-        @return dictionary
-        """
-        return self._dict
+    def get_message(self):
+        """returns the message"""
+        return self._message
 
     def set_dict(self, dictionary):
-        """
-        Set dictionary
-        """
+        """Set dictionary"""
         self._dict = dictionary
+
+    def get_dict(self):
+        """returns the dictionary"""
+        return self._dict

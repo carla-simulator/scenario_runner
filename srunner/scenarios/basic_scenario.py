@@ -10,17 +10,20 @@ This module provide BasicScenario, the basic class of all the scenarios.
 """
 
 from __future__ import print_function
+from ast import NameConstant
 
 import operator
 import py_trees
 
 import carla
 
-import srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as conditions
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (WaitForBlackboardVariable,
+                                                                               InTimeToArrivalToLocation)
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenariomanager.weather_sim import WeatherBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import UpdateAllActorControls
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import Criterion
 
 
 class BasicScenario(object):
@@ -35,56 +38,83 @@ class BasicScenario(object):
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self.other_actors = []
-        if not self.timeout:     # pylint: disable=access-member-before-definition
-            self.timeout = 60    # If no timeout was provided, set it to 60 seconds
-
-        self.criteria_list = []  # List of evaluation criteria
-        self.scenario = None
-        self.world = world
-
-        self.ego_vehicles = ego_vehicles
         self.name = name
+        self.ego_vehicles = ego_vehicles
+        self.other_actors = []
         self.config = config
+        self.world = world
+        self.debug_mode = debug_mode
         self.terminate_on_failure = terminate_on_failure
+        self.criteria_enable = criteria_enable
+
+        self.route_mode = bool(config.route)
+        self.behavior_tree = None
+        self.criteria_tree = None
+
+        if not self.timeout:
+            self.timeout = 60  # If no timeout was provided, set it to 60 seconds
+        if debug_mode:
+            py_trees.logging.level = py_trees.logging.Level.DEBUG
 
         self._initialize_environment(world)
-
-        is_route_scenario = CarlaDataProvider.get_ego_vehicle_route() is not None
-        self._initialize_other_parameters(config, is_route_scenario)
-
-        # Initializing adversarial actors
         self._initialize_actors(config)
+
         if CarlaDataProvider.is_sync_mode():
             world.tick()
         else:
             world.wait_for_tick()
 
-        # Setup scenario
-        if debug_mode:
-            py_trees.logging.level = py_trees.logging.Level.DEBUG
+        # Main scenario tree
+        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        behavior = self._create_behavior()
+        # Add a trigger and end condition to the behavior to ensure it is only activated when it is relevant
+        self.behavior_tree = py_trees.composites.Sequence()
 
-        criteria = None
-        if criteria_enable:
-            criteria = self._create_test_criteria()
-
-        # Add a trigger condition for the behavior to ensure the behavior is only activated, when it is relevant
-        behavior_seq = py_trees.composites.Sequence()
         trigger_behavior = self._setup_scenario_trigger(config)
         if trigger_behavior:
-            behavior_seq.add_child(trigger_behavior)
+            self.behavior_tree.add_child(trigger_behavior)
 
-        if behavior is not None:
-            behavior_seq.add_child(behavior)
-            behavior_seq.name = behavior.name
+        scenario_behavior = self._create_behavior()
+        self.behavior_tree.add_child(scenario_behavior)
+        self.behavior_tree.name = scenario_behavior.name
 
         end_behavior = self._setup_scenario_end(config)
         if end_behavior:
-            behavior_seq.add_child(end_behavior)
+            self.behavior_tree.add_child(end_behavior)
 
-        self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
+        # And then add it to the main tree
+        self.scenario_tree.add_child(self.behavior_tree)
+
+        # Create the criteria tree (if needed)
+        if self.criteria_enable:
+            criteria = self._create_test_criteria()
+
+            # All the work is done, thanks!
+            if isinstance(criteria, py_trees.composites.Composite):
+                self.criteria_tree = criteria
+
+            # Lazy mode, but its okay, we'll create the parallel behavior tree for you.
+            elif isinstance(criteria, list):
+                for criterion in criteria:
+                    criterion.terminate_on_failure = terminate_on_failure
+
+                self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria",
+                                                                  policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                self.criteria_tree.add_children(criteria)
+                self.criteria_tree.setup(timeout=1)
+
+            else:
+                raise ValueError("The scenario criteria is neither a list nor a py_trees.composites.Composite")
+
+            self.scenario_tree.add_child(self.criteria_tree)
+
+        # Add other nodes
+        self.timeout_node = TimeOut(self.timeout, name="TimeOut")  # Timeout node
+        self.scenario_tree.add_child(self.timeout_node)
+        self.scenario_tree.add_child(WeatherBehavior())
+        self.scenario_tree.add_child(UpdateAllActorControls())
+
+        self.scenario_tree.setup(timeout=1)
 
     def _initialize_environment(self, world):
         """
@@ -122,15 +152,6 @@ class BasicScenario(object):
             for new_actor in new_actors:
                 self.other_actors.append(new_actor)
 
-    def _initialize_other_parameters(self, config, is_route_scenario):
-        """
-        Initializes other parameters part of the config file.
-        As routes and scenarios are parsed differently, use 'is_route_scenario'
-        to know if the scenario is being triggered as part of a route.
-        Override this method in child class to provide custom initialization.
-        """
-        pass
-
     def _setup_scenario_trigger(self, config):
         """
         This function creates a trigger maneuver, that has to be finished before the real scenario starts.
@@ -138,31 +159,18 @@ class BasicScenario(object):
 
         The function can be overloaded by a user implementation inside the user-defined scenario class.
         """
-        start_location = None
         if config.trigger_points and config.trigger_points[0]:
-            start_location = config.trigger_points[0].location     # start location of the scenario
+            start_location = config.trigger_points[0].location
+        else:
+            return None
 
-        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+        # Scenario is not part of a route, wait for the ego to move
+        if not self.route_mode:
+            return InTimeToArrivalToLocation(self.ego_vehicles[0], 2.0, start_location)
 
-        if start_location:
-            if ego_vehicle_route:
-                if config.route_var_name is None:  # pylint: disable=no-else-return
-                    return conditions.InTriggerDistanceToLocationAlongRoute(self.ego_vehicles[0],
-                                                                            ego_vehicle_route,
-                                                                            start_location,
-                                                                            5)
-                else:
-                    check_name = "WaitForBlackboardVariable: {}".format(config.route_var_name)
-                    return conditions.WaitForBlackboardVariable(name=check_name,
-                                                                variable_name=config.route_var_name,
-                                                                variable_value=True,
-                                                                var_init_value=False)
-
-            return conditions.InTimeToArrivalToLocation(self.ego_vehicles[0],
-                                                        2.0,
-                                                        start_location)
-
-        return None
+        # Scenario is part of a route.
+        check_name = "WaitForBlackboardVariable: {}".format(config.route_var_name)
+        return WaitForBlackboardVariable(config.route_var_name, True, False, name=check_name)
 
     def _setup_scenario_end(self, config):
         """
@@ -171,15 +179,11 @@ class BasicScenario(object):
 
         The function can be overloaded by a user implementation inside the user-defined scenario class.
         """
-        ego_vehicle_route = CarlaDataProvider.get_ego_vehicle_route()
+        if not self.route_mode:
+            return None
 
-        if ego_vehicle_route:
-            if config.route_var_name is not None:
-                set_name = "Reset Blackboard Variable: {} ".format(config.route_var_name)
-                return py_trees.blackboard.SetBlackboardVariable(name=set_name,
-                                                                 variable_name=config.route_var_name,
-                                                                 variable_value=False)
-        return None
+        set_name = "Reset Blackboard Variable: {} ".format(config.route_var_name)
+        return py_trees.blackboard.SetBlackboardVariable(set_name, config.route_var_name, False)
 
     def _create_behavior(self):
         """
@@ -208,68 +212,21 @@ class BasicScenario(object):
         """
         return control
 
-    def remove_all_actors(self):
+    def get_criteria(self):
         """
-        Remove all actors
+        Return the list of test criteria, including all the leaf nodes.
+        Some criteria might have trigger conditions, which have to be filtered out.
         """
-        for i, _ in enumerate(self.other_actors):
-            if self.other_actors[i] is not None:
-                if CarlaDataProvider.actor_id_exists(self.other_actors[i].id):
-                    CarlaDataProvider.remove_actor_by_id(self.other_actors[i].id)
-                self.other_actors[i] = None
-        self.other_actors = []
+        criteria = []
+        if not self.criteria_tree:
+            return criteria
 
+        criteria_nodes = self._extract_nodes_from_tree(self.criteria_tree)
+        for criterion in criteria_nodes:
+            if isinstance(criterion, Criterion):
+                criteria.append(criterion)
 
-class Scenario(object):
-
-    """
-    Basic scenario class. This class holds the behavior_tree describing the
-    scenario and the test criteria.
-
-    The user must not modify this class.
-
-    Important parameters:
-    - behavior: User defined scenario with py_tree
-    - criteria_list: List of user defined test criteria with py_tree
-    - timeout (default = 60s): Timeout of the scenario in seconds
-    - terminate_on_failure: Terminate scenario on first failure
-    """
-
-    def __init__(self, behavior, criteria, name, timeout=60, terminate_on_failure=False):
-        self.behavior = behavior
-        self.test_criteria = criteria
-        self.timeout = timeout
-        self.name = name
-
-        if self.test_criteria is not None and not isinstance(self.test_criteria, py_trees.composites.Parallel):
-            # list of nodes
-            for criterion in self.test_criteria:
-                criterion.terminate_on_failure = terminate_on_failure
-
-            # Create py_tree for test criteria
-            self.criteria_tree = py_trees.composites.Parallel(
-                name="Test Criteria",
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE
-            )
-            self.criteria_tree.add_children(self.test_criteria)
-            self.criteria_tree.setup(timeout=1)
-        else:
-            self.criteria_tree = criteria
-
-        # Create node for timeout
-        self.timeout_node = TimeOut(self.timeout, name="TimeOut")
-
-        # Create overall py_tree
-        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        if behavior is not None:
-            self.scenario_tree.add_child(self.behavior)
-        self.scenario_tree.add_child(self.timeout_node)
-        self.scenario_tree.add_child(WeatherBehavior())
-        self.scenario_tree.add_child(UpdateAllActorControls())
-
-        if criteria is not None:
-            self.scenario_tree.add_child(self.criteria_tree)
-        self.scenario_tree.setup(timeout=1)
+        return criteria
 
     def _extract_nodes_from_tree(self, tree):  # pylint: disable=no-self-use
         """
@@ -290,13 +247,6 @@ class Scenario(object):
             return []
 
         return node_list
-
-    def get_criteria(self):
-        """
-        Return the list of test criteria (all leave nodes)
-        """
-        criteria_list = self._extract_nodes_from_tree(self.criteria_tree)
-        return criteria_list
 
     def terminate(self):
         """
@@ -319,3 +269,14 @@ class Scenario(object):
         for actor_id in actor_dict:
             actor_dict[actor_id].reset()
         py_trees.blackboard.Blackboard().set("ActorsWithController", {}, overwrite=True)
+
+    def remove_all_actors(self):
+        """
+        Remove all actors
+        """
+        for i, _ in enumerate(self.other_actors):
+            if self.other_actors[i] is not None:
+                if CarlaDataProvider.actor_id_exists(self.other_actors[i].id):
+                    CarlaDataProvider.remove_actor_by_id(self.other_actors[i].id)
+                self.other_actors[i] = None
+        self.other_actors = []

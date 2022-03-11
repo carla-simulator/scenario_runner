@@ -130,10 +130,10 @@ class Accident(BasicScenario):
         The vehicle has to drive the whole predetermined distance.
         """
         root = py_trees.composites.Sequence()
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             root.add_child(HandleStartAccidentScenario(self._accident_wp, self._distance_to_accident))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             root.add_child(HandleEndAccidentScenario())
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
@@ -146,6 +146,8 @@ class Accident(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
+        if self.route_mode:
+            return []
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):

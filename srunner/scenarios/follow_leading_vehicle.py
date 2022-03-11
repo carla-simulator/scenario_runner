@@ -360,13 +360,9 @@ class FollowLeadingVehicleRoute(BasicScenario):
 
     def _create_test_criteria(self):
         """
-        A list of all test criteria will be created that is later used
-        in parallel behavior tree.
+        Empty, the route already has a collision criteria
         """
-        criteria = []
-        criteria.append(CollisionTest(self.ego_vehicles[0]))
-
-        return criteria
+        return []
 
     def __del__(self):
         """

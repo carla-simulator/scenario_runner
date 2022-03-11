@@ -101,23 +101,20 @@ class ResultOutputProvider(object):
 
         # Criteria part
         output += " > Criteria Information\n"
-        header = ['Actor', 'Criterion', 'Result', 'Actual Value', 'Expected Value']
+        header = ['Actor', 'Criterion', 'Result', 'Actual Value', 'Success Value']
         list_statistics = [header]
 
         for criterion in self._data.scenario.get_criteria():
-            name_string = criterion.name
+            name = criterion.name
             if criterion.optional:
-                name_string += " (Opt.)"
+                name += " (Opt.)"
             else:
-                name_string += " (Req.)"
+                name += " (Req.)"
 
             actor = "{} (id={})".format(criterion.actor.type_id[8:], criterion.actor.id)
-            criteria = name_string
-            result = "FAILURE" if criterion.test_status == "RUNNING" else criterion.test_status
-            actual_value = criterion.actual_value
-            expected_value = criterion.expected_value_success
 
-            list_statistics.extend([[actor, criteria, result, actual_value, expected_value]])
+            list_statistics.extend([[
+                actor, name, criterion.test_status, criterion.actual_value, criterion.success_value]])
 
         # Timeout
         actor = ""
@@ -182,7 +179,7 @@ class ResultOutputProvider(object):
                     criterion.name,
                     "{}-{}".format(criterion.actor.type_id[8:], criterion.actor.id),
                     criterion.optional,
-                    criterion.expected_value_success,
+                    criterion.success_value,
                     criterion.actual_value,
                     criterion.test_status in ["SUCCESS", "ACCEPTABLE"]
                 )
@@ -255,7 +252,7 @@ class ResultOutputProvider(object):
                     result_string += "  Actual:   {}\n".format(
                         criterion.actual_value)
                     result_string += "  Expected: {}\n".format(
-                        criterion.expected_value_success)
+                        criterion.success_value)
                     result_string += "\n"
                     result_string += "  Exact Value: {} = {}]]></failure>\n".format(
                         criterion.name, criterion.actual_value)

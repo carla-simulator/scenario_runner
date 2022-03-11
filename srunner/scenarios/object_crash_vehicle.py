@@ -95,6 +95,7 @@ class StationaryObjectCrossing(BasicScenario):
 
         # non leaf nodes
         root = py_trees.composites.Parallel(
+            name="StaticObstacle",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scenario_sequence = py_trees.composites.Sequence()
 
@@ -257,7 +258,7 @@ class DynamicObjectCrossing(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
         """
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence(name="CrossingActor")
         collision_location = self._collision_wp.transform.location
         collision_distance = collision_location.distance(self._adversary_transform.location)
         collision_duration = collision_distance / self._adversary_speed
@@ -292,12 +293,9 @@ class DynamicObjectCrossing(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        criteria = []
-
-        collision_criterion = CollisionTest(self.ego_vehicles[0])
-        criteria.append(collision_criterion)
-
-        return criteria
+        if self.route_mode:
+            return []
+        return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
         """

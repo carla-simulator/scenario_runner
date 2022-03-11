@@ -142,8 +142,8 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
         root.add_child(tl_freezer_sequence)
 
-        sequence = py_trees.composites.Sequence("Sequence Behavior")
-        if CarlaDataProvider.get_ego_vehicle_route():
+        sequence = py_trees.composites.Sequence(name="SignalizedJunctionLeftTurn")
+        if self.route_mode:
             sequence.add_child(JunctionScenarioManager(self._direction, True, True, True))
         sequence.add_child(root)
 
@@ -154,7 +154,9 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        return [CollisionTest(self.ego_vehicles[0])]
+        if self.route_mode:
+            return []
+        return CollisionTest(self.ego_vehicles[0])
 
     def __del__(self):
         """

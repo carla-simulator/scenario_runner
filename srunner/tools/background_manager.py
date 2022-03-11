@@ -153,7 +153,7 @@ class JunctionScenarioManager(AtomicBehavior):
     something like 'left', 'right' or 'opposite'
     """
 
-    def __init__(self, entry_direction, remove_entry, remove_exit, remove_middle, name="Scenario7Manager"):
+    def __init__(self, entry_direction, remove_entry, remove_exit, remove_middle, name="JunctionScenarioManager"):
         self._entry_direction = entry_direction
         self._remove_entry = remove_entry
         self._remove_exit = remove_exit

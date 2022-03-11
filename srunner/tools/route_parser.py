@@ -270,6 +270,7 @@ class RouteParser(object):
                     scenario_config.type = scenario_name
                     scenario_config.subtype = subtype
                     scenario_config.trigger_points = [trigger_point]
+                    scenario_config.route = trajectory
                     for other in scenario.pop('other_actors', []):
                         scenario_config.other_actors.append(ActorConfigurationData.parse_from_dict(other, 'scenario'))
                     scenario_config.other_parameters.update(scenario)

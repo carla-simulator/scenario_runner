@@ -163,7 +163,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         Hero vehicle is entering a junction in an urban area, at a signalized intersection,
         while another actor runs a red lift, forcing the ego to break.
         """
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence(name="OppositeVehicleTakingPriority")
 
         # Wait until ego is close to the adversary
         trigger_adversary = py_trees.composites.Parallel(
@@ -183,7 +183,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         main_behavior.add_child(sequence)
 
         root = py_trees.composites.Sequence()
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             root.add_child(JunctionScenarioManager(self._direction, True, True, True))
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)
@@ -197,7 +197,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        return [CollisionTest(self.ego_vehicles[0])]
+        if self.route_mode:
+            return []
+        return CollisionTest(self.ego_vehicles[0])
 
     def __del__(self):
         """

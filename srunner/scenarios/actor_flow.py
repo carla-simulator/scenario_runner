@@ -102,7 +102,7 @@ class EnterActorFlow(BasicScenario):
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wps[i].transform.location, self._sink_distance))
 
         sequence = py_trees.composites.Sequence()
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             sequence.add_child(JunctionScenarioManager('left', True, False, True))
 
             grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
@@ -117,7 +117,7 @@ class EnterActorFlow(BasicScenario):
 
             sequence.add_child(SwitchRouteSources(False))
         sequence.add_child(root)
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             sequence.add_child(SwitchRouteSources(True))
 
         return sequence
@@ -127,6 +127,8 @@ class EnterActorFlow(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
+        if self.route_mode:
+            return []
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
@@ -208,7 +210,7 @@ class CrossActorFlow(BasicScenario):
         root.add_child(end_condition)
 
         sequence = py_trees.composites.Sequence()
-        if CarlaDataProvider.get_ego_vehicle_route():
+        if self.route_mode:
             sequence.add_child(JunctionScenarioManager('opposite', True, True, True))
             sequence.add_child(StopEntries())
         sequence.add_child(root)
