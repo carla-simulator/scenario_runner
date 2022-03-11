@@ -89,8 +89,12 @@ class BasicScenario(object):
         if self.criteria_enable:
             criteria = self._create_test_criteria()
 
+            # All the work is done, thanks!
+            if isinstance(criteria, py_trees.composites.Composite):
+                self.criteria_tree = criteria
+
             # Lazy mode, but its okay, we'll create the parallel behavior tree for you.
-            if isinstance(criteria, list):
+            elif isinstance(criteria, list):
                 for criterion in criteria:
                     criterion.terminate_on_failure = terminate_on_failure
 
@@ -99,11 +103,8 @@ class BasicScenario(object):
                 self.criteria_tree.add_children(criteria)
                 self.criteria_tree.setup(timeout=1)
 
-            # All the work is done, thanks!
-            elif isinstance(criteria, py_trees.composites.Parallel):
-                self.criteria_tree = criteria
             else:
-                raise ValueError("The scenario criteria is neither a list nor a py_trees.composites.Parallel")
+                raise ValueError("The scenario criteria is neither a list nor a py_trees.composites.Composite")
 
             self.scenario_tree.add_child(self.criteria_tree)
 
