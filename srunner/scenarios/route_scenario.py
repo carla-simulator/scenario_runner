@@ -104,19 +104,9 @@ class RouteScenario(BasicScenario):
         """
         new_scenarios_config = []
         for scenario_config in scenario_configs:
-            # Get the trigger point of the scenario
             trigger_point = scenario_config.trigger_points[0]
-
-            # Check if the route passes through the scenario
-            match_position = RouteParser.is_scenario_at_route(trigger_point, self.route)
-            if match_position is None:
+            if not RouteParser.is_scenario_at_route(trigger_point, self.route):
                 print("WARNING: Ignoring scenario '{}' as it is too far from the route".format(scenario_config.name))
-                continue
-
-            # Check the route has the correct topology
-            subtype = RouteParser.get_scenario_subtype(scenario_config.name, self.route[match_position:])
-            if subtype is None:
-                print("WARNING: Ignoring scenario '{}' as it is incompatible with the route trajectory".format(scenario_config.name))
                 continue
 
             new_scenarios_config.append(scenario_config)
@@ -232,15 +222,12 @@ class RouteScenario(BasicScenario):
             scenario_config.route_var_name = "ScenarioRouteNumber{}".format(scenario_number)
             scenario_config.route = self.route
 
-            # Do a tick every once in a while to avoid spawning everything at the same time
-            if scenario_number % scenarios_per_tick == 0:
-                world.tick()
-
             try:
                 scenario_class = all_scenario_classes[scenario_config.type]
                 scenario_instance = scenario_class(world, [ego_vehicle], scenario_config, timeout=timeout)
-                if scenario_number % scenarios_per_tick == 0:
 
+                # Do a tick every once in a while to avoid spawning everything at the same time
+                if scenario_number % scenarios_per_tick == 0:
                     world.tick()
 
             except Exception as e:

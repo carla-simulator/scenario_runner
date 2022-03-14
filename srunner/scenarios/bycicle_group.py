@@ -21,22 +21,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, InTimeToArrivalToVehicle
 from srunner.scenarios.basic_scenario import BasicScenario
 
-def convert_dict_to_transform(actor_dict):
-    """
-    Convert a JSON string to a CARLA transform
-    """
-    return carla.Transform(
-        carla.Location(
-            x=float(actor_dict['x']),
-            y=float(actor_dict['y']),
-            z=float(actor_dict['z'])
-        ),
-        carla.Rotation(
-            roll=0.0,
-            pitch=0.0,
-            yaw=float(actor_dict['yaw'])
-        )
-    )
 
 class BycicleGroup(BasicScenario):
     """

@@ -21,22 +21,6 @@ DIST_THRESHOLD = 2.0
 ANGLE_THRESHOLD = 10
 
 
-def convert_dict_to_transform(dicti):
-    """Convert a dict to a CARLA transform"""
-    return carla.Transform(
-        carla.Location(
-            float(dicti['x']),
-            float(dicti['y']),
-            float(dicti['z'])
-        ),
-        carla.Rotation(
-            roll=0.0,
-            pitch=0.0,
-            yaw=float(dicti['yaw'])
-        )
-    )
-
-
 def convert_elem_to_transform(elem):
     """Convert an ElementTree.Element to a CARLA transform"""
     return carla.Transform(
@@ -172,60 +156,3 @@ class RouteParser(object):
                 return True
 
         return None
-
-    @staticmethod
-    def get_scenario_subtype(scenario, route):
-        """
-        Some scenarios have subtypes depending on the route trajectory,
-        even being invalid if there isn't a valid one. As an example,
-        some scenarios need the route to turn in a specific direction,
-        and if this isn't the case, the scenario should not be considered valid.
-        This is currently only used for validity purposes.
-
-        :param scenario: the scenario name
-        :param route: route starting at the triggering point of the scenario
-        :return: tag representing this subtype
-        """
-
-        def is_junction_option(option):
-            """Whether or not an option is part of a junction"""
-            if option in (RoadOption.LANEFOLLOW, RoadOption.CHANGELANELEFT, RoadOption.CHANGELANERIGHT):
-                return False
-            return True
-
-        subtype = None
-
-        if scenario == 'Scenario4':  # Only if the route turns
-            for _, option in route:
-                if is_junction_option(option):
-                    if option == RoadOption.LEFT:
-                        subtype = 'S4left'
-                    elif option == RoadOption.RIGHT:
-                        subtype = 'S4right'
-                    else:
-                        subtype = None
-                    break  # Avoid checking all of them
-                subtype = None
-
-        if scenario == 'Scenario7':
-            for _, option in route:
-                if is_junction_option(option):
-                    if RoadOption.STRAIGHT == option:
-                        subtype = 'S7opposite'
-                    break
-        elif scenario == 'Scenario8':  # Only if the route turns left
-            for _, option in route:
-                if is_junction_option(option):
-                    if option == RoadOption.LEFT:
-                        subtype = 'S8left'
-                    break
-        elif scenario == 'Scenario9':  # Only if the route turns right
-            for _, option in route:
-                if is_junction_option(option):
-                    if option == RoadOption.RIGHT:
-                        subtype = 'S9right'
-                    break
-        else:
-            subtype = 'valid'
-
-        return subtype

@@ -21,22 +21,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
 from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing
 from srunner.tools.background_manager import HandleStartAccidentScenario, HandleEndAccidentScenario
 
-def convert_dict_to_transform(actor_dict):
-    """
-    Convert a JSON string to a CARLA transform
-    """
-    return carla.Transform(
-        carla.Location(
-            x=float(actor_dict['x']),
-            y=float(actor_dict['y']),
-            z=float(actor_dict['z'])
-        ),
-        carla.Rotation(
-            roll=0.0,
-            pitch=0.0,
-            yaw=float(actor_dict['yaw'])
-        )
-    )
 
 class ConstructionSetupCrossing(StationaryObjectCrossing):
 
