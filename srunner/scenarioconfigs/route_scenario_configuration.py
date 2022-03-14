@@ -48,5 +48,5 @@ class RouteScenarioConfiguration(ScenarioConfiguration):
 
     def __init__(self):
         super(RouteScenarioConfiguration, self).__init__()
-        self.trajectory = None
-        self.scenario_file = None
+        self.keypoints = None
+        self.scenario_configs = []

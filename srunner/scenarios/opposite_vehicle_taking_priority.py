@@ -199,7 +199,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         """
         if self.route_mode:
             return []
-        return CollisionTest(self.ego_vehicles[0])
+        return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
         """
