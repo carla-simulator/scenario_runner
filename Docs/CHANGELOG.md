@@ -17,9 +17,25 @@
 * Actor Flows are now more consistent
 * Scenarios can now parse and use all parameters present at the configuration file.
 * Improved overall parsing of routes and scenarios.
+* Added new scenarios:
+    - Accident: the ego has to lane change in order to avoid an accident
+    - CrossBycicleFlow: the ego has to do  aturn at an intersection but it has to cross a bycicle lane full of incoming traffic
+* Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
+* `NoSignalJunctionCrossingRoute` scenario has been moved from `junction_crossing_route.py` to `no_signal_junction_crossing.py`
 * The BackgroundActivity has been readded to the routes, which the objective of creating the sensation of traffic around the ego
+* BasicScenario and Scenario class have been merged into one, simplifying its usage.
+* Actor Flows are now more consistent.
+* Scenarios are no logner fixed to a location but instead are now part of the route.
+* Routes now automatically import all scenarios.
+* Routes will now also take into account the criteria of their specific scenarios, only being active when they are running. The ResultWriter now automaically adds these criteria, grouping them if more than one scenario of the same type is triggered.
+
+* Scenarios can now parse and use all parameters present at the configuration file.
+* Renamed RouteScenarioConfiguration's 'trajectory' to 'keypoints' and 'scenarios' to 'scenario_configs`
+* Improved the handling of the route information. Added the route information to their configuration (config.route). As such,`CarlaDataProvider.get_ego_vehicle_route()` and `CarlaDataProvider.set_ego_vehicle_route()` functions have been replaced.
+* The CarlaDataProvider's spawning functions can now filter vehicles by type.
+* atomic criteria now have the `units` attribute, which is used by the ResultWriter for better output readibility.
 
 ### :bug: Bug Fixes
 * Fixed bug at OtherLeadingVehicle scenario causing the vehicles to move faster than intended
