@@ -1918,7 +1918,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         actors = CarlaDataProvider.request_new_batch_actors(
             'vehicle.*', len(spawn_transforms), spawn_transforms, True, False, 'background',
-            safe_blueprint=True, tick=False)
+            filter_type="car", tick=False)
 
         if not actors:
             return actors
@@ -1946,7 +1946,7 @@ class BackgroundBehavior(AtomicBehavior):
         )
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', new_transform, rolename='background',
-            autopilot=True, random_location=False, safe_blueprint=True, tick=False)
+            autopilot=True, random_location=False, filter_type="car", tick=False)
 
         if not actor:
             return actor
