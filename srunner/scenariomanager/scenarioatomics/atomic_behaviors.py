@@ -2507,7 +2507,7 @@ class ActorFlow(AtomicBehavior):
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, name="ActorFlow"):
+                 actor_speed=20 / 3.6, actor_type="car", name="ActorFlow"):
         """
         Setup class members
         """
@@ -2528,6 +2528,7 @@ class ActorFlow(AtomicBehavior):
 
         self._sink_dist = sink_dist
         self._speed = actor_speed
+        self._actor_type = actor_type
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2554,7 +2555,7 @@ class ActorFlow(AtomicBehavior):
 
         if distance > self._spawn_dist:
             actor = CarlaDataProvider.request_new_actor(
-                'vehicle.*', self._source_transform, rolename='scenario', safe_blueprint=True, tick=False
+                'vehicle.*', self._source_transform, rolename='scenario', filter_type=self._actor_type, tick=False
             )
             if actor is None:
                 return py_trees.common.Status.RUNNING

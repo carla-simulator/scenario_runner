@@ -415,7 +415,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
 
     @staticmethod
-    def create_blueprint(model, rolename='scenario', color=None, actor_category="car", safe=False):
+    def create_blueprint(model, rolename='scenario', color=None, actor_category="car", filter_type=""):
         """
         Function to setup the blueprint of an actor given its model and other relevant parameters
         """
@@ -438,16 +438,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         try:
             blueprints = CarlaDataProvider._blueprint_library.filter(model)
             blueprints_ = []
-            if safe:
-                # Safe vehicles are those that can move through all roads.
-                # This means that big vehicles such as ambulance and trucks are removed,
-                # as well as 2-wheeled ones as they can go through highways
-                for bp in blueprints:
-                    if bp.id.endswith('firetruck') or bp.id.endswith('ambulance') \
-                            or bp.id.endswith('carlacola') or bp.id.endswith('cybertruck') \
-                            or int(bp.get_attribute('number_of_wheels')) != 4:
-                        continue
-                    blueprints_.append(bp)
+            if filter_type:
+                blueprints = [x for x in blueprints if x.get_attribute('type') == filter_type]
             else:
                 blueprints_ = blueprints
 
@@ -525,11 +517,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def request_new_actor(model, spawn_point, rolename='scenario', autopilot=False,
                           random_location=False, color=None, actor_category="car",
-                          safe_blueprint=False, tick=True):
+                          filter_type="", tick=True):
         """
         This method tries to create a new actor, returning it if successful (None otherwise).
         """
-        blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, safe_blueprint)
+        blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, filter_type)
 
         if random_location:
             actor = None
@@ -552,7 +544,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         # De/activate the autopilot of the actor if it belongs to vehicle
         if autopilot:
-            if actor.type_id.startswith('vehicle.'):
+            if isinstance(actor, carla.Vehicle):
                 actor.set_autopilot(autopilot, CarlaDataProvider._traffic_manager_port)
             else:
                 print("WARNING: Tried to set the autopilot of a non vehicle actor")
@@ -570,7 +562,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actor
 
     @staticmethod
-    def request_new_actors(actor_list, safe_blueprint=False, tick=True):
+    def request_new_actors(actor_list, filter_type="", tick=True):
         """
         This method tries to series of actor in batch. If this was successful,
         the new actors are returned, None otherwise.
@@ -594,7 +586,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             # Get the blueprint
             blueprint = CarlaDataProvider.create_blueprint(
-                actor.model, actor.rolename, actor.color, actor.category, safe_blueprint)
+                actor.model, actor.rolename, actor.color, actor.category, filter_type)
 
             # Get the spawn point
             transform = actor.transform
@@ -647,7 +639,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def request_new_batch_actors(model, amount, spawn_points, autopilot=False,
                                  random_location=False, rolename='scenario',
-                                 safe_blueprint=False, tick=True):
+                                 filter_type="", tick=True):
         """
         Simplified version of "request_new_actors". This method also create several actors in batch.
 
@@ -668,7 +660,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         for i in range(amount):
             # Get vehicle by model
-            blueprint = CarlaDataProvider.create_blueprint(model, rolename, safe=safe_blueprint)
+            blueprint = CarlaDataProvider.create_blueprint(model, rolename, filter_type=filter_type)
 
             if random_location:
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
