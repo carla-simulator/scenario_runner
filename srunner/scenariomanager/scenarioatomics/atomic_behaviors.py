@@ -2555,7 +2555,8 @@ class ActorFlow(AtomicBehavior):
 
         if distance > self._spawn_dist:
             actor = CarlaDataProvider.request_new_actor(
-                'vehicle.*', self._source_transform, rolename='scenario', filter_type=self._actor_type, tick=False
+                'vehicle.*', self._source_transform, rolename='scenario',
+                attribute_filter={'base_type': self._actor_type}, tick=False
             )
             if actor is None:
                 return py_trees.common.Status.RUNNING
@@ -2593,6 +2594,55 @@ class ActorFlow(AtomicBehavior):
                 actor.destroy()
             except RuntimeError:
                 pass  # Actor was already destroyed
+
+
+class OpenVehicleDoor(AtomicBehavior):
+
+    """
+    Implementation for a behavior that will open the door of a vehicle,
+    then close it after a while.
+
+    Important parameters:
+    - actor: Type of CARLA actors to be spawned
+    - vehicle_door: The specific door that will be opened
+    - duration: Duration of the open door
+    """
+
+    def __init__(self, actor, vehicle_door, duration, name="OpenVehicleDoor"):
+        """
+        Setup class members
+        """
+        super(OpenVehicleDoor, self).__init__(name, actor)
+        self._vehicle_door = vehicle_door
+        self._duration = duration
+        self._start_time = 0
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def initialise(self):
+        """
+        Set start time
+        """
+        self._start_time = GameTime.get_time()
+        self._actor.open_door(self._vehicle_door)
+        super().initialise()
+
+    def update(self):
+        """
+        Keep running until termination condition is satisfied
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if GameTime.get_time() - self._start_time > self._duration:
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        Close the open door
+        """
+        self._actor.close_door(self._vehicle_door)
+        super().terminate(new_status)
 
 
 class TrafficLightFreezer(AtomicBehavior):

@@ -32,7 +32,7 @@ class ChangeRoadBehavior(AtomicBehavior):
         self._num_back_vehicles = num_back_vehicles
         self._vehicle_dist = vehicle_dist
         self._spawn_dist = spawn_dist
-        super(ChangeRoadBehavior, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
@@ -61,7 +61,7 @@ class ChangeOppositeBehavior(AtomicBehavior):
         self._vehicle_dist = vehicle_dist
         self._spawn_dist = spawn_dist
         self._max_actors = max_actors
-        super(ChangeOppositeBehavior, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
@@ -91,7 +91,7 @@ class ChangeJunctionBehavior(AtomicBehavior):
         self._vehicle_dist = vehicle_dist
         self._spawn_dist = spawn_dist
         self._max_actors = max_actors
-        super(ChangeJunctionBehavior, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
@@ -109,7 +109,7 @@ class StopFrontVehicles(AtomicBehavior):
     """
 
     def __init__(self, name="StopFrontVehicles"):
-        super(StopFrontVehicles, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set("BA_StopFrontVehicles", True, overwrite=True)
@@ -123,26 +123,10 @@ class StartFrontVehicles(AtomicBehavior):
     """
 
     def __init__(self, name="StartFrontVehicles"):
-        super(StartFrontVehicles, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set("BA_StartFrontVehicles", True, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
-class HandleCrossingActor(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that a crossing actor has been triggered.
-    'crossing_dist' is the distance between the crossing actor and the junction
-    """
-
-    def __init__(self, crossing_dist=10, name="HandleCrossingActor"):
-        self._crossing_dist = crossing_dist
-        super(HandleCrossingActor, self).__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_HandleCrossingActor", self._crossing_dist, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -158,7 +142,7 @@ class JunctionScenarioManager(AtomicBehavior):
         self._remove_entry = remove_entry
         self._remove_exit = remove_exit
         self._remove_middle = remove_middle
-        super(JunctionScenarioManager, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
@@ -177,11 +161,26 @@ class ExtentExitRoadSpace(AtomicBehavior):
     def __init__(self, distance, direction, name="ExtentExitRoadSpace"):
         self._distance = distance
         self._direction = direction
-        super(ExtentExitRoadSpace, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", [self._distance, self._direction], overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class LeaveSpaceInFront(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the ego needs more space in front.
+    This only works at roads, not junctions.
+    """
+    def __init__(self, space, name="LeaveSpaceInFront"):
+        self._space = space
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_LeaveSpaceInFront", self._space, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -190,7 +189,7 @@ class StopEntries(AtomicBehavior):
     Updates the blackboard to tell the background activity to stop all junction entries
     """
     def __init__(self, name="StopEntries"):
-        super(StopEntries, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
@@ -204,7 +203,7 @@ class SwitchRouteSources(AtomicBehavior):
     """
     def __init__(self, enabled=True, name="SwitchRouteSources"):
         self._enabled = enabled
-        super(SwitchRouteSources, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
@@ -219,7 +218,7 @@ class HandleStartAccidentScenario(AtomicBehavior):
     def __init__(self, accident_wp, distance, name="HandleStartAccidentScenario"):
         self._accident_wp = accident_wp
         self._distance = distance
-        super(HandleStartAccidentScenario, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
@@ -232,7 +231,7 @@ class HandleEndAccidentScenario(AtomicBehavior):
     Updates the blackboard to tell the background activity that the road behavior has to be initialized
     """
     def __init__(self, name="HandleEndAccidentScenario"):
-        super(HandleEndAccidentScenario, self).__init__(name)
+        super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
