@@ -202,7 +202,7 @@ class BackgroundBehavior(AtomicBehavior):
     Handles the background activity
     """
 
-    def __init__(self, ego_actor, route, night_mode=False, debug=True, name="BackgroundBehavior"):
+    def __init__(self, ego_actor, route, night_mode=False, debug=False, name="BackgroundBehavior"):
         """
         Setup class members
         """
