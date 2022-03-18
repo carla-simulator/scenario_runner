@@ -27,7 +27,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
-from srunner.tools.background_manager import HandleCrossingActor
+from srunner.tools.background_manager import LeaveSpaceInFront
 
 
 def get_sidewalk_transform(waypoint):
@@ -161,10 +161,6 @@ class BaseVehicleTurning(BasicScenario):
         collision_duration = collision_distance / self._adversary_speed
         collision_time_trigger = collision_duration + self._reaction_time
 
-        # On trigger behavior
-        if self.route_mode:
-            sequence.add_child(HandleCrossingActor(self._spawn_dist))
-
         # First waiting behavior
         sequence.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
@@ -177,6 +173,9 @@ class BaseVehicleTurning(BasicScenario):
             self.ego_vehicles[0], collision_location, self._min_trigger_dist))
         sequence.add_child(trigger_adversary)
         sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
+
+        if self.route_mode:
+            sequence.add_child(LeaveSpaceInFront(self._spawn_dist))
 
         # Move the adversary.
         speed_duration = 2.0 * collision_duration

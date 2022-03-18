@@ -415,10 +415,28 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
 
     @staticmethod
-    def create_blueprint(model, rolename='scenario', color=None, actor_category="car", filter_type=""):
+    def create_blueprint(model, rolename='scenario', color=None, actor_category="car", attribute_filter=None):
         """
         Function to setup the blueprint of an actor given its model and other relevant parameters
         """
+        def check_attribute_value(blueprint, name, value):
+            """
+            Checks if the blueprint has that attribute with that value
+            """
+            if not blueprint.has_attribute(name):
+                return False
+
+            attribute_type = blueprint.get_attribute(key).type
+            if attribute_type == carla.ActorAttributeType.Bool:
+                return blueprint.get_attribute(name).as_bool() == value
+            elif attribute_type == carla.ActorAttributeType.Int:
+                return blueprint.get_attribute(name).as_int() == value
+            elif attribute_type == carla.ActorAttributeType.Float:
+                return blueprint.get_attribute(name).as_float() == value
+            elif attribute_type == carla.ActorAttributeType.String:
+                return blueprint.get_attribute(name).as_str() == value
+
+            return False
 
         _actor_blueprint_categories = {
             'car': 'vehicle.tesla.model3',
@@ -437,13 +455,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Set the model
         try:
             blueprints = CarlaDataProvider._blueprint_library.filter(model)
-            blueprints_ = []
-            if filter_type:
-                blueprints = [x for x in blueprints if x.get_attribute('type') == filter_type]
-            else:
-                blueprints_ = blueprints
+            if attribute_filter is not None:
+                for key, value in attribute_filter.items():
+                    blueprints = [x for x in blueprints if check_attribute_value(x, key, value)]
 
-            blueprint = CarlaDataProvider._rng.choice(blueprints_)
+            blueprint = CarlaDataProvider._rng.choice(blueprints)
         except ValueError:
             # The model is not part of the blueprint library. Let's take a default one for the given category
             bp_filter = "vehicle.*"
@@ -517,11 +533,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def request_new_actor(model, spawn_point, rolename='scenario', autopilot=False,
                           random_location=False, color=None, actor_category="car",
-                          filter_type="", tick=True):
+                          attribute_filter=None, tick=True):
         """
         This method tries to create a new actor, returning it if successful (None otherwise).
         """
-        blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, filter_type)
+        blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, attribute_filter)
 
         if random_location:
             actor = None
@@ -562,7 +578,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actor
 
     @staticmethod
-    def request_new_actors(actor_list, filter_type="", tick=True):
+    def request_new_actors(actor_list, attribute_filter=None, tick=True):
         """
         This method tries to series of actor in batch. If this was successful,
         the new actors are returned, None otherwise.
@@ -586,7 +602,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             # Get the blueprint
             blueprint = CarlaDataProvider.create_blueprint(
-                actor.model, actor.rolename, actor.color, actor.category, filter_type)
+                actor.model, actor.rolename, actor.color, actor.category, attribute_filter)
 
             # Get the spawn point
             transform = actor.transform
@@ -639,7 +655,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def request_new_batch_actors(model, amount, spawn_points, autopilot=False,
                                  random_location=False, rolename='scenario',
-                                 filter_type="", tick=True):
+                                 attribute_filter=None, tick=True):
         """
         Simplified version of "request_new_actors". This method also create several actors in batch.
 
@@ -660,7 +676,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         for i in range(amount):
             # Get vehicle by model
-            blueprint = CarlaDataProvider.create_blueprint(model, rolename, filter_type=filter_type)
+            blueprint = CarlaDataProvider.create_blueprint(model, rolename, attribute_filter=attribute_filter)
 
             if random_location:
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):

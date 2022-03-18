@@ -25,6 +25,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 
+from srunner.tools.background_manager import LeaveSpaceInFront
+
 
 class StationaryObjectCrossing(BasicScenario):
 
@@ -259,6 +261,9 @@ class DynamicObjectCrossing(BasicScenario):
         then after 60 seconds, a timeout stops the scenario
         """
         sequence = py_trees.composites.Sequence(name="CrossingActor")
+        if self.route_mode:
+            sequence.add_child(LeaveSpaceInFront(self._start_distance))
+
         collision_location = self._collision_wp.transform.location
         collision_distance = collision_location.distance(self._adversary_transform.location)
         collision_duration = collision_distance / self._adversary_speed

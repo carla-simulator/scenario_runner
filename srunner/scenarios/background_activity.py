@@ -115,7 +115,6 @@ class Junction(object):
         self.id = junction_id  # pylint: disable=invalid-name
         self.route_entry_index = route_entry_index
         self.route_exit_index = route_exit_index
-        self.exit_road_length = 0
         self.route_entry_keys = []
         self.route_exit_keys = []
         self.opposite_entry_keys = []
@@ -277,23 +276,8 @@ class BackgroundBehavior(AtomicBehavior):
         self._opposite_spawn_dist = 20  # Initial distance between spawned opposite vehicles [m]
         self._opposite_sources_max_actors = 8  # Maximum vehicles alive at the same time per source
 
-        # Scenario 2 variables
-        self._stopped_road_actors = []
-
-        # Scenario 4 variables
-        self._is_crossing_scenario_active = False
-        self._crossing_scenario_actors = []
-        self._ego_exitted_junction = False
-        self._crossing_dist = None  # Distance between the crossing object and the junction exit
-        self._start_ego_wp = None
-
-        # Junction scenario variables
-        self.scenario_info = {
-            'direction': None,
-            'remove_entries': False,
-            'remove_middle': False,
-            'remove_exits': False,
-        }  # Same as the Junction.scenario_info, but this stores the data in case no junctions are active
+        # Scenario variables:
+        self._stopped_road_actors = []  # Actors stopped by a hard break scenario
 
         self._route_sources_active = True
 
@@ -369,8 +353,6 @@ class BackgroundBehavior(AtomicBehavior):
         # Update non junction sources.
         self._update_opposite_actors()
 
-        self._monitor_crossing_scenario_end()
-
         return py_trees.common.Status.RUNNING
 
     def terminate(self, new_status):
@@ -437,7 +419,6 @@ class BackgroundBehavior(AtomicBehavior):
                 if prev_junction:
                     start_dist = self._accum_dist[i]
                     prev_end_dist = self._accum_dist[prev_junction.route_exit_index]
-                    prev_junction.exit_road_length = start_dist - prev_end_dist
 
                 # Same junction as the prev one and closer than 2 meters
                 if prev_junction and prev_junction.junctions[-1].id == junction_id:
@@ -451,14 +432,6 @@ class BackgroundBehavior(AtomicBehavior):
 
                 junction_data.append(Junction(next_wp.get_junction(), junction_num, i))
                 junction_num += 1
-
-        if len(junction_data) > 0:
-            road_end_dist = self._accum_dist[self._route_length - 1]
-            if junction_data[-1].route_exit_index:
-                route_start_dist = self._accum_dist[junction_data[-1].route_exit_index]
-            else:
-                route_start_dist = self._accum_dist[self._route_length - 1]
-            junction_data[-1].exit_road_length = road_end_dist - route_start_dist
 
         return junction_data
 
@@ -925,128 +898,6 @@ class BackgroundBehavior(AtomicBehavior):
                 'remove_exits': remove_exits,
             }
 
-    def _handle_junction_scenario_end(self, junction):
-        """Ends the junction scenario interaction. This is pretty much useless as the junction
-        scenario ends at the same time as the active junction, but in the future it might not"""
-        junction.scenario_info = {
-            'direction': None,
-            'remove_entries': False,
-            'remove_middle': False,
-            'remove_exits': False,
-        }
-
-    def _monitor_crossing_scenario_end(self):
-        """Monitors the ego distance to the junction to know if the scenario 4 has ended"""
-        if self._ego_exitted_junction:
-            ref_location = self._start_ego_wp.transform.location
-            ego_location = self._ego_wp.transform.location
-            if ego_location.distance(ref_location) > self._crossing_dist:
-                for actor in self._crossing_scenario_actors:
-                    self._tm.vehicle_percentage_speed_difference(actor, 0)
-                self._is_crossing_scenario_active = False
-                self._crossing_scenario_actors.clear()
-                self._ego_exitted_junction = False
-                self._crossing_dist = None
-
-    def _handle_crossing_scenario_interaction(self, junction, ego_wp):
-        """
-        Handles the interation between the scenario 4 of the Leaderboard and the background activity.
-        This removes all vehicles near the bycicle path, and stops the others so that they don't interfere
-        """
-        if not self._is_crossing_scenario_active:
-            return
-
-        self._ego_exitted_junction = True
-        self._start_ego_wp = ego_wp
-        min_crossing_space = 2
-
-        # Actor exitting the junction
-        exit_dict = junction.exit_dict
-        for exit_key in exit_dict:
-            if exit_key not in junction.route_exit_keys:
-                continue
-            actors = exit_dict[exit_key]['actors']
-            exit_lane_wp = exit_dict[exit_key]['ref_wp']
-            exit_lane_location = exit_lane_wp.transform.location
-            for actor in list(actors):
-                actor_location = CarlaDataProvider.get_location(actor)
-                if not actor_location:
-                    self._destroy_actor(actor)
-                    continue
-
-                dist_to_scenario = exit_lane_location.distance(actor_location) - self._crossing_dist
-                actor_length = actor.bounding_box.extent.x
-                if abs(dist_to_scenario) < actor_length + min_crossing_space:
-                    self._destroy_actor(actor)
-                    continue
-
-                if dist_to_scenario > 0:
-                    continue  # Don't stop the actors that have already passed the scenario
-
-                if get_lane_key(ego_wp) == get_lane_key(exit_lane_wp):
-                    self._destroy_actor(actor)
-                    continue  # Actor at the ego lane and between the ego and scenario
-
-                self._crossing_scenario_actors.append(actor)
-
-        # Actor entering the junction
-        for entry_source in junction.entry_sources:
-            entry_lane_wp = entry_source.entry_lane_wp
-            if get_lane_key(entry_lane_wp) in junction.opposite_entry_keys:
-                # Source is affected
-                actors = entry_source.actors
-                entry_lane_location = entry_lane_wp.transform.location
-                for actor in list(actors):
-                    actor_location = CarlaDataProvider.get_location(actor)
-                    if not actor_location:
-                        self._destroy_actor(actor)
-                        continue
-
-                    crossing_space = abs(entry_lane_location.distance(actor_location) - self._crossing_dist)
-                    actor_length = actor.bounding_box.extent.x
-                    if crossing_space < actor_length + min_crossing_space:
-                        self._destroy_actor(actor)
-                        continue  # Actors blocking the path of the crossing obstacle
-
-                    self._crossing_scenario_actors.append(actor)
-
-        # Actors entering the next junction
-        if len(self._active_junctions) > 1:
-            next_junction = self._active_junctions[1]
-            actors_dict = next_junction.actor_dict
-            for actor in list(actors_dict):
-                if actors_dict[actor]['state'] != JUNCTION_ENTRY:
-                    continue
-
-                actor_location = CarlaDataProvider.get_location(actor)
-                if not actor_location:
-                    self._destroy_actor(actor)
-                    continue
-
-                dist_to_scenario = exit_lane_location.distance(actor_location) - self._crossing_dist
-                actor_length = actor.bounding_box.extent.x
-                if abs(dist_to_scenario) < actor_length + min_crossing_space:
-                    self._destroy_actor(actor)
-                    continue
-
-                if dist_to_scenario > 0:
-                    continue  # Don't stop the actors that have already passed the scenario
-
-                actor_wp = self._map.get_waypoint(actor_location)
-                if get_lane_key(ego_wp) == get_lane_key(actor_wp):
-                    self._destroy_actor(actor)
-                    continue  # Actor at the ego lane and between the ego and scenario
-
-                self._crossing_scenario_actors.append(actor)
-
-        # Immediately freeze the actors
-        for actor in self._crossing_scenario_actors:
-            try:
-                actor.set_target_velocity(carla.Vector3D(0, 0, 0))
-                self._tm.vehicle_percentage_speed_difference(actor, 100)
-            except RuntimeError:
-                pass  # Just in case the actor is not alive
-
     def _end_junction_behavior(self, junction):
         """
         Destroys unneeded actors (those that aren't part of the route's road),
@@ -1102,9 +953,6 @@ class BackgroundBehavior(AtomicBehavior):
 
             # Destroy the rest
             self._destroy_actor(actor)
-
-        self._handle_crossing_scenario_interaction(junction, self._ego_wp) # TODO: Do a better scenario case
-        self._handle_junction_scenario_end(junction)  # TODO: See if this can be removed (as it changes a popped element)
 
         if not self._active_junctions:
             self._ego_state = EGO_ROAD
@@ -1745,13 +1593,6 @@ class BackgroundBehavior(AtomicBehavior):
             self._start_road_front_vehicles()
             py_trees.blackboard.Blackboard().set("BA_StartFrontVehicles", None, True)
 
-        # Handles crossing actor scenarios. This currently only works for Scenario4
-        crossing_dist = py_trees.blackboard.Blackboard().get('BA_HandleCrossingActor')
-        if crossing_dist is not None:
-            self._is_crossing_scenario_active = True
-            self._crossing_dist = crossing_dist
-            py_trees.blackboard.Blackboard().set('BA_HandleCrossingActor', None, True)
-
         # Handles junction scenarios (scenarios 7 to 10)
         junction_scenario_data = py_trees.blackboard.Blackboard().get('BA_JunctionScenario')
         if junction_scenario_data is not None:
@@ -1777,6 +1618,12 @@ class BackgroundBehavior(AtomicBehavior):
         if stop_entry_data is not None:
             self._stop_non_route_entries()
             py_trees.blackboard.Blackboard().set('BA_StopEntries', None, True)
+
+        # Leave space in front
+        leave_space_data = py_trees.blackboard.Blackboard().get('BA_LeaveSpaceInFront')
+        if leave_space_data is not None:
+            self._leave_space_in_front(leave_space_data)
+            py_trees.blackboard.Blackboard().set('BA_LeaveSpaceInFront', None, True)
 
         self._compute_parameters()
 
@@ -1843,23 +1690,26 @@ class BackgroundBehavior(AtomicBehavior):
             if exit_lane_key in direction_lane_keys:
                 exit_dict[exit_lane_key]['max_distance'] += space
 
-                # For all the actors present, teleport them a bit to the front and activate them
-                for actor in exit_dict[exit_lane_key]['actors']:
-                    location = CarlaDataProvider.get_location(actor)
-                    if not location:
-                        continue
-
-                    actor_wp = self._map.get_waypoint(location)
-                    new_actor_wps = actor_wp.next(space)
-                    if len(new_actor_wps) > 0:
-                        new_transform = new_actor_wps[0].transform
-                        new_transform.location.z += 0.2
-                        actor.set_transform(new_transform)
-
+                actors = exit_dict[exit_lane_key]['actors']
+                self._move_actors_forward(actors, space)
+                for actor in actors:
                     if junction.actor_dict[actor]['state'] == JUNCTION_INACTIVE:
                         self._tm.vehicle_percentage_speed_difference(actor, 0)
                         junction.actor_dict[actor]['state'] = JUNCTION_EXIT
 
+    def _move_actors_forward(self, actors, space):
+        """Teleports the actors forward a set distance"""
+        for actor in actors:
+            location = CarlaDataProvider.get_location(actor)
+            if not location:
+                continue
+
+            actor_wp = self._map.get_waypoint(location)
+            new_actor_wps = actor_wp.next(space)
+            if len(new_actor_wps) > 0:
+                new_transform = new_actor_wps[0].transform
+                new_transform.location.z += 0.2
+                actor.set_transform(new_transform)
 
     def _stop_non_route_entries(self):
         if len(self._active_junctions) > 0:
@@ -1903,6 +1753,32 @@ class BackgroundBehavior(AtomicBehavior):
                 if get_lane_key(source.entry_lane_wp) in junction.route_entry_keys:
                     source.active = enabled
 
+    def _leave_space_in_front(self, space):
+        """Teleports all the vehicles in front of the ego forward"""
+        all_actors = []
+        if not self._active_junctions:
+            for lane in self._road_dict:
+                all_actors.extend(self._road_dict[lane].actors)
+
+        else:
+            junction = self._active_junctions[0]
+            if self._is_junction(self._ego_wp):  # We care about the exit
+                for actor, info in junction.actor_dict.items():
+                    if info['exit_lane_key'] in junction.route_exit_keys:
+                        all_actors.append(actor)
+            else:  # We care about the entry
+                for source in junction.entry_sources:
+                    if get_lane_key(source.entry_lane_wp) in junction.route_entry_keys:
+                        all_actors.extend(source.actors)
+
+        front_actors = []
+        for actor in all_actors:
+            location = CarlaDataProvider.get_location(actor)
+            if location and not self._is_location_behind_ego(location):
+                front_actors.append(actor)
+
+        self._move_actors_forward(front_actors, space)
+
     #############################
     ##     Actor functions     ##
     #############################
@@ -1918,7 +1794,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         actors = CarlaDataProvider.request_new_batch_actors(
             'vehicle.*', len(spawn_transforms), spawn_transforms, True, False, 'background',
-            filter_type="car", tick=False)
+            attribute_filter={'base_type': 'car'}, tick=False)
 
         if not actors:
             return actors
@@ -1946,7 +1822,7 @@ class BackgroundBehavior(AtomicBehavior):
         )
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', new_transform, rolename='background',
-            autopilot=True, random_location=False, filter_type="car", tick=False)
+            autopilot=True, random_location=False, attribute_filter={'base_type':'car'}, tick=False)
 
         if not actor:
             return actor
@@ -1999,7 +1875,7 @@ class BackgroundBehavior(AtomicBehavior):
         """
         # Updates their speed
         route_wp = self._route[self._route_index]
-        scenario_actors = self._crossing_scenario_actors + self._stopped_road_actors
+        scenario_actors = self._stopped_road_actors
         for lane in self._road_dict:
             for i, actor in enumerate(self._road_dict[lane].actors):
                 location = CarlaDataProvider.get_location(actor)
@@ -2134,7 +2010,7 @@ class BackgroundBehavior(AtomicBehavior):
 
                 state, exit_lane_key, _ = actor_dict[actor].values()
                 if self.debug:
-                    string = 'J' + str(i+1) + '_' + state[:2] + '(' + str(j) + ')'
+                    string = 'J' + str(i+1) + '_' + state[:2]
                     draw_string(self._world, location, string, DEBUG_JUNCTION, False)
 
                 # Monitor its entry
@@ -2215,8 +2091,6 @@ class BackgroundBehavior(AtomicBehavior):
             self._opposite_actors.remove(actor)
         if actor in self._stopped_road_actors:
             self._stopped_road_actors.remove(actor)
-        if actor in self._crossing_scenario_actors:
-            self._crossing_scenario_actors.remove(actor)
 
         for opposite_source in self._opposite_sources:
             if actor in opposite_source.actors:

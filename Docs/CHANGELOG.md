@@ -19,7 +19,8 @@
 * Improved overall parsing of routes and scenarios.
 * Added new scenarios:
     - Accident: the ego has to lane change in order to avoid an accident
-    - CrossBycicleFlow: the ego has to do  aturn at an intersection but it has to cross a bycicle lane full of incoming traffic
+    - CrossBycicleFlow: the ego has to do a turn at an intersection but it has to cross a bycicle lane full of incoming traffic
+    - VehicleOpensDoor: a parked vehicle next to the ego suddenly opens the door, forcing the ego to brake. After a while, the door automatically closes.
 * Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
@@ -30,6 +31,7 @@
 * Scenarios are no logner fixed to a location but instead are now part of the route.
 * Routes now automatically import all scenarios.
 * Routes will now also take into account the criteria of their specific scenarios, only being active when they are running. The ResultWriter now automaically adds these criteria, grouping them if more than one scenario of the same type is triggered.
+* Separated the route argument into two, `route` for the file path, and `route-id`, for the name of route. the functionaility remains unchanged.
 
 * Scenarios can now parse and use all parameters present at the configuration file.
 * Renamed RouteScenarioConfiguration's 'trajectory' to 'keypoints' and 'scenarios' to 'scenario_configs`

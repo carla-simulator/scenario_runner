@@ -392,11 +392,11 @@ class ScenarioRunner(object):
                                          debug_mode=self._args.debug)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
-                scenario = scenario_class(self.world,
-                                          self.ego_vehicles,
-                                          config,
-                                          self._args.randomize,
-                                          self._args.debug)
+                scenario = scenario_class(world=self.world,
+                                          ego_vehicles=self.ego_vehicles,
+                                          config=config,
+                                          randomize=self._args.randomize,
+                                          debug_mode=self._args.debug)
         except Exception as exception:                  # pylint: disable=broad-except
             print("The scenario cannot be loaded")
             traceback.print_exc()
@@ -462,12 +462,8 @@ class ScenarioRunner(object):
         """
         result = False
 
-        if self._args.route:
-            routes = self._args.route[0]
-            single_route = self._args.route[1] if len(self._args.route) > 1 else None
-
         # retrieve routes
-        route_configurations = RouteParser.parse_routes_file(routes, single_route)
+        route_configurations = RouteParser.parse_routes_file(self._args.route, self._args.route_id)
 
         for config in route_configurations:
             for _ in range(self._args.repetitions):
@@ -543,11 +539,10 @@ def main():
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
+    parser.add_argument('--route', help='Run a route as a scenario', type=str)
+    parser.add_argument('--route-id', help='Run a specific route inside that \'route\' file', default='', type=str)
     parser.add_argument(
-        '--route', help='Run a route as a scenario (input: (route_file, [route id]))', nargs='+', type=str)
-
-    parser.add_argument(
-        '--agent', help="Agent used to execute the scenario. Currently only compatible with route-based scenarios.")
+        '--agent', help="Agent used to execute the route. Not compatible with non-route-based scenarios.")
     parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
 
     parser.add_argument('--output', action="store_true", help='Provide results on stdout')
