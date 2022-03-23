@@ -155,4 +155,4 @@ class RouteParser(object):
             if is_trigger_close(trigger_transform, route_transform):
                 return True
 
-        return None
+        return False

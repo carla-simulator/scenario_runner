@@ -137,18 +137,16 @@ class JunctionScenarioManager(AtomicBehavior):
     something like 'left', 'right' or 'opposite'
     """
 
-    def __init__(self, entry_direction, remove_entry, remove_exit, remove_middle, name="JunctionScenarioManager"):
+    def __init__(self, entry_direction, remove_exit=True, name="JunctionScenarioManager"):
         self._entry_direction = entry_direction
-        self._remove_entry = remove_entry
         self._remove_exit = remove_exit
-        self._remove_middle = remove_middle
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set(
             "BA_JunctionScenario",
-            [self._entry_direction, self._remove_entry, self._remove_exit, self._remove_middle],
+            [self._entry_direction, self._remove_exit],
             overwrite=True
         )
         return py_trees.common.Status.SUCCESS

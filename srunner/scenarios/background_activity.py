@@ -853,7 +853,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._road_num_front_vehicles = self._road_front_vehicles
         self._opposite_sources.clear()
 
-    def _initialise_junction_scenario(self, direction, remove_entries, remove_exits, remove_middle):
+    def _initialise_junction_scenario(self, direction, remove_exits, remove_entries, remove_middle):
         """
         Removes all vehicles in a particular 'direction' as well as all actors inside the junction.
         Additionally, activates some flags to ensure the junction is empty at all times
@@ -1596,8 +1596,8 @@ class BackgroundBehavior(AtomicBehavior):
         # Handles junction scenarios (scenarios 7 to 10)
         junction_scenario_data = py_trees.blackboard.Blackboard().get('BA_JunctionScenario')
         if junction_scenario_data is not None:
-            direction, remove_entries, remove_exits, remove_middle = junction_scenario_data
-            self._initialise_junction_scenario(direction, remove_entries, remove_exits, remove_middle)
+            entry_direction, remove_exits = junction_scenario_data
+            self._initialise_junction_scenario(entry_direction, remove_exits, True, True)
             py_trees.blackboard.Blackboard().set('BA_JunctionScenario', None, True)
 
         # Handles road accident scenario (Accident and Construction)

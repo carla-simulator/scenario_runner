@@ -189,9 +189,6 @@ class CrossActorFlow(BasicScenario):
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
-        self.world.debug.draw_point(source_wp.transform.location + carla.Location(z=3))
-        self.world.debug.draw_point(sink_wp.transform.location + carla.Location(z=3))
-
         grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
         route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
         junction_id = None
