@@ -144,7 +144,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
         sequence = py_trees.composites.Sequence(name="SignalizedJunctionRightTurn")
         if self.route_mode:
-            sequence.add_child(JunctionScenarioManager(self._direction, True, False, True))
+            sequence.add_child(JunctionScenarioManager(self._direction, False))
         sequence.add_child(root)
 
         return sequence

@@ -184,7 +184,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(JunctionScenarioManager(self._direction, True, True, True))
+            root.add_child(JunctionScenarioManager(self._direction, True))
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)
         root.add_child(ActorDestroy(self.other_actors[0]))

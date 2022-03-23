@@ -103,7 +103,7 @@ class EnterActorFlow(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
-            sequence.add_child(JunctionScenarioManager('left', True, False, True))
+            sequence.add_child(JunctionScenarioManager('left', False))
 
             grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
@@ -208,7 +208,7 @@ class CrossActorFlow(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
-            sequence.add_child(JunctionScenarioManager('opposite', True, True, True))
+            sequence.add_child(JunctionScenarioManager('opposite', True))
             sequence.add_child(StopEntries())
         sequence.add_child(root)
 
