@@ -18,6 +18,7 @@ import py_trees
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction, ChangeParameter
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorControl, ChangeActorTargetSpeed
 from srunner.scenariomanager.timer import GameTime
+from srunner.scenariomanager.weather_sim import OSCWeatherBehavior
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, ParameterRef
 from srunner.tools.py_trees_port import Decorator
@@ -438,6 +439,12 @@ class OpenScenario(BasicScenario):
         behavior.add_child(stories_behavior)
 
         return behavior
+
+    def _create_weather_behavior(self):
+        """
+        Sets the osc weather behavior, which will monitor other behaviors, changing the weather
+        """
+        return OSCWeatherBehavior()
 
     def _create_condition_container(self, node, story, name='Conditions Group', sequence=None,
                                     maneuver=None, success_on_all=True):

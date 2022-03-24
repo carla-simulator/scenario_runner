@@ -190,6 +190,12 @@ class BackgroundActivity(BasicScenario):
         """
         return []
 
+    def _initialize_environment(self, world):
+        """
+        Nothing to do here, avoid settign the weather
+        """
+        pass
+
     def __del__(self):
         """
         Remove all actors upon deletion
