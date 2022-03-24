@@ -175,6 +175,8 @@ class RouteWeatherBehavior(py_trees.behaviour.Behaviour):
     This behavior interpolates the desired weather between two weather keypoints and if the extreme cases
     (0% and 100%) aren't defined, the closest one will be chosen
     (i.e, if the route weather is at 90%, all weathers from 90% to 100% will be the one defined at 90%)
+
+    Use the debug argument to print what is the route's percentage of each route position.
     """
 
     def __init__(self, ego_vehicle, route, weathers, debug=False, name="RouteWeatherBehavior"):
@@ -199,9 +201,18 @@ class RouteWeatherBehavior(py_trees.behaviour.Behaviour):
         self._route_transforms, _ = zip(*self._route)
         self._route_perc = self._get_route_percentages()
         if debug:
+            debug_perc = -1
             for transform, perc in zip(self._route_transforms, self._route_perc):
                 location = transform.location
-                self._world.debug.draw_string(location + carla.Location(z=1), str(round(perc, 2)), life_time=100000)
+                new_perc = int(perc)
+                if new_perc > debug_perc:
+                    self._world.debug.draw_string(
+                        location + carla.Location(z=1),
+                        str(new_perc),
+                        color=carla.Color(50, 50, 50),
+                        life_time=100000
+                    )
+                    debug_perc = new_perc
         self._route_weathers = self.get_route_weathers()
 
     def _get_route_percentages(self):
