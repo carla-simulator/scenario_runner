@@ -76,20 +76,11 @@ class ScenarioConfigurationParser(object):
                     elif elem.tag == 'other_actor':
                         config.other_actors.append(ActorConfigurationData.parse_from_node(elem, 'scenario'))
                     elif elem.tag == 'weather':
-                        config.weather.cloudiness = float(elem.attrib.get("cloudiness", 50))
-                        config.weather.precipitation = float(elem.attrib.get("precipitation", 10))
-                        config.weather.precipitation_deposits = float(elem.attrib.get("precipitation_deposits", 10))
-                        config.weather.wind_intensity = float(elem.attrib.get("wind_intensity", 0.35))
-                        config.weather.sun_azimuth_angle = float(elem.attrib.get("sun_azimuth_angle", 0.0))
-                        config.weather.sun_altitude_angle = float(elem.attrib.get("sun_altitude_angle", 70.0))
-                        config.weather.fog_density = float(elem.attrib.get("fog_density", 0.0))
-                        config.weather.fog_distance = float(elem.attrib.get("fog_distance", 0.0))
-                        config.weather.wetness = float(elem.attrib.get("wetness", 0.0))
-                        config.weather.fog_falloff = float(elem.attrib.get("fog_falloff", 0.0))
-                        config.weather.scattering_intensity = float(elem.attrib.get("scattering_intensity", 0.0))
-                        config.weather.mie_scattering_scale = float(elem.attrib.get("mie_scattering_scale", 0.0))
-                        config.weather.rayleigh_scattering_scale = float(
-                            elem.attrib.get("rayleigh_scattering_scale", 0.0331))
+                        for weather_attrib in elem.attrib:
+                            if hasattr(config.weather, weather_attrib):
+                                setattr(config.weather, weather_attrib, float(elem.attrib[weather_attrib]))
+                            else:
+                                print(f"WARNING: Ignoring '{weather_attrib}', as it isn't a weather parameter")
 
                     elif elem.tag == 'route':
                         route_conf = RouteConfiguration()
@@ -102,35 +93,6 @@ class ScenarioConfigurationParser(object):
 
                 scenario_configurations.append(config)
         return scenario_configurations
-
-    @staticmethod
-    def parse_weather(weather_element):
-        """Parses the weather element into a carla.WeatherParameters.
-        """
-        weather = carla.WeatherParameters()
-
-        for weather_attrib in weather_element:
-
-            if 'cloudiness' in weather_attrib.attrib:
-                weather.cloudiness = float(weather_attrib.attrib['cloudiness'])
-            if 'precipitation' in weather_attrib.attrib:
-                weather.precipitation = float(weather_attrib.attrib['precipitation'])
-            if 'precipitation_deposits' in weather_attrib.attrib:
-                weather.precipitation_deposits = float(weather_attrib.attrib['precipitation_deposits'])
-            if 'wind_intensity' in weather_attrib.attrib:
-                weather.wind_intensity = float(weather_attrib.attrib['wind_intensity'])
-            if 'sun_azimuth_angle' in weather_attrib.attrib:
-                weather.sun_azimuth_angle = float(weather_attrib.attrib['sun_azimuth_angle'])
-            if 'sun_altitude_angle' in weather_attrib.attrib:
-                weather.sun_altitude_angle = float(weather_attrib.attrib['sun_altitude_angle'])
-            if 'wetness' in weather_attrib.attrib:
-                weather.wetness = float(weather_attrib.attrib['wetness'])
-            if 'fog_distance' in weather_attrib.attrib:
-                weather.fog_distance = float(weather_attrib.attrib['fog_distance'])
-            if 'fog_density' in weather_attrib.attrib:
-                weather.fog_density = float(weather_attrib.attrib['fog_density'])
-
-        return weather
 
     @staticmethod
     def get_list_of_scenarios(additional_config_file_name):

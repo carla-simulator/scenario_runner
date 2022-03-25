@@ -126,8 +126,7 @@ class BasicScenario(object):
         """
 
         # Set the appropriate weather conditions
-        if self.config.weather is not None:
-            world.set_weather(self.config.weather)
+        world.set_weather(self.config.weather)
 
         # Set the appropriate road friction
         if self.config.friction is not None:

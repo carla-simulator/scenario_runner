@@ -103,20 +103,24 @@ class RouteParser(object):
         """
         weathers = []
 
-        for weather_elem in route.find("weathers").iter('weather'):
+        weathers_elem = route.find("weathers")
+        if weathers_elem is None:
+            return [[0, carla.WeatherParameters(sun_altitude_angle=70, cloudiness=50)]]
+
+        for weather_elem in weathers_elem.iter('weather'):
             route_percentage = float(weather_elem.attrib['route_percentage'])
 
-            weather = carla.WeatherParameters(sun_altitude_angle=70, cloudiness=30)  # Base weather
+            weather = carla.WeatherParameters(sun_altitude_angle=70, cloudiness=50)  # Base weather
             for weather_attrib in weather_elem.attrib:
                 if hasattr(weather, weather_attrib):
                     setattr(weather, weather_attrib, float(weather_elem.attrib[weather_attrib]))
+                elif weather_attrib != 'route_percentage':
+                    print(f"WARNING: Ignoring '{weather_attrib}', as it isn't a weather parameter")
 
             weathers.append([route_percentage, weather])
 
         weathers.sort(key=lambda x: x[0])
-
         return weathers
-
 
     @staticmethod
     def is_scenario_at_route(trigger_transform, route):
