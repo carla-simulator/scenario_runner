@@ -229,7 +229,7 @@ class ChangeWeather(AtomicBehavior):
 
     """
     Atomic to write a new weather configuration into the blackboard.
-    Used in combination with WeatherBehavior() to have a continuous weather simulation.
+    Used in combination with OSCWeatherBehavior() to have a continuous weather simulation.
 
     The behavior immediately terminates with SUCCESS after updating the blackboard.
 

@@ -20,7 +20,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (W
                                                                                InTimeToArrivalToLocation)
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
-from srunner.scenariomanager.weather_sim import WeatherBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import UpdateAllActorControls
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import Criterion
 
@@ -112,8 +111,11 @@ class BasicScenario(object):
         # Add other nodes
         self.timeout_node = TimeOut(self.timeout, name="TimeOut")  # Timeout node
         self.scenario_tree.add_child(self.timeout_node)
-        self.scenario_tree.add_child(WeatherBehavior())
         self.scenario_tree.add_child(UpdateAllActorControls())
+
+        weather = self._create_weather_behavior()
+        if weather:
+            self.scenario_tree.add_child(weather)
 
         self.scenario_tree.setup(timeout=1)
 
@@ -202,6 +204,13 @@ class BasicScenario(object):
         raise NotImplementedError(
             "This function is re-implemented by all scenarios"
             "If this error becomes visible the class hierarchy is somehow broken")
+
+    def _create_weather_behavior(self):
+        """
+        Default initialization of the weather behavior.
+        Override this method in child class to provide custom initialization.
+        """
+        pass
 
     def change_control(self, control):  # pylint: disable=no-self-use
         """

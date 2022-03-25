@@ -39,6 +39,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
 
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.background_activity import BackgroundActivity
+from srunner.scenariomanager.weather_sim import RouteWeatherBehavior
+
 
 from srunner.tools.route_parser import RouteParser, DIST_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory
@@ -293,7 +295,7 @@ class RouteScenario(BasicScenario):
         and adds the scenario specific ones, which will only be active during their scenario
         """
         criteria = py_trees.composites.Parallel(name="Criteria",
-                                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         # End condition
         criteria.add_child(RouteCompletionTest(self.ego_vehicles[0], route=self.route))
@@ -324,6 +326,20 @@ class RouteScenario(BasicScenario):
 
         return criteria
 
+    def _create_weather_behavior(self):
+        """
+        If needed, add the dynamic weather behavior to the route
+        """
+        if len(self.config.weather) == 1:
+            return
+        return RouteWeatherBehavior(self.ego_vehicles[0], self.route, self.config.weather)
+
+    def _initialize_environment(self, world):
+        """
+        Set the weather
+        """
+        # Set the appropriate weather conditions
+        world.set_weather(self.config.weather[0][1])
 
     def _create_criterion_tree(self, scenario, criteria):
         """

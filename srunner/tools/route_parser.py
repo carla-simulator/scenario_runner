@@ -98,44 +98,29 @@ class RouteParser(object):
     @staticmethod
     def parse_weather(route):
         """
-        Returns a carla.WeatherParameters with the corresponding weather for that route. If the route
-        has no weather attribute, the default one is triggered.
+        Parses all the weather information as a list of [position, carla.WeatherParameters],
+        where the position represents a % of the route.
         """
+        weathers = []
 
-        route_weather = route.find("weather")
-        if route_weather is None:
-            weather = carla.WeatherParameters(sun_altitude_angle=70)
+        weathers_elem = route.find("weathers")
+        if weathers_elem is None:
+            return [[0, carla.WeatherParameters(sun_altitude_angle=70, cloudiness=50)]]
 
-        else:
-            weather = carla.WeatherParameters()
-            for weather_attrib in route.iter("weather"):
+        for weather_elem in weathers_elem.iter('weather'):
+            route_percentage = float(weather_elem.attrib['route_percentage'])
 
-                if 'cloudiness' in weather_attrib.attrib:
-                    weather.cloudiness = float(weather_attrib.attrib['cloudiness'])
-                if 'precipitation' in weather_attrib.attrib:
-                    weather.precipitation = float(weather_attrib.attrib['precipitation'])
-                if 'precipitation_deposits' in weather_attrib.attrib:
-                    weather.precipitation_deposits = float(weather_attrib.attrib['precipitation_deposits'])
-                if 'wind_intensity' in weather_attrib.attrib:
-                    weather.wind_intensity = float(weather_attrib.attrib['wind_intensity'])
-                if 'sun_azimuth_angle' in weather_attrib.attrib:
-                    weather.sun_azimuth_angle = float(weather_attrib.attrib['sun_azimuth_angle'])
-                if 'sun_altitude_angle' in weather_attrib.attrib:
-                    weather.sun_altitude_angle = float(weather_attrib.attrib['sun_altitude_angle'])
-                if 'wetness' in weather_attrib.attrib:
-                    weather.wetness = float(weather_attrib.attrib['wetness'])
-                if 'fog_distance' in weather_attrib.attrib:
-                    weather.fog_distance = float(weather_attrib.attrib['fog_distance'])
-                if 'fog_density' in weather_attrib.attrib:
-                    weather.fog_density = float(weather_attrib.attrib['fog_density'])
-                if 'scattering_intensity' in weather_attrib.attrib:
-                    weather.scattering_intensity = float(weather_attrib.attrib['scattering_intensity'])
-                if 'mie_scattering_scale' in weather_attrib.attrib:
-                    weather.mie_scattering_scale = float(weather_attrib.attrib['mie_scattering_scale'])
-                if 'rayleigh_scattering_scale' in weather_attrib.attrib:
-                    weather.rayleigh_scattering_scale = float(weather_attrib.attrib['rayleigh_scattering_scale'])
+            weather = carla.WeatherParameters(sun_altitude_angle=70, cloudiness=50)  # Base weather
+            for weather_attrib in weather_elem.attrib:
+                if hasattr(weather, weather_attrib):
+                    setattr(weather, weather_attrib, float(weather_elem.attrib[weather_attrib]))
+                elif weather_attrib != 'route_percentage':
+                    print(f"WARNING: Ignoring '{weather_attrib}', as it isn't a weather parameter")
 
-        return weather
+            weathers.append([route_percentage, weather])
+
+        weathers.sort(key=lambda x: x[0])
+        return weathers
 
     @staticmethod
     def is_scenario_at_route(trigger_transform, route):
