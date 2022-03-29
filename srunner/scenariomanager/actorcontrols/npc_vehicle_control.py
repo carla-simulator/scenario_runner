@@ -137,6 +137,3 @@ class NpcVehicleControl(BasicControl):
             light_state = self._actor.get_light_state()
             light_state &= ~carla.VehicleLightState.Brake
             self._actor.set_light_state(carla.VehicleLightState(light_state))
-
-    def get_waypoints(self):
-        return self._local_planner._waypoints_queue

@@ -21,6 +21,7 @@ import operator
 import os
 import time
 import subprocess
+from bisect import bisect_right
 
 import numpy as np
 from numpy import random
@@ -867,27 +868,21 @@ class ChangeActorWaypoints(AtomicBehavior):
             return py_trees.common.Status.SUCCESS
 
         if self._times is not None:
-            self._update_speed(actor)
+            current_relative_time = GameTime.get_time() - self._start_time
+            current_waypoint_idx = bisect_right(self._times, current_relative_time)
+            if current_waypoint_idx >= len(self._times):
+                return py_trees.common.Status.SUCCESS
+            remaining_time = self._times[current_waypoint_idx] - current_relative_time
+            self._update_speed(actor, self._waypoints[current_waypoint_idx], remaining_time)
 
         return py_trees.common.Status.RUNNING
 
-    def _update_speed(self, actor):
-        remaining_waypoints = actor.get_waypoints()
-        waypoint_idx = len(self._times) - len(remaining_waypoints)
-        if 0 <= waypoint_idx < len(self._times):
-            target_waypoint = remaining_waypoints[0]
-            if isinstance(target_waypoint, carla.Transform):
-                target_location = target_waypoint.location
-            elif isinstance(target_waypoint, tuple) and isinstance(target_waypoint[0], carla.Waypoint):
-                target_location = target_waypoint[0].transform.location
-            else:
-                raise RuntimeError(f'Unexpected waypoint type: {type(target_waypoint)}')
-            remaining_dist = calculate_distance(CarlaDataProvider.get_location(self._actor), target_location)
-            target_time = self._times[waypoint_idx]
-            current_relative_time = GameTime.get_time() - self._start_time
-            remaining_time = max(target_time - current_relative_time, 0.01)
-            target_speed = remaining_dist / remaining_time
-            actor.update_target_speed(target_speed)
+    def _update_speed(self, actor, target_waypoint, remaining_time):
+        target_location = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            target_waypoint[0]).location
+        remaining_dist = calculate_distance(CarlaDataProvider.get_location(self._actor), target_location)
+        target_speed = remaining_dist / max(remaining_time, 0.001)
+        actor.update_target_speed(target_speed)
 
 
 class ChangeActorLateralMotion(AtomicBehavior):

@@ -158,15 +158,6 @@ class ActorControl(object):
         """
         return self._last_waypoint_command
 
-    def get_waypoints(self):
-        """
-        Get the remaining waypoints
-
-        returns:
-            The remaining waypoints
-        """
-        return self.control_instance.get_waypoints()
-
     def get_last_lane_offset_command(self):
         """
         Get timestamp of the last issued lane offset control command
