@@ -106,7 +106,7 @@ contains of submodules, which are not listed, the support status applies to all 
 | `VisibilityAction`                                  | &#10060;             | &#10060;             |                  |
 | `RoutingAction`<br> `AcquirePositionAction`        | &#10060;             | &#9989;            |                  |
 | `RoutingAction`<br> `AssignRouteAction`            | &#10060;             | &#9989;            | Route Options (shortest/fastest/etc) are supported. Shortests means direct path between A and B, all other will use the shortest path along the road network between A and B       |
-| `RoutingAction`<br> `FollowTrajectoryAction`       | &#10060;             | &#10060;             |                  |
+| `RoutingAction`<br> `FollowTrajectoryAction`       | &#10060;             | &#9989;             | Currently only Polylines without temporal constraints are supported and the trajectoryFollowingMode is up to the controller |
 
 <br>
 
