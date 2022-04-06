@@ -1507,8 +1507,11 @@ class RouteCompletionTest(Criterion):
     - route: Route to be checked
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    DISTANCE_THRESHOLD = 10.0  # meters
     WINDOWS_SIZE = 2
+
+    # Thresholds to return that a route has been completed
+    DISTANCE_THRESHOLD = 10.0  # meters
+    PERCENTAGE_THRESHOLD = 99  # %
 
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
         """
@@ -1519,24 +1522,29 @@ class RouteCompletionTest(Criterion):
         self._route = route
         self._map = CarlaDataProvider.get_map()
 
-        self._wsize = self.WINDOWS_SIZE
-        self._current_index = 0
+        self._index = 0
         self._route_length = len(self._route)
         self._route_transforms, _ = zip(*self._route)
+        self._route_accum_perc = self._get_acummulated_percentages()
+
         self.target_location = self._route_transforms[-1].location
-
-        self._accum_meters = []
-        prev_loc = self._route_transforms[0].location
-        for i, tran in enumerate(self._route_transforms):
-            loc = tran.location
-            d = loc.distance(prev_loc)
-            accum = 0 if i == 0 else self._accum_meters[i - 1]
-
-            self._accum_meters.append(d + accum)
-            prev_loc = loc
 
         self._traffic_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETION)
         self.events.append(self._traffic_event)
+
+    def _get_acummulated_percentages(self):
+        """Gets the accumulated percentage of each of the route transforms"""
+        accum_meters = []
+        prev_loc = self._route_transforms[0].location
+        for i, tran in enumerate(self._route_transforms):
+            d = tran.location.distance(prev_loc)
+            new_d = 0 if i == 0 else accum_meters[i - 1]
+
+            accum_meters.append(d + new_d)
+            prev_loc = tran.location
+
+        max_dist = accum_meters[-1]
+        return [x / max_dist * 100 for x in accum_meters]
 
     def update(self):
         """
@@ -1553,7 +1561,7 @@ class RouteCompletionTest(Criterion):
 
         elif self.test_status in ('RUNNING', 'INIT'):
 
-            for index in range(self._current_index, min(self._current_index + self._wsize + 1, self._route_length)):
+            for index in range(self._index, min(self._index + self.WINDOWS_SIZE + 1, self._route_length)):
                 # Get the dot product to know if it has passed this location
                 ref_location = self._route_transforms[index].location
                 wp = self._map.get_waypoint(ref_location)
@@ -1561,20 +1569,11 @@ class RouteCompletionTest(Criterion):
                 wp_veh = location - ref_location                    # vector waypoint - vehicle
 
                 if wp_veh.dot(wp_dir) > 0:
-                    # good! segment completed!
-                    self._current_index = index
-                    self.actual_value = 100.0 * float(self._accum_meters[self._current_index]) \
-                        / float(self._accum_meters[-1])
-                    self._traffic_event.set_dict({
-                        'route_completed': self.actual_value})
-                    self._traffic_event.set_message(
-                        "Agent has completed > {:.2f}% of the route".format(
-                            self.actual_value))
+                    self._index = index
+                    self.actual_value = self._route_accum_perc[self._index]
 
-            if self.actual_value > 99.0 and location.distance(self.target_location) < self.DISTANCE_THRESHOLD:
-                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED)
-                route_completion_event.set_message("Destination was successfully reached")
-                self.events.append(route_completion_event)
+            if self.actual_value > self.PERCENTAGE_THRESHOLD \
+                    and location.distance(self.target_location) < self.DISTANCE_THRESHOLD:
                 self.test_status = "SUCCESS"
                 self.actual_value = 100
 
@@ -1590,6 +1589,9 @@ class RouteCompletionTest(Criterion):
         Set test status to failure if not successful and terminate
         """
         self.actual_value = round(self.actual_value, 2)
+
+        self._traffic_event.set_dict({'route_completed': self.actual_value})
+        self._traffic_event.set_message("Agent has completed {} of the route".format(self.actual_value))
 
         if self.test_status == "INIT":
             self.test_status = "FAILURE"
