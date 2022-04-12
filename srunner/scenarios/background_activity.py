@@ -1631,6 +1631,19 @@ class BackgroundBehavior(AtomicBehavior):
             self._leave_space_in_front(leave_space_data)
             py_trees.blackboard.Blackboard().set('BA_LeaveSpaceInFront', None, True)
 
+        # Remove Lane
+        remove_lane_data = py_trees.blackboard.Blackboard().get('BA_RemoveLane')
+        if remove_lane_data is not None and isinstance(remove_lane_data, str):
+            lane_id_list = [x.split('*')[-1] for x in  list(self._road_dict.keys())]
+            if remove_lane_data in lane_id_list:
+                lane_index = lane_id_list.index(remove_lane_data)
+                lane_key = list(self._road_dict.keys())[lane_index]
+                for actor in list(self._road_dict[lane_key].actors):
+                    self._destroy_actor(actor)
+                self._road_dict.pop(lane_key)
+
+            py_trees.blackboard.Blackboard().set('BA_RemoveLanes', None, True)
+
         self._compute_parameters()
 
     def _compute_parameters(self):

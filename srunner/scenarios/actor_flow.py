@@ -26,7 +26,8 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import (SwitchRouteSources,
                                               JunctionScenarioManager,
                                               ExtentExitRoadSpace,
-                                              StopEntries)
+                                              StopEntries,
+                                              RemoveLane)
 from srunner.tools.scenario_helper import get_same_dir_lanes
 
 def convert_dict_to_location(actor_dict):
@@ -174,6 +175,11 @@ class CrossActorFlow(BasicScenario):
         else:
             self._source_dist_interval = [5, 7] # m
 
+        if 'clear_lane' in config.other_parameters:
+            self._clear_lane = True
+        else:
+            self._clear_lane = False
+
         super(CrossActorFlow, self).__init__("CrossActorFlow",
                                              ego_vehicles,
                                              config,
@@ -207,7 +213,10 @@ class CrossActorFlow(BasicScenario):
         root.add_child(end_condition)
 
         sequence = py_trees.composites.Sequence()
+
         if self.route_mode:
+            if self._clear_lane:
+                sequence.add_child(RemoveLane(str(source_wp.lane_id)))
             sequence.add_child(JunctionScenarioManager('opposite', True))
             sequence.add_child(StopEntries())
         sequence.add_child(root)
