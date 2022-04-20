@@ -18,7 +18,7 @@
       <scenarios>
          <scenario name="CrossActorFlow_1" type="CrossActorFlow">
             <trigger_point x="275" y="140" z="0.0" yaw="0"/>
-            <start_actor_flow x="283.11" y="137.09" z="0.2"/>
+            <start_actor_flow x="255" y="137.09" z="0.2"/>
             <end_actor_flow x="621" y="137" z="0.2"/>
             <flow_speed value="20"/>
             <source_dist_interval from="20" to="40"/>
