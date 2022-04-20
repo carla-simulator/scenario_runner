@@ -22,7 +22,6 @@
             <end_actor_flow x="621" y="137" z="0.2"/>
             <flow_speed value="20"/>
             <source_dist_interval from="20" to="40"/>
-            <clear_lane />
          </scenario>
       </scenarios>
    </route>
