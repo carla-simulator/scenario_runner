@@ -235,3 +235,21 @@ class HandleEndAccidentScenario(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
+
+class RemoveLane(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to remove its actors from the given lane,
+    and stop generating new ones on this lane.
+
+    Args:
+        lane_id (str): A carla.Waypoint.lane_id
+    """
+    def __init__(self, lane=None, name="RemoveLane"):
+        self._lane = lane
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_RemoveLane", self._lane, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+        

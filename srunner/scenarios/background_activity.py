@@ -1631,6 +1631,12 @@ class BackgroundBehavior(AtomicBehavior):
             self._leave_space_in_front(leave_space_data)
             py_trees.blackboard.Blackboard().set('BA_LeaveSpaceInFront', None, True)
 
+        # Remove Lane
+        remove_lane_data = py_trees.blackboard.Blackboard().get('BA_RemoveLane')
+        if remove_lane_data is not None:
+            self._remove_lane(remove_lane_data)
+            py_trees.blackboard.Blackboard().set('BA_RemoveLanes', None, True)
+
         self._compute_parameters()
 
     def _compute_parameters(self):
@@ -1785,6 +1791,18 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._move_actors_forward(front_actors, space)
 
+    def _remove_lane(self, lane_id):
+        """Remove BA actors from this lane, and BA would never generate new actors on this lane"""
+        lane_id = str(lane_id)
+        lane_id_list = [x.split('*')[-1] for x in  list(self._road_dict.keys())]
+        if lane_id in lane_id_list:
+            lane_index = lane_id_list.index(lane_id)
+            lane_key = list(self._road_dict.keys())[lane_index]
+            for actor in list(self._road_dict[lane_key].actors):
+                self._destroy_actor(actor)
+            self._road_dict.pop(lane_key)
+
+            
     #############################
     ##     Actor functions     ##
     #############################
