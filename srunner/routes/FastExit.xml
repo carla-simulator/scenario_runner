@@ -16,7 +16,7 @@
          <position x="510.9" y="89.45" z="0.0" />
       </waypoints>
       <scenarios>
-         <scenario name="CrossActorFlow_1" type="CrossActorFlow">
+         <scenario name="HighwayExit_1" type="HighwayExit">
             <trigger_point x="275" y="140" z="0.0" yaw="0"/>
             <start_actor_flow x="255" y="137.09" z="0.2"/>
             <end_actor_flow x="621" y="137" z="0.2"/>
