@@ -175,11 +175,6 @@ class CrossActorFlow(BasicScenario):
         else:
             self._source_dist_interval = [5, 7] # m
 
-        if 'clear_lane' in config.other_parameters:
-            self._clear_lane = True
-        else:
-            self._clear_lane = False
-
         super(CrossActorFlow, self).__init__("CrossActorFlow",
                                              ego_vehicles,
                                              config,
@@ -215,8 +210,6 @@ class CrossActorFlow(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            if self._clear_lane:
-                sequence.add_child(RemoveLane(str(source_wp.lane_id)))
             sequence.add_child(JunctionScenarioManager('opposite', True))
             sequence.add_child(StopEntries())
         sequence.add_child(root)
@@ -329,10 +322,14 @@ class CrossingBycicleFlow(BasicScenario):
         """
         self.remove_all_actors()
 
-class CleanCrossActorFlow(BasicScenario):
+class HighwayExit(BasicScenario):
     """
     This scenario is similar to CrossActorFlow
     It will remove the BackgroundActivity from the lane where ActorFlow starts.
+    Then vehicles (cars) will start driving from start_actor_flow location to end_actor_flow location
+    in a relatively high speed, forcing the ego to accelerate to cut in the actor flow 
+    then exit from the highway.
+    This scenario works when Background Activity is running in route mode. And there should be no junctions in front of the ego.
     """
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
@@ -365,7 +362,7 @@ class CleanCrossActorFlow(BasicScenario):
             self._source_dist_interval = [5, 7] # m
 
 
-        super(CleanCrossActorFlow, self).__init__("CleanCrossActorFlow",
+        super(HighwayExit, self).__init__("HighwayExit",
                                              ego_vehicles,
                                              config,
                                              world,
@@ -399,9 +396,8 @@ class CleanCrossActorFlow(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            sequence.add_child(RemoveLane(str(source_wp.lane_id)))
+            sequence.add_child(RemoveLane(source_wp.lane_id))
             sequence.add_child(JunctionScenarioManager('opposite', True))
-            sequence.add_child(StopEntries())
         sequence.add_child(root)
 
         return sequence
