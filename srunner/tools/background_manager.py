@@ -252,3 +252,4 @@ class RemoveLane(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_RemoveLane", self._lane, overwrite=True)
         return py_trees.common.Status.SUCCESS
+        
