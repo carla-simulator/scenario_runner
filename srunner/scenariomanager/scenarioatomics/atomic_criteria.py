@@ -1031,25 +1031,23 @@ class OutsideRouteLanesTest(Criterion):
         for index in range(self._current_index + 1,
                            min(self._current_index + self.WINDOWS_SIZE + 1, self._route_length)):
             # Get the dot product to know if it has passed this location
-            index_location = self._route_transforms[index].location
-            index_waypoint = self._map.get_waypoint(index_location)
+            route_transform = self._route_transforms[index]
+            route_location = route_transform.location
 
-            wp_dir = index_waypoint.transform.get_forward_vector()  # Waypoint's forward vector
-            wp_veh = location - index_location  # vector waypoint - vehicle
+            wp_dir = route_transform.get_forward_vector()  # Waypoint's forward vector
+            wp_veh = location - route_location  # vector waypoint - vehicle
 
             if wp_veh.dot(wp_dir) > 0:
-                # Get the distance traveled
-                index_location = self._route_transforms[index].location
-                current_index_location = self._route_transforms[self._current_index].location
-                new_dist = current_index_location.distance(index_location)
-
-                # Add it to the total distance
-                self._current_index = index
+                # Get the distance traveled and add it to the total distance
+                prev_route_location = self._route_transforms[self._current_index].location
+                new_dist = prev_route_location.distance(route_location)
                 self._total_distance += new_dist
 
                 # And to the wrong one if outside route lanes
                 if self._outside_lane_active or self._wrong_lane_active:
                     self._wrong_distance += new_dist
+
+                self._current_index = index
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
@@ -1563,10 +1561,10 @@ class RouteCompletionTest(Criterion):
 
             for index in range(self._index, min(self._index + self.WINDOWS_SIZE + 1, self._route_length)):
                 # Get the dot product to know if it has passed this location
-                ref_location = self._route_transforms[index].location
-                wp = self._map.get_waypoint(ref_location)
-                wp_dir = wp.transform.get_forward_vector()          # Waypoint's forward vector
-                wp_veh = location - ref_location                    # vector waypoint - vehicle
+                route_transform = self._route_transforms[index]
+                route_location = route_transform.location
+                wp_dir = route_transform.get_forward_vector()          # Waypoint's forward vector
+                wp_veh = location - route_location                     # vector route - vehicle
 
                 if wp_veh.dot(wp_dir) > 0:
                     self._index = index
@@ -1940,3 +1938,93 @@ class RunningStopTest(Criterion):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+
+class CheckMinSpeed(Criterion):
+
+    """
+    Check at which stage of the route is the actor at each tick
+
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - route: Route to be checked
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
+    """
+    WINDOWS_SIZE = 2
+
+    # Thresholds to return that a route has been completed
+    MULTIPLIER = 1.5  # %
+
+    def __init__(self, actor, name="CheckMinSpeed", terminate_on_failure=False):
+        """
+        """
+        super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
+        self.units = "%"
+        self.success_value = 100
+        self._world = CarlaDataProvider.get_world()
+        self._mean_speed = 0
+        self._actor_speed = 0
+        self._speed_points = 0
+
+        self._active = True
+
+        self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION)
+        self.events.append(self._traffic_event)
+
+    def update(self):
+        """
+        Check if the actor location is within trigger region
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # Get the actor speed
+        velocity = CarlaDataProvider.get_velocity(self.actor)
+        if velocity is None:
+            return new_status
+
+        set_speed_data = py_trees.blackboard.Blackboard().get('BA_ClearJunction')
+        if set_speed_data is not None:
+            self._active = set_speed_data
+            py_trees.blackboard.Blackboard().set('BA_ClearJunction', None, True)
+
+        if self._active:
+            # Get the speed of the surrounding Background Activity
+            all_vehicles = self._world.get_actors().filter('vehicle*')
+            background_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'background']
+
+            if background_vehicles:
+                frame_mean_speed = 0
+                for vehicle in background_vehicles:
+                    frame_mean_speed += CarlaDataProvider.get_velocity(vehicle)
+                frame_mean_speed /= len(background_vehicles)
+
+                # Record the data
+                self._mean_speed += frame_mean_speed
+                self._actor_speed += velocity
+                self._speed_points += 1
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        Set the actual value as a percentage of the two mean speeds,
+        the test status to failure if not successful and terminate
+        """
+        if self._speed_points > 0:
+            self._mean_speed /= self._speed_points
+            self._actor_speed /= self._speed_points
+            self.actual_value = round(self._actor_speed / self._mean_speed * 100, 2)
+        else:
+            self.actual_value = 100
+
+        if self.actual_value >= self.success_value:
+            self.test_status = "SUCCESS"
+        else:
+            self.test_status = "FAILURE"
+
+        self._traffic_event.set_dict({'percentage': self.actual_value})
+        self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
+
+        super().terminate(new_status)

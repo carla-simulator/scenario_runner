@@ -236,6 +236,7 @@ class HandleEndAccidentScenario(AtomicBehavior):
         py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
+
 class RemoveLane(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to remove its actors from the given lane,
@@ -252,4 +253,36 @@ class RemoveLane(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_RemoveLane", self._lane, overwrite=True)
         return py_trees.common.Status.SUCCESS
-        
+
+
+class RemoveJunctionEntry(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to remove its actors from the given lane,
+    and stop generating new ones on this lane.
+
+    Args:
+        wp (carla.Waypoint): A waypoint used as reference to the entry lane
+        all_road_entries (bool): Boolean to remove all entries part of the same road, or just one
+    """
+    def __init__(self, wp, all_road_entries=False, name="RemoveJunctionEntry"):
+        self._wp = wp
+        self._all_road_entries = all_road_entries
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", [self._wp, self._all_road_entries], overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class ClearJunction(AtomicBehavior):
+    """
+    """
+
+    def __init__(self, name="ClearJunction"):
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_ClearJunction", True, overwrite=True)
+        return py_trees.common.Status.SUCCESS
