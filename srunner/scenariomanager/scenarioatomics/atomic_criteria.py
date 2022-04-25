@@ -1020,9 +1020,15 @@ class OutsideRouteLanesTest(Criterion):
         if location is None:
             return new_status
 
-        # Check if outside route lanes
-        self._is_outside_driving_lanes(location)
-        self._is_at_wrong_lane(location)
+        # Deactivate by other components
+        activate = py_trees.blackboard.Blackboard().get('AC_SwitchOutsideRouteLanesTest')
+        if activate is not None and activate is False:
+            # Don't check if it's deactivated
+            pass
+        else:
+            # Check if it's activated
+            self._is_outside_driving_lanes(location)
+            self._is_at_wrong_lane(location)
 
         if self._outside_lane_active or self._wrong_lane_active:
             self.test_status = "FAILURE"

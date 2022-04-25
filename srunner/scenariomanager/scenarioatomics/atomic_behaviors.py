@@ -3233,3 +3233,24 @@ class KeepLongitudinalGap(AtomicBehavior):
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
+
+class SwitchOutsideRouteLanesTest(AtomicBehavior):
+
+    """
+    Atomic that switch the OutsideRouteLanesTest criterion.
+
+    Args:
+        activate (bool): True: activate; False: deactivate
+        name (str): name of the behavior
+    """
+
+    def __init__(self, activate, name="SwitchOutsideRouteLanesTest"):
+        """
+        Setup class members
+        """
+        super(SwitchOutsideRouteLanesTest, self).__init__(name)
+        self._activate = activate
+
+    def update(self):
+        py_trees.blackboard.Blackboard().set("AC_SwitchOutsideRouteLanesTest", self._activate, overwrite=True)
+        return py_trees.common.Status.SUCCESS
