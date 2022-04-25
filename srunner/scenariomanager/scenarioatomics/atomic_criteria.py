@@ -1978,35 +1978,30 @@ class CheckMinSpeed(Criterion):
         new_status = py_trees.common.Status.RUNNING
 
         # Get the actor speed
-        if self._active:
-            print("ACTIVE")
-            velocity = CarlaDataProvider.get_velocity(self.actor)
-            if velocity is None:
-                return new_status
-
-        else:
-            print("INACTIVE")
-            velocity = 0
+        velocity = CarlaDataProvider.get_velocity(self.actor)
+        if velocity is None:
+            return new_status
 
         set_speed_data = py_trees.blackboard.Blackboard().get('BA_ClearJunction')
         if set_speed_data is not None:
             self._active = set_speed_data
             py_trees.blackboard.Blackboard().set('BA_ClearJunction', None, True)
 
-        # Get the speed of the surrounding Background Activity
-        all_vehicles = self._world.get_actors().filter('vehicle*')
-        background_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'background']
+        if self._active:
+            # Get the speed of the surrounding Background Activity
+            all_vehicles = self._world.get_actors().filter('vehicle*')
+            background_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'background']
 
-        if background_vehicles:
-            frame_mean_speed = 0
-            for vehicle in background_vehicles:
-                frame_mean_speed += CarlaDataProvider.get_velocity(vehicle)
-            frame_mean_speed /= len(background_vehicles)
+            if background_vehicles:
+                frame_mean_speed = 0
+                for vehicle in background_vehicles:
+                    frame_mean_speed += CarlaDataProvider.get_velocity(vehicle)
+                frame_mean_speed /= len(background_vehicles)
 
-            # Record the data
-            self._mean_speed += frame_mean_speed
-            self._actor_speed += velocity
-            self._speed_points += 1
+                # Record the data
+                self._mean_speed += frame_mean_speed
+                self._actor_speed += velocity
+                self._speed_points += 1
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
