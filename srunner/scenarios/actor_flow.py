@@ -27,7 +27,9 @@ from srunner.tools.background_manager import (SwitchRouteSources,
                                               JunctionScenarioManager,
                                               ExtentExitRoadSpace,
                                               StopEntries,
-                                              RemoveLane)
+                                              RemoveLane,
+                                              RemoveJunctionEntry,
+                                              ClearJunction)
 from srunner.tools.scenario_helper import get_same_dir_lanes
 
 def convert_dict_to_location(actor_dict):
@@ -75,6 +77,11 @@ class EnterActorFlow(BasicScenario):
         else:
             self._source_dist_interval = [5, 7] # m
 
+        if 'clear_junction' in config.other_parameters:
+            self._clear_junction = config.other_parameters['clear_junction']
+        else:
+            self._clear_junction = True
+
         super(EnterActorFlow, self).__init__("EnterActorFlow",
                                              ego_vehicles,
                                              config,
@@ -93,6 +100,9 @@ class EnterActorFlow(BasicScenario):
         # Get all lanes
         source_wps = get_same_dir_lanes(source_wp)
         sink_wps = get_same_dir_lanes(sink_wp)
+
+        for wp in source_wps + sink_wps:
+            self._world.debug.draw_point(wp.transform.location + carla.Location(z=0.5), life_time=200)
         num_flows = min(len(source_wps), len(sink_wps))
 
         root = py_trees.composites.Parallel(
@@ -104,7 +114,9 @@ class EnterActorFlow(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
-            sequence.add_child(JunctionScenarioManager('left', False))
+            sequence.add_child(RemoveJunctionEntry(source_wp, True))
+            if self._clear_junction:
+                sequence.add_child(ClearJunction())
 
             grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
@@ -114,6 +126,7 @@ class EnterActorFlow(BasicScenario):
                 extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
                 if current_wp.is_junction:
                     sequence.add_child(ExtentExitRoadSpace(distance=extra_space, direction='left'))
+                    sequence.add_child(ExtentExitRoadSpace(distance=extra_space, direction='ref'))
                     break
 
             sequence.add_child(SwitchRouteSources(False))
@@ -210,7 +223,7 @@ class CrossActorFlow(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            sequence.add_child(JunctionScenarioManager('opposite', True))
+            sequence.add_child(RemoveJunctionEntry(source_wp, True))
             sequence.add_child(StopEntries())
         sequence.add_child(root)
 
@@ -397,7 +410,6 @@ class HighwayExit(BasicScenario):
 
         if self.route_mode:
             sequence.add_child(RemoveLane(source_wp.lane_id))
-            sequence.add_child(JunctionScenarioManager('opposite', True))
         sequence.add_child(root)
 
         return sequence

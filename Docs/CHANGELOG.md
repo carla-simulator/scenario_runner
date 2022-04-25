@@ -33,6 +33,7 @@
 * Routes will now also take into account the criteria of their specific scenarios, only being active when they are running. The ResultWriter now automaically adds these criteria, grouping them if more than one scenario of the same type is triggered.
 * Routes can now have dynamic weather. These are set by keypoints at a routes percentage, and all values between them are interpolated.
 * Separated the route argument into two, `route` for the file path, and `route-id`, for the name of route. the functionaility remains unchanged.
+* Added a new criteria for routes, `CheckMinSpeed`, that checks the ego's speed and compares it with teh rest of the traffic
 
 * Scenarios can now parse and use all parameters present at the configuration file.
 * Renamed RouteScenarioConfiguration's 'trajectory' to 'keypoints' and 'scenarios' to 'scenario_configs`
