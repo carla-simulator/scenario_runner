@@ -214,7 +214,7 @@ class BackgroundBehavior(AtomicBehavior):
     Handles the background activity
     """
 
-    VELOCITY_MULTIPLIER = 3  # TODO: Remove it when the map has speed limits
+    VELOCITY_MULTIPLIER = 2.5  # TODO: Remove it when the map has speed limits
 
     def __init__(self, ego_actor, route, night_mode=False, debug=False, name="BackgroundBehavior"):
         """
@@ -285,6 +285,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._opposite_removal_dist = 30  # Distance at which actors are destroyed
         self._opposite_sources_dist = 60  # Distance from the ego to the opposite sources [m]
         self._opposite_sources_max_actors = 8  # Maximum vehicles alive at the same time per source
+        self._opposite_increase_ratio = 3.0  # Meters the radius increases per m/s of the ego
 
         # Scenario variables:
         self._stopped_road_actors = []  # Actors stopped by a hard break scenario
@@ -1186,9 +1187,12 @@ class BackgroundBehavior(AtomicBehavior):
         else:
             next_junction_index = self._junctions[0].route_entry_index
 
+        ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
+        source_dist = self._opposite_sources_dist + ego_speed * self._opposite_increase_ratio
+
         ego_accum_dist = self._accum_dist[self._route_index]
         for i in range(self._route_index, next_junction_index):
-            if self._accum_dist[i] - ego_accum_dist > self._opposite_sources_dist:
+            if self._accum_dist[i] - ego_accum_dist > source_dist:
                 self._opposite_route_index = i
                 break
         if not self._opposite_route_index:
@@ -1438,13 +1442,16 @@ class BackgroundBehavior(AtomicBehavior):
         if prev_index == self._route_index:
             return
 
+        ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
+        source_dist = self._opposite_sources_dist + ego_speed * self._opposite_increase_ratio
+
         # Get the new route tracking wp
         oppo_route_index = None
         last_index = self._junctions[0].route_entry_index if self._junctions else self._route_length - 1
         current_accum_dist = self._accum_dist[self._route_index]
         for i in range(self._opposite_route_index, last_index):
             accum_dist = self._accum_dist[i]
-            if accum_dist - current_accum_dist >= self._opposite_sources_dist:
+            if accum_dist - current_accum_dist >= source_dist:
                 oppo_route_index = i
                 break
         if not oppo_route_index:
@@ -1994,7 +2001,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._get_road_radius()
         self._compute_parameters()
 
-    def _set_road_actor_speed(self, location, actor, multiplier=2):
+    def _set_road_actor_speed(self, location, actor, multiplier=1):
         """Changes the speed of the vehicle depending on its distance to the ego"""
         distance = location.distance(self._ego_wp.transform.location)
         percentage = (self._max_radius - distance) / (self._max_radius - self._min_radius) * 100
@@ -2140,7 +2147,7 @@ class BackgroundBehavior(AtomicBehavior):
 
                 # Set them ready to move so that the ego can smoothly cross the junction
                 elif state == JUNCTION_ROAD:
-                    self._set_road_actor_speed(location, actor, multiplier=2)
+                    self._set_road_actor_speed(location, actor, multiplier=1.5)
                     pass
 
     def _update_opposite_actors(self):
@@ -2148,7 +2155,8 @@ class BackgroundBehavior(AtomicBehavior):
         Updates the opposite actors. This involves tracking their position,
         removing them if too far behind the ego.
         """
-        max_dist = max(self._opposite_removal_dist, self._spawn_dist)
+        ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
+        max_dist = max(self._opposite_removal_dist + ego_speed * self._opposite_increase_ratio, self._spawn_dist)
         for actor in list(self._opposite_actors):
             location = CarlaDataProvider.get_location(actor)
             if not location:
@@ -2200,6 +2208,7 @@ class BackgroundBehavior(AtomicBehavior):
     def _destroy_actor(self, actor):
         """Destroy the actor and all its references"""
         self._remove_actor_info(actor)
+        actor.set_autopilot(False)
         try:
             actor.destroy()
         except RuntimeError:

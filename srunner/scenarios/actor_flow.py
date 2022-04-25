@@ -100,9 +100,6 @@ class EnterActorFlow(BasicScenario):
         # Get all lanes
         source_wps = get_same_dir_lanes(source_wp)
         sink_wps = get_same_dir_lanes(sink_wp)
-
-        for wp in source_wps + sink_wps:
-            self._world.debug.draw_point(wp.transform.location + carla.Location(z=0.5), life_time=200)
         num_flows = min(len(source_wps), len(sink_wps))
 
         root = py_trees.composites.Parallel(
@@ -234,6 +231,8 @@ class CrossActorFlow(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
+        if self.route_mode:
+            return []
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
@@ -403,7 +402,7 @@ class HighwayExit(BasicScenario):
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed))
         end_condition = py_trees.composites.Sequence()
         end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0], junction_id))
-        
+
         root.add_child(end_condition)
 
         sequence = py_trees.composites.Sequence()
@@ -419,6 +418,8 @@ class HighwayExit(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
+        if self.route_mode:
+            return []
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):
