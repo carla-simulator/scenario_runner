@@ -11,12 +11,10 @@
       <scenarios>
          <scenario name="ParkingExit_1" type="ParkingExit">
                 <trigger_point x="60" y="7.2" z="0.0" yaw="0"/>
-                <parking_point x="60" y="10.8" z="0.0" />
-                <end_distance value="25" />
+                <parking_lane_side value="right" />
                 <front_vehicle_distance value="20" />
                 <behind_vehicle_distance value="5" />
          </scenario>
       </scenarios>
    </route>
-  
 </routes>

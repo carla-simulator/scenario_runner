@@ -1020,19 +1020,6 @@ class OutsideRouteLanesTest(Criterion):
         if location is None:
             return new_status
 
-        # Deactivate by other components
-        activate = py_trees.blackboard.Blackboard().get('AC_SwitchOutsideRouteLanesTest')
-        if activate is not None and activate is False:
-            # Don't check if it's deactivated
-            pass
-        else:
-            # Check if it's activated
-            self._is_outside_driving_lanes(location)
-            self._is_at_wrong_lane(location)
-
-        if self._outside_lane_active or self._wrong_lane_active:
-            self.test_status = "FAILURE"
-
         # Get the traveled distance
         for index in range(self._current_index + 1,
                            min(self._current_index + self.WINDOWS_SIZE + 1, self._route_length)):
@@ -1054,6 +1041,20 @@ class OutsideRouteLanesTest(Criterion):
                     self._wrong_distance += new_dist
 
                 self._current_index = index
+
+        # Deactivate/Activate cheching by blackboard message
+        activate = py_trees.blackboard.Blackboard().get('AC_SwitchOutsideRouteLanesTest')
+        if activate is not None and activate is False:
+            # Don't check if it's deactivated
+            pass
+        else:
+            # Check if it's activated
+            self._is_outside_driving_lanes(location)
+            self._is_at_wrong_lane(location)
+        py_trees.blackboard.Blackboard().set('AC_SwitchOutsideRouteLanesTest', None, True)
+
+        if self._outside_lane_active or self._wrong_lane_active:
+            self.test_status = "FAILURE"
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
