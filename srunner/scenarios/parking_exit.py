@@ -98,7 +98,6 @@ class ParkingExit(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         # Put blocking vehicles
-        # parking_waypoint = self._parking_waypoint
         if self._parking_lane_side == "left":
             parking_waypoint = self._map.get_waypoint(
                 self.ego_vehicles[0].get_location()).get_left_lane()
