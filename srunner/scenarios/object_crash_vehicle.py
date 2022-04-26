@@ -229,6 +229,15 @@ class DynamicObjectCrossing(BasicScenario):
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
                 continue
+                
+            # Get the the other adversary transform and spawn it
+            offset = {"yaw": 270, "z": 0.5, "k": 1.0}
+            self._adversary_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
+            second_adversary = CarlaDataProvider.request_new_actor(self._adversary_type, self._adversary_transform)
+            if second_adversary is None:
+                self._number_of_attempts -= 1
+                move_dist = self._retry_dist
+                continue
 
             # Get the blocker transform and spawn it
             blocker_wp = sidewalk_waypoint.previous(self._blocker_shift)[0]
@@ -251,8 +260,8 @@ class DynamicObjectCrossing(BasicScenario):
             adversary.apply_control(carla.VehicleControl(hand_brake=True))
         blocker.set_simulate_physics(enabled=False)
         self.other_actors.append(adversary)
-        self.other_actors.append(blocker)
-
+        self.other_actors.append(second_adversary)
+        
     def _create_behavior(self):
         """
         After invoking this scenario, cyclist will wait for the user
@@ -302,6 +311,195 @@ class DynamicObjectCrossing(BasicScenario):
             return []
         return [CollisionTest(self.ego_vehicles[0])]
 
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()
+
+
+class PedestriansCrossingSidewalk(BasicScenario):
+    """
+    This class holds everything required for a simple object crash
+    without prior vehicle action involving a vehicle and three or four pedestrians,
+    The ego vehicle is passing through a road,
+    And encounters three or four pedestrians crossing the road.
+    """
+    
+    def __init__(self, world, ego_vehicles, config,
+                 adversary_type='walker.*', blocker_type='static.prop.vendingmachine',
+                 randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
+        """
+        Setup all relevant parameters and create scenario
+        """
+        self._wmap = CarlaDataProvider.get_map()
+        self._trigger_location = config.trigger_points[0].location
+        self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
+        self._num_lane_changes = 0
+        
+        self._start_distance = 12
+        self._blocker_shift = 0.9
+        self._retry_dist = 0.4
+        
+        self._adversary_type = adversary_type  # blueprint filter of the adversary
+        self._blocker_type = blocker_type  # blueprint filter of the blocker
+        self._adversary_transform = None
+        self._blocker_transform = None
+        self._collision_wp = None
+        
+        self._adversary_speed = 2.0  # Speed of the adversary [m/s]
+        self._reaction_time = 0.8  # Time the agent has to react to avoid the collision [s]
+        self._reaction_ratio = 0.12  # The higehr the number of lane changes, the smaller the reaction time
+        self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
+        self._ego_end_distance = 40
+        self.timeout = timeout
+        
+        self._number_of_attempts = 6
+        
+        super(PedestriansCrossingSidewalk, self).__init__("PedestriansCrossingSidewalk",
+                                                    ego_vehicles,
+                                                    config,
+                                                    world,
+                                                    debug_mode,
+                                                    criteria_enable=criteria_enable)
+    
+    def _get_sidewalk_transform(self, waypoint, offset):
+        """
+        Processes the waypoint transform to find a suitable spawning one at the sidewalk.
+        It first rotates the transform so that it is pointing towards the road and then moves a
+        bit to the side waypoint that aren't part of sidewalks, as they might be invading the road
+        """
+        
+        new_rotation = waypoint.transform.rotation
+        new_rotation.yaw += offset['yaw']
+        
+        if waypoint.lane_type == carla.LaneType.Sidewalk:
+            new_location = waypoint.transform.location
+        else:
+            right_vector = waypoint.transform.get_right_vector()
+            offset_dist = waypoint.lane_width * offset["k"]
+            offset_location = carla.Location(offset_dist * right_vector.x, offset_dist * right_vector.y)
+            new_location = waypoint.transform.location + offset_location
+        new_location.z += offset['z']
+        
+        return carla.Transform(new_location, new_rotation)
+    
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        # Get the waypoint in front of the ego.
+        move_dist = self._start_distance
+        waypoint = self._reference_waypoint
+        while self._number_of_attempts > 0:
+            self._num_lane_changes = 0
+            
+            # Move to the front
+            location, _ = get_location_in_distance_from_wp(waypoint, move_dist, False)
+            waypoint = self._wmap.get_waypoint(location)
+            self._collision_wp = waypoint
+            
+            # Move to the right
+            sidewalk_waypoint = waypoint
+            while sidewalk_waypoint.lane_type != carla.LaneType.Sidewalk:
+                right_wp = sidewalk_waypoint.get_right_lane()
+                if right_wp is None:
+                    break  # No more right lanes
+                sidewalk_waypoint = right_wp
+                self._num_lane_changes += 1
+            
+            # Get the first adversary transform and spawn it
+            offset = {"yaw": 270, "z": 0.5, "k": 1.0}
+            self._adversary_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
+            first_adversary = CarlaDataProvider.request_new_actor(self._adversary_type, self._adversary_transform)
+            if first_adversary is None:
+                self._number_of_attempts -= 1
+                move_dist = self._retry_dist
+                continue
+            
+            # Get the the second adversary transform and spawn it
+            offset = {"yaw": 270, "z": 0.5, "k": 2.0}
+            self._adversary_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
+            second_adversary = CarlaDataProvider.request_new_actor(self._adversary_type, self._adversary_transform)
+            if second_adversary is None:
+                self._number_of_attempts -= 1
+                move_dist = self._retry_dist
+                continue
+                
+            # Get the the third adversary transform and spawn it
+            offset = {"yaw": 270, "z": 1.0, "k": 2.0}
+            self._adversary_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
+            third_adversary = CarlaDataProvider.request_new_actor(self._adversary_type, self._adversary_transform)
+            if third_adversary is None:
+                self._number_of_attempts -= 1
+                move_dist = self._retry_dist
+                continue
+                
+            # Get the the fourth adversary transform and spawn it
+            offset = {"yaw": 270, "z": 1.5, "k": 2.0}
+            self._adversary_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
+            forth_adversary = CarlaDataProvider.request_new_actor(self._adversary_type, self._adversary_transform)
+            if forth_adversary is None:
+                self._number_of_attempts -= 1
+                move_dist = self._retry_dist
+                continue
+            
+            break
+        
+        if self._number_of_attempts == 0:
+            raise Exception("Couldn't find viable position for the adversary and blocker actors")
+        
+        if isinstance(first_adversary, carla.Vehicle):
+            first_adversary.apply_control(carla.VehicleControl(hand_brake=True))
+        
+        self.other_actors.append(first_adversary)
+        self.other_actors.append(second_adversary)
+        self.other_actors.append(third_adversary)
+        self.other_actors.append(forth_adversary)
+    
+    def _create_behavior(self):
+        sequence = py_trees.composites.Sequence(name="CrossingActor")
+        if self.route_mode:
+            sequence.add_child(LeaveSpaceInFront(self._start_distance))
+    
+        collision_location = self._collision_wp.transform.location
+        collision_distance = collision_location.distance(self._adversary_transform.location)
+        collision_duration = collision_distance / self._adversary_speed
+        reaction_time = self._reaction_time - self._reaction_ratio * self._num_lane_changes
+        collision_time_trigger = collision_duration + reaction_time
+        
+        # Wait until ego is close to the adversary
+        trigger_adversary = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+        trigger_adversary.add_child(InTimeToArrivalToLocation(
+            self.ego_vehicles[0], collision_time_trigger, collision_location))
+        trigger_adversary.add_child(InTriggerDistanceToLocation(
+            self.ego_vehicles[0], collision_location, self._min_trigger_dist))
+        sequence.add_child(trigger_adversary)
+        
+        # Move the adversary
+        speed_duration = 2.0 * collision_duration
+        speed_distance = 2.0 * collision_distance
+        sequence.add_child(KeepVelocity(
+            self.other_actors[0], self._adversary_speed,
+            duration=speed_duration, distance=speed_distance, name="AdversaryCrossing"))
+        
+        # Remove everything
+        sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
+        sequence.add_child(ActorDestroy(self.other_actors[1], name="DestroyBlocker"))
+        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))
+        
+        return sequence
+    
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        if self.route_mode:
+            return []
+        return [CollisionTest(self.ego_vehicles[0])]
+    
     def __del__(self):
         """
         Remove all actors upon deletion
