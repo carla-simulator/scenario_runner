@@ -3254,3 +3254,21 @@ class SwitchOutsideRouteLanesTest(AtomicBehavior):
     def update(self):
         py_trees.blackboard.Blackboard().set("AC_SwitchOutsideRouteLanesTest", self._activate, overwrite=True)
         return py_trees.common.Status.SUCCESS
+
+class SwitchMinSpeedCriteria(AtomicBehavior):
+
+    def __init__(self, active, name="ChangeMinSpeed"):
+        """
+        Setup parameters
+        """
+        super().__init__(name)
+        self._active = active
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        keeps track of gap and update the controller accordingly
+        """
+        new_status = py_trees.common.Status.SUCCESS
+        py_trees.blackboard.Blackboard().set("SwitchMinSpeedCriteria", self._active, overwrite=True)
+        return new_status
