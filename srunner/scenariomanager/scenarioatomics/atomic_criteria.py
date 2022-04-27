@@ -1003,6 +1003,7 @@ class OutsideRouteLanesTest(Criterion):
         self._last_lane_id = None
         self._total_distance = 0
         self._wrong_distance = 0
+        self._active = True
 
     def update(self):
         """
@@ -1020,11 +1021,16 @@ class OutsideRouteLanesTest(Criterion):
         if location is None:
             return new_status
 
-        # Check if outside route lanes
+        # Deactivate/Activate checking by blackboard message
+        active = py_trees.blackboard.Blackboard().get('AC_SwitchOutsideRouteLanesTest')
+        if active is not None:
+            self._active = active
+            py_trees.blackboard.Blackboard().set("AC_SwitchOutsideRouteLanesTest", None, overwrite=True)
+
         self._is_outside_driving_lanes(location)
         self._is_at_wrong_lane(location)
 
-        if self._outside_lane_active or self._wrong_lane_active:
+        if self._active and (self._outside_lane_active or self._wrong_lane_active):
             self.test_status = "FAILURE"
 
         # Get the traveled distance
@@ -1044,10 +1050,11 @@ class OutsideRouteLanesTest(Criterion):
                 self._total_distance += new_dist
 
                 # And to the wrong one if outside route lanes
-                if self._outside_lane_active or self._wrong_lane_active:
+                if self._active and (self._outside_lane_active or self._wrong_lane_active):
                     self._wrong_distance += new_dist
 
                 self._current_index = index
+
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status

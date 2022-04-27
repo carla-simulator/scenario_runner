@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes>
+   <route id="0" town="Town03">
+      <waypoints>
+         <position x="60" y="7.1" z="0.0" />
+         <position x="75" y="7.5" z="0.0" />
+         <position x="90" y="8" z="0.0" />
+         <position x="140" y="8.8" z="0.0" />
+         <position x="220" y="9.8" z="0.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingExit_1" type="ParkingExit">
+                <trigger_point x="60" y="7.2" z="0.0" yaw="0"/>
+                <parking_lane_side value="right" />
+                <front_vehicle_distance value="20" />
+                <behind_vehicle_distance value="5" />
+         </scenario>
+      </scenarios>
+   </route>
+</routes>
