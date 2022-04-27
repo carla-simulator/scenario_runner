@@ -76,6 +76,18 @@ class ParkingExit(BasicScenario):
         else:
             self._parking_lane_side = "right"
 
+        # Get parking_waypoint based on trigger_point
+        self._trigger_location = config.trigger_points[0].location
+        self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
+        if self._parking_lane_side == "left":
+            self._parking_waypoint = self._reference_waypoint.get_left_lane()
+        else:
+            self._parking_waypoint = self._reference_waypoint.get_right_lane()
+
+        if self._parking_waypoint is None:
+            raise Exception(
+                "Couldn't find parking point on the {} side".format(self._parking_lane_side))
+
         super(ParkingExit, self).__init__("ParkingExit",
                                           ego_vehicles,
                                           config,
@@ -88,17 +100,6 @@ class ParkingExit(BasicScenario):
         Custom initialization
         """
         # Put blocking vehicles
-        if self._parking_lane_side == "left":
-            self._parking_waypoint = self._map.get_waypoint(
-                self.ego_vehicles[0].get_location()).get_left_lane()
-        else:
-            self._parking_waypoint = self._map.get_waypoint(
-                self.ego_vehicles[0].get_location()).get_right_lane()
-
-        if self._parking_waypoint is None:
-            raise Exception(
-                "Couldn't find parking point on the {} side".format(self._parking_lane_side))
-
         front_points = self._parking_waypoint.next(
             self._front_vehicle_distance)
         if front_points:
