@@ -18,10 +18,8 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SwitchOutsideRouteLanesTest, ActorTransformSetter, ActorDestroy
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
-
-import operator
 
 
 def convert_dict_to_location(actor_dict):
@@ -71,7 +69,7 @@ class ParkingExit(BasicScenario):
         else:
             self._behind_vehicle_distance = 5  # m
 
-        self._end_distance = self._front_vehicle_distance + 5
+        self._end_distance = self._front_vehicle_distance + 15
 
         if 'parking_lane_side' in config.other_parameters:
             self._parking_lane_side = config.other_parameters['parking_lane_side']['value']
@@ -99,7 +97,7 @@ class ParkingExit(BasicScenario):
 
         if self._parking_waypoint is None:
             raise Exception(
-                    "Couldn't find parking point on the {} side".format(self._parking_lane_side))
+                "Couldn't find parking point on the {} side".format(self._parking_lane_side))
 
         front_points = self._parking_waypoint.next(
             self._front_vehicle_distance)
@@ -146,8 +144,8 @@ class ParkingExit(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         end_condition = py_trees.composites.Sequence()
-        end_condition.add_child(InTriggerDistanceToLocation(
-            self.ego_vehicles[0], self._parking_waypoint.transform.location, self._end_distance, operator.gt, name="EndTrigger"))
+        end_condition.add_child(DriveDistance(
+            self.ego_vehicles[0], self._end_distance))
         root.add_child(end_condition)
         sequence.add_child(root)
 
