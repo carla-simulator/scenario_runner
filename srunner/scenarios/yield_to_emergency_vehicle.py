@@ -41,6 +41,8 @@ def convert_dict_to_location(actor_dict):
 class YieldToEmergencyVehicle(BasicScenario):
     """
     This class holds everything required for a scenario in which the ego TODO
+    Should be on the highway which is long enough and has no junctions.
+    The ego should start from the left lane. At least two lanes on the highway.
     """
 
     def __init__(self, world, ego_vehicles, config, debug_mode=False, criteria_enable=True,
@@ -52,7 +54,8 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._actor_types = ["vehicle.carlamotors.firetruck", "vehicle.ford.ambulance", "vehicle.dodge.charger_police", "vehicle.dodge.charger_police_2020"]
+        # self._actor_types = ["vehicle.carlamotors.firetruck", "vehicle.ford.ambulance", "vehicle.dodge.charger_police", "vehicle.dodge.charger_police_2020"]
+        self._actor_types = ["vehicle.carlamotors.firetruck", "vehicle.ford.ambulance"]
 
         if 'emergency_vehicle_distance' in config.other_parameters:
             self._emergency_vehicle_distance = float(
