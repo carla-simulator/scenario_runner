@@ -16,7 +16,7 @@ import carla
 
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SwitchOutsideRouteLanesTest, ActorTransformSetter
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SwitchOutsideRouteLanesTest, ActorTransformSetter, ActorDestroy
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -85,9 +85,47 @@ class ParkingExit(BasicScenario):
                                           debug_mode,
                                           criteria_enable=criteria_enable)
 
-    def _spawn_blocking_vehicle(self, spawn_point):
-        CarlaDataProvider.request_new_actor(
-            'vehicle.tesla.model3', spawn_point)
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        # Put blocking vehicles
+        if self._parking_lane_side == "left":
+            self._parking_waypoint = self._map.get_waypoint(
+                self.ego_vehicles[0].get_location()).get_left_lane()
+        else:
+            self._parking_waypoint = self._map.get_waypoint(
+                self.ego_vehicles[0].get_location()).get_right_lane()
+
+        if self._parking_waypoint is None:
+            raise Exception(
+                    "Couldn't find parking point on the {} side".format(self._parking_lane_side))
+
+        front_points = self._parking_waypoint.next(
+            self._front_vehicle_distance)
+        if front_points:
+            actor_front = CarlaDataProvider.request_new_actor(
+                'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+            if actor_front is None:
+                raise Exception(
+                    "Couldn't spawn the vehicle in front of the parking point")
+            self.other_actors.append(actor_front)
+        else:
+            raise Exception(
+                "Couldn't find viable position for the vehicle in front of the parking point")
+
+        behind_points = self._parking_waypoint.previous(
+            self._behind_vehicle_distance)
+        if behind_points:
+            actor_behind = CarlaDataProvider.request_new_actor(
+                'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+            if actor_behind is None:
+                raise Exception(
+                    "Couldn't spawn the vehicle behind the parking point")
+            self.other_actors.append(actor_behind)
+        else:
+            raise Exception(
+                "Couldn't find viable position for the vehicle behind the parking point")
 
     def _create_behavior(self):
         """
@@ -97,42 +135,26 @@ class ParkingExit(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
 
-        # Put blocking vehicles
-        if self._parking_lane_side == "left":
-            parking_waypoint = self._map.get_waypoint(
-                self.ego_vehicles[0].get_location()).get_left_lane()
-        else:
-            parking_waypoint = self._map.get_waypoint(
-                self.ego_vehicles[0].get_location()).get_right_lane()
-
-        front_points = parking_waypoint.next(self._front_vehicle_distance)
-        if len(front_points) > 0:
-            CarlaDataProvider.request_new_actor(
-                'vehicle.tesla.model3', front_points[0].transform)
-
-        behind_points = parking_waypoint.previous(
-            self._behind_vehicle_distance)
-        if len(behind_points) > 0:
-            CarlaDataProvider.request_new_actor(
-                'vehicle.tesla.model3', behind_points[0].transform)
-
         # Deactivate OutsideRouteLanesTest
         sequence.add_child(SwitchOutsideRouteLanesTest(False))
 
         # Teleport ego to the parking point
         sequence.add_child(ActorTransformSetter(
-            self.ego_vehicles[0], parking_waypoint.transform))
+            self.ego_vehicles[0], self._parking_waypoint.transform))
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         end_condition = py_trees.composites.Sequence()
         end_condition.add_child(InTriggerDistanceToLocation(
-            self.ego_vehicles[0], parking_waypoint.transform.location, self._end_distance, operator.gt, name="EndTrigger"))
+            self.ego_vehicles[0], self._parking_waypoint.transform.location, self._end_distance, operator.gt, name="EndTrigger"))
         root.add_child(end_condition)
         sequence.add_child(root)
 
         sequence.add_child(SwitchOutsideRouteLanesTest(True))
+
+        for actor in self.other_actors:
+            sequence.add_child(ActorDestroy(actor))
 
         return sequence
 
