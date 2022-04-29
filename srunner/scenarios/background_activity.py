@@ -1073,23 +1073,24 @@ class BackgroundBehavior(AtomicBehavior):
             for lane_key in self._road_dict:
                 source = self._road_dict[lane_key]
 
-                last_location = CarlaDataProvider.get_location(source.actors[-1])
-                if last_location is None:
-                    continue
-                source_location = source.wp.transform.location
-                ego_location = self._ego_wp.transform.location
-
-                # Stop the source from being too close to the ego or last lane vehicle
-                actor_dist = max(0, last_location.distance(source_location) - self._spawn_dist)
-                ego_dist = max(0, ego_location.distance(source_location) - min_distance)
-                move_dist = min(actor_dist, ego_dist)
-
-                # Move the source forward if needed
-                if move_dist > 0:
-                    new_source_wps = source.wp.next(added_dist)
-                    if not new_source_wps:
+                if source.actors:
+                    last_location = CarlaDataProvider.get_location(source.actors[-1])
+                    if last_location is None:
                         continue
-                    source.wp = new_source_wps[0]
+                    source_location = source.wp.transform.location
+                    ego_location = self._ego_wp.transform.location
+
+                    # Stop the source from being too close to the ego or last lane vehicle
+                    actor_dist = max(0, last_location.distance(source_location) - self._spawn_dist)
+                    ego_dist = max(0, ego_location.distance(source_location) - min_distance)
+                    move_dist = min(actor_dist, ego_dist)
+
+                    # Move the source forward if needed
+                    if move_dist > 0:
+                        new_source_wps = source.wp.next(added_dist)
+                        if not new_source_wps:
+                            continue
+                        source.wp = new_source_wps[0]
 
         for lane_key in self._road_dict:
             source = self._road_dict[lane_key]
@@ -1642,12 +1643,13 @@ class BackgroundBehavior(AtomicBehavior):
         if leave_space_data is not None:
             self._leave_space_in_front(leave_space_data)
             py_trees.blackboard.Blackboard().set('BA_LeaveSpaceInFront', None, True)
-
-        # Remove Lane
-        remove_lane_data = py_trees.blackboard.Blackboard().get('BA_RemoveLane')
-        if remove_lane_data is not None:
-            self._remove_lane(remove_lane_data)
-            py_trees.blackboard.Blackboard().set('BA_RemoveLanes', None, True)
+        
+        # Switch lane
+        switch_lane_data = py_trees.blackboard.Blackboard().get('BA_SwitchLane')
+        if switch_lane_data is not None:
+            lane_id, active = switch_lane_data
+            self._switch_lane(lane_id, active)
+            py_trees.blackboard.Blackboard().set('BA_SwitchLane', None, True)
 
         # Remove junction entry
         remove_junction_entry_data = py_trees.blackboard.Blackboard().get('BA_RemoveJunctionEntry')
@@ -1816,16 +1818,25 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._move_actors_forward(front_actors, space)
 
-    def _remove_lane(self, lane_id):
-        """Remove BA actors from this lane, and BA would never generate new actors on this lane"""
+    def _switch_lane(self, lane_id, active):
+        """
+        active is False: remove BA actors from this lane, and BA would never generate new actors on this lane
+        active is True: recover the lane, reset source waypoint.
+        """
         lane_id = str(lane_id)
         lane_id_list = [x.split('*')[-1] for x in  list(self._road_dict.keys())]
         if lane_id in lane_id_list:
             lane_index = lane_id_list.index(lane_id)
             lane_key = list(self._road_dict.keys())[lane_index]
-            for actor in list(self._road_dict[lane_key].actors):
-                self._destroy_actor(actor)
-            self._road_dict.pop(lane_key)
+            self._road_dict[lane_key].active = active
+            if active:
+                ego_wp = self._map.get_waypoint(self._ego_actor.get_location())
+                new_source_wps = ego_wp.previous(self._spawn_dist)
+                if new_source_wps:
+                    self._road_dict[lane_key].wp = new_source_wps[0]
+            else:
+                for actor in list(self._road_dict[lane_key].actors):
+                    self._destroy_actor(actor)
 
     def _remove_junction_entry(self, wp, all_entries):
         """Removes a specific entry (or all the entries at the same road) of the closest junction"""

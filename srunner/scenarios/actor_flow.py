@@ -27,7 +27,7 @@ from srunner.tools.background_manager import (SwitchRouteSources,
                                               JunctionScenarioManager,
                                               ExtentExitRoadSpace,
                                               StopEntries,
-                                              RemoveLane,
+                                              SwitchLane,
                                               RemoveJunctionEntry,
                                               ClearJunction)
 from srunner.tools.scenario_helper import get_same_dir_lanes
@@ -408,8 +408,11 @@ class HighwayExit(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            sequence.add_child(RemoveLane(source_wp.lane_id))
+            sequence.add_child(SwitchLane(source_wp.lane_id, False))
         sequence.add_child(root)
+
+        if self.route_mode:
+            sequence.add_child(SwitchLane(source_wp.lane_id, True))
 
         return sequence
 
