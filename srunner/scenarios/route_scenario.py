@@ -41,7 +41,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.scenariomanager.weather_sim import RouteWeatherBehavior
-
+from srunner.scenariomanager.lights_sim import RouteLightsBehavior
 
 from srunner.tools.route_parser import RouteParser, DIST_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory
@@ -335,6 +335,12 @@ class RouteScenario(BasicScenario):
         if len(self.config.weather) == 1:
             return
         return RouteWeatherBehavior(self.ego_vehicles[0], self.route, self.config.weather)
+
+    def _create_lights_behavior(self):
+        """
+        Create the light behavior
+        """
+        return RouteLightsBehavior(self.ego_vehicles[0], 100)
 
     def _initialize_environment(self, world):
         """

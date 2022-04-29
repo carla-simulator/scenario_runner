@@ -162,7 +162,7 @@ class BackgroundActivity(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicle, config, route, night_mode=False, debug_mode=False, timeout=0):
+    def __init__(self, world, ego_vehicle, config, route, debug_mode=False, timeout=0):
         """
         Setup all relevant parameters and create scenario
         """
@@ -170,7 +170,6 @@ class BackgroundActivity(BasicScenario):
         self.ego_vehicle = ego_vehicle
         self.route = route
         self.config = config
-        self._night_mode = night_mode
         self.debug = debug_mode
         self.timeout = timeout  # Timeout of scenario in seconds
 
@@ -187,7 +186,7 @@ class BackgroundActivity(BasicScenario):
         Basic behavior do nothing, i.e. Idle
         """
         # Check if a vehicle is further than X, destroy it if necessary and respawn it
-        return BackgroundBehavior(self.ego_vehicle, self.route, self._night_mode)
+        return BackgroundBehavior(self.ego_vehicle, self.route)
 
     def _create_test_criteria(self):
         """
@@ -216,7 +215,7 @@ class BackgroundBehavior(AtomicBehavior):
 
     VELOCITY_MULTIPLIER = 2.5  # TODO: Remove it when the map has speed limits
 
-    def __init__(self, ego_actor, route, night_mode=False, debug=False, name="BackgroundBehavior"):
+    def __init__(self, ego_actor, route, debug=False, name="BackgroundBehavior"):
         """
         Setup class members
         """
@@ -228,7 +227,6 @@ class BackgroundBehavior(AtomicBehavior):
         self._tm = CarlaDataProvider.get_client().get_trafficmanager(
             CarlaDataProvider.get_traffic_manager_port())
         self._tm.global_percentage_speed_difference(0.0)
-        self._night_mode = night_mode
 
         # Global variables
         self._ego_actor = ego_actor
@@ -1899,11 +1897,6 @@ class BackgroundBehavior(AtomicBehavior):
             self._tm.auto_lane_change(actor, False)
             self._set_actor_speed_percentage(actor, 100)
 
-        if self._night_mode:
-            for actor in actors:
-                actor.set_light_state(carla.VehicleLightState(
-                    carla.VehicleLightState.Position | carla.VehicleLightState.LowBeam))
-
         return actors
 
     def _spawn_source_actor(self, source, ego_dist=0):
@@ -1926,9 +1919,6 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._tm.auto_lane_change(actor, False)
         self._set_actor_speed_percentage(actor, 100)
-        if self._night_mode:
-            actor.set_light_state(carla.VehicleLightState(
-                carla.VehicleLightState.Position | carla.VehicleLightState.LowBeam))
 
         return actor
 
@@ -2207,6 +2197,7 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _destroy_actor(self, actor):
         """Destroy the actor and all its references"""
+        print("Destorying")
         self._remove_actor_info(actor)
         actor.set_autopilot(False)
         try:
