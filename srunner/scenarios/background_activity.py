@@ -254,11 +254,6 @@ class BackgroundBehavior(AtomicBehavior):
         self._road_back_vehicles = 3  # Amount of vehicles behind the ego
         self._radius_increase_ratio = 3.0  # Meters the radius increases per m/s of the ego
 
-        # TODO: Remove these 3 and refine road radiuses
-        self._extra_radius = 0.0  # Extra distance to avoid the road behavior from blocking. 
-        self._extra_radius_increase_ratio = 0.5 * timestep  # Distance the radius increases per tick (0.5 m/s)
-        self._max_extra_radius = 10  # Max extra distance
-
         self._road_num_front_vehicles = self._road_front_vehicles  # Checks the real amount of actors in the front of the ego
         self._road_extra_front_actors = 0  # For cases where we want more space but not more vehicles
         self._road_time_delay = 3
@@ -271,8 +266,8 @@ class BackgroundBehavior(AtomicBehavior):
         self._get_road_radius()
 
         # Junction variables
-        self._junctions = []
-        self._active_junctions = []
+        self._junctions = []  # List with all the junctions part of the route, in order of appearance
+        self._active_junctions = []  # List of all the active junctions
 
         self._junction_sources_dist = 40  # Distance from the entry sources to the junction [m]
         self._junction_sources_max_actors = 5  # Maximum vehicles alive at the same time per source
@@ -1532,52 +1527,33 @@ class BackgroundBehavior(AtomicBehavior):
         This is done using py_trees' Blackboard variables and all behaviors should be at `background_manager.py`.
         The blackboard variable is reset to None to avoid changing them back again next time.
         """
+        # General behavior
+        general_behavior_data = py_trees.blackboard.Blackboard().get('BA_ChangeGeneralBehavior')
+        if general_behavior_data is not None:
+            self._spawn_dist = general_behavior_data
+            self._get_road_radius()
+            py_trees.blackboard.Blackboard().set('BA_ChangeGeneralBehavior', None, True)
 
         # Road behavior
         road_behavior_data = py_trees.blackboard.Blackboard().get('BA_ChangeRoadBehavior')
         if road_behavior_data is not None:
-            num_front_vehicles, num_back_vehicles, vehicle_dist, spawn_dist, sources_active = road_behavior_data
+            num_front_vehicles, num_back_vehicles = road_behavior_data
             if num_front_vehicles is not None:
                 self._road_front_vehicles = num_front_vehicles
             if num_back_vehicles is not None:
                 self._road_back_vehicles = num_back_vehicles
-            if vehicle_dist is not None:
-                self._spawn_dist = vehicle_dist
-            if spawn_dist is not None:
-                self._spawn_dist = spawn_dist
-            if sources_active is not None:
-                for lane_key in self._road_dict:
-                    self._road_dict[lane_key].active = sources_active
-
             self._get_road_radius()
             py_trees.blackboard.Blackboard().set('BA_ChangeRoadBehavior', None, True)
-
-        # Extend the space of a specific exit lane
-        road_exit_data = py_trees.blackboard.Blackboard().get('BA_ExtentExitRoadSpace')
-        if road_exit_data is not None:
-            space, direction = road_exit_data
-            self._extent_road_exit_space(space, direction)
-            py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", None, True)
-
-        # Switch route sources
-        switch_sources_data = py_trees.blackboard.Blackboard().get('BA_SwitchRouteSources')
-        if switch_sources_data is not None:
-            self._switch_route_sources(switch_sources_data)
-            py_trees.blackboard.Blackboard().set("BA_SwitchRouteSources", None, True)
 
         # Opposite behavior
         opposite_behavior_data = py_trees.blackboard.Blackboard().get('BA_ChangeOppositeBehavior')
         if opposite_behavior_data is not None:
-            source_dist, vehicle_dist, spawn_dist, max_actors = road_behavior_data
+            source_dist, max_actors = road_behavior_data
             if source_dist is not None:
                 if source_dist < self._junction_sources_dist:
                     print('WARNING: Opposite sources distance is lower than the junction ones. Ignoring it')
                 else:
                     self._opposite_sources_dist = source_dist
-            if vehicle_dist is not None:
-                self._spawn_dist = vehicle_dist
-            if spawn_dist is not None:
-                self._spawn_dist = spawn_dist
             if max_actors is not None:
                 self._opposite_sources_max_actors = max_actors
             py_trees.blackboard.Blackboard().set('BA_ChangeOppositeBehavior', None, True)
@@ -1585,19 +1561,27 @@ class BackgroundBehavior(AtomicBehavior):
         # Junction behavior
         junction_behavior_data = py_trees.blackboard.Blackboard().get('BA_ChangeJunctionBehavior')
         if junction_behavior_data is not None:
-            source_dist, vehicle_dist, spawn_dist, max_actors = road_behavior_data
+            source_dist, max_actors = road_behavior_data
             if source_dist is not None:
                 if source_dist > self._opposite_sources_dist:
                     print('WARNING: Junction sources distance is higher than the opposite ones. Ignoring it')
                 else:
                     self._junction_sources_dist = source_dist
-            if vehicle_dist is not None:
-                self._spawn_dist = vehicle_dist
-            if spawn_dist is not None:
-                self._spawn_dist = spawn_dist
             if max_actors is not None:
                 self._junction_sources_max_actors = max_actors
             py_trees.blackboard.Blackboard().set('BA_ChangeJunctionBehavior', None, True)
+
+        # Extend the space of a specific exit lane
+        road_exit_data = py_trees.blackboard.Blackboard().get('BA_ExtentExitRoadSpace')
+        if road_exit_data is not None:
+            self._extent_road_exit_space(road_exit_data)
+            py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", None, True)
+
+        # Switch route sources
+        switch_sources_data = py_trees.blackboard.Blackboard().get('BA_SwitchRouteSources')
+        if switch_sources_data is not None:
+            self._switch_route_sources(switch_sources_data)
+            py_trees.blackboard.Blackboard().set("BA_SwitchRouteSources", None, True)
 
         # Stop front vehicles
         stop_data = py_trees.blackboard.Blackboard().get('BA_StopFrontVehicles')
@@ -1656,7 +1640,7 @@ class BackgroundBehavior(AtomicBehavior):
             self._remove_junction_entry(wp, all_entries)
             py_trees.blackboard.Blackboard().set('BA_RemoveJunctionEntry', None, True)
 
-        # Clear jucntion
+        # Clear junction
         clear_junction_data = py_trees.blackboard.Blackboard().get('BA_ClearJunction')
         if clear_junction_data is not None:
             self._clear_junction()
@@ -1667,22 +1651,8 @@ class BackgroundBehavior(AtomicBehavior):
     def _compute_parameters(self):
         """Computes the parameters that are dependent on the speed of the ego. """
         ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
-
-        # As the vehicles don't move if the agent doesn't, some agents might get blocked forever.
-        # Partially avoid this by adding an extra distance to the radius when the vehicle is stopped
-        # in the middle of the road and unaffected by any object such as traffic lights or stops.
-        if ego_speed == 0 \
-                and len(self._stopped_road_actors) == 0 \
-                and not self._ego_actor.is_at_traffic_light() \
-                and len(self._active_junctions) <= 0:
-            self._extra_radius = min(self._extra_radius + self._extra_radius_increase_ratio, self._max_extra_radius)
-
-        # At all cases, reduce it if the agent is moving
-        if ego_speed > 0 and self._extra_radius > 0:
-            self._extra_radius = max(self._extra_radius - self._extra_radius_increase_ratio, 0)
-
-        self._min_radius = self._base_min_radius + self._radius_increase_ratio * ego_speed + self._extra_radius
-        self._max_radius = self._base_max_radius + self._radius_increase_ratio * ego_speed + self._extra_radius
+        self._min_radius = self._base_min_radius + self._radius_increase_ratio * ego_speed
+        self._max_radius = self._base_max_radius + self._radius_increase_ratio * ego_speed
         self._junction_detection_dist = self._max_radius
 
     def _stop_road_front_vehicles(self):
@@ -1712,7 +1682,7 @@ class BackgroundBehavior(AtomicBehavior):
             actor.set_light_state(carla.VehicleLightState(lights))
         self._stopped_road_actors = []
 
-    def _extent_road_exit_space(self, space, direction):
+    def _extent_road_exit_space(self, space):
         """Increases the space left by the exit vehicles at a specific road"""
         if len(self._active_junctions) > 0:
             junction = self._active_junctions[0]
@@ -1721,22 +1691,20 @@ class BackgroundBehavior(AtomicBehavior):
         else:
             return
 
-        direction_lane_keys = junction.exit_directions[direction]
-        exit_dict = junction.exit_dict
-        for exit_lane_key in exit_dict:
-            if exit_lane_key in direction_lane_keys:
-                exit_dict[exit_lane_key]['max_distance'] += space
+        route_lane_keys = junction.route_exit_keys
 
-                actors = exit_dict[exit_lane_key]['actors']
-                self._move_actors_forward(actors, space)
-                for actor in actors:
-                    if junction.actor_dict[actor]['state'] == JUNCTION_ROAD:
-                        self._set_actor_speed_percentage(actor, 100)
-                        junction.actor_dict[actor]['state'] = JUNCTION_EXIT
+        for exit_lane_key in route_lane_keys:
+            junction.exit_dict[exit_lane_key]['max_distance'] += space
+            actors = junction.exit_dict[exit_lane_key]['actors']
+            self._move_actors_forward(actors, space)
+            for actor in actors:
+                if junction.actor_dict[actor]['state'] == JUNCTION_ROAD:
+                    self._set_actor_speed_percentage(actor, 100)
+                    junction.actor_dict[actor]['state'] = JUNCTION_EXIT
 
     def _move_actors_forward(self, actors, space):
         """Teleports the actors forward a set distance"""
-        for actor in actors:
+        for actor in list(actors):
             location = CarlaDataProvider.get_location(actor)
             if not location:
                 continue
@@ -1747,6 +1715,8 @@ class BackgroundBehavior(AtomicBehavior):
                 new_transform = new_actor_wps[0].transform
                 new_transform.location.z += 0.2
                 actor.set_transform(new_transform)
+            else:
+                self._destroy_actor(actor)
 
     def _stop_non_route_entries(self):
         if len(self._active_junctions) > 0:
@@ -1792,29 +1762,41 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _leave_space_in_front(self, space):
         """Teleports all the vehicles in front of the ego forward"""
-        all_actors = []
+        # all_actors = []
         if not self._active_junctions:
             for lane in self._road_dict:
-                all_actors.extend(self._road_dict[lane].actors)
+                lane_actors = self._road_dict[lane].actors
+                front_actors = []
+                for actor in lane_actors:
+                    location = CarlaDataProvider.get_location(actor)
+                    if location and not self._is_location_behind_ego(location):
+                        front_actors.append(actor)
 
-        else:
-            junction = self._active_junctions[0]
-            if self._is_junction(self._ego_wp):  # We care about the exit
-                for actor, info in junction.actor_dict.items():
-                    if info['exit_lane_key'] in junction.route_exit_keys:
-                        all_actors.append(actor)
-            else:  # We care about the entry
-                for source in junction.entry_sources:
-                    if get_lane_key(source.entry_lane_wp) in junction.route_entry_keys:
-                        all_actors.extend(source.actors)
+                last_actor_location = CarlaDataProvider.get_location(front_actors[-1])
+                distance = last_actor_location.distance(self._ego_wp.transform.location)
+                step = space - distance
+                if step > 0:  # Only move the needed distance
+                    self._move_actors_forward(front_actors, step)
 
-        front_actors = []
-        for actor in all_actors:
-            location = CarlaDataProvider.get_location(actor)
-            if location and not self._is_location_behind_ego(location):
-                front_actors.append(actor)
+        # else:
+        #     junction = self._active_junctions[0]
+        #     if self._is_junction(self._ego_wp):  # We care about the exit
+        #         for actor, info in junction.actor_dict.items():
+        #             if info['exit_lane_key'] in junction.route_exit_keys:
+        #                 all_actors.append(actor)
+        #     else:  # We care about the entry
+        #         for source in junction.entry_sources:
+        #             if get_lane_key(source.entry_lane_wp) in junction.route_entry_keys:
+        #                 all_actors.extend(source.actors)
 
-        self._move_actors_forward(front_actors, space)
+        # front_actors = []
+        # for actor in all_actors:
+        #     location = CarlaDataProvider.get_location(actor)
+        #     if location and not self._is_location_behind_ego(location):
+        #         front_actors.append(actor)
+
+
+        # self._move_actors_forward(front_actors, space)
 
     def _remove_lane(self, lane_id):
         """Remove BA actors from this lane, and BA would never generate new actors on this lane"""

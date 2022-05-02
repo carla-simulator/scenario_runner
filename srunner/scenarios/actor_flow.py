@@ -77,11 +77,6 @@ class EnterActorFlow(BasicScenario):
         else:
             self._source_dist_interval = [5, 7] # m
 
-        if 'clear_junction' in config.other_parameters:
-            self._clear_junction = config.other_parameters['clear_junction']
-        else:
-            self._clear_junction = True
-
         super(EnterActorFlow, self).__init__("EnterActorFlow",
                                              ego_vehicles,
                                              config,
@@ -112,8 +107,7 @@ class EnterActorFlow(BasicScenario):
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
             sequence.add_child(RemoveJunctionEntry(source_wp, True))
-            if self._clear_junction:
-                sequence.add_child(ClearJunction())
+            sequence.add_child(ClearJunction())
 
             grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
@@ -122,8 +116,7 @@ class EnterActorFlow(BasicScenario):
                 current_wp = route[i][0]
                 extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
                 if current_wp.is_junction:
-                    sequence.add_child(ExtentExitRoadSpace(distance=extra_space, direction='left'))
-                    sequence.add_child(ExtentExitRoadSpace(distance=extra_space, direction='ref'))
+                    sequence.add_child(ExtentExitRoadSpace(extra_space))
                     break
 
             sequence.add_child(SwitchRouteSources(False))

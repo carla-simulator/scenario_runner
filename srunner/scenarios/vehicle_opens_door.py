@@ -18,7 +18,7 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import OpenVehicleDoor
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import OpenVehicleDoor, HandBrakeVehicle
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
                                                                                DriveDistance)
@@ -45,11 +45,15 @@ class VehicleOpensDoor(BasicScenario):
         self._map = CarlaDataProvider.get_map()
 
         self.timeout = timeout
-        self._parked_distance = 20
         self._wait_duration = 15
         self._end_distance = 40
         self._min_trigger_dist = 5
-        self._reaction_time = 1.5
+        self._reaction_time = 2.0
+
+        if 'distance' in config.other_parameters:
+            self._parked_distance = config.other_parameters['distance']['value']
+        else:
+            self._parked_distance = 50
 
         if 'direction' in config.other_parameters:
             self._direction = config.other_parameters['direction']['value']
@@ -82,19 +86,10 @@ class VehicleOpensDoor(BasicScenario):
             raise ValueError("Couldn't find a spot to place the adversary vehicle")
 
         self.parked_actor = CarlaDataProvider.request_new_actor(
-            "*vehicle.*", parked_wp.transform, attribute_filter={'has_dynamic_doors': True})
+            "*vehicle.*", parked_wp.transform, attribute_filter={'has_dynamic_doors': True, 'base_type': 'car'})
+        if not self.parked_actor:
+            raise ValueError("Couldn't spawn the parked vehicle")
         self.other_actors.append(self.parked_actor)
-
-        # Move the actor to the edge of the lane, or the open door might not reach the ego vehicle
-        displacement = (parked_wp.lane_width - self.parked_actor.bounding_box.extent.y) / 2
-        displacement_vector = parked_wp.transform.get_right_vector()
-        if self._direction == 'right':
-            displacement_vector *= -1
-
-        new_location = parked_wp.transform.location + carla.Location(x=displacement*displacement_vector.x,
-                                                                     y=displacement*displacement_vector.y)
-        self.parked_actor.set_location(new_location)
-
 
     def _create_behavior(self):
         """
@@ -102,6 +97,7 @@ class VehicleOpensDoor(BasicScenario):
         while another actor runs a red lift, forcing the ego to break.
         """
         sequence = py_trees.composites.Sequence(name="CrossingActor")
+        sequence.add_child(HandBrakeVehicle(self.parked_actor, True))
 
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._parked_distance))
