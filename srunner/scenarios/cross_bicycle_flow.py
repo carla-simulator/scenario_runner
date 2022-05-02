@@ -125,7 +125,6 @@ class CrossingBycicleFlow(BasicScenario):
         # Get the relevant traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction_id)
         ego_tl = get_closest_traffic_light(self._reference_waypoint, tls)
-        source_tl = get_closest_traffic_light(source_wp, tls)
         self._flow_tl_dict = {}
         self._init_tl_dict = {}
         for tl in tls:
