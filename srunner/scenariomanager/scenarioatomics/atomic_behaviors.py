@@ -2632,8 +2632,7 @@ class BicycleFlow(AtomicBehavior):
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
         self._actor_data = []
-        grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
-        self._inst_dict = {'map': CarlaDataProvider.get_map(), 'global_route_planner': grp}
+        self._grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
@@ -2663,7 +2662,8 @@ class BicycleFlow(AtomicBehavior):
                 return py_trees.common.Status.RUNNING
 
             actor.set_target_velocity(self._speed * self._source_vector)
-            controller = BasicAgent(actor, 3.6 * self._speed, inst_dict=self._inst_dict)
+            controller = BasicAgent(actor, 3.6 * self._speed,
+                map_inst=CarlaDataProvider.get_map(), grp_inst=self._grp)
             controller.set_global_plan(self._plan)
 
             self._actor_data.append([actor, controller])

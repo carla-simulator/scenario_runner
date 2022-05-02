@@ -13,6 +13,28 @@ import py_trees
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior
 
 
+class ChangeGeneralBehavior(AtomicBehavior):
+    """
+    Updates the blackboard to change the general parameters.
+    None values imply that these values won't be changed.
+
+    Args:
+        spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
+        target_speed (float): Target speed of all BA vehicles
+    """
+
+    def __init__(self, spawn_dist=None, target_speed=None, name="ChangeGeneralBehavior"):
+        self._spawn_dist = spawn_dist
+        self._target_speed = target_speed
+        super().__init__(name)
+
+    def update(self):
+        py_trees.blackboard.Blackboard().set(
+            "BA_ChangeGeneralBehavior", [self._spawn_dist, self._target_speed], overwrite=True
+        )
+        return py_trees.common.Status.SUCCESS
+
+
 class ChangeRoadBehavior(AtomicBehavior):
     """
     Updates the blackboard to change the parameters of the road behavior.
@@ -21,24 +43,17 @@ class ChangeRoadBehavior(AtomicBehavior):
     Args:
         num_front_vehicles (int): Amount of vehicles in front of the ego. Can't be negative
         num_back_vehicles (int): Amount of vehicles behind it. Can't be negative
-        vehicle_dist (float): Minimum distance between the road vehicles. Must between 0 and 'spawn_dist'
-        spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
         switch_source (bool): (De)activatea the road sources.
     """
 
-    def __init__(self, num_front_vehicles=None, num_back_vehicles=None,
-                 vehicle_dist=None, spawn_dist=None, name="ChangeRoadBehavior"):
+    def __init__(self, num_front_vehicles=None, num_back_vehicles=None, name="ChangeRoadBehavior"):
         self._num_front_vehicles = num_front_vehicles
         self._num_back_vehicles = num_back_vehicles
-        self._vehicle_dist = vehicle_dist
-        self._spawn_dist = spawn_dist
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeRoadBehavior",
-            [self._num_front_vehicles, self._num_back_vehicles, self._vehicle_dist, self._spawn_dist],
-            overwrite=True
+            "BA_ChangeRoadBehavior", [self._num_front_vehicles, self._num_back_vehicles], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -50,24 +65,18 @@ class ChangeOppositeBehavior(AtomicBehavior):
 
     Args:
         source_dist (float): Distance between the opposite sources and the ego vehicle. Must be positive
-        vehicle_dist (float) Minimum distance between the opposite vehicles. Must between 0 and 'spawn_dist'
-        spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
     def __init__(self, source_dist=None, vehicle_dist=None, spawn_dist=None,
                  max_actors=None, name="ChangeOppositeBehavior"):
         self._source_dist = source_dist
-        self._vehicle_dist = vehicle_dist
-        self._spawn_dist = spawn_dist
         self._max_actors = max_actors
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeOppositeBehavior",
-            [self._source_dist, self._vehicle_dist, self._spawn_dist, self._max_actors],
-            overwrite=True
+            "BA_ChangeOppositeBehavior", [self._source_dist, self._max_actors], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -79,25 +88,18 @@ class ChangeJunctionBehavior(AtomicBehavior):
 
     Args:
         source_dist (float): Distance between the junctiob sources and the junction entry. Must be positive
-        vehicle_dist (float) Minimum distance between the junction vehicles. Must between 0 and 'spawn_dist'
-        spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
-
     """
 
     def __init__(self, source_dist=None, vehicle_dist=None, spawn_dist=None,
                  max_actors=None, name="ChangeJunctionBehavior"):
         self._source_dist = source_dist
-        self._vehicle_dist = vehicle_dist
-        self._spawn_dist = spawn_dist
         self._max_actors = max_actors
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeJunctionBehavior",
-            [self._source_dist, self._vehicle_dist, self._spawn_dist, self._max_actors],
-            overwrite=True
+            "BA_ChangeJunctionBehavior", [self._source_dist, self._max_actors], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -156,14 +158,13 @@ class ExtentExitRoadSpace(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that an exit road needs more space
     """
-    def __init__(self, distance, direction, name="ExtentExitRoadSpace"):
+    def __init__(self, distance, name="ExtentExitRoadSpace"):
         self._distance = distance
-        self._direction = direction
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", [self._distance, self._direction], overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", self._distance, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
