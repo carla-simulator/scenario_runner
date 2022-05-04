@@ -68,15 +68,16 @@ class ChangeOppositeBehavior(AtomicBehavior):
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
-    def __init__(self, source_dist=None, vehicle_dist=None, spawn_dist=None,
-                 max_actors=None, name="ChangeOppositeBehavior"):
+    def __init__(self, source_dist=None, max_actors=None, spawn_dist=None, active=None, name="ChangeOppositeBehavior"):
         self._source_dist = source_dist
         self._max_actors = max_actors
+        self._spawn_dist = spawn_dist
+        self._active = active
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeOppositeBehavior", [self._source_dist, self._max_actors], overwrite=True
+            "BA_ChangeOppositeBehavior", [self._source_dist, self._max_actors, self._spawn_dist, self._active], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
