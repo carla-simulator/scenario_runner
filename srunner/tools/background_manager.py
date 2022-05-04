@@ -183,19 +183,6 @@ class LeaveSpaceInFront(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class StopEntries(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity to stop all junction entries
-    """
-    def __init__(self, name="StopEntries"):
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_StopEntries", True, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
 class SwitchRouteSources(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to (de)activate all route sources
@@ -278,6 +265,8 @@ class RemoveJunctionEntry(AtomicBehavior):
 
 class ClearJunction(AtomicBehavior):
     """
+    Updates the blackboard to tell the background activity to remove all actors inside the junction,
+    and stop the ones that are about to enter it, leaving an empty space inside the junction.
     """
 
     def __init__(self, name="ClearJunction"):

@@ -1357,7 +1357,7 @@ class BackgroundBehavior(AtomicBehavior):
                     actor = self._spawn_source_actor(source)
                     if not actor:
                         continue
-                    if junction.stop_entries:
+                    if junction.stop_entries and get_lane_key(source.entry_lane_wp) not in junction.route_entry_keys:
                         self._set_actor_speed_percentage(actor, 0)
                     self._tm.distance_to_leading_vehicle(actor, self._spawn_dist)
                     self._add_actor_dict_element(actor_dict, actor, at_oppo_entry_lane=at_oppo_entry_lane)
@@ -1615,12 +1615,6 @@ class BackgroundBehavior(AtomicBehavior):
             self._road_extra_front_actors = 0
             py_trees.blackboard.Blackboard().set('BA_HandleEndAccidentScenario', None, True)
 
-        # Stops non route entries
-        stop_entry_data = py_trees.blackboard.Blackboard().get('BA_StopEntries')
-        if stop_entry_data is not None:
-            self._stop_non_route_entries()
-            py_trees.blackboard.Blackboard().set('BA_StopEntries', None, True)
-
         # Leave space in front
         leave_space_data = py_trees.blackboard.Blackboard().get('BA_LeaveSpaceInFront')
         if leave_space_data is not None:
@@ -1717,15 +1711,6 @@ class BackgroundBehavior(AtomicBehavior):
                 actor.set_transform(new_transform)
             else:
                 self._destroy_actor(actor)
-
-    def _stop_non_route_entries(self):
-        if len(self._active_junctions) > 0:
-            entry_sources = self._active_junctions[0].entry_sources
-            for source in entry_sources:
-                for actor in source.actors:
-                    self._set_actor_speed_percentage(actor, 0)
-        elif len(self._junctions) > 0:
-            self._junctions[0].stop_entries = True
 
     def _handle_lanechange_scenario(self, accident_wp, distance):
         """
@@ -1845,17 +1830,28 @@ class BackgroundBehavior(AtomicBehavior):
     def _clear_junction(self):
         """Clears the junction, and all subsequent actors that enter it"""
         if self._active_junctions:
+
+            # Remove all actors in the middle
             junction = self._active_junctions[0]
             actor_dict = junction.actor_dict
             for actor in list(actor_dict):
                 if actor_dict[actor]['state'] == JUNCTION_MIDDLE:
                     self._destroy_actor(actor)
-
             junction.scenario_info['remove_middle'] = True
+
+            # Stop all entry actors
+            entry_sources = junction.entry_sources
+            route_entry_keys = junction.route_entry_keys
+            for source in entry_sources:
+
+                if get_lane_key(source.entry_lane_wp) not in route_entry_keys:
+                    for actor in source.actors:
+                        if actor_dict[actor]['state'] == JUNCTION_ENTRY:
+                            self._set_actor_speed_percentage(actor, 0)
 
         elif self._junctions:
             self._junctions[0].scenario_info['remove_middle'] = True
-
+            self._junctions[0].stop_entries = True
 
     #############################
     ##     Actor functions     ##

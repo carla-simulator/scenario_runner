@@ -2596,6 +2596,92 @@ class ActorFlow(AtomicBehavior):
                 pass  # Actor was already destroyed
 
 
+class BicycleFlow(AtomicBehavior):
+    """
+    Behavior that indefinitely creates bicycles at a location,
+    controls them until another location, and then destroys them.
+    Therefore, a parallel termination behavior has to be used.
+
+    Important parameters:
+    - plan (list(carla.Waypoint)): plan used by the bicycles.
+    - spawn_distance_interval (list(float, float)): Distance between spawned actors
+    - sink_distance: Actors at this distance from the sink will be deleted
+    - actors_speed: Speed of the actors part of the flow [m/s]
+    """
+
+    def __init__(self, plan, spawn_dist_interval, sink_dist=2,
+                 actor_speed=20 / 3.6, name="BicycleFlow"):
+        """
+        Setup class members
+        """
+        super().__init__(name)
+        self._rng = CarlaDataProvider.get_random_seed()
+        self._world = CarlaDataProvider.get_world()
+
+        self._plan = plan
+        self._sink_dist = sink_dist
+        self._speed = actor_speed
+
+        self._source_transform = self._plan[0][0].transform
+        self._source_location = self._source_transform.location
+        self._source_vector = self._source_transform.get_forward_vector()
+        self._sink_location = self._plan[-1][0].transform.location
+
+        self._min_spawn_dist = spawn_dist_interval[0]
+        self._max_spawn_dist = spawn_dist_interval[1]
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+        self._actor_data = []
+        self._grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
+
+    def update(self):
+        """Controls the created actors and creaes / removes other when needed"""
+        # Control the vehicles, removing them when needed
+        for actor_data in list(self._actor_data):
+            actor, controller = actor_data
+            sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
+            if sink_distance < self._sink_dist:
+                actor.destroy()
+                self._actor_data.remove(actor_data)
+            else:
+                controller.run_step()
+
+        # Spawn new actors if needed
+        if len(self._actor_data) == 0:
+            distance = self._spawn_dist + 1
+        else:
+            actor_location = CarlaDataProvider.get_location(self._actor_data[-1][0])
+            distance = self._source_location.distance(actor_location)
+
+        if distance > self._spawn_dist:
+            actor = CarlaDataProvider.request_new_actor(
+                'vehicle.*', self._source_transform, rolename='scenario',
+                attribute_filter={'base_type': 'bicycle'}, tick=False
+            )
+            if actor is None:
+                return py_trees.common.Status.RUNNING
+
+            actor.set_target_velocity(self._speed * self._source_vector)
+            controller = BasicAgent(actor, 3.6 * self._speed,
+                map_inst=CarlaDataProvider.get_map(), grp_inst=self._grp)
+            controller.set_global_plan(self._plan)
+
+            self._actor_data.append([actor, controller])
+            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+        return py_trees.common.Status.RUNNING
+
+    def terminate(self, new_status):
+        """
+        Default terminate. Can be extended in derived class
+        """
+        for actor, _ in self._actor_data:
+            try:
+                actor.destroy()
+            except RuntimeError:
+                pass  # Actor was already destroyed
+
+
 class OpenVehicleDoor(AtomicBehavior):
 
     """
