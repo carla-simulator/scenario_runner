@@ -2035,3 +2035,72 @@ class CheckMinSpeed(Criterion):
         self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
 
         super().terminate(new_status)
+
+class YieldToEmergencyVehicleTest(Criterion):
+
+    """
+    TODO
+    Atomic to detect if the vehicle is either on a sidewalk or at a wrong lane. The distance spent outside
+    is computed and it is returned as a percentage of the route distance traveled.
+
+    Args:
+        actor (carla.ACtor): CARLA actor to be used for this test
+        route (list [carla.Location, connection]): series of locations representing the route waypoints
+        optional (bool): If True, the result is not considered for an overall pass/fail result
+    """
+
+    WAITING_TIME_THRESHOLD = 15
+
+    ALLOWED_OUT_DISTANCE = 1.3          # At least 0.5, due to the mini-shoulder between lanes and sidewalks
+    MAX_ALLOWED_VEHICLE_ANGLE = 120.0   # Maximum angle between the yaw and waypoint lane
+    MAX_ALLOWED_WAYPOINT_ANGLE = 150.0  # Maximum change between the yaw-lane angle between frames
+    WINDOWS_SIZE = 3                    # Amount of additional waypoints checked (in case the first on fails)
+
+    def __init__(self, actor, ev, optional=False, name="YieldToEmergencyVehicleTest"):
+        """
+        Constructor
+        """
+        super(YieldToEmergencyVehicleTest, self).__init__(name, actor, ev, optional)
+        self.units = "s"
+        self.success_value = 15
+        self.actual_value = 0
+        self._start_time = None
+
+        self._ev = ev
+
+        self._map = CarlaDataProvider.get_map()
+
+
+
+    def update(self):
+        """
+        TODO
+        Transforms the actor location and its four corners to waypoints. Depending on its types,
+        the actor will be considered to be at driving lanes, sidewalk or offroad.
+
+        returns:
+            py_trees.common.Status.FAILURE: when the actor has left driving and terminate_on_failure is active
+            py_trees.common.Status.RUNNING: the rest of the time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # Some of the vehicle parameters
+        location = CarlaDataProvider.get_location(self.actor)
+        location_ev = CarlaDataProvider.get_location(self._ev)
+        if location is None or location_ev is None:
+            return new_status
+
+        # Init start_time
+        if self._start_time is None:
+            self._start_time = GameTime.get_time()
+
+        # On the same lane
+        if self._map.get_waypoint(location).lane_id == self._map.get_waypoint(location_ev).lane_id:
+            self.actual_value += GameTime.get_time() - self._start_time
+
+        if self.actual_value > self.success_value:
+            self.test_status = "FAILURE"
+
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status

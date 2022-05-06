@@ -20,7 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransf
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation, DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import RemoveLane, SwitchRouteSources, SwitchLane
+from srunner.tools.background_manager import RemoveLane, SwitchRouteSources
 
 import operator
 import random
@@ -103,8 +103,8 @@ class YieldToEmergencyVehicle(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
-        # sequence.add_child(RemoveLane(self._reference_waypoint.lane_id))
-        sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, False))
+        sequence.add_child(RemoveLane(self._reference_waypoint.lane_id))
+        # sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, False))
 
         # Teleport EV behind the ego
         ev_points = self._map.get_waypoint(self.ego_vehicles[0].get_location()).previous(
@@ -140,8 +140,8 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         sequence.add_child(SwitchOutsideRouteLanesTest(True))
 
-        # sequence.add_child(SwitchRouteSources(True))
-        sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, True))
+        sequence.add_child(SwitchRouteSources(True))
+        # sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, True))
 
         return sequence
 
