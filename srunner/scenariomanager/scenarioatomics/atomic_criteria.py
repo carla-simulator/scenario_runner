@@ -1989,10 +1989,10 @@ class CheckMinSpeed(Criterion):
         if velocity is None:
             return new_status
 
-        set_speed_data = py_trees.blackboard.Blackboard().get('BA_ClearJunction')
+        set_speed_data = py_trees.blackboard.Blackboard().get('BA_CheckMinSpeed')
         if set_speed_data is not None:
             self._active = set_speed_data
-            py_trees.blackboard.Blackboard().set('BA_ClearJunction', None, True)
+            py_trees.blackboard.Blackboard().set('BA_CheckMinSpeed', None, True)
 
         if self._active:
             # Get the speed of the surrounding Background Activity

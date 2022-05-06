@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes>
+   <route id="0" town="Town06"> <!-- HighwayExit, old towns -->
+      <waypoints>
+         <position x="237" y="140" z="0.0" />
+         <position x="273.1" y="140.55" z="0.0" />
+         <position x="293.1" y="140.63" z="0.0" />
+         <position x="323.1" y="140.75" z="0.0" />
+         <position x="400.1" y="141.12" z="0.0" />
+         <position x="423.1" y="141.16" z="0.0" />
+         <position x="443.1" y="141.24" z="0.0" />
+         <position x="452.61" y="137.78" z="0.0" />
+         <position x="462.43" y="137.59" z="0.0" />
+         <position x="480.81" y="132.07" z="0.0" />
+         <position x="488.83" y="126.72" z="0.0" />
+         <position x="510.9" y="89.45" z="0.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="HighwayExit_1" type="HighwayExit">
+            <trigger_point x="275" y="140" z="0.0" yaw="0"/>
+            <start_actor_flow x="255" y="137.09" z="0.2"/>
+            <end_actor_flow x="621" y="137" z="0.2"/>
+            <flow_speed value="20"/>
+            <source_dist_interval from="20" to="40"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="1" town="Town03"> <!-- ParkingExit, old towns -->
+      <waypoints>
+         <position x="-74.3" y="-38.5" z="0.0" />
+         <position x="-73.5" y="-168.0" z="0.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingExit_1" type="ParkingExit">
+            <trigger_point x="-74.3" y="-38.5" z="0.0" yaw="270"/>
+            <parking_lane_side value="right" />
+            <front_vehicle_distance value="20" />
+            <behind_vehicle_distance value="5" />
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="2" town="TrainingMapTiles"> <!-- ParkingExit, new town -->
+      <waypoints>
+         <position x="34.1" y="3550.1" z="365" />
+         <position x="34.5" y="3650.9" z="365" />
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingExit_1" type="ParkingExit">
+            <trigger_point x="34.1" y="3550.1" z="361" yaw="90"/>
+            <parking_lane_side value="right" />
+            <front_vehicle_distance value="10" />
+            <behind_vehicle_distance value="8" />
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="3" town="TrainingMapTiles"> <!-- VehicleOpensDoor, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="0" precipitation="0" precipitation_deposits="0" sun_altitude_angle="-10"/>
+      </weathers>
+      <waypoints>
+         <position x="34.1" y="3506.1" z="365" />
+         <position x="34.5" y="3650.9" z="365" />
+      </waypoints>
+      <scenarios>
+         <scenario name="VehicleOpensDoor_1" type="VehicleOpensDoor">
+            <trigger_point x="34.5" y="3552" z="361" yaw="90"/>
+            <direction value="right"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="4" town="TrainingMapTiles"> <!-- CrossingBicycleFlow, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2081.9" y="4987.4" z="365" />
+         <position x="1965.0" y="4939.6" z="365" />
+      </waypoints>
+      <scenarios>
+         <scenario name="CrossingBycicleFlow_1" type="CrossingBycicleFlow">
+            <trigger_point x="2028.5" y="4988" z="365" yaw="180"/>
+            <start_actor_flow x="2043.8" y="4985.4" z="365"/>
+            <flow_speed value="10"/>
+            <source_dist_interval from="20" to="50"/>
+         </scenario>
+      </scenarios>
+   </route>
+  
+</routes>
