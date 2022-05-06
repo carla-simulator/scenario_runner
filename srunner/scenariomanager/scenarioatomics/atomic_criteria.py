@@ -2064,13 +2064,13 @@ class YieldToEmergencyVehicleTest(Criterion):
         self.units = "s"
         self.success_value = 15
         self.actual_value = 0
-        self._start_time = None
-
+        self._last_time = 0
         self._ev = ev
-
         self._map = CarlaDataProvider.get_map()
 
-
+    def initialise(self):
+        self._last_time = GameTime.get_time()
+        super(YieldToEmergencyVehicleTest, self).initialise()
 
     def update(self):
         """
@@ -2084,23 +2084,24 @@ class YieldToEmergencyVehicleTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        # Some of the vehicle parameters
         location = CarlaDataProvider.get_location(self.actor)
         location_ev = CarlaDataProvider.get_location(self._ev)
         if location is None or location_ev is None:
             return new_status
 
-        # Init start_time
-        if self._start_time is None:
-            self._start_time = GameTime.get_time()
+        if self.actual_value > 20:
+            print(self._ev)
+            print(location_ev)
 
         # On the same lane
         if self._map.get_waypoint(location).lane_id == self._map.get_waypoint(location_ev).lane_id:
-            self.actual_value += GameTime.get_time() - self._start_time
+            self.actual_value += GameTime.get_time() - self._last_time
+            self.actual_value = round(self.actual_value, 2)
 
         if self.actual_value > self.success_value:
             self.test_status = "FAILURE"
 
+        self._last_time = GameTime.get_time()
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
