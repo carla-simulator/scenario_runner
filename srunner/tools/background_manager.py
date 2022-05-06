@@ -238,8 +238,8 @@ class HandleEndAccidentScenario(AtomicBehavior):
 
 class SwitchLane(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity to remove its actors from the given lane,
-    and stop generating new ones on this lane.
+    Updates the blackboard to tell the background activity to remove its actors from the given lane 
+    and stop generating new ones on this lane, or recover from stopping.
 
     Args:
         lane_id (str): A carla.Waypoint.lane_id
