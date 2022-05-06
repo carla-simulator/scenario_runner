@@ -1073,24 +1073,29 @@ class BackgroundBehavior(AtomicBehavior):
             for lane_key in self._road_dict:
                 source = self._road_dict[lane_key]
 
-                if source.actors:
+                # If no actors are found, let the last_location be ego's location 
+                # to  keep moving the source waypoint forward
+                if len(source.actors) == 0:
+                    last_location = self._ego_wp.transform.location
+                else:
                     last_location = CarlaDataProvider.get_location(source.actors[-1])
-                    if last_location is None:
+
+                if last_location is None:
+                    continue
+                source_location = source.wp.transform.location
+                ego_location = self._ego_wp.transform.location
+
+                # Stop the source from being too close to the ego or last lane vehicle
+                actor_dist = max(0, last_location.distance(source_location) - self._spawn_dist)
+                ego_dist = max(0, ego_location.distance(source_location) - min_distance)
+                move_dist = min(actor_dist, ego_dist)
+
+                # Move the source forward if needed
+                if move_dist > 0:
+                    new_source_wps = source.wp.next(added_dist)
+                    if not new_source_wps:
                         continue
-                    source_location = source.wp.transform.location
-                    ego_location = self._ego_wp.transform.location
-
-                    # Stop the source from being too close to the ego or last lane vehicle
-                    actor_dist = max(0, last_location.distance(source_location) - self._spawn_dist)
-                    ego_dist = max(0, ego_location.distance(source_location) - min_distance)
-                    move_dist = min(actor_dist, ego_dist)
-
-                    # Move the source forward if needed
-                    if move_dist > 0:
-                        new_source_wps = source.wp.next(added_dist)
-                        if not new_source_wps:
-                            continue
-                        source.wp = new_source_wps[0]
+                    source.wp = new_source_wps[0]
 
         for lane_key in self._road_dict:
             source = self._road_dict[lane_key]
@@ -1820,8 +1825,8 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _switch_lane(self, lane_id, active):
         """
-        active is False: remove BA actors from this lane, and BA would never generate new actors on this lane
-        active is True: recover the lane, reset source waypoint.
+        active is False: remove BA actors from this lane, and BA would stop generating new actors on this lane.
+        active is True: recover BA on the lane.
         """
         lane_id = str(lane_id)
         lane_id_list = [x.split('*')[-1] for x in  list(self._road_dict.keys())]
@@ -1829,12 +1834,7 @@ class BackgroundBehavior(AtomicBehavior):
             lane_index = lane_id_list.index(lane_id)
             lane_key = list(self._road_dict.keys())[lane_index]
             self._road_dict[lane_key].active = active
-            if active:
-                ego_wp = self._map.get_waypoint(self._ego_actor.get_location())
-                new_source_wps = ego_wp.previous(self._spawn_dist)
-                if new_source_wps:
-                    self._road_dict[lane_key].wp = new_source_wps[0]
-            else:
+            if not active:
                 for actor in list(self._road_dict[lane_key].actors):
                     self._destroy_actor(actor)
 
