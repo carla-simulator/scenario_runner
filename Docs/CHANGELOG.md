@@ -22,6 +22,7 @@
     - ParkingExit: the ego starts parked at the side and has to maneuver to properly enter the driving road.
     - CrossBycicleFlow: the ego has to do a turn at an intersection but it has to cross a bycicle lane full of incoming traffic
     - VehicleOpensDoor: a parked vehicle next to the ego suddenly opens the door, forcing the ego to brake. The ego has to maneuver to an adjacent lane to surpass the obstacle.
+    - HighwayCutIn: The ego is met with a vehicle that tries to enter the highway by cutting in front of it.
 * Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
