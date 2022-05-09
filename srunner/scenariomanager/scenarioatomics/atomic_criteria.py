@@ -2039,22 +2039,15 @@ class CheckMinSpeed(Criterion):
 class YieldToEmergencyVehicleTest(Criterion):
 
     """
-    TODO
-    Atomic to detect if the vehicle is either on a sidewalk or at a wrong lane. The distance spent outside
-    is computed and it is returned as a percentage of the route distance traveled.
+    Atomic Criterion to detect if the actor yields its lane to the emergency vehicle behind it within a certain time
 
     Args:
         actor (carla.ACtor): CARLA actor to be used for this test
-        route (list [carla.Location, connection]): series of locations representing the route waypoints
+        ev (carla.ACtor): The emergency vehicle
         optional (bool): If True, the result is not considered for an overall pass/fail result
     """
 
-    WAITING_TIME_THRESHOLD = 15
-
-    ALLOWED_OUT_DISTANCE = 1.3          # At least 0.5, due to the mini-shoulder between lanes and sidewalks
-    MAX_ALLOWED_VEHICLE_ANGLE = 120.0   # Maximum angle between the yaw and waypoint lane
-    MAX_ALLOWED_WAYPOINT_ANGLE = 150.0  # Maximum change between the yaw-lane angle between frames
-    WINDOWS_SIZE = 3                    # Amount of additional waypoints checked (in case the first on fails)
+    WAITING_TIME_THRESHOLD = 15 # Maximum time for actor to block ev
 
     def __init__(self, actor, ev, optional=False, name="YieldToEmergencyVehicleTest"):
         """
@@ -2074,13 +2067,10 @@ class YieldToEmergencyVehicleTest(Criterion):
 
     def update(self):
         """
-        TODO
-        Transforms the actor location and its four corners to waypoints. Depending on its types,
-        the actor will be considered to be at driving lanes, sidewalk or offroad.
+        Count the time when actor and ev are on the same lane and actor is in front of ev
 
         returns:
-            py_trees.common.Status.FAILURE: when the actor has left driving and terminate_on_failure is active
-            py_trees.common.Status.RUNNING: the rest of the time
+            py_trees.common.Status.RUNNING
         """
         new_status = py_trees.common.Status.RUNNING
 
@@ -2089,12 +2079,19 @@ class YieldToEmergencyVehicleTest(Criterion):
         if location is None or location_ev is None:
             return new_status
 
-        if self.actual_value > 20:
-            print(self._ev)
-            print(location_ev)
+        actor_wp = self._map.get_waypoint(location)
+        ev_wp = self._map.get_waypoint(location_ev)
 
-        # On the same lane
-        if self._map.get_waypoint(location).lane_id == self._map.get_waypoint(location_ev).lane_id:
+        # True if actor and ev are on the same lane
+        on_the_same_lane = actor_wp.lane_id == ev_wp.lane_id
+
+        ev_dir = ev_wp.transform.get_forward_vector()
+        actor_ev_dir = location - location_ev
+        dot_ve_wp = actor_ev_dir.x * ev_dir.x + actor_ev_dir.y * ev_dir.y + actor_ev_dir.z * ev_dir.z
+        # True if actor is in front of ev
+        actor_in_front_of_ev = dot_ve_wp > 0.0
+
+        if on_the_same_lane and actor_in_front_of_ev:
             self.actual_value += GameTime.get_time() - self._last_time
             self.actual_value = round(self.actual_value, 2)
 
