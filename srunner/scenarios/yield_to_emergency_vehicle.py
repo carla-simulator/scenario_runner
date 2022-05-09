@@ -18,7 +18,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransf
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, WaitForTime
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import RemoveLane, SwitchRouteSources
+from srunner.tools.background_manager import SwitchLane
 
 import random
 
@@ -97,8 +97,7 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
 
-        sequence.add_child(RemoveLane(self._reference_waypoint.lane_id))
-        # sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, False))
+        sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, False))
 
         # Teleport EV behind the ego
         ev_points = self._map.get_waypoint(self.ego_vehicles[0].get_location()).previous(
@@ -113,6 +112,7 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         sequence.add_child(SwitchOutsideRouteLanesTest(False))
 
+        # Emergency Vehicle runs for self._ev_drive_time seconds
         ev_end_condition = py_trees.composites.Parallel("Waiting for emergency vehicle driving for a certein distance",
                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -124,6 +124,7 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 
+        # End condition
         end_condition = py_trees.composites.Parallel("Waiting for ego driving for a certein distance",
                                                      policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         end_condition.add_child(DriveDistance(
@@ -133,8 +134,7 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         sequence.add_child(SwitchOutsideRouteLanesTest(True))
 
-        sequence.add_child(SwitchRouteSources(True))
-        # sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, True))
+        sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, True))
 
         return sequence
 
