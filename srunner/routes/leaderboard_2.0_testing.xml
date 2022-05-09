@@ -39,7 +39,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="2" town="TrainingMapTiles"> <!-- ParkingExit, new town -->
+   <route id="2" town="TrainingMap"> <!-- ParkingExit, new town -->
       <waypoints>
          <position x="34.1" y="3550.1" z="365" />
          <position x="34.5" y="3650.9" z="365" />
@@ -53,22 +53,20 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="3" town="TrainingMapTiles"> <!-- VehicleOpensDoor, new town -->
-      <weathers>
-         <weather route_percentage="0" cloudiness="0" precipitation="0" precipitation_deposits="0" sun_altitude_angle="-10"/>
-      </weathers>
+   <route id="3" town="TrainingMap"> <!-- VehicleOpensDoor, new town, opposite lane -->
       <waypoints>
-         <position x="34.1" y="3506.1" z="365" />
-         <position x="34.5" y="3650.9" z="365" />
+         <position x="2822.7" y="4256.7" z="360" />
+         <position x="2782.9" y="4497.9" z="363" />
       </waypoints>
       <scenarios>
          <scenario name="VehicleOpensDoor_1" type="VehicleOpensDoor">
-            <trigger_point x="34.5" y="3552" z="361" yaw="90"/>
+            <trigger_point x="2818.4" y="4284.1" z="360" yaw="102"/>
             <direction value="right"/>
+            <cross_onto_opposite_lane/>
          </scenario>
       </scenarios>
    </route>
-   <route id="4" town="TrainingMapTiles"> <!-- CrossingBicycleFlow, new town -->
+   <route id="4" town="TrainingMap"> <!-- CrossingBicycleFlow, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -86,5 +84,23 @@
          </scenario>
       </scenarios>
    </route>
-  
+   <route id="5" town="TrainingMap"> <!-- AccidentTwoWay, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2534.5" y="1444.3" z="355" />
+         <position x="2388.6" y="1095.3" z="350" />
+         <position x="2389.1" y="599.1" z="338" />
+      </waypoints>
+      <scenarios>
+         <scenario name="AccidentTwoWays_1" type="AccidentTwoWays">
+            <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
+         </scenario>
+         <scenario name="AccidentTwoWays_2" type="AccidentTwoWays">
+            <trigger_point x="2388.9" y="897.6" z="345" yaw="270"/>
+         </scenario>
+      </scenarios>
+   </route>
 </routes>

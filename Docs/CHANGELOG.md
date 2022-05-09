@@ -18,9 +18,10 @@
 * Scenarios can now parse and use all parameters present at the configuration file.
 * Improved overall parsing of routes and scenarios.
 * Added new scenarios:
-    - Accident: the ego has to lane change in order to avoid an accident
+    - Accident: the ego has to lane change in order to avoid an accident. Two variants, one with traffic in the same direction,a nd another one having to invade the opposite lane
+    - ParkingExit: the ego starts parked at the side and has to maneuver to properly enter the driving road.
     - CrossBycicleFlow: the ego has to do a turn at an intersection but it has to cross a bycicle lane full of incoming traffic
-    - VehicleOpensDoor: a parked vehicle next to the ego suddenly opens the door, forcing the ego to brake. After a while, the door automatically closes.
+    - VehicleOpensDoor: a parked vehicle next to the ego suddenly opens the door, forcing the ego to brake. The ego has to maneuver to an adjacent lane to surpass the obstacle.
 * Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
