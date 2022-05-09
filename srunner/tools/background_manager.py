@@ -224,24 +224,24 @@ class HandleEndAccidentScenario(AtomicBehavior):
         py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
-
-class RemoveLane(AtomicBehavior):
+class SwitchLane(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity to remove its actors from the given lane,
-    and stop generating new ones on this lane.
+    Updates the blackboard to tell the background activity to remove its actors from the given lane 
+    and stop generating new ones on this lane, or recover from stopping.
 
     Args:
         lane_id (str): A carla.Waypoint.lane_id
+        active (bool)
     """
-    def __init__(self, lane=None, name="RemoveLane"):
-        self._lane = lane
+    def __init__(self, lane_id=None, active=True, name="SwitchLane"):
+        self._lane_id = lane_id
+        self._active = active
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RemoveLane", self._lane, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_SwitchLane", [self._lane_id, self._active], overwrite=True)
         return py_trees.common.Status.SUCCESS
-
 
 class RemoveJunctionEntry(AtomicBehavior):
     """
