@@ -1105,6 +1105,7 @@ class DriveDistance(AtomicCondition):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
+
 class AtRightmostLane(AtomicCondition):
 
     """
