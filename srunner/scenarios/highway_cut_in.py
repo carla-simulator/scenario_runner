@@ -16,12 +16,32 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy,  WaypointFollower, LaneChange, AccelerateToVelocity, SetInitSpeed
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
+                                                                      ActorTransformSetter,
+                                                                      SyncArrivalWithAgent,
+                                                                      CutIn)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, WaitUntilInFront
 from srunner.scenarios.basic_scenario import BasicScenario
 
-class HighwayEntryCutIn(BasicScenario):
+from srunner.tools.background_manager import (SwitchRouteSources,
+                                              ExtentExitRoadSpace,
+                                              RemoveJunctionEntry,
+                                              ClearJunction)
+
+from srunner.tools.scenario_helper import generate_target_waypoint
+
+def convert_dict_to_location(actor_dict):
+    """
+    Convert a JSON string to a Carla.Location
+    """
+    location = carla.Location(
+        x=float(actor_dict['x']),
+        y=float(actor_dict['y']),
+        z=float(actor_dict['z'])
+    )
+    return location
+
+class HighwayCutInRoute(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
     in front of the ego, forcing it to react. This vehicles are 'special' ones such as police cars,
@@ -37,75 +57,84 @@ class HighwayEntryCutIn(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._drive_distance = 100
-        self._other_init_speed = 100 / 3.6
-        self._other_end_speed = 70 / 3.6
-        self._factor = 0
 
-        super(HighwayEntryCutIn, self).__init__("HighwayEntryCutIn",
-                                                ego_vehicles,
-                                                config,
-                                                world,
-                                                debug_mode,
-                                                criteria_enable=criteria_enable)
+        self._same_lane_time = 1
+        self._other_lane_time = 3
+        self._change_time = 2
+        self._speed_perc = 80
+        self._cut_in_distance = 8
+        self._extra_space = 170
+
+        self._start_location = convert_dict_to_location(config.other_parameters['other_actor_location'])
+
+        super().__init__("HighwayEntryCutIn",
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
         Custom initialization
         """
-        starting_location = config.other_actors[0].transform.location
-        starting_waypoint = self._map.get_waypoint(starting_location)
+        self._other_waypoint = self._map.get_waypoint(self._start_location)
+        self._other_transform = self._other_waypoint.transform
 
-        other_vehicle = CarlaDataProvider.request_new_actor(config.other_actors[0].model, starting_waypoint.transform)
-        self.other_actors.append(other_vehicle)
+        self._cut_in_vehicle = CarlaDataProvider.request_new_actor(
+            'vehicle.*', self._other_transform, rolename='scenario',
+            attribute_filter={'base_type': 'car', 'has_lights': True}
+        )
+        self.other_actors.append(self._cut_in_vehicle)
+
+        # Move below ground
+        self._cut_in_vehicle.set_location(self._other_transform.location - carla.Location(z=100))
+        self._cut_in_vehicle.set_simulate_physics(False)
+
 
     def _create_behavior(self):
         """
         Hero vehicle is entering a junction in an urban area, at a signalized intersection,
         while another actor runs a red lift, forcing the ego to break.
         """
+        # behavior.add_child(SwitchRouteSources(False))
 
-        behaviour = py_trees.composites.Sequence("ExitFreewayCutIn")
+        behavior = py_trees.composites.Sequence("HighwayCutInRoute")
 
-        # Make the vehicle "sync" with the ego_vehicle
-        sync_arrival = py_trees.composites.Parallel(
-            "Sync Arrival", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sync_arrival.add_child(WaitUntilInFront(self.other_actors[0], self.ego_vehicles[0], factor=self._factor))
+        if self.route_mode:
+            behavior.add_child(RemoveJunctionEntry(self._other_waypoint, True))
+            behavior.add_child(ClearJunction())
+            behavior.add_child(ExtentExitRoadSpace(self._extra_space))
 
-        sync_behavior = py_trees.composites.Sequence()
-        sync_behavior.add_child(SetInitSpeed(self.other_actors[0], self._other_init_speed))
-        sync_behavior.add_child(WaypointFollower(self.other_actors[0], self._other_init_speed * 1000))
-        sync_arrival.add_child(sync_behavior)
+        behavior.add_child(ActorTransformSetter(self._cut_in_vehicle, self._other_transform))
 
-        # Force a lane change
-        lane_change = LaneChange(
-            self.other_actors[0],
-            speed=self._other_end_speed,
-            direction='left',
-            distance_same_lane=1,
-            distance_other_lane=30,
-            distance_lane_change=60)
+        # Sync behavior
+        target_wp = generate_target_waypoint(self._other_waypoint)
+        front_wps = target_wp.next(self._cut_in_distance)
+        if not front_wps:
+            raise ValueError("Couldn't find a waypoint to perform the cut in")
+        target_wp = front_wps[0]
 
-        # End of the scenario
-        end_condition = py_trees.composites.Parallel(
-            "End condition", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        trigger_wp = self._map.get_waypoint(self.config.trigger_points[0].location)
+        reference_wp = generate_target_waypoint(trigger_wp)
+        behavior.add_child(SyncArrivalWithAgent(
+            self._cut_in_vehicle, self.ego_vehicles[0], target_wp.transform, reference_wp.transform, 5))
 
-        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        end_condition.add_child(WaypointFollower(self.other_actors[0], self._other_end_speed))
-
-        # behaviour.add_child(init_speed)
-        behaviour.add_child(sync_arrival)
-        behaviour.add_child(lane_change)
-        behaviour.add_child(end_condition)
-        behaviour.add_child(ActorDestroy(self.other_actors[0]))
-
-        return behaviour
+        # Cut in
+        behavior.add_child(CutIn(
+            self._cut_in_vehicle, self.ego_vehicles[0], 'left', self._speed_perc,
+            self._same_lane_time, self._other_lane_time, self._change_time, name="Cut_in")
+        )
+        behavior.add_child(ActorDestroy(self._cut_in_vehicle))
+        return behavior
 
     def _create_test_criteria(self):
         """
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
+        if self.route_mode:
+            return []
         return [CollisionTest(self.ego_vehicles[0])]
 
     def __del__(self):

@@ -39,7 +39,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="2" town="TrainingMapTiles"> <!-- ParkingExit, new town -->
+   <route id="2" town="TrainingMap"> <!-- ParkingExit, new town -->
       <waypoints>
          <position x="34.1" y="3550.1" z="365" />
          <position x="34.5" y="3650.9" z="365" />
@@ -53,7 +53,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="3" town="TrainingMapTiles"> <!-- VehicleOpensDoor, new town -->
+   <route id="3" town="TrainingMap"> <!-- VehicleOpensDoor, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="0" precipitation="0" precipitation_deposits="0" sun_altitude_angle="-10"/>
       </weathers>
@@ -68,7 +68,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="4" town="TrainingMapTiles"> <!-- CrossingBicycleFlow, new town -->
+   <route id="4" town="TrainingMap"> <!-- CrossingBicycleFlow, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -83,6 +83,22 @@
             <start_actor_flow x="2043.8" y="4985.4" z="365"/>
             <flow_speed value="10"/>
             <source_dist_interval from="20" to="50"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="6" town="TrainingMap"> <!-- HighwayCutIn (High Speed), new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2571.9" y="3117.2" z="358" />
+         <position x="3231.0" y="3115.9" z="367" />
+      </waypoints>
+      <scenarios>
+         <scenario name="HighwayCutIn_1" type="HighwayCutInRoute">
+            <trigger_point x="2646.2" y="3117.0" z="358" yaw="0"/>
+            <other_actor_location x="2699.6" y="3156.8" z="365"/>
          </scenario>
       </scenarios>
    </route>
