@@ -2838,21 +2838,18 @@ class OpenVehicleDoor(AtomicBehavior):
     - duration: Duration of the open door
     """
 
-    def __init__(self, actor, vehicle_door, duration, name="OpenVehicleDoor"):
+    def __init__(self, actor, vehicle_door, name="OpenVehicleDoor"):
         """
         Setup class members
         """
         super(OpenVehicleDoor, self).__init__(name, actor)
         self._vehicle_door = vehicle_door
-        self._duration = duration
-        self._start_time = 0
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def initialise(self):
         """
         Set start time
         """
-        self._start_time = GameTime.get_time()
         self._actor.open_door(self._vehicle_door)
         super().initialise()
 
@@ -2860,19 +2857,9 @@ class OpenVehicleDoor(AtomicBehavior):
         """
         Keep running until termination condition is satisfied
         """
-        new_status = py_trees.common.Status.RUNNING
-
-        if GameTime.get_time() - self._start_time > self._duration:
-            new_status = py_trees.common.Status.SUCCESS
-
+        new_status = py_trees.common.Status.SUCCESS
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
-
-    def terminate(self, new_status):
-        """
-        Close the open door
-        """
-        self._actor.close_door(self._vehicle_door)
-        super().terminate(new_status)
 
 
 class TrafficLightFreezer(AtomicBehavior):
