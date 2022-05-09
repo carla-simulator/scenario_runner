@@ -11,6 +11,5 @@
             <emergency_vehicle_distance value="5" />
          </scenario>
       </scenarios>
-   </route>
-  
+   </route>  
 </routes>
