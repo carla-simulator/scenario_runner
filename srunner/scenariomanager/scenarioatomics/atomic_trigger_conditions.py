@@ -1105,40 +1105,6 @@ class DriveDistance(AtomicCondition):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
-class WaitForTime(AtomicCondition):
-
-    """
-    This class contains an atomic behavior to wait for a certain time.
-
-    The condition terminates with SUCCESS, when the given time has passed.
-    """
-
-    def __init__(self, time=0, name="WaitForTime"):
-        """
-        Setup parameters
-        """
-        super(WaitForTime, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
-        self._time = time
-        self._start_time =  0
-
-    def initialise(self):
-        self._start_time = GameTime.get_time()
-        super(WaitForTime, self).initialise()
-
-    def update(self):
-        """
-        Check passage of time
-        """
-        new_status = py_trees.common.Status.RUNNING
-
-        new_time = GameTime.get_time()
-        if new_time - self._start_time > self._time:
-            new_status = py_trees.common.Status.SUCCESS
-
-        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
-        return new_status
-
 class AtRightmostLane(AtomicCondition):
 
     """
@@ -1317,4 +1283,38 @@ class CheckParameter(AtomicCondition):
         if self._comparison_operator(current_value, self._value):
             new_status = py_trees.common.Status.SUCCESS
 
+        return new_status
+
+class WaitForTime(AtomicCondition):
+
+    """
+    This class contains an atomic behavior to wait for a certain time.
+
+    The condition terminates with SUCCESS, when the given time has passed.
+    """
+
+    def __init__(self, time=0, name="WaitForTime"):
+        """
+        Setup parameters
+        """
+        super(WaitForTime, self).__init__(name)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._time = time
+        self._start_time =  0
+
+    def initialise(self):
+        self._start_time = GameTime.get_time()
+        super(WaitForTime, self).initialise()
+
+    def update(self):
+        """
+        Check passage of time
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        new_time = GameTime.get_time()
+        if new_time - self._start_time > self._time:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
