@@ -103,4 +103,20 @@
          </scenario>
       </scenarios>
    </route>
+   <route id="6" town="TrainingMap"> <!-- HighwayCutIn (High Speed), new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2571.9" y="3117.2" z="358" />
+         <position x="3231.0" y="3115.9" z="367" />
+      </waypoints>
+      <scenarios>
+         <scenario name="HighwayCutIn_1" type="HighwayCutInRoute">
+            <trigger_point x="2646.2" y="3117.0" z="358" yaw="0"/>
+            <other_actor_location x="2699.6" y="3156.8" z="365"/>
+         </scenario>
+      </scenarios>
+   </route>
 </routes>

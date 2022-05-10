@@ -11,7 +11,6 @@ Scenario spawning elements to make the town dynamic and interesting
 import math
 from collections import OrderedDict
 import py_trees
-import numpy as np
 
 import carla
 
