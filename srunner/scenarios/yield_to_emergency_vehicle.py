@@ -14,9 +14,9 @@ from __future__ import print_function
 import py_trees
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, WaypointFollower, SwitchOutsideRouteLanesTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, WaypointFollower, Idle
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, WaitForTime
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import SwitchLane
 
@@ -84,14 +84,12 @@ class YieldToEmergencyVehicle(BasicScenario):
         """
         - Remove BA from current lane
         - Teleport Emergency Vehicle(EV) behind the ego
-        - Deactivate OutsideRouteLanesTest
         - [Parallel SUCCESS_ON_ONE]
-            - WaitForTime(20 seconds)
+            - IDle(20 seconds)
             - WaypointFollower(EV, speed=80, avoid_collision=True)
         - Destroy EV
         - [Parallel SUCCESS_ON_ONE]
             - DriveDistance(ego, 30)
-        - Activate OutsideRouteLanesTest
         - Recover BA
         """
 
@@ -110,13 +108,12 @@ class YieldToEmergencyVehicle(BasicScenario):
         sequence.add_child(ActorTransformSetter(
             self.other_actors[0], ev_start_transform))
 
-        sequence.add_child(SwitchOutsideRouteLanesTest(False))
 
         # Emergency Vehicle runs for self._ev_drive_time seconds
         ev_end_condition = py_trees.composites.Parallel("Waiting for emergency vehicle driving for a certein distance",
                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        ev_end_condition.add_child(WaitForTime(self._ev_drive_time))
+        ev_end_condition.add_child(Idle(self._ev_drive_time))
 
         ev_end_condition.add_child(WaypointFollower(
             self.other_actors[0], self._ev_speed, avoid_collision=True))
@@ -131,8 +128,6 @@ class YieldToEmergencyVehicle(BasicScenario):
             self.ego_vehicles[0], 30))
 
         sequence.add_child(end_condition)
-
-        sequence.add_child(SwitchOutsideRouteLanesTest(True))
 
         sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, True))
 
