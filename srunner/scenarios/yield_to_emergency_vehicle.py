@@ -20,8 +20,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Dr
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import SwitchLane
 
-import random
-
 
 class YieldToEmergencyVehicle(BasicScenario):
     """
@@ -42,8 +40,6 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._actor_types = ["vehicle.carlamotors.firetruck", "vehicle.ford.ambulance",
-                             "vehicle.dodge.charger_police", "vehicle.dodge.charger_police_2020"]
         self._ev_drive_time = 20  # seconds
         self._ev_speed = 80
 
@@ -74,7 +70,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         spawn_transform.location.z -= 500
 
         actor = CarlaDataProvider.request_new_actor(
-            random.choice(self._actor_types), spawn_transform, rolename='scenario')
+            "vehicle.*", spawn_transform, rolename='scenario', attribute_filter={'special_type': 'emergency'})
         if actor is None:
             raise Exception(
                 "Couldn't spawn the emergency vehicle")
@@ -107,7 +103,6 @@ class YieldToEmergencyVehicle(BasicScenario):
                 "Couldn't find viable position for the emergency vehicle")
         sequence.add_child(ActorTransformSetter(
             self.other_actors[0], ev_start_transform))
-
 
         # Emergency Vehicle runs for self._ev_drive_time seconds
         ev_end_condition = py_trees.composites.Parallel("Waiting for emergency vehicle driving for a certein distance",
