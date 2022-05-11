@@ -14,7 +14,7 @@ from __future__ import print_function
 import py_trees
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, WaypointFollower, Idle
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, BasicAgentBehavior, SetInitSpeed
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -41,13 +41,12 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
         self._ev_drive_time = 20  # seconds
-        self._ev_speed = 80
 
         if 'emergency_vehicle_distance' in config.other_parameters:
             self._emergency_vehicle_distance = float(
                 config.other_parameters['emergency_vehicle_distance']['value'])
         else:
-            self._emergency_vehicle_distance = 5  # m
+            self._emergency_vehicle_distance = 15  # m
 
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(
@@ -70,10 +69,12 @@ class YieldToEmergencyVehicle(BasicScenario):
         spawn_transform.location.z -= 500
 
         actor = CarlaDataProvider.request_new_actor(
-            "vehicle.*", spawn_transform, rolename='scenario', attribute_filter={'special_type': 'emergency'})
+            "vehicle.*.*", spawn_transform, rolename='scenario', attribute_filter={'special_type': 'emergency'})
         if actor is None:
             raise Exception(
                 "Couldn't spawn the emergency vehicle")
+        # Remove its physics so that it doesn't fall
+        actor.set_simulate_physics(False)
         self.other_actors.append(actor)
 
     def _create_behavior(self):
@@ -94,7 +95,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, False))
 
         # Teleport EV behind the ego
-        ev_points = self._map.get_waypoint(self.ego_vehicles[0].get_location()).previous(
+        ev_points = self._reference_waypoint.previous(
             self._emergency_vehicle_distance)
         if ev_points:
             ev_start_transform = ev_points[0].transform
@@ -103,6 +104,7 @@ class YieldToEmergencyVehicle(BasicScenario):
                 "Couldn't find viable position for the emergency vehicle")
         sequence.add_child(ActorTransformSetter(
             self.other_actors[0], ev_start_transform))
+        sequence.add_child(SetInitSpeed(self.other_actors[0], 20))
 
         # Emergency Vehicle runs for self._ev_drive_time seconds
         ev_end_condition = py_trees.composites.Parallel("Waiting for emergency vehicle driving for a certein distance",
@@ -110,8 +112,11 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         ev_end_condition.add_child(Idle(self._ev_drive_time))
 
-        ev_end_condition.add_child(WaypointFollower(
-            self.other_actors[0], self._ev_speed, avoid_collision=True))
+        target_locations = self._reference_waypoint.next(2000)
+        target_location = target_locations[0].transform.location
+        ev_end_condition.add_child(BasicAgentBehavior(
+            self.other_actors[0], target_location))
+
         sequence.add_child(ev_end_condition)
 
         sequence.add_child(ActorDestroy(self.other_actors[0]))
@@ -133,10 +138,13 @@ class YieldToEmergencyVehicle(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return[YieldToEmergencyVehicleTest(self.ego_vehicles[0], self.other_actors[0])]
+        criterias = []
+        criterias.append(YieldToEmergencyVehicleTest(
+            self.ego_vehicles[0], self.other_actors[0]))
+        if not self.route_mode:
+            criterias.append(CollisionTest(self.ego_vehicles[0]))
 
-        return [CollisionTest(self.ego_vehicles[0]), YieldToEmergencyVehicleTest(self.ego_vehicles[0], self.other_actors[0])]
+        return criterias
 
     def __del__(self):
         """
