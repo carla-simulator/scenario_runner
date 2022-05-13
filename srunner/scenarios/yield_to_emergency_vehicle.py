@@ -51,6 +51,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(
             self._trigger_location)
+        self._ev_start_transform = None
 
         super(YieldToEmergencyVehicle, self).__init__("YieldToEmergencyVehicle",
                                                       ego_vehicles,
@@ -64,17 +65,25 @@ class YieldToEmergencyVehicle(BasicScenario):
         Custom initialization
         """
         # Spawn emergency vehicle
-
-        spawn_transform = self._reference_waypoint.transform
-        spawn_transform.location.z -= 500
+        ev_points = self._reference_waypoint.previous(
+            self._emergency_vehicle_distance)
+        if ev_points:
+            self._ev_start_transform = ev_points[0].transform
+        else:
+            raise Exception(
+                "Couldn't find viable position for the emergency vehicle")
 
         actor = CarlaDataProvider.request_new_actor(
-            "vehicle.*.*", spawn_transform, rolename='scenario', attribute_filter={'special_type': 'emergency'})
+            "vehicle.*.*", self._ev_start_transform, rolename='scenario', attribute_filter={'special_type': 'emergency'})
         if actor is None:
             raise Exception(
                 "Couldn't spawn the emergency vehicle")
         # Remove its physics so that it doesn't fall
         actor.set_simulate_physics(False)
+        # Move the actor underground
+        new_location = actor.get_location()
+        new_location.z -= 500
+        actor.set_location(new_location)
         self.other_actors.append(actor)
 
     def _create_behavior(self):
@@ -82,8 +91,8 @@ class YieldToEmergencyVehicle(BasicScenario):
         - Remove BA from current lane
         - Teleport Emergency Vehicle(EV) behind the ego
         - [Parallel SUCCESS_ON_ONE]
-            - IDle(20 seconds)
-            - WaypointFollower(EV, speed=80, avoid_collision=True)
+            - Idle(20 seconds)
+            - FasterBasicAgentBehavior
         - Destroy EV
         - [Parallel SUCCESS_ON_ONE]
             - DriveDistance(ego, 30)
@@ -95,15 +104,8 @@ class YieldToEmergencyVehicle(BasicScenario):
         sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, False))
 
         # Teleport EV behind the ego
-        ev_points = self._reference_waypoint.previous(
-            self._emergency_vehicle_distance)
-        if ev_points:
-            ev_start_transform = ev_points[0].transform
-        else:
-            raise Exception(
-                "Couldn't find viable position for the emergency vehicle")
         sequence.add_child(ActorTransformSetter(
-            self.other_actors[0], ev_start_transform))
+            self.other_actors[0], self._ev_start_transform))
         sequence.add_child(SetInitSpeed(self.other_actors[0], 20))
 
         # Emergency Vehicle runs for self._ev_drive_time seconds

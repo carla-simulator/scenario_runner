@@ -1958,7 +1958,7 @@ class FasterBasicAgentBehavior(AtomicBehavior):
     This class contains an atomic behavior, which uses the
     basic_agent from CARLA to control the actor until
     reaching a target location. 
-    The actor is expected to be faster than other_actor.
+    The actor is expected to be faster than the other_actor.
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - other_actor: Reference CARLA actor
@@ -1978,7 +1978,7 @@ class FasterBasicAgentBehavior(AtomicBehavior):
         self._agent = None
         self._plan = None
         self._target_speed = None
-        self._speed_increment = 30 # km/h. How much actor will be faster then other_actor
+        self._speed_increment = 30 # km/h. How much the actor will be faster then the other_actor
         self._other_actor = other_actor
 
     def initialise(self):
@@ -1995,7 +1995,7 @@ class FasterBasicAgentBehavior(AtomicBehavior):
         if self._agent.done():
             new_status = py_trees.common.Status.SUCCESS
 
-        # Set actor's target speed which should be higher than other_actor's current speed
+        # Set the actor's target speed which should be higher than the other_actor's current speed
         if self._other_actor:
             self._target_speed = get_speed(self._other_actor) + self._speed_increment
             self._agent.set_target_speed(self._target_speed)
