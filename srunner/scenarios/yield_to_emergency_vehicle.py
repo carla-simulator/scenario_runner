@@ -14,7 +14,7 @@ from __future__ import print_function
 import py_trees
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, BasicAgentBehavior, SetInitSpeed
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, SetInitSpeed, FasterBasicAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -114,8 +114,8 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         target_locations = self._reference_waypoint.next(2000)
         target_location = target_locations[0].transform.location
-        ev_end_condition.add_child(BasicAgentBehavior(
-            self.other_actors[0], target_location))
+        ev_end_condition.add_child(FasterBasicAgentBehavior(
+            self.other_actors[0], self.ego_vehicles[0], target_location))
 
         sequence.add_child(ev_end_condition)
 

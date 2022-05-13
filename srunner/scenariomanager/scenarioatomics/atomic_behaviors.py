@@ -33,7 +33,7 @@ from agents.navigation.basic_agent import BasicAgent
 from agents.navigation.constant_velocity_agent import ConstantVelocityAgent
 from agents.navigation.local_planner import RoadOption, LocalPlanner
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.tools.misc import is_within_distance
+from agents.tools.misc import is_within_distance, get_speed
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -1952,6 +1952,66 @@ class BasicAgentBehavior(AtomicBehavior):
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
         super(BasicAgentBehavior, self).terminate(new_status)
+
+class FasterBasicAgentBehavior(AtomicBehavior):
+    """
+    This class contains an atomic behavior, which uses the
+    basic_agent from CARLA to control the actor until
+    reaching a target location. 
+    The actor is expected to be faster than other_actor.
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - other_actor: Reference CARLA actor
+    - target_location: Is the desired target location (carla.location),
+                       the actor should move to
+    The behavior terminates after reaching the target_location (within 2 meters)
+    """
+
+    def __init__(self, actor, other_actor, target_location, name="BasicAgentBehavior"):
+        """
+        Setup actor and maximum steer value
+        """
+        super(FasterBasicAgentBehavior, self).__init__(name, actor)
+        self._map = CarlaDataProvider.get_map()
+        self._target_location = target_location
+        self._control = carla.VehicleControl()
+        self._agent = None
+        self._plan = None
+        self._target_speed = None
+        self._speed_increment = 30 # km/h. How much actor will be faster then other_actor
+        self._other_actor = other_actor
+
+    def initialise(self):
+        """Initialises the agent"""
+        self._agent = BasicAgent(self._actor)
+        self._plan = self._agent.trace_route(
+            self._map.get_waypoint(CarlaDataProvider.get_location(self._actor)),
+            self._map.get_waypoint(self._target_location))
+        self._agent.set_global_plan(self._plan)
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._agent.done():
+            new_status = py_trees.common.Status.SUCCESS
+
+        # Set actor's target speed which should be higher than other_actor's current speed
+        if self._other_actor:
+            self._target_speed = get_speed(self._other_actor) + self._speed_increment
+            self._agent.set_target_speed(self._target_speed)
+
+        self._control = self._agent.run_step()
+        self._actor.apply_control(self._control)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+    def terminate(self, new_status):
+        """Resets the control"""
+        self._control.throttle = 0.0
+        self._control.brake = 0.0
+        self._actor.apply_control(self._control)
+        super(FasterBasicAgentBehavior, self).terminate(new_status)
 
 
 class ConstantVelocityAgentBehavior(AtomicBehavior):
