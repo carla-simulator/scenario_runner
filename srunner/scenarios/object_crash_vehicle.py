@@ -316,7 +316,9 @@ class PedestrianCrossing(BasicScenario):
     The ego vehicle is passing through a road,
     And encounters a group of pedestrians crossing the road.
 
-    This is a single ego vehicle scenario
+    This is a single ego vehicle scenario.
+
+    Notice that the pavement is expected to be self._start_distance (30m) ahead of the trigger point.
     """
 
     def __init__(self, world, ego_vehicles, config,
@@ -330,7 +332,7 @@ class PedestrianCrossing(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
         self._num_lane_changes = 0
 
-        self._start_distance = 12
+        self._start_distance = 30
         self._retry_dist = 0.4
 
         self._adversary_type = adversary_type  # blueprint filter of the adversary
