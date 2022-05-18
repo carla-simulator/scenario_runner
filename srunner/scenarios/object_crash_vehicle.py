@@ -65,9 +65,9 @@ class StationaryObjectCrossing(BasicScenario):
         """
         Custom initialization
         """
-        _start_distance = 40
+        _distance = 40
         lane_width = self._reference_waypoint.lane_width
-        location, _ = get_location_in_distance_from_wp(self._reference_waypoint, _start_distance)
+        location, _ = get_location_in_distance_from_wp(self._reference_waypoint, _distance)
         waypoint = self._wmap.get_waypoint(location)
         offset = {"orientation": 270, "position": 90, "z": 0.4, "k": 0.2}
         position_yaw = waypoint.transform.rotation.yaw + offset['position']
@@ -150,7 +150,11 @@ class DynamicObjectCrossing(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
         self._num_lane_changes = 0
 
-        self._start_distance = 12
+        if 'distance' in config.other_parameters:
+            self._distance = int(config.other_parameters['distance']['value'])
+        else:
+            self._distance = 12
+
         self._blocker_shift = 0.9
         self._retry_dist = 0.4
 
@@ -202,7 +206,7 @@ class DynamicObjectCrossing(BasicScenario):
         Custom initialization
         """
         # Get the waypoint in front of the ego.
-        move_dist = self._start_distance
+        move_dist = self._distance
         waypoint = self._reference_waypoint
         while self._number_of_attempts > 0:
             self._num_lane_changes = 0
@@ -262,7 +266,7 @@ class DynamicObjectCrossing(BasicScenario):
         """
         sequence = py_trees.composites.Sequence(name="CrossingActor")
         if self.route_mode:
-            sequence.add_child(LeaveSpaceInFront(self._start_distance))
+            sequence.add_child(LeaveSpaceInFront(self._distance))
 
         collision_location = self._collision_wp.transform.location
         collision_distance = collision_location.distance(self._adversary_transform.location)

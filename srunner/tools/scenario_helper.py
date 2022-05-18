@@ -135,7 +135,7 @@ def get_crossing_point(actor):
     return crossing
 
 
-def get_geometric_linear_intersection(ego_location, other_location):
+def get_geometric_linear_intersection(ego_location, other_location, move_to_junction=False):
     """
     Obtain a intersection point between two actor's location by using their waypoints (wp)
 
@@ -144,11 +144,31 @@ def get_geometric_linear_intersection(ego_location, other_location):
 
     wp_ego_1 = CarlaDataProvider.get_map().get_waypoint(ego_location)
     wp_ego_2 = wp_ego_1.next(1)[0]
+
+    if move_to_junction:
+        while True:
+            next_wp = wp_ego_2.next(1)[0]
+            if next_wp.is_junction:
+                break
+            else:
+                wp_ego_1 = wp_ego_2
+                wp_ego_2 = next_wp
+
     ego_1_loc = wp_ego_1.transform.location
     ego_2_loc = wp_ego_2.transform.location
 
     wp_other_1 = CarlaDataProvider.get_world().get_map().get_waypoint(other_location)
     wp_other_2 = wp_other_1.next(1)[0]
+
+    if move_to_junction:
+        while True:
+            next_wp = wp_other_2.next(1)[0]
+            if next_wp.is_junction:
+                break
+            else:
+                wp_other_1 = wp_other_2
+                wp_other_2 = next_wp
+
     other_1_loc = wp_other_1.transform.location
     other_2_loc = wp_other_2.transform.location
 

@@ -24,10 +24,10 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            filter_junction_wp_direction,
                                            get_closest_traffic_light)
 
-from srunner.tools.background_manager import JunctionScenarioManager
+from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry
 
 
-class SignalizedJunctionLeftTurn(BasicScenario):
+class JunctionLeftTurn(BasicScenario):
 
     """
     Implementation class for Hero
@@ -46,20 +46,37 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         """
         self._world = world
         self._map = CarlaDataProvider.get_map()
-        self._source_dist = 40
-        self._sink_dist = 20
-        self._source_dist_interval = [25, 50]
-        self._opposite_speed = 35 / 3.6
         self._rng = random.RandomState(2000)
-        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
+
+        if 'flow_speed' in config.other_parameters:
+            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
+        else:
+            self._flow_speed = 20 # m/s
+
+        if 'source_dist_interval' in config.other_parameters:
+            self._source_dist_interval = [
+                float(config.other_parameters['source_dist_interval']['from']),
+                float(config.other_parameters['source_dist_interval']['to'])
+            ]
+        else:
+            self._source_dist_interval = [25, 50] # m
+
         self._direction = 'opposite'
+
+        # The faster the flow, the further they are spawned so that the agents can react accordingly
+        self._source_dist = 3 * self._flow_speed
+        self._sink_dist = 1.5 * self._flow_speed
+
+        self._signalized_junction = False
+        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
+
         self.timeout = timeout
-        super(SignalizedJunctionLeftTurn, self).__init__("SignalizedJunctionLeftTurn",
-                                                         ego_vehicles,
-                                                         config,
-                                                         world,
-                                                         debug_mode,
-                                                         criteria_enable=criteria_enable)
+        super(JunctionLeftTurn, self).__init__("JunctionLeftTurn",
+                                               ego_vehicles,
+                                               config,
+                                               world,
+                                               debug_mode,
+                                               criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
@@ -111,40 +128,44 @@ class SignalizedJunctionLeftTurn(BasicScenario):
 
         # get traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
-        ego_tl = get_closest_traffic_light(ego_wp, tls)
-        source_tl = get_closest_traffic_light(self._source_wp, tls)
-        self._flow_tl_dict = {}
-        self._init_tl_dict = {}
-        for tl in tls:
-            if tl == ego_tl:
-                self._flow_tl_dict[tl] = carla.TrafficLightState.Green
-                self._init_tl_dict[tl] = carla.TrafficLightState.Red
-            elif tl == source_tl:
-                self._flow_tl_dict[tl] = carla.TrafficLightState.Green
-                self._init_tl_dict[tl] = carla.TrafficLightState.Green
-            else:
-                self._flow_tl_dict[tl] = carla.TrafficLightState.Red
-                self._init_tl_dict[tl] = carla.TrafficLightState.Red
+        if tls:
+            self._signalized_junction = True
+            ego_tl = get_closest_traffic_light(ego_wp, tls)
+            source_tl = get_closest_traffic_light(self._source_wp, tls)
+            self._flow_tl_dict = {}
+            self._init_tl_dict = {}
+            for tl in tls:
+                if tl == ego_tl:
+                    self._flow_tl_dict[tl] = carla.TrafficLightState.Green
+                    self._init_tl_dict[tl] = carla.TrafficLightState.Red
+                elif tl == source_tl:
+                    self._flow_tl_dict[tl] = carla.TrafficLightState.Green
+                    self._init_tl_dict[tl] = carla.TrafficLightState.Green
+                else:
+                    self._flow_tl_dict[tl] = carla.TrafficLightState.Red
+                    self._init_tl_dict[tl] = carla.TrafficLightState.Red
 
     def _create_behavior(self):
         """
         Hero vehicle is turning left in an urban area at a signalized intersection,
         where, a flow of actors coming straight is present.
         """
+        sequence = py_trees.composites.Sequence(name="SignalizedJunctionLeftTurn")
+        if self.route_mode:
+            sequence.add_child(ClearJunction())
+            sequence.add_child(RemoveJunctionEntry(self._source_wp, True))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         root.add_child(ActorFlow(
-            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._opposite_speed))
+            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
 
-        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
-        tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
-        tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
-        root.add_child(tl_freezer_sequence)
+        if self._signalized_junction:
+            tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
+            tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
+            tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
+            root.add_child(tl_freezer_sequence)
 
-        sequence = py_trees.composites.Sequence(name="SignalizedJunctionLeftTurn")
-        if self.route_mode:
-            sequence.add_child(JunctionScenarioManager(self._direction, True))
         sequence.add_child(root)
 
         return sequence

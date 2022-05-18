@@ -63,7 +63,7 @@ class Accident(BasicScenario):
         """
         starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
         accident_wps = starting_wp.next(self._distance_to_accident)
-        pre_accident_wps = starting_wp.next(self._distance_to_accident/2)
+        pre_accident_wps = starting_wp.next(self._distance_to_accident / 2)
         if not accident_wps: 
             raise ValueError("Couldn't find a viable position to set up the accident actors")
         if not pre_accident_wps: 

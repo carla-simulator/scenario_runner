@@ -15,8 +15,6 @@ from __future__ import print_function
 import py_trees
 import carla
 
-from agents.navigation.global_route_planner import GlobalRoutePlanner
-
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
@@ -107,7 +105,7 @@ class EnterActorFlow(BasicScenario):
             sequence.add_child(RemoveJunctionEntry(source_wp, True))
             sequence.add_child(ClearJunction())
 
-            grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
+            grp = CarlaDataProvider.get_global_route_planner()
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
             extra_space = 0
             for i in range(-2, -len(route)-1, -1):
@@ -191,7 +189,7 @@ class CrossActorFlow(BasicScenario):
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
-        grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
+        grp = CarlaDataProvider.get_global_route_planner()
         route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
         junction_id = None
         for wp, _ in route:
@@ -287,7 +285,7 @@ class HighwayExit(BasicScenario):
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
-        grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
+        grp = CarlaDataProvider.get_global_route_planner()
         route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
         junction_id = None
         for wp, _ in route:

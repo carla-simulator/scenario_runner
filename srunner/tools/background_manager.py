@@ -133,28 +133,6 @@ class StartFrontVehicles(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class JunctionScenarioManager(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that a JunctionScenarioManager has been triggered
-    'entry_direction' is the direction from which the incoming traffic enters the junction. It should be
-    something like 'left', 'right' or 'opposite'
-    """
-
-    def __init__(self, entry_direction, remove_exit=True, name="JunctionScenarioManager"):
-        self._entry_direction = entry_direction
-        self._remove_exit = remove_exit
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set(
-            "BA_JunctionScenario",
-            [self._entry_direction, self._remove_exit],
-            overwrite=True
-        )
-        return py_trees.common.Status.SUCCESS
-
-
 class ExtentExitRoadSpace(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that an exit road needs more space
@@ -202,14 +180,16 @@ class HandleStartAccidentScenario(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that the road behavior has to be initialized
     """
-    def __init__(self, accident_wp, distance, name="HandleStartAccidentScenario"):
+    def __init__(self, accident_wp, distance, stop_back_vehicles=False, name="HandleStartAccidentScenario"):
         self._accident_wp = accident_wp
         self._distance = distance
+        self._stop_back_vehicles = stop_back_vehicles
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_HandleStartAccidentScenario", [self._accident_wp, self._distance], overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_HandleStartAccidentScenario",
+            [self._accident_wp, self._distance, self._stop_back_vehicles], overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -262,6 +242,24 @@ class RemoveJunctionEntry(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", [self._wp, self._all_road_entries], overwrite=True)
         return py_trees.common.Status.SUCCESS
+
+
+class RemoveJunctionExit(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that a junction exit has to be empty.
+    This is done using the direction from which the incoming traffic enters the junction. It should be
+    something like 'left', 'right' or 'opposite'.
+    """
+
+    def __init__(self, direction, name="RemoveJunctionExit"):
+        self._entry_direction = direction
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionExit", self._entry_direction, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
 
 
 class ClearJunction(AtomicBehavior):

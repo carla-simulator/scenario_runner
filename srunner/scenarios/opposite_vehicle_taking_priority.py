@@ -31,7 +31,7 @@ from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
                                            filter_junction_wp_direction,
                                            get_closest_traffic_light)
 
-from srunner.tools.background_manager import JunctionScenarioManager
+from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry
 
 
 class OppositeVehicleRunningRedLight(BasicScenario):
@@ -51,11 +51,20 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 30
         self._sink_dist = 20
-        self._direction = None
+
+        if 'direction' in config.other_parameters:
+            self._direction = config.other_parameters['direction']['value']
+        else:
+            self._direction = "right"
+
+        if 'adversary_speed' in config.other_parameters:
+            self._adversary_speed = float(config.other_parameters['flow_speed']['value'])
+        else:
+            self._adversary_speed = 70 / 3.6 # m/s
+
         self._opposite_bp_wildcards = ['*firetruck*', '*ambulance*', '*police*']  # Wildcard patterns of the blueprints
         self.timeout = timeout
 
-        self._adversary_speed = 70 / 3.6  # Speed of the adversary [m/s]
         self._sync_time = 2.2  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
         self._speed_duration_ratio = 2.0
@@ -76,10 +85,10 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         Custom initialization
         """
         ego_location = config.trigger_points[0].location
-        ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
+        self._ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
         # Get the junction
-        starting_wp = ego_wp
+        starting_wp = self._ego_wp
         while not starting_wp.is_junction:
             starting_wps = starting_wp.next(1.0)
             if len(starting_wps) == 0:
@@ -88,16 +97,10 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         junction = starting_wp.get_junction()
 
         # Get the opposite entry lane wp
-        possible_directions = ['right', 'left']
-        self._rng.shuffle(possible_directions)
-        for direction in possible_directions:
-            entry_wps, _ = get_junction_topology(junction)
-            source_entry_wps = filter_junction_wp_direction(starting_wp, entry_wps, direction)
-            if source_entry_wps:
-                self._direction = direction
-                break
-        if not self._direction:
-            raise ValueError("Trying to find a lane to spawn the opposite actor but none was found")
+        entry_wps, _ = get_junction_topology(junction)
+        source_entry_wps = filter_junction_wp_direction(starting_wp, entry_wps, self._direction)
+        if not source_entry_wps:
+            raise ValueError("Couldn't find a lane for the given direction")
 
         # Get the source transform
         spawn_wp = source_entry_wps[0]
@@ -143,13 +146,17 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # get the collision location
         self._collision_location = get_geometric_linear_intersection(
-            starting_wp.transform.location, source_entry_wps[0].transform.location)
+            starting_wp.transform.location, source_entry_wps[0].transform.location, True)
         if not self._collision_location:
             raise ValueError("Couldn't find an intersection point")
 
+        # Get the z component
+        collision_wp = self._map.get_waypoint(self._collision_location)
+        self._collision_location.z = collision_wp.transform.location.z
+
         # Get the relevant traffic lights
         tls = self._world.get_traffic_lights_in_junction(junction.id)
-        ego_tl = get_closest_traffic_light(ego_wp, tls)
+        ego_tl = get_closest_traffic_light(self._ego_wp, tls)
         source_tl = get_closest_traffic_light(self._spawn_wp, tls,)
         self._tl_dict = {}
         for tl in tls:
@@ -184,7 +191,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(JunctionScenarioManager(self._direction, True))
+            root.add_child(ClearJunction())
+            root.add_child(RemoveJunctionEntry(self._spawn_wp, True))
+
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)
         root.add_child(ActorDestroy(self.other_actors[0]))

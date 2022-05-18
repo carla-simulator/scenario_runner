@@ -63,21 +63,19 @@ class ControlLoss(BasicScenario):
 
         # Get the debris locations
         first_wp, _ = get_waypoint_in_distance(self._reference_waypoint, self._distance[0])
-        first_ground_loc = self.world.ground_projection(first_wp.transform.location, 2)
-        self.first_loc_prev = first_ground_loc.location if first_ground_loc else first_wp.transform.location
+        first_ground_loc = self.world.ground_projection(first_wp.transform.location + carla.Location(z=1), 2)
+        first_loc_prev = first_ground_loc.location if first_ground_loc else first_wp.transform.location
+        self.first_transform = carla.Transform(first_loc_prev, first_wp.transform.rotation)
 
         second_wp, _ = get_waypoint_in_distance(self._reference_waypoint, self._distance[1])
-        second_ground_loc = self.world.ground_projection(second_wp.transform.location, 2)
-        self.second_loc_prev = second_ground_loc.location if second_ground_loc else second_wp.transform.location
+        second_ground_loc = self.world.ground_projection(second_wp.transform.location + carla.Location(z=1), 2)
+        second_loc_prev = second_ground_loc.location if second_ground_loc else second_wp.transform.location
+        self.second_transform = carla.Transform(second_loc_prev, second_wp.transform.rotation)
 
         third_wp, _ = get_waypoint_in_distance(self._reference_waypoint, self._distance[2])
-        third_ground_loc = self.world.ground_projection(third_wp.transform.location, 2)
-        self.third_loc_prev = third_ground_loc.location if third_ground_loc else third_wp.transform.location
-
-        # Get the debris transforms
-        self.first_transform = carla.Transform(self.first_loc_prev, first_wp.transform.rotation)
-        self.second_transform = carla.Transform(self.second_loc_prev, second_wp.transform.rotation)
-        self.third_transform = carla.Transform(self.third_loc_prev, third_wp.transform.rotation)
+        third_ground_loc = self.world.ground_projection(third_wp.transform.location + carla.Location(z=1), 2)
+        third_loc_prev = third_ground_loc.location if third_ground_loc else third_wp.transform.location
+        self.third_transform = carla.Transform(third_loc_prev, third_wp.transform.rotation)
 
         # Spawn the debris
         first_debris = CarlaDataProvider.request_new_actor(

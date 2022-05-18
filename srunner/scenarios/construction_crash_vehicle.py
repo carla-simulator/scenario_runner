@@ -14,15 +14,17 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, SwitchOutsideRouteLanesTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import Idle
-from srunner.scenarios.object_crash_vehicle import StationaryObjectCrossing
-from srunner.tools.background_manager import HandleStartAccidentScenario, HandleEndAccidentScenario
+from srunner.scenarios.basic_scenario import BasicScenario
+from srunner.tools.background_manager import (HandleStartAccidentScenario,
+                                              HandleEndAccidentScenario,
+                                              ChangeOppositeBehavior,
+                                              LeaveSpaceInFront)
 
 
-class ConstructionSetupCrossing(StationaryObjectCrossing):
+class ConstructionSetupCrossing(BasicScenario):
 
     """
     This class holds everything required for a construction scenario
@@ -41,37 +43,29 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._drive_distance = 150
         self._distance_to_construction = 100
-        self.construction_wp = None
+        self._drive_distance = self._distance_to_construction + 20
+        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
+        self._construction_wp = None
 
-        super(ConstructionSetupCrossing, self).__init__(world,
-                                                        ego_vehicles,
-                                                        config,
-                                                        randomize,
-                                                        debug_mode,
-                                                        criteria_enable)
+        if 'cross_onto_opposite_lane' in config.other_parameters:
+            self._cross_opposite_lane = True
+            self._opposite_frequency = 100
+        else:
+            self._cross_opposite_lane = False
+
+        super().__init__("ConstructionSetupCrossing", ego_vehicles, config, world, debug_mode, False, criteria_enable)
 
     def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-        lane_width = self._reference_waypoint.lane_width
-        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
-        construction_wps = starting_wp.next(self._distance_to_construction)
+        """Creates all props part of the construction"""
+        construction_wps = self._reference_waypoint.next(self._distance_to_construction)
         if not construction_wps: 
-            raise ValueError("Couldn't find a viable position to set up the accident actors")
-        self.construction_wp = construction_wps[0]
+            raise ValueError("Couldn't find a viable position to set up the construction actors")
+        construction_wp = construction_wps[0]
+        self._create_construction_setup(construction_wp.transform, self._reference_waypoint.lane_width)
 
-        self._create_construction_setup(self.construction_wp.transform, lane_width)
-        pre_accident_wps = starting_wp.next(self._distance_to_construction/2)
-        if not construction_wps: 
-            raise ValueError("Couldn't find a viable position to set up the accident actors")
-        self.construction_wp = pre_accident_wps[0]
-
-    def create_cones_side(self, start_transform, forward_vector, z_inc=0, 
-                          cone_length=0, cone_offset=0):
-        
+    def create_cones_side(self, start_transform, forward_vector, z_inc=0, cone_length=0, cone_offset=0):
+        """Creates the cones at tthe side"""
         _dist = 0
         while _dist < (cone_length * cone_offset):
             # Move forward
@@ -88,9 +82,7 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
             self.other_actors.append(cone)
 
     def _create_construction_setup(self, start_transform, lane_width):
-        """
-        Create Construction Setup
-        """
+        """Create construction setup"""
 
         _initial_offset = {'cones': {'yaw': 180, 'k': lane_width / 2.0},
                            'warning_sign': {'yaw': 180, 'k': 5, 'z': 0},
@@ -145,11 +137,23 @@ class ConstructionSetupCrossing(StationaryObjectCrossing):
         """
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(HandleStartAccidentScenario(self.construction_wp, self._distance_to_construction))
+            if not self._cross_opposite_lane:
+                pre_construction_wps = self._reference_waypoint.next(self._distance_to_construction / 2)
+                if not pre_construction_wps: 
+                    raise ValueError("Couldn't find a viable position to set up the construction actors")
+                lane_change_wp = pre_construction_wps[0]
+                root.add_child(HandleStartAccidentScenario(lane_change_wp, self._distance_to_construction, True))
+            else:
+                root.add_child(SwitchOutsideRouteLanesTest(False))
+                root.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
+                root.add_child(LeaveSpaceInFront(self._distance_to_construction + 20))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
-            root.add_child(HandleEndAccidentScenario())
-        root.add_child(Idle(15))
+            if not self._cross_opposite_lane:
+                root.add_child(HandleEndAccidentScenario())
+            else:
+                root.add_child(SwitchOutsideRouteLanesTest(True))
+                root.add_child(ChangeOppositeBehavior(spawn_dist=15))
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
         return root

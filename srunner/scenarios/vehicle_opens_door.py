@@ -135,6 +135,7 @@ class VehicleOpensDoor(BasicScenario):
         sequence.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         if self._cross_opposite_lane:
             sequence.add_child(SwitchOutsideRouteLanesTest(True))
+            sequence.add_child(ChangeOppositeBehavior(spawn_dist=15))
         sequence.add_child(ActorDestroy(self._parked_actor))
 
         return sequence

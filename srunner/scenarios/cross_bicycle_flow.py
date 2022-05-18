@@ -14,8 +14,6 @@ from __future__ import print_function
 import py_trees
 import carla
 
-from agents.navigation.global_route_planner import GlobalRoutePlanner
-
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import BicycleFlow, TrafficLightFreezer
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest

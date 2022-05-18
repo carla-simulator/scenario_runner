@@ -235,6 +235,8 @@ class RouteWeatherBehavior(py_trees.behaviour.Behaviour):
         def interpolate(prev_w, next_w, perc, name):
             x0 = prev_w[0]
             x1 = next_w[0]
+            if x0 == x1:
+                raise ValueError("Two weather keypoints have the same route percentage")
             y0 = getattr(prev_w[1], name)
             y1 = getattr(next_w[1], name)
             return y0 + (y1 - y0) * (perc - x0) / (x1 - x0)
