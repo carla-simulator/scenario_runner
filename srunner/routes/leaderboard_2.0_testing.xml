@@ -119,4 +119,22 @@
          </scenario>
       </scenarios>
    </route>
+   <route id="111" town="Town03"> <!-- Blocked Intersections, old towns -->
+      <!-- <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers> -->
+      <waypoints>
+         <position x="117" y="193" z="0" />
+         <position x="12" y="193" z="0" />
+         <position x="5.8" y="186" z="0" />
+         <position x="5.65" y="150" z="0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="BlockedIntersection_1" type="BlockedIntersection">
+            <trigger_point x="102" y="193" z="0" yaw="180"/>
+            <blocker_point x="5.8" y="179" z="0.5"/>
+         </scenario>
+      </scenarios>
+   </route>
 </routes>
