@@ -342,6 +342,12 @@ class PedestrianCrossing(BasicScenario):
        
         self._adversary_speed_list = [1.3, 0.9, 1, 1.6] # Speed of the adversary [m/s]
         self._max_adversary_speed = max(self._adversary_speed_list)
+        self._adversary_offset_list = [
+            {"yaw": 270, "z": 1.0, "k": 1},
+            {"yaw": 270, "z": 1.5, "k": 2},
+            {"yaw": 270, "z": 2.0, "k": 2},
+            {"yaw": 270, "z": 2.5, "k": 2}
+        ]
         self._adversary_number = len(self._adversary_speed_list)
 
         self._reaction_time = 0.8  # Time the agent has to react to avoid the collision [s]
@@ -405,15 +411,10 @@ class PedestrianCrossing(BasicScenario):
                 sidewalk_waypoint = right_wp
                 self._num_lane_changes += 1
 
-            spawn_transforms = []
-            spawn_transforms.append(self._get_sidewalk_transform(
-                sidewalk_waypoint, {"yaw": 270, "z": 1.0, "k": 1}))
-            spawn_transforms.append(self._get_sidewalk_transform(
-                sidewalk_waypoint, {"yaw": 270, "z": 1.5, "k": 2}))
-            spawn_transforms.append(self._get_sidewalk_transform(
-                sidewalk_waypoint, {"yaw": 270, "z": 2.0, "k": 2}))
-            spawn_transforms.append(self._get_sidewalk_transform(
-                sidewalk_waypoint, {"yaw": 270, "z": 2.5, "k": 2}))
+
+            spawn_transforms = [self._get_sidewalk_transform(sidewalk_waypoint, offset) 
+                                for offset in self._adversary_offset_list]
+            # Pedestrians are almost in the same place. Can choose anyone's transform as reference.
             self._adversary_transform = spawn_transforms[0]
 
             # Spawn actors in batch
