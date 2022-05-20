@@ -66,6 +66,9 @@ class JunctionRightTurn(BasicScenario):
         self._signalized_junction = False
         self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
 
+        self._flow_tl_dict = {}
+        self._init_tl_dict = {}
+
         super().__init__("JunctionRightTurn",
                          ego_vehicles,
                          config,
@@ -78,15 +81,17 @@ class JunctionRightTurn(BasicScenario):
         Custom initialization
         """
         ego_location = config.trigger_points[0].location
-        ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
+        self._ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
         # Get the junction
-        starting_wp = ego_wp
+        starting_wp = self._ego_wp
+        ego_junction_dist = 0
         while not starting_wp.is_junction:
             starting_wps = starting_wp.next(1.0)
             if len(starting_wps) == 0:
                 raise ValueError("Failed to find a junction")
             starting_wp = starting_wps[0]
+            ego_junction_dist += 1
         junction = starting_wp.get_junction()
 
         # Get the source entry lane wp
@@ -105,15 +110,15 @@ class JunctionRightTurn(BasicScenario):
 
         # Get the source transform
         source_wp = source_entry_wp
-        accum_dist = 0
-        while accum_dist < self._source_dist:
+        source_junction_dist = 0
+        while source_junction_dist < self._source_dist:
             source_wps = source_wp.previous(5)
             if len(source_wps) == 0:
                 raise ValueError("Failed to find a source location")
             if source_wps[0].is_junction:
                 break
             source_wp = source_wps[0]
-            accum_dist += 5
+            source_junction_dist += 5
 
         self._source_wp = source_wp
         source_transform = self._source_wp.transform
@@ -125,25 +130,29 @@ class JunctionRightTurn(BasicScenario):
             raise ValueError("Failed to find a sink location")
         self._sink_wp = sink_wps[0]
 
-        # Get the relevant traffic lights
+        self._get_traffic_lights(junction, ego_junction_dist, source_junction_dist)
+
+    def _get_traffic_lights(self, junction, ego_dist, source_dist):
+        """Get the traffic light of the junction, mapping their states"""
         tls = self._world.get_traffic_lights_in_junction(junction.id)
         if tls:
             self._signalized_junction = True
-
-            ego_tl = get_closest_traffic_light(ego_wp, tls)
-            source_tl = get_closest_traffic_light(source_wps[0], tls)
-            self._flow_tl_dict = {}
-            self._init_tl_dict = {}
+            ego_landmark = self._ego_wp.get_landmarks_of_type(ego_dist + 2, "1000001")[0]
+            ego_tl = self._world.get_traffic_light(ego_landmark)
+            source_landmark = self._source_wp.get_landmarks_of_type(source_dist + 2, "1000001")[0]
+            source_tl = self._world.get_traffic_light(source_landmark)
             for tl in tls:
-                if tl == ego_tl:
+                if tl.id == ego_tl.id:
                     self._flow_tl_dict[tl] = carla.TrafficLightState.Green
                     self._init_tl_dict[tl] = carla.TrafficLightState.Red
-                elif tl == source_tl:
+                elif tl.id == source_tl.id:
                     self._flow_tl_dict[tl] = carla.TrafficLightState.Green
                     self._init_tl_dict[tl] = carla.TrafficLightState.Green
                 else:
                     self._flow_tl_dict[tl] = carla.TrafficLightState.Red
                     self._init_tl_dict[tl] = carla.TrafficLightState.Red
+
+
 
     def _create_behavior(self):
         """

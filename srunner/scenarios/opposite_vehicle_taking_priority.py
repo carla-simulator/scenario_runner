@@ -70,6 +70,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._speed_duration_ratio = 2.0
         self._speed_distance_ratio = 1.5
 
+        self._signalized_junction = False
+
         # Get the CDP seed or at routes, all copies of the scenario will have the same configuration
         self._rng = CarlaDataProvider.get_random_seed()
 
@@ -89,11 +91,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # Get the junction
         starting_wp = self._ego_wp
+        ego_junction_dist = 0
         while not starting_wp.is_junction:
             starting_wps = starting_wp.next(1.0)
             if len(starting_wps) == 0:
                 raise ValueError("Failed to find junction as a waypoint with no next was detected")
             starting_wp = starting_wps[0]
+            ego_junction_dist += 1
         junction = starting_wp.get_junction()
 
         # Get the opposite entry lane wp
@@ -104,15 +108,15 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         # Get the source transform
         spawn_wp = source_entry_wps[0]
-        added_dist = 0
-        while added_dist < self._source_dist:
+        source_junction_dist = 0
+        while source_junction_dist < self._source_dist:
             spawn_wps = spawn_wp.previous(1.0)
             if len(spawn_wps) == 0:
                 raise ValueError("Failed to find a source location as a waypoint with no previous was detected")
             if spawn_wps[0].is_junction:
                 break
             spawn_wp = spawn_wps[0]
-            added_dist += 1
+            source_junction_dist += 1
         self._spawn_wp = spawn_wp
 
         source_transform = spawn_wp.transform
@@ -154,16 +158,23 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         collision_wp = self._map.get_waypoint(self._collision_location)
         self._collision_location.z = collision_wp.transform.location.z
 
-        # Get the relevant traffic lights
+        self._get_traffic_lights(junction, ego_junction_dist, source_junction_dist)
+
+    def _get_traffic_lights(self, junction, ego_dist, source_dist):
+        """Get the traffic light of the junction, mapping their states"""
         tls = self._world.get_traffic_lights_in_junction(junction.id)
-        ego_tl = get_closest_traffic_light(self._ego_wp, tls)
-        source_tl = get_closest_traffic_light(self._spawn_wp, tls,)
-        self._tl_dict = {}
-        for tl in tls:
-            if tl in (ego_tl, source_tl):
-                self._tl_dict[tl] = carla.TrafficLightState.Green
-            else:
-                self._tl_dict[tl] = carla.TrafficLightState.Red
+        if tls:
+            self._signalized_junction = True
+            ego_landmark = self._ego_wp.get_landmarks_of_type(ego_dist + 2, "1000001")[0]
+            ego_tl = self._world.get_traffic_light(ego_landmark)
+            source_landmark = self._spawn_wp.get_landmarks_of_type(source_dist + 2, "1000001")[0]
+            source_tl = self._world.get_traffic_light(source_landmark)
+            self._tl_dict = {}
+            for tl in tls:
+                if tl.id in (ego_tl.id, source_tl.id):
+                    self._tl_dict[tl] = carla.TrafficLightState.Green
+                else:
+                    self._tl_dict[tl] = carla.TrafficLightState.Red
 
     def _create_behavior(self):
         """
@@ -183,10 +194,11 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         sequence.add_child(trigger_adversary)
         sequence.add_child(ConstantVelocityAgentBehavior(
             self.other_actors[0], target_location=self._sink_wp.transform.location,
-            target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True}, name="AdversaryCrossing"))
+            target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True, 'ignore_traffic_lights': True}, name="AdversaryCrossing"))
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        main_behavior.add_child(TrafficLightFreezer(self._tl_dict))
+        if self._signalized_junction:
+            main_behavior.add_child(TrafficLightFreezer(self._tl_dict))
         main_behavior.add_child(sequence)
 
         root = py_trees.composites.Sequence()
