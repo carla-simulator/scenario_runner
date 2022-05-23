@@ -20,17 +20,15 @@ class ChangeGeneralBehavior(AtomicBehavior):
 
     Args:
         spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
-        target_speed (float): Target speed of all BA vehicles
     """
 
-    def __init__(self, spawn_dist=None, target_speed=None, name="ChangeGeneralBehavior"):
+    def __init__(self, spawn_dist=None, name="ChangeGeneralBehavior"):
         self._spawn_dist = spawn_dist
-        self._target_speed = target_speed
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeGeneralBehavior", [self._spawn_dist, self._target_speed], overwrite=True
+            "BA_ChangeGeneralBehavior", self._spawn_dist, overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -68,16 +66,15 @@ class ChangeOppositeBehavior(AtomicBehavior):
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
-    def __init__(self, source_dist=None, max_actors=None, spawn_dist=None, active=None, name="ChangeOppositeBehavior"):
+    def __init__(self, source_dist=None, spawn_dist=None, active=None, name="ChangeOppositeBehavior"):
         self._source_dist = source_dist
-        self._max_actors = max_actors
         self._spawn_dist = spawn_dist
         self._active = active
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeOppositeBehavior", [self._source_dist, self._max_actors, self._spawn_dist, self._active], overwrite=True
+            "BA_ChangeOppositeBehavior", [self._source_dist, self._spawn_dist, self._active], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -92,8 +89,7 @@ class ChangeJunctionBehavior(AtomicBehavior):
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
-    def __init__(self, source_dist=None, vehicle_dist=None, spawn_dist=None,
-                 max_actors=None, name="ChangeJunctionBehavior"):
+    def __init__(self, source_dist=None, max_actors=None, name="ChangeJunctionBehavior"):
         self._source_dist = source_dist
         self._max_actors = max_actors
         super().__init__(name)
@@ -205,6 +201,7 @@ class HandleEndAccidentScenario(AtomicBehavior):
         py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
+
 class SwitchLane(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to remove its actors from the given lane 
@@ -223,6 +220,7 @@ class SwitchLane(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_SwitchLane", [self._lane_id, self._active], overwrite=True)
         return py_trees.common.Status.SUCCESS
+
 
 class RemoveJunctionEntry(AtomicBehavior):
     """
@@ -261,7 +259,6 @@ class RemoveJunctionExit(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-
 class ClearJunction(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to remove all actors inside the junction,
@@ -275,3 +272,4 @@ class ClearJunction(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_ClearJunction", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
+

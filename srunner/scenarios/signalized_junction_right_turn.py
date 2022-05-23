@@ -22,8 +22,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Wa
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
-                                           filter_junction_wp_direction,
-                                           get_closest_traffic_light)
+                                           filter_junction_wp_direction)
 
 from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry
 

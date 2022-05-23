@@ -272,7 +272,6 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._opposite_removal_dist = 30  # Distance at which actors are destroyed
         self._opposite_sources_dist = 60  # Distance from the ego to the opposite sources [m]
-        self._opposite_sources_max_actors = 8  # Maximum vehicles alive at the same time per source
         self._opposite_increase_ratio = 3.0  # Meters the radius increases per m/s of the ego
         self._opposite_spawn_dist = self._spawn_dist  # Distance between spawned vehicles [m]
 
@@ -1437,10 +1436,6 @@ class BackgroundBehavior(AtomicBehavior):
     def _update_opposite_sources(self):
         """Checks the opposite actor sources to see if new actors have to be created"""
         for source in self._opposite_sources:
-            # Cap the amount of alive actors
-            if len(source.actors) >= self._opposite_sources_max_actors:
-                continue
-
             if not source.active:
                 continue
 
@@ -1492,14 +1487,12 @@ class BackgroundBehavior(AtomicBehavior):
         # Opposite behavior
         opposite_behavior_data = py_trees.blackboard.Blackboard().get('BA_ChangeOppositeBehavior')
         if opposite_behavior_data is not None:
-            source_dist, max_actors, spawn_dist, active = opposite_behavior_data
+            source_dist, spawn_dist, active = opposite_behavior_data
             if source_dist is not None:
                 if source_dist < self._junction_sources_dist:
                     print('WARNING: Opposite sources distance is lower than the junction ones. Ignoring it')
                 else:
                     self._opposite_sources_dist = source_dist
-            if max_actors is not None:
-                self._opposite_sources_max_actors = max_actors
             if spawn_dist is not None:
                 self._opposite_spawn_dist = spawn_dist
             if active is not None:
