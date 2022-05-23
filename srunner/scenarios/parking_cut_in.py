@@ -3,9 +3,8 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-Object crash without prior vehicle action scenario:
-The scenario realizes the user controlled ego vehicle
-moving along the road and encountering a cyclist ahead.
+Parking cut in scenario synchronizes a vehicle that is parked at a side lane
+to cut in in front of the ego vehicle, forcing it to break
 """
 
 from __future__ import print_function
@@ -27,12 +26,8 @@ from srunner.tools.background_manager import LeaveSpaceInFront
 class ParkingCutIn(BasicScenario):
 
     """
-    This class holds everything required for a simple object crash
-    without prior vehicle action involving a vehicle and a cyclist/pedestrian,
-    The ego vehicle is passing through a road,
-    And encounters a cyclist/pedestrian crossing the road.
-
-    This is a single ego vehicle scenario
+    Parking cut in scenario synchronizes a vehicle that is parked at a side lane
+    to cut in in front of the ego vehicle, forcing it to break
     """
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
@@ -127,10 +122,8 @@ class ParkingCutIn(BasicScenario):
 
     def _create_behavior(self):
         """
-        After invoking this scenario, cyclist will wait for the user
-        controlled vehicle to enter trigger distance region,
-        the cyclist starts crossing the road once the condition meets,
-        then after 60 seconds, a timeout stops the scenario
+        After invoking this scenario, a parked vehicle will wait for the ego to
+        be close-by, merging into its lane, forcing it to break.
         """
         sequence = py_trees.composites.Sequence(name="CrossingActor")
         if self.route_mode:
