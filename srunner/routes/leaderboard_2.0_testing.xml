@@ -47,7 +47,7 @@
       <scenarios>
          <scenario name="ParkingExit_1" type="ParkingExit">
             <trigger_point x="34.1" y="3550.1" z="361" yaw="90"/>
-            <parking_lane_side value="right" />
+            <direction value="right" />
             <front_vehicle_distance value="10" />
             <behind_vehicle_distance value="8" />
          </scenario>
@@ -116,6 +116,25 @@
          <scenario name="HighwayCutIn_1" type="HighwayCutInRoute">
             <trigger_point x="2646.2" y="3117.0" z="358" yaw="0"/>
             <other_actor_location x="2699.6" y="3156.8" z="365"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="7" town="TrainingMap"> <!-- ParkingCutIn, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="461.9" y="3506.5" z="368" />
+         <position x="462.5" y="3755.3" z="370" />
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingCutIn_1" type="ParkingCutIn">
+            <trigger_point x="462.2" y="3512.4" z="368" yaw="90"/>
+            <direction value="left"/>
+         </scenario>
+         <scenario name="ParkingCutIn_1" type="ParkingCutIn">
+            <trigger_point x="462.2" y="3610.4" z="368" yaw="90"/>
+            <direction value="left"/>
          </scenario>
       </scenarios>
    </route>
