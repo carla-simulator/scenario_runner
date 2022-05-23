@@ -134,7 +134,6 @@
          <scenario name="MergerIntoSlowTraffic_1" type="MergerIntoSlowTraffic">
                <trigger_point x="50.23" y="142.12" z="0.0" yaw="201.11"/>
 		<start_actor_flow x="16.32" y="179.9" z="0.2"/>
-		<junction x="16.32" y="179.9" z="0.2"/>
 		<end_actor_flow x="15.50" y="35.0" z="0.2"/>
 		<flow_speed value="18"/>
 		<source_dist_interval from="18" to="30"/>
