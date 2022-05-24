@@ -16,10 +16,12 @@ import carla
 
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SwitchOutsideRouteLanesTest, ActorTransformSetter, ActorDestroy
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
+
+from srunner.tools.background_manager import ChangeGeneralBehavior
 
 
 def convert_dict_to_location(actor_dict):
@@ -87,6 +89,8 @@ class ParkingExit(BasicScenario):
         if self._parking_waypoint is None:
             raise Exception(
                 "Couldn't find parking point on the {} side".format(self._direction))
+
+        self._flow_interval = 30
 
         super(ParkingExit, self).__init__("ParkingExit",
                                           ego_vehicles,
@@ -163,10 +167,7 @@ class ParkingExit(BasicScenario):
         """
 
         sequence = py_trees.composites.Sequence()
-
-        # Deactivate OutsideRouteLanesTest
-        sequence.add_child(SwitchOutsideRouteLanesTest(False))
-
+        sequence.add_child(ChangeGeneralBehavior(self._flow_interval))
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -176,10 +177,9 @@ class ParkingExit(BasicScenario):
         root.add_child(end_condition)
         sequence.add_child(root)
 
-        sequence.add_child(SwitchOutsideRouteLanesTest(True))
-
         for actor in self.other_actors:
             sequence.add_child(ActorDestroy(actor))
+        sequence.add_child(ChangeGeneralBehavior(15))
 
         return sequence
 

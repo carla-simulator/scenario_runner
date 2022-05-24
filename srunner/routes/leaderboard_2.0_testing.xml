@@ -84,7 +84,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="5" town="TrainingMap"> <!-- AccidentTwoWay, new town -->
+   <route id="5" town="TrainingMap"> <!-- Accident, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -95,11 +95,13 @@
          <position x="2389.1" y="599.1" z="338" />
       </waypoints>
       <scenarios>
-         <scenario name="AccidentTwoWays_1" type="AccidentTwoWays">
+         <scenario name="Accident_1" type="Accident">
             <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
+            <cross_onto_opposite_lane/>
          </scenario>
-         <scenario name="AccidentTwoWays_2" type="AccidentTwoWays">
+         <scenario name="Accident_2" type="Accident">
             <trigger_point x="2388.9" y="897.6" z="345" yaw="270"/>
+            <cross_onto_opposite_lane/>
          </scenario>
       </scenarios>
    </route>

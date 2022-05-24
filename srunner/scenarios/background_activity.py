@@ -1701,7 +1701,6 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _leave_space_in_front(self, space):
         """Teleports all the vehicles in front of the ego forward"""
-        # all_actors = []
         if not self._active_junctions:
             for lane in self._road_dict:
                 lane_actors = self._road_dict[lane].actors
@@ -1711,31 +1710,12 @@ class BackgroundBehavior(AtomicBehavior):
                     if location and not self._is_location_behind_ego(location):
                         front_actors.append(actor)
 
-                last_actor_location = CarlaDataProvider.get_location(front_actors[-1])
-                distance = last_actor_location.distance(self._ego_wp.transform.location)
-                step = space - distance
-                if step > 0:  # Only move the needed distance
-                    self._move_actors_forward(front_actors, step)
-
-        # else:
-        #     junction = self._active_junctions[0]
-        #     if self._is_junction(self._ego_wp):  # We care about the exit
-        #         for actor, info in junction.actor_dict.items():
-        #             if info['exit_lane_key'] in junction.route_exit_keys:
-        #                 all_actors.append(actor)
-        #     else:  # We care about the entry
-        #         for source in junction.entry_sources:
-        #             if get_lane_key(source.entry_lane_wp) in junction.route_entry_keys:
-        #                 all_actors.extend(source.actors)
-
-        # front_actors = []
-        # for actor in all_actors:
-        #     location = CarlaDataProvider.get_location(actor)
-        #     if location and not self._is_location_behind_ego(location):
-        #         front_actors.append(actor)
-
-
-        # self._move_actors_forward(front_actors, space)
+                if front_actors:
+                    last_actor_location = CarlaDataProvider.get_location(front_actors[-1])
+                    distance = last_actor_location.distance(self._ego_wp.transform.location)
+                    step = space - distance
+                    if step > 0:  # Only move the needed distance
+                        self._move_actors_forward(front_actors, step)
 
     def _switch_lane(self, lane_id, active):
         """
