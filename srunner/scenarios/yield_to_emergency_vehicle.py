@@ -12,9 +12,10 @@ Scenario in which the ego has to yield its lane to emergency vehicle.
 from __future__ import print_function
 
 import py_trees
+import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, SetInitSpeed, FasterBasicAgentBehavior
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, SetInitSpeed, FasterBasicAgentBehavior, ConstantVelocityAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -41,6 +42,8 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
         self._ev_drive_time = 20  # seconds
+        self._ev_drive_distance = 1000 # m
+        self._ev_target_speed = 25 # m/s
 
         if 'emergency_vehicle_distance' in config.other_parameters:
             self._emergency_vehicle_distance = float(
@@ -84,6 +87,9 @@ class YieldToEmergencyVehicle(BasicScenario):
         new_location = actor.get_location()
         new_location.z -= 500
         actor.set_location(new_location)
+        # Turn on special lights
+        actor.set_light_state(carla.VehicleLightState(
+            carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2))
         self.other_actors.append(actor)
 
     def _create_behavior(self):
@@ -106,7 +112,6 @@ class YieldToEmergencyVehicle(BasicScenario):
         # Teleport EV behind the ego
         sequence.add_child(ActorTransformSetter(
             self.other_actors[0], self._ev_start_transform))
-        sequence.add_child(SetInitSpeed(self.other_actors[0], 20))
 
         # Emergency Vehicle runs for self._ev_drive_time seconds
         ev_end_condition = py_trees.composites.Parallel("Waiting for emergency vehicle driving for a certein distance",
@@ -114,10 +119,10 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         ev_end_condition.add_child(Idle(self._ev_drive_time))
 
-        target_locations = self._reference_waypoint.next(2000)
+        target_locations = self._reference_waypoint.next(self._ev_drive_distance)
         target_location = target_locations[0].transform.location
-        ev_end_condition.add_child(FasterBasicAgentBehavior(
-            self.other_actors[0], self.ego_vehicles[0], target_location))
+        ev_end_condition.add_child(ConstantVelocityAgentBehavior(
+            self.other_actors[0], target_location, 25))
 
         sequence.add_child(ev_end_condition)
 
