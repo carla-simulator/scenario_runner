@@ -119,11 +119,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="111" town="Town03"> <!-- Blocked Intersections, old towns -->
-      <!-- <weathers>
-         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
-         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
-      </weathers> -->
+   <route id="7" town="Town03"> <!-- Blocked Intersections, old towns -->
       <waypoints>
          <position x="117" y="193" z="0" />
          <position x="12" y="193" z="0" />
