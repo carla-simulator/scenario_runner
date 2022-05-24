@@ -1870,6 +1870,7 @@ class BackgroundBehavior(AtomicBehavior):
     def _initialize_actor(self, actor):
         """Save the actor into the needed structures and disable its lane changes"""
         self._tm.auto_lane_change(actor, False)
+        self._tm.update_vehicle_lights(actor, True)
         self._actors_speed_perc[actor] = 100
         self._all_actors.append(actor)
 
@@ -2200,7 +2201,6 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _destroy_actor(self, actor):
         """Destroy the actor and all its references"""
-        print("Destorying")
         self._remove_actor_info(actor)
         actor.set_autopilot(False)
         try:
