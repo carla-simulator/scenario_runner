@@ -71,22 +71,22 @@ class ParkingExit(BasicScenario):
 
         self._end_distance = self._front_vehicle_distance + 15
 
-        if 'parking_lane_side' in config.other_parameters:
-            self._parking_lane_side = config.other_parameters['parking_lane_side']['value']
+        if 'direction' in config.other_parameters:
+            self._direction = config.other_parameters['direction']['value']
         else:
-            self._parking_lane_side = "right"
+            self._direction = "right"
 
         # Get parking_waypoint based on trigger_point
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
-        if self._parking_lane_side == "left":
+        if self._direction == "left":
             self._parking_waypoint = self._reference_waypoint.get_left_lane()
         else:
             self._parking_waypoint = self._reference_waypoint.get_right_lane()
 
         if self._parking_waypoint is None:
             raise Exception(
-                "Couldn't find parking point on the {} side".format(self._parking_lane_side))
+                "Couldn't find parking point on the {} side".format(self._direction))
 
         super(ParkingExit, self).__init__("ParkingExit",
                                           ego_vehicles,
@@ -99,47 +99,73 @@ class ParkingExit(BasicScenario):
         """
         Custom initialization
         """
-        # Put blocking vehicles
+        # Spawn the actor in front of the ego
         front_points = self._parking_waypoint.next(
             self._front_vehicle_distance)
-        if front_points:
-            actor_front = CarlaDataProvider.request_new_actor(
-                'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
-            if actor_front is None:
-                raise Exception(
-                    "Couldn't spawn the vehicle in front of the parking point")
-            self.other_actors.append(actor_front)
-        else:
-            raise Exception(
+        if not front_points:
+            raise ValueError(
                 "Couldn't find viable position for the vehicle in front of the parking point")
 
+        actor_front = CarlaDataProvider.request_new_actor(
+            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+        if actor_front is None:
+            raise ValueError(
+                "Couldn't spawn the vehicle in front of the parking point")
+        self.other_actors.append(actor_front)
+
+        # And move it to the side
+        side_transform = self._get_displaced_transform(actor_front, front_points[0])
+        actor_front.set_location(side_transform)
+
+        # Spawn the actor behind the ego
         behind_points = self._parking_waypoint.previous(
             self._behind_vehicle_distance)
-        if behind_points:
-            actor_behind = CarlaDataProvider.request_new_actor(
-                'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
-            if actor_behind is None:
-                raise Exception(
-                    "Couldn't spawn the vehicle behind the parking point")
-            self.other_actors.append(actor_behind)
-        else:
-            raise Exception(
+        if not behind_points:
+            raise ValueError(
                 "Couldn't find viable position for the vehicle behind the parking point")
+
+        actor_behind = CarlaDataProvider.request_new_actor(
+            'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+        if actor_behind is None:
+            raise ValueError(
+                "Couldn't spawn the vehicle behind the parking point")
+        self.other_actors.append(actor_behind)
+
+        # And move it to the side
+        side_transform = self._get_displaced_transform(actor_behind, behind_points[0])
+        actor_behind.set_location(side_transform)
+
+        # Move the ego to its side position
+        self._ego_transform = self._get_displaced_transform(self.ego_vehicles[0], self._parking_waypoint)
+        self.ego_vehicles[0].set_location(self._ego_transform)
+
+    def _get_displaced_transform(self, actor, wp):
+        """
+        Calculates the transforming such that the actor is at the sidemost part of the lane
+        """
+        # Move the actor to the edge of the lane near the sidewalk
+        displacement = (wp.lane_width - actor.bounding_box.extent.y) / 4
+        displacement_vector = wp.transform.get_right_vector()
+        if self._direction == 'left':
+            displacement_vector *= -1
+
+        new_location = wp.transform.location + carla.Location(x=displacement*displacement_vector.x,
+                                                              y=displacement*displacement_vector.y,
+                                                              z=displacement*displacement_vector.z)
+        new_location.z += 0.05  # Just in case, avoid collisions with the ground
+        return new_location
 
     def _create_behavior(self):
         """
-        Deactivate OutsideRouteLanesTest, then move ego to the parking point, generate blocking vehicles in front of and behind the ego.
-        After ego drives away, actviate OutsideRouteLanesTest, end scenario.
+        Deactivate OutsideRouteLanesTest, then move ego to the parking point,
+        generate blocking vehicles in front of and behind the ego.
+        After ego drives away, activate OutsideRouteLanesTest, end scenario.
         """
 
         sequence = py_trees.composites.Sequence()
 
         # Deactivate OutsideRouteLanesTest
         sequence.add_child(SwitchOutsideRouteLanesTest(False))
-
-        # Teleport ego to the parking point
-        sequence.add_child(ActorTransformSetter(
-            self.ego_vehicles[0], self._parking_waypoint.transform))
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)

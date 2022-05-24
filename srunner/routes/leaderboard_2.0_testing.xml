@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes>
+   <route id="0" town="Town06"> <!-- HighwayExit, old towns -->
+      <waypoints>
+         <position x="237" y="140" z="0.0" />
+         <position x="273.1" y="140.55" z="0.0" />
+         <position x="293.1" y="140.63" z="0.0" />
+         <position x="323.1" y="140.75" z="0.0" />
+         <position x="400.1" y="141.12" z="0.0" />
+         <position x="423.1" y="141.16" z="0.0" />
+         <position x="443.1" y="141.24" z="0.0" />
+         <position x="452.61" y="137.78" z="0.0" />
+         <position x="462.43" y="137.59" z="0.0" />
+         <position x="480.81" y="132.07" z="0.0" />
+         <position x="488.83" y="126.72" z="0.0" />
+         <position x="510.9" y="89.45" z="0.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="HighwayExit_1" type="HighwayExit">
+            <trigger_point x="275" y="140" z="0.0" yaw="0"/>
+            <start_actor_flow x="255" y="137.09" z="0.2"/>
+            <end_actor_flow x="621" y="137" z="0.2"/>
+            <flow_speed value="20"/>
+            <source_dist_interval from="20" to="40"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="1" town="Town03"> <!-- ParkingExit, old towns -->
+      <waypoints>
+         <position x="-74.3" y="-38.5" z="0.0" />
+         <position x="-73.5" y="-168.0" z="0.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingExit_1" type="ParkingExit">
+            <trigger_point x="-74.3" y="-38.5" z="0.0" yaw="270"/>
+            <parking_lane_side value="right" />
+            <front_vehicle_distance value="20" />
+            <behind_vehicle_distance value="5" />
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="2" town="TrainingMap"> <!-- ParkingExit, new town -->
+      <waypoints>
+         <position x="34.1" y="3550.1" z="365" />
+         <position x="34.5" y="3650.9" z="365" />
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingExit_1" type="ParkingExit">
+            <trigger_point x="34.1" y="3550.1" z="361" yaw="90"/>
+            <direction value="right" />
+            <front_vehicle_distance value="10" />
+            <behind_vehicle_distance value="8" />
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="3" town="TrainingMap"> <!-- VehicleOpensDoor, new town, opposite lane -->
+      <waypoints>
+         <position x="2822.7" y="4256.7" z="360" />
+         <position x="2782.9" y="4497.9" z="363" />
+      </waypoints>
+      <scenarios>
+         <scenario name="VehicleOpensDoor_1" type="VehicleOpensDoor">
+            <trigger_point x="2818.4" y="4284.1" z="360" yaw="102"/>
+            <direction value="right"/>
+            <cross_onto_opposite_lane/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="4" town="TrainingMap"> <!-- CrossingBicycleFlow, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2081.9" y="4987.4" z="365" />
+         <position x="1965.0" y="4939.6" z="365" />
+      </waypoints>
+      <scenarios>
+         <scenario name="CrossingBycicleFlow_1" type="CrossingBycicleFlow">
+            <trigger_point x="2028.5" y="4988" z="365" yaw="180"/>
+            <start_actor_flow x="2043.8" y="4985.4" z="365"/>
+            <flow_speed value="10"/>
+            <source_dist_interval from="20" to="50"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="5" town="TrainingMap"> <!-- AccidentTwoWay, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2534.5" y="1444.3" z="355" />
+         <position x="2388.6" y="1095.3" z="350" />
+         <position x="2389.1" y="599.1" z="338" />
+      </waypoints>
+      <scenarios>
+         <scenario name="AccidentTwoWays_1" type="AccidentTwoWays">
+            <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
+         </scenario>
+         <scenario name="AccidentTwoWays_2" type="AccidentTwoWays">
+            <trigger_point x="2388.9" y="897.6" z="345" yaw="270"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="6" town="TrainingMap"> <!-- HighwayCutIn (High Speed), new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2571.9" y="3117.2" z="358" />
+         <position x="3231.0" y="3115.9" z="367" />
+      </waypoints>
+      <scenarios>
+         <scenario name="HighwayCutIn_1" type="HighwayCutInRoute">
+            <trigger_point x="2646.2" y="3117.0" z="358" yaw="0"/>
+            <other_actor_location x="2699.6" y="3156.8" z="365"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="7" town="TrainingMap"> <!-- ParkingCutIn, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="461.9" y="3506.5" z="368" />
+         <position x="462.5" y="3755.3" z="370" />
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingCutIn_1" type="ParkingCutIn">
+            <trigger_point x="462.2" y="3512.4" z="368" yaw="90"/>
+            <direction value="left"/>
+         </scenario>
+         <scenario name="ParkingCutIn_1" type="ParkingCutIn">
+            <trigger_point x="462.2" y="3610.4" z="368" yaw="90"/>
+            <direction value="left"/>
+         </scenario>
+      </scenarios>
+   </route>
+</routes>
