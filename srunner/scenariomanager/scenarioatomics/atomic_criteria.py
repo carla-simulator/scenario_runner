@@ -2056,7 +2056,7 @@ class YieldToEmergencyVehicleTest(Criterion):
         """
         super(YieldToEmergencyVehicleTest, self).__init__(name, actor, ev, optional)
         self.units = "%"
-        self.success_value = 0.7
+        self.success_value = 70
         self.actual_value = 0
         # self._last_time = 0
         self._ev = ev
@@ -2087,7 +2087,7 @@ class YieldToEmergencyVehicleTest(Criterion):
             else:
                 return new_status
             
-        if self._ev:
+        if self._ev.is_alive:
             ev_speed = get_speed(self._ev)
             # Record ev's speed in this moment
             self._ev_speed_log.append(ev_speed)
@@ -2097,7 +2097,7 @@ class YieldToEmergencyVehicleTest(Criterion):
 
     def terminate(self, new_status):
         mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
-        self.actual_value = mean_speed / self._target_speed
+        self.actual_value = mean_speed / self._target_speed *100
         self.actual_value = round(self.actual_value, 2)
         
         if self.actual_value >= self.success_value:
