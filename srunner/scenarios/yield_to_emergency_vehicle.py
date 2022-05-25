@@ -98,7 +98,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         - Teleport Emergency Vehicle(EV) behind the ego
         - [Parallel SUCCESS_ON_ONE]
             - Idle(20 seconds)
-            - FasterBasicAgentBehavior
+            - AdaptiveConstantVelocityAgentBehavior
         - Destroy EV
         - [Parallel SUCCESS_ON_ONE]
             - DriveDistance(ego, 30)
