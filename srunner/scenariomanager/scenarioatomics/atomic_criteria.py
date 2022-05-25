@@ -21,6 +21,7 @@ import py_trees
 import shapely.geometry
 
 import carla
+from agents.tools.misc import get_speed
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
@@ -2039,7 +2040,7 @@ class CheckMinSpeed(Criterion):
 class YieldToEmergencyVehicleTest(Criterion):
 
     """
-    Atomic Criterion to detect if the actor yields its lane to the emergency vehicle behind it within a certain time
+    Atomic Criterion to detect if the actor yields its lane to the emergency vehicle behind it
 
     Args:
         actor (carla.ACtor): CARLA actor to be used for this test
@@ -2054,51 +2055,54 @@ class YieldToEmergencyVehicleTest(Criterion):
         Constructor
         """
         super(YieldToEmergencyVehicleTest, self).__init__(name, actor, ev, optional)
-        self.units = "s"
-        self.success_value = 15
+        self.units = "%"
+        self.success_value = 0.7
         self.actual_value = 0
-        self._last_time = 0
+        # self._last_time = 0
         self._ev = ev
+        self._target_speed = None
+        self._ev_speed_log = []
         self._map = CarlaDataProvider.get_map()
 
     def initialise(self):
-        self._last_time = GameTime.get_time()
+        # self._last_time = GameTime.get_time()
         super(YieldToEmergencyVehicleTest, self).initialise()
 
     def update(self):
         """
-        Count the time when actor and ev are on the same lane and actor is in front of ev
+        Collect ev's actual speed on each time-step
 
         returns:
             py_trees.common.Status.RUNNING
         """
         new_status = py_trees.common.Status.RUNNING
 
-        location = CarlaDataProvider.get_location(self.actor)
-        location_ev = CarlaDataProvider.get_location(self._ev)
-        if location is None or location_ev is None:
-            return new_status
-
-        actor_wp = self._map.get_waypoint(location)
-        ev_wp = self._map.get_waypoint(location_ev)
-
-        # True if actor and ev are on the same lane
-        on_the_same_lane = actor_wp.lane_id == ev_wp.lane_id
-
-        ev_dir = ev_wp.transform.get_forward_vector()
-        actor_ev_dir = location - location_ev
-        dot_ve_wp = actor_ev_dir.x * ev_dir.x + actor_ev_dir.y * ev_dir.y + actor_ev_dir.z * ev_dir.z
-        # True if actor is in front of ev
-        actor_in_front_of_ev = dot_ve_wp > 0.0
-
-        if on_the_same_lane and actor_in_front_of_ev:
-            self.actual_value += GameTime.get_time() - self._last_time
-            self.actual_value = round(self.actual_value, 2)
-
-        if self.actual_value > self.success_value:
-            self.test_status = "FAILURE"
-
-        self._last_time = GameTime.get_time()
+        # Get target speed from Blackboard
+        # The value is expected to be set by AdaptiveConstantVelocityAgentBehavior
+        if self._target_speed is None:
+            target_speed = py_trees.blackboard.Blackboard().get("ACVAB_speed_{}".format(self.actor.id))
+            if target_speed is not None:
+                self._target_speed = target_speed
+                py_trees.blackboard.Blackboard().set("ACVAB_speed_{}".format(self.actor.id), None, overwrite=True)
+            else:
+                return new_status
+            
+        if self._ev:
+            ev_speed = get_speed(self._ev)
+            # Record ev's speed in this moment
+            self._ev_speed_log.append(ev_speed)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
+
+    def terminate(self, new_status):
+        mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
+        self.actual_value = mean_speed / self._target_speed
+        self.actual_value = round(self.actual_value, 2)
+        
+        if self.actual_value >= self.success_value:
+            self.test_status = "SUCCESS"
+        else:
+            self.test_status = "FAILURE"
+
+        super().terminate(new_status)
