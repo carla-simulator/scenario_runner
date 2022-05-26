@@ -41,9 +41,8 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._ev_drive_time = 20  # seconds
+        self._ev_drive_time = 12  # seconds
         self._ev_drive_distance = 1000 # m
-        self._ev_target_speed = 25 # m/s
 
         if 'emergency_vehicle_distance' in config.other_parameters:
             self._emergency_vehicle_distance = float(
