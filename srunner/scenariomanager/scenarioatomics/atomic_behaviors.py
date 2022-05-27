@@ -2700,7 +2700,7 @@ class ActorFlow(AtomicBehavior):
         if distance > self._spawn_dist:
             actor = CarlaDataProvider.request_new_actor(
                 'vehicle.*', self._source_transform, rolename='scenario',
-                attribute_filter={'base_type': self._actor_type}, tick=False
+                attribute_filter={'base_type': self._actor_type, 'has_lights': True}, tick=False
             )
             if actor is None:
                 return py_trees.common.Status.RUNNING
