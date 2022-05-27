@@ -138,4 +138,22 @@
          </scenario>
       </scenarios>
    </route>
+   <route id="8" town="TrainingMap"> <!-- MergerIntoSlowTraffic, old towns -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+            <position x="86.9" y="144.0" z="0.0"/>
+            <position x="15.34" y="-23.97" z="0.0"/>
+      </waypoints>
+      <scenarios>
+         <scenario name="MergerIntoSlowTraffic_1" type="MergerIntoSlowTraffic">
+            <trigger_point x="50.23" y="142.12" z="0.0" yaw="201.11"/>
+            <start_actor_flow x="16.32" y="179.9" z="0.2"/>
+            <end_actor_flow x="15.50" y="35.0" z="0.2"/>
+            <flow_speed value="10"/>
+            <source_dist_interval from="10" to="25"/>
+         </scenario>
+      </scenarios>
+   </route>
 </routes>

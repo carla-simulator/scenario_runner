@@ -124,8 +124,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             'vehicle.*', self._spawn_location, attribute_filter={'special_type': 'emergency'})
         if not opposite_actor:
             raise Exception("Couldn't spawn the actor")
-        opposite_actor.set_light_state(carla.VehicleLightState(
-            carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2))
+        lights = opposite_actor.get_light_state()
+        lights |= self._lights
+        opposite_actor.set_light_state(carla.VehicleLightState(lights))
         self.other_actors.append(opposite_actor)
 
         opposite_transform = carla.Transform(

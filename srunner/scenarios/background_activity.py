@@ -156,7 +156,7 @@ class BackgroundActivity(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicle, config, route, night_mode=False, debug_mode=False, timeout=0):
+    def __init__(self, world, ego_vehicle, config, route, debug_mode=False, timeout=0):
         """
         Setup all relevant parameters and create scenario
         """
@@ -164,7 +164,6 @@ class BackgroundActivity(BasicScenario):
         self.ego_vehicle = ego_vehicle
         self.route = route
         self.config = config
-        self._night_mode = night_mode
         self.debug = debug_mode
         self.timeout = timeout  # Timeout of scenario in seconds
 
@@ -181,7 +180,7 @@ class BackgroundActivity(BasicScenario):
         Basic behavior do nothing, i.e. Idle
         """
         # Check if a vehicle is further than X, destroy it if necessary and respawn it
-        return BackgroundBehavior(self.ego_vehicle, self.route, self._night_mode)
+        return BackgroundBehavior(self.ego_vehicle, self.route)
 
     def _create_test_criteria(self):
         """
@@ -208,7 +207,7 @@ class BackgroundBehavior(AtomicBehavior):
     Handles the background activity
     """
 
-    def __init__(self, ego_actor, route, night_mode=False, debug=False, name="BackgroundBehavior"):
+    def __init__(self, ego_actor, route, debug=False, name="BackgroundBehavior"):
         """
         Setup class members
         """
@@ -219,7 +218,6 @@ class BackgroundBehavior(AtomicBehavior):
         self._tm = CarlaDataProvider.get_client().get_trafficmanager(
             CarlaDataProvider.get_traffic_manager_port())
         self._tm.global_percentage_speed_difference(0.0)
-        self._night_mode = night_mode
         self._rng = CarlaDataProvider.get_random_seed()
 
         # Global variables
@@ -1571,8 +1569,8 @@ class BackgroundBehavior(AtomicBehavior):
         # Remove junction entry
         remove_junction_entry_data = py_trees.blackboard.Blackboard().get('BA_RemoveJunctionEntry')
         if remove_junction_entry_data is not None:
-            wp, all_entries = remove_junction_entry_data
-            self._remove_junction_entry(wp, all_entries)
+            wps, all_entries = remove_junction_entry_data
+            self._remove_junction_entry(wps, all_entries)
             py_trees.blackboard.Blackboard().set('BA_RemoveJunctionEntry', None, True)
 
         # Removes an exit direction
@@ -1737,38 +1735,39 @@ class BackgroundBehavior(AtomicBehavior):
                 for actor in list(self._road_dict[lane_key].actors):
                     self._destroy_actor(actor)
 
-    def _remove_junction_entry(self, wp, all_entries):
+    def _remove_junction_entry(self, wps, all_entries):
         """Removes a specific entry (or all the entries at the same road) of the closest junction"""
-        if len(self._active_junctions) > 0:
-            junction = self._active_junctions[0]
-        elif len(self._junctions) > 0:
-            junction = self._junctions[0]
-        else:
-            return
+        for wp in wps:
+            if len(self._active_junctions) > 0:
+                junction = self._active_junctions[0]
+            elif len(self._junctions) > 0:
+                junction = self._junctions[0]
+            else:
+                return
 
-        mapped_wp = None
-        mapped_dist = float('inf')
-        ref_loc = wp.transform.location
-        for entry_wp in junction.entry_wps:
-            distance = ref_loc.distance(entry_wp.transform.location)
-            if distance < mapped_dist:
-                mapped_wp = entry_wp
-                mapped_dist = distance
+            mapped_wp = None
+            mapped_dist = float('inf')
+            ref_loc = wp.transform.location
+            for entry_wp in junction.entry_wps:
+                distance = ref_loc.distance(entry_wp.transform.location)
+                if distance < mapped_dist:
+                    mapped_wp = entry_wp
+                    mapped_dist = distance
 
-        if all_entries:
-            mapped_road_key = get_road_key(mapped_wp)
-            mapped_lane_keys = [key for key in junction.entry_lane_keys if is_lane_at_road(key, mapped_road_key)]
-        else:
-            mapped_lane_keys = [get_lane_key(mapped_wp)]
+            if all_entries:
+                mapped_road_key = get_road_key(mapped_wp)
+                mapped_lane_keys = [key for key in junction.entry_lane_keys if is_lane_at_road(key, mapped_road_key)]
+            else:
+                mapped_lane_keys = [get_lane_key(mapped_wp)]
 
-        if len(self._active_junctions) > 0:
-            for source in junction.entry_sources:
-                if get_lane_key(source.wp) in mapped_lane_keys:
-                    for actor in list(source.actors):
-                        self._destroy_actor(actor)
-                    source.active = False
-        else:
-            junction.inactive_entry_keys = mapped_lane_keys
+            if len(self._active_junctions) > 0:
+                for source in junction.entry_sources:
+                    if get_lane_key(source.wp) in mapped_lane_keys:
+                        for actor in list(source.actors):
+                            self._destroy_actor(actor)
+                        source.active = False
+            else:
+                junction.inactive_entry_keys = mapped_lane_keys
 
     def _remove_exit_direction(self, direction, remove_exits):
         """
@@ -1866,11 +1865,6 @@ class BackgroundBehavior(AtomicBehavior):
         for actor in actors:
             self._initialise_actor(actor, leading_dist)
 
-        if self._night_mode:
-            for actor in actors:
-                actor.set_light_state(carla.VehicleLightState(
-                    carla.VehicleLightState.Position | carla.VehicleLightState.LowBeam))
-
         return actors
 
     def _spawn_source_actor(self, source, leading_dist, ego_dist=0):
@@ -1892,10 +1886,6 @@ class BackgroundBehavior(AtomicBehavior):
             return actor
 
         self._initialise_actor(actor, leading_dist)
-        if self._night_mode:
-            actor.set_light_state(carla.VehicleLightState(
-                carla.VehicleLightState.Position | carla.VehicleLightState.LowBeam))
-
         return actor
 
     def _is_location_behind_ego(self, location):
