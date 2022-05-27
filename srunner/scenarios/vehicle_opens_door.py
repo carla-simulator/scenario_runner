@@ -32,9 +32,8 @@ from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBe
 
 class VehicleOpensDoor(BasicScenario):
     """
-    This class holds everything required for a scenario in which another vehicle runs a red light
-    in front of the ego, forcing it to react. This vehicles are 'special' ones such as police cars,
-    ambulances or firetrucks.
+    This class holds everything required for a scenario in which another vehicle parked at the side lane
+    opens the door, forcing the ego to lane change.
     """
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
@@ -63,12 +62,6 @@ class VehicleOpensDoor(BasicScenario):
             self._direction = 'right'
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
-
-        if 'cross_onto_opposite_lane' in config.other_parameters:
-            self._cross_opposite_lane = True
-            self._opposite_frequency = 70
-        else:
-            self._cross_opposite_lane = False
 
         super().__init__("VehicleOpensDoor", ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
 
@@ -106,10 +99,9 @@ class VehicleOpensDoor(BasicScenario):
 
     def _create_behavior(self):
         """
-        Hero vehicle is entering a junction in an urban area, at a signalized intersection,
-        while another actor runs a red lift, forcing the ego to break.
+        Leave space in front, as the TM doesn't detect open doors
         """
-        sequence = py_trees.composites.Sequence(name="CrossingActor")
+        sequence = py_trees.composites.Sequence(name="VehicleOpensDoor")
 
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._parked_distance))
@@ -118,7 +110,7 @@ class VehicleOpensDoor(BasicScenario):
 
         # Wait until ego is close to the adversary
         trigger_adversary = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerOpenDoor")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
             self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
@@ -126,16 +118,8 @@ class VehicleOpensDoor(BasicScenario):
         sequence.add_child(trigger_adversary)
 
         door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
-
         sequence.add_child(OpenVehicleDoor(self._parked_actor, door))
-        if self._cross_opposite_lane:
-            sequence.add_child(SwitchOutsideRouteLanesTest(False))
-            sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
-
         sequence.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
-        if self._cross_opposite_lane:
-            sequence.add_child(SwitchOutsideRouteLanesTest(True))
-            sequence.add_child(ChangeOppositeBehavior(spawn_dist=15))
         sequence.add_child(ActorDestroy(self._parked_actor))
 
         return sequence
@@ -155,6 +139,7 @@ class VehicleOpensDoor(BasicScenario):
                                                               z=displacement*displacement_vector.z)
         new_location.z += 0.05  # Just in case, avoid collisions with the ground
         return new_location
+
     def _create_test_criteria(self):
         """
         A list of all test criteria will be created that is later used
@@ -169,3 +154,52 @@ class VehicleOpensDoor(BasicScenario):
         Remove all actors and traffic lights upon deletion
         """
         self.remove_all_actors()
+
+
+class VehicleOpensDoorTwoWays(VehicleOpensDoor):
+    """
+    Variation of VehicleOpensDoor wher ethe vehicle has to invade an opposite lane
+    """
+
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=180):
+        if 'frequency' in config.other_parameters:
+            self._opposite_frequency = config.other_parameters['frequency']['value']
+        else:
+            self._opposite_frequency = 70
+
+        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
+
+    def _create_behavior(self):
+        """
+        Leave space in front, as the TM doesn't detect open doors, and change the opposite frequency 
+        so that the ego can pass
+        """
+        sequence = py_trees.composites.Sequence(name="VehicleOpensDoorTwoWays")
+
+        if self.route_mode:
+            sequence.add_child(LeaveSpaceInFront(self._parked_distance))
+
+        collision_location = self._front_wp.transform.location
+
+        # Wait until ego is close to the adversary
+        trigger_adversary = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerOpenDoor")
+        trigger_adversary.add_child(InTimeToArrivalToLocation(
+            self.ego_vehicles[0], self._reaction_time, collision_location))
+        trigger_adversary.add_child(InTriggerDistanceToLocation(
+            self.ego_vehicles[0], collision_location, self._min_trigger_dist))
+        sequence.add_child(trigger_adversary)
+
+        door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
+
+        sequence.add_child(OpenVehicleDoor(self._parked_actor, door))
+        sequence.add_child(SwitchOutsideRouteLanesTest(False))
+        sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
+
+        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+        sequence.add_child(SwitchOutsideRouteLanesTest(True))
+        sequence.add_child(ChangeOppositeBehavior(spawn_dist=15))
+        sequence.add_child(ActorDestroy(self._parked_actor))
+
+        return sequence

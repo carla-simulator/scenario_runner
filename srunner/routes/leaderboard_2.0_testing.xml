@@ -59,10 +59,9 @@
          <position x="2782.9" y="4497.9" z="363" />
       </waypoints>
       <scenarios>
-         <scenario name="VehicleOpensDoor_1" type="VehicleOpensDoor">
+         <scenario name="VehicleOpensDoorTwoWays_1" type="VehicleOpensDoorTwoWays">
             <trigger_point x="2818.4" y="4284.1" z="360" yaw="102"/>
             <direction value="right"/>
-            <cross_onto_opposite_lane/>
          </scenario>
       </scenarios>
    </route>
@@ -95,11 +94,10 @@
          <position x="2389.1" y="599.1" z="338" />
       </waypoints>
       <scenarios>
-         <scenario name="Accident_1" type="Accident">
+         <scenario name="AccidentTwoWays_1" type="AccidentTwoWays">
             <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
-            <cross_onto_opposite_lane/>
          </scenario>
-         <scenario name="Accident_2" type="Accident">
+         <scenario name="AccidentTwoWays_2" type="AccidentTwoWays">
             <trigger_point x="2388.9" y="897.6" z="345" yaw="270"/>
             <cross_onto_opposite_lane/>
          </scenario>

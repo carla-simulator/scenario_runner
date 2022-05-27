@@ -71,12 +71,12 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._init_tl_dict = {}
 
         self.timeout = timeout
-        super(JunctionLeftTurn, self).__init__("JunctionLeftTurn",
-                                               ego_vehicles,
-                                               config,
-                                               world,
-                                               debug_mode,
-                                               criteria_enable=criteria_enable)
+        super().__init__("SignalizedJunctionLeftTurn",
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
@@ -232,12 +232,12 @@ class NonSignalizedJunctionLeftTurn(BasicScenario):
         self._sink_dist = 3 * self._flow_speed
 
         self.timeout = timeout
-        super(JunctionLeftTurn, self).__init__("NonSignalizedJunctionLeftTurn",
-                                               ego_vehicles,
-                                               config,
-                                               world,
-                                               debug_mode,
-                                               criteria_enable=criteria_enable)
+        super().__init__("NonSignalizedJunctionLeftTurn",
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """

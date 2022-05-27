@@ -13,26 +13,6 @@ import py_trees
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior
 
 
-class ChangeGeneralBehavior(AtomicBehavior):
-    """
-    Updates the blackboard to change the general parameters.
-    None values imply that these values won't be changed.
-
-    Args:
-        spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
-    """
-
-    def __init__(self, spawn_dist=None, name="ChangeGeneralBehavior"):
-        self._spawn_dist = spawn_dist
-        super().__init__(name)
-
-    def update(self):
-        py_trees.blackboard.Blackboard().set(
-            "BA_ChangeGeneralBehavior", self._spawn_dist, overwrite=True
-        )
-        return py_trees.common.Status.SUCCESS
-
-
 class ChangeRoadBehavior(AtomicBehavior):
     """
     Updates the blackboard to change the parameters of the road behavior.
@@ -44,14 +24,15 @@ class ChangeRoadBehavior(AtomicBehavior):
         switch_source (bool): (De)activatea the road sources.
     """
 
-    def __init__(self, num_front_vehicles=None, num_back_vehicles=None, name="ChangeRoadBehavior"):
-        self._num_front_vehicles = num_front_vehicles
-        self._num_back_vehicles = num_back_vehicles
+    def __init__(self, num_front_vehicles=None, num_back_vehicles=None, spawn_dist=None, name="ChangeRoadBehavior"):
+        self._num_front = num_front_vehicles
+        self._num_back = num_back_vehicles
+        self._spawn_dist = spawn_dist
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeRoadBehavior", [self._num_front_vehicles, self._num_back_vehicles], overwrite=True
+            "BA_ChangeRoadBehavior", [self._num_front, self._num_back, self._spawn_dist], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -89,14 +70,16 @@ class ChangeJunctionBehavior(AtomicBehavior):
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
-    def __init__(self, source_dist=None, max_actors=None, name="ChangeJunctionBehavior"):
+    def __init__(self, source_dist=None, spawn_dist=None, max_actors=None, source_perc=None, name="ChangeJunctionBehavior"):
         self._source_dist = source_dist
+        self._spawn_dist = spawn_dist
         self._max_actors = max_actors
+        self._perc = source_perc
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeJunctionBehavior", [self._source_dist, self._max_actors], overwrite=True
+            "BA_ChangeJunctionBehavior", [self._source_dist, self._spawn_dist, self._max_actors, self._perc], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 

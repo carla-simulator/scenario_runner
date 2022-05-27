@@ -14,7 +14,7 @@ import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
-                                                                      WaypointFollower)
+                                                                      BasicAgentBehavior)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -38,10 +38,10 @@ class ParkingCutIn(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
 
-        self._cut_in_distance = 25
-        self._blocker_distance = 18
+        self._cut_in_distance = 35
+        self._blocker_distance = 28
 
-        self._adversary_speed = 10.0  # Speed of the adversary [m/s]
+        self._adversary_speed = 13.0  # Speed of the adversary [m/s]
         self._reaction_time = 2.5  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 10.0  # Min distance to the collision location that triggers the adversary [m]
         self._end_distance = 40
@@ -127,7 +127,7 @@ class ParkingCutIn(BasicScenario):
         """
         sequence = py_trees.composites.Sequence(name="CrossingActor")
         if self.route_mode:
-            sequence.add_child(LeaveSpaceInFront(self._cut_in_distance))
+            sequence.add_child(LeaveSpaceInFront(self._cut_in_distance + 10))
 
         collision_location = self._collision_wp.transform.location
 
@@ -143,7 +143,7 @@ class ParkingCutIn(BasicScenario):
         # Move the adversary
         cut_in = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Cut in behavior")
-        cut_in.add_child(WaypointFollower(self.other_actors[1], self._adversary_speed))
+        cut_in.add_child(BasicAgentBehavior(self.other_actors[1]))
         cut_in.add_child(DriveDistance(self.other_actors[1], self._end_distance))
         sequence.add_child(cut_in)
 

@@ -12,8 +12,7 @@ from __future__ import print_function
 import py_trees
 
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import (ChangeGeneralBehavior,
-                                              ChangeRoadBehavior,
+from srunner.tools.background_manager import (ChangeRoadBehavior,
                                               ChangeOppositeBehavior,
                                               ChangeJunctionBehavior)
 
@@ -30,12 +29,6 @@ class BackgroundActivityParametrizer(BasicScenario):
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        # General
-        self._spawn_dist = None
-        if 'spawn_dist' in config.other_parameters:
-            self._spawn_dist = float(config.other_parameters['spawn_dist']['value'])
-        self._target_speed = None
-
         # Road
         self._num_front_vehicles = None
         if 'num_front_vehicles' in config.other_parameters:
@@ -43,6 +36,9 @@ class BackgroundActivityParametrizer(BasicScenario):
         self._num_back_vehicles = None
         if 'num_back_vehicles' in config.other_parameters:
             self._num_back_vehicles = float(config.other_parameters['num_back_vehicles']['value'])
+        self._road_spawn_dist = None
+        if 'road_spawn_dist' in config.other_parameters:
+            self._road_spawn_dist = float(config.other_parameters['road_spawn_dist']['value'])
 
         # Opposite
         self._opposite_source_dist = None
@@ -65,6 +61,12 @@ class BackgroundActivityParametrizer(BasicScenario):
         self._junction_max_actors = None
         if 'junction_max_actors' in config.other_parameters:
             self._junction_max_actors = float(config.other_parameters['junction_max_actors']['value'])
+        self._junction_spawn_dist = None
+        if 'junction_spawn_dist' in config.other_parameters:
+            self._junction_spawn_dist = float(config.other_parameters['junction_spawn_dist']['value'])
+        self._junction_source_perc = None
+        if 'junction_source_perc' in config.other_parameters:
+            self._junction_source_perc = float(config.other_parameters['junction_source_perc']['value'])
 
         super().__init__("BackgroundActivityParametrizer",
                           ego_vehicles,
@@ -80,10 +82,9 @@ class BackgroundActivityParametrizer(BasicScenario):
         """
 
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ChangeGeneralBehavior(self._spawn_dist))
-        sequence.add_child(ChangeRoadBehavior(self._num_front_vehicles, self._num_back_vehicles))
+        sequence.add_child(ChangeRoadBehavior(self._num_front_vehicles, self._num_back_vehicles, self._road_spawn_dist))
         sequence.add_child(ChangeJunctionBehavior(
-            self._junction_source_dist, self._junction_max_actors))
+            self._junction_source_dist, self._junction_max_actors, self._junction_spawn_dist, self._junction_source_perc))
         sequence.add_child(ChangeOppositeBehavior(
             self._opposite_source_dist, self._opposite_spawn_dist, self._opposite_active))
 

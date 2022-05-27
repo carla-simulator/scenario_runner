@@ -21,7 +21,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import ChangeGeneralBehavior
+from srunner.tools.background_manager import ChangeRoadBehavior
 
 
 def convert_dict_to_location(actor_dict):
@@ -167,7 +167,7 @@ class ParkingExit(BasicScenario):
         """
 
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ChangeGeneralBehavior(self._flow_interval))
+        sequence.add_child(ChangeRoadBehavior(self._flow_interval))
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -179,7 +179,7 @@ class ParkingExit(BasicScenario):
 
         for actor in self.other_actors:
             sequence.add_child(ActorDestroy(actor))
-        sequence.add_child(ChangeGeneralBehavior(15))
+        sequence.add_child(ChangeRoadBehavior(15))
 
         return sequence
 

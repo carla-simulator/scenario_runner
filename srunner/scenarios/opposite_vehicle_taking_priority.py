@@ -62,16 +62,12 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         else:
             self._adversary_speed = 70 / 3.6 # m/s
 
-        self._opposite_bp_wildcards = ['*firetruck*', '*ambulance*', '*police*']  # Wildcard patterns of the blueprints
         self.timeout = timeout
 
         self._sync_time = 2.2  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
         self._speed_duration_ratio = 2.0
         self._speed_distance_ratio = 1.5
-
-        # Get the CDP seed or at routes, all copies of the scenario will have the same configuration
-        self._rng = CarlaDataProvider.get_random_seed()
 
         super().__init__("OppositeVehicleRunningRedLight",
                          ego_vehicles,
@@ -124,8 +120,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         )
 
         # Spawn the actor and move it below ground
-        opposite_bp_wildcard = self._rng.choice(self._opposite_bp_wildcards)
-        opposite_actor = CarlaDataProvider.request_new_actor(opposite_bp_wildcard, self._spawn_location)
+        opposite_actor = CarlaDataProvider.request_new_actor(
+            'vehicle.*', self._spawn_location, attribute_filter={'special_type': 'emergency'})
         if not opposite_actor:
             raise Exception("Couldn't spawn the actor")
         opposite_actor.set_light_state(carla.VehicleLightState(

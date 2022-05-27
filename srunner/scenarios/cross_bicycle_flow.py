@@ -135,7 +135,7 @@ class CrossingBycicleFlow(BasicScenario):
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        root.add_child(BicycleFlow(plan, self._source_dist_interval, self._sink_distance, self._flow_speed))
+        root.add_child(BicycleFlow(plan, self._source_dist_interval, self._sink_distance, self._flow_speed, True))
 
         # End condition, when the ego exits the junction
         end_condition = py_trees.composites.Sequence()

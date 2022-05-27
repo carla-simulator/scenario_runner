@@ -1919,7 +1919,7 @@ class BasicAgentBehavior(AtomicBehavior):
     The behavior terminates after reaching the target_location (within 2 meters)
     """
 
-    def __init__(self, actor, target_location, name="BasicAgentBehavior"):
+    def __init__(self, actor, target_location=None, name="BasicAgentBehavior"):
         """
         Setup actor and maximum steer value
         """
@@ -1932,11 +1932,12 @@ class BasicAgentBehavior(AtomicBehavior):
 
     def initialise(self):
         """Initialises the agent"""
-        self._agent = BasicAgent(self._actor)
-        self._plan = self._agent.trace_route(
-            self._map.get_waypoint(CarlaDataProvider.get_location(self._actor)),
-            self._map.get_waypoint(self._target_location))
-        self._agent.set_global_plan(self._plan)
+        self._agent = BasicAgent(self._actor,
+            map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
+        if self._target_location:
+            self._plan = self._agent.set_destination(
+                self._target_location, CarlaDataProvider.get_location(self._actor))
+            self._agent.set_global_plan(self._plan)
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
@@ -2659,7 +2660,7 @@ class ActorFlow(AtomicBehavior):
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, actor_type="car", name="ActorFlow"):
+                 actor_speed=20 / 3.6, name="ActorFlow"):
         """
         Setup class members
         """
@@ -2680,7 +2681,6 @@ class ActorFlow(AtomicBehavior):
 
         self._sink_dist = sink_dist
         self._speed = actor_speed
-        self._actor_type = actor_type
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2708,7 +2708,7 @@ class ActorFlow(AtomicBehavior):
         if distance > self._spawn_dist:
             actor = CarlaDataProvider.request_new_actor(
                 'vehicle.*', self._source_transform, rolename='scenario',
-                attribute_filter={'base_type': self._actor_type, 'has_lights': True}, tick=False
+                attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False
             )
             if actor is None:
                 return py_trees.common.Status.RUNNING
@@ -2758,12 +2758,13 @@ class BicycleFlow(AtomicBehavior):
     Important parameters:
     - plan (list(carla.Waypoint)): plan used by the bicycles.
     - spawn_distance_interval (list(float, float)): Distance between spawned actors
-    - sink_distance: Actors at this distance from the sink will be deleted
-    - actors_speed: Speed of the actors part of the flow [m/s]
+    - sink_distance (float): Actors at this distance from the sink will be deleted
+    - actors_speed (float): Speed of the actors part of the flow [m/s]
+    - add_initial_actors (bool): Boolean to initialy populate all the flow with bicycles
     """
 
     def __init__(self, plan, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, name="BicycleFlow"):
+                 actor_speed=20 / 3.6, add_initial_actors=False, name="BicycleFlow"):
         """
         Setup class members
         """
@@ -2784,15 +2785,45 @@ class BicycleFlow(AtomicBehavior):
         self._max_spawn_dist = spawn_dist_interval[1]
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
+        self._add_initial_actors = add_initial_actors
+
         self._actor_data = []
         self._grp = CarlaDataProvider.get_global_route_planner()
+
+    def initialise(self):
+        if self._add_initial_actors:
+            ref_loc = self._plan[0][0].transform.location
+            for wp, _ in self._plan:
+                if wp.transform.location.distance(ref_loc) < self._spawn_dist:
+                    continue
+                self._spawn_actor()
+                ref_loc = wp.transform.location
+
+    def _spawn_actor(self):
+        actor = CarlaDataProvider.request_new_actor(
+            'vehicle.*', self._source_transform, rolename='scenario',
+            attribute_filter={'base_type': 'bicycle'}, tick=False
+        )
+        if actor is None:
+            return
+
+        actor.set_target_velocity(self._speed * self._source_vector)
+        controller = BasicAgent(actor, 3.6 * self._speed,
+            map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
+        controller.set_global_plan(self._plan)
+
+        self._actor_data.append([actor, controller])
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
         # Control the vehicles, removing them when needed
         for actor_data in list(self._actor_data):
             actor, controller = actor_data
-            sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
+            location = CarlaDataProvider.get_location(actor)
+            if not location:
+                continue
+            sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
                 actor.destroy()
                 self._actor_data.remove(actor_data)
@@ -2804,23 +2835,13 @@ class BicycleFlow(AtomicBehavior):
             distance = self._spawn_dist + 1
         else:
             actor_location = CarlaDataProvider.get_location(self._actor_data[-1][0])
-            distance = self._source_location.distance(actor_location)
+            if actor_location is None:
+                distance = 0
+            else:
+                distance = self._source_location.distance(actor_location)
 
         if distance > self._spawn_dist:
-            actor = CarlaDataProvider.request_new_actor(
-                'vehicle.*', self._source_transform, rolename='scenario',
-                attribute_filter={'base_type': 'bicycle'}, tick=False
-            )
-            if actor is None:
-                return py_trees.common.Status.RUNNING
-
-            actor.set_target_velocity(self._speed * self._source_vector)
-            controller = BasicAgent(actor, 3.6 * self._speed,
-                map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
-            controller.set_global_plan(self._plan)
-
-            self._actor_data.append([actor, controller])
-            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+            self._spawn_actor()
 
         return py_trees.common.Status.RUNNING
 
