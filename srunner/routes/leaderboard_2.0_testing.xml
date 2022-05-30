@@ -164,10 +164,11 @@
       <scenarios>
          <scenario name="PedestrianCrossing_1" type="PedestrianCrossing">
             <trigger_point x="106.7" y="50" z="0.0" yaw="270"/>
-            <start_walker_flow x="116" y="8" z="1" yaw="180"/>
-            <source_dist_interval from="2" to="5"/>
+            <start_walker_flow x="118" y="8" z="1" yaw="180"/>
+            <source_dist_interval from="2" to="6"/>
             <end_walker_flow_1 x="93" y="21" z="1" yaw="90" p="0.45"/>
             <end_walker_flow_2 x="111" y="23" z="1" yaw="90" p="0.55"/>
+         </scenario>
       </scenarios>
    </route>
 </routes>
