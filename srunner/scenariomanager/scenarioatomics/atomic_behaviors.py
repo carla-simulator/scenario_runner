@@ -3489,3 +3489,96 @@ class SwitchMinSpeedCriteria(AtomicBehavior):
         new_status = py_trees.common.Status.SUCCESS
         py_trees.blackboard.Blackboard().set("SwitchMinSpeedCriteria", self._active, overwrite=True)
         return new_status
+
+class WalkerFlow(AtomicBehavior):
+    """
+    TODO
+    Behavior that indefinitely creates actors at a location,
+    controls them until another location, and then destroys them.
+    Therefore, a parallel termination behavior has to be used.
+
+    Important parameters:
+    - source_transform (carla.Transform): Transform at which actors will be spawned
+    - sink_location (carla.Location): Location at which actors will be deleted
+    - spawn_distance: Distance between spawned actors TODO
+    - sink_distance: Actors closer to the sink than this distance will be deleted
+    """
+    # TODO batch_size
+    # TODO use spawn dist interval
+    def __init__(self, source_transform, sink_transforms, sink_transforms_prob, spawn_dist_interval, sink_dist=1,
+                 name="WalkerFlow"):
+        """
+        Setup class members
+        """
+        super(WalkerFlow, self).__init__(name)
+        self._rng = CarlaDataProvider.get_random_seed()
+        self._world = CarlaDataProvider.get_world()
+        self._tm = CarlaDataProvider.get_client().get_trafficmanager(CarlaDataProvider.get_traffic_manager_port())
+
+        self._controller_bp = self._world.get_blueprint_library().find('controller.ai.walker')
+
+        self._source_transform = source_transform
+        self._sink_transforms = sink_transforms
+        self._sink_transforms_prob = sink_transforms_prob
+
+        self._sink_locations = [tran.location for tran in self._sink_transforms]
+
+        self._source_location = self._source_transform.location
+
+        self._sink_dist = sink_dist
+
+
+        self._min_spawn_dist = spawn_dist_interval[0]
+        self._max_spawn_dist = spawn_dist_interval[1]
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+
+
+        self._walkers = []
+
+    def update(self):
+        """Controls the created actors and creaes / removes other when needed"""
+        # Control the vehicles, removing them when needed
+        for item in self._walkers:
+            walker, controller, sink_location = item
+            loc = CarlaDataProvider.get_location(walker)
+            if loc.distance(sink_location) < self._sink_dist:
+                self._destroy_walker(walker, controller)
+                self._walkers.remove(item)
+
+
+
+        # Spawn new actors
+        if len(self._walkers) == 0:
+            distance = self._spawn_dist + 1
+        else:
+            actor_location = CarlaDataProvider.get_location(self._actor_list[-1][0])
+            distance = self._source_transform.location.distance(actor_location)
+
+        if distance > self._spawn_dist:
+            print("dist:{}, _spawn_dist:{}".format(distance, self._spawn_dist))
+            # spawn here
+            walker = CarlaDataProvider.request_new_actor(
+                'walker.*', self._source_transform, rolename='scenario'
+            )
+            # TODO: set is_invicible false
+            # add to list
+            self._walkers.append((walker, controller, sink_location))
+            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+        return py_trees.common.Status.RUNNING
+
+    def _destroy_walker(self, walker, controller):
+        controller.stop()
+        controller.destroy()
+        walker.destroy()
+
+    def terminate(self, new_status):
+        """
+        Default terminate. Can be extended in derived class
+        """
+        for walker, controller, _ in self._walkers:
+            try:
+                self._destroy_walker(walker, controller)
+            except RuntimeError:
+                pass  # Actor was already destroyed
