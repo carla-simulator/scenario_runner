@@ -71,22 +71,22 @@ class ParkingExit(BasicScenario):
 
         self._end_distance = self._front_vehicle_distance + 15
 
-        if 'parking_lane_side' in config.other_parameters:
-            self._parking_lane_side = config.other_parameters['parking_lane_side']['value']
+        if 'direction' in config.other_parameters:
+            self._direction = config.other_parameters['direction']['value']
         else:
-            self._parking_lane_side = "right"
+            self._direction = "right"
 
         # Get parking_waypoint based on trigger_point
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
-        if self._parking_lane_side == "left":
+        if self._direction == "left":
             self._parking_waypoint = self._reference_waypoint.get_left_lane()
         else:
             self._parking_waypoint = self._reference_waypoint.get_right_lane()
 
         if self._parking_waypoint is None:
             raise Exception(
-                "Couldn't find parking point on the {} side".format(self._parking_lane_side))
+                "Couldn't find parking point on the {} side".format(self._direction))
 
         super(ParkingExit, self).__init__("ParkingExit",
                                           ego_vehicles,
@@ -146,7 +146,7 @@ class ParkingExit(BasicScenario):
         # Move the actor to the edge of the lane near the sidewalk
         displacement = (wp.lane_width - actor.bounding_box.extent.y) / 4
         displacement_vector = wp.transform.get_right_vector()
-        if self._parking_lane_side == 'left':
+        if self._direction == 'left':
             displacement_vector *= -1
 
         new_location = wp.transform.location + carla.Location(x=displacement*displacement_vector.x,

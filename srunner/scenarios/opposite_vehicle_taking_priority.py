@@ -61,6 +61,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._speed_duration_ratio = 2.0
         self._speed_distance_ratio = 1.5
 
+        self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
+
         # Get the CDP seed or at routes, all copies of the scenario will have the same configuration
         self._rng = CarlaDataProvider.get_random_seed()
 
@@ -123,8 +125,9 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         opposite_actor = CarlaDataProvider.request_new_actor(opposite_bp_wildcard, self._spawn_location)
         if not opposite_actor:
             raise Exception("Couldn't spawn the actor")
-        opposite_actor.set_light_state(carla.VehicleLightState(
-            carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2))
+        lights = opposite_actor.get_light_state()
+        lights |= self._lights
+        opposite_actor.set_light_state(carla.VehicleLightState(lights))
         self.other_actors.append(opposite_actor)
 
         opposite_transform = carla.Transform(
