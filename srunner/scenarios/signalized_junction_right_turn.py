@@ -161,7 +161,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
         if self.route_mode:
             sequence.add_child(ClearJunction())
-            sequence.add_child(RemoveJunctionEntry(self._source_wp, True))
+            sequence.add_child(RemoveJunctionEntry([self._source_wp], True))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
@@ -297,7 +297,7 @@ class NonSignalizedJunctionRightTurn(BasicScenario):
         sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
         if self.route_mode:
             sequence.add_child(ClearJunction())
-            sequence.add_child(RemoveJunctionEntry(self._source_wp, True))
+            sequence.add_child(RemoveJunctionEntry([self._source_wp], True))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))

@@ -2714,7 +2714,7 @@ class ActorFlow(AtomicBehavior):
                 return py_trees.common.Status.RUNNING
 
             actor.set_autopilot(True)
-            self._tm.set_path(actor, [self._source_location, self._sink_location])
+            self._tm.set_path(actor, [self._sink_location])
 
             if self._is_constant_velocity_active:
                 self._tm.ignore_vehicles_percentage(actor, 100)

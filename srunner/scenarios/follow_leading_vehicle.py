@@ -329,7 +329,7 @@ class FollowLeadingVehicleRoute(BasicScenario):
         Setup all relevant parameters and create scenario
         """
         self.timeout = timeout
-        self._stop_duration = 15
+        self._stop_duration = 10
         self.end_distance = 15
 
         super(FollowLeadingVehicleRoute, self).__init__("FollowLeadingVehicleRoute",

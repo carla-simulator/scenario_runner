@@ -47,7 +47,7 @@ class VehicleOpensDoor(BasicScenario):
 
         self.timeout = timeout
         self._wait_duration = 15
-        self._end_distance = 40
+        self._takeover_distance = 60
         self._min_trigger_dist = 10
         self._reaction_time = 3.0
 
@@ -93,8 +93,8 @@ class VehicleOpensDoor(BasicScenario):
         self.other_actors.append(self._parked_actor)
 
         # And move it to the side
-        side_transform = self._get_displaced_transform(self._parked_actor, parked_wp)
-        self._parked_actor.set_location(side_transform)
+        side_location = self._get_displaced_location(self._parked_actor, parked_wp)
+        self._parked_actor.set_location(side_location)
         self._parked_actor.apply_control(carla.VehicleControl(hand_brake=True))
 
     def _create_behavior(self):
@@ -119,12 +119,12 @@ class VehicleOpensDoor(BasicScenario):
 
         door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
         sequence.add_child(OpenVehicleDoor(self._parked_actor, door))
-        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
         sequence.add_child(ActorDestroy(self._parked_actor))
 
         return sequence
 
-    def _get_displaced_transform(self, actor, wp):
+    def _get_displaced_location(self, actor, wp):
         """
         Calculates the transforming such that the actor is at the sidemost part of the lane
         """
@@ -197,9 +197,9 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
         sequence.add_child(SwitchOutsideRouteLanesTest(False))
         sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
 
-        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
         sequence.add_child(SwitchOutsideRouteLanesTest(True))
-        sequence.add_child(ChangeOppositeBehavior(spawn_dist=15))
+        sequence.add_child(ChangeOppositeBehavior(spawn_dist=50))
         sequence.add_child(ActorDestroy(self._parked_actor))
 
         return sequence

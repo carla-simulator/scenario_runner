@@ -118,8 +118,8 @@ class ParkingExit(BasicScenario):
         self.other_actors.append(actor_front)
 
         # And move it to the side
-        side_transform = self._get_displaced_transform(actor_front, front_points[0])
-        actor_front.set_location(side_transform)
+        side_location = self._get_displaced_location(actor_front, front_points[0])
+        actor_front.set_location(side_location)
 
         # Spawn the actor behind the ego
         behind_points = self._parking_waypoint.previous(
@@ -136,14 +136,14 @@ class ParkingExit(BasicScenario):
         self.other_actors.append(actor_behind)
 
         # And move it to the side
-        side_transform = self._get_displaced_transform(actor_behind, behind_points[0])
-        actor_behind.set_location(side_transform)
+        side_location = self._get_displaced_location(actor_behind, behind_points[0])
+        actor_behind.set_location(side_location)
 
         # Move the ego to its side position
-        self._ego_transform = self._get_displaced_transform(self.ego_vehicles[0], self._parking_waypoint)
+        self._ego_transform = self._get_displaced_location(self.ego_vehicles[0], self._parking_waypoint)
         self.ego_vehicles[0].set_location(self._ego_transform)
 
-    def _get_displaced_transform(self, actor, wp):
+    def _get_displaced_location(self, actor, wp):
         """
         Calculates the transforming such that the actor is at the sidemost part of the lane
         """

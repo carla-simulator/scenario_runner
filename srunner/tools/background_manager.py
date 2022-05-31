@@ -232,13 +232,13 @@ class RemoveJunctionExit(AtomicBehavior):
     something like 'left', 'right' or 'opposite'.
     """
 
-    def __init__(self, direction, name="RemoveJunctionExit"):
-        self._entry_direction = direction
+    def __init__(self, wps, name="RemoveJunctionExit"):
+        self._wps = wps
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionExit", self._entry_direction, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionExit", self._wps, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 

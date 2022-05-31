@@ -46,11 +46,17 @@ class Accident(BasicScenario):
             self._distance = int(config.other_parameters['distance']['value'])
         else:
             self._distance = 100
-        self._drive_distance = self._distance + 20
+
         self._offset = 0.75
         self._first_distance = 10
         self._second_distance = 6
+
+        self._takeover_max_dist = self._first_distance + self._second_distance + 40
+        self._drive_distance = self._distance + self._takeover_max_dist
+
         self._accident_wp = None
+
+        self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 
         super().__init__(
             "Accident", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
@@ -166,5 +172,118 @@ class AccidentTwoWays(Accident):
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
+
+        return root
+
+
+class ParkedObstacle(BasicScenario):
+    """
+    Scenarios in which a parked vehicle is incorrectly parked,
+    forcing the ego to lane change out of the route's lane
+    """
+
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=180):
+        """
+        Setup all relevant parameters and create scenario
+        and instantiate scenario manager
+        """
+        self._world = world
+        self._map = CarlaDataProvider.get_map()
+        self.timeout = timeout
+        if 'distance' in config.other_parameters:
+            self._distance = int(config.other_parameters['distance']['value'])
+        else:
+            self._distance = 100
+        self._drive_distance = self._distance + 20
+        self._offset = 0.75
+
+        self._lights = carla.VehicleLightState.RightBlinker | carla.VehicleLightState.LeftBlinker
+
+        super().__init__(
+            "ParkedObstacle", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
+        parked_wps = starting_wp.next(self._distance)
+        if not parked_wps: 
+            raise ValueError("Couldn't find a viable position to set up the accident actors")
+        self._parked_wp = parked_wps[0]
+
+        # Create the parked vehicle
+        displacement = self._offset * self._parked_wp.lane_width / 2
+        r_vec = self._parked_wp.transform.get_right_vector()
+        w_loc = self._parked_wp.transform.location
+        w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
+        parked_transform = carla.Transform(w_loc, self._parked_wp.transform.rotation)
+        parked_car = CarlaDataProvider.request_new_actor(
+            'vehicle.*', parked_transform, attribute_filter={'base_type': 'car', 'has_lights': True})
+        self.other_actors.append(parked_car)
+
+        lights = parked_car.get_light_state()
+        lights |= self._lights
+        parked_car.set_light_state(carla.VehicleLightState(lights))
+
+        pre_parked_wps = starting_wp.next(self._distance / 2)
+        if not pre_parked_wps: 
+            raise ValueError("Couldn't find a viable position to set up the accident actors")
+        self._pre_parked_wp = pre_parked_wps[0]
+
+
+    def _create_behavior(self):
+        """
+        The vehicle has to drive the whole predetermined distance.
+        """
+        root = py_trees.composites.Sequence()
+        if self.route_mode:
+            root.add_child(HandleStartAccidentScenario(self._pre_parked_wp, self._distance))
+        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        if self.route_mode:
+            root.add_child(HandleEndAccidentScenario())
+        root.add_child(ActorDestroy(self.other_actors[0]))
+
+        return root
+
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        if self.route_mode:
+            return []
+        return [CollisionTest(self.ego_vehicles[0])]
+
+    def __del__(self):
+        """
+        Remove all actors and traffic lights upon deletion
+        """
+        self.remove_all_actors()
+
+
+class ParkedObstacleTwoWays(ParkedObstacle):
+    """
+    Variation of the ParkedObstacle scenario but the ego now has to invade the opposite lane
+    """
+
+    def _create_behavior(self):
+        """
+        The vehicle has to drive the whole predetermined distance. Adapt the opposite flow to
+        let the ego invade the opposite lane.
+        """
+        total_dist = self._distance + 20
+
+        root = py_trees.composites.Sequence()
+        if self.route_mode:
+            root.add_child(LeaveSpaceInFront(total_dist))
+            root.add_child(SwitchOutsideRouteLanesTest(False))
+            root.add_child(ChangeOppositeBehavior(active=False))
+        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        if self.route_mode:
+            root.add_child(SwitchOutsideRouteLanesTest(True))
+            root.add_child(ChangeOppositeBehavior(active=True))
+        root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root

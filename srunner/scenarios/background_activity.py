@@ -136,7 +136,7 @@ class Junction(object):
         self.stop_non_route_entries = False
         self.clear_middle = False
         self.inactive_entry_keys = []
-        self.inactive_exit_direction = None
+        self.inactive_exit_keys = []
 
     def contains(self, other_junction):
         """Checks whether or not a carla.Junction is part of the class"""
@@ -265,17 +265,18 @@ class BackgroundBehavior(AtomicBehavior):
         self._junction_sources_max_actors = 4  # Maximum vehicles alive at the same time per source
         self._junction_spawn_dist = 15  # Distance between spawned vehicles [m]
 
-        self._junction_source_perc = 80  # Probability [%] of the source being created
+        self._junction_source_perc = 70  # Probability [%] of the source being created
 
         # Opposite lane variables
         self._opposite_actors = []
         self._opposite_sources = []
         self._opposite_route_index = 0
 
-        self._opposite_removal_dist = 30  # Distance at which actors are destroyed
-        self._opposite_sources_dist = 60  # Distance from the ego to the opposite sources [m]
+        self._opposite_sources_dist = 100  # Distance from the ego to the opposite sources [m]
         self._opposite_increase_ratio = 3.0  # Meters the radius increases per m/s of the ego
-        self._opposite_spawn_dist = 15  # Distance between spawned vehicles [m]
+        self._opposite_spawn_dist = 50  # Distance between spawned vehicles [m]
+
+        self._active_opposite_sources = True  # Flag to (de)activate all opposite sources
 
         # Scenario variables:
         self._stopped_road_actors = []  # Actors stopped by a hard break scenario
@@ -1151,7 +1152,7 @@ class BackgroundBehavior(AtomicBehavior):
         oppo_wp = self._route[self._opposite_route_index]
 
         for wp in get_opposite_dir_lanes(oppo_wp):
-            self._opposite_sources.append(Source(wp, []))
+            self._opposite_sources.append(Source(wp, [], active=self._active_opposite_sources))
 
     def _initialise_road_checker(self):
         """
@@ -1206,7 +1207,6 @@ class BackgroundBehavior(AtomicBehavior):
             if 100 * self._rng.random() > self._junction_source_perc:
                 source.active = False
 
-
     def _initialise_junction_exits(self, junction):
         """
         Computes and stores the max capacity of the exit. Prepares the behavior of the next road
@@ -1214,9 +1214,6 @@ class BackgroundBehavior(AtomicBehavior):
         """
         exit_wps = junction.exit_wps
         route_exit_keys = junction.route_exit_keys
-
-        inactive_direction = junction.inactive_exit_direction
-        inactive_lane_keys = [] if not inactive_direction else junction.exit_directions[inactive_direction]
 
         for wp in exit_wps:
             max_actors = 0
@@ -1256,8 +1253,8 @@ class BackgroundBehavior(AtomicBehavior):
             }
 
             exit_lane_key = get_lane_key(wp)
-            if exit_lane_key in inactive_lane_keys:
-                continue  # The direction is prohibited
+            if exit_lane_key in junction.inactive_exit_keys:
+                continue  # The exit is inactive, don't spawn anything
 
             if exit_lane_key in route_exit_keys:
                 actors = self._spawn_actors(exiting_wps, self._junction_spawn_dist / 2)
@@ -1495,6 +1492,7 @@ class BackgroundBehavior(AtomicBehavior):
             if spawn_dist is not None:
                 self._opposite_spawn_dist = spawn_dist
             if active is not None:
+                self._active_opposite_sources = active
                 for source in self._opposite_sources:
                     source.active = active
             py_trees.blackboard.Blackboard().set('BA_ChangeOppositeBehavior', None, True)
@@ -1576,7 +1574,7 @@ class BackgroundBehavior(AtomicBehavior):
         # Removes an exit direction
         remove_exit_data = py_trees.blackboard.Blackboard().get('BA_RemoveJunctionExit')
         if remove_exit_data is not None:
-            self._remove_exit_direction(remove_exit_data)
+            self._remove_junction_exit(remove_exit_data)
             py_trees.blackboard.Blackboard().set('BA_RemoveJunctionExit', None, True)
 
         # Clear junction
@@ -1767,26 +1765,33 @@ class BackgroundBehavior(AtomicBehavior):
                             self._destroy_actor(actor)
                         source.active = False
             else:
-                junction.inactive_entry_keys = mapped_lane_keys
+                junction.inactive_entry_keys.extend(mapped_lane_keys)
 
-    def _remove_exit_direction(self, direction, remove_exits):
-        """
-        Removes all vehicles in a particular exit 'direction',
-        and prevent their spawn when initializing the next junction.
-        This will not remove actors that later on enter the exit,
-        so it is best to use it in tandem with clear_middle.
-        """
-        if self._active_junctions:
-            scenario_junction = self._active_junctions[0]
-            scenario_junction.inactive_exit_direction = direction
+    def _remove_junction_exit(self, wps):
+        """Removes a specific exit of the closest junction"""
+        for wp in wps:
+            if len(self._active_junctions) > 0:
+                junction = self._active_junctions[0]
+            elif len(self._junctions) > 0:
+                junction = self._junctions[0]
+            else:
+                return
 
-            if remove_exits:
-                for exit_dir in scenario_junction.exit_directions[direction]:
-                    for actor in list(scenario_junction.exit_dict[exit_dir]['actors']):
-                        self._destroy_actor(actor)
+            mapped_key = None
+            mapped_dist = float('inf')
+            ref_loc = wp.transform.location
+            for exit_wp in junction.exit_wps:
+                distance = ref_loc.distance(exit_wp.transform.location)
+                if distance < mapped_dist:
+                    mapped_key = get_lane_key(exit_wp)
+                    mapped_dist = distance
 
-        elif self._junctions:
-            self._junctions[0].inactive_exit_direction = direction
+            if len(self._active_junctions) > 0:
+                for actor in list(junction.exit_dict[mapped_key]['actors']):
+                    self._destroy_actor(actor)
+
+            else:
+                junction.inactive_exit_keys.append(mapped_key)
 
     def _clear_middle(self):
         """Clears the junction, and all subsequent actors that enter it"""
@@ -2111,7 +2116,7 @@ class BackgroundBehavior(AtomicBehavior):
         removing them if too far behind the ego.
         """
         ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
-        max_dist = max(self._opposite_removal_dist + ego_speed * self._opposite_increase_ratio, self._opposite_spawn_dist)
+        max_dist = max(self._opposite_sources_dist + ego_speed * self._opposite_increase_ratio, self._opposite_spawn_dist)
         for actor in list(self._opposite_actors):
             location = CarlaDataProvider.get_location(actor)
             if not location:

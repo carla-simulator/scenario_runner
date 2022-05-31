@@ -46,7 +46,8 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         if not location:
             return new_status
 
-        night_mode = self._world.get_weather().sun_altitude_angle < 0
+        sun_altitude = self._world.get_weather().sun_altitude_angle
+        night_mode = sun_altitude < 15 or sun_altitude > 165
         if night_mode:
             self.turn_close_lights_on(location)
         elif self._prev_night_mode:

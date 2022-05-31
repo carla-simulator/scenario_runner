@@ -47,9 +47,14 @@ class ConstructionSetupCrossing(BasicScenario):
             self._distance = int(config.other_parameters['distance']['value'])
         else:
             self._distance = 100
-        self._drive_distance = self._distance + 20
+
+        self._takeover_max_dist = 60
+        self._drive_distance = self._distance + self._takeover_max_dist
+
         self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._construction_wp = None
+
+        self._construction_transforms = []
 
         super().__init__("ConstructionSetupCrossing", ego_vehicles, config, world, debug_mode, False, criteria_enable)
 
@@ -185,7 +190,7 @@ class ConstructionSetupCrossingTwoWays(ConstructionSetupCrossing):
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
             root.add_child(SwitchOutsideRouteLanesTest(True))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=15))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
         return root

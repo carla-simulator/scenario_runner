@@ -81,8 +81,8 @@ class ParkingCutIn(BasicScenario):
         self._blocker_actor.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(self._blocker_actor)
 
-        side_transform = self._get_displaced_transform(self._blocker_actor, parking_wp)
-        self._blocker_actor.set_location(side_transform)
+        side_location = self._get_displaced_location(self._blocker_actor, parking_wp)
+        self._blocker_actor.set_location(side_location)
 
         collision_wps = self._reference_waypoint.next(self._cut_in_distance)
         if not collision_wps:
@@ -101,12 +101,12 @@ class ParkingCutIn(BasicScenario):
             raise ValueError("Couldn't spawn the parked actor")
         self.other_actors.append(self._parked_actor)
 
-        side_transform = self._get_displaced_transform(self._parked_actor, parking_wp)
-        self._parked_actor.set_location(side_transform)
+        side_location = self._get_displaced_location(self._parked_actor, parking_wp)
+        self._parked_actor.set_location(side_location)
 
-    def _get_displaced_transform(self, actor, wp):
+    def _get_displaced_location(self, actor, wp):
         """
-        Calculates the transforming such that the actor is at the sidemost part of the lane
+        Calculates the location such that the actor is at the sidemost part of the lane
         """
         # Move the actor to the edge of the lane near the sidewalk
         displacement = (wp.lane_width - actor.bounding_box.extent.y) / 4
