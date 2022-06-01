@@ -2086,7 +2086,7 @@ class YieldToEmergencyVehicleTest(Criterion):
                 py_trees.blackboard.Blackboard().set("ACVAB_speed_{}".format(self.actor.id), None, overwrite=True)
             else:
                 return new_status
-            
+
         if self._ev.is_alive:
             ev_speed = get_speed(self._ev)
             # Record ev's speed in this moment

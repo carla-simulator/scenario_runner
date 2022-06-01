@@ -2019,17 +2019,18 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
     constant_velocity_agent from CARLA to control the actor until
     reaching a target location.
     Important parameters:
-    - actor: CARLA actor to execute the behavior
-    - reference_actor: Reference CARLA actor to get target speed
+    - actor: CARLA actor to execute the behavior.
+    - reference_actor: Reference CARLA actor to get target speed.
     - speed_increment: Float value (m/s). 
                        How much the actor will be faster then the reference_actor.
     - target_location: Is the desired target location (carla.location),
-                       the actor should move to
-    - plan: List of [carla.Waypoint, RoadOption] to pass to the controller
+                       the actor should move to. 
+                       If it's None, the actor will follow the lane and never stop.
+    - plan: List of [carla.Waypoint, RoadOption] to pass to the controller.
     The behavior terminates after reaching the target_location (within 2 meters)
     """
 
-    def __init__(self, actor, reference_actor,  target_location, speed_increment=10,
+    def __init__(self, actor, reference_actor,  target_location=None, speed_increment=10,
                  opt_dict=None, name="ConstantVelocityAgentBehavior"):
         """
         Set up actor and local planner
@@ -2047,18 +2048,17 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
     def initialise(self):
         """Initialises the agent"""
         # Get target speed
-        if self._reference_actor:
-            self._target_speed = get_speed(self._reference_actor) + self._speed_increment*3.6
-            py_trees.blackboard.Blackboard().set(
-                "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
-        else:
-            raise RuntimeError("Reference actor not available.")
+        self._target_speed = get_speed(self._reference_actor) + self._speed_increment*3.6
+        py_trees.blackboard.Blackboard().set(
+            "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
 
         self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict)
-        self._plan = self._agent.trace_route(
-            self._map.get_waypoint(CarlaDataProvider.get_location(self._actor)),
-            self._map.get_waypoint(self._target_location))
-        self._agent.set_global_plan(self._plan)
+
+        if self._target_location is not None:
+            self._plan = self._agent.trace_route(
+                self._map.get_waypoint(CarlaDataProvider.get_location(self._actor)),
+                self._map.get_waypoint(self._target_location))
+            self._agent.set_global_plan(self._plan)
 
     def update(self):
         """Moves the actor and waits for it to finish the plan"""

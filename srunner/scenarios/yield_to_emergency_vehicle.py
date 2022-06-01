@@ -42,13 +42,15 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
         self._ev_drive_time = 12  # seconds
-        self._ev_drive_distance = 1000 # m
 
-        if 'emergency_vehicle_distance' in config.other_parameters:
-            self._emergency_vehicle_distance = float(
-                config.other_parameters['emergency_vehicle_distance']['value'])
+        # m/s. How much the EV is expected to be faster than the EGO
+        self._speed_increment = 15
+
+        if 'distance' in config.other_parameters:
+            self._distance = float(
+                config.other_parameters['distance']['value'])
         else:
-            self._emergency_vehicle_distance = 15  # m
+            self._distance = 15  # m
 
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(
@@ -68,7 +70,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         """
         # Spawn emergency vehicle
         ev_points = self._reference_waypoint.previous(
-            self._emergency_vehicle_distance)
+            self._distance)
         if ev_points:
             self._ev_start_transform = ev_points[0].transform
         else:
@@ -106,7 +108,9 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
 
-        sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, False))
+        if self.route_mode:
+            sequence.add_child(SwitchLane(
+                self._reference_waypoint.lane_id, False))
 
         # Teleport EV behind the ego
         sequence.add_child(ActorTransformSetter(
@@ -118,24 +122,16 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         ev_end_condition.add_child(Idle(self._ev_drive_time))
 
-        target_locations = self._reference_waypoint.next(self._ev_drive_distance)
-        target_location = target_locations[0].transform.location
         ev_end_condition.add_child(AdaptiveConstantVelocityAgentBehavior(
-            self.other_actors[0], self.ego_vehicles[0], target_location, 15))
+            self.other_actors[0], self.ego_vehicles[0], speed_increment=self._speed_increment))
 
         sequence.add_child(ev_end_condition)
 
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 
-        # End condition
-        end_condition = py_trees.composites.Parallel("Waiting for ego driving for a certein distance",
-                                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition.add_child(DriveDistance(
-            self.ego_vehicles[0], 30))
-
-        sequence.add_child(end_condition)
-
-        sequence.add_child(SwitchLane(self._reference_waypoint.lane_id, True))
+        if self.route_mode:
+            sequence.add_child(SwitchLane(
+                self._reference_waypoint.lane_id, True))
 
         return sequence
 
