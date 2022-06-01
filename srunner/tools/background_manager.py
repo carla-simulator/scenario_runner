@@ -250,17 +250,17 @@ class RemoveJunctionEntry(AtomicBehavior):
     and stop generating new ones on this lane.
 
     Args:
-        wp (carla.Waypoint): A waypoint used as reference to the entry lane
+        wp (carla.Waypoint): A list of waypoint used as reference to the entry lane
         all_road_entries (bool): Boolean to remove all entries part of the same road, or just one
     """
-    def __init__(self, wp, all_road_entries=False, name="RemoveJunctionEntry"):
-        self._wp = wp
+    def __init__(self, wps, all_road_entries=False, name="RemoveJunctionEntry"):
+        self._wps = wps
         self._all_road_entries = all_road_entries
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", [self._wp, self._all_road_entries], overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", [self._wps, self._all_road_entries], overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
