@@ -81,6 +81,10 @@ class BasicScenario(object):
         if end_behavior:
             self.behavior_tree.add_child(end_behavior)
 
+        lights = self._create_lights_behavior()
+        if lights:
+            self.scenario_tree.add_child(lights)
+
         # And then add it to the main tree
         self.scenario_tree.add_child(self.behavior_tree)
 
@@ -207,7 +211,14 @@ class BasicScenario(object):
 
     def _create_weather_behavior(self):
         """
-        Default initialization of the weather behavior.
+        Default empty initialization of the weather behavior.
+        Override this method in child class to provide custom initialization.
+        """
+        pass
+
+    def _create_lights_behavior(self):
+        """
+        Default empty initialization of the lights behavior.
         Override this method in child class to provide custom initialization.
         """
         pass

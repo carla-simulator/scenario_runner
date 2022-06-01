@@ -49,6 +49,8 @@ class Accident(BasicScenario):
         self._second_distance = 6
         self._accident_wp = None
 
+        self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
+
         super(Accident, self).__init__("Accident",
                                        ego_vehicles,
                                        config,
@@ -77,10 +79,9 @@ class Accident(BasicScenario):
         w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
         police_transform = carla.Transform(w_loc, self._accident_wp.transform.rotation)
         police_car = CarlaDataProvider.request_new_actor('vehicle.dodge.charger_police_2020', police_transform)
-        police_lights = carla.VehicleLightState.Special1
-        police_lights |= carla.VehicleLightState.Special2
-        police_lights |= carla.VehicleLightState.Position
-        police_car.set_light_state(carla.VehicleLightState(police_lights))
+        lights = police_car.get_light_state()
+        lights |= self._lights
+        police_car.set_light_state(carla.VehicleLightState(lights))
         self.other_actors.append(police_car)
 
         # Create the first vehicle that has been in the accident
