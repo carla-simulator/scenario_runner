@@ -82,7 +82,10 @@ class PedestrianCrossing(BasicScenario):
         self.timeout = timeout
 
         # Fix random seed
-        self._random_seed = 202205
+        if 'random_seed' in config.other_parameters:
+            self._random_seed = int(config.other_parameters['random_seed']['value'])
+        else:
+            self._random_seed = 2000
 
         super(PedestrianCrossing, self).__init__("PedestrianCrossing",
                                                  ego_vehicles,
