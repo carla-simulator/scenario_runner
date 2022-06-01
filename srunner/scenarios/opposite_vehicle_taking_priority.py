@@ -28,10 +28,9 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
                                            generate_target_waypoint,
                                            get_junction_topology,
-                                           filter_junction_wp_direction,
-                                           get_closest_traffic_light)
+                                           filter_junction_wp_direction)
 
-from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry
+from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry, ClearEgoLane
 
 
 class OppositeVehicleRunningRedLight(BasicScenario):
@@ -68,6 +67,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
         self._speed_duration_ratio = 2.0
         self._speed_distance_ratio = 1.5
+
+        self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 
         super().__init__("OppositeVehicleRunningRedLight",
                          ego_vehicles,
@@ -199,7 +200,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         root = py_trees.composites.Sequence()
         if self.route_mode:
             root.add_child(ClearJunction())
-            root.add_child(RemoveJunctionEntry(self._spawn_wp, True))
+            root.add_child(ClearEgoLane())
+            root.add_child(RemoveJunctionEntry([self._spawn_wp]))
 
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)
@@ -259,6 +261,8 @@ class OppositeVehicleTakingPriority(BasicScenario):
         self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
         self._speed_duration_ratio = 2.0
         self._speed_distance_ratio = 1.5
+
+        self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 
         # Get the CDP seed or at routes, all copies of the scenario will have the same configuration
         self._rng = CarlaDataProvider.get_random_seed()
@@ -372,7 +376,7 @@ class OppositeVehicleTakingPriority(BasicScenario):
         root = py_trees.composites.Sequence()
         if self.route_mode:
             root.add_child(ClearJunction())
-            root.add_child(RemoveJunctionEntry(self._spawn_wp, True))
+            root.add_child(RemoveJunctionEntry([self._spawn_wp]))
 
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)

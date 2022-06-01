@@ -16,12 +16,12 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, SwitchOutsideRouteLanesTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, SwitchWrongDirectionTest
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import (HandleStartAccidentScenario,
-                                              HandleEndAccidentScenario,
+from srunner.tools.background_manager import (StartObstacleScenario,
+                                              EndObstacleScenario,
                                               LeaveSpaceInFront,
                                               ChangeOppositeBehavior)
 
@@ -45,7 +45,7 @@ class Accident(BasicScenario):
         if 'distance' in config.other_parameters:
             self._distance = int(config.other_parameters['distance']['value'])
         else:
-            self._distance = 100
+            self._distance = 120
 
         self._offset = 0.75
         self._first_distance = 10
@@ -81,6 +81,8 @@ class Accident(BasicScenario):
         w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
         police_transform = carla.Transform(w_loc, self._accident_wp.transform.rotation)
         police_car = CarlaDataProvider.request_new_actor('vehicle.dodge.charger_police_2020', police_transform)
+        if not police_car:
+            raise ValueError("Couldn't spawn the police car")
         lights = police_car.get_light_state()
         lights |= self._lights
         police_car.set_light_state(carla.VehicleLightState(lights))
@@ -99,11 +101,13 @@ class Accident(BasicScenario):
         vehicle_1_transform = carla.Transform(w_loc, vehicle_wp.transform.rotation)
         vehicle_1_car = CarlaDataProvider.request_new_actor(
             'vehicle.*', vehicle_1_transform, attribute_filter={'base_type': 'car'})
+        if not vehicle_1_car:
+            raise ValueError("Couldn't spawn the accident car")
         self.other_actors.append(vehicle_1_car)
 
         # Create the second vehicle that has been in the accident
         vehicle_wps = vehicle_wp.next(self._second_distance)
-        if not vehicle_wps: 
+        if not vehicle_wps:
             raise ValueError("Couldn't find a viable position to set up the accident actors")
         vehicle_wp = vehicle_wps[0]
 
@@ -114,6 +118,8 @@ class Accident(BasicScenario):
         vehicle_2_transform = carla.Transform(w_loc, vehicle_wp.transform.rotation)
         vehicle_2_car = CarlaDataProvider.request_new_actor(
             'vehicle.*', vehicle_2_transform, attribute_filter={'base_type': 'car'})
+        if not vehicle_2_car:
+            raise ValueError("Couldn't spawn the accident car")
         self.other_actors.append(vehicle_2_car)
 
     def _create_behavior(self):
@@ -122,10 +128,10 @@ class Accident(BasicScenario):
         """
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(HandleStartAccidentScenario(self._accident_wp, self._distance))
+            root.add_child(StartObstacleScenario(self._accident_wp, self._distance))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
-            root.add_child(HandleEndAccidentScenario())
+            root.add_child(EndObstacleScenario())
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
@@ -152,6 +158,13 @@ class AccidentTwoWays(Accident):
     """
     Variation of the Accident scenario but the ego now has to invade the opposite lane
     """
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
+        if 'frequency' in config.other_parameters:
+            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
+        else:
+            self._opposite_frequency = 200
+        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
+
 
     def _create_behavior(self):
         """
@@ -163,12 +176,12 @@ class AccidentTwoWays(Accident):
         root = py_trees.composites.Sequence()
         if self.route_mode:
             root.add_child(LeaveSpaceInFront(total_dist))
-            root.add_child(SwitchOutsideRouteLanesTest(False))
-            root.add_child(ChangeOppositeBehavior(active=False))
+            root.add_child(SwitchWrongDirectionTest(False))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
-            root.add_child(SwitchOutsideRouteLanesTest(True))
-            root.add_child(ChangeOppositeBehavior(active=True))
+            root.add_child(SwitchWrongDirectionTest(True))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
@@ -194,7 +207,7 @@ class ParkedObstacle(BasicScenario):
         if 'distance' in config.other_parameters:
             self._distance = int(config.other_parameters['distance']['value'])
         else:
-            self._distance = 100
+            self._distance = 120
         self._drive_distance = self._distance + 20
         self._offset = 0.75
 
@@ -221,6 +234,8 @@ class ParkedObstacle(BasicScenario):
         parked_transform = carla.Transform(w_loc, self._parked_wp.transform.rotation)
         parked_car = CarlaDataProvider.request_new_actor(
             'vehicle.*', parked_transform, attribute_filter={'base_type': 'car', 'has_lights': True})
+        if not parked_car:
+            raise ValueError("Couldn't spawn the parked car")
         self.other_actors.append(parked_car)
 
         lights = parked_car.get_light_state()
@@ -239,10 +254,10 @@ class ParkedObstacle(BasicScenario):
         """
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(HandleStartAccidentScenario(self._pre_parked_wp, self._distance))
+            root.add_child(StartObstacleScenario(self._pre_parked_wp, self._distance))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
-            root.add_child(HandleEndAccidentScenario())
+            root.add_child(EndObstacleScenario())
         root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root
@@ -267,6 +282,12 @@ class ParkedObstacleTwoWays(ParkedObstacle):
     """
     Variation of the ParkedObstacle scenario but the ego now has to invade the opposite lane
     """
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
+        if 'frequency' in config.other_parameters:
+            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
+        else:
+            self._opposite_frequency = 200
+        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
         """
@@ -278,12 +299,12 @@ class ParkedObstacleTwoWays(ParkedObstacle):
         root = py_trees.composites.Sequence()
         if self.route_mode:
             root.add_child(LeaveSpaceInFront(total_dist))
-            root.add_child(SwitchOutsideRouteLanesTest(False))
-            root.add_child(ChangeOppositeBehavior(active=False))
+            root.add_child(SwitchWrongDirectionTest(False))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
-            root.add_child(SwitchOutsideRouteLanesTest(True))
-            root.add_child(ChangeOppositeBehavior(active=True))
+            root.add_child(SwitchWrongDirectionTest(True))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
         root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root

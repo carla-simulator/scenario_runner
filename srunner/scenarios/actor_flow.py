@@ -104,7 +104,7 @@ class EnterActorFlow(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
-            sequence.add_child(RemoveJunctionEntry([source_wp], True))
+            sequence.add_child(RemoveJunctionEntry([source_wp]))
             sequence.add_child(ClearJunction())
 
             grp = CarlaDataProvider.get_global_route_planner()
@@ -177,6 +177,7 @@ class InterurbanActorFlow(BasicScenario):
 
         self._reference_wp = self._map.get_waypoint(config.trigger_points[0].location)
         exit_wp = generate_target_waypoint_in_route(self._reference_wp, config.route)
+        exit_wp = exit_wp.next(10)[0]  # just in case the junction maneuvers don't match
         self._other_entry_wp = exit_wp.get_left_lane()
         if not self._other_entry_wp or self._other_entry_wp.lane_type != carla.LaneType.Driving:
             raise ValueError("Couldn't find an end position")
@@ -208,7 +209,7 @@ class InterurbanActorFlow(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            sequence.add_child(RemoveJunctionEntry([source_wp, self._other_entry_wp], True))
+            sequence.add_child(RemoveJunctionEntry([source_wp, self._other_entry_wp]))
             sequence.add_child(ChangeOppositeBehavior(active=False))
         sequence.add_child(root)
         if self.route_mode:
@@ -506,7 +507,7 @@ class MergerIntoSlowTraffic(BasicScenario):
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
 
-            sequence.add_child(RemoveJunctionEntry([trigger_wp,source_wp], False))
+            sequence.add_child(RemoveJunctionEntry([trigger_wp,source_wp]))
 
             grp = CarlaDataProvider.get_global_route_planner()
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)

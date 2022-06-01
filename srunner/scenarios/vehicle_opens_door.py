@@ -20,7 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       OpenVehicleDoor,
-                                                                      SwitchOutsideRouteLanesTest)
+                                                                      SwitchWrongDirectionTest)
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
                                                                                DriveDistance)
@@ -164,7 +164,7 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
         if 'frequency' in config.other_parameters:
-            self._opposite_frequency = config.other_parameters['frequency']['value']
+            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
         else:
             self._opposite_frequency = 70
 
@@ -194,11 +194,11 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
         door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
 
         sequence.add_child(OpenVehicleDoor(self._parked_actor, door))
-        sequence.add_child(SwitchOutsideRouteLanesTest(False))
+        sequence.add_child(SwitchWrongDirectionTest(False))
         sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
 
         sequence.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
-        sequence.add_child(SwitchOutsideRouteLanesTest(True))
+        sequence.add_child(SwitchWrongDirectionTest(True))
         sequence.add_child(ChangeOppositeBehavior(spawn_dist=50))
         sequence.add_child(ActorDestroy(self._parked_actor))
 

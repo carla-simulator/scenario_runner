@@ -24,7 +24,7 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
                                            filter_junction_wp_direction)
 
-from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry
+from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry, ExtentExitRoadSpace, ClearEgoLane
 
 
 class SignalizedJunctionRightTurn(BasicScenario):
@@ -161,7 +161,9 @@ class SignalizedJunctionRightTurn(BasicScenario):
         sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
         if self.route_mode:
             sequence.add_child(ClearJunction())
-            sequence.add_child(RemoveJunctionEntry([self._source_wp], True))
+            sequence.add_child(ClearEgoLane())
+            sequence.add_child(RemoveJunctionEntry([self._source_wp]))
+            sequence.add_child(ExtentExitRoadSpace(50))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
@@ -297,7 +299,9 @@ class NonSignalizedJunctionRightTurn(BasicScenario):
         sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
         if self.route_mode:
             sequence.add_child(ClearJunction())
-            sequence.add_child(RemoveJunctionEntry([self._source_wp], True))
+            sequence.add_child(ClearEgoLane())
+            sequence.add_child(RemoveJunctionEntry([self._source_wp]))
+            sequence.add_child(ExtentExitRoadSpace(50))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))

@@ -23,8 +23,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestr
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import (SwitchRouteSources,
-                                              ExtentExitRoadSpace,
+from srunner.tools.background_manager import (ExtentExitRoadSpace,
                                               RemoveJunctionEntry,
                                               ClearJunction)
 

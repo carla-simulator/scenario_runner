@@ -14,17 +14,19 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, SwitchOutsideRouteLanesTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
+                                                                      ActorTransformSetter,
+                                                                      SwitchWrongDirectionTest)
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import (HandleStartAccidentScenario,
-                                              HandleEndAccidentScenario,
+from srunner.tools.background_manager import (StartObstacleScenario,
+                                              EndObstacleScenario,
                                               ChangeOppositeBehavior,
                                               LeaveSpaceInFront)
 
 
-class ConstructionSetupCrossing(BasicScenario):
+class ConstructionObstacle(BasicScenario):
     """
     This class holds everything required for a construction scenario
     The ego vehicle is passing through a road and encounters
@@ -56,14 +58,14 @@ class ConstructionSetupCrossing(BasicScenario):
 
         self._construction_transforms = []
 
-        super().__init__("ConstructionSetupCrossing", ego_vehicles, config, world, debug_mode, False, criteria_enable)
+        super().__init__("ConstructionObstacle", ego_vehicles, config, world, debug_mode, False, criteria_enable)
 
     def _initialize_actors(self, config):
         """Creates all props part of the construction"""
-        construction_wps = self._reference_waypoint.next(self._distance)
-        if not construction_wps: 
+        wps = self._reference_waypoint.next(self._distance)
+        if not wps: 
             raise ValueError("Couldn't find a viable position to set up the construction actors")
-        construction_wp = construction_wps[0]
+        construction_wp = wps[0]
         self._create_construction_setup(construction_wp.transform, self._reference_waypoint.lane_width)
 
     def create_cones_side(self, start_transform, forward_vector, z_inc=0, cone_length=0, cone_offset=0):
@@ -76,11 +78,15 @@ class ConstructionSetupCrossing(BasicScenario):
 
             location = start_transform.location + forward_dist
             location.z += z_inc
-            transform = carla.Transform(location, start_transform.rotation)
+            spawn_transform = carla.Transform(location, start_transform.rotation)
+            spawn_transform.location.z -= 200
+            cone_transform = carla.Transform(location, start_transform.rotation)
 
-            cone = CarlaDataProvider.request_new_actor('static.prop.constructioncone', transform)
-            cone.set_simulate_physics(True)
+            cone = CarlaDataProvider.request_new_actor('static.prop.constructioncone', spawn_transform)
+            cone.set_simulate_physics(False)
             self.other_actors.append(cone)
+
+            self._construction_transforms.append([cone, cone_transform])
 
     def _create_construction_setup(self, start_transform, lane_width):
         """Create construction setup"""
@@ -107,10 +113,15 @@ class ConstructionSetupCrossing(BasicScenario):
                 transform.rotation.get_forward_vector()
             transform.location.z += value['z']
             transform.rotation.yaw += _perp_angle
+
+            spawn_transform = carla.Transform(transform.location, transform.rotation)
+            spawn_transform.location.z -= 200
             static = CarlaDataProvider.request_new_actor(
-                _prop_names[key], transform)
-            static.set_simulate_physics(True)
+                _prop_names[key], spawn_transform)
+            static.set_simulate_physics(False)
             self.other_actors.append(static)
+
+            self._construction_transforms.append([static, transform])
 
         # Cones
         side_transform = carla.Transform(
@@ -138,14 +149,18 @@ class ConstructionSetupCrossing(BasicScenario):
         """
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            pre_construction_wps = self._reference_waypoint.next(self._distance / 2)
-            if not pre_construction_wps: 
+            prev_wps = self._reference_waypoint.next(self._distance / 2)
+            if not prev_wps:
                 raise ValueError("Couldn't find a viable position to set up the construction actors")
-            lane_change_wp = pre_construction_wps[0]
-            root.add_child(HandleStartAccidentScenario(lane_change_wp, self._distance, True))
+            lane_change_wp = prev_wps[0]
+            root.add_child(StartObstacleScenario(lane_change_wp, self._distance, True))
+
+        for actor, transform in self._construction_transforms:
+            root.add_child(ActorTransformSetter(actor, transform, True))
+
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
-            root.add_child(HandleEndAccidentScenario())
+            root.add_child(EndObstacleScenario())
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
         return root
@@ -166,16 +181,16 @@ class ConstructionSetupCrossing(BasicScenario):
         self.remove_all_actors()
 
 
-class ConstructionSetupCrossingTwoWays(ConstructionSetupCrossing):
+class ConstructionObstacleTwoWays(ConstructionObstacle):
     """
-    Variation of ConstructionSetupCrossing where the ego has to invade the opposite lane
+    Variation of ConstructionObstacle where the ego has to invade the opposite lane
     """
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
 
         if 'frequency' in config.other_parameters:
-            self._opposite_frequency = config.other_parameters['frequency']['value']
+            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
         else:
-            self._opposite_frequency = 130
+            self._opposite_frequency = 200
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
@@ -184,12 +199,16 @@ class ConstructionSetupCrossingTwoWays(ConstructionSetupCrossing):
         """
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(SwitchOutsideRouteLanesTest(False))
+            root.add_child(SwitchWrongDirectionTest(False))
             root.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
             root.add_child(LeaveSpaceInFront(self._distance + 20))
+
+        for actor, transform in self._construction_transforms:
+            root.add_child(ActorTransformSetter(actor, transform, True))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+
         if self.route_mode:
-            root.add_child(SwitchOutsideRouteLanesTest(True))
+            root.add_child(SwitchWrongDirectionTest(True))
             root.add_child(ChangeOppositeBehavior(spawn_dist=50))
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))

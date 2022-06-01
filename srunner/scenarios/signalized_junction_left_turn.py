@@ -23,7 +23,7 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
                                            filter_junction_wp_direction)
 
-from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry
+from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry, ChangeOppositeBehavior, ClearEgoLane
 
 
 class SignalizedJunctionLeftTurn(BasicScenario):
@@ -66,9 +66,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._source_dist = 5 * self._flow_speed
         self._sink_dist = 3 * self._flow_speed
 
-        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
-        self._flow_tl_dict = {}
-        self._init_tl_dict = {}
+        self._tl_dict = {}
 
         self.timeout = timeout
         super().__init__("SignalizedJunctionLeftTurn",
@@ -141,15 +139,10 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         source_landmark = self._source_wp.get_landmarks_of_type(source_dist + 2, "1000001")[0]
         source_tl = self._world.get_traffic_light(source_landmark)
         for tl in tls:
-            if tl.id == ego_tl.id:
-                self._flow_tl_dict[tl] = carla.TrafficLightState.Green
-                self._init_tl_dict[tl] = carla.TrafficLightState.Red
-            elif tl.id == source_tl.id:
-                self._flow_tl_dict[tl] = carla.TrafficLightState.Green
-                self._init_tl_dict[tl] = carla.TrafficLightState.Green
+            if tl.id == ego_tl.id or tl.id == source_tl.id:
+                self._tl_dict[tl] = carla.TrafficLightState.Green
             else:
-                self._flow_tl_dict[tl] = carla.TrafficLightState.Red
-                self._init_tl_dict[tl] = carla.TrafficLightState.Red
+                self._tl_dict[tl] = carla.TrafficLightState.Red
 
 
     def _create_behavior(self):
@@ -160,18 +153,21 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         sequence = py_trees.composites.Sequence(name="SignalizedJunctionLeftTurn")
         if self.route_mode:
             sequence.add_child(ClearJunction())
+            sequence.add_child(ClearEgoLane())
+            sequence.add_child(RemoveJunctionEntry([self._source_wp]))
+            sequence.add_child(ChangeOppositeBehavior(active=False))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
 
-        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
-        tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
-        tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
-        root.add_child(tl_freezer_sequence)
+        root.add_child(TrafficLightFreezer(self._tl_dict))
 
         sequence.add_child(root)
+
+        if self.route_mode:
+            sequence.add_child(ChangeOppositeBehavior(active=True))
 
         return sequence
 
@@ -294,10 +290,12 @@ class NonSignalizedJunctionLeftTurn(BasicScenario):
         Hero vehicle is turning left in an urban area at a signalized intersection,
         where, a flow of actors coming straight is present.
         """
-        sequence = py_trees.composites.Sequence(name="SignalizedJunctionLeftTurn")
+        sequence = py_trees.composites.Sequence(name="NonSignalizedJunctionLeftTurn")
         if self.route_mode:
             sequence.add_child(ClearJunction())
-            sequence.add_child(RemoveJunctionEntry([self._source_wp], True))
+            sequence.add_child(ClearEgoLane())
+            sequence.add_child(RemoveJunctionEntry([self._source_wp]))
+            sequence.add_child(ChangeOppositeBehavior(active=False))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
@@ -305,6 +303,9 @@ class NonSignalizedJunctionLeftTurn(BasicScenario):
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
 
         sequence.add_child(root)
+
+        if self.route_mode:
+            sequence.add_child(ChangeOppositeBehavior(active=True))
 
         return sequence
 

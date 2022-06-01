@@ -155,11 +155,11 @@ class SwitchRouteSources(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class HandleStartAccidentScenario(AtomicBehavior):
+class StartObstacleScenario(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that the road behavior has to be initialized
     """
-    def __init__(self, accident_wp, distance, stop_back_vehicles=False, name="HandleStartAccidentScenario"):
+    def __init__(self, accident_wp, distance, stop_back_vehicles=False, name="StartObstacleScenario"):
         self._accident_wp = accident_wp
         self._distance = distance
         self._stop_back_vehicles = stop_back_vehicles
@@ -167,21 +167,21 @@ class HandleStartAccidentScenario(AtomicBehavior):
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_HandleStartAccidentScenario",
+        py_trees.blackboard.Blackboard().set("BA_StartObstacleScenario",
             [self._accident_wp, self._distance, self._stop_back_vehicles], overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class HandleEndAccidentScenario(AtomicBehavior):
+class EndObstacleScenario(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that the road behavior has to be initialized
     """
-    def __init__(self, name="HandleEndAccidentScenario"):
+    def __init__(self, name="EndObstacleScenario"):
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_EndObstacleScenario", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -214,14 +214,13 @@ class RemoveJunctionEntry(AtomicBehavior):
         wp (carla.Waypoint): A list of waypoint used as reference to the entry lane
         all_road_entries (bool): Boolean to remove all entries part of the same road, or just one
     """
-    def __init__(self, wps, all_road_entries=False, name="RemoveJunctionEntry"):
+    def __init__(self, wps, name="RemoveJunctionEntry"):
         self._wps = wps
-        self._all_road_entries = all_road_entries
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", [self._wps, self._all_road_entries], overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", self._wps, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -254,5 +253,19 @@ class ClearJunction(AtomicBehavior):
     def update(self):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_ClearJunction", True, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class ClearEgoLane(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to remove all actors in front of the ego.
+    """
+
+    def __init__(self, name="ClearEgoLane"):
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_ClearEgoLane", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 

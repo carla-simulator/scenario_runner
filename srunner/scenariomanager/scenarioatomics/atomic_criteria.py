@@ -1003,7 +1003,7 @@ class OutsideRouteLanesTest(Criterion):
         self._last_lane_id = None
         self._total_distance = 0
         self._wrong_distance = 0
-        self._active = True
+        self._wrong_direction_active = True
 
     def update(self):
         """
@@ -1022,15 +1022,15 @@ class OutsideRouteLanesTest(Criterion):
             return new_status
 
         # Deactivate/Activate checking by blackboard message
-        active = py_trees.blackboard.Blackboard().get('AC_SwitchOutsideRouteLanesTest')
+        active = py_trees.blackboard.Blackboard().get('AC_SwitchWrongDirectionTest')
         if active is not None:
-            self._active = active
-            py_trees.blackboard.Blackboard().set("AC_SwitchOutsideRouteLanesTest", None, overwrite=True)
+            self._wrong_direction_active = active
+            py_trees.blackboard.Blackboard().set("AC_SwitchWrongDirectionTest", None, overwrite=True)
 
         self._is_outside_driving_lanes(location)
         self._is_at_wrong_lane(location)
 
-        if self._active and (self._outside_lane_active or self._wrong_lane_active):
+        if self._outside_lane_active or (self._wrong_direction_active and self._wrong_lane_active):
             self.test_status = "FAILURE"
 
         # Get the traveled distance
@@ -1050,7 +1050,7 @@ class OutsideRouteLanesTest(Criterion):
                 self._total_distance += new_dist
 
                 # And to the wrong one if outside route lanes
-                if self._active and (self._outside_lane_active or self._wrong_lane_active):
+                if self._outside_lane_active or (self._wrong_direction_active and self._wrong_lane_active):
                     self._wrong_distance += new_dist
 
                 self._current_index = index
@@ -2019,7 +2019,9 @@ class CheckMinSpeed(Criterion):
         Set the actual value as a percentage of the two mean speeds,
         the test status to failure if not successful and terminate
         """
-        if self._speed_points > 0:
+        if self._mean_speed == 0:
+            self.actual_value = 0
+        elif self._speed_points > 0:
             self._mean_speed /= self._speed_points
             self._actor_speed /= self._speed_points
             self.actual_value = round(self._actor_speed / self._mean_speed * 100, 2)

@@ -111,7 +111,7 @@ class ParkingExit(BasicScenario):
                 "Couldn't find viable position for the vehicle in front of the parking point")
 
         actor_front = CarlaDataProvider.request_new_actor(
-            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car', 'has_lights': False})
         if actor_front is None:
             raise ValueError(
                 "Couldn't spawn the vehicle in front of the parking point")
@@ -167,7 +167,7 @@ class ParkingExit(BasicScenario):
         """
 
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ChangeRoadBehavior(self._flow_interval))
+        sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_interval))
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -179,7 +179,7 @@ class ParkingExit(BasicScenario):
 
         for actor in self.other_actors:
             sequence.add_child(ActorDestroy(actor))
-        sequence.add_child(ChangeRoadBehavior(15))
+        sequence.add_child(ChangeRoadBehavior(spawn_dist=15))
 
         return sequence
 
