@@ -63,9 +63,17 @@ class BlockedIntersection(BasicScenario):
         self._block_distance = 10  # m. Will stop blocking when ego is within this distance
         self._block_time = 5  # s
 
-        self._obstacle_horizontal_gap = 3  # m
+        self._obstacle_horizontal_gap = 2  # m
         self._obstacle_vertical_gap = 2  # m
         self._obstacle_model = "static.prop.trampoline"
+        self._obstacle_amount = 6
+
+        # The amount of obstacles that invade the road
+        if 'extra_obstacle' in config.other_parameters:
+            self._extra_obstacle = int(
+                config.other_parameters['extra_obstacle']['value'])
+        else:
+            self._extra_obstacle = 2
 
         super(BlockedIntersection, self).__init__("BlockedIntersection",
                                                   ego_vehicles,
@@ -92,11 +100,25 @@ class BlockedIntersection(BasicScenario):
         obs_points = sidewalk_waypoint.next_until_lane_end(
             self._obstacle_horizontal_gap)
         # Only need some obstacles near junction
-        obs_points = obs_points[-1*min(len(obs_points), 4):]
+        obs_points = obs_points[-1 *
+                                min(len(obs_points), self._obstacle_amount):]
+        obs_transforms = [wp.transform for wp in obs_points]
 
-        for obs_point in obs_points:
+        # Add some obstacles to invade the road
+        for _ in range(self._extra_obstacle):
+            end_transform_1 = obs_transforms[-1]
+            end_transform_2 = obs_transforms[-2]
+            delta_location = carla.Location(x=end_transform_1.location.x-end_transform_2.location.x,
+                                            y=end_transform_1.location.y-end_transform_2.location.y,
+                                            z=end_transform_1.location.z-end_transform_2.location.z)
+            extra_location = end_transform_1.location + delta_location
+            extra_transform = carla.Transform(extra_location, carla.Rotation())
+            obs_transforms.append(extra_transform)
+
+        # Spawn obstacles
+        for obs_transform in obs_transforms:
             actor = CarlaDataProvider.request_new_actor(
-                self._obstacle_model, obs_point.transform, rolename='scenario')
+                self._obstacle_model, obs_transform, rolename='scenario')
             if actor is None:
                 raise Exception(
                     "Couldn't spawn obstacles")
@@ -118,7 +140,9 @@ class BlockedIntersection(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
 
-        sequence.add_child(RemoveJunctionEntry(self._reference_waypoint))
+        # TODO route only
+        sequence.add_child(RemoveJunctionEntry(
+            [self._reference_waypoint, self._blocker_waypoint], all_road_entries=True))
         sequence.add_child(SwitchLane(self._blocker_waypoint.lane_id, False))
 
         # Ego go behind the blocker

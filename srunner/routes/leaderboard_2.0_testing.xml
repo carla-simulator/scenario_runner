@@ -168,17 +168,19 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="10" town="Town03"> <!-- Blocked Intersections, old towns -->
+   <route id="10" town="Town01"> <!--  Blocked Intersections, old towns  -->
       <waypoints>
-         <position x="117" y="193" z="0" />
-         <position x="12" y="193" z="0" />
-         <position x="5.8" y="186" z="0" />
-         <position x="5.65" y="150" z="0" />
+         <position x="295" y="1.98" z="0"/>
+         <position x="325" y="1.98" z="0"/>
+         <position x="335" y="10" z="0"/>
+         <position x="335" y="46" z="0"/>
       </waypoints>
-      <scenarios>
-         <scenario name="BlockedIntersection_1" type="BlockedIntersection">
-            <trigger_point x="102" y="193" z="0" yaw="180"/>
-            <blocker_point x="5.8" y="179" z="0.5"/>
+         <scenarios>
+            <scenario name="BlockedIntersection_1" type="BlockedIntersection">
+            <trigger_point x="300" y="1.98" z="0" yaw="0"/>
+            <blocker_point x="335" y="11" z="0.5"/>
+            <extra_obstacle value="2" />
          </scenario>
-      <scenarios>
+      </scenarios>
+   </route>
 </routes>
