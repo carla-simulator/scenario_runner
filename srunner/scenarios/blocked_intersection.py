@@ -66,7 +66,7 @@ class BlockedIntersection(BasicScenario):
         self._obstacle_horizontal_gap = 2  # m
         self._obstacle_vertical_gap = 2  # m
         self._obstacle_model = "static.prop.trampoline"
-        self._obstacle_amount = 6
+        self._obstacle_amount = 6  # Extra obstacles are not included
 
         # The amount of obstacles that invade the road
         if 'extra_obstacle' in config.other_parameters:
@@ -116,16 +116,11 @@ class BlockedIntersection(BasicScenario):
             obs_transforms.append(extra_transform)
 
         # Spawn obstacles
-        for obs_transform in obs_transforms:
-            actor = CarlaDataProvider.request_new_actor(
-                self._obstacle_model, obs_transform, rolename='scenario')
-            if actor is None:
-                raise Exception(
-                    "Couldn't spawn obstacles")
-            self.other_actors.append(actor)
+        actors = CarlaDataProvider.request_new_batch_actors(
+            self._obstacle_model, len(obs_transforms), obs_transforms, rolename='scenario')
+        self.other_actors += actors
 
         # Spawn the blocker vehicle
-
         actor = CarlaDataProvider.request_new_actor(
             "vehicle.*.*", self._blocker_waypoint.transform, rolename='scenario')
         if actor is None:
@@ -140,10 +135,11 @@ class BlockedIntersection(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
 
-        # TODO route only
-        sequence.add_child(RemoveJunctionEntry(
-            [self._reference_waypoint, self._blocker_waypoint], all_road_entries=True))
-        sequence.add_child(SwitchLane(self._blocker_waypoint.lane_id, False))
+        if self.route_mode:
+            sequence.add_child(RemoveJunctionEntry(
+                [self._reference_waypoint, self._blocker_waypoint], all_road_entries=True))
+            sequence.add_child(SwitchLane(
+                self._blocker_waypoint.lane_id, False))
 
         # Ego go behind the blocker
         blocker_wait = py_trees.composites.Parallel("Wait for ego to come close",
@@ -155,7 +151,9 @@ class BlockedIntersection(BasicScenario):
         sequence.add_child(ActorDestroy(self.other_actors[-1]))
 
         # End
-        sequence.add_child(SwitchLane(self._blocker_waypoint.lane_id, True))
+        if self.route_mode:
+            sequence.add_child(SwitchLane(
+                self._blocker_waypoint.lane_id, True))
 
         return sequence
 
