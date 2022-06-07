@@ -75,7 +75,7 @@
          <position x="1965.0" y="4939.6" z="365" />
       </waypoints>
       <scenarios>
-         <scenario name="CrossingBycicleFlow_1" type="CrossingBycicleFlow">
+         <scenario name="CrossingBicycleFlow_1" type="CrossingBicycleFlow_1">
             <trigger_point x="2028.5" y="4988" z="365" yaw="180"/>
             <start_actor_flow x="2043.8" y="4985.4" z="365"/>
             <flow_speed value="10"/>

@@ -47,6 +47,13 @@ class Accident(BasicScenario):
         else:
             self._distance = 120
 
+        if 'direction' in config.other_parameters:
+            self._direction = config.other_parameters['direction']['value']
+        else:
+            self._direction = 'right'
+        if self._direction not in ('left', 'right'):
+            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
+
         self._offset = 0.75
         self._first_distance = 10
         self._second_distance = 6
@@ -77,6 +84,8 @@ class Accident(BasicScenario):
         # Create the police vehicle
         displacement = self._offset * self._accident_wp.lane_width / 2
         r_vec = self._accident_wp.transform.get_right_vector()
+        if self._direction == 'left':
+            r_vec *= -1
         w_loc = self._accident_wp.transform.location
         w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
         police_transform = carla.Transform(w_loc, self._accident_wp.transform.rotation)
@@ -96,6 +105,8 @@ class Accident(BasicScenario):
         self._accident_wp = pre_accident_wps[0]
         displacement = self._offset * vehicle_wp.lane_width / 2
         r_vec = vehicle_wp.transform.get_right_vector()
+        if self._direction == 'left':
+            r_vec *= -1
         w_loc = vehicle_wp.transform.location
         w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
         vehicle_1_transform = carla.Transform(w_loc, vehicle_wp.transform.rotation)
@@ -113,6 +124,8 @@ class Accident(BasicScenario):
 
         displacement = self._offset * vehicle_wp.lane_width / 2
         r_vec = vehicle_wp.transform.get_right_vector()
+        if self._direction == 'left':
+            r_vec *= -1
         w_loc = vehicle_wp.transform.location
         w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
         vehicle_2_transform = carla.Transform(w_loc, vehicle_wp.transform.rotation)
@@ -126,16 +139,15 @@ class Accident(BasicScenario):
         """
         The vehicle has to drive the whole predetermined distance.
         """
+        total_dist = self._distance + self._first_distance + self._second_distance + 20
+
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(StartObstacleScenario(self._accident_wp, self._distance))
+            root.add_child(LeaveSpaceInFront(total_dist))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        if self.route_mode:
-            root.add_child(EndObstacleScenario())
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
-
         return root
 
     def _create_test_criteria(self):
@@ -252,12 +264,12 @@ class ParkedObstacle(BasicScenario):
         """
         The vehicle has to drive the whole predetermined distance.
         """
+        total_dist = self._distance + 20
+
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(StartObstacleScenario(self._pre_parked_wp, self._distance))
+            root.add_child(LeaveSpaceInFront(total_dist))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        if self.route_mode:
-            root.add_child(EndObstacleScenario())
         root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root

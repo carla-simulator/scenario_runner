@@ -101,7 +101,7 @@ class HighwayCutInRoute(BasicScenario):
         behavior = py_trees.composites.Sequence("HighwayCutInRoute")
 
         if self.route_mode:
-            behavior.add_child(RemoveJunctionEntry([self._other_waypoint], True))
+            behavior.add_child(RemoveJunctionEntry([self._other_waypoint]))
             behavior.add_child(ClearJunction())
             behavior.add_child(ExtentExitRoadSpace(self._extra_space))
 

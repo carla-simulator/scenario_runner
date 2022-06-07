@@ -147,67 +147,12 @@ class Junction(object):
         return False
 
 
-class BackgroundActivity(BasicScenario):
-
-    """
-    Implementation of a scenario to spawn a set of background actors,
-    and to remove traffic jams in background traffic
-
-    This is a single ego vehicle scenario
-    """
-
-    def __init__(self, world, ego_vehicle, config, route, debug_mode=False, timeout=0):
-        """
-        Setup all relevant parameters and create scenario
-        """
-        self._map = CarlaDataProvider.get_map()
-        self.ego_vehicle = ego_vehicle
-        self.route = route
-        self.config = config
-        self.debug = debug_mode
-        self.timeout = timeout  # Timeout of scenario in seconds
-
-        super(BackgroundActivity, self).__init__("BackgroundActivity",
-                                                 [ego_vehicle],
-                                                 config,
-                                                 world,
-                                                 debug_mode,
-                                                 terminate_on_failure=True,
-                                                 criteria_enable=True)
-
-    def _create_behavior(self):
-        """
-        Basic behavior do nothing, i.e. Idle
-        """
-        # Check if a vehicle is further than X, destroy it if necessary and respawn it
-        return BackgroundBehavior(self.ego_vehicle, self.route)
-
-    def _create_test_criteria(self):
-        """
-        A list of all test criteria will be created that is later used
-        in parallel behavior tree.
-        """
-        return []
-
-    def _initialize_environment(self, world):
-        """
-        Nothing to do here, avoid settign the weather
-        """
-        pass
-
-    def __del__(self):
-        """
-        Remove all actors upon deletion
-        """
-        pass
-
-
 class BackgroundBehavior(AtomicBehavior):
     """
     Handles the background activity
     """
 
-    def __init__(self, ego_actor, route, debug=False, name="BackgroundBehavior"):
+    def __init__(self, ego_actor, route, debug=True, name="BackgroundBehavior"):
         """
         Setup class members
         """
@@ -241,7 +186,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._road_front_vehicles = 2  # Amount of vehicles in front of the ego
         self._road_back_vehicles = 2  # Amount of vehicles behind the ego
-        self._radius_increase_ratio = 3.0  # Meters the radius increases per m/s of the ego
+        self._radius_increase_ratio = 2.5  # Meters the radius increases per m/s of the ego
 
         self._base_junction_detection = 30
         self._detection_ratio = 1.5  # Meters the radius increases per m/s of the ego
@@ -433,47 +378,79 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _filter_fake_junctions(self, data):
         """
-        Filters fake junctions. As a general note, a fake junction is that where no road lane divide in two.
-        However, this might fail for some CARLA maps, so check junctions which have all lanes straight too
+        Filters fake junctions. A fake junction is that which has no intersecting maneuvers
+        (i.e, no two maneuvers start / end at the same lane).
+        However, this fails for highway entry / exits with dedicated lanes, so specifically check those
         """
         fake_data = []
         filtered_data = []
-        threshold = math.radians(15)
 
         for junction_data in data:
-            used_entry_lanes = []
-            used_exit_lanes = []
-            for junction in junction_data.junctions:
-                for entry_wp, exit_wp in junction.get_waypoints(carla.LaneType.Driving):
-                    entry_wp = self._get_junction_entry_wp(entry_wp)
-                    if not entry_wp:
-                        continue
-                    if get_lane_key(entry_wp) not in used_entry_lanes:
-                        used_entry_lanes.append(get_lane_key(entry_wp))
+            if len (junction_data.junctions) > 1:
+                filtered_data.append(junction_data)
+                continue  # These are always junctions
 
-                    exit_wp = self._get_junction_exit_wp(exit_wp)
-                    if not exit_wp:
-                        continue
-                    if get_lane_key(exit_wp) not in used_exit_lanes:
-                        used_exit_lanes.append(get_lane_key(exit_wp))
+            junction = junction_data.junctions[0]
 
-            if not used_entry_lanes and not used_exit_lanes:
-                fake_data.append(junction_data)
-                continue
+            found_intersecting_maneuvers = False
+            used_entries = []
+            used_exits = []
 
-            found_turn = False
-            for entry_wp, exit_wp in junction_data.junctions[0].get_waypoints(carla.LaneType.Driving):
-                entry_heading = entry_wp.transform.get_forward_vector()
-                exit_heading = exit_wp.transform.get_forward_vector()
-                dot = entry_heading.x * exit_heading.x + entry_heading.y * exit_heading.y
-                if dot < math.cos(threshold):
-                    found_turn = True
+            # Search for intersecting maneuvers
+            for entry_wp, exit_wp in junction.get_waypoints(carla.LaneType.Driving):
+                entry_key = get_lane_key(self._get_junction_entry_wp(entry_wp))
+                exit_key = get_lane_key(self._get_junction_exit_wp(exit_wp))
+
+                # Check if a maneuver starts / ends at another one.
+                # Checking if it was used isn't enough as some maneuvers are repeated in CARLA maps.
+                # Instead, check if the index of both entry and exit are different.
+                entry_index = -1 if entry_key not in used_entries else used_entries.index(entry_key)
+                exit_index = -1 if exit_key not in used_exits else used_exits.index(exit_key)
+
+                if exit_index != entry_index:
+                    found_intersecting_maneuvers = True
                     break
 
-            if not found_turn:
-                fake_data.append(junction_data)
-            else:
+                used_entries.append(entry_key)
+                used_exits.append(exit_key)
+
+            if found_intersecting_maneuvers:
                 filtered_data.append(junction_data)
+                continue
+
+            # Search for highway dedicated lane entries.
+            found_highway = False
+            used_entry_roads = {}
+            used_exit_roads = {}
+            for entry_wp, exit_wp in junction.get_waypoints(carla.LaneType.Driving):
+                entry_road_key = get_road_key(self._get_junction_entry_wp(entry_wp))
+                exit_road_key = get_road_key(self._get_junction_exit_wp(exit_wp))
+
+                # Entries / exits with dedicated lanes have no intersecting maneuvers
+                # (as the entry / exit is a lane that finishes, not a maneuvers part of a junction),
+                # so they are missfiltered as fake junctions.
+                # Detect them by an entry road having 3 or more lanes. TODO: Improve this
+                if entry_road_key in used_entry_roads:
+                    used_entry_roads[entry_road_key] += 1
+                else:
+                    used_entry_roads[entry_road_key] = 0
+
+                if exit_road_key in used_exit_roads:
+                    used_exit_roads[exit_road_key] += 1
+                else:
+                    used_exit_roads[exit_road_key] = 0
+
+                if used_entry_roads[entry_road_key] >= 3 or used_exit_roads[exit_road_key] >= 3:
+                    found_highway = True
+                    break
+
+            if found_highway:
+                filtered_data.append(junction_data)
+                continue
+
+            fake_data.append(junction_data)
+
+            # TODO: Recheck for old CARLA maps
 
         return fake_data, filtered_data
 
@@ -1352,7 +1329,7 @@ class BackgroundBehavior(AtomicBehavior):
 
             for old_wp in list(old_wps):
                 next_wps = old_wp.next(route_move_dist)
-                if not next_wps:
+                if not next_wps and get_lane_key(old_wp) in self._road_dict:
                     for actor in list(self._road_dict[get_lane_key(old_wp)].actors):
                         self._destroy_actor(actor)
                     self._road_dict.pop(get_lane_key(old_wp), None)
@@ -1537,8 +1514,8 @@ class BackgroundBehavior(AtomicBehavior):
         # Handles road accident scenario (Accident and Construction)
         handle_start_accident_data = py_trees.blackboard.Blackboard().get('BA_StartObstacleScenario')
         if handle_start_accident_data is not None:
-            accident_wp, distance, stop_back_vehicles = handle_start_accident_data
-            self._handle_lanechange_scenario(accident_wp, distance, stop_back_vehicles)
+            accident_wp, distance, direction, stop_back_vehicles = handle_start_accident_data
+            self._handle_lanechange_scenario(accident_wp, distance, direction, stop_back_vehicles)
             py_trees.blackboard.Blackboard().set('BA_StartObstacleScenario', None, True)
 
         # Handles road accident scenario (Accident and Construction)
@@ -1657,7 +1634,7 @@ class BackgroundBehavior(AtomicBehavior):
             else:
                 self._destroy_actor(actor)
 
-    def _handle_lanechange_scenario(self, accident_wp, distance, stop_back_vehicles=False):
+    def _handle_lanechange_scenario(self, accident_wp, distance, direction, stop_back_vehicles=False):
         """
         Handles the scenarios in which the BA has to change lane,
         generally due to an obstacle in the road (accident / construction / stopped vehicle...)
@@ -1665,9 +1642,15 @@ class BackgroundBehavior(AtomicBehavior):
         ego_wp = self._route[self._route_index]
         lane_change_actors = self._road_dict[get_lane_key(ego_wp)].actors
 
-        first_wp = accident_wp.get_left_lane().next(distance / 4)[0]
-        second_wp = first_wp.next(distance / 2)[0]
-        third_wp = second_wp.get_right_lane().next(distance / 4)[0]
+        if direction == 'left':
+            first_wp = accident_wp.get_left_lane().next(distance / 4)[0]
+            second_wp = first_wp.next(distance / 2)[0]
+            third_wp = second_wp.get_right_lane().next(distance / 4)[0]
+        else:
+            first_wp = accident_wp.get_right_lane().next(distance / 4)[0]
+            second_wp = first_wp.next(distance / 2)[0]
+            third_wp = second_wp.get_left_lane().next(distance / 4)[0]
+
         vehicle_path = [first_wp.transform.location,
                         second_wp.transform.location,
                         third_wp.transform.location]
@@ -1706,20 +1689,18 @@ class BackgroundBehavior(AtomicBehavior):
     def _leave_space_in_front(self, space):
         """Teleports all the vehicles in front of the ego forward"""
         if not self._active_junctions:
-            for lane in self._road_dict:
-                lane_actors = self._road_dict[lane].actors
-                front_actors = []
-                for actor in lane_actors:
-                    location = CarlaDataProvider.get_location(actor)
-                    if location and not self._is_location_behind_ego(location):
-                        front_actors.append(actor)
+            front_actors = []
+            for actor in self._road_dict[get_lane_key(self._ego_wp)].actors:
+                location = CarlaDataProvider.get_location(actor)
+                if location and not self._is_location_behind_ego(location):
+                    front_actors.append(actor)
 
-                if front_actors:
-                    last_actor_location = CarlaDataProvider.get_location(front_actors[-1])
-                    distance = last_actor_location.distance(self._ego_wp.transform.location)
-                    step = space - distance
-                    if step > 0:  # Only move the needed distance
-                        self._move_actors_forward(front_actors, step)
+            if front_actors:
+                last_actor_location = CarlaDataProvider.get_location(front_actors[-1])
+                distance = last_actor_location.distance(self._ego_wp.transform.location)
+                step = space - distance
+                if step > 0:  # Only move the needed distance
+                    self._move_actors_forward(front_actors, step)
 
     def _switch_lane(self, lane_id, active):
         """

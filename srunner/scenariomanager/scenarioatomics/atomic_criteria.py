@@ -1947,7 +1947,7 @@ class RunningStopTest(Criterion):
         return new_status
 
 
-class CheckMinSpeed(Criterion):
+class MinSpeedRouteTest(Criterion):
 
     """
     Check at which stage of the route is the actor at each tick
@@ -1962,7 +1962,7 @@ class CheckMinSpeed(Criterion):
     # Thresholds to return that a route has been completed
     MULTIPLIER = 1.5  # %
 
-    def __init__(self, actor, name="CheckMinSpeed", terminate_on_failure=False):
+    def __init__(self, actor, name="MinSpeedRouteTest", terminate_on_failure=False):
         """
         """
         super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
@@ -1989,10 +1989,10 @@ class CheckMinSpeed(Criterion):
         if velocity is None:
             return new_status
 
-        set_speed_data = py_trees.blackboard.Blackboard().get('BA_CheckMinSpeed')
+        set_speed_data = py_trees.blackboard.Blackboard().get('BA_MinSpeedRouteTest')
         if set_speed_data is not None:
             self._active = set_speed_data
-            py_trees.blackboard.Blackboard().set('BA_CheckMinSpeed', None, True)
+            py_trees.blackboard.Blackboard().set('BA_MinSpeedRouteTest', None, True)
 
         if self._active:
             # Get the speed of the surrounding Background Activity

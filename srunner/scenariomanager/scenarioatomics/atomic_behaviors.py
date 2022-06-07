@@ -3293,15 +3293,13 @@ class ScenarioTriggerer(AtomicBehavior):
 
     WINDOWS_SIZE = 5
 
-    def __init__(self, actor, route, blackboard_list, distance,
-                 repeat_scenarios=False, debug=False, name="ScenarioTriggerer"):
+    def __init__(self, actor, route, blackboard_list, distance, debug=False, name="ScenarioTriggerer"):
         """
         Setup class members
         """
         super(ScenarioTriggerer, self).__init__(name)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
-        self._repeat = repeat_scenarios
         self._debug = debug
 
         self._actor = actor
@@ -3357,7 +3355,7 @@ class ScenarioTriggerer(AtomicBehavior):
             condition2 = bool(not value)
 
             # Already done, if needed
-            condition3 = bool(self._repeat or black_var_name not in self._triggered_scenarios)
+            condition3 = bool(black_var_name not in self._triggered_scenarios)
 
             if condition1 and condition2 and condition3:
                 _ = blackboard.set(black_var_name, True)

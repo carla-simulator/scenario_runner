@@ -91,16 +91,14 @@ class EnterActorFlow(BasicScenario):
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
         # Get all lanes
-        source_wps = get_same_dir_lanes(source_wp)
         sink_wps = get_same_dir_lanes(sink_wp)
-        num_flows = min(len(source_wps), len(sink_wps))
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        for i in range(num_flows):
-            root.add_child(ActorFlow(
-                source_wps[i], sink_wps[i], self._source_dist_interval, self._sink_distance, self._flow_speed))
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wps[i].transform.location, self._sink_distance))
+        root.add_child(ActorFlow(
+                source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed))
+        for sink_wp in sink_wps:
+            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
@@ -493,21 +491,22 @@ class MergerIntoSlowTraffic(BasicScenario):
         """
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
-        trigger_wp=self._map.get_waypoint(self._trigger_point)
+
+        sink_wps = get_same_dir_lanes(sink_wp)
+
+        trigger_wp = self._map.get_waypoint(self._trigger_point)
+
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed))
-
-        end_condition = py_trees.composites.Sequence()
-        end_condition.add_child(InTriggerDistanceToLocation(
-            self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
-        root.add_child(end_condition)
+        for sink_wp in sink_wps:
+            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
 
-            sequence.add_child(RemoveJunctionEntry([trigger_wp,source_wp]))
+            sequence.add_child(RemoveJunctionEntry([trigger_wp, source_wp]))
 
             grp = CarlaDataProvider.get_global_route_planner()
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)

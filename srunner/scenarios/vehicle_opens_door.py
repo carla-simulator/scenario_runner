@@ -166,7 +166,7 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
         if 'frequency' in config.other_parameters:
             self._opposite_frequency = float(config.other_parameters['frequency']['value'])
         else:
-            self._opposite_frequency = 70
+            self._opposite_frequency = 100
 
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
