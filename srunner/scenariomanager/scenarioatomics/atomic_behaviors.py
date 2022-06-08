@@ -2660,7 +2660,7 @@ class ActorFlow(AtomicBehavior):
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, name="ActorFlow"):
+                 actor_speed=20 / 3.6, add_initial_actors=False, name="ActorFlow"):
         """
         Setup class members
         """
@@ -2681,6 +2681,7 @@ class ActorFlow(AtomicBehavior):
 
         self._sink_dist = sink_dist
         self._speed = actor_speed
+        self._add_initial_actors = add_initial_actors
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2688,6 +2689,42 @@ class ActorFlow(AtomicBehavior):
 
         self._actor_list = []
         self._collision_sensor_list = []
+
+    def initialise(self):
+        if self._add_initial_actors:
+            grp = CarlaDataProvider.get_global_route_planner()
+            plan = grp.trace_route(self._source_location, self._sink_location)
+
+            ref_loc = plan[0][0].transform.location
+            for wp, _ in plan:
+                if wp.transform.location.distance(ref_loc) < self._spawn_dist:
+                    continue
+                self._spawn_actor()
+                ref_loc = wp.transform.location
+    
+    def _spawn_actor(self):
+        actor = CarlaDataProvider.request_new_actor(
+            'vehicle.*', self._source_transform, rolename='scenario',
+            attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False
+        )
+        if actor is None:
+            return py_trees.common.Status.RUNNING
+
+        actor.set_autopilot(True)
+        self._tm.set_path(actor, [self._sink_location])
+
+        if self._is_constant_velocity_active:
+            self._tm.ignore_vehicles_percentage(actor, 100)
+            self._tm.auto_lane_change(actor, False)
+            self._tm.set_desired_speed(actor, 3.6 * self._speed)
+            self._tm.update_vehicle_lights(actor, True)
+            actor.enable_constant_velocity(carla.Vector3D(self._speed, 0, 0))  # For when physics are active
+        self._actor_list.append(actor)
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+        sensor = self._world.spawn_actor(self._collision_bp, carla.Transform(), attach_to=actor)
+        sensor.listen(lambda _: self.stop_constant_velocity())
+        self._collision_sensor_list.append(sensor)
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
@@ -2706,28 +2743,7 @@ class ActorFlow(AtomicBehavior):
             distance = self._source_transform.location.distance(actor_location)
 
         if distance > self._spawn_dist:
-            actor = CarlaDataProvider.request_new_actor(
-                'vehicle.*', self._source_transform, rolename='scenario',
-                attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False
-            )
-            if actor is None:
-                return py_trees.common.Status.RUNNING
-
-            actor.set_autopilot(True)
-            self._tm.set_path(actor, [self._sink_location])
-
-            if self._is_constant_velocity_active:
-                self._tm.ignore_vehicles_percentage(actor, 100)
-                self._tm.auto_lane_change(actor, False)
-                self._tm.set_desired_speed(actor, 3.6 * self._speed)
-                self._tm.update_vehicle_lights(actor, True)
-                actor.enable_constant_velocity(carla.Vector3D(self._speed, 0, 0))  # For when physics are active
-            self._actor_list.append(actor)
-            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
-
-            sensor = self._world.spawn_actor(self._collision_bp, carla.Transform(), attach_to=actor)
-            sensor.listen(lambda _: self.stop_constant_velocity())
-            self._collision_sensor_list.append(sensor)
+            self._spawn_actor()
 
         return py_trees.common.Status.RUNNING
 

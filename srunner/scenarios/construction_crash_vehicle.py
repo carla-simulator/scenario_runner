@@ -20,9 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestr
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import (StartObstacleScenario,
-                                              EndObstacleScenario,
-                                              ChangeOppositeBehavior,
+from srunner.tools.background_manager import (ChangeOppositeBehavior,
                                               LeaveSpaceInFront)
 
 
@@ -153,14 +151,12 @@ class ConstructionObstacle(BasicScenario):
             if not prev_wps:
                 raise ValueError("Couldn't find a viable position to set up the construction actors")
             lane_change_wp = prev_wps[0]
-            root.add_child(StartObstacleScenario(lane_change_wp, self._distance, True))
+            root.add_child(LeaveSpaceInFront(self._distance + 20))
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
 
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        if self.route_mode:
-            root.add_child(EndObstacleScenario())
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
         return root

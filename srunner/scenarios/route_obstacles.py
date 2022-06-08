@@ -20,10 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestro
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import (StartObstacleScenario,
-                                              EndObstacleScenario,
-                                              LeaveSpaceInFront,
-                                              ChangeOppositeBehavior)
+from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior
 
 
 class Accident(BasicScenario):
