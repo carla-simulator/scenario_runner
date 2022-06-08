@@ -23,6 +23,7 @@
     - CrossBycicleFlow: the ego has to do a turn at an intersection but it has to cross a bycicle lane full of incoming traffic
     - VehicleOpensDoor: a parked vehicle next to the ego suddenly opens the door, forcing the ego to brake. The ego has to maneuver to an adjacent lane to surpass the obstacle.
     - HighwayCutIn: The ego is met with a vehicle that tries to enter the highway by cutting in front of it.
+    - YieldToEmergencyVehicle: The ego has to yield its lane to emergency vehicle.
     - ParkingCutIn: A vehicle parked at the side cuts in front of the ego.
     - MergerIntoSlowTraffic: the ego has to enter a lane that is filled with slow traffic.
 * Added new functions to the BackgroundManager

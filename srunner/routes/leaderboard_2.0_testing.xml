@@ -156,4 +156,16 @@
          </scenario>
       </scenarios>
    </route>
+   <route id="9" town="Town04"> <!-- YieldToEmergencyVehicle, old towns -->
+      <waypoints>
+         <position x="-350" y="26.5" z="0.0" />
+         <position x="120" y="26.5" z="1.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="YieldToEmergencyVehicle_1" type="YieldToEmergencyVehicle">
+            <trigger_point x="-320" y="26.5" z="0.0" yaw="0"/>
+            <distance value="45" />
+         </scenario>
+      </scenarios>
+   </route>
 </routes>
