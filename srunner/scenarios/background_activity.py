@@ -1295,6 +1295,26 @@ class BackgroundBehavior(AtomicBehavior):
         Continually check the road in front to see if it has changed its topology.
         If the number of lanes have been reduced, remove the actors part of the merging lane.
         """
+        def get_road_wp(wp):
+            """Goes backwards in the lane to match the wp with the road key dictionary"""
+            road_wp = wp
+            if get_lane_key(road_wp) in self._road_dict:
+                return road_wp
+
+            road_wp = wp
+            distance = self._max_radius
+
+            while distance > 0:
+                prev_wps = road_wp.previous(1)
+                if not prev_wps:
+                    return None
+                road_wp = prev_wps[0]
+                if get_lane_key(road_wp) in self._road_dict:
+                    return road_wp
+                distance -= 1
+
+            return None
+
         if self.debug:
             checker_wp = self._route[self._road_checker_index]
             draw_point(self._world, checker_wp.transform.location, DEBUG_SMALL, DEBUG_ROAD, False)
@@ -1328,9 +1348,12 @@ class BackgroundBehavior(AtomicBehavior):
             route_move_dist = max(new_accum_dist - prev_accum_dist, 0.1)
 
             for old_wp in list(old_wps):
-                next_wps = old_wp.next(route_move_dist)
-                if not next_wps and get_lane_key(old_wp) in self._road_dict:
-                    for actor in list(self._road_dict[get_lane_key(old_wp)].actors):
+                next_wps = old_wp.next(2 * route_move_dist)  # x2, just in case
+                if not next_wps:
+                    road_wp = get_road_wp(old_wp)
+                    if not road_wp:
+                        continue
+                    for actor in list(self._road_dict[get_lane_key(road_wp)].actors):
                         self._destroy_actor(actor)
                     self._road_dict.pop(get_lane_key(old_wp), None)
 
@@ -1473,7 +1496,7 @@ class BackgroundBehavior(AtomicBehavior):
         # Junction behavior
         junction_behavior_data = py_trees.blackboard.Blackboard().get('BA_ChangeJunctionBehavior')
         if junction_behavior_data is not None:
-            source_dist, spawn_dist, max_actors, source_perc = road_behavior_data
+            source_dist, spawn_dist, max_actors, source_perc = junction_behavior_data
             if source_dist is not None:
                 if source_dist > self._opposite_sources_dist:
                     print('WARNING: Junction sources distance is higher than the opposite ones. Ignoring it')
