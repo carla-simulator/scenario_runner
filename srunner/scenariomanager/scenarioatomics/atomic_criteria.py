@@ -1976,9 +1976,6 @@ class MinSpeedRouteTest(Criterion):
 
         self._active = True
 
-        self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION)
-        self.events.append(self._traffic_event)
-
     def update(self):
         """
         Check if the actor location is within trigger region
@@ -2034,8 +2031,11 @@ class MinSpeedRouteTest(Criterion):
         else:
             self.test_status = "FAILURE"
 
-        self._traffic_event.set_dict({'percentage': self.actual_value})
-        self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
+        if self.test_status == "FAILURE":
+            self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION)
+            self._traffic_event.set_dict({'percentage': self.actual_value})
+            self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
+            self.events.append(self._traffic_event)
 
         super().terminate(new_status)
 
@@ -2101,10 +2101,17 @@ class YieldToEmergencyVehicleTest(Criterion):
         mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
         self.actual_value = mean_speed / self._target_speed *100
         self.actual_value = round(self.actual_value, 2)
-        
+
         if self.actual_value >= self.success_value:
             self.test_status = "SUCCESS"
         else:
             self.test_status = "FAILURE"
+
+        if self.test_status == "FAILURE":
+            traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE)
+            traffic_event.set_dict({'speed_percentage': self.actual_value})
+            traffic_event.set_message(
+                f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
+            self.events.append(traffic_event)
 
         super().terminate(new_status)
