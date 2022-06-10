@@ -168,4 +168,18 @@
          </scenario>
       </scenarios>
    </route>
+   <route id="68" town="Town02"> <!-- InvadingTurn, old towns -->
+      <waypoints>
+         <position x="150" y="109.5" z="0.0" />
+         <position x="182" y="109.5" z="0.0" />
+         <position x="189.7" y="121" z="0.0" />
+         <position x="189.7" y="171" z="0.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="InvadingTurn_1" type="InvadingTurn">
+            <trigger_point x="170" y="109.5" z="0.0" yaw="0"/>
+            <adversary_start x="194" y="123" z="0"/>
+         </scenario>
+      </scenarios>
+   </route>
 </routes>
