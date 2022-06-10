@@ -3504,9 +3504,10 @@ class WalkerFlow(AtomicBehavior):
     - sink_transforms_prob (list(float)): The probability of each sink_transform
     - spawn_dist_interval (list(float)): Distance between spawned actors
     - random_seed : Optional. The seed of numpy's random
-    - sink_distance: Actors closer to the sink than this distance will be deleted
+    - sink_distance: Actors closer to the sink than this distance will be deleted. 
+                     Probably due to the navigation module rerouting the walkers, a sink distance of 2 is reasonable.
     """
-    def __init__(self, source_transform, sink_transforms, sink_transforms_prob, spawn_dist_interval, random_seed, sink_dist=1,
+    def __init__(self, source_transform, sink_transforms, sink_transforms_prob, spawn_dist_interval, random_seed=None, sink_dist=2,
                  name="WalkerFlow"):
         """
         Setup class members
@@ -3518,7 +3519,6 @@ class WalkerFlow(AtomicBehavior):
         else:
             self._rng = CarlaDataProvider.get_random_seed()
         self._world = CarlaDataProvider.get_world()
-        self._tm = CarlaDataProvider.get_client().get_trafficmanager(CarlaDataProvider.get_traffic_manager_port())
 
         self._controller_bp = self._world.get_blueprint_library().find('controller.ai.walker')
 
