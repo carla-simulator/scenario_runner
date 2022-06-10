@@ -3499,15 +3499,15 @@ class WalkerFlow(AtomicBehavior):
     There can be more than one target location.
 
     Important parameters:
-    - source_transform (carla.Transform): Transform at which actors will be spawned
-    - sink_transforms (list(carla.Transform)): Transforms at which actors will be deleted
-    - sink_transforms_prob (list(float)): The probability of each sink_transform
+    - source_location (carla.Transform): Transform at which actors will be spawned
+    - sink_locations (list(carla.Transform)): Transforms at which actors will be deleted
+    - sink_locations_prob (list(float)): The probability of each sink_transform
     - spawn_dist_interval (list(float)): Distance between spawned actors
     - random_seed : Optional. The seed of numpy's random
     - sink_distance: Actors closer to the sink than this distance will be deleted. 
                      Probably due to the navigation module rerouting the walkers, a sink distance of 2 is reasonable.
     """
-    def __init__(self, source_transform, sink_transforms, sink_transforms_prob, spawn_dist_interval, random_seed=None, sink_dist=2,
+    def __init__(self, source_location, sink_locations, sink_locations_prob, spawn_dist_interval, random_seed=None, sink_dist=2,
                  name="WalkerFlow"):
         """
         Setup class members
@@ -3522,12 +3522,10 @@ class WalkerFlow(AtomicBehavior):
 
         self._controller_bp = self._world.get_blueprint_library().find('controller.ai.walker')
 
-        self._source_transform = source_transform
-        self._source_location = self._source_transform.location
+        self._source_location = source_location
 
-        self._sink_transforms = sink_transforms
-        self._sink_transforms_prob = sink_transforms_prob
-        self._sink_locations = [tran.location for tran in self._sink_transforms]
+        self._sink_locations = sink_locations
+        self._sink_locations_prob = sink_locations_prob
         self._sink_dist = sink_dist
 
         self._min_spawn_dist = spawn_dist_interval[0]
@@ -3553,13 +3551,13 @@ class WalkerFlow(AtomicBehavior):
             distance = self._spawn_dist + 1
         else:
             actor_location = CarlaDataProvider.get_location(self._walkers[-1][0])
-            distance = self._source_transform.location.distance(actor_location)
+            distance = self._source_location.distance(actor_location)
 
         if distance > self._spawn_dist:
             # spawn new walkers
             walker_amount = self._rng.choice(self._batch_size_list)
             for i in range(walker_amount):
-                spawn_tran = carla.Transform(self._source_transform.location, self._source_transform.rotation)
+                spawn_tran = carla.Transform(self._source_location)
                 spawn_tran.location.y -= i
                 walker = CarlaDataProvider.request_new_actor(
                     'walker.*', spawn_tran, rolename='scenario'
@@ -3568,7 +3566,7 @@ class WalkerFlow(AtomicBehavior):
                     continue
                 # Use ai.walker to controll walkers
                 controller = self._world.try_spawn_actor(self._controller_bp, carla.Transform(), walker)
-                sink_location = self._rng.choice(a = self._sink_locations, p = self._sink_transforms_prob)
+                sink_location = self._rng.choice(a = self._sink_locations, p = self._sink_locations_prob)
                 controller.start()
                 controller.go_to_location(sink_location)
                 # Add to walkers list

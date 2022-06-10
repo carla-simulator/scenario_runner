@@ -21,18 +21,16 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import RemoveJunctionEntry
 
 
-def convert_dict_to_transform(actor_dict):
+def convert_dict_to_location(actor_dict):
     """
-    Convert a JSON string to a Carla.Transform
+    Convert a JSON string to a Carla.Location
     """
     location = carla.Location(
         x=float(actor_dict['x']),
         y=float(actor_dict['y']),
         z=float(actor_dict['z'])
     )
-    transform = carla.Transform(
-        location, carla.Rotation(yaw=float(actor_dict['yaw'])))
-    return transform
+    return location
 
 
 class PedestrianCrossing(BasicScenario):
@@ -56,18 +54,17 @@ class PedestrianCrossing(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(
             self._trigger_location)
 
-        self._source_wp = None
-        self._start_walker_flow = convert_dict_to_transform(
+        self._start_walker_flow = convert_dict_to_location(
             config.other_parameters['start_walker_flow'])
-        self._sink_transforms = []
-        self._sink_transforms_prob = []
+        self._sink_locations = []
+        self._sink_locations_prob = []
 
         end_walker_flow_list = [
             v for k, v in config.other_parameters.items() if 'end_walker_flow' in k]
 
         for item in end_walker_flow_list:
-            self._sink_transforms.append(convert_dict_to_transform(item))
-            self._sink_transforms_prob.append(float(item['p']))
+            self._sink_locations.append(convert_dict_to_location(item))
+            self._sink_locations_prob.append(float(item['p']))
 
         if 'source_dist_interval' in config.other_parameters:
             self._source_dist_interval = [
@@ -80,12 +77,6 @@ class PedestrianCrossing(BasicScenario):
         self._ego_end_distance = 40
         self._pedestrian_timeout = 60
         self.timeout = timeout
-
-        # Fix random seed
-        if 'random_seed' in config.other_parameters:
-            self._random_seed = int(config.other_parameters['random_seed']['value'])
-        else:
-            self._random_seed = 2000
 
         super(PedestrianCrossing, self).__init__("PedestrianCrossing",
                                                  ego_vehicles,
@@ -111,7 +102,7 @@ class PedestrianCrossing(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="PedestrianMove")
 
         walker_root.add_child(WalkerFlow(
-            self._start_walker_flow, self._sink_transforms, self._sink_transforms_prob, self._source_dist_interval, self._random_seed))
+            self._start_walker_flow, self._sink_locations, self._sink_locations_prob, self._source_dist_interval))
         walker_root.add_child(Idle(self._pedestrian_timeout))
 
         sequence.add_child(walker_root)
