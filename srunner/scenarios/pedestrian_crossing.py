@@ -12,10 +12,9 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
-    Idle, WalkerFlow)
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import WalkerFlow
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
 from srunner.tools.background_manager import RemoveJunctionEntry
@@ -103,13 +102,9 @@ class PedestrianCrossing(BasicScenario):
 
         walker_root.add_child(WalkerFlow(
             self._start_walker_flow, self._sink_locations, self._sink_locations_prob, self._source_dist_interval))
-        walker_root.add_child(Idle(self._pedestrian_timeout))
+        walker_root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
         sequence.add_child(walker_root)
-
-        # Remove everything
-        sequence.add_child(DriveDistance(
-            self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))
 
         return sequence
 
