@@ -3590,3 +3590,80 @@ class WalkerFlow(AtomicBehavior):
                 self._destroy_walker(walker, controller)
             except RuntimeError:
                 pass  # Actor was already destroyed
+
+class AIWalkerBehavior(AtomicBehavior):
+    """
+    Behavior that creates a walker controlled by AI Walker controller.
+    The walker go from source location to sink location.
+    A parallel termination behavior has to be used.
+
+    Important parameters:
+    - source_location (carla.Location): Location at which the actor will be spawned
+    - sink_location (carla.Location): Location at which the actor will be deleted
+    """
+
+    def __init__(self, source_location, sink_location,
+                 name="AIWalkerBehavior"):
+        """
+        Setup class members
+        """
+        super(AIWalkerBehavior, self).__init__(name)
+
+        self._world = CarlaDataProvider.get_world()
+        self._controller_bp = self._world.get_blueprint_library().find('controller.ai.walker')
+
+        self._source_location = source_location
+
+        self._sink_location = sink_location
+        self._sink_dist = 2
+
+        self._walker = None
+        self._controller = None
+
+    def initialise(self):
+        """
+        Spawn the walker at source location.
+        Setup the AI controller.
+
+        May throw RuntimeError if the walker can not be
+        spawned at given location.
+        """
+        spawn_tran = carla.Transform(self._source_location)
+        self._walker = CarlaDataProvider.request_new_actor(
+            'walker.*', spawn_tran, rolename='scenario'
+        )
+        if self._walker is None:
+            raise RuntimeError("Couldn't spawn the walker")
+        # Use ai.walker to controll the walker
+        self._controller = self._world.try_spawn_actor(
+            self._controller_bp, carla.Transform(), self._walker)
+        self._controller.start()
+        self._controller.go_to_location(self._sink_location)
+
+        super(AIWalkerBehavior, self).initialise()
+
+    def update(self):
+        """Controls the created walker"""
+        # Remove walkers when needed
+        if self._walker is not None:
+            loc = CarlaDataProvider.get_location(self._walker)
+            # At the very beginning of the scenario, the get_location may return None
+            if loc is not None:
+                if loc.distance(self._sink_location) < self._sink_dist:
+                    self.terminate(py_trees.common.Status.SUCCESS)
+
+        return py_trees.common.Status.RUNNING
+
+    def _destroy_walker(self, walker, controller):
+        controller.stop()
+        controller.destroy()
+        walker.destroy()
+
+    def terminate(self, new_status):
+        """
+        Default terminate. Can be extended in derived class
+        """
+        try:
+            self._destroy_walker(self._walker, self._controller)
+        except RuntimeError:
+            pass  # Actor was already destroyed
