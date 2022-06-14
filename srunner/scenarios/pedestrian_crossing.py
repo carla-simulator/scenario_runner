@@ -12,7 +12,7 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import WalkerFlow
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import WalkerFlow, AIWalkerBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -53,6 +53,11 @@ class PedestrianCrossing(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(
             self._trigger_location)
 
+        self._init_walker_start = convert_dict_to_location(
+            config.other_parameters['init_walker_start'])
+        self._init_walker_end = convert_dict_to_location(
+            config.other_parameters['init_walker_end'])
+
         self._start_walker_flow = convert_dict_to_location(
             config.other_parameters['start_walker_flow'])
         self._sink_locations = []
@@ -92,19 +97,26 @@ class PedestrianCrossing(BasicScenario):
         Ego is expected to cross the junction when there is enough space to go through.
         Ego is not expected to wait for pedestrians crossing the road for a long time.
         """
-        sequence = py_trees.composites.Sequence(name="CrossingActor")
+        sequence = py_trees.composites.Sequence(name="CrossingPedestrian")
         if self.route_mode:
             sequence.add_child(RemoveJunctionEntry([self._reference_waypoint]))
 
         # Move the adversary
+        root = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+
+        root.add_child(AIWalkerBehavior(
+            self._init_walker_start, self._init_walker_end))
+
         walker_root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="PedestrianMove")
-
         walker_root.add_child(WalkerFlow(
             self._start_walker_flow, self._sink_locations, self._sink_locations_prob, self._source_dist_interval))
         walker_root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
-        sequence.add_child(walker_root)
+        root.add_child(walker_root)
+
+        sequence.add_child(root)
 
         return sequence
 

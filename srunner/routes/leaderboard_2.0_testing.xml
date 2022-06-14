@@ -168,6 +168,8 @@
             <source_dist_interval from="3" to="7"/>
             <end_walker_flow_1 x="93" y="21" z="1" p="0.45"/>
             <end_walker_flow_2 x="111" y="23" z="1" p="0.55"/>
+            <init_walker_start x="112" y="10" z="1" />
+            <init_walker_end x="93" y="21" z="1" />
          </scenario>
       </scenarios>
    </route>
