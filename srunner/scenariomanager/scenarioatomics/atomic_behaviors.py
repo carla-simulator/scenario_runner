@@ -3499,9 +3499,9 @@ class WalkerFlow(AtomicBehavior):
     There can be more than one target location.
 
     Important parameters:
-    - source_location (carla.Transform): Transform at which actors will be spawned
-    - sink_locations (list(carla.Transform)): Transforms at which actors will be deleted
-    - sink_locations_prob (list(float)): The probability of each sink_transform
+    - source_location (carla.Location): Location at which actors will be spawned
+    - sink_locations (list(carla.Location)): Locations at which actors will be deleted
+    - sink_locations_prob (list(float)): The probability of each sink_location
     - spawn_dist_interval (list(float)): Distance between spawned actors
     - random_seed : Optional. The seed of numpy's random
     - sink_distance: Actors closer to the sink than this distance will be deleted. 
