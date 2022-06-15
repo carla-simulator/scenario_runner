@@ -63,10 +63,18 @@ class BlockedIntersection(BasicScenario):
         self._block_distance = 10  # m. Will stop blocking when ego is within this distance
         self._block_time = 5  # s
 
-        self._obstacle_horizontal_gap = 2  # m
-        self._obstacle_vertical_gap = 2  # m
-        self._obstacle_model = "static.prop.trampoline"
-        self._obstacle_amount = 6  # Extra obstacles are not included
+        if 'obstacle_model' in config.other_parameters:
+            self._obstacle_model = config.other_parameters['obstacle_model']['value']
+        else:
+            self._obstacle_model = "static.prop.trampoline"
+
+        if 'obstacle_gap' in config.other_parameters:
+            self._obstacle_gap = int(
+                config.other_parameters['obstacle_gap']['value'])
+        else:
+            self._obstacle_gap = 2
+
+        self._obstacle_amount = 1  # Extra obstacles are not included. One obstacle by default.
 
         # The amount of obstacles that invade the road
         if 'extra_obstacle' in config.other_parameters:
@@ -97,17 +105,16 @@ class BlockedIntersection(BasicScenario):
                 break  # No more right lanes
             sidewalk_waypoint = right_wp
 
-        obs_points = sidewalk_waypoint.next_until_lane_end(
-            self._obstacle_horizontal_gap)
-        # Only need some obstacles near junction
-        obs_points = obs_points[-1 *
-                                min(len(obs_points), self._obstacle_amount):]
-        obs_transforms = [wp.transform for wp in obs_points]
+        sidewalk_points = sidewalk_waypoint.next_until_lane_end(
+            self._obstacle_gap)
+        sidewalk_transforms = [wp.transform for wp in sidewalk_points]
+        obs_transforms = sidewalk_transforms[-1 *
+                                             min(len(sidewalk_transforms), self._obstacle_amount):]
 
         # Add some obstacles to invade the road
         for _ in range(self._extra_obstacle):
-            end_transform_1 = obs_transforms[-1]
-            end_transform_2 = obs_transforms[-2]
+            end_transform_1 = sidewalk_transforms[-1]
+            end_transform_2 = sidewalk_transforms[-2]
             delta_location = carla.Location(x=end_transform_1.location.x-end_transform_2.location.x,
                                             y=end_transform_1.location.y-end_transform_2.location.y,
                                             z=end_transform_1.location.z-end_transform_2.location.z)
