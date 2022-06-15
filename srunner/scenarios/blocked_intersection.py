@@ -41,6 +41,7 @@ class BlockedIntersection(BasicScenario):
     The ego is expected to not see the blockage until far into the junction, resulting in a hard brake.
 
     User needs to specify the location of the blocker.
+    This scenario is expected to spawn obstalces on the sidewalk.
     """
 
     def __init__(self, world, ego_vehicles, config, debug_mode=False, criteria_enable=True,
@@ -102,7 +103,7 @@ class BlockedIntersection(BasicScenario):
         while sidewalk_waypoint.lane_type != carla.LaneType.Sidewalk:
             right_wp = sidewalk_waypoint.get_right_lane()
             if right_wp is None:
-                break  # No more right lanes
+                raise RuntimeError("Can't find sidewalk to spawn obstacles")
             sidewalk_waypoint = right_wp
 
         sidewalk_points = sidewalk_waypoint.next_until_lane_end(
