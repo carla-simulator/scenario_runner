@@ -53,8 +53,17 @@ class PedestrianCrossing(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(
             self._trigger_location)
 
-        self._init_walker_start = convert_dict_to_location(
-            config.other_parameters['init_walker_start'])
+        # Get the start point of the initial pedestrian
+        sidewalk_waypoint = self._reference_waypoint
+        while sidewalk_waypoint.lane_type != carla.LaneType.Sidewalk:
+            right_wp = sidewalk_waypoint.get_right_lane()
+            if right_wp is None:
+                break  # No more right lanes
+            sidewalk_waypoint = right_wp
+        self._init_walker_start = sidewalk_waypoint.next_until_lane_end(
+            1)[-1].transform.location
+        self._init_walker_start.z += 1
+
         # The initial pedestrian will walk to end_walker_flow_1
         self._init_walker_end = convert_dict_to_location(
             config.other_parameters['end_walker_flow_1'])
@@ -79,8 +88,6 @@ class PedestrianCrossing(BasicScenario):
         else:
             self._source_dist_interval = [2, 8]  # m
 
-        self._ego_end_distance = 40
-        self._pedestrian_timeout = 60
         self.timeout = timeout
 
         super(PedestrianCrossing, self).__init__("PedestrianCrossing",
