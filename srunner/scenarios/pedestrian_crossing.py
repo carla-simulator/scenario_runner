@@ -41,7 +41,7 @@ class PedestrianCrossing(BasicScenario):
 
     This is a single ego vehicle scenario.
 
-    Notice that the pavement is expected to be self._start_distance (30m) ahead of the trigger point.
+    Notice that the initial pedestrian will walk from the start of the junction ahead to end_walker_flow_1.
     """
 
     def __init__(self, world, ego_vehicles, config, debug_mode=False, criteria_enable=True, timeout=60):
@@ -55,8 +55,9 @@ class PedestrianCrossing(BasicScenario):
 
         self._init_walker_start = convert_dict_to_location(
             config.other_parameters['init_walker_start'])
+        # The initial pedestrian will walk to end_walker_flow_1
         self._init_walker_end = convert_dict_to_location(
-            config.other_parameters['init_walker_end'])
+            config.other_parameters['end_walker_flow_1'])
 
         self._start_walker_flow = convert_dict_to_location(
             config.other_parameters['start_walker_flow'])
