@@ -25,7 +25,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 
-from srunner.tools.background_manager import LeaveSpaceInFront
+from srunner.tools.background_manager import LeaveSpaceInFront, RemoveJunctionEntry
 
 
 class StationaryObjectCrossing(BasicScenario):

@@ -168,4 +168,19 @@
          </scenario>
       </scenarios>
    </route>
+   <route id="10" town="Town05"> <!-- PedestrianCrossing, old towns -->
+      <waypoints>
+         <position x="106" y="55" z="0.0" />
+         <position x="97.5" y="-74.5" z="0.0" />
+      </waypoints>
+      <scenarios>
+         <scenario name="PedestrianCrossing_1" type="PedestrianCrossing">
+            <trigger_point x="106.7" y="50" z="0.0" yaw="270"/>
+            <start_walker_flow x="118" y="8" z="1"/>
+            <source_dist_interval from="3" to="7"/>
+            <end_walker_flow_1 x="93" y="21" z="1" p="0.45"/>
+            <end_walker_flow_2 x="111" y="23" z="1" p="0.55"/>
+         </scenario>
+      </scenarios>
+   </route>
 </routes>
