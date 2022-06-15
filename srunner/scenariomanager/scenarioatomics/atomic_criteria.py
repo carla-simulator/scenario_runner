@@ -21,6 +21,7 @@ import py_trees
 import shapely.geometry
 
 import carla
+from agents.tools.misc import get_speed
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
@@ -2033,5 +2034,75 @@ class CheckMinSpeed(Criterion):
 
         self._traffic_event.set_dict({'percentage': self.actual_value})
         self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
+
+        super().terminate(new_status)
+
+class YieldToEmergencyVehicleTest(Criterion):
+
+    """
+    Atomic Criterion to detect if the actor yields its lane to the emergency vehicle behind it
+
+    Args:
+        actor (carla.ACtor): CARLA actor to be used for this test
+        ev (carla.ACtor): The emergency vehicle
+        optional (bool): If True, the result is not considered for an overall pass/fail result
+    """
+
+    WAITING_TIME_THRESHOLD = 15 # Maximum time for actor to block ev
+
+    def __init__(self, actor, ev, optional=False, name="YieldToEmergencyVehicleTest"):
+        """
+        Constructor
+        """
+        super(YieldToEmergencyVehicleTest, self).__init__(name, actor, ev, optional)
+        self.units = "%"
+        self.success_value = 70
+        self.actual_value = 0
+        # self._last_time = 0
+        self._ev = ev
+        self._target_speed = None
+        self._ev_speed_log = []
+        self._map = CarlaDataProvider.get_map()
+
+    def initialise(self):
+        # self._last_time = GameTime.get_time()
+        super(YieldToEmergencyVehicleTest, self).initialise()
+
+    def update(self):
+        """
+        Collect ev's actual speed on each time-step
+
+        returns:
+            py_trees.common.Status.RUNNING
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # Get target speed from Blackboard
+        # The value is expected to be set by AdaptiveConstantVelocityAgentBehavior
+        if self._target_speed is None:
+            target_speed = py_trees.blackboard.Blackboard().get("ACVAB_speed_{}".format(self.actor.id))
+            if target_speed is not None:
+                self._target_speed = target_speed
+                py_trees.blackboard.Blackboard().set("ACVAB_speed_{}".format(self.actor.id), None, overwrite=True)
+            else:
+                return new_status
+
+        if self._ev.is_alive:
+            ev_speed = get_speed(self._ev)
+            # Record ev's speed in this moment
+            self._ev_speed_log.append(ev_speed)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+    def terminate(self, new_status):
+        mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
+        self.actual_value = mean_speed / self._target_speed *100
+        self.actual_value = round(self.actual_value, 2)
+        
+        if self.actual_value >= self.success_value:
+            self.test_status = "SUCCESS"
+        else:
+            self.test_status = "FAILURE"
 
         super().terminate(new_status)

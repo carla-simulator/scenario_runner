@@ -33,7 +33,7 @@ from agents.navigation.basic_agent import BasicAgent
 from agents.navigation.constant_velocity_agent import ConstantVelocityAgent
 from agents.navigation.local_planner import RoadOption, LocalPlanner
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.tools.misc import is_within_distance
+from agents.tools.misc import is_within_distance, get_speed
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
@@ -2012,6 +2012,74 @@ class ConstantVelocityAgentBehavior(AtomicBehavior):
         self._actor.apply_control(self._control)
         super(ConstantVelocityAgentBehavior, self).terminate(new_status)
 
+class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior, which uses the
+    constant_velocity_agent from CARLA to control the actor until
+    reaching a target location.
+    Important parameters:
+    - actor: CARLA actor to execute the behavior.
+    - reference_actor: Reference CARLA actor to get target speed.
+    - speed_increment: Float value (m/s). 
+                       How much the actor will be faster then the reference_actor.
+    - target_location: Is the desired target location (carla.location),
+                       the actor should move to. 
+                       If it's None, the actor will follow the lane and never stop.
+    - plan: List of [carla.Waypoint, RoadOption] to pass to the controller.
+    The behavior terminates after reaching the target_location (within 2 meters)
+    """
+
+    def __init__(self, actor, reference_actor,  target_location=None, speed_increment=10,
+                 opt_dict=None, name="ConstantVelocityAgentBehavior"):
+        """
+        Set up actor and local planner
+        """
+        super(AdaptiveConstantVelocityAgentBehavior, self).__init__(name, actor)
+        self._speed_increment = speed_increment
+        self._reference_actor = reference_actor
+        self._map = CarlaDataProvider.get_map()
+        self._target_location = target_location
+        self._opt_dict = opt_dict if opt_dict else {}
+        self._control = carla.VehicleControl()
+        self._agent = None
+        self._plan = None
+
+    def initialise(self):
+        """Initialises the agent"""
+        # Get target speed
+        self._target_speed = get_speed(self._reference_actor) + self._speed_increment*3.6
+        py_trees.blackboard.Blackboard().set(
+            "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
+
+        self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict)
+
+        if self._target_location is not None:
+            self._plan = self._agent.trace_route(
+                self._map.get_waypoint(CarlaDataProvider.get_location(self._actor)),
+                self._map.get_waypoint(self._target_location))
+            self._agent.set_global_plan(self._plan)
+
+    def update(self):
+        """Moves the actor and waits for it to finish the plan"""
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._agent.done():
+            new_status = py_trees.common.Status.SUCCESS
+
+        self._control = self._agent.run_step()
+        self._actor.apply_control(self._control)
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+    def terminate(self, new_status):
+        """Resets the control"""
+        self._control.throttle = 0.0
+        self._control.brake = 0.0
+        self._actor.apply_control(self._control)
+        super(AdaptiveConstantVelocityAgentBehavior, self).terminate(new_status)
 
 class Idle(AtomicBehavior):
 
