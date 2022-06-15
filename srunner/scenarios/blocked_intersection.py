@@ -11,15 +11,17 @@ Scenario with low visibility, the ego performs a turn only to find out that the 
 
 from __future__ import print_function
 
-import py_trees
 import carla
-
+import py_trees
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, Idle
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToVehicle
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
+    ActorDestroy, Idle)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import \
+    CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import \
+    InTriggerDistanceToVehicle
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import SwitchLane, RemoveJunctionEntry
+from srunner.tools.background_manager import RemoveJunctionEntry
 
 
 def convert_dict_to_location(actor_dict):
@@ -41,7 +43,7 @@ class BlockedIntersection(BasicScenario):
     The ego is expected to not see the blockage until far into the junction, resulting in a hard brake.
 
     User needs to specify the location of the blocker.
-    This scenario is expected to spawn obstalces on the sidewalk.
+    This scenario is expected to spawn obstacles on the sidewalk.
     """
 
     def __init__(self, world, ego_vehicles, config, debug_mode=False, criteria_enable=True,
@@ -75,7 +77,8 @@ class BlockedIntersection(BasicScenario):
         else:
             self._obstacle_gap = 2
 
-        self._obstacle_amount = 1  # Extra obstacles are not included. One obstacle by default.
+        # Extra obstacles are not included. One obstacle by default.
+        self._obstacle_amount = 1
 
         # The amount of obstacles that invade the road
         if 'extra_obstacle' in config.other_parameters:
@@ -146,8 +149,6 @@ class BlockedIntersection(BasicScenario):
         if self.route_mode:
             sequence.add_child(RemoveJunctionEntry(
                 [self._reference_waypoint, self._blocker_waypoint], all_road_entries=True))
-            sequence.add_child(SwitchLane(
-                self._blocker_waypoint.lane_id, False))
 
         # Ego go behind the blocker
         blocker_wait = py_trees.composites.Parallel("Wait for ego to come close",
@@ -157,11 +158,6 @@ class BlockedIntersection(BasicScenario):
         sequence.add_child(blocker_wait)
         sequence.add_child(Idle(self._block_time))
         sequence.add_child(ActorDestroy(self.other_actors[-1]))
-
-        # End
-        if self.route_mode:
-            sequence.add_child(SwitchLane(
-                self._blocker_waypoint.lane_id, True))
 
         return sequence
 
