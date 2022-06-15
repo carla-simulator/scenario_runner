@@ -58,7 +58,7 @@ class PedestrianCrossing(BasicScenario):
         while sidewalk_waypoint.lane_type != carla.LaneType.Sidewalk:
             right_wp = sidewalk_waypoint.get_right_lane()
             if right_wp is None:
-                break  # No more right lanes
+                raise RuntimeError("Can't find sidewalk to spawn pedestrian")
             sidewalk_waypoint = right_wp
         self._init_walker_start = sidewalk_waypoint.next_until_lane_end(
             1)[-1].transform.location
