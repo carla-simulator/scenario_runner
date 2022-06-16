@@ -151,11 +151,8 @@ class BlockedIntersection(BasicScenario):
                 [self._reference_waypoint, self._blocker_waypoint], all_road_entries=True))
 
         # Ego go behind the blocker
-        blocker_wait = py_trees.composites.Parallel("Wait for ego to come close",
-                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        blocker_wait.add_child(InTriggerDistanceToVehicle(
+        sequence.add_child(InTriggerDistanceToVehicle(
             self.other_actors[-1], self.ego_vehicles[0],  self._block_distance))
-        sequence.add_child(blocker_wait)
         sequence.add_child(Idle(self._block_time))
         sequence.add_child(ActorDestroy(self.other_actors[-1]))
 
