@@ -112,8 +112,6 @@ class BlockedIntersection(BasicScenario):
         sidewalk_points = sidewalk_waypoint.next_until_lane_end(
             self._obstacle_gap)
         sidewalk_transforms = [wp.transform for wp in sidewalk_points]
-        obs_transforms = sidewalk_transforms[-1 *
-                                             min(len(sidewalk_transforms), self._obstacle_amount):]
 
         # Add some obstacles to invade the road
         for _ in range(self._extra_obstacle):
@@ -124,7 +122,10 @@ class BlockedIntersection(BasicScenario):
                                             z=end_transform_1.location.z-end_transform_2.location.z)
             extra_location = end_transform_1.location + delta_location
             extra_transform = carla.Transform(extra_location, carla.Rotation())
-            obs_transforms.append(extra_transform)
+            sidewalk_transforms.append(extra_transform)
+
+        obs_transforms = sidewalk_transforms[-1 *
+                                             min(len(sidewalk_transforms), self._obstacle_amount + self._extra_obstacle):]
 
         # Spawn obstacles
         actors = CarlaDataProvider.request_new_batch_actors(
