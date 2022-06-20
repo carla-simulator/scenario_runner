@@ -1401,7 +1401,7 @@ class KeepVelocity(AtomicBehavior):
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - target_velocity: The target velocity the actor should reach
-    - forced_speed: Whether or not to forcefully set the actors speed
+    - forced_speed: Whether or not to forcefully set the actors speed. This will ony be active until a collision happens
     - duration[optional]: Duration in seconds of this behavior
     - distance[optional]: Maximum distance in meters covered by the actor during this behavior
 
@@ -1420,7 +1420,8 @@ class KeepVelocity(AtomicBehavior):
         self._target_velocity = target_velocity
 
         self._control, self._type = get_actor_control(actor)
-        self._map = self._actor.get_world().get_map()
+        self._world = CarlaDataProvider.get_world()
+        self._map = CarlaDataProvider.get_map()
         self._waypoint = self._map.get_waypoint(self._actor.get_location())
 
         self._forced_speed = force_speed
@@ -1429,6 +1430,17 @@ class KeepVelocity(AtomicBehavior):
         self._distance = 0
         self._start_time = 0
         self._location = None
+
+        self._collision_sensor = None
+
+    def _set_collision_sensor(self):
+        blueprint = self._world.get_blueprint_library().find('sensor.other.collision')
+        self._collision_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self._actor)
+        self._collision_sensor.listen(lambda _: self._stop_constant_velocity())
+
+    def _stop_constant_velocity(self, event):
+        """Stops the constant velocity behavior"""
+        self._forced_speed = False
 
     def initialise(self):
         self._location = CarlaDataProvider.get_location(self._actor)
@@ -1441,6 +1453,8 @@ class KeepVelocity(AtomicBehavior):
         elif self._type == 'vehicle':
             self._control.hand_brake = False
         self._actor.apply_control(self._control)
+
+        self._set_collision_sensor()
 
         super(KeepVelocity, self).initialise()
 
@@ -1483,13 +1497,18 @@ class KeepVelocity(AtomicBehavior):
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-
-        if self._type == 'vehicle':
-            self._control.throttle = 0.0
-        elif self._type == 'walker':
-            self._control.speed = 0.0
-        if self._actor is not None and self._actor.is_alive:
-            self._actor.apply_control(self._control)
+        try:
+            if self._type == 'vehicle':
+                self._control.throttle = 0.0
+            elif self._type == 'walker':
+                self._control.speed = 0.0
+            if self._actor is not None and self._actor.is_alive:
+                self._actor.apply_control(self._control)
+            if self._collision_sensor:
+                self._collision_sensor.stop()
+                self._collision_sensor.destroy()
+        except RuntimeError:
+            pass
         super(KeepVelocity, self).terminate(new_status)
 
 
@@ -2054,6 +2073,8 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
         self._agent = None
         self._plan = None
 
+        self._grp = CarlaDataProvider.get_global_route_planner()
+
     def initialise(self):
         """Initialises the agent"""
         # Get target speed
@@ -2061,7 +2082,8 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
         py_trees.blackboard.Blackboard().set(
             "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
 
-        self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict)
+        self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict,
+                                            map_inst=self._map, grp_inst=self._grp)
 
         if self._target_location is not None:
             self._plan = self._agent.trace_route(
@@ -2887,7 +2909,7 @@ class BicycleFlow(AtomicBehavior):
             for wp, _ in self._plan:
                 if wp.transform.location.distance(ref_loc) < self._spawn_dist:
                     continue
-                self._spawn_actor()
+                self._spawn_actor(wp.transform)
                 ref_loc = wp.transform.location
                 self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
@@ -3775,9 +3797,11 @@ class AIWalkerBehavior(AtomicBehavior):
         return py_trees.common.Status.RUNNING
 
     def _destroy_walker(self, walker, controller):
-        controller.stop()
-        controller.destroy()
-        walker.destroy()
+        if controller:
+            controller.stop()
+            controller.destroy()
+        if walker:
+            walker.destroy()
 
     def terminate(self, new_status):
         """

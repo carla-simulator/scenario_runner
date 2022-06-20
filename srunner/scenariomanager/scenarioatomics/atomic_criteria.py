@@ -2098,14 +2098,17 @@ class YieldToEmergencyVehicleTest(Criterion):
         return new_status
 
     def terminate(self, new_status):
-        mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
-        self.actual_value = mean_speed / self._target_speed *100
-        self.actual_value = round(self.actual_value, 2)
-
-        if self.actual_value >= self.success_value:
-            self.test_status = "SUCCESS"
+        if not len(self._ev_speed_log):
+            self.actual_value = 100
         else:
-            self.test_status = "FAILURE"
+            mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
+            self.actual_value = mean_speed / self._target_speed *100
+            self.actual_value = round(self.actual_value, 2)
+
+            if self.actual_value >= self.success_value:
+                self.test_status = "SUCCESS"
+            else:
+                self.test_status = "FAILURE"
 
         if self.test_status == "FAILURE":
             traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE)

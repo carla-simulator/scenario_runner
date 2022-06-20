@@ -57,12 +57,12 @@ class YieldToEmergencyVehicle(BasicScenario):
             self._trigger_location)
         self._ev_start_transform = None
 
-        super(YieldToEmergencyVehicle, self).__init__("YieldToEmergencyVehicle",
-                                                      ego_vehicles,
-                                                      config,
-                                                      world,
-                                                      debug_mode,
-                                                      criteria_enable=criteria_enable)
+        super().__init__("YieldToEmergencyVehicle",
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """

@@ -52,7 +52,7 @@ class VehicleOpensDoor(BasicScenario):
         self._reaction_time = 3.0
 
         if 'distance' in config.other_parameters:
-            self._parked_distance = config.other_parameters['distance']['value']
+            self._parked_distance = float(config.other_parameters['distance']['value'])
         else:
             self._parked_distance = 50
 

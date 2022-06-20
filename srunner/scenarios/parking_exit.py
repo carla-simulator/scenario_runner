@@ -78,6 +78,11 @@ class ParkingExit(BasicScenario):
         else:
             self._direction = "right"
 
+        if 'flow_interval' in config.other_parameters:
+            self._flow_interval = float(config.other_parameters['flow_interval']['value'])
+        else:
+            self._flow_interval = 30
+
         # Get parking_waypoint based on trigger_point
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
@@ -90,7 +95,7 @@ class ParkingExit(BasicScenario):
             raise Exception(
                 "Couldn't find parking point on the {} side".format(self._direction))
 
-        self._flow_interval = 30
+        self._bp_attributes = {'base_type': 'car', 'has_lights': False}
 
         super(ParkingExit, self).__init__("ParkingExit",
                                           ego_vehicles,
@@ -111,7 +116,7 @@ class ParkingExit(BasicScenario):
                 "Couldn't find viable position for the vehicle in front of the parking point")
 
         actor_front = CarlaDataProvider.request_new_actor(
-            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car', 'has_lights': False})
+            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter=self._bp_attributes)
         if actor_front is None:
             raise ValueError(
                 "Couldn't spawn the vehicle in front of the parking point")
@@ -129,7 +134,7 @@ class ParkingExit(BasicScenario):
                 "Couldn't find viable position for the vehicle behind the parking point")
 
         actor_behind = CarlaDataProvider.request_new_actor(
-            'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+            'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter=self._bp_attributes)
         if actor_behind is None:
             raise ValueError(
                 "Couldn't spawn the vehicle behind the parking point")

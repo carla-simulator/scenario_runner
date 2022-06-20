@@ -78,7 +78,8 @@ class PedestrianCrossing(BasicScenario):
 
         for item in end_walker_flow_list:
             self._sink_locations.append(convert_dict_to_location(item))
-            self._sink_locations_prob.append(float(item['p']))
+            prob = float(item['p'])  if 'p' in item else 0.5
+            self._sink_locations_prob.append(prob)
 
         if 'source_dist_interval' in config.other_parameters:
             self._source_dist_interval = [

@@ -22,7 +22,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestr
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
-                                                                               WaitEndIntersection,
                                                                                DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route

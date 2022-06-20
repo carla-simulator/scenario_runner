@@ -108,7 +108,7 @@ class Accident(BasicScenario):
         w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
         vehicle_1_transform = carla.Transform(w_loc, vehicle_wp.transform.rotation)
         vehicle_1_car = CarlaDataProvider.request_new_actor(
-            'vehicle.*', vehicle_1_transform, attribute_filter={'base_type': 'car'})
+            'vehicle.*', vehicle_1_transform, attribute_filter={'base_type': 'car', 'has_lights': False})
         if not vehicle_1_car:
             raise ValueError("Couldn't spawn the accident car")
         self.other_actors.append(vehicle_1_car)
@@ -127,7 +127,7 @@ class Accident(BasicScenario):
         w_loc += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
         vehicle_2_transform = carla.Transform(w_loc, vehicle_wp.transform.rotation)
         vehicle_2_car = CarlaDataProvider.request_new_actor(
-            'vehicle.*', vehicle_2_transform, attribute_filter={'base_type': 'car'})
+            'vehicle.*', vehicle_2_transform, attribute_filter={'base_type': 'car', 'has_lights': False})
         if not vehicle_2_car:
             raise ValueError("Couldn't spawn the accident car")
         self.other_actors.append(vehicle_2_car)
@@ -218,7 +218,7 @@ class ParkedObstacle(BasicScenario):
         else:
             self._distance = 120
         self._drive_distance = self._distance + 20
-        self._offset = 0.75
+        self._offset = 1.0
 
         self._lights = carla.VehicleLightState.RightBlinker | carla.VehicleLightState.LeftBlinker
 
