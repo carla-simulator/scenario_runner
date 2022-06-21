@@ -56,6 +56,8 @@ class InvadingTurn(BasicScenario):
         self._adversary_start = convert_dict_to_location(
             config.other_parameters['adversary_start'])
 
+        self._displacement = -1.5
+
         super(InvadingTurn, self).__init__("InvadingTurn",
                                            ego_vehicles,
                                            config,
@@ -120,8 +122,8 @@ class InvadingTurn(BasicScenario):
         self._adversary_end = self._reference_waypoint.get_left_lane().transform.location
         print("_adversary_end:{}".format(self._adversary_end))
         # TODO: para speed
-        adversary_end_condition.add_child(BasicAgentBehavior(
-            self.other_actors[0], self._adversary_end))
+        adversary_end_condition.add_child(ConstantVelocityAgentBehavior(
+            self.other_actors[0], self._adversary_end, 10, opt_dict={'offset': self._displacement}))
 
         sequence.add_child(adversary_end_condition)
 
