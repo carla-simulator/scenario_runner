@@ -556,12 +556,14 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 actor = CarlaDataProvider._world.try_spawn_actor(blueprint, spawn_point)
 
         else:
-            # slightly lift the actor to avoid collisions with ground when spawning the actor
+            # For non prop models, slightly lift the actor to avoid collisions with the ground
+            z_offset = 0.2 if 'prop' not in model else 0
+
             # DO NOT USE spawn_point directly, as this will modify spawn_point permanently
             _spawn_point = carla.Transform(carla.Location(), spawn_point.rotation)
             _spawn_point.location.x = spawn_point.location.x
             _spawn_point.location.y = spawn_point.location.y
-            _spawn_point.location.z = spawn_point.location.z + 0.2
+            _spawn_point.location.z = spawn_point.location.z + z_offset
             actor = CarlaDataProvider._world.try_spawn_actor(blueprint, _spawn_point)
 
         if actor is None:

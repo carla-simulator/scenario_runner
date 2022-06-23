@@ -23,9 +23,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestr
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import (ExtentExitRoadSpace,
-                                              RemoveJunctionEntry,
-                                              ClearJunction)
+from srunner.tools.background_manager import HandleJunctionScenario
 
 from srunner.tools.scenario_helper import generate_target_waypoint
 
@@ -99,10 +97,14 @@ class HighwayCutIn(BasicScenario):
         behavior = py_trees.composites.Sequence("HighwayCutIn")
 
         if self.route_mode:
-            behavior.add_child(RemoveJunctionEntry([self._other_waypoint]))
-            behavior.add_child(ClearJunction())
-            behavior.add_child(ExtentExitRoadSpace(self._extra_space))
-
+            behavior.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_road=False,
+                remove_entries=[self._other_waypoint],
+                remove_exits=[],
+                stop_entries=False,
+                extend_road_exit=self._extra_space
+            ))
         behavior.add_child(ActorTransformSetter(self._cut_in_vehicle, self._other_transform))
 
         # Sync behavior

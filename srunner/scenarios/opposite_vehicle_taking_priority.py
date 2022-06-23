@@ -30,7 +30,7 @@ from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
                                            get_junction_topology,
                                            filter_junction_wp_direction)
 
-from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry, ClearEgoLane
+from srunner.tools.background_manager import HandleJunctionScenario
 
 
 class OppositeVehicleRunningRedLight(BasicScenario):
@@ -199,10 +199,14 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(ClearJunction())
-            root.add_child(ClearEgoLane())
-            root.add_child(RemoveJunctionEntry([self._spawn_wp]))
-
+            root.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_road=True,
+                remove_entries=[self._spawn_wp],
+                remove_exits=[self._sink_wp],
+                stop_entries=False,
+                extend_road_exit=0
+            ))
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)
         root.add_child(ActorDestroy(self.other_actors[0]))
@@ -375,8 +379,14 @@ class OppositeVehicleTakingPriority(BasicScenario):
 
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            root.add_child(ClearJunction())
-            root.add_child(RemoveJunctionEntry([self._spawn_wp]))
+            root.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_road=True,
+                remove_entries=[self._spawn_wp],
+                remove_exits=[self._sink_wp],
+                stop_entries=True,
+                extend_road_exit=0
+            ))
 
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
         root.add_child(main_behavior)

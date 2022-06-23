@@ -153,17 +153,20 @@ class DynamicObjectCrossing(BasicScenario):
         else:
             self._distance = 12
 
+        if 'blocker_model' in config.other_parameters:
+            self._blocker_model = config.other_parameters['blocker_model']['value']
+        else:
+            self._blocker_model = 'static.prop.vendingmachine'  # blueprint filter of the blocker
+
         self._blocker_shift = 0.9
         self._retry_dist = 0.4
 
-        self._adversary_type = 'walker.*'  # blueprint filter of the adversary
-        self._blocker_type = 'static.prop.vendingmachine'  # blueprint filter of the blocker
         self._adversary_transform = None
         self._blocker_transform = None
         self._collision_wp = None
 
-        self._adversary_speed = 3.0  # Speed of the adversary [m/s]
-        self._reaction_time = 1.5  # Time the agent has to react to avoid the collision [s]
+        self._adversary_speed = 2.0  # Speed of the adversary [m/s]
+        self._reaction_time = 1.8  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
@@ -219,38 +222,43 @@ class DynamicObjectCrossing(BasicScenario):
                 right_wp = sidewalk_waypoint.get_right_lane()
                 if right_wp is None:
                     break  # No more right lanes
-                self._collision_dist += sidewalk_waypoint.transform.location.distance(right_wp.transform.location)
                 sidewalk_waypoint = right_wp
 
-            # Get the adversary transform and spawn it
-            offset = {"yaw": 270, "z": 0.5, "k": 1.0}
-            self._adversary_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
-            self._collision_dist += sidewalk_waypoint.transform.location.distance(self._adversary_transform.location)
-            adversary = CarlaDataProvider.request_new_actor(self._adversary_type, self._adversary_transform)
-            if adversary is None:
-                self._number_of_attempts -= 1
-                move_dist = self._retry_dist
-                continue
-
             # Get the blocker transform and spawn it
-            blocker_wp = sidewalk_waypoint.previous(self._blocker_shift)[0]
-            offset = {"yaw": 90, "z": 0.0, "k": 1.0}
-            self._blocker_transform = self._get_sidewalk_transform(blocker_wp, offset)
-            blocker = CarlaDataProvider.request_new_actor(self._blocker_type, self._blocker_transform)
+            offset = {"yaw": 90, "z": 0.0, "k": 1.5}
+            self._blocker_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
+            blocker = CarlaDataProvider.request_new_actor(self._blocker_model, self._blocker_transform)
             if not blocker:
-                adversary.destroy()
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
+                print("Failed blocker")
                 continue
 
-            # Both actors where summoned, end
+            # Get the adversary transform and spawn it
+            walker_dist = blocker.bounding_box.extent.x + 0.5
+            wps = sidewalk_waypoint.next(walker_dist)
+            if not wps:
+                raise ValueError("Couldn't find a location to spawn the adversary")
+            walker_wp = wps[0]
+
+            offset = {"yaw": 270, "z": 0.5, "k": 1.2}
+            self._adversary_transform = self._get_sidewalk_transform(walker_wp, offset)
+            adversary = CarlaDataProvider.request_new_actor('walker.*', self._adversary_transform)
+            if adversary is None:
+                blocker.destroy()
+                self._number_of_attempts -= 1
+                move_dist = self._retry_dist
+                print("Failed adversary")
+                continue
+
+            self._collision_dist += waypoint.transform.location.distance(self._adversary_transform.location)
+
+            # Both actors were succesfully spawned, end
             break
 
         if self._number_of_attempts == 0:
             raise Exception("Couldn't find viable position for the adversary and blocker actors")
 
-        if isinstance(adversary, carla.Vehicle):
-            adversary.apply_control(carla.VehicleControl(hand_brake=True))
         blocker.set_simulate_physics(enabled=False)
         self.other_actors.append(adversary)
         self.other_actors.append(blocker)

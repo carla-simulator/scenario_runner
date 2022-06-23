@@ -1436,7 +1436,7 @@ class KeepVelocity(AtomicBehavior):
     def _set_collision_sensor(self):
         blueprint = self._world.get_blueprint_library().find('sensor.other.collision')
         self._collision_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self._actor)
-        self._collision_sensor.listen(lambda _: self._stop_constant_velocity())
+        self._collision_sensor.listen(lambda event: self._stop_constant_velocity(event))
 
     def _stop_constant_velocity(self, event):
         """Stops the constant velocity behavior"""
@@ -2792,7 +2792,7 @@ class ActorFlow(AtomicBehavior):
                 self._spawn_actor(wp.transform)
                 ref_loc = wp.transform.location
                 self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
-    
+
     def _spawn_actor(self, transform):
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', transform, rolename='scenario',
@@ -2802,7 +2802,7 @@ class ActorFlow(AtomicBehavior):
             return py_trees.common.Status.RUNNING
 
         actor.set_autopilot(True)
-        self._tm.set_path(actor, [self._sink_location])
+        self._tm.set_path(actor, [self._source_transform.location, self._sink_location])
 
         if self._is_constant_velocity_active:
             self._tm.ignore_vehicles_percentage(actor, 100)

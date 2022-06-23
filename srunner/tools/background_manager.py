@@ -112,20 +112,6 @@ class StartFrontVehicles(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class ExtentExitRoadSpace(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that an exit road needs more space
-    """
-    def __init__(self, distance, name="ExtentExitRoadSpace"):
-        self._distance = distance
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", self._distance, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
 class LeaveSpaceInFront(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that the ego needs more space in front.
@@ -137,7 +123,7 @@ class LeaveSpaceInFront(AtomicBehavior):
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_LeaveSpaceInFront", self._space, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_LeaveSpaceInFront", [self._space], overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -186,7 +172,22 @@ class EndObstacleScenario(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class SwitchLane(AtomicBehavior):
+class AddExtraRoadSpace(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to leave more space between road vehicles.
+    Used when another behavior removes a specific lane / lane changes the vehicles
+    """
+    def __init__(self, extra_actors, name="EndObstacleScenario"):
+        self._extra_actors = extra_actors
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_AddExtraRoadSpace", self._extra_actors, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class RemoveRoadLane(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to remove its actors from the given lane 
     and stop generating new ones on this lane, or recover from stopping.
@@ -195,78 +196,78 @@ class SwitchLane(AtomicBehavior):
         lane_id (str): A carla.Waypoint.lane_id
         active (bool)
     """
-    def __init__(self, lane_id=None, active=True, name="SwitchLane"):
-        self._lane_id = lane_id
-        self._active = active
+    def __init__(self, lane_wp, name="RemoveRoadLane"):
+        self._lane_wp = lane_wp
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_SwitchLane", [self._lane_id, self._active], overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_RemoveRoadLane", self._lane_wp, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class RemoveJunctionEntry(AtomicBehavior):
+class ReAddEgoRoadLane(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity to remove its actors from the given lane,
-    and stop generating new ones on this lane.
+    Updates the blackboard to tell the background activity to readd the ego road lane.
 
     Args:
-        wp (carla.Waypoint): A list of waypoint used as reference to the entry lane
-        all_road_entries (bool): Boolean to remove all entries part of the same road, or just one
+        lane_id (str): A carla.Waypoint.lane_id
+        active (bool)
     """
-    def __init__(self, wps, name="RemoveJunctionEntry"):
-        self._wps = wps
+    def __init__(self, name="BA_ReAddEgoRoadLane"):
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", self._wps, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_ReAddEgoRoadLane", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class RemoveJunctionExit(AtomicBehavior):
+class LeaveSpaceInFront(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a junction exit has to be empty.
-    This is done using the direction from which the incoming traffic enters the junction. It should be
-    something like 'left', 'right' or 'opposite'.
+    Updates the blackboard to tell the background activity that the ego needs more space in front.
+    This only works at roads, not junctions.
     """
-
-    def __init__(self, wps, name="RemoveJunctionExit"):
-        self._wps = wps
+    def __init__(self, space, name="LeaveSpaceInFront"):
+        self._space = space
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionExit", self._wps, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_LeaveSpaceInFront", self._space, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class ClearJunction(AtomicBehavior):
+class HandleJunctionScenario(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity to remove all actors inside the junction,
-    and stop the ones that are about to enter it, leaving an empty space inside the junction.
-    """
+    Updates the blackboard to tell the background activity to adapt to a junction scenario
 
-    def __init__(self, name="ClearJunction"):
+    Args:
+        clear_junction (bool): Remove all actors inside the junction, and all that enter it afterwards
+        clear_ego_road (bool): Remove all actors part of the ego road to ensure a smooth entry of the ego to the junction.
+        remove_entries (list): list of waypoint representing a junction entry that needs to be removed
+        remove_exits (list): list of waypoint representing a junction exit that needs to be removed
+        stop_entries (bool): Stops all the junction entries
+        extend_road_exit (float): Moves the road junction actors forward to leave more space for the scenario.
+            It also deactivates the road sources.
+        active (bool)
+    """
+    def __init__(self, clear_junction=True, clear_ego_road=True, remove_entries=[],
+                 remove_exits=[], stop_entries=True, extend_road_exit=0,
+                 name="HandleJunctionScenario"):
+        self._clear_junction = clear_junction
+        self._clear_ego_road = clear_ego_road
+        self._remove_entries = remove_entries
+        self._remove_exits = remove_exits
+        self._stop_entries = stop_entries
+        self._extend_road_exit = extend_road_exit
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_ClearJunction", True, overwrite=True)
+        py_trees.blackboard.Blackboard().set(
+            "BA_HandleJunctionScenario",
+            [self._clear_junction, self._clear_ego_road, self._remove_entries,
+             self._remove_exits, self._stop_entries, self._extend_road_exit],
+            overwrite=True)
         return py_trees.common.Status.SUCCESS
-
-
-class ClearEgoLane(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity to remove all actors in front of the ego.
-    """
-
-    def __init__(self, name="ClearEgoLane"):
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_ClearEgoLane", True, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-

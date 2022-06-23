@@ -21,7 +21,9 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Dr
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import (ChangeOppositeBehavior,
-                                              LeaveSpaceInFront)
+                                              RemoveRoadLane,
+                                              ReAddEgoRoadLane,
+                                              AddExtraRoadSpace)
 
 
 class ConstructionObstacle(BasicScenario):
@@ -146,12 +148,6 @@ class ConstructionObstacle(BasicScenario):
         Only behavior here is to wait
         """
         root = py_trees.composites.Sequence()
-        if self.route_mode:
-            prev_wps = self._reference_waypoint.next(self._distance / 2)
-            if not prev_wps:
-                raise ValueError("Couldn't find a viable position to set up the construction actors")
-            lane_change_wp = prev_wps[0]
-            root.add_child(LeaveSpaceInFront(self._distance + 20))
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
@@ -159,7 +155,17 @@ class ConstructionObstacle(BasicScenario):
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
-        return root
+
+        if not self.route_mode:
+            return root
+
+        sequence = py_trees.composites.Sequence()
+        sequence.add_child(RemoveRoadLane(self._reference_waypoint))
+        sequence.add_child(AddExtraRoadSpace(2))
+        sequence.add_child(root)
+        sequence.add_child(ReAddEgoRoadLane())
+        sequence.add_child(AddExtraRoadSpace(0))
+        return sequence
 
     def _create_test_criteria(self):
         """
@@ -194,18 +200,24 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
         Only behavior here is to wait
         """
         root = py_trees.composites.Sequence()
-        if self.route_mode:
-            root.add_child(SwitchWrongDirectionTest(False))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
-            root.add_child(LeaveSpaceInFront(self._distance + 20))
-
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
 
-        if self.route_mode:
-            root.add_child(SwitchWrongDirectionTest(True))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
-        return root
+
+        if not self.route_mode:
+            return root
+
+        sequence = py_trees.composites.Sequence()
+        sequence.add_child(SwitchWrongDirectionTest(False))
+        sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
+        sequence.add_child(RemoveRoadLane(self._reference_waypoint))
+        sequence.add_child(AddExtraRoadSpace(2))
+        sequence.add_child(root)
+        sequence.add_child(SwitchWrongDirectionTest(True))
+        sequence.add_child(ChangeOppositeBehavior(spawn_dist=50))
+        sequence.add_child(ReAddEgoRoadLane())
+        sequence.add_child(AddExtraRoadSpace(0))
+        return sequence

@@ -22,9 +22,10 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Wa
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
-                                           filter_junction_wp_direction)
+                                           filter_junction_wp_direction,
+                                           get_same_dir_lanes)
 
-from srunner.tools.background_manager import ClearJunction, RemoveJunctionEntry, ExtentExitRoadSpace, ClearEgoLane
+from srunner.tools.background_manager import HandleJunctionScenario
 
 
 class SignalizedJunctionRightTurn(BasicScenario):
@@ -62,9 +63,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         self._source_dist = 5 * self._flow_speed
         self._sink_dist = 3 * self._flow_speed
 
-        self._signalized_junction = False
         self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
-
         self._flow_tl_dict = {}
         self._init_tl_dict = {}
 
@@ -160,10 +159,14 @@ class SignalizedJunctionRightTurn(BasicScenario):
 
         sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
         if self.route_mode:
-            sequence.add_child(ClearJunction())
-            sequence.add_child(ClearEgoLane())
-            sequence.add_child(RemoveJunctionEntry([self._source_wp]))
-            sequence.add_child(ExtentExitRoadSpace(50))
+            sequence.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_road=True,
+                remove_entries=get_same_dir_lanes(self._source_wp),
+                remove_exits=[],
+                stop_entries=False,
+                extend_road_exit=self._sink_dist
+            ))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
@@ -298,10 +301,14 @@ class NonSignalizedJunctionRightTurn(BasicScenario):
 
         sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
         if self.route_mode:
-            sequence.add_child(ClearJunction())
-            sequence.add_child(ClearEgoLane())
-            sequence.add_child(RemoveJunctionEntry([self._source_wp]))
-            sequence.add_child(ExtentExitRoadSpace(50))
+            sequence.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_road=True,
+                remove_entries=get_same_dir_lanes(self._source_wp),
+                remove_exits=[],
+                stop_entries=True,
+                extend_road_exit=self._sink_dist
+            ))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))

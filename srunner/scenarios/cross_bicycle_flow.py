@@ -20,8 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.scenario_helper import get_closest_traffic_light
-from srunner.tools.background_manager import ClearJunction
+from srunner.tools.background_manager import HandleJunctionScenario
 from agents.navigation.local_planner import RoadOption
 
 
@@ -174,7 +173,14 @@ class CrossingBicycleFlow(BasicScenario):
             return root
 
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ClearJunction())
+        sequence.add_child(HandleJunctionScenario(
+            clear_junction=True,
+            clear_ego_road=True,
+            remove_entries=[],
+            remove_exits=[],
+            stop_entries=False,
+            extend_road_exit=0
+        ))
         sequence.add_child(root)
         return sequence
 
