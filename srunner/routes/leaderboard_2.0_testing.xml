@@ -168,17 +168,15 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="68" town="TrainingMap"> <!-- InvadingTurn, new town -->
+<route id="68" town="TrainingMap"> <!-- InvadingTurn, new town -->
       <waypoints>
-         <position x="-1299" y="3639.2" z="368" />
-         <position x="-1283.9" y="3672" z="368" />
-         <position x="-1287.9" y="3681.8" z="368" />
-         <position x="-1440" y="3680" z="368" />
+         <position x="1979.2" y="4241.2" z="361" />
+         <position x="1825" y="4307.6" z="361" />
       </waypoints>
       <scenarios>
          <scenario name="InvadingTurn_1" type="InvadingTurn">
-            <trigger_point x="-1292.09" y="3657.82" z="354" yaw="63.4"/>
-            <adversary_start x="-1287.3" y="3684.4" z="368"/>
+            <trigger_point x="1976.1" y="4260.5" z="361" yaw="99"/>
+            <adversary_start x="1875" y="4319.7" z="361"/>
          </scenario>
       </scenarios>
    </route>

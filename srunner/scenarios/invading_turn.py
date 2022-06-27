@@ -56,7 +56,7 @@ class InvadingTurn(BasicScenario):
         self._adversary_start = convert_dict_to_location(
             config.other_parameters['adversary_start'])
 
-        self._displacement = -1.5
+        self._displacement = -1
 
         super(InvadingTurn, self).__init__("InvadingTurn",
                                            ego_vehicles,
@@ -108,8 +108,6 @@ class InvadingTurn(BasicScenario):
             #     self._adversary_start_waypoint.lane_id, False))
             sequence.add_child(SwitchLane(
                 self._reference_waypoint.lane_id, False))
-            sequence.add_child(RemoveJunctionEntry(
-                [self._adversary_start_waypoint, self._reference_waypoint], True))
 
         # Teleport adversary to its place
         sequence.add_child(ActorTransformSetter(
