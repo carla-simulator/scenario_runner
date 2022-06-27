@@ -56,7 +56,7 @@ class InvadingTurn(BasicScenario):
         self._adversary_start = convert_dict_to_location(
             config.other_parameters['adversary_start'])
 
-        self._displacement = -1
+        self._displacement = -1.1
 
         super(InvadingTurn, self).__init__("InvadingTurn",
                                            ego_vehicles,
