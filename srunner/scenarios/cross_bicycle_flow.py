@@ -175,7 +175,7 @@ class CrossingBicycleFlow(BasicScenario):
         sequence = py_trees.composites.Sequence()
         sequence.add_child(HandleJunctionScenario(
             clear_junction=True,
-            clear_ego_road=True,
+            clear_ego_entry=True,
             remove_entries=[],
             remove_exits=[],
             stop_entries=False,

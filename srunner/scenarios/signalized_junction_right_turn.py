@@ -161,7 +161,7 @@ class SignalizedJunctionRightTurn(BasicScenario):
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
-                clear_ego_road=True,
+                clear_ego_entry=True,
                 remove_entries=get_same_dir_lanes(self._source_wp),
                 remove_exits=[],
                 stop_entries=False,
@@ -303,7 +303,7 @@ class NonSignalizedJunctionRightTurn(BasicScenario):
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
-                clear_ego_road=True,
+                clear_ego_entry=True,
                 remove_entries=get_same_dir_lanes(self._source_wp),
                 remove_exits=[],
                 stop_entries=True,

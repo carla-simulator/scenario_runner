@@ -68,9 +68,9 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         if weather.sun_altitude_angle <= self.SUN_ALTITUDE_THRESHOLD_1 \
                 or weather.sun_altitude_angle >= self.SUN_ALTITUDE_THRESHOLD_2:
             return True
-        if weather.cloudiness > self.CLOUDINESS_THRESHOLD:
+        if weather.cloudiness >= self.CLOUDINESS_THRESHOLD:
             return True
-        if weather.fog_density > self.FOG_THRESHOLD:
+        if weather.fog_density >= self.FOG_THRESHOLD:
             return True
         return False
 

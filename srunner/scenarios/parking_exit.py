@@ -78,10 +78,10 @@ class ParkingExit(BasicScenario):
         else:
             self._direction = "right"
 
-        if 'flow_interval' in config.other_parameters:
-            self._flow_interval = float(config.other_parameters['flow_interval']['value'])
+        if 'flow_distance' in config.other_parameters:
+            self._flow_distance = float(config.other_parameters['flow_distance']['value'])
         else:
-            self._flow_interval = 30
+            self._flow_distance = 30
 
         # Get parking_waypoint based on trigger_point
         self._trigger_location = config.trigger_points[0].location
@@ -172,7 +172,7 @@ class ParkingExit(BasicScenario):
         """
 
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_interval))
+        sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_distance))
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 

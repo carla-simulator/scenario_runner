@@ -73,14 +73,14 @@ class EnterActorFlow(BasicScenario):
             self._source_dist_interval = [5, 7] # m
 
         ego_location = config.trigger_points[0].location
-        self._ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
+        self._reference_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
-        super(EnterActorFlow, self).__init__("EnterActorFlow",
-                                             ego_vehicles,
-                                             config,
-                                             world,
-                                             debug_mode,
-                                             criteria_enable=criteria_enable)
+        super().__init__("EnterActorFlow",
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _create_behavior(self):
         """
@@ -115,8 +115,8 @@ class EnterActorFlow(BasicScenario):
 
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
-                clear_ego_road=True,
-                remove_entries=[self._ego_wp, source_wp],
+                clear_ego_entry=True,
+                remove_entries=source_wps,
                 remove_exits=[],
                 stop_entries=False,
                 extend_road_exit=extra_space
@@ -166,13 +166,16 @@ class EnterActorFlowV2(EnterActorFlow):
         for sink_wp in sink_wps:
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
 
+        exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
+        exit_wp = exit_wp.next(10)[0]  # just in case the junction maneuvers don't match
+
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
-                clear_ego_road=True,
+                clear_ego_entry=True,
                 remove_entries=[source_wp],
-                remove_exits=sink_wps,
+                remove_exits= get_same_dir_lanes(exit_wp),
                 stop_entries=False,
                 extend_road_exit=0
             ))
@@ -258,7 +261,7 @@ class HighwayExit(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            sequence.add_child(RemoveRoadLane(source_wp.lane_id))
+            sequence.add_child(RemoveRoadLane(source_wp))
         sequence.add_child(root)
 
         return sequence
@@ -318,6 +321,9 @@ class MergerIntoSlowTraffic(BasicScenario):
         else:
             self._source_dist_interval = [5, 7] # m
 
+        ego_location = config.trigger_points[0].location
+        self._reference_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+
         super().__init__("MergerIntoSlowTraffic",
                          ego_vehicles,
                          config,
@@ -340,8 +346,8 @@ class MergerIntoSlowTraffic(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         for source_wp, sink_wp in zip(source_wps, sink_wps):
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
-            root.add_child(ActorFlow(
-                source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
+        root.add_child(ActorFlow(
+            source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
@@ -357,8 +363,8 @@ class MergerIntoSlowTraffic(BasicScenario):
 
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
-                clear_ego_road=True,
-                remove_entries=[source_wp],
+                clear_ego_entry=True,
+                remove_entries=source_wps,
                 remove_exits=[],
                 stop_entries=False,
                 extend_road_exit=extra_space
@@ -407,13 +413,16 @@ class MergerIntoSlowTrafficV2(MergerIntoSlowTraffic):
         for sink_wp in sink_wps:
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
 
+        exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
+        exit_wp = exit_wp.next(10)[0]  # just in case the junction maneuvers don't match
+
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
-                clear_ego_road=True,
+                clear_ego_entry=True,
                 remove_entries=[source_wp],
-                remove_exits=[sink_wps],
+                remove_exits=get_same_dir_lanes(exit_wp),
                 stop_entries=False,
                 extend_road_exit=0
             ))
@@ -496,7 +505,7 @@ class InterurbanActorFlow(BasicScenario):
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
-                clear_ego_road=False,
+                clear_ego_entry=False,
                 remove_entries=[source_wp, self._other_entry_wp],
                 remove_exits=[],
                 stop_entries=False,
@@ -606,7 +615,7 @@ class InterurbanAdvancedActorFlow(BasicScenario):
 
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
-                clear_ego_road=True,
+                clear_ego_entry=True,
                 remove_entries=[source_wp_1, source_wp_2],
                 remove_exits=[self._exit_wp],
                 stop_entries=False,

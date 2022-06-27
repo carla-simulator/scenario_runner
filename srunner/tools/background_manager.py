@@ -172,21 +172,6 @@ class EndObstacleScenario(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class AddExtraRoadSpace(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity to leave more space between road vehicles.
-    Used when another behavior removes a specific lane / lane changes the vehicles
-    """
-    def __init__(self, extra_actors, name="EndObstacleScenario"):
-        self._extra_actors = extra_actors
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_AddExtraRoadSpace", self._extra_actors, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
 class RemoveRoadLane(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to remove its actors from the given lane 
@@ -244,7 +229,7 @@ class HandleJunctionScenario(AtomicBehavior):
 
     Args:
         clear_junction (bool): Remove all actors inside the junction, and all that enter it afterwards
-        clear_ego_road (bool): Remove all actors part of the ego road to ensure a smooth entry of the ego to the junction.
+        clear_ego_entry (bool): Remove all actors part of the ego road to ensure a smooth entry of the ego to the junction.
         remove_entries (list): list of waypoint representing a junction entry that needs to be removed
         remove_exits (list): list of waypoint representing a junction exit that needs to be removed
         stop_entries (bool): Stops all the junction entries
@@ -252,11 +237,11 @@ class HandleJunctionScenario(AtomicBehavior):
             It also deactivates the road sources.
         active (bool)
     """
-    def __init__(self, clear_junction=True, clear_ego_road=True, remove_entries=[],
+    def __init__(self, clear_junction=True, clear_ego_entry=True, remove_entries=[],
                  remove_exits=[], stop_entries=True, extend_road_exit=0,
                  name="HandleJunctionScenario"):
         self._clear_junction = clear_junction
-        self._clear_ego_road = clear_ego_road
+        self._clear_ego_entry = clear_ego_entry
         self._remove_entries = remove_entries
         self._remove_exits = remove_exits
         self._stop_entries = stop_entries
@@ -267,7 +252,7 @@ class HandleJunctionScenario(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set(
             "BA_HandleJunctionScenario",
-            [self._clear_junction, self._clear_ego_road, self._remove_entries,
+            [self._clear_junction, self._clear_ego_entry, self._remove_entries,
              self._remove_exits, self._stop_entries, self._extend_road_exit],
             overwrite=True)
         return py_trees.common.Status.SUCCESS

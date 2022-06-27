@@ -99,7 +99,7 @@ class HighwayCutIn(BasicScenario):
         if self.route_mode:
             behavior.add_child(HandleJunctionScenario(
                 clear_junction=True,
-                clear_ego_road=False,
+                clear_ego_entry=False,
                 remove_entries=[self._other_waypoint],
                 remove_exits=[],
                 stop_entries=False,

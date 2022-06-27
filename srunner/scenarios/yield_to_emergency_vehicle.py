@@ -18,7 +18,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, AdaptiveConstantVelocityAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import RemoveRoadLane, ReAddEgoRoadLane, AddExtraRoadSpace
+from srunner.tools.background_manager import RemoveRoadLane, ReAddEgoRoadLane
 
 
 class YieldToEmergencyVehicle(BasicScenario):
@@ -109,7 +109,6 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         if self.route_mode:
             sequence.add_child(RemoveRoadLane(self._reference_waypoint))
-            sequence.add_child(AddExtraRoadSpace(2))
 
         # Teleport EV behind the ego
         sequence.add_child(ActorTransformSetter(
@@ -130,7 +129,6 @@ class YieldToEmergencyVehicle(BasicScenario):
 
         if self.route_mode:
             sequence.add_child(ReAddEgoRoadLane())
-            sequence.add_child(AddExtraRoadSpace(0))
 
         return sequence
 

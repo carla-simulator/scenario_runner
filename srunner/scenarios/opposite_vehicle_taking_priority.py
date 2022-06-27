@@ -201,7 +201,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         if self.route_mode:
             root.add_child(HandleJunctionScenario(
                 clear_junction=True,
-                clear_ego_road=True,
+                clear_ego_entry=True,
                 remove_entries=[self._spawn_wp],
                 remove_exits=[self._sink_wp],
                 stop_entries=False,
@@ -381,7 +381,7 @@ class OppositeVehicleTakingPriority(BasicScenario):
         if self.route_mode:
             root.add_child(HandleJunctionScenario(
                 clear_junction=True,
-                clear_ego_road=True,
+                clear_ego_entry=True,
                 remove_entries=[self._spawn_wp],
                 remove_exits=[self._sink_wp],
                 stop_entries=True,

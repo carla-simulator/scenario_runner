@@ -86,7 +86,7 @@ def draw_point(world, location, point_type=DEBUG_SMALL, debug_type=DEBUG_ROAD, p
 def draw_arrow(world, location1, location2, arrow_type=DEBUG_SMALL, debug_type=DEBUG_ROAD, persistent=False):
     """Utility function to draw debugging points"""
     if location1 == location2:
-        draw_point(location1, arrow_type, debug_type, persistent)
+        draw_point(world, location1, arrow_type, debug_type, persistent)
     v_shift, thickness = DEBUG_TYPE.get(arrow_type, DEBUG_SMALL)
     l_shift = carla.Location(z=v_shift)
     color = DEBUG_COLORS.get(debug_type, DEBUG_ROAD)
@@ -191,7 +191,6 @@ class BackgroundBehavior(AtomicBehavior):
         # Road variables
         self._road_dict = {}  # Dictionary lane key -> actor source
         self._road_checker_index = 0
-        self._road_ego_key = ""
 
         self._road_front_vehicles = 2  # Amount of vehicles in front of the ego
         self._road_back_vehicles = 2  # Amount of vehicles behind the ego
@@ -200,7 +199,6 @@ class BackgroundBehavior(AtomicBehavior):
         self._base_junction_detection = 30
         self._detection_ratio = 1.5  # Meters the radius increases per m/s of the ego
 
-        self._road_num_front_vehicles = self._road_front_vehicles  # Checks the real amount of actors in the front of the ego
         self._road_extra_front_actors = 0  # For cases where we want more space but not more vehicles
         self._road_spawn_dist = 15  # Distance between spawned vehicles [m]
 
@@ -261,8 +259,8 @@ class BackgroundBehavior(AtomicBehavior):
         Computes the min and max radius of the road behaviorm which will determine the speed of the vehicles.
         Vehicles closer than the min radius maintain full speed, while those further than max radius are
         stopped. Between the two, the velocity decreases linearly"""
-        self._base_min_radius = (self._road_num_front_vehicles + self._road_extra_front_actors) * self._road_spawn_dist
-        self._base_max_radius = (self._road_num_front_vehicles + self._road_extra_front_actors + 1) * self._road_spawn_dist
+        self._base_min_radius = (self._road_front_vehicles + self._road_extra_front_actors) * self._road_spawn_dist
+        self._base_max_radius = (self._road_front_vehicles + self._road_extra_front_actors + 1) * self._road_spawn_dist
         self._min_radius = self._base_min_radius
         self._max_radius = self._base_max_radius
 
@@ -270,7 +268,6 @@ class BackgroundBehavior(AtomicBehavior):
         """Creates the background activity actors. Pressuposes that the ego is at a road"""
         self._create_junction_dict()
         ego_wp = self._route[0]
-        self._road_ego_key = get_lane_key(ego_wp)
         same_dir_wps = get_same_dir_lanes(ego_wp)
 
         self._initialise_road_behavior(same_dir_wps)
@@ -305,7 +302,6 @@ class BackgroundBehavior(AtomicBehavior):
 
             self._monitor_topology_changes(prev_ego_index)
             self._monitor_road_changes(prev_ego_index)
-            self._update_ego_route_lane_key()
 
             self._move_opposite_sources(prev_ego_index)
             self._update_opposite_sources()
@@ -837,7 +833,6 @@ class BackgroundBehavior(AtomicBehavior):
             # TODO: Else should map the source to the entry and add it
 
         self._road_dict.clear()
-        self._road_num_front_vehicles = self._road_front_vehicles
         self._opposite_sources.clear()
 
     def _end_junction_behavior(self, junction):
@@ -900,7 +895,6 @@ class BackgroundBehavior(AtomicBehavior):
             self._ego_state = EGO_ROAD
             self._initialise_opposite_sources()
             self._initialise_road_checker()
-            self._update_ego_route_lane_key()
 
     def _search_for_next_junction(self):
         """Check if closeby to a junction. The closest one will always be the first"""
@@ -1037,9 +1031,7 @@ class BackgroundBehavior(AtomicBehavior):
             front_veh = 0
             for actor in source.actors:
                 location = CarlaDataProvider.get_location(actor)
-                if not location:
-                    continue
-                if not self._is_location_behind_ego(location):
+                if location and not self._is_location_behind_ego(location):
                     front_veh += 1
             if front_veh > self._road_front_vehicles:
                 self._destroy_actor(source.actors[0])  # This is always the front most vehicle
@@ -1213,11 +1205,12 @@ class BackgroundBehavior(AtomicBehavior):
 
             next_wp = wp
 
-            # Move the initial distance
+            # Move the initial distance (added by the `_extent_road_exit_space`)
             if max_distance > 0:
                 next_wps = next_wp.next(max_distance)
-                if len(next_wps) > 0:
-                    next_wp = next_wps[0]
+                if not next_wps:
+                    continue
+                next_wp = next_wps[0]
 
             for i in range(max(self._road_front_vehicles, 1)):
 
@@ -1422,7 +1415,6 @@ class BackgroundBehavior(AtomicBehavior):
                 zero_index = len([a for a in actors_sorted_with_dist if a[1] < 0])
                 min_index = max(zero_index - self._road_front_vehicles, 0)
                 max_index = min(zero_index + self._road_front_vehicles - 1, len(actors_sorted_with_dist) - 1)
-                print(f"{actors_sorted_with_dist} - {zero_index} - {min_index} - {max_index}")
 
                 # Remove the unneeded ones, and make the ending lane actors perform a lane change
                 source_actors = []
@@ -1617,13 +1609,6 @@ class BackgroundBehavior(AtomicBehavior):
         if handle_end_accident_data is not None:
             self._road_extra_front_actors = 0
             py_trees.blackboard.Blackboard().set('BA_EndObstacleScenario', None, True)
-
-        # Add extra road space 
-        extra_road_space_data = py_trees.blackboard.Blackboard().get('BA_AddExtraRoadSpace')
-        if extra_road_space_data is not None:
-            self._road_extra_front_actors = extra_road_space_data
-            py_trees.blackboard.Blackboard().set('BA_AddExtraRoadSpace', None, True)
-
 
         # Leave space in front
         leave_space_data = py_trees.blackboard.Blackboard().get('BA_LeaveSpaceInFront')
@@ -1836,13 +1821,13 @@ class BackgroundBehavior(AtomicBehavior):
         Adapts the BA to the junction scenario by clearing the junction,
         its entries, exits, and by extending the road exit to add more space
         """
-        clear_junction, clear_ego_entry_road, remove_entries, remove_exits, stop_entries, extend_road_exit = junction_data
+        clear_junction, clear_ego_entry, remove_entries, remove_exits, stop_entries, extend_road_exit = junction_data
 
         if clear_junction:
             self._clear_junction_middle()
 
-        if clear_ego_entry_road:
-            self._clear_ego_entry_road()
+        if clear_ego_entry:
+            self._clear_ego_entry()
 
         if remove_entries:
             self._remove_junction_entries(remove_entries)
@@ -1869,10 +1854,10 @@ class BackgroundBehavior(AtomicBehavior):
         elif self._junctions:
             self._junctions[0].clear_middle = True
 
-    def _clear_ego_entry_road(self):
+    def _clear_ego_entry(self):
         """
-        Remove all actors in front of the vehicle, and stop those behind,
-        letting the ego smoothly enter the junction
+        Remove all actors in front of the vehicle, and stops those behind,
+        letting the ego smoothly enter the junction.
         """
         def handle_actors(actor_list):
             for actor in list(actor_list):
@@ -1882,15 +1867,12 @@ class BackgroundBehavior(AtomicBehavior):
                 else:
                     self._actors_speed_perc[actor] = 0
 
-        ego_key = get_road_key(self._ego_wp)
         if self._active_junctions:
             for source in self._active_junctions[0].entry_sources:
-                if get_road_key(source.entry_lane_wp) == ego_key:
-                    handle_actors(source.actors)
+                handle_actors(source.actors)
         else:
             for lane_key in list(self._road_dict):
-                if is_lane_at_road(lane_key, ego_key):
-                    handle_actors(self._road_dict[lane_key].actors)
+                handle_actors(self._road_dict[lane_key].actors)
 
     def _remove_junction_entries(self, wps):
         """Removes a list of entries of the closest junction (or marks them so that they aren't spawned)"""
@@ -2087,35 +2069,6 @@ class BackgroundBehavior(AtomicBehavior):
             return True
         return False
 
-    def _update_ego_route_lane_key(self):
-        """
-        Gets the route lane key of the ego. This corresponds to the same lane if the ego is driving normally,
-        but if is is going in opposite direction, the route's leftmost one is chosen instead
-        """
-        route_wp = self._route[self._route_index]
-        location = CarlaDataProvider.get_location(self._ego_actor)
-        ego_true_wp = self._map.get_waypoint(location)
-        if get_road_key(ego_true_wp) != get_road_key(route_wp):
-            # Just return the default value as two different roads are being compared.
-            # This might happen for when moving to a new road and should be fixed next frame
-            self._road_ego_key = get_lane_key(route_wp)
-            return
-
-        yaw_diff = (ego_true_wp.transform.rotation.yaw - route_wp.transform.rotation.yaw) % 360
-        if yaw_diff < 90 or yaw_diff > 270:
-            self._road_ego_key = get_lane_key(ego_true_wp)
-            return
-        else:
-            # Get the first lane of the opposite direction
-            leftmost_wp = route_wp
-            while True:
-                possible_left_wp = leftmost_wp.get_left_lane()
-                if possible_left_wp is None or possible_left_wp.lane_id * leftmost_wp.lane_id < 0:
-                    break
-                leftmost_wp = possible_left_wp
-            self._road_ego_key = get_lane_key(leftmost_wp)
-            return
-
     def _update_road_actors(self):
         """
         Dynamically controls the actor speed in front of the ego.
@@ -2139,19 +2092,6 @@ class BackgroundBehavior(AtomicBehavior):
                 if actor in scenario_actors or self._is_location_behind_ego(location):
                     continue
                 self._set_road_actor_speed(location, actor)
-
-        if not self._road_ego_key in self._road_dict:
-            self._road_num_front_vehicles = self._road_front_vehicles
-            return
-
-        front_actors = 0
-        for actor in self._road_dict[self._road_ego_key].actors:
-            if not self._is_location_behind_ego(actor.get_location()):
-                front_actors += 1
-        self._road_num_front_vehicles = front_actors
-
-        self._get_road_radius()
-        self._compute_parameters()
 
     def _set_road_actor_speed(self, location, actor, multiplier=1):
         """Changes the speed of the vehicle depending on its distance to the ego"""
@@ -2228,20 +2168,18 @@ class BackgroundBehavior(AtomicBehavior):
         new_wps = get_lane_waypoints(route_wp, 0)
         check_dist = 1.1 * route_wp.transform.location.distance(prev_route_wp.transform.location)
         wp_pairs = get_wp_pairs(old_wps, new_wps, check_dist)
+        # TODO: these pairs are sometimes wrong as some fake intersections have overlapping lanes (highway entries)
 
         for old_wp, new_wp in wp_pairs:
             old_key = get_lane_key(old_wp)
             new_key = get_lane_key(new_wp)
 
-            # Update the road lane key. If the lane ends, new_key will be empty, so get the route key instead
-            if old_key == self._road_ego_key:
-                self._road_ego_key = new_key if new_key else get_lane_key(route_wp)
-
             # Lane has ended / started, no need to remap it
             if not new_wp or not old_wp:
                 continue
 
-            draw_arrow(self._world, old_wp.transform.location, new_wp.transform.location, DEBUG_MEDIUM, DEBUG_ROAD, True)
+            if self.debug:
+                draw_arrow(self._world, old_wp.transform.location, new_wp.transform.location, DEBUG_MEDIUM, DEBUG_ROAD, True)
 
             # Check that the lane is part of the road dictionary
             if old_key in list(self._road_dict):

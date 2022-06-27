@@ -22,8 +22,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import (ChangeOppositeBehavior,
                                               RemoveRoadLane,
-                                              ReAddEgoRoadLane,
-                                              AddExtraRoadSpace)
+                                              ReAddEgoRoadLane)
 
 
 class ConstructionObstacle(BasicScenario):
@@ -161,10 +160,8 @@ class ConstructionObstacle(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
         sequence.add_child(RemoveRoadLane(self._reference_waypoint))
-        sequence.add_child(AddExtraRoadSpace(2))
         sequence.add_child(root)
         sequence.add_child(ReAddEgoRoadLane())
-        sequence.add_child(AddExtraRoadSpace(0))
         return sequence
 
     def _create_test_criteria(self):
@@ -214,10 +211,8 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
         sequence.add_child(SwitchWrongDirectionTest(False))
         sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
         sequence.add_child(RemoveRoadLane(self._reference_waypoint))
-        sequence.add_child(AddExtraRoadSpace(2))
         sequence.add_child(root)
         sequence.add_child(SwitchWrongDirectionTest(True))
         sequence.add_child(ChangeOppositeBehavior(spawn_dist=50))
         sequence.add_child(ReAddEgoRoadLane())
-        sequence.add_child(AddExtraRoadSpace(0))
         return sequence
