@@ -200,7 +200,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="68" town="TrainingMap"> <!-- InvadingTurn, new town -->
+   <route id="12" town="TrainingMap"> <!-- InvadingTurn, new town -->
          <waypoints>
             <position x="1979.2" y="4241.2" z="361" />
             <position x="1825" y="4307.6" z="361" />
@@ -208,7 +208,8 @@
          <scenarios>
             <scenario name="InvadingTurn_1" type="InvadingTurn">
                <trigger_point x="1976.1" y="4260.5" z="361" yaw="99"/>
-               <adversary_start x="1875" y="4319.7" z="361"/>
+               <adversary_start x="1885" y="4322.12" z="361"/>
+               <offset value="-1.1"/>
             </scenario>
          </scenarios>
    </route>

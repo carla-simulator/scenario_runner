@@ -6,7 +6,8 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """
-Scenario in which TODO
+Scenario in which the ego is about to turn right 
+when a vehicle coming from the opposite lane invades the ego's lane, forcing the ego to move right to avoid a possible collision.
 """
 
 from __future__ import print_function
@@ -15,11 +16,10 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, AdaptiveConstantVelocityAgentBehavior, ConstantVelocityAgentBehavior, BasicAgentBehavior
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, BasicAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import SwitchLane, RemoveJunctionEntry
+from srunner.tools.background_manager import SwitchLane
 
 
 def convert_dict_to_location(actor_dict):
@@ -36,7 +36,11 @@ def convert_dict_to_location(actor_dict):
 
 class InvadingTurn(BasicScenario):
     """
-    This class holds everything required for a scenario in which TODO
+    This class holds everything required for a scenario in which the ego is about to turn right 
+    when a vehicle coming from the opposite lane invades the ego's lane, 
+    forcing the ego to move right to avoid a possible collision.
+
+    This scenario is expected to take place on a road that has only one lane in each direction.
     """
 
     def __init__(self, world, ego_vehicles, config, debug_mode=False, criteria_enable=True,
@@ -45,7 +49,6 @@ class InvadingTurn(BasicScenario):
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
 
@@ -55,8 +58,15 @@ class InvadingTurn(BasicScenario):
 
         self._adversary_start = convert_dict_to_location(
             config.other_parameters['adversary_start'])
+        self._adversary_end = self._reference_waypoint.get_left_lane().transform.location
 
-        self._displacement = -1.1
+        # How much the adversary will invade the lane. Should be negative.
+        # The greater the absolute value of this parameter, the higher the offset of the vehicle.
+        if 'offset' in config.other_parameters:
+            self._offset = float(
+                config.other_parameters['offset']['value'])
+        else:
+            self._offset = -1.1
 
         super(InvadingTurn, self).__init__("InvadingTurn",
                                            ego_vehicles,
@@ -98,39 +108,27 @@ class InvadingTurn(BasicScenario):
 
     def _create_behavior(self):
         """
-        TODO
+        The adversary vehicle will go to the target place while invading another lane.
         """
 
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            # sequence.add_child(SwitchLane(
-            #     self._adversary_start_waypoint.lane_id, False))
             sequence.add_child(SwitchLane(
                 self._reference_waypoint.lane_id, False))
 
-        # Teleport adversary to its place
+        # Teleport adversary
         sequence.add_child(ActorTransformSetter(
             self.other_actors[0], self._adversary_start_transform))
 
-        # Emergency Vehicle runs for self._ev_drive_time seconds
-        adversary_end_condition = py_trees.composites.Parallel("Waiting for emergency vehicle driving for a certein distance",
-                                                               policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        self._adversary_end = self._reference_waypoint.get_left_lane().transform.location
-        print("_adversary_end:{}".format(self._adversary_end))
-        # TODO: para speed
-        adversary_end_condition.add_child(ConstantVelocityAgentBehavior(
-            self.other_actors[0], self._adversary_end, 10, opt_dict={'offset': self._displacement}))
-
-        sequence.add_child(adversary_end_condition)
+        sequence.add_child(BasicAgentBehavior(
+            self.other_actors[0], self._adversary_end, opt_dict={'offset': self._offset}))
 
         sequence.add_child(ActorDestroy(self.other_actors[0]))
-        sequence.add_child(Idle(10))
 
         if self.route_mode:
             sequence.add_child(SwitchLane(
-                self._adversary_start_waypoint.lane_id, True))
+                self._reference_waypoint.lane_id, True))
 
         return sequence
 
