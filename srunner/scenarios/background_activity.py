@@ -1660,9 +1660,10 @@ class BackgroundBehavior(AtomicBehavior):
                 if location and not self._is_location_behind_ego(location):
                     self._stopped_road_actors.append(actor)
                     self._actors_speed_perc[actor] = 0
-                    # lights = actor.get_light_state()
-                    # lights |= carla.VehicleLightState.Brake
-                    # actor.set_light_state(carla.VehicleLightState(lights))
+                    self._tm.update_vehicle_lights(actor, False)
+                    lights = actor.get_light_state()
+                    lights |= carla.VehicleLightState.Brake
+                    actor.set_light_state(carla.VehicleLightState(lights))
 
     def _start_road_front_vehicles(self):
         """
@@ -1671,9 +1672,10 @@ class BackgroundBehavior(AtomicBehavior):
         """
         for actor in self._stopped_road_actors:
             self._actors_speed_perc[actor] = 100
-            # lights = actor.get_light_state()
-            # lights &= ~carla.VehicleLightState.Brake
-            # actor.set_light_state(carla.VehicleLightState(lights))
+            self._tm.update_vehicle_lights(actor, True)
+            lights = actor.get_light_state()
+            lights &= ~carla.VehicleLightState.Brake
+            actor.set_light_state(carla.VehicleLightState(lights))
         self._stopped_road_actors = []
 
     def _move_actors_forward(self, actors, space):

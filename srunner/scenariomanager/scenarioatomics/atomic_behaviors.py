@@ -1478,6 +1478,9 @@ class KeepVelocity(AtomicBehavior):
                 self._actor.set_target_velocity(carla.Vector3D(
                     math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
 
+                # Add a throttle. Useless speed-wise, but makes the bicycle riders pedal.
+                self._actor.apply_control(carla.VehicleControl(throttle=1.0)) 
+
         new_location = CarlaDataProvider.get_location(self._actor)
         self._distance += calculate_distance(self._location, new_location)
         self._location = new_location
