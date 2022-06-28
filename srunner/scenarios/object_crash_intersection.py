@@ -170,9 +170,6 @@ class BaseVehicleTurning(BasicScenario):
         sequence.add_child(trigger_adversary)
         sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
 
-        # if self.route_mode:
-        #     sequence.add_child(LeaveSpaceInFront(self._spawn_dist))
-
         # Move the adversary.
         speed_duration = 2.0 * collision_duration
         speed_distance = 2.0 * collision_distance
