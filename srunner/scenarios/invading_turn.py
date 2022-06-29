@@ -97,7 +97,7 @@ class InvadingTurn(BasicScenario):
 
         spawn_transform.location.z += 5  # Avoid colliding with BA actors
         actor = CarlaDataProvider.request_new_actor(
-            "vehicle.*", spawn_transform, rolename='scenario')
+            "vehicle.*", spawn_transform, rolename='scenario', attribute_filter={'base_type': 'car', 'has_lights': True})
         if actor is None:
             raise Exception(
                 "Couldn't spawn the adversary vehicle")
