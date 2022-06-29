@@ -56,8 +56,13 @@ class InvadingTurn(BasicScenario):
         self._reference_waypoint = self._map.get_waypoint(
             self._trigger_location)
 
-        self._adversary_start = convert_dict_to_location(
-            config.other_parameters['adversary_start'])
+        # Distance between the trigger point and the start location of the adversary
+        if 'distance' in config.other_parameters:
+            self._distance = float(
+                config.other_parameters['distance']['value'])
+        else:
+            self._distance = 120  # m
+
         self._adversary_end = self._reference_waypoint.get_left_lane().transform.location
 
         # How much the adversary will invade the lane. Should be negative.
@@ -80,8 +85,9 @@ class InvadingTurn(BasicScenario):
         Custom initialization
         """
         # Spawn adversary actor
-        self._adversary_start_waypoint = self._map.get_waypoint(
-            self._adversary_start)
+        self._adversary_start_waypoint = self._reference_waypoint.next(self._distance)[
+            0]
+        self._adversary_start_waypoint = self._adversary_start_waypoint.get_left_lane()
         if self._adversary_start_waypoint:
             self._adversary_start_transform = self._adversary_start_waypoint.transform
         else:
