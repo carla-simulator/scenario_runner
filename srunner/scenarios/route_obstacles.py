@@ -16,10 +16,12 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, SwitchOutsideRouteLanesTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, SwitchOutsideRouteLanesTest, \
+    BasicAgentBehavior, BicycleFlow, ConstantVelocityAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
+from srunner.tests.carla_mocks.agents.navigation.local_planner import RoadOption
 from srunner.tools.background_manager import (HandleStartAccidentScenario,
                                               HandleEndAccidentScenario,
                                               LeaveSpaceInFront,
@@ -143,6 +145,114 @@ class Accident(BasicScenario):
         """
         self.remove_all_actors()
 
+        
+class Hazard(BasicScenario):
+    """
+    There are three bicycles on the lane ahead.
+    """
+
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=180):
+        """
+        Setup all relevant parameters and create scenario
+        and instantiate scenario manager
+        """
+        self._world = world
+        self._map = CarlaDataProvider.get_map()
+        self.timeout = timeout
+        self._drive_distance = 100
+        self._distance_to_accident = [40,43,50]
+        self._offset = [0.6,0.75,0.9]
+        self._accident_wp = []
+        self._target_location=None
+        self._plan=[]
+
+        if 'distance' in config.other_parameters:
+            self._distance_to_accident = [
+                float(config.other_parameters['distance']['first']),
+                float(config.other_parameters['distance']['second']),
+                float(config.other_parameters['distance']['third'])
+            ]
+        else:
+            self._source_dist_interval = [74,76,88]  # m
+
+        super().__init__("Hazard",
+                         ego_vehicles,
+                         config,
+                         world,
+                         randomize,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+
+        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
+        self._target_location = starting_wp.next(150)[0].transform.location
+        for i,distance in enumerate(self._distance_to_accident):
+
+            accident_wps = starting_wp.next(distance)
+
+            if not accident_wps:
+                raise ValueError("Couldn't find a viable position to set up the accident actors")
+            self._accident_wp.append(accident_wps[0])
+            displacement = self._offset[i]* accident_wps[0].lane_width / 2
+            r_vec = accident_wps[0].transform.get_right_vector()
+            w_loc = accident_wps[0].transform.location
+            w_loc = w_loc + carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
+            bycicle_transform = carla.Transform(w_loc, accident_wps[0].transform.rotation)
+            bycicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century', bycicle_transform)
+            self.other_actors.append(bycicle)
+
+    def _create_behavior(self):
+        """
+        The vehicle has to drive the whole predetermined distance.
+        """
+
+        root = py_trees.composites.Sequence()
+        if self.route_mode:
+            total_dist = self._distance_to_accident[2] + 30
+            root.add_child(LeaveSpaceInFront(total_dist))
+            root.add_child(SwitchOutsideRouteLanesTest(False))
+            root.add_child(ChangeOppositeBehavior(active=False))
+            bycicle = py_trees.composites.Parallel(
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            bycicle.add_child(ConstantVelocityAgentBehavior(
+                        self.other_actors[2], self._target_location,target_speed=3.1,opt_dict={'offset':self._offset[2]* self._accident_wp[2].lane_width / 2}))
+
+            bycicle.add_child(ConstantVelocityAgentBehavior(
+                self.other_actors[1], self._target_location, target_speed=3,
+                opt_dict={'offset': self._offset[1] * self._accident_wp[1].lane_width / 2}))
+            bycicle.add_child(ConstantVelocityAgentBehavior(
+                self.other_actors[0], self._target_location, target_speed=3,
+                opt_dict={'offset': self._offset[0] * self._accident_wp[0].lane_width / 2}))
+            root.add_child(bycicle)
+        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        if self.route_mode:
+            root.add_child(SwitchOutsideRouteLanesTest(True))
+            root.add_child(ChangeOppositeBehavior(active=True))
+        root.add_child(ActorDestroy(self.other_actors[0]))
+        root.add_child(ActorDestroy(self.other_actors[1]))
+        root.add_child(ActorDestroy(self.other_actors[2]))
+
+        return root
+
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        if self.route_mode:
+            return []
+        return [CollisionTest(self.ego_vehicles[0])]
+
+    def __del__(self):
+        """
+        Remove all actors and traffic lights upon deletion
+        """
+        self.remove_all_actors()
 
 class AccidentTwoWays(BasicScenario):
     """
