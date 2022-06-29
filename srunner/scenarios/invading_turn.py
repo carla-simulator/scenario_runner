@@ -19,7 +19,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, BasicAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import SwitchLane
+from srunner.tools.background_manager import LeaveSpaceInFront
 
 
 def convert_dict_to_location(actor_dict):
@@ -124,8 +124,7 @@ class InvadingTurn(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            sequence.add_child(SwitchLane(
-                self._reference_waypoint.lane_id, False))
+            sequence.add_child(LeaveSpaceInFront(self._distance))
 
         # Teleport adversary
         sequence.add_child(ActorTransformSetter(
@@ -135,10 +134,6 @@ class InvadingTurn(BasicScenario):
             self.other_actors[0], self._adversary_end, opt_dict={'offset': self._offset}))
 
         sequence.add_child(ActorDestroy(self.other_actors[0]))
-
-        if self.route_mode:
-            sequence.add_child(SwitchLane(
-                self._reference_waypoint.lane_id, True))
 
         return sequence
 
