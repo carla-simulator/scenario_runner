@@ -209,7 +209,7 @@
             <scenario name="InvadingTurn_1" type="InvadingTurn">
                <trigger_point x="1976.1" y="4260.5" z="361" yaw="99"/>
                <distance value="120" />
-               <offset value="-1.1"/>
+               <offset value="0.5"/>
             </scenario>
          </scenarios>
    </route>

@@ -65,13 +65,12 @@ class InvadingTurn(BasicScenario):
 
         self._adversary_end = self._reference_waypoint.get_left_lane().transform.location
 
-        # How much the adversary will invade the lane. Should be negative.
-        # The greater the absolute value of this parameter, the higher the offset of the vehicle.
+        # The width (m) of the vehicle invading the opposite lane.
         if 'offset' in config.other_parameters:
             self._offset = float(
                 config.other_parameters['offset']['value'])
         else:
-            self._offset = -1.1
+            self._offset = 0.5
 
         super(InvadingTurn, self).__init__("InvadingTurn",
                                            ego_vehicles,
@@ -111,6 +110,11 @@ class InvadingTurn(BasicScenario):
         actor.set_location(new_location)
 
         self.other_actors.append(actor)
+
+        # Calculate the real offset
+        lane_width = self._adversary_start_waypoint.lane_width
+        car_width = actor.bounding_box.extent.y*2
+        self._offset = -1*(self._offset + 0.5*lane_width - 0.5*car_width)
 
     def _create_behavior(self):
         """
