@@ -28,6 +28,7 @@
     - ParkingCutIn: A vehicle parked at the side cuts in front of the ego.
     - BlockedIntersection: With low visibility, the ego performs a turn only to find out that the end is blocked by another vehicle.
     - MergerIntoSlowTraffic: the ego has to enter a lane that is filled with slow traffic.
+    - Hazard:Ego vehicles are driving on roads without sidewalks, and there is a dangerous scene in front of them where three bicycles occupy some roads.
 * Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
