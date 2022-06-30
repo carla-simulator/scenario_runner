@@ -190,7 +190,12 @@ class BicycleFlowAtSideLane(BasicScenario):
         """
 
         starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
-        self._target_location = starting_wp.next(150)[0].transform.location
+        if 'end_bycicle_distance' in config.other_parameters:
+            self._end_bycicle_distance = float(
+                config.other_parameters['end_bycicle_distance']['value'])
+        else:
+            self._end_bycicle_distance = 150
+        self._target_location = starting_wp.next(self._end_bycicle_distance)[0].transform.location
         for i,distance in zip(self._distance_to_Trigger):
 
             accident_wps = starting_wp.next(distance)
