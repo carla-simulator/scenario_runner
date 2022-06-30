@@ -215,6 +215,7 @@
          <scenario name="BicycleFlowAtSideLane_1" type="BicycleFlowAtSideLane">
             <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
             <distance first="74" second="77" third="82"/>
+            <end_bycicle_distance value="150" />
          </scenario>
         
       </scenarios> 
