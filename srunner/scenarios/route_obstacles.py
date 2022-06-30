@@ -144,9 +144,8 @@ class Accident(BasicScenario):
         Remove all actors and traffic lights upon deletion
         """
         self.remove_all_actors()
-
-        
-class Hazard(BasicScenario):
+  
+class BicycleFlowAtSideLane(BasicScenario):
     """
     There are three bicycles on the lane ahead.
     """
