@@ -147,7 +147,8 @@ class Accident(BasicScenario):
   
 class BicycleFlowAtSideLane(BasicScenario):
     """
-    There are three bicycles on the lane ahead.
+    Added the dangerous scene of ego vehicles driving on roads without sidewalks,
+    with three bicycles encroaching on some roads in front.
     """
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
@@ -160,20 +161,20 @@ class BicycleFlowAtSideLane(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
         self._drive_distance = 100
-        self._distance_to_accident = [40,43,50]
+        #self._distance_to_Trigger = [40,43,50]
         self._offset = [0.6,0.75,0.9]
         self._accident_wp = []
         self._target_location=None
         self._plan=[]
 
         if 'distance' in config.other_parameters:
-            self._distance_to_accident = [
+            self._distance_to_Trigger = [
                 float(config.other_parameters['distance']['first']),
                 float(config.other_parameters['distance']['second']),
                 float(config.other_parameters['distance']['third'])
             ]
         else:
-            self._source_dist_interval = [74,76,88]  # m
+            self._distance_to_Trigger = [74,76,88]  # m
 
         super().__init__("Hazard",
                          ego_vehicles,
@@ -190,7 +191,7 @@ class BicycleFlowAtSideLane(BasicScenario):
 
         starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
         self._target_location = starting_wp.next(150)[0].transform.location
-        for i,distance in enumerate(self._distance_to_accident):
+        for i,distance in zip(self._distance_to_Trigger):
 
             accident_wps = starting_wp.next(distance)
 
@@ -212,22 +213,22 @@ class BicycleFlowAtSideLane(BasicScenario):
 
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            total_dist = self._distance_to_accident[2] + 30
+            total_dist = self._distance_to_Trigger[2] + 30
             root.add_child(LeaveSpaceInFront(total_dist))
             root.add_child(SwitchOutsideRouteLanesTest(False))
             root.add_child(ChangeOppositeBehavior(active=False))
-            bycicle = py_trees.composites.Parallel(
+        bycicle = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-            bycicle.add_child(ConstantVelocityAgentBehavior(
-                        self.other_actors[2], self._target_location,target_speed=3.1,opt_dict={'offset':self._offset[2]* self._accident_wp[2].lane_width / 2}))
+        bycicle.add_child(ConstantVelocityAgentBehavior(
+                self.other_actors[2], self._target_location,target_speed=3.1,opt_dict={'offset':self._offset[2]* self._accident_wp[2].lane_width / 2}))
 
-            bycicle.add_child(ConstantVelocityAgentBehavior(
+        bycicle.add_child(ConstantVelocityAgentBehavior(
                 self.other_actors[1], self._target_location, target_speed=3,
                 opt_dict={'offset': self._offset[1] * self._accident_wp[1].lane_width / 2}))
-            bycicle.add_child(ConstantVelocityAgentBehavior(
+        bycicle.add_child(ConstantVelocityAgentBehavior(
                 self.other_actors[0], self._target_location, target_speed=3,
                 opt_dict={'offset': self._offset[0] * self._accident_wp[0].lane_width / 2}))
-            root.add_child(bycicle)
+        root.add_child(bycicle)
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
             root.add_child(SwitchOutsideRouteLanesTest(True))
