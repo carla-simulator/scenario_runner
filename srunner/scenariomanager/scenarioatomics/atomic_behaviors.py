@@ -1941,20 +1941,21 @@ class BasicAgentBehavior(AtomicBehavior):
     The behavior terminates after reaching the target_location (within 2 meters)
     """
 
-    def __init__(self, actor, target_location=None, name="BasicAgentBehavior"):
+    def __init__(self, actor, target_location, opt_dict=None, name="BasicAgentBehavior"):
         """
         Setup actor and maximum steer value
         """
         super(BasicAgentBehavior, self).__init__(name, actor)
         self._map = CarlaDataProvider.get_map()
         self._target_location = target_location
+        self._opt_dict = opt_dict if opt_dict else {}
         self._control = carla.VehicleControl()
         self._agent = None
         self._plan = None
 
     def initialise(self):
         """Initialises the agent"""
-        self._agent = BasicAgent(self._actor,
+        self._agent = BasicAgent(self._actor, opt_dict=self._opt_dict,
             map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
         if self._target_location:
             self._plan = self._agent.set_destination(

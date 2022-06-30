@@ -36,6 +36,7 @@
     - OppositeVehicleTakingPriority: non signalized version of OppositeVehicleRunningRedLight.
     - BackgroundActivityParametrizer: allows the customization of the BackgroundActivity parameters.
     - PriorityAtJunction: sets the traffic light of the incoming junction to green. Improves route smoothness by letting the vehicle cross the junction without stopping.
+    - InvadingTurn: the ego is about to turn right when a vehicle coming from the opposite lane invades the ego's lane, forcing the ego to move right to avoid a possible collision.
 * Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
