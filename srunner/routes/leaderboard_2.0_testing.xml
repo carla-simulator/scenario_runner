@@ -212,7 +212,7 @@
          <position x="2389.1" y="599.1" z="338" />
       </waypoints>
     <scenarios>
-         <scenario name="Hazard_1" type="Hazard">
+         <scenario name="BicycleFlowAtSideLane_1" type="BicycleFlowAtSideLane">
             <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
             <distance first="74" second="77" third="82"/>
          </scenario>
