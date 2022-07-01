@@ -201,25 +201,23 @@
       </scenarios>
    </route>
    <route id="12" town="Town04">
-    <weathers>
-	<weather route_percentage="0" cloudiness="30" precipitation="0" sun_altitude_angle="70" fog_density="0"/>
-	<weather route_percentage="100" cloudiness="70" precipitation="0" sun_altitude_angle="20" fog_density="20"/>
-    </weathers>
-    <waypoints>
-        <position x="340.2" y="17.4" z="0.7"/>
-	<position x="260.2" y="16.7" z="2.3"/>
-        <position x="230.2" y="17.3" z="0.9"/>
-    </waypoints>
-    <scenarios>
-        <scenario name="ParkingCutIn_1" type="ParkingCutIn" >
+      <weathers>
+	 <weather route_percentage="0" cloudiness="30" precipitation="0" sun_altitude_angle="70" fog_density="0"/>
+	 <weather route_percentage="100" cloudiness="70" precipitation="0" sun_altitude_angle="20" fog_density="20"/>
+      </weathers>
+      <waypoints>
+         <position x="340.2" y="17.4" z="0.7"/>
+	 <position x="260.2" y="16.7" z="2.3"/>
+         <position x="230.2" y="17.3" z="0.9"/>
+      </waypoints>
+      <scenarios>
+         <scenario name="ParkingCutIn_1" type="CutInWithStaticVehicle" >
             <trigger_point x="300.2" y="17.3" z="0.9" yaw="180" model="vehicle.lincoln.mkz_2017"/>
-        </scenario>
-	<scenario name="ParkingCutIn_2" type="ParkingCutIn" >
-             <trigger_point x="250.2" y="16.2" z="3.2" yaw="180" model="vehicle.lincoln.mkz_2017"/>
-	     <direction value="left" />
-        </scenario>
-    </scenarios>>
+         </scenario>
+	 <scenario name="ParkingCutIn_2" type="CutInWithStaticVehicle" >
+            <trigger_point x="250.2" y="16.2" z="3.2" yaw="180" model="vehicle.lincoln.mkz_2017"/>
+	    <direction value="left" />
+         </scenario>
+      </scenarios>>
    </route>
-
-
 </routes>
