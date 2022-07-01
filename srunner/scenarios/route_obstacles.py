@@ -161,9 +161,8 @@ class BicycleFlowAtSideLane(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
         self._drive_distance = 100
-        #self._distance_to_Trigger = [40,43,50]
         self._offset = [0.6,0.75,0.9]
-        self._accident_wp = []
+        self._bicycle_wp = []
         self._target_location=None
         self._plan=[]
 
@@ -196,18 +195,18 @@ class BicycleFlowAtSideLane(BasicScenario):
         else:
             self._end_bycicle_distance = 150
         self._target_location = starting_wp.next(self._end_bycicle_distance)[0].transform.location
-        for i,distance in zip(self._distance_to_Trigger):
+        for offset,distance in zip(self._offset,self._distance_to_Trigger):
 
-            accident_wps = starting_wp.next(distance)
+            bicycle_wps = starting_wp.next(distance)
 
-            if not accident_wps:
-                raise ValueError("Couldn't find a viable position to set up the accident actors")
-            self._accident_wp.append(accident_wps[0])
-            displacement = self._offset[i]* accident_wps[0].lane_width / 2
-            r_vec = accident_wps[0].transform.get_right_vector()
-            w_loc = accident_wps[0].transform.location
+            if not bicycle_wps:
+                raise ValueError("Couldn't find a viable position to set up the bicycle actors")
+            self._bicycle_wp.append(bicycle_wps[0])
+            displacement = offset* bicycle_wps[0].lane_width / 2
+            r_vec = bicycle_wps[0].transform.get_right_vector()
+            w_loc = bicycle_wps[0].transform.location
             w_loc = w_loc + carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
-            bycicle_transform = carla.Transform(w_loc, accident_wps[0].transform.rotation)
+            bycicle_transform = carla.Transform(w_loc, bicycle_wps[0].transform.rotation)
             bycicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century', bycicle_transform)
             self.other_actors.append(bycicle)
 
@@ -225,14 +224,14 @@ class BicycleFlowAtSideLane(BasicScenario):
         bycicle = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         bycicle.add_child(ConstantVelocityAgentBehavior(
-                self.other_actors[2], self._target_location,target_speed=3.1,opt_dict={'offset':self._offset[2]* self._accident_wp[2].lane_width / 2}))
+                self.other_actors[2], self._target_location,target_speed=3.1,opt_dict={'offset':self._offset[2]* self._bicycle_wp[2].lane_width / 2}))
 
         bycicle.add_child(ConstantVelocityAgentBehavior(
                 self.other_actors[1], self._target_location, target_speed=3,
-                opt_dict={'offset': self._offset[1] * self._accident_wp[1].lane_width / 2}))
+                opt_dict={'offset': self._offset[1] * self._bicycle_wp[1].lane_width / 2}))
         bycicle.add_child(ConstantVelocityAgentBehavior(
                 self.other_actors[0], self._target_location, target_speed=3,
-                opt_dict={'offset': self._offset[0] * self._accident_wp[0].lane_width / 2}))
+                opt_dict={'offset': self._offset[0] * self._bicycle_wp[0].lane_width / 2}))
         root.add_child(bycicle)
         root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
         if self.route_mode:
