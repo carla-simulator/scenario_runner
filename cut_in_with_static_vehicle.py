@@ -48,7 +48,7 @@ class CutInWithStaticVehicle(BasicScenario):
             self._direction = config.other_parameters['direction']['value']
         else:
             self._direction = "right"
-        super().__init__("ParkingCutIn",
+        super().__init__("CutInWithStaticVehicle",
                          ego_vehicles,
                          config,
                          world,
