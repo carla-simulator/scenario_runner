@@ -21,6 +21,7 @@ import operator
 import os
 import time
 import subprocess
+from bisect import bisect_right
 
 import numpy as np
 from numpy import random
@@ -754,7 +755,7 @@ class ChangeActorWaypoints(AtomicBehavior):
              in synchronous mode
     """
 
-    def __init__(self, actor, waypoints, name="ChangeActorWaypoints"):
+    def __init__(self, actor, waypoints, times=None, name="ChangeActorWaypoints"):
         """
         Setup parameters
         """
@@ -762,6 +763,7 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         self._waypoints = waypoints
         self._start_time = None
+        self._times = times
 
     def initialise(self):
         """
@@ -788,8 +790,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         # Transforming OSC waypoints to Carla waypoints
         carla_route_elements = []
         for (osc_point, routing_option) in self._waypoints:
-            carla_transforms = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
-                osc_point)
+            carla_transforms = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(osc_point)
             carla_route_elements.append((carla_transforms, routing_option))
 
         # Obtain final route, considering the routing option
@@ -859,15 +860,30 @@ class ChangeActorWaypoints(AtomicBehavior):
         if not actor_dict or not self._actor.id in actor_dict:
             return py_trees.common.Status.FAILURE
 
-        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
+        actor = actor_dict[self._actor.id]
+
+        if actor.get_last_waypoint_command() != self._start_time:
             return py_trees.common.Status.SUCCESS
 
-        new_status = py_trees.common.Status.RUNNING
+        if actor.check_reached_waypoint_goal():
+            return py_trees.common.Status.SUCCESS
 
-        if actor_dict[self._actor.id].check_reached_waypoint_goal():
-            new_status = py_trees.common.Status.SUCCESS
+        if self._times is not None:
+            current_relative_time = GameTime.get_time() - self._start_time
+            current_waypoint_idx = bisect_right(self._times, current_relative_time)
+            if current_waypoint_idx >= len(self._times):
+                return py_trees.common.Status.SUCCESS
+            remaining_time = self._times[current_waypoint_idx] - current_relative_time
+            self._update_speed(actor, self._waypoints[current_waypoint_idx], remaining_time)
 
-        return new_status
+        return py_trees.common.Status.RUNNING
+
+    def _update_speed(self, actor, target_waypoint, remaining_time):
+        target_location = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+            target_waypoint[0]).location
+        remaining_dist = calculate_distance(CarlaDataProvider.get_location(self._actor), target_location)
+        target_speed = remaining_dist / max(remaining_time, 0.001)
+        actor.update_target_speed(target_speed)
 
 
 class ChangeActorLateralMotion(AtomicBehavior):

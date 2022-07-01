@@ -58,6 +58,7 @@
 * OpenSCENARIO support:
     - Added support for `ParameterAction`
     - Extended `ParameterCondition` support to use as an event trigger condition
+    - Added basic support for FollowTrajectoryAction. Currently only Polylines are supported
 
 ### :bug: Bug Fixes
 * Fixed metrics parsing and remade the example recordings
