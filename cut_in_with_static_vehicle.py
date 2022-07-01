@@ -1,11 +1,10 @@
 #!/usr/bin/env python
+
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2022 Intel Corporation
+
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
-
-"""
-Parking cut in scenario synchronizes a vehicle that is parked at a side lane
-to cut in in front of the ego vehicle, forcing it to break
-"""
 
 from __future__ import print_function
 
@@ -24,10 +23,10 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import SwitchLane
 
-class ParkingCutIn(BasicScenario):
+class CutInWithStaticVehicle(BasicScenario):
 
     """
-    Parking cut in scenario synchronizes a vehicle that is parked at a side lane
+    Cut in(with static vehicle) scenario synchronizes a vehicle that is parked at a side lane
     to cut in in front of the ego vehicle, forcing it to break
     """
 
@@ -44,7 +43,6 @@ class ParkingCutIn(BasicScenario):
         self._adversary_speed = 10.0  # Speed of the adversary [m/s]
         self._reaction_time = 2.5  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 18.0  # Min distance to the collision location that triggers the adversary [m]
-        self._end_distance = 10 # 40
         self.timeout = timeout
         if 'direction' in config.other_parameters:
             self._direction = config.other_parameters['direction']['value']
@@ -67,58 +65,36 @@ class ParkingCutIn(BasicScenario):
             raise ValueError("Couldn't find a proper position for the cut in vehicle")
         self._blocker_wp = blocker_wps[0]
         if self._direction == 'left':
-            parking_wp = self._blocker_wp.get_left_lane()
+            sideblocker_wp = self._blocker_wp.get_left_lane()
         else:
-            parking_wp = self._blocker_wp.get_right_lane()
+            sideblocker_wp = self._blocker_wp.get_right_lane()
 
         self._blocker_actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', parking_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
+            'vehicle.*', sideblocker_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
         if not self._blocker_actor:
             raise ValueError("Couldn't spawn the parked actor")
         self._blocker_actor.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(self._blocker_actor)
-
-        side_transform = self._get_displaced_transform(self._blocker_actor, parking_wp)
-        self._blocker_actor.set_location(side_transform)
 
         collision_wps = self._reference_waypoint.next(self._cut_in_distance)
         if not collision_wps:
             raise ValueError("Couldn't find a proper position for the cut in vehicle")
         self._collision_wp = collision_wps[0]
 
-        # Get the parking direction
+        # Get the parking direction of the car that will be cut in
         if self._direction == 'left':
-            parking_wp = self._collision_wp.get_left_lane()
+            cutin_wp = self._collision_wp.get_left_lane()
         else:
-            parking_wp = self._collision_wp.get_right_lane()
+            cutin_wp = self._collision_wp.get_right_lane()
 
         self._parked_actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', parking_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
+            'vehicle.*',cutin_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
         if not self._parked_actor:
             raise ValueError("Couldn't spawn the parked actor")
         self.other_actors.append(self._parked_actor)
 
-        side_transform = self._get_displaced_transform(self._parked_actor, parking_wp)
-        self._parked_actor.set_location(side_transform)
-
         self._front_wps = self._collision_wp.next(self._front_distance)
         self._front_wp = self._front_wps[0].transform.location
-
-    def _get_displaced_transform(self, actor, wp):
-        """
-        Calculates the transforming such that the actor is at the sidemost part of the lane
-        """
-        # Move the actor to the edge of the lane near the sidewalk
-        displacement = (wp.lane_width - actor.bounding_box.extent.y) / 4
-        displacement_vector = wp.transform.get_right_vector()
-        if self._direction == 'left':
-            displacement_vector *= -1
-
-        new_location = wp.transform.location + carla.Location(x=displacement*displacement_vector.x,
-                                                              y=displacement*displacement_vector.y,
-                                                              z=displacement*displacement_vector.z)
-        new_location.z += 0.05  # Just in case, avoid collisions with the ground
-        return new_location
 
     def _create_behavior(self):
         """
@@ -136,9 +112,9 @@ class ParkingCutIn(BasicScenario):
         trigger_adversary = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
-            self.ego_vehicles[0], self._reaction_time, collision_location))  #<reaction_time :Success
+            self.ego_vehicles[0], self._reaction_time, collision_location))  
         trigger_adversary.add_child(InTriggerDistanceToLocation(
-            self.ego_vehicles[0], collision_location, self._min_trigger_dist)) # A < B :Success
+            self.ego_vehicles[0], collision_location, self._min_trigger_dist)) 
 
         sequence.add_child(trigger_adversary)
 
@@ -174,3 +150,4 @@ class ParkingCutIn(BasicScenario):
         Remove all actors upon deletion
         """
         self.remove_all_actors()
+        
