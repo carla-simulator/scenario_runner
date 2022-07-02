@@ -200,7 +200,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="12" town="Town04">
+   <route id="13" town="Town04">
       <weathers>
          <weather route_percentage="0" cloudiness="30" precipitation="0" sun_altitude_angle="70" fog_density="0"/>
 	 <weather route_percentage="100" cloudiness="70" precipitation="0" sun_altitude_angle="20" fog_density="20"/>
