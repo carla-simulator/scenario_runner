@@ -201,16 +201,36 @@
       </scenarios>
    </route>
    <route id="12" town="TrainingMap"> <!-- InvadingTurn, new town -->
-         <waypoints>
-            <position x="1979.2" y="4241.2" z="361" />
-            <position x="1825" y="4307.6" z="361" />
-         </waypoints>
-         <scenarios>
-            <scenario name="InvadingTurn_1" type="InvadingTurn">
-               <trigger_point x="1976.1" y="4260.5" z="361" yaw="99"/>
-               <distance value="120" />
-               <offset value="0.5"/>
-            </scenario>
-         </scenarios>
+      <waypoints>
+         <position x="1979.2" y="4241.2" z="361" />
+         <position x="1825" y="4307.6" z="361" />
+      </waypoints>
+      <scenarios>
+         <scenario name="InvadingTurn_1" type="InvadingTurn">
+            <trigger_point x="1976.1" y="4260.5" z="361" yaw="99"/>
+            <distance value="120" />
+            <offset value="0.5"/>
+         </scenario>
+      </scenarios>
+   </route>
+   <route id="13" town="Town04">
+      <weathers>
+         <weather route_percentage="0" cloudiness="30" precipitation="0" sun_altitude_angle="70" fog_density="0"/>
+	       <weather route_percentage="100" cloudiness="70" precipitation="0" sun_altitude_angle="20" fog_density="20"/>
+      </weathers>
+      <waypoints>
+         <position x="340.2" y="17.4" z="0.7"/>
+	       <position x="260.2" y="16.7" z="2.3"/>
+	       <position x="230.2" y="17.3" z="0.9"/>
+      </waypoints>
+      <scenarios>
+         <scenario name="CutInWithStaticVehicle_1" type="CutInWithStaticVehicle" >
+	          <trigger_point x="300.2" y="17.3" z="0.9" yaw="180" model="vehicle.lincoln.mkz_2017"/>
+         </scenario>
+	       <scenario name="CutInWithStaticVehicle_2" type="CutInWithStaticVehicle" >
+	          <trigger_point x="250.2" y="16.2" z="3.2" yaw="180" model="vehicle.lincoln.mkz_2017"/>
+	          <direction value="left" />
+	       </scenario>
+      </scenarios>
    </route>
 </routes>

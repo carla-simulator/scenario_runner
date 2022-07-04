@@ -482,3 +482,4 @@
     - WaitForTrafficLightState: wait for the traffic light to have a given state
     - SyncArrival: sync the arrival of two vehicles to a given target
     - AddNoiseToVehicle: Add noise to steer as well as throttle of the vehicle
+    - CutInWithStaticVehicle:Based on the code of ParkingCutIn,realized the cutin function of a static vehicle on the highway
