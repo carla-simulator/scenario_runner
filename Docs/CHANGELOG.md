@@ -28,6 +28,7 @@
     - ParkingCutIn: A vehicle parked at the side cuts in front of the ego.
     - BlockedIntersection: With low visibility, the ego performs a turn only to find out that the end is blocked by another vehicle.
     - MergerIntoSlowTraffic: the ego has to enter a lane that is filled with slow traffic.
+    - BicycleFlowAtSideLane:Added the dangerous scene of ego vehicles driving on roads without sidewalks, with three bicycles encroaching on some roads in front.
     - InvadingTurn: the ego is about to turn right when a vehicle coming from the opposite lane invades the ego's lane, forcing the ego to move right to avoid a possible collision.
 * Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed

@@ -234,3 +234,23 @@
       </scenarios>
    </route>
 </routes>
+ <route id="12" town="TrainingMap"> <!-- AccidentTwoWay, new town -->
+      <weathers>
+         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+      </weathers>
+      <waypoints>
+         <position x="2534.5" y="1444.3" z="355" />
+         <position x="2388.6" y="1095.3" z="350" />
+         <position x="2389.1" y="599.1" z="338" />
+      </waypoints>
+    <scenarios>
+         <scenario name="BicycleFlowAtSideLane_1" type="BicycleFlowAtSideLane">
+            <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
+            <distance first="74" second="77" third="82"/>
+            <end_bycicle_distance value="150" />
+         </scenario>
+        
+      </scenarios> 
+   </route>
+   
