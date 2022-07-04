@@ -14,6 +14,7 @@
 
 ## Latest changes
 ### :rocket: New Features
+* Improved the timeout at routes
 * Actor Flows are now more consistent
 * Scenarios can now parse and use all parameters present at the configuration file.
 * Improved overall parsing of routes and scenarios.

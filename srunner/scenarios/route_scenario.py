@@ -42,6 +42,7 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.background_activity import BackgroundActivity
 from srunner.scenariomanager.weather_sim import RouteWeatherBehavior
 from srunner.scenariomanager.lights_sim import RouteLightsBehavior
+from srunner.scenariomanager.timer import RouteTimeoutBehavior
 
 from srunner.tools.route_parser import RouteParser, DIST_THRESHOLD
 from srunner.tools.route_manipulation import interpolate_trajectory
@@ -330,17 +331,23 @@ class RouteScenario(BasicScenario):
 
     def _create_weather_behavior(self):
         """
-        If needed, add the dynamic weather behavior to the route
+        Create the weather behavior
         """
         if len(self.config.weather) == 1:
-            return
+            return  # Just set the weather at the beginning and done
         return RouteWeatherBehavior(self.ego_vehicles[0], self.route, self.config.weather)
 
     def _create_lights_behavior(self):
         """
-        Create the light behavior
+        Create the street lights behavior
         """
         return RouteLightsBehavior(self.ego_vehicles[0], 100)
+
+    def _create_timeout_behavior(self):
+        """
+        Create the timeout behavior
+        """
+        return RouteTimeoutBehavior(self.ego_vehicles[0], self.route)
 
     def _initialize_environment(self, world):
         """
