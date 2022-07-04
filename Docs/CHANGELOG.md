@@ -14,6 +14,7 @@
 
 ## Latest changes
 ### :rocket: New Features
+* Improved the timeout at routes
 * Actor Flows are now more consistent
 * Scenarios can now parse and use all parameters present at the configuration file.
 * Improved overall parsing of routes and scenarios.
@@ -36,6 +37,7 @@
     - OppositeVehicleTakingPriority: non signalized version of OppositeVehicleRunningRedLight.
     - BackgroundActivityParametrizer: allows the customization of the BackgroundActivity parameters.
     - PriorityAtJunction: sets the traffic light of the incoming junction to green. Improves route smoothness by letting the vehicle cross the junction without stopping.
+    - BicycleFlowAtSideLane:Added the dangerous scene of ego vehicles driving on roads without sidewalks, with three bicycles encroaching on some roads in front.
     - InvadingTurn: the ego is about to turn right when a vehicle coming from the opposite lane invades the ego's lane, forcing the ego to move right to avoid a possible collision.
 * Added new functions to the BackgroundManager
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
@@ -490,3 +492,4 @@
     - WaitForTrafficLightState: wait for the traffic light to have a given state
     - SyncArrival: sync the arrival of two vehicles to a given target
     - AddNoiseToVehicle: Add noise to steer as well as throttle of the vehicle
+    - CutInWithStaticVehicle:Based on the code of ParkingCutIn,realized the cutin function of a static vehicle on the highway

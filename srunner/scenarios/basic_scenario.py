@@ -81,9 +81,15 @@ class BasicScenario(object):
         if end_behavior:
             self.behavior_tree.add_child(end_behavior)
 
+        # Create the lights behavior
         lights = self._create_lights_behavior()
         if lights:
             self.scenario_tree.add_child(lights)
+
+        # Create the weather behavior
+        weather = self._create_weather_behavior()
+        if weather:
+            self.scenario_tree.add_child(weather)
 
         # And then add it to the main tree
         self.scenario_tree.add_child(self.behavior_tree)
@@ -112,14 +118,13 @@ class BasicScenario(object):
 
             self.scenario_tree.add_child(self.criteria_tree)
 
-        # Add other nodes
-        self.timeout_node = TimeOut(self.timeout, name="TimeOut")  # Timeout node
-        self.scenario_tree.add_child(self.timeout_node)
-        self.scenario_tree.add_child(UpdateAllActorControls())
+        # Create the timeout behavior
+        self.timeout_node = self._create_timeout_behavior()
+        if self.timeout_node:
+            self.scenario_tree.add_child(self.timeout_node)
 
-        weather = self._create_weather_behavior()
-        if weather:
-            self.scenario_tree.add_child(weather)
+        # Add other nodes
+        self.scenario_tree.add_child(UpdateAllActorControls())
 
         self.scenario_tree.setup(timeout=1)
 
@@ -211,17 +216,26 @@ class BasicScenario(object):
 
     def _create_weather_behavior(self):
         """
-        Default empty initialization of the weather behavior.
+        Default empty initialization of the weather behavior,
+        responsible of controlling the weather during the simulation.
         Override this method in child class to provide custom initialization.
         """
         pass
 
     def _create_lights_behavior(self):
         """
-        Default empty initialization of the lights behavior.
+        Default empty initialization of the lights behavior,
+        responsible of controlling the street lights during the simulation.
         Override this method in child class to provide custom initialization.
         """
         pass
+
+    def _create_timeout_behavior(self):
+        """
+        Default initialization of the timeout behavior.
+        Override this method in child class to provide custom initialization.
+        """
+        return TimeOut(self.timeout, name="TimeOut")  # Timeout node
 
     def change_control(self, control):  # pylint: disable=no-self-use
         """
