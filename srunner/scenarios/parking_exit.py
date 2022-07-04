@@ -16,10 +16,12 @@ import carla
 
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import SwitchOutsideRouteLanesTest, ActorTransformSetter, ActorDestroy
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
+
+from srunner.tools.background_manager import ChangeRoadBehavior
 
 
 def convert_dict_to_location(actor_dict):
@@ -76,6 +78,11 @@ class ParkingExit(BasicScenario):
         else:
             self._direction = "right"
 
+        if 'flow_distance' in config.other_parameters:
+            self._flow_distance = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._flow_distance = 30
+
         # Get parking_waypoint based on trigger_point
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
@@ -87,6 +94,8 @@ class ParkingExit(BasicScenario):
         if self._parking_waypoint is None:
             raise Exception(
                 "Couldn't find parking point on the {} side".format(self._direction))
+
+        self._bp_attributes = {'base_type': 'car', 'has_lights': False}
 
         super(ParkingExit, self).__init__("ParkingExit",
                                           ego_vehicles,
@@ -107,15 +116,15 @@ class ParkingExit(BasicScenario):
                 "Couldn't find viable position for the vehicle in front of the parking point")
 
         actor_front = CarlaDataProvider.request_new_actor(
-            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter=self._bp_attributes)
         if actor_front is None:
             raise ValueError(
                 "Couldn't spawn the vehicle in front of the parking point")
         self.other_actors.append(actor_front)
 
         # And move it to the side
-        side_transform = self._get_displaced_transform(actor_front, front_points[0])
-        actor_front.set_location(side_transform)
+        side_location = self._get_displaced_location(actor_front, front_points[0])
+        actor_front.set_location(side_location)
 
         # Spawn the actor behind the ego
         behind_points = self._parking_waypoint.previous(
@@ -125,21 +134,21 @@ class ParkingExit(BasicScenario):
                 "Couldn't find viable position for the vehicle behind the parking point")
 
         actor_behind = CarlaDataProvider.request_new_actor(
-            'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter={'base_type': 'car'})
+            'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter=self._bp_attributes)
         if actor_behind is None:
             raise ValueError(
                 "Couldn't spawn the vehicle behind the parking point")
         self.other_actors.append(actor_behind)
 
         # And move it to the side
-        side_transform = self._get_displaced_transform(actor_behind, behind_points[0])
-        actor_behind.set_location(side_transform)
+        side_location = self._get_displaced_location(actor_behind, behind_points[0])
+        actor_behind.set_location(side_location)
 
         # Move the ego to its side position
-        self._ego_transform = self._get_displaced_transform(self.ego_vehicles[0], self._parking_waypoint)
+        self._ego_transform = self._get_displaced_location(self.ego_vehicles[0], self._parking_waypoint)
         self.ego_vehicles[0].set_location(self._ego_transform)
 
-    def _get_displaced_transform(self, actor, wp):
+    def _get_displaced_location(self, actor, wp):
         """
         Calculates the transforming such that the actor is at the sidemost part of the lane
         """
@@ -163,10 +172,7 @@ class ParkingExit(BasicScenario):
         """
 
         sequence = py_trees.composites.Sequence()
-
-        # Deactivate OutsideRouteLanesTest
-        sequence.add_child(SwitchOutsideRouteLanesTest(False))
-
+        sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_distance))
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
@@ -176,10 +182,9 @@ class ParkingExit(BasicScenario):
         root.add_child(end_condition)
         sequence.add_child(root)
 
-        sequence.add_child(SwitchOutsideRouteLanesTest(True))
-
         for actor in self.other_actors:
             sequence.add_child(ActorDestroy(actor))
+        sequence.add_child(ChangeRoadBehavior(spawn_dist=15))
 
         return sequence
 

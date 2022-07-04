@@ -17,7 +17,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import RemoveJunctionEntry
+from srunner.tools.background_manager import HandleJunctionScenario
 
 
 def convert_dict_to_location(actor_dict):
@@ -78,7 +78,8 @@ class PedestrianCrossing(BasicScenario):
 
         for item in end_walker_flow_list:
             self._sink_locations.append(convert_dict_to_location(item))
-            self._sink_locations_prob.append(float(item['p']))
+            prob = float(item['p'])  if 'p' in item else 0.5
+            self._sink_locations_prob.append(prob)
 
         if 'source_dist_interval' in config.other_parameters:
             self._source_dist_interval = [
@@ -107,7 +108,14 @@ class PedestrianCrossing(BasicScenario):
         """
         sequence = py_trees.composites.Sequence(name="CrossingPedestrian")
         if self.route_mode:
-            sequence.add_child(RemoveJunctionEntry([self._reference_waypoint]))
+            sequence.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_entry=True,
+                remove_entries=[],
+                remove_exits=[],
+                stop_entries=True,
+                extend_road_exit=0
+            ))
 
         # Move the adversary
         root = py_trees.composites.Parallel(

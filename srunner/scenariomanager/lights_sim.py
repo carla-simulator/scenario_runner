@@ -20,7 +20,15 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 class RouteLightsBehavior(py_trees.behaviour.Behaviour):
 
     """
+    Behavior responsible for turning the street lights on and off depending on the weather conditions.
+    Only those around the ego vehicle will be turned on, regardless of weather conditions
     """
+    SUN_ALTITUDE_THRESHOLD_1 = 15
+    SUN_ALTITUDE_THRESHOLD_2 = 165
+
+    # For higher fog and cloudness values, the amount of light in scene starts to rapidly decrease
+    CLOUDINESS_THRESHOLD = 95
+    FOG_THRESHOLD = 40
 
     def __init__(self, ego_vehicle, radius=50, name="LightsBehavior"):
         """
@@ -46,16 +54,27 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         if not location:
             return new_status
 
-        night_mode = self._world.get_weather().sun_altitude_angle < 0
+        night_mode = self._get_night_mode(self._world.get_weather())
         if night_mode:
-            self.turn_close_lights_on(location)
+            self._turn_close_lights_on(location)
         elif self._prev_night_mode:
-            self.turn_all_lights_off()
+            self._turn_all_lights_off()
 
         self._prev_night_mode = night_mode
         return new_status
 
-    def turn_close_lights_on(self, location):
+    def _get_night_mode(self, weather):
+        """Check wheather or not the street lights need to be turned on"""
+        if weather.sun_altitude_angle <= self.SUN_ALTITUDE_THRESHOLD_1 \
+                or weather.sun_altitude_angle >= self.SUN_ALTITUDE_THRESHOLD_2:
+            return True
+        if weather.cloudiness >= self.CLOUDINESS_THRESHOLD:
+            return True
+        if weather.fog_density >= self.FOG_THRESHOLD:
+            return True
+        return False
+
+    def _turn_close_lights_on(self, location):
         """Turns on the lights of all the objects close to the ego vehicle"""
         ego_speed = CarlaDataProvider.get_velocity(self._ego_vehicle)
         radius = max(self._radius, 5 * ego_speed)
@@ -95,7 +114,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         lights |= self._vehicle_lights
         self._ego_vehicle.set_light_state(carla.VehicleLightState(lights))
 
-    def turn_all_lights_off(self):
+    def _turn_all_lights_off(self):
         """Turns off the lights of all object"""
         all_lights = self._light_manager.get_all_lights()
         off_lights = [l for l in all_lights if l.is_on]

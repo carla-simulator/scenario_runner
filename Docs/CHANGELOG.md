@@ -29,6 +29,14 @@
     - ParkingCutIn: A vehicle parked at the side cuts in front of the ego.
     - BlockedIntersection: With low visibility, the ego performs a turn only to find out that the end is blocked by another vehicle.
     - MergerIntoSlowTraffic: the ego has to enter a lane that is filled with slow traffic.
+    - InterurbanActorFlow and InterurbanAdvancedActorFlow: actor flow scenarios for the new interurban intersections with dedicated lanes.
+    - ParkingCrossingPedestrian: similar to DynamicObjectCrossing, but the occluder is a vehicle stopped at a parking lane.
+    - ParkedObstacle: very similar to the Accident one but with a different blocker.
+    - NonSignalizedJunctionLeftTurn: non signalized version of SignalizedJunctionLeftTurn.
+    - NonSignalizedJunctionRightTurn: non signalized version of SignalizedJunctionRightTurn.
+    - OppositeVehicleTakingPriority: non signalized version of OppositeVehicleRunningRedLight.
+    - BackgroundActivityParametrizer: allows the customization of the BackgroundActivity parameters.
+    - PriorityAtJunction: sets the traffic light of the incoming junction to green. Improves route smoothness by letting the vehicle cross the junction without stopping.
     - BicycleFlowAtSideLane:Added the dangerous scene of ego vehicles driving on roads without sidewalks, with three bicycles encroaching on some roads in front.
     - InvadingTurn: the ego is about to turn right when a vehicle coming from the opposite lane invades the ego's lane, forcing the ego to move right to avoid a possible collision.
 * Added new functions to the BackgroundManager

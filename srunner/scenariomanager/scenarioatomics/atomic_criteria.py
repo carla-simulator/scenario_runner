@@ -1004,7 +1004,7 @@ class OutsideRouteLanesTest(Criterion):
         self._last_lane_id = None
         self._total_distance = 0
         self._wrong_distance = 0
-        self._active = True
+        self._wrong_direction_active = True
 
     def update(self):
         """
@@ -1023,15 +1023,15 @@ class OutsideRouteLanesTest(Criterion):
             return new_status
 
         # Deactivate/Activate checking by blackboard message
-        active = py_trees.blackboard.Blackboard().get('AC_SwitchOutsideRouteLanesTest')
+        active = py_trees.blackboard.Blackboard().get('AC_SwitchWrongDirectionTest')
         if active is not None:
-            self._active = active
-            py_trees.blackboard.Blackboard().set("AC_SwitchOutsideRouteLanesTest", None, overwrite=True)
+            self._wrong_direction_active = active
+            py_trees.blackboard.Blackboard().set("AC_SwitchWrongDirectionTest", None, overwrite=True)
 
         self._is_outside_driving_lanes(location)
         self._is_at_wrong_lane(location)
 
-        if self._active and (self._outside_lane_active or self._wrong_lane_active):
+        if self._outside_lane_active or (self._wrong_direction_active and self._wrong_lane_active):
             self.test_status = "FAILURE"
 
         # Get the traveled distance
@@ -1051,7 +1051,7 @@ class OutsideRouteLanesTest(Criterion):
                 self._total_distance += new_dist
 
                 # And to the wrong one if outside route lanes
-                if self._active and (self._outside_lane_active or self._wrong_lane_active):
+                if self._outside_lane_active or (self._wrong_direction_active and self._wrong_lane_active):
                     self._wrong_distance += new_dist
 
                 self._current_index = index
@@ -1948,7 +1948,7 @@ class RunningStopTest(Criterion):
         return new_status
 
 
-class CheckMinSpeed(Criterion):
+class MinSpeedRouteTest(Criterion):
 
     """
     Check at which stage of the route is the actor at each tick
@@ -1963,7 +1963,7 @@ class CheckMinSpeed(Criterion):
     # Thresholds to return that a route has been completed
     MULTIPLIER = 1.5  # %
 
-    def __init__(self, actor, name="CheckMinSpeed", terminate_on_failure=False):
+    def __init__(self, actor, name="MinSpeedRouteTest", terminate_on_failure=False):
         """
         """
         super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
@@ -1976,9 +1976,6 @@ class CheckMinSpeed(Criterion):
 
         self._active = True
 
-        self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION)
-        self.events.append(self._traffic_event)
-
     def update(self):
         """
         Check if the actor location is within trigger region
@@ -1990,10 +1987,10 @@ class CheckMinSpeed(Criterion):
         if velocity is None:
             return new_status
 
-        set_speed_data = py_trees.blackboard.Blackboard().get('BA_CheckMinSpeed')
+        set_speed_data = py_trees.blackboard.Blackboard().get('BA_MinSpeedRouteTest')
         if set_speed_data is not None:
             self._active = set_speed_data
-            py_trees.blackboard.Blackboard().set('BA_CheckMinSpeed', None, True)
+            py_trees.blackboard.Blackboard().set('BA_MinSpeedRouteTest', None, True)
 
         if self._active:
             # Get the speed of the surrounding Background Activity
@@ -2020,7 +2017,9 @@ class CheckMinSpeed(Criterion):
         Set the actual value as a percentage of the two mean speeds,
         the test status to failure if not successful and terminate
         """
-        if self._speed_points > 0:
+        if self._mean_speed == 0:
+            self.actual_value = 0
+        elif self._speed_points > 0:
             self._mean_speed /= self._speed_points
             self._actor_speed /= self._speed_points
             self.actual_value = round(self._actor_speed / self._mean_speed * 100, 2)
@@ -2032,8 +2031,11 @@ class CheckMinSpeed(Criterion):
         else:
             self.test_status = "FAILURE"
 
-        self._traffic_event.set_dict({'percentage': self.actual_value})
-        self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
+        if self.test_status == "FAILURE":
+            self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION)
+            self._traffic_event.set_dict({'percentage': self.actual_value})
+            self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
+            self.events.append(self._traffic_event)
 
         super().terminate(new_status)
 
@@ -2096,13 +2098,23 @@ class YieldToEmergencyVehicleTest(Criterion):
         return new_status
 
     def terminate(self, new_status):
-        mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
-        self.actual_value = mean_speed / self._target_speed *100
-        self.actual_value = round(self.actual_value, 2)
-        
-        if self.actual_value >= self.success_value:
-            self.test_status = "SUCCESS"
+        if not len(self._ev_speed_log):
+            self.actual_value = 100
         else:
-            self.test_status = "FAILURE"
+            mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
+            self.actual_value = mean_speed / self._target_speed *100
+            self.actual_value = round(self.actual_value, 2)
+
+            if self.actual_value >= self.success_value:
+                self.test_status = "SUCCESS"
+            else:
+                self.test_status = "FAILURE"
+
+        if self.test_status == "FAILURE":
+            traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE)
+            traffic_event.set_dict({'speed_percentage': self.actual_value})
+            traffic_event.set_message(
+                f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
+            self.events.append(traffic_event)
 
         super().terminate(new_status)

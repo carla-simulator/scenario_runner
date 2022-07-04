@@ -21,7 +21,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import \
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import \
     InTriggerDistanceToVehicle
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import RemoveJunctionEntry
+from srunner.tools.background_manager import HandleJunctionScenario
 
 
 def convert_dict_to_location(actor_dict):
@@ -148,9 +148,14 @@ class BlockedIntersection(BasicScenario):
         sequence = py_trees.composites.Sequence()
 
         if self.route_mode:
-            sequence.add_child(RemoveJunctionEntry(
-                [self._reference_waypoint, self._blocker_waypoint], all_road_entries=True))
-
+            sequence.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_entry=True,
+                remove_entries=[],
+                remove_exits=[],
+                stop_entries=True,
+                extend_road_exit=0
+            ))
         # Ego go behind the blocker
         sequence.add_child(InTriggerDistanceToVehicle(
             self.other_actors[-1], self.ego_vehicles[0],  self._block_distance))

@@ -23,10 +23,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestr
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import (SwitchRouteSources,
-                                              ExtentExitRoadSpace,
-                                              RemoveJunctionEntry,
-                                              ClearJunction)
+from srunner.tools.background_manager import HandleJunctionScenario
 
 from srunner.tools.scenario_helper import generate_target_waypoint
 
@@ -41,7 +38,7 @@ def convert_dict_to_location(actor_dict):
     )
     return location
 
-class HighwayCutInRoute(BasicScenario):
+class HighwayCutIn(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
     in front of the ego, forcing it to react. This vehicles are 'special' ones such as police cars,
@@ -67,7 +64,7 @@ class HighwayCutInRoute(BasicScenario):
 
         self._start_location = convert_dict_to_location(config.other_parameters['other_actor_location'])
 
-        super().__init__("HighwayEntryCutIn",
+        super().__init__("HighwayCutIn",
                          ego_vehicles,
                          config,
                          world,
@@ -97,15 +94,17 @@ class HighwayCutInRoute(BasicScenario):
         Hero vehicle is entering a junction in an urban area, at a signalized intersection,
         while another actor runs a red lift, forcing the ego to break.
         """
-        # behavior.add_child(SwitchRouteSources(False))
-
-        behavior = py_trees.composites.Sequence("HighwayCutInRoute")
+        behavior = py_trees.composites.Sequence("HighwayCutIn")
 
         if self.route_mode:
-            behavior.add_child(RemoveJunctionEntry([self._other_waypoint], True))
-            behavior.add_child(ClearJunction())
-            behavior.add_child(ExtentExitRoadSpace(self._extra_space))
-
+            behavior.add_child(HandleJunctionScenario(
+                clear_junction=True,
+                clear_ego_entry=False,
+                remove_entries=[self._other_waypoint],
+                remove_exits=[],
+                stop_entries=False,
+                extend_road_exit=self._extra_space
+            ))
         behavior.add_child(ActorTransformSetter(self._cut_in_vehicle, self._other_transform))
 
         # Sync behavior

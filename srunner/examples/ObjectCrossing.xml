@@ -51,7 +51,7 @@
     <scenario name="DynamicObjectCrossing_9" type="DynamicObjectCrossing" town="Town03">
         <ego_vehicle x="90" y="129" z="1" yaw="180" model="vehicle.lincoln.mkz_2017" />
     </scenario>
-    <scenario name="ConstructionSetupCrossing" type="ConstructionSetupCrossing" town="Town02">
+    <scenario name="ConstructionObstacle" type="ConstructionObstacle" town="Town02">
         <ego_vehicle x="7.63" y="109.91" z="1.22" yaw="359" model="vehicle.lincoln.mkz_2017" />
     </scenario>
 

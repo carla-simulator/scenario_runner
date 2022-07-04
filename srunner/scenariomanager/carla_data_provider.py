@@ -18,6 +18,7 @@ from numpy import random
 from six import iteritems
 
 import carla
+from agents.navigation.global_route_planner import GlobalRoutePlanner
 
 
 def calculate_velocity(actor):
@@ -63,6 +64,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _traffic_manager_port = 8000
     _random_seed = 2000
     _rng = random.RandomState(_random_seed)
+    _grp = None
 
     @staticmethod
     def register_actor(actor):
@@ -196,6 +198,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._sync_flag = world.get_settings().synchronous_mode
         CarlaDataProvider._map = world.get_map()
         CarlaDataProvider._blueprint_library = world.get_blueprint_library()
+        CarlaDataProvider._grp = GlobalRoutePlanner(CarlaDataProvider._map, 2.0)
         CarlaDataProvider.generate_spawn_points()
         CarlaDataProvider.prepare_map()
 
@@ -225,9 +228,16 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_random_seed():
         """
-        @return true if syncronuous mode is used
+        @return the random seed.
         """
         return CarlaDataProvider._rng
+
+    @staticmethod
+    def get_global_route_planner():
+        """
+        @return the global route planner
+        """
+        return CarlaDataProvider._grp
 
     @staticmethod
     def is_sync_mode():
@@ -546,12 +556,14 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 actor = CarlaDataProvider._world.try_spawn_actor(blueprint, spawn_point)
 
         else:
-            # slightly lift the actor to avoid collisions with ground when spawning the actor
+            # For non prop models, slightly lift the actor to avoid collisions with the ground
+            z_offset = 0.2 if 'prop' not in model else 0
+
             # DO NOT USE spawn_point directly, as this will modify spawn_point permanently
             _spawn_point = carla.Transform(carla.Location(), spawn_point.rotation)
             _spawn_point.location.x = spawn_point.location.x
             _spawn_point.location.y = spawn_point.location.y
-            _spawn_point.location.z = spawn_point.location.z + 0.2
+            _spawn_point.location.z = spawn_point.location.z + z_offset
             actor = CarlaDataProvider._world.try_spawn_actor(blueprint, _spawn_point)
 
         if actor is None:
@@ -822,3 +834,4 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_points = None
         CarlaDataProvider._spawn_index = 0
         CarlaDataProvider._rng = random.RandomState(CarlaDataProvider._random_seed)
+        CarlaDataProvider._grp = None

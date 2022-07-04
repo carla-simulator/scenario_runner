@@ -14,7 +14,7 @@ import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
-                                                                      WaypointFollower)
+                                                                      BasicAgentBehavior)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -38,10 +38,10 @@ class ParkingCutIn(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
 
-        self._cut_in_distance = 25
-        self._blocker_distance = 18
+        self._cut_in_distance = 35
+        self._blocker_distance = 28
 
-        self._adversary_speed = 10.0  # Speed of the adversary [m/s]
+        self._adversary_speed = 13.0  # Speed of the adversary [m/s]
         self._reaction_time = 2.5  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 10.0  # Min distance to the collision location that triggers the adversary [m]
         self._end_distance = 40
@@ -81,8 +81,8 @@ class ParkingCutIn(BasicScenario):
         self._blocker_actor.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(self._blocker_actor)
 
-        side_transform = self._get_displaced_transform(self._blocker_actor, parking_wp)
-        self._blocker_actor.set_location(side_transform)
+        side_location = self._get_displaced_location(self._blocker_actor, parking_wp)
+        self._blocker_actor.set_location(side_location)
 
         collision_wps = self._reference_waypoint.next(self._cut_in_distance)
         if not collision_wps:
@@ -101,12 +101,12 @@ class ParkingCutIn(BasicScenario):
             raise ValueError("Couldn't spawn the parked actor")
         self.other_actors.append(self._parked_actor)
 
-        side_transform = self._get_displaced_transform(self._parked_actor, parking_wp)
-        self._parked_actor.set_location(side_transform)
+        side_location = self._get_displaced_location(self._parked_actor, parking_wp)
+        self._parked_actor.set_location(side_location)
 
-    def _get_displaced_transform(self, actor, wp):
+    def _get_displaced_location(self, actor, wp):
         """
-        Calculates the transforming such that the actor is at the sidemost part of the lane
+        Calculates the location such that the actor is at the sidemost part of the lane
         """
         # Move the actor to the edge of the lane near the sidewalk
         displacement = (wp.lane_width - actor.bounding_box.extent.y) / 4
@@ -127,7 +127,7 @@ class ParkingCutIn(BasicScenario):
         """
         sequence = py_trees.composites.Sequence(name="CrossingActor")
         if self.route_mode:
-            sequence.add_child(LeaveSpaceInFront(self._cut_in_distance))
+            sequence.add_child(LeaveSpaceInFront(self._cut_in_distance + 10))
 
         collision_location = self._collision_wp.transform.location
 
@@ -143,7 +143,7 @@ class ParkingCutIn(BasicScenario):
         # Move the adversary
         cut_in = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Cut in behavior")
-        cut_in.add_child(WaypointFollower(self.other_actors[1], self._adversary_speed))
+        cut_in.add_child(BasicAgentBehavior(self.other_actors[1]))
         cut_in.add_child(DriveDistance(self.other_actors[1], self._end_distance))
         sequence.add_child(cut_in)
 

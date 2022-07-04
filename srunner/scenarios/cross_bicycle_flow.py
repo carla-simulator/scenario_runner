@@ -14,16 +14,13 @@ from __future__ import print_function
 import py_trees
 import carla
 
-from agents.navigation.global_route_planner import GlobalRoutePlanner
-
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import BicycleFlow, TrafficLightFreezer
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.scenario_helper import get_closest_traffic_light
-from srunner.tools.background_manager import ClearJunction
+from srunner.tools.background_manager import HandleJunctionScenario
 from agents.navigation.local_planner import RoadOption
 
 
@@ -39,7 +36,7 @@ def convert_dict_to_location(actor_dict):
     return location
 
 
-class CrossingBycicleFlow(BasicScenario):
+class CrossingBicycleFlow(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
     in front of the ego, forcing it to react. This vehicles are 'special' ones such as police cars,
@@ -82,39 +79,46 @@ class CrossingBycicleFlow(BasicScenario):
 
         self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
 
-        super().__init__("CrossingBycicleFlow",
+        super().__init__("CrossingBicycleFlow",
                          ego_vehicles,
                          config,
                          world,
                          debug_mode,
                          criteria_enable=criteria_enable)
 
-    def _create_behavior(self):
-        """
-        Hero vehicle is entering a junction in an urban area, at a signalized intersection,
-        while another actor runs a red lift, forcing the ego to break.
-        """
-        source_wp = self._map.get_waypoint(self._start_flow, lane_type=carla.LaneType.Biking)
-        if not source_wp:
-            raise ValueError("Couldn't find a biking lane")
-        elif source_wp.transform.location.distance(self._start_flow) > 10:
-            raise ValueError("Couldn't find a biking lane at the specified location")
+    def _initialize_actors(self, config):
+
+        ego_location = config.trigger_points[0].location
+        self._ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
+
+        # Get the junction
+        starting_wp = self._ego_wp
+        ego_junction_dist = 0
+        while not starting_wp.is_junction:
+            starting_wps = starting_wp.next(1.0)
+            if len(starting_wps) == 0:
+                raise ValueError("Failed to find junction as a waypoint with no next was detected")
+            starting_wp = starting_wps[0]
+            ego_junction_dist += 1
+        junction = starting_wp.get_junction()
 
         # Get the plan
-        plan = []
-        junction_id = -1
+        self._source_wp = self._map.get_waypoint(self._start_flow, lane_type=carla.LaneType.Biking)
+        if not self._source_wp or self._source_wp.transform.location.distance(self._start_flow) > 10:
+            raise ValueError("Couldn't find a biking lane at the specified location")
+
+        self._plan = []
         plan_step = 0
-        wp = source_wp
+        wp = self._source_wp
         while True:
             next_wps = wp.next(1)
             if not next_wps:
                 raise ValueError("Couldn't find a proper plan for the bicycle flow")
             next_wp = next_wps
             wp = next_wp[0]
-            plan.append([next_wp[0], RoadOption.LANEFOLLOW])
+            self._plan.append([next_wp[0], RoadOption.LANEFOLLOW])
 
             if plan_step == 0 and wp.is_junction:
-                junction_id = wp.get_junction().id
                 plan_step += 1
             elif plan_step == 1 and not wp.is_junction:
                 plan_step += 1
@@ -122,22 +126,36 @@ class CrossingBycicleFlow(BasicScenario):
             elif plan_step == 2 and exit_loc.distance(wp.transform.location) > self._end_dist_flow:
                 break
 
-        # Get the relevant traffic lights
-        tls = self._world.get_traffic_lights_in_junction(junction_id)
-        ego_tl = get_closest_traffic_light(self._reference_waypoint, tls)
+        self._get_traffic_lights(junction, ego_junction_dist)
+
+    def _get_traffic_lights(self, junction, ego_dist):
+        """Get the traffic light of the junction, mapping their states"""
+        tls = self._world.get_traffic_lights_in_junction(junction.id)
+        if not tls:
+            raise ValueError("No traffic lights found, use the NonSignalized version instead")
+
+        ego_landmark = self._ego_wp.get_landmarks_of_type(ego_dist + 2, "1000001")[0]
+        ego_tl = self._world.get_traffic_light(ego_landmark)
         self._flow_tl_dict = {}
         self._init_tl_dict = {}
         for tl in tls:
-            if tl == ego_tl:
+            if tl.id == ego_tl.id:
                 self._flow_tl_dict[tl] = carla.TrafficLightState.Green
                 self._init_tl_dict[tl] = carla.TrafficLightState.Red
             else:
                 self._flow_tl_dict[tl] = carla.TrafficLightState.Red
                 self._init_tl_dict[tl] = carla.TrafficLightState.Red
 
+
+    def _create_behavior(self):
+        """
+        Hero vehicle is entering a junction in an urban area, at a signalized intersection,
+        while another actor runs a red lift, forcing the ego to break.
+        """
+
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        root.add_child(BicycleFlow(plan, self._source_dist_interval, self._sink_distance, self._flow_speed))
+        root.add_child(BicycleFlow(self._plan, self._source_dist_interval, self._sink_distance, self._flow_speed, True))
 
         # End condition, when the ego exits the junction
         end_condition = py_trees.composites.Sequence()
@@ -155,7 +173,14 @@ class CrossingBycicleFlow(BasicScenario):
             return root
 
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ClearJunction())
+        sequence.add_child(HandleJunctionScenario(
+            clear_junction=True,
+            clear_ego_entry=True,
+            remove_entries=[],
+            remove_exits=[],
+            stop_entries=False,
+            extend_road_exit=0
+        ))
         sequence.add_child(root)
         return sequence
 

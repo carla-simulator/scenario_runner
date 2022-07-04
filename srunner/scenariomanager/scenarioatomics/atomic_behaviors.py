@@ -32,7 +32,6 @@ import carla
 from agents.navigation.basic_agent import BasicAgent
 from agents.navigation.constant_velocity_agent import ConstantVelocityAgent
 from agents.navigation.local_planner import RoadOption, LocalPlanner
-from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.tools.misc import is_within_distance, get_speed
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -794,7 +793,7 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         # Obtain final route, considering the routing option
         # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
-        grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
+        grp = CarlaDataProvider.get_global_route_planner()
         route = []
         for i, _ in enumerate(carla_route_elements):
             if carla_route_elements[i][1] == "shortest":
@@ -1402,7 +1401,7 @@ class KeepVelocity(AtomicBehavior):
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - target_velocity: The target velocity the actor should reach
-    - forced_speed: Whether or not to forcefully set the actors speed
+    - forced_speed: Whether or not to forcefully set the actors speed. This will ony be active until a collision happens
     - duration[optional]: Duration in seconds of this behavior
     - distance[optional]: Maximum distance in meters covered by the actor during this behavior
 
@@ -1421,7 +1420,8 @@ class KeepVelocity(AtomicBehavior):
         self._target_velocity = target_velocity
 
         self._control, self._type = get_actor_control(actor)
-        self._map = self._actor.get_world().get_map()
+        self._world = CarlaDataProvider.get_world()
+        self._map = CarlaDataProvider.get_map()
         self._waypoint = self._map.get_waypoint(self._actor.get_location())
 
         self._forced_speed = force_speed
@@ -1430,6 +1430,17 @@ class KeepVelocity(AtomicBehavior):
         self._distance = 0
         self._start_time = 0
         self._location = None
+
+        self._collision_sensor = None
+
+    def _set_collision_sensor(self):
+        blueprint = self._world.get_blueprint_library().find('sensor.other.collision')
+        self._collision_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self._actor)
+        self._collision_sensor.listen(lambda event: self._stop_constant_velocity(event))
+
+    def _stop_constant_velocity(self, event):
+        """Stops the constant velocity behavior"""
+        self._forced_speed = False
 
     def initialise(self):
         self._location = CarlaDataProvider.get_location(self._actor)
@@ -1442,6 +1453,8 @@ class KeepVelocity(AtomicBehavior):
         elif self._type == 'vehicle':
             self._control.hand_brake = False
         self._actor.apply_control(self._control)
+
+        self._set_collision_sensor()
 
         super(KeepVelocity, self).initialise()
 
@@ -1465,6 +1478,9 @@ class KeepVelocity(AtomicBehavior):
                 self._actor.set_target_velocity(carla.Vector3D(
                     math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
 
+                # Add a throttle. Useless speed-wise, but makes the bicycle riders pedal.
+                self._actor.apply_control(carla.VehicleControl(throttle=1.0)) 
+
         new_location = CarlaDataProvider.get_location(self._actor)
         self._distance += calculate_distance(self._location, new_location)
         self._location = new_location
@@ -1484,13 +1500,18 @@ class KeepVelocity(AtomicBehavior):
         On termination of this behavior, the throttle should be set back to 0.,
         to avoid further acceleration.
         """
-
-        if self._type == 'vehicle':
-            self._control.throttle = 0.0
-        elif self._type == 'walker':
-            self._control.speed = 0.0
-        if self._actor is not None and self._actor.is_alive:
-            self._actor.apply_control(self._control)
+        try:
+            if self._type == 'vehicle':
+                self._control.throttle = 0.0
+            elif self._type == 'walker':
+                self._control.speed = 0.0
+            if self._actor is not None and self._actor.is_alive:
+                self._actor.apply_control(self._control)
+            if self._collision_sensor:
+                self._collision_sensor.stop()
+                self._collision_sensor.destroy()
+        except RuntimeError:
+            pass
         super(KeepVelocity, self).terminate(new_status)
 
 
@@ -1715,12 +1736,12 @@ class SyncArrivalWithAgent(AtomicBehavior):
         self._end_dist = end_dist
         self._agent = None
 
-        self._map = CarlaDataProvider.get_map()
-        self._grp = GlobalRoutePlanner(self._map, 100)
-
     def initialise(self):
         """Initialises the agent"""
-        self._agent = ConstantVelocityAgent(self._actor, map_inst=self._map, grp_inst=self._grp)
+        self._agent = ConstantVelocityAgent(
+            self._actor,
+            map_inst=CarlaDataProvider.get_map(),
+            grp_inst=CarlaDataProvider.get_global_route_planner())
 
     def update(self):
         """
@@ -1802,12 +1823,16 @@ class CutIn(AtomicBehavior):
         self._change_time = change_time
 
         self._map = CarlaDataProvider.get_map()
-        self._grp = GlobalRoutePlanner(self._map, 100)
+        self._grp = CarlaDataProvider.get_global_route_planner()
 
     def initialise(self):
         """Initialises the agent"""
         speed = CarlaDataProvider.get_velocity(self._reference_actor)
-        self._agent = BasicAgent(self._actor, 3.6 * speed * self._speed_perc / 100, map_inst=self._map, grp_inst=self._grp)
+        self._agent = BasicAgent(
+            self._actor,
+            3.6 * speed * self._speed_perc / 100,
+            map_inst=CarlaDataProvider.get_map(),
+            grp_inst=CarlaDataProvider.get_global_route_planner())
         self._agent.lane_change(self._direction, self._same_lane_time, self._other_lane_time, self._change_time)
 
     def update(self):
@@ -1916,7 +1941,7 @@ class BasicAgentBehavior(AtomicBehavior):
     The behavior terminates after reaching the target_location (within 2 meters)
     """
 
-    def __init__(self, actor, target_location, opt_dict=None, name="BasicAgentBehavior"):
+    def __init__(self, actor, target_location=None, opt_dict=None, name="BasicAgentBehavior"):
         """
         Setup actor and maximum steer value
         """
@@ -1930,11 +1955,12 @@ class BasicAgentBehavior(AtomicBehavior):
 
     def initialise(self):
         """Initialises the agent"""
-        self._agent = BasicAgent(self._actor, opt_dict=self._opt_dict)
-        self._plan = self._agent.trace_route(
-            self._map.get_waypoint(CarlaDataProvider.get_location(self._actor)),
-            self._map.get_waypoint(self._target_location))
-        self._agent.set_global_plan(self._plan)
+        self._agent = BasicAgent(self._actor, opt_dict=self._opt_dict,
+            map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
+        if self._target_location:
+            self._plan = self._agent.set_destination(
+                self._target_location, CarlaDataProvider.get_location(self._actor))
+            self._agent.set_global_plan(self._plan)
 
     def update(self):
         new_status = py_trees.common.Status.RUNNING
@@ -1984,9 +2010,14 @@ class ConstantVelocityAgentBehavior(AtomicBehavior):
         self._agent = None
         self._plan = None
 
+        self._map = CarlaDataProvider.get_map()
+        self._grp = CarlaDataProvider.get_global_route_planner()
+
     def initialise(self):
         """Initialises the agent"""
-        self._agent = ConstantVelocityAgent(self._actor, self._target_speed * 3.6, opt_dict=self._opt_dict)
+        self._agent = ConstantVelocityAgent(
+            self._actor, self._target_speed * 3.6, opt_dict=self._opt_dict,
+            map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
         self._plan = self._agent.trace_route(
             self._map.get_waypoint(CarlaDataProvider.get_location(self._actor)),
             self._map.get_waypoint(self._target_location))
@@ -2046,6 +2077,8 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
         self._agent = None
         self._plan = None
 
+        self._grp = CarlaDataProvider.get_global_route_planner()
+
     def initialise(self):
         """Initialises the agent"""
         # Get target speed
@@ -2053,7 +2086,8 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
         py_trees.blackboard.Blackboard().set(
             "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
 
-        self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict)
+        self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict,
+                                            map_inst=self._map, grp_inst=self._grp)
 
         if self._target_location is not None:
             self._plan = self._agent.trace_route(
@@ -2720,7 +2754,7 @@ class ActorFlow(AtomicBehavior):
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, actor_type="car", name="ActorFlow"):
+                 actor_speed=20 / 3.6, add_initial_actors=False, name="ActorFlow"):
         """
         Setup class members
         """
@@ -2741,7 +2775,7 @@ class ActorFlow(AtomicBehavior):
 
         self._sink_dist = sink_dist
         self._speed = actor_speed
-        self._actor_type = actor_type
+        self._add_initial_actors = add_initial_actors
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2750,11 +2784,51 @@ class ActorFlow(AtomicBehavior):
         self._actor_list = []
         self._collision_sensor_list = []
 
+    def initialise(self):
+        if self._add_initial_actors:
+            grp = CarlaDataProvider.get_global_route_planner()
+            plan = grp.trace_route(self._source_location, self._sink_location)
+
+            ref_loc = plan[0][0].transform.location
+            for wp, _ in plan:
+                if wp.transform.location.distance(ref_loc) < self._spawn_dist:
+                    continue
+                self._spawn_actor(wp.transform)
+                ref_loc = wp.transform.location
+                self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+    def _spawn_actor(self, transform):
+        actor = CarlaDataProvider.request_new_actor(
+            'vehicle.*', transform, rolename='scenario',
+            attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False
+        )
+        if actor is None:
+            return py_trees.common.Status.RUNNING
+
+        actor.set_autopilot(True)
+        self._tm.set_path(actor, [self._source_transform.location, self._sink_location])
+
+        if self._is_constant_velocity_active:
+            self._tm.ignore_vehicles_percentage(actor, 100)
+            self._tm.auto_lane_change(actor, False)
+            self._tm.set_desired_speed(actor, 3.6 * self._speed)
+            self._tm.update_vehicle_lights(actor, True)
+            actor.enable_constant_velocity(carla.Vector3D(self._speed, 0, 0))  # For when physics are active
+        self._actor_list.append(actor)
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+        sensor = self._world.spawn_actor(self._collision_bp, carla.Transform(), attach_to=actor)
+        sensor.listen(lambda _: self.stop_constant_velocity())
+        self._collision_sensor_list.append(sensor)
+
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
         # Control the vehicles, removing them when needed
         for actor in list(self._actor_list):
-            sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
+            location = CarlaDataProvider.get_location(actor)
+            if not location:
+                continue
+            sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
                 actor.destroy()
                 self._actor_list.remove(actor)
@@ -2764,30 +2838,13 @@ class ActorFlow(AtomicBehavior):
             distance = self._spawn_dist + 1
         else:
             actor_location = CarlaDataProvider.get_location(self._actor_list[-1])
-            distance = self._source_transform.location.distance(actor_location)
+            if actor_location is None:
+                distance = 0
+            else:
+                distance = self._source_location.distance(actor_location)
 
         if distance > self._spawn_dist:
-            actor = CarlaDataProvider.request_new_actor(
-                'vehicle.*', self._source_transform, rolename='scenario',
-                attribute_filter={'base_type': self._actor_type, 'has_lights': True}, tick=False
-            )
-            if actor is None:
-                return py_trees.common.Status.RUNNING
-
-            actor.set_autopilot(True)
-            self._tm.set_path(actor, [self._source_location, self._sink_location])
-
-            if self._is_constant_velocity_active:
-                self._tm.ignore_vehicles_percentage(actor, 100)
-                self._tm.auto_lane_change(actor, False)
-                self._tm.set_desired_speed(actor, 3.6 * self._speed)
-                actor.enable_constant_velocity(carla.Vector3D(self._speed, 0, 0))  # For when physics are active
-            self._actor_list.append(actor)
-            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
-
-            sensor = self._world.spawn_actor(self._collision_bp, carla.Transform(), attach_to=actor)
-            sensor.listen(lambda _: self.stop_constant_velocity())
-            self._collision_sensor_list.append(sensor)
+            self._spawn_actor(self._source_transform)
 
         return py_trees.common.Status.RUNNING
 
@@ -2818,12 +2875,13 @@ class BicycleFlow(AtomicBehavior):
     Important parameters:
     - plan (list(carla.Waypoint)): plan used by the bicycles.
     - spawn_distance_interval (list(float, float)): Distance between spawned actors
-    - sink_distance: Actors at this distance from the sink will be deleted
-    - actors_speed: Speed of the actors part of the flow [m/s]
+    - sink_distance (float): Actors at this distance from the sink will be deleted
+    - actors_speed (float): Speed of the actors part of the flow [m/s]
+    - add_initial_actors (bool): Boolean to initialy populate all the flow with bicycles
     """
 
     def __init__(self, plan, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, name="BicycleFlow"):
+                 actor_speed=20 / 3.6, add_initial_actors=False, name="BicycleFlow"):
         """
         Setup class members
         """
@@ -2844,15 +2902,46 @@ class BicycleFlow(AtomicBehavior):
         self._max_spawn_dist = spawn_dist_interval[1]
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
+        self._add_initial_actors = add_initial_actors
+
         self._actor_data = []
-        self._grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), 2.0)
+        self._grp = CarlaDataProvider.get_global_route_planner()
+
+    def initialise(self):
+        if self._add_initial_actors:
+            ref_loc = self._plan[0][0].transform.location
+            for wp, _ in self._plan:
+                if wp.transform.location.distance(ref_loc) < self._spawn_dist:
+                    continue
+                self._spawn_actor(wp.transform)
+                ref_loc = wp.transform.location
+                self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+
+    def _spawn_actor(self, transform):
+        actor = CarlaDataProvider.request_new_actor(
+            'vehicle.*', transform, rolename='scenario',
+            attribute_filter={'base_type': 'bicycle'}, tick=False
+        )
+        if actor is None:
+            return
+
+        actor.set_target_velocity(self._speed * self._source_vector)
+        controller = BasicAgent(actor, 3.6 * self._speed,
+            map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
+        controller.set_global_plan(self._plan)
+
+        self._actor_data.append([actor, controller])
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
         # Control the vehicles, removing them when needed
         for actor_data in list(self._actor_data):
             actor, controller = actor_data
-            sink_distance = self._sink_location.distance(CarlaDataProvider.get_location(actor))
+            location = CarlaDataProvider.get_location(actor)
+            if not location:
+                continue
+            sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
                 actor.destroy()
                 self._actor_data.remove(actor_data)
@@ -2864,23 +2953,13 @@ class BicycleFlow(AtomicBehavior):
             distance = self._spawn_dist + 1
         else:
             actor_location = CarlaDataProvider.get_location(self._actor_data[-1][0])
-            distance = self._source_location.distance(actor_location)
+            if actor_location is None:
+                distance = 0
+            else:
+                distance = self._source_location.distance(actor_location)
 
         if distance > self._spawn_dist:
-            actor = CarlaDataProvider.request_new_actor(
-                'vehicle.*', self._source_transform, rolename='scenario',
-                attribute_filter={'base_type': 'bicycle'}, tick=False
-            )
-            if actor is None:
-                return py_trees.common.Status.RUNNING
-
-            actor.set_target_velocity(self._speed * self._source_vector)
-            controller = BasicAgent(actor, 3.6 * self._speed,
-                map_inst=CarlaDataProvider.get_map(), grp_inst=self._grp)
-            controller.set_global_plan(self._plan)
-
-            self._actor_data.append([actor, controller])
-            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+            self._spawn_actor(self._source_transform)
 
         return py_trees.common.Status.RUNNING
 
@@ -3332,15 +3411,13 @@ class ScenarioTriggerer(AtomicBehavior):
 
     WINDOWS_SIZE = 5
 
-    def __init__(self, actor, route, blackboard_list, distance,
-                 repeat_scenarios=False, debug=False, name="ScenarioTriggerer"):
+    def __init__(self, actor, route, blackboard_list, distance, debug=False, name="ScenarioTriggerer"):
         """
         Setup class members
         """
         super(ScenarioTriggerer, self).__init__(name)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
-        self._repeat = repeat_scenarios
         self._debug = debug
 
         self._actor = actor
@@ -3396,7 +3473,7 @@ class ScenarioTriggerer(AtomicBehavior):
             condition2 = bool(not value)
 
             # Already done, if needed
-            condition3 = bool(self._repeat or black_var_name not in self._triggered_scenarios)
+            condition3 = bool(black_var_name not in self._triggered_scenarios)
 
             if condition1 and condition2 and condition3:
                 _ = blackboard.set(black_var_name, True)
@@ -3468,7 +3545,7 @@ class KeepLongitudinalGap(AtomicBehavior):
         self._start_time = GameTime.get_time()
         actor_dict[self._actor.id].update_target_speed(self.max_speed, start_time=self._start_time)
 
-        self._global_rp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 1.0)
+        self._global_rp = CarlaDataProvider.get_global_route_planner()
 
         super(KeepLongitudinalGap, self).initialise()
 
@@ -3520,25 +3597,25 @@ class KeepLongitudinalGap(AtomicBehavior):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
-class SwitchOutsideRouteLanesTest(AtomicBehavior):
+class SwitchWrongDirectionTest(AtomicBehavior):
 
     """
     Atomic that switch the OutsideRouteLanesTest criterion.
 
     Args:
-        activate (bool): True: activate; False: deactivate
+        active (bool): True: activated; False: deactivated
         name (str): name of the behavior
     """
 
-    def __init__(self, activate, name="SwitchOutsideRouteLanesTest"):
+    def __init__(self, active, name="SwitchWrongDirectionTest"):
         """
         Setup class members
         """
-        super(SwitchOutsideRouteLanesTest, self).__init__(name)
-        self._activate = activate
+        self._active = active
+        super().__init__(name)
 
     def update(self):
-        py_trees.blackboard.Blackboard().set("AC_SwitchOutsideRouteLanesTest", self._activate, overwrite=True)
+        py_trees.blackboard.Blackboard().set("AC_SwitchWrongDirectionTest", self._active, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 class SwitchMinSpeedCriteria(AtomicBehavior):
@@ -3724,9 +3801,11 @@ class AIWalkerBehavior(AtomicBehavior):
         return py_trees.common.Status.RUNNING
 
     def _destroy_walker(self, walker, controller):
-        controller.stop()
-        controller.destroy()
-        walker.destroy()
+        if controller:
+            controller.stop()
+            controller.destroy()
+        if walker:
+            walker.destroy()
 
     def terminate(self, new_status):
         """

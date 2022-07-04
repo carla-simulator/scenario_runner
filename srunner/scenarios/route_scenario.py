@@ -36,10 +36,10 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
                                                                      RunningRedLightTest,
                                                                      RunningStopTest,
                                                                      ActorBlockedTest,
-                                                                     CheckMinSpeed)
+                                                                     MinSpeedRouteTest)
 
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.scenarios.background_activity import BackgroundActivity
+from srunner.scenarios.background_activity import BackgroundBehavior
 from srunner.scenariomanager.weather_sim import RouteWeatherBehavior
 from srunner.scenariomanager.lights_sim import RouteLightsBehavior
 from srunner.scenariomanager.timer import RouteTimeoutBehavior
@@ -278,15 +278,11 @@ class RouteScenario(BasicScenario):
 
         # Add the behavior that manages the scenario trigger conditions
         scenario_triggerer = ScenarioTriggerer(
-            self.ego_vehicles[0], self.route, blackboard_list, scenario_trigger_distance, repeat_scenarios=False
-        )
+            self.ego_vehicles[0], self.route, blackboard_list, scenario_trigger_distance)
         behavior.add_child(scenario_triggerer)  # Tick the ScenarioTriggerer before the scenarios
 
         # Add the Background Activity
-        background_activity = BackgroundActivity(
-            self.world, self.ego_vehicles[0], self.config, self.route, timeout=self.timeout
-        )
-        behavior.add_child(background_activity.behavior_tree)
+        behavior.add_child(BackgroundBehavior(self.ego_vehicles[0], self.route, name="BackgroundActivity"))
 
         behavior.add_children(scenario_behaviors)
         return behavior
@@ -309,7 +305,7 @@ class RouteScenario(BasicScenario):
         criteria.add_child(CollisionTest(self.ego_vehicles[0], other_actor_type='walker', name="CollisionPedestrianTest"))
         criteria.add_child(RunningRedLightTest(self.ego_vehicles[0]))
         criteria.add_child(RunningStopTest(self.ego_vehicles[0]))
-        criteria.add_child(CheckMinSpeed(self.ego_vehicles[0], name="MinSpeedTest"))
+        criteria.add_child(MinSpeedRouteTest(self.ego_vehicles[0], name="MinSpeedTest"))
 
         # These stop the route early to save computational time
         criteria.add_child(InRouteTest(

@@ -13,28 +13,6 @@ import py_trees
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior
 
 
-class ChangeGeneralBehavior(AtomicBehavior):
-    """
-    Updates the blackboard to change the general parameters.
-    None values imply that these values won't be changed.
-
-    Args:
-        spawn_dist (float): Minimum distance between spawned vehicles. Must be positive
-        target_speed (float): Target speed of all BA vehicles
-    """
-
-    def __init__(self, spawn_dist=None, target_speed=None, name="ChangeGeneralBehavior"):
-        self._spawn_dist = spawn_dist
-        self._target_speed = target_speed
-        super().__init__(name)
-
-    def update(self):
-        py_trees.blackboard.Blackboard().set(
-            "BA_ChangeGeneralBehavior", [self._spawn_dist, self._target_speed], overwrite=True
-        )
-        return py_trees.common.Status.SUCCESS
-
-
 class ChangeRoadBehavior(AtomicBehavior):
     """
     Updates the blackboard to change the parameters of the road behavior.
@@ -46,14 +24,15 @@ class ChangeRoadBehavior(AtomicBehavior):
         switch_source (bool): (De)activatea the road sources.
     """
 
-    def __init__(self, num_front_vehicles=None, num_back_vehicles=None, name="ChangeRoadBehavior"):
-        self._num_front_vehicles = num_front_vehicles
-        self._num_back_vehicles = num_back_vehicles
+    def __init__(self, num_front_vehicles=None, num_back_vehicles=None, spawn_dist=None, name="ChangeRoadBehavior"):
+        self._num_front = num_front_vehicles
+        self._num_back = num_back_vehicles
+        self._spawn_dist = spawn_dist
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeRoadBehavior", [self._num_front_vehicles, self._num_back_vehicles], overwrite=True
+            "BA_ChangeRoadBehavior", [self._num_front, self._num_back, self._spawn_dist], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -68,16 +47,15 @@ class ChangeOppositeBehavior(AtomicBehavior):
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
-    def __init__(self, source_dist=None, max_actors=None, spawn_dist=None, active=None, name="ChangeOppositeBehavior"):
+    def __init__(self, source_dist=None, spawn_dist=None, active=None, name="ChangeOppositeBehavior"):
         self._source_dist = source_dist
-        self._max_actors = max_actors
         self._spawn_dist = spawn_dist
         self._active = active
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeOppositeBehavior", [self._source_dist, self._max_actors, self._spawn_dist, self._active], overwrite=True
+            "BA_ChangeOppositeBehavior", [self._source_dist, self._spawn_dist, self._active], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -92,15 +70,16 @@ class ChangeJunctionBehavior(AtomicBehavior):
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
-    def __init__(self, source_dist=None, vehicle_dist=None, spawn_dist=None,
-                 max_actors=None, name="ChangeJunctionBehavior"):
+    def __init__(self, source_dist=None, spawn_dist=None, max_actors=None, source_perc=None, name="ChangeJunctionBehavior"):
         self._source_dist = source_dist
+        self._spawn_dist = spawn_dist
         self._max_actors = max_actors
+        self._perc = source_perc
         super().__init__(name)
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeJunctionBehavior", [self._source_dist, self._max_actors], overwrite=True
+            "BA_ChangeJunctionBehavior", [self._source_dist, self._spawn_dist, self._max_actors, self._perc], overwrite=True
         )
         return py_trees.common.Status.SUCCESS
 
@@ -133,39 +112,99 @@ class StartFrontVehicles(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class JunctionScenarioManager(AtomicBehavior):
+class LeaveSpaceInFront(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that a JunctionScenarioManager has been triggered
-    'entry_direction' is the direction from which the incoming traffic enters the junction. It should be
-    something like 'left', 'right' or 'opposite'
+    Updates the blackboard to tell the background activity that the ego needs more space in front.
+    This only works at roads, not junctions.
     """
-
-    def __init__(self, entry_direction, remove_exit=True, name="JunctionScenarioManager"):
-        self._entry_direction = entry_direction
-        self._remove_exit = remove_exit
+    def __init__(self, space, name="LeaveSpaceInFront"):
+        self._space = space
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set(
-            "BA_JunctionScenario",
-            [self._entry_direction, self._remove_exit],
-            overwrite=True
-        )
+        py_trees.blackboard.Blackboard().set("BA_LeaveSpaceInFront", [self._space], overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
-class ExtentExitRoadSpace(AtomicBehavior):
+class SwitchRouteSources(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity that an exit road needs more space
+    Updates the blackboard to tell the background activity to (de)activate all route sources
     """
-    def __init__(self, distance, name="ExtentExitRoadSpace"):
-        self._distance = distance
+    def __init__(self, enabled=True, name="SwitchRouteSources"):
+        self._enabled = enabled
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_ExtentExitRoadSpace", self._distance, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_SwitchRouteSources", self._enabled, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class StartObstacleScenario(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    """
+    def __init__(self, accident_wp, distance, direction='left', stop_back_vehicles=False, name="StartObstacleScenario"):
+        self._accident_wp = accident_wp
+        self._distance = distance
+        self._direction = direction
+        self._stop_back_vehicles = stop_back_vehicles
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_StartObstacleScenario",
+            [self._accident_wp, self._distance, self._direction, self._stop_back_vehicles], overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class EndObstacleScenario(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the road behavior has to be initialized
+    """
+    def __init__(self, name="EndObstacleScenario"):
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_EndObstacleScenario", True, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class RemoveRoadLane(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to remove its actors from the given lane 
+    and stop generating new ones on this lane, or recover from stopping.
+
+    Args:
+        lane_id (str): A carla.Waypoint.lane_id
+        active (bool)
+    """
+    def __init__(self, lane_wp, name="RemoveRoadLane"):
+        self._lane_wp = lane_wp
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_RemoveRoadLane", self._lane_wp, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class ReAddEgoRoadLane(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to readd the ego road lane.
+
+    Args:
+        lane_id (str): A carla.Waypoint.lane_id
+        active (bool)
+    """
+    def __init__(self, name="BA_ReAddEgoRoadLane"):
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_ReAddEgoRoadLane", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -184,96 +223,36 @@ class LeaveSpaceInFront(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class SwitchRouteSources(AtomicBehavior):
+class HandleJunctionScenario(AtomicBehavior):
     """
-    Updates the blackboard to tell the background activity to (de)activate all route sources
-    """
-    def __init__(self, enabled=True, name="SwitchRouteSources"):
-        self._enabled = enabled
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_SwitchRouteSources", self._enabled, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
-class HandleStartAccidentScenario(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that the road behavior has to be initialized
-    """
-    def __init__(self, accident_wp, distance, name="HandleStartAccidentScenario"):
-        self._accident_wp = accident_wp
-        self._distance = distance
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_HandleStartAccidentScenario", [self._accident_wp, self._distance], overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
-class HandleEndAccidentScenario(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that the road behavior has to be initialized
-    """
-    def __init__(self, name="HandleEndAccidentScenario"):
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_HandleEndAccidentScenario", True, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-class SwitchLane(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity to remove its actors from the given lane 
-    and stop generating new ones on this lane, or recover from stopping.
+    Updates the blackboard to tell the background activity to adapt to a junction scenario
 
     Args:
-        lane_id (str): A carla.Waypoint.lane_id
+        clear_junction (bool): Remove all actors inside the junction, and all that enter it afterwards
+        clear_ego_entry (bool): Remove all actors part of the ego road to ensure a smooth entry of the ego to the junction.
+        remove_entries (list): list of waypoint representing a junction entry that needs to be removed
+        remove_exits (list): list of waypoint representing a junction exit that needs to be removed
+        stop_entries (bool): Stops all the junction entries
+        extend_road_exit (float): Moves the road junction actors forward to leave more space for the scenario.
+            It also deactivates the road sources.
         active (bool)
     """
-    def __init__(self, lane_id=None, active=True, name="SwitchLane"):
-        self._lane_id = lane_id
-        self._active = active
+    def __init__(self, clear_junction=True, clear_ego_entry=True, remove_entries=[],
+                 remove_exits=[], stop_entries=True, extend_road_exit=0,
+                 name="HandleJunctionScenario"):
+        self._clear_junction = clear_junction
+        self._clear_ego_entry = clear_ego_entry
+        self._remove_entries = remove_entries
+        self._remove_exits = remove_exits
+        self._stop_entries = stop_entries
+        self._extend_road_exit = extend_road_exit
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_SwitchLane", [self._lane_id, self._active], overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-class RemoveJunctionEntry(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity to remove its actors from the given lane,
-    and stop generating new ones on this lane.
-
-    Args:
-        wp (carla.Waypoint): A list of waypoint used as reference to the entry lane
-        all_road_entries (bool): Boolean to remove all entries part of the same road, or just one
-    """
-    def __init__(self, wps, all_road_entries=False, name="RemoveJunctionEntry"):
-        self._wps = wps
-        self._all_road_entries = all_road_entries
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_RemoveJunctionEntry", [self._wps, self._all_road_entries], overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
-class ClearJunction(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity to remove all actors inside the junction,
-    and stop the ones that are about to enter it, leaving an empty space inside the junction.
-    """
-
-    def __init__(self, name="ClearJunction"):
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_ClearJunction", True, overwrite=True)
+        py_trees.blackboard.Blackboard().set(
+            "BA_HandleJunctionScenario",
+            [self._clear_junction, self._clear_ego_entry, self._remove_entries,
+             self._remove_exits, self._stop_entries, self._extend_road_exit],
+            overwrite=True)
         return py_trees.common.Status.SUCCESS

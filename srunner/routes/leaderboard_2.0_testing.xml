@@ -59,10 +59,9 @@
          <position x="2782.9" y="4497.9" z="363" />
       </waypoints>
       <scenarios>
-         <scenario name="VehicleOpensDoor_1" type="VehicleOpensDoor">
+         <scenario name="VehicleOpensDoorTwoWays_1" type="VehicleOpensDoorTwoWays">
             <trigger_point x="2818.4" y="4284.1" z="360" yaw="102"/>
             <direction value="right"/>
-            <cross_onto_opposite_lane/>
          </scenario>
       </scenarios>
    </route>
@@ -76,7 +75,7 @@
          <position x="1965.0" y="4939.6" z="365" />
       </waypoints>
       <scenarios>
-         <scenario name="CrossingBycicleFlow_1" type="CrossingBycicleFlow">
+         <scenario name="CrossingBicycleFlow_1" type="CrossingBicycleFlow_1">
             <trigger_point x="2028.5" y="4988" z="365" yaw="180"/>
             <start_actor_flow x="2043.8" y="4985.4" z="365"/>
             <flow_speed value="10"/>
@@ -84,7 +83,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="5" town="TrainingMap"> <!-- AccidentTwoWay, new town -->
+   <route id="5" town="TrainingMap"> <!-- Accident, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -100,6 +99,7 @@
          </scenario>
          <scenario name="AccidentTwoWays_2" type="AccidentTwoWays">
             <trigger_point x="2388.9" y="897.6" z="345" yaw="270"/>
+            <cross_onto_opposite_lane/>
          </scenario>
       </scenarios>
    </route>

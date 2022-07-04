@@ -22,7 +22,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestr
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
-                                                                               WaitEndIntersection,
                                                                                DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
@@ -76,7 +75,7 @@ class BaseVehicleTurning(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
         self._ego_route = config.route
 
-        self._start_distance = 10
+        self._start_distance = 11
         self._spawn_dist = self._start_distance
         self._number_of_attempts = 6
         self._retry_dist = 0.4
@@ -84,8 +83,8 @@ class BaseVehicleTurning(BasicScenario):
         self._adversary_transform = None
 
         self._collision_wp = None
-        self._adversary_speed = 4.0  # Speed of the adversary [m/s]
-        self._reaction_time = 0.5  # Time the agent has to react to avoid the collision [s]
+        self._adversary_speed = 2.0  # Speed of the adversary [m/s]
+        self._reaction_time = 1.6  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
 
@@ -159,34 +158,24 @@ class BaseVehicleTurning(BasicScenario):
         collision_location = self._collision_wp.transform.location
         collision_distance = collision_location.distance(self._adversary_transform.location)
         collision_duration = collision_distance / self._adversary_speed
-        collision_time_trigger = collision_duration + self._reaction_time
-
-        # First waiting behavior
-        sequence.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
         # Adversary trigger behavior
         trigger_adversary = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
-            self.ego_vehicles[0], collision_time_trigger, collision_location))
+            self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], collision_location, self._min_trigger_dist))
+
         sequence.add_child(trigger_adversary)
         sequence.add_child(HandBrakeVehicle(self.other_actors[0], False))
-
-        if self.route_mode:
-            sequence.add_child(LeaveSpaceInFront(self._spawn_dist))
 
         # Move the adversary.
         speed_duration = 2.0 * collision_duration
         speed_distance = 2.0 * collision_distance
         sequence.add_child(KeepVelocity(
-            self.other_actors[0],
-            self._adversary_speed,
-            True,
-            speed_duration,
-            speed_distance,
-            name="AdversaryCrossing")
+            self.other_actors[0], self._adversary_speed, True,
+            speed_duration, speed_distance, name="AdversaryCrossing")
         )
 
         # Remove everything
