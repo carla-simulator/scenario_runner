@@ -39,7 +39,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="2" town="TrainingMap"> <!-- ParkingExit, new town -->
+   <route id="2" town="Town12"> <!-- ParkingExit, new town -->
       <waypoints>
          <position x="34.1" y="3550.1" z="365" />
          <position x="34.5" y="3650.9" z="365" />
@@ -53,7 +53,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="3" town="TrainingMap"> <!-- VehicleOpensDoor, new town, opposite lane -->
+   <route id="3" town="Town12"> <!-- VehicleOpensDoor, new town, opposite lane -->
       <waypoints>
          <position x="2822.7" y="4256.7" z="360" />
          <position x="2782.9" y="4497.9" z="363" />
@@ -65,7 +65,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="4" town="TrainingMap"> <!-- CrossingBicycleFlow, new town -->
+   <route id="4" town="Town12"> <!-- CrossingBicycleFlow, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -83,7 +83,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="5" town="TrainingMap"> <!-- Accident, new town -->
+   <route id="5" town="Town12"> <!-- Accident, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -103,7 +103,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="6" town="TrainingMap"> <!-- HighwayCutIn (High Speed), new town -->
+   <route id="6" town="Town12"> <!-- HighwayCutIn (High Speed), new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -119,7 +119,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="7" town="TrainingMap"> <!-- ParkingCutIn, new town -->
+   <route id="7" town="Town12"> <!-- ParkingCutIn, new town -->
       <weathers>
          <weather route_percentage="0" cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
       </weathers>
@@ -138,7 +138,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="8" town="TrainingMap"> <!-- MergerIntoSlowTraffic, old towns -->
+   <route id="8" town="Town12"> <!-- MergerIntoSlowTraffic, old towns -->
       <weathers>
          <weather route_percentage="0" cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
       </weathers>
@@ -200,7 +200,7 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="12" town="TrainingMap"> <!-- InvadingTurn, new town -->
+   <route id="12" town="Town12"> <!-- InvadingTurn, new town -->
       <waypoints>
          <position x="1979.2" y="4241.2" z="361" />
          <position x="1825" y="4307.6" z="361" />
@@ -216,25 +216,24 @@
    <route id="13" town="Town04">
       <weathers>
          <weather route_percentage="0" cloudiness="30" precipitation="0" sun_altitude_angle="70" fog_density="0"/>
-	       <weather route_percentage="100" cloudiness="70" precipitation="0" sun_altitude_angle="20" fog_density="20"/>
+         <weather route_percentage="100" cloudiness="70" precipitation="0" sun_altitude_angle="20" fog_density="20"/>
       </weathers>
       <waypoints>
          <position x="340.2" y="17.4" z="0.7"/>
-	       <position x="260.2" y="16.7" z="2.3"/>
-	       <position x="230.2" y="17.3" z="0.9"/>
+         <position x="260.2" y="16.7" z="2.3"/>
+         <position x="230.2" y="17.3" z="0.9"/>
       </waypoints>
       <scenarios>
          <scenario name="CutInWithStaticVehicle_1" type="CutInWithStaticVehicle" >
-	          <trigger_point x="300.2" y="17.3" z="0.9" yaw="180" model="vehicle.lincoln.mkz_2017"/>
+            <trigger_point x="300.2" y="17.3" z="0.9" yaw="180" model="vehicle.lincoln.mkz_2017"/>
          </scenario>
-	       <scenario name="CutInWithStaticVehicle_2" type="CutInWithStaticVehicle" >
-	          <trigger_point x="250.2" y="16.2" z="3.2" yaw="180" model="vehicle.lincoln.mkz_2017"/>
-	          <direction value="left" />
-	       </scenario>
+         <scenario name="CutInWithStaticVehicle_2" type="CutInWithStaticVehicle" >
+            <trigger_point x="250.2" y="16.2" z="3.2" yaw="180" model="vehicle.lincoln.mkz_2017"/>
+            <direction value="left" />
+         </scenario>
       </scenarios>
    </route>
-</routes>
- <route id="12" town="TrainingMap"> <!-- AccidentTwoWay, new town -->
+   <route id="14" town="Town12">
       <weathers>
          <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
          <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
@@ -244,13 +243,12 @@
          <position x="2388.6" y="1095.3" z="350" />
          <position x="2389.1" y="599.1" z="338" />
       </waypoints>
-    <scenarios>
+      <scenarios>
          <scenario name="BicycleFlowAtSideLane_1" type="BicycleFlowAtSideLane">
             <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
             <distance first="74" second="77" third="82"/>
             <end_bycicle_distance value="150" />
          </scenario>
-        
-      </scenarios> 
+      </scenarios>
    </route>
-   
+</routes>

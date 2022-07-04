@@ -11,17 +11,17 @@ from __future__ import print_function
 import py_trees
 import carla
 
+from agents.navigation.local_planner import RoadOption
+
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
-                                                    WaypointFollower,
-                                                    BasicAgentBehavior
-                                                    )
+                                                                      WaypointFollower,
+                                                                      BasicAgentBehavior)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
-                                                                               InTimeToArrivalToLocation,
-                                                                               DriveDistance)
+                                                                               InTimeToArrivalToLocation)
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import SwitchLane
+from srunner.tools.background_manager import RemoveRoadLane
 
 class CutInWithStaticVehicle(BasicScenario):
 
@@ -94,7 +94,10 @@ class CutInWithStaticVehicle(BasicScenario):
         self.other_actors.append(self._parked_actor)
 
         self._front_wps = self._collision_wp.next(self._front_distance)
-        self._front_wp = self._front_wps[0].transform.location
+        self._front_wp = self._front_wps[0]
+
+        self._plan = [[self._collision_wp, RoadOption.STRAIGHT],
+                      [self._front_wp, RoadOption.STRAIGHT] ]
 
     def _create_behavior(self):
         """
@@ -104,7 +107,7 @@ class CutInWithStaticVehicle(BasicScenario):
         sequence = py_trees.composites.Sequence(name="CrossingActor")
         if self.route_mode:
             other_car = self._wmap.get_waypoint(self.other_actors[1].get_location())
-            sequence.add_child(SwitchLane(other_car.lane_id, False))
+            sequence.add_child(RemoveRoadLane(other_car))
 
         collision_location = self._collision_wp.transform.location
 
@@ -119,13 +122,13 @@ class CutInWithStaticVehicle(BasicScenario):
         sequence.add_child(trigger_adversary)
 
         # The adversary change the lane
-        sequence.add_child(BasicAgentBehavior(self.other_actors[1],target_location=self._front_wp))
+        sequence.add_child(BasicAgentBehavior(self.other_actors[1], plan=self._plan))
 
         # Move the adversary
         cut_in = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Cut in behavior")
         other_car = self._wmap.get_waypoint(self.other_actors[1].get_location())
-        sequence.add_child(SwitchLane(other_car.lane_id, True))
+        sequence.add_child(RemoveRoadLane(other_car))
         cut_in.add_child(WaypointFollower(self.other_actors[1], self._adversary_speed))
 
         sequence.add_child(cut_in)
