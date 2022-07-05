@@ -163,119 +163,7 @@ class Accident(BasicScenario):
         Remove all actors and traffic lights upon deletion
         """
         self.remove_all_actors()
-  
-class BicycleFlowAtSideLane(BasicScenario):
-    """
-    Added the dangerous scene of ego vehicles driving on roads without sidewalks,
-    with three bicycles encroaching on some roads in front.
-    """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=180):
-        """
-        Setup all relevant parameters and create scenario
-        and instantiate scenario manager
-        """
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
-        self.timeout = timeout
-        self._drive_distance = 100
-        self._offset = [0.6,0.75,0.9]
-        self._bicycle_wp = []
-        self._target_location=None
-        self._plan=[]
-
-        if 'distance' in config.other_parameters:
-            self._distance_to_Trigger = [
-                float(config.other_parameters['distance']['first']),
-                float(config.other_parameters['distance']['second']),
-                float(config.other_parameters['distance']['third'])
-            ]
-        else:
-            self._distance_to_Trigger = [74,76,88]  # m
-
-        super().__init__("Hazard",
-                         ego_vehicles,
-                         config,
-                         world,
-                         randomize,
-                         debug_mode,
-                         criteria_enable=criteria_enable)
-
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-
-        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
-        if 'end_bycicle_distance' in config.other_parameters:
-            self._end_bycicle_distance = float(
-                config.other_parameters['end_bycicle_distance']['value'])
-        else:
-            self._end_bycicle_distance = 150
-        self._target_location = starting_wp.next(self._end_bycicle_distance)[0].transform.location
-        for offset,distance in zip(self._offset,self._distance_to_Trigger):
-
-            bicycle_wps = starting_wp.next(distance)
-
-            if not bicycle_wps:
-                raise ValueError("Couldn't find a viable position to set up the bicycle actors")
-            self._bicycle_wp.append(bicycle_wps[0])
-            displacement = offset* bicycle_wps[0].lane_width / 2
-            r_vec = bicycle_wps[0].transform.get_right_vector()
-            w_loc = bicycle_wps[0].transform.location
-            w_loc = w_loc + carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
-            bycicle_transform = carla.Transform(w_loc, bicycle_wps[0].transform.rotation)
-            bycicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century', bycicle_transform)
-            self.other_actors.append(bycicle)
-
-    def _create_behavior(self):
-        """
-        The vehicle has to drive the whole predetermined distance.
-        """
-
-        root = py_trees.composites.Sequence()
-        if self.route_mode:
-            total_dist = self._distance_to_Trigger[2] + 30
-            root.add_child(LeaveSpaceInFront(total_dist))
-            root.add_child(SwitchOutsideRouteLanesTest(False))
-            root.add_child(ChangeOppositeBehavior(active=False))
-        bycicle = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        bycicle.add_child(ConstantVelocityAgentBehavior(
-                self.other_actors[2], self._target_location,target_speed=3.1,opt_dict={'offset':self._offset[2]* self._bicycle_wp[2].lane_width / 2}))
-
-        bycicle.add_child(ConstantVelocityAgentBehavior(
-                self.other_actors[1], self._target_location, target_speed=3,
-                opt_dict={'offset': self._offset[1] * self._bicycle_wp[1].lane_width / 2}))
-        bycicle.add_child(ConstantVelocityAgentBehavior(
-                self.other_actors[0], self._target_location, target_speed=3,
-                opt_dict={'offset': self._offset[0] * self._bicycle_wp[0].lane_width / 2}))
-        root.add_child(bycicle)
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        if self.route_mode:
-            root.add_child(SwitchOutsideRouteLanesTest(True))
-            root.add_child(ChangeOppositeBehavior(active=True))
-        root.add_child(ActorDestroy(self.other_actors[0]))
-        root.add_child(ActorDestroy(self.other_actors[1]))
-        root.add_child(ActorDestroy(self.other_actors[2]))
-
-        return root
-
-    def _create_test_criteria(self):
-        """
-        A list of all test criteria will be created that is later used
-        in parallel behavior tree.
-        """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
-
-    def __del__(self):
-        """
-        Remove all actors and traffic lights upon deletion
-        """
-        self.remove_all_actors()
 
 class AccidentTwoWays(Accident):
     """
@@ -431,3 +319,118 @@ class ParkedObstacleTwoWays(ParkedObstacle):
         root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root
+
+
+class BicycleFlowAtSideLane(BasicScenario):
+    """
+    Added the dangerous scene of ego vehicles driving on roads without sidewalks,
+    with three bicycles encroaching on some roads in front.
+    """
+
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=180):
+        """
+        Setup all relevant parameters and create scenario
+        and instantiate scenario manager
+        """
+        self._world = world
+        self._map = CarlaDataProvider.get_map()
+        self.timeout = timeout
+        self._drive_distance = 100
+        self._offset = [0.6, 0.75, 0.9]
+        self._bicycle_wp = []
+        self._target_location = None
+        self._plan = []
+        self._bicycle_speed = 3  # m/s
+
+        if 'distance' in config.other_parameters:
+            self._distance_to_Trigger = [
+                float(config.other_parameters['distance']['first']),
+                float(config.other_parameters['distance']['second']),
+                float(config.other_parameters['distance']['third'])
+            ]
+        else:
+            self._distance_to_Trigger = [74,76,88]  # m
+
+        super().__init__("BicycleFlowAtSideLane",
+                         ego_vehicles,
+                         config,
+                         world,
+                         randomize,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+
+        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
+        if 'end_bycicle_distance' in config.other_parameters:
+            self._end_bycicle_distance = float(
+                config.other_parameters['end_bycicle_distance']['value'])
+        else:
+            self._end_bycicle_distance = 150
+        self._target_location = starting_wp.next(self._end_bycicle_distance)[0].transform.location
+        for offset,distance in zip(self._offset,self._distance_to_Trigger):
+
+            bicycle_wps = starting_wp.next(distance)
+
+            if not bicycle_wps:
+                raise ValueError("Couldn't find a viable position to set up the bicycle actors")
+            self._bicycle_wp.append(bicycle_wps[0])
+            displacement = offset* bicycle_wps[0].lane_width / 2
+            r_vec = bicycle_wps[0].transform.get_right_vector()
+            w_loc = bicycle_wps[0].transform.location
+            w_loc = w_loc + carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
+            bycicle_transform = carla.Transform(w_loc, bicycle_wps[0].transform.rotation)
+            bycicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century', bycicle_transform)
+            self.other_actors.append(bycicle)
+
+    def _create_behavior(self):
+        """
+        The vehicle has to drive the whole predetermined distance.
+        """
+
+        root = py_trees.composites.Sequence()
+        if self.route_mode:
+            total_dist = self._distance_to_Trigger[2] + 30
+            root.add_child(LeaveSpaceInFront(total_dist))
+            root.add_child(SwitchWrongDirectionTest(False))
+            root.add_child(ChangeOppositeBehavior(active=False))
+        bycicle = py_trees.composites.Parallel(
+                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        bycicle.add_child(ConstantVelocityAgentBehavior(
+                self.other_actors[2], self._target_location, target_speed = self._bicycle_speed,
+                opt_dict={'offset': self._offset[2] * self._bicycle_wp[2].lane_width / 2}))
+        bycicle.add_child(ConstantVelocityAgentBehavior(
+                self.other_actors[1], self._target_location, target_speed = self._bicycle_speed,
+                opt_dict={'offset': self._offset[1] * self._bicycle_wp[1].lane_width / 2}))
+        bycicle.add_child(ConstantVelocityAgentBehavior(
+                self.other_actors[0], self._target_location, target_speed = self._bicycle_speed,
+                opt_dict={'offset': self._offset[0] * self._bicycle_wp[0].lane_width / 2}))
+        root.add_child(bycicle)
+        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        if self.route_mode:
+            root.add_child(SwitchWrongDirectionTest(True))
+            root.add_child(ChangeOppositeBehavior(active=True))
+        root.add_child(ActorDestroy(self.other_actors[0]))
+        root.add_child(ActorDestroy(self.other_actors[1]))
+        root.add_child(ActorDestroy(self.other_actors[2]))
+
+        return root
+
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        if self.route_mode:
+            return []
+        return [CollisionTest(self.ego_vehicles[0])]
+
+    def __del__(self):
+        """
+        Remove all actors and traffic lights upon deletion
+        """
+        self.remove_all_actors()

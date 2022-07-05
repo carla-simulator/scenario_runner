@@ -234,7 +234,6 @@ class RouteTimeoutBehavior(py_trees.behaviour.Behaviour):
             self._current_index = new_index
 
         elapsed_time = GameTime.get_time() - self._start_time
-        print(f"Timeout node: {round(elapsed_time, 2)}/{round(self._timeout_value, 2)}s")
         if elapsed_time > self._timeout_value:
             new_status = py_trees.common.Status.SUCCESS
             self.timeout = True
