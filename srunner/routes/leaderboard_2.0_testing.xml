@@ -1,19 +1,19 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <routes>
-   <route id="0" town="Town06"> <!-- HighwayExit, old towns -->
+   <route id="0" town="Town06">
+      <!-- HighwayExit, old towns -->
       <waypoints>
-         <position x="237" y="140" z="0.0" />
-         <position x="273.1" y="140.55" z="0.0" />
-         <position x="293.1" y="140.63" z="0.0" />
-         <position x="323.1" y="140.75" z="0.0" />
-         <position x="400.1" y="141.12" z="0.0" />
-         <position x="423.1" y="141.16" z="0.0" />
-         <position x="443.1" y="141.24" z="0.0" />
-         <position x="452.61" y="137.78" z="0.0" />
-         <position x="462.43" y="137.59" z="0.0" />
-         <position x="480.81" y="132.07" z="0.0" />
-         <position x="488.83" y="126.72" z="0.0" />
-         <position x="510.9" y="89.45" z="0.0" />
+         <position x="237" y="140" z="0.0"/>
+         <position x="273.1" y="140.55" z="0.0"/>
+         <position x="293.1" y="140.63" z="0.0"/>
+         <position x="323.1" y="140.75" z="0.0"/>
+         <position x="400.1" y="141.12" z="0.0"/>
+         <position x="423.1" y="141.16" z="0.0"/>
+         <position x="443.1" y="141.24" z="0.0"/>
+         <position x="452.61" y="137.78" z="0.0"/>
+         <position x="462.43" y="137.59" z="0.0"/>
+         <position x="480.81" y="132.07" z="0.0"/>
+         <position x="488.83" y="126.72" z="0.0"/>
+         <position x="510.9" y="89.45" z="0.0"/>
       </waypoints>
       <scenarios>
          <scenario name="HighwayExit_1" type="HighwayExit">
@@ -25,38 +25,41 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="1" town="Town03"> <!-- ParkingExit, old towns -->
+   <route id="1" town="Town03">
+      <!-- ParkingExit, old towns -->
       <waypoints>
-         <position x="-74.3" y="-38.5" z="0.0" />
-         <position x="-73.5" y="-168.0" z="0.0" />
+         <position x="-74.3" y="-38.5" z="0.0"/>
+         <position x="-73.5" y="-168.0" z="0.0"/>
       </waypoints>
       <scenarios>
          <scenario name="ParkingExit_1" type="ParkingExit">
             <trigger_point x="-74.3" y="-38.5" z="0.0" yaw="270"/>
-            <parking_lane_side value="right" />
-            <front_vehicle_distance value="20" />
-            <behind_vehicle_distance value="5" />
+            <parking_lane_side value="right"/>
+            <front_vehicle_distance value="20"/>
+            <behind_vehicle_distance value="5"/>
          </scenario>
       </scenarios>
    </route>
-   <route id="2" town="Town12"> <!-- ParkingExit, new town -->
+   <route id="2" town="Town12">
+      <!-- ParkingExit, new town -->
       <waypoints>
-         <position x="34.1" y="3550.1" z="365" />
-         <position x="34.5" y="3650.9" z="365" />
+         <position x="34.1" y="3550.1" z="365"/>
+         <position x="34.5" y="3650.9" z="365"/>
       </waypoints>
       <scenarios>
          <scenario name="ParkingExit_1" type="ParkingExit">
             <trigger_point x="34.1" y="3550.1" z="361" yaw="90"/>
-            <direction value="right" />
-            <front_vehicle_distance value="10" />
-            <behind_vehicle_distance value="8" />
+            <direction value="right"/>
+            <front_vehicle_distance value="10"/>
+            <behind_vehicle_distance value="8"/>
          </scenario>
       </scenarios>
    </route>
-   <route id="3" town="Town12"> <!-- VehicleOpensDoor, new town, opposite lane -->
+   <route id="3" town="Town12">
+      <!-- VehicleOpensDoor, new town, opposite lane -->
       <waypoints>
-         <position x="2822.7" y="4256.7" z="360" />
-         <position x="2782.9" y="4497.9" z="363" />
+         <position x="2822.7" y="4256.7" z="360"/>
+         <position x="2782.9" y="4497.9" z="363"/>
       </waypoints>
       <scenarios>
          <scenario name="VehicleOpensDoorTwoWays_1" type="VehicleOpensDoorTwoWays">
@@ -65,33 +68,39 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="4" town="Town12"> <!-- CrossingBicycleFlow, new town -->
+   <route id="4" town="Town12">
+      <!-- CrossingBicycleFlow, new town -->
       <weathers>
-         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
-         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+         <weather route_percentage="0"
+            cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100"
+            cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
       </weathers>
       <waypoints>
-         <position x="2081.9" y="4987.4" z="365" />
-         <position x="1965.0" y="4939.6" z="365" />
+         <position x="2081.9" y="4987.4" z="365"/>
+         <position x="1965.0" y="4939.6" z="365"/>
       </waypoints>
       <scenarios>
-         <scenario name="CrossingBicycleFlow_1" type="CrossingBicycleFlow_1">
+         <scenario name="CrossingBicycleFlow_1" type="CrossingBicycleFlow">
             <trigger_point x="2028.5" y="4988" z="365" yaw="180"/>
             <start_actor_flow x="2043.8" y="4985.4" z="365"/>
             <flow_speed value="10"/>
-            <source_dist_interval from="20" to="50"/>
+            <source_dist_interval from="15" to="45"/>
          </scenario>
       </scenarios>
    </route>
-   <route id="5" town="Town12"> <!-- Accident, new town -->
+   <route id="5" town="Town12">
+      <!-- Accident, new town -->
       <weathers>
-         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
-         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+         <weather route_percentage="0"
+            cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100"
+            cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
       </weathers>
       <waypoints>
-         <position x="2534.5" y="1444.3" z="355" />
-         <position x="2388.6" y="1095.3" z="350" />
-         <position x="2389.1" y="599.1" z="338" />
+         <position x="2534.5" y="1444.3" z="355"/>
+         <position x="2388.6" y="1095.3" z="350"/>
+         <position x="2389.1" y="599.1" z="338"/>
       </waypoints>
       <scenarios>
          <scenario name="AccidentTwoWays_1" type="AccidentTwoWays">
@@ -103,14 +112,17 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="6" town="Town12"> <!-- HighwayCutIn (High Speed), new town -->
+   <route id="6" town="Town12">
+      <!-- HighwayCutIn (High Speed), new town -->
       <weathers>
-         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
-         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+         <weather route_percentage="0"
+            cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100"
+            cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
       </weathers>
       <waypoints>
-         <position x="2571.9" y="3117.2" z="358" />
-         <position x="3231.0" y="3115.9" z="367" />
+         <position x="2571.9" y="3117.2" z="358"/>
+         <position x="3231.0" y="3115.9" z="367"/>
       </waypoints>
       <scenarios>
          <scenario name="HighwayCutIn_1" type="HighwayCutInRoute">
@@ -119,13 +131,15 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="7" town="Town12"> <!-- ParkingCutIn, new town -->
+   <route id="7" town="Town12">
+      <!-- ParkingCutIn, new town -->
       <weathers>
-         <weather route_percentage="0" cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
+         <weather route_percentage="0"
+            cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
       </weathers>
       <waypoints>
-         <position x="461.9" y="3506.5" z="368" />
-         <position x="462.5" y="3755.3" z="370" />
+         <position x="461.9" y="3506.5" z="368"/>
+         <position x="462.5" y="3755.3" z="370"/>
       </waypoints>
       <scenarios>
          <scenario name="ParkingCutIn_1" type="ParkingCutIn">
@@ -138,40 +152,44 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="8" town="Town12"> <!-- MergerIntoSlowTraffic, old towns -->
+   <route id="8" town="Town12">
+      <!-- MergerIntoSlowTraffic, old towns -->
       <weathers>
-         <weather route_percentage="0" cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
+         <weather route_percentage="0"
+            cloudiness="70" precipitation="0" precipitation_deposits="10" sun_altitude_angle="70"/>
       </weathers>
       <waypoints>
-            <position x="86.9" y="144.0" z="0.0"/>
-            <position x="15.34" y="-23.97" z="0.0"/>
+         <position x="-2398.3" y="4063.1" z="362.9"/>
+         <position x="-2313.8" y="3763.8" z="356.8"/>
       </waypoints>
       <scenarios>
          <scenario name="MergerIntoSlowTraffic_1" type="MergerIntoSlowTraffic">
-            <trigger_point x="50.23" y="142.12" z="0.0" yaw="201.11"/>
-            <start_actor_flow x="16.32" y="179.9" z="0.2"/>
-            <end_actor_flow x="15.50" y="35.0" z="0.2"/>
+            <trigger_point x="-2413.1" y="4056.3" z="362.8" yaw="216.9"/>
+            <start_actor_flow x="-2451.3" y="4052.1" z="362.7"/>
+            <end_actor_flow x="-2323.6" y="3782.6" z="357.5"/>
             <flow_speed value="10"/>
-            <source_dist_interval from="10" to="25"/>
+            <source_dist_interval from="10" to="35"/>
          </scenario>
       </scenarios>
    </route>
-   <route id="9" town="Town04"> <!-- YieldToEmergencyVehicle, old towns -->
+   <route id="9" town="Town04">
+      <!-- YieldToEmergencyVehicle, old towns -->
       <waypoints>
-         <position x="-350" y="26.5" z="0.0" />
-         <position x="120" y="26.5" z="1.0" />
+         <position x="-350" y="26.5" z="0.0"/>
+         <position x="120" y="26.5" z="1.0"/>
       </waypoints>
       <scenarios>
          <scenario name="YieldToEmergencyVehicle_1" type="YieldToEmergencyVehicle">
             <trigger_point x="-320" y="26.5" z="0.0" yaw="0"/>
-            <distance value="45" />
+            <distance value="45"/>
          </scenario>
       </scenarios>
    </route>
-   <route id="10" town="Town05"> <!-- PedestrianCrossing, old towns -->
+   <route id="10" town="Town05">
+      <!-- PedestrianCrossing, old towns -->
       <waypoints>
-         <position x="106" y="55" z="0.0" />
-         <position x="97.5" y="-74.5" z="0.0" />
+         <position x="106" y="55" z="0.0"/>
+         <position x="97.5" y="-74.5" z="0.0"/>
       </waypoints>
       <scenarios>
          <scenario name="PedestrianCrossing_1" type="PedestrianCrossing">
@@ -183,7 +201,8 @@
          </scenario>
       </scenarios>
    </route>
-   <route id="11" town="Town01"> <!--  Blocked Intersections, old towns  -->
+   <route id="11" town="Town01">
+      <!--  Blocked Intersections, old towns  -->
       <waypoints>
          <position x="295" y="1.98" z="0"/>
          <position x="325" y="1.98" z="0"/>
@@ -195,28 +214,33 @@
             <trigger_point x="300" y="1.98" z="0" yaw="0"/>
             <blocker_point x="335" y="11" z="0.5"/>
             <obstacle_model value="static.prop.trampoline"/>
-            <obstacle_gap value="2" />
-            <extra_obstacle value="2" />
+            <obstacle_gap value="2"/>
+            <extra_obstacle value="2"/>
          </scenario>
       </scenarios>
    </route>
-   <route id="12" town="Town12"> <!-- InvadingTurn, new town -->
+   <route id="12" town="Town12">
+      <!-- InvadingTurn, new town -->
       <waypoints>
-         <position x="1979.2" y="4241.2" z="361" />
-         <position x="1825" y="4307.6" z="361" />
+         <position x="1979.2" y="4241.2" z="361"/>
+         <position x="1825" y="4307.6" z="361"/>
       </waypoints>
       <scenarios>
          <scenario name="InvadingTurn_1" type="InvadingTurn">
             <trigger_point x="1976.1" y="4260.5" z="361" yaw="99"/>
-            <distance value="120" />
+            <distance value="120"/>
             <offset value="0.5"/>
          </scenario>
       </scenarios>
    </route>
    <route id="13" town="Town04">
       <weathers>
-         <weather route_percentage="0" cloudiness="30" precipitation="0" sun_altitude_angle="70" fog_density="0"/>
-         <weather route_percentage="100" cloudiness="70" precipitation="0" sun_altitude_angle="20" fog_density="20"/>
+         <weather route_percentage="0"
+            cloudiness="30" precipitation="0" sun_altitude_angle="70"
+            fog_density="0"/>
+         <weather route_percentage="100"
+            cloudiness="70" precipitation="0" sun_altitude_angle="20"
+            fog_density="20"/>
       </weathers>
       <waypoints>
          <position x="340.2" y="17.4" z="0.7"/>
@@ -224,30 +248,32 @@
          <position x="230.2" y="17.3" z="0.9"/>
       </waypoints>
       <scenarios>
-         <scenario name="CutInWithStaticVehicle_1" type="CutInWithStaticVehicle" >
+         <scenario name="CutInWithStaticVehicle_1" type="CutInWithStaticVehicle">
             <trigger_point x="300.2" y="17.3" z="0.9" yaw="180" model="vehicle.lincoln.mkz_2017"/>
          </scenario>
-         <scenario name="CutInWithStaticVehicle_2" type="CutInWithStaticVehicle" >
+         <scenario name="CutInWithStaticVehicle_2" type="CutInWithStaticVehicle">
             <trigger_point x="250.2" y="16.2" z="3.2" yaw="180" model="vehicle.lincoln.mkz_2017"/>
-            <direction value="left" />
+            <direction value="left"/>
          </scenario>
       </scenarios>
    </route>
    <route id="14" town="Town12">
       <weathers>
-         <weather route_percentage="0" cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
-         <weather route_percentage="100" cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
+         <weather route_percentage="0"
+            cloudiness="50" precipitation="0" precipitation_deposits="20" sun_altitude_angle="40"/>
+         <weather route_percentage="100"
+            cloudiness="90" precipitation="0" precipitation_deposits="80" sun_altitude_angle="70"/>
       </weathers>
       <waypoints>
-         <position x="2534.5" y="1444.3" z="355" />
-         <position x="2388.6" y="1095.3" z="350" />
-         <position x="2389.1" y="599.1" z="338" />
+         <position x="2534.5" y="1444.3" z="355"/>
+         <position x="2388.6" y="1095.3" z="350"/>
+         <position x="2389.1" y="599.1" z="338"/>
       </waypoints>
       <scenarios>
          <scenario name="BicycleFlowAtSideLane_1" type="BicycleFlowAtSideLane">
             <trigger_point x="2478.0" y="1339.4" z="355" yaw="230"/>
             <distance first="74" second="77" third="82"/>
-            <end_bycicle_distance value="150" />
+            <end_bycicle_distance value="150"/>
          </scenario>
       </scenarios>
    </route>

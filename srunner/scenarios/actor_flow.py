@@ -364,7 +364,7 @@ class MergerIntoSlowTraffic(BasicScenario):
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
                 clear_ego_entry=True,
-                remove_entries=source_wp,
+                remove_entries=[source_wp],
                 remove_exits=[],
                 stop_entries=False,
                 extend_road_exit=extra_space

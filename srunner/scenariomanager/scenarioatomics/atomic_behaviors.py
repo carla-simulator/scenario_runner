@@ -1965,8 +1965,9 @@ class BasicAgentBehavior(AtomicBehavior):
         if self._plan:
             self._agent.set_global_plan(self._plan)
         elif self._target_location:
-            self._plan = self._agent.set_destination(
-                self._target_location, CarlaDataProvider.get_location(self._actor))
+            init_wp = self._map.get_waypoint(CarlaDataProvider.get_location(self._actor))
+            end_wp = self._map.get_waypoint(self._target_location)
+            self._plan = self._agent.trace_route(init_wp, end_wp)
             self._agent.set_global_plan(self._plan)
 
     def update(self):
