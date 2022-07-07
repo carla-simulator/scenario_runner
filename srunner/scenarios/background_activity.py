@@ -2109,8 +2109,6 @@ class BackgroundBehavior(AtomicBehavior):
         percentage = max(min(percentage, 100), 0)
         self._actors_speed_perc[actor] = percentage
 
-        draw_string(self._world, location, str(percentage), DEBUG_ROAD, False)
-
     def _set_road_back_actor_speed(self, location, actor):
         """
         Changes the speed of the vehicle depending on its distance to the ego.
@@ -2120,8 +2118,6 @@ class BackgroundBehavior(AtomicBehavior):
         percentage = distance / (self._max_radius - self._min_radius) * 100 + 100
         percentage = max(min(percentage, 200), 0)
         self._actors_speed_perc[actor] = percentage
-
-        draw_string(self._world, location, str(percentage), DEBUG_ROAD, False)
 
     def _monitor_road_changes(self, prev_route_index):
         """
