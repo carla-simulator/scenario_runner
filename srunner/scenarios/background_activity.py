@@ -194,7 +194,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._road_front_vehicles = 2  # Amount of vehicles in front of the ego
         self._road_back_vehicles = 2  # Amount of vehicles behind the ego
-        self._radius_increase_ratio = 2.5  # Meters the radius increases per m/s of the ego
+        self._radius_increase_ratio = 2.3  # Meters the radius increases per m/s of the ego
 
         self._base_junction_detection = 30
         self._detection_ratio = 1.5  # Meters the radius increases per m/s of the ego
@@ -232,7 +232,6 @@ class BackgroundBehavior(AtomicBehavior):
 
         # Scenario variables:
         self._stopped_road_actors = []  # Actors stopped by a hard break scenario
-        # self._clear_actors = []  # Actors that will be cleaned up by a junction
 
         self._route_sources_active = True
 
@@ -1868,6 +1867,7 @@ class BackgroundBehavior(AtomicBehavior):
                     self._destroy_actor(actor)
                 else:
                     self._actors_speed_perc[actor] = 0
+                    self._stopped_road_actors.append(actor)
 
         if self._active_junctions:
             for source in self._active_junctions[0].entry_sources:
@@ -2077,8 +2077,6 @@ class BackgroundBehavior(AtomicBehavior):
         Not applied to those behind it so that they can catch up it
         """
         # Updates their speed
-        # scenario_actors = self._stopped_road_actors + self._clear_actors
-        scenario_actors = self._stopped_road_actors
         for lane_key in self._road_dict:
             for i, actor in enumerate(self._road_dict[lane_key].actors):
                 location = CarlaDataProvider.get_location(actor)
@@ -2091,17 +2089,39 @@ class BackgroundBehavior(AtomicBehavior):
                     string += '_[' + lane_key + ']'
                     draw_string(self._world, location, string, DEBUG_ROAD, False)
 
-                if actor in scenario_actors or self._is_location_behind_ego(location):
+                # if actor in scenario_actors or self._is_location_behind_ego(location):
+                if actor in self._stopped_road_actors:
                     continue
-                self._set_road_actor_speed(location, actor)
+                if not self._is_location_behind_ego(location):
+                    self._set_road_actor_speed(location, actor)
+                else:
+                    self._set_road_back_actor_speed(location, actor)
 
     def _set_road_actor_speed(self, location, actor, multiplier=1):
-        """Changes the speed of the vehicle depending on its distance to the ego"""
+        """
+        Changes the speed of the vehicle depending on its distance to the ego.
+        Capped at 100% for all actors closer than `self._min_radius`,
+        it gradually reduces for larger distances up to 0.
+        """
         distance = location.distance(self._ego_wp.transform.location)
         percentage = (self._max_radius - distance) / (self._max_radius - self._min_radius) * 100
         percentage *= multiplier
-        percentage = min(percentage, 100)
+        percentage = max(min(percentage, 100), 0)
         self._actors_speed_perc[actor] = percentage
+
+        draw_string(self._world, location, str(percentage), DEBUG_ROAD, False)
+
+    def _set_road_back_actor_speed(self, location, actor):
+        """
+        Changes the speed of the vehicle depending on its distance to the ego.
+        The further they are, the higher their speed, helping them catch up to the ego.
+        """
+        distance = location.distance(self._ego_wp.transform.location)
+        percentage = distance / (self._max_radius - self._min_radius) * 100 + 100
+        percentage = max(min(percentage, 200), 0)
+        self._actors_speed_perc[actor] = percentage
+
+        draw_string(self._world, location, str(percentage), DEBUG_ROAD, False)
 
     def _monitor_road_changes(self, prev_route_index):
         """
