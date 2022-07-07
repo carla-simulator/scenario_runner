@@ -2112,7 +2112,7 @@ class YieldToEmergencyVehicleTest(Criterion):
 
         if self.test_status == "FAILURE":
             traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE)
-            traffic_event.set_dict({'speed_percentage': self.actual_value})
+            traffic_event.set_dict({'percentage': self.actual_value})
             traffic_event.set_message(
                 f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
             self.events.append(traffic_event)

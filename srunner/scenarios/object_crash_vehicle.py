@@ -158,6 +158,14 @@ class DynamicObjectCrossing(BasicScenario):
         else:
             self._blocker_model = 'static.prop.vendingmachine'  # blueprint filter of the blocker
 
+        if 'crossing_angle' in config.other_parameters:
+            self._crossing_angle = float(config.other_parameters['crossing_angle']['value'])
+        else:
+            self._crossing_angle = 0  # Crossing angle of the pedestrian
+
+        if abs(self._crossing_angle) > 90:
+            raise ValueError("'crossing_angle' must be between -90 and 90º for the pedestrian to cross the road")
+
         self._blocker_shift = 0.9
         self._retry_dist = 0.4
 
@@ -241,7 +249,7 @@ class DynamicObjectCrossing(BasicScenario):
                 raise ValueError("Couldn't find a location to spawn the adversary")
             walker_wp = wps[0]
 
-            offset = {"yaw": 270, "z": 0.5, "k": 1.2}
+            offset = {"yaw": 270 - self._crossing_angle, "z": 0.5, "k": 1.2}
             self._adversary_transform = self._get_sidewalk_transform(walker_wp, offset)
             adversary = CarlaDataProvider.request_new_actor('walker.*', self._adversary_transform)
             if adversary is None:
