@@ -16,8 +16,11 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, BasicAgentBehavior
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      ActorDestroy,
+                                                                      BasicAgentBehavior,
+                                                                      ScenarioTimeout)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import LeaveSpaceInFront
 
@@ -71,6 +74,11 @@ class InvadingTurn(BasicScenario):
                 config.other_parameters['offset']['value'])
         else:
             self._offset = 0.5
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
 
         super(InvadingTurn, self).__init__("InvadingTurn",
                                            ego_vehicles,
@@ -130,9 +138,13 @@ class InvadingTurn(BasicScenario):
         sequence.add_child(ActorTransformSetter(
             self.other_actors[0], self._adversary_start_transform))
 
-        sequence.add_child(BasicAgentBehavior(
+        behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        behavior.add_child(BasicAgentBehavior(
             self.other_actors[0], self._adversary_end, opt_dict={'offset': self._offset}))
+        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._distance))
+        behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
+        sequence.add_child(behavior)
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
@@ -142,9 +154,10 @@ class InvadingTurn(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """

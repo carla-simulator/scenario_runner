@@ -3604,6 +3604,7 @@ class KeepLongitudinalGap(AtomicBehavior):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
+
 class SwitchWrongDirectionTest(AtomicBehavior):
 
     """
@@ -3625,6 +3626,7 @@ class SwitchWrongDirectionTest(AtomicBehavior):
         py_trees.blackboard.Blackboard().set("AC_SwitchWrongDirectionTest", self._active, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
+
 class SwitchMinSpeedCriteria(AtomicBehavior):
 
     def __init__(self, active, name="ChangeMinSpeed"):
@@ -3642,6 +3644,7 @@ class SwitchMinSpeedCriteria(AtomicBehavior):
         new_status = py_trees.common.Status.SUCCESS
         py_trees.blackboard.Blackboard().set("SwitchMinSpeedCriteria", self._active, overwrite=True)
         return new_status
+
 
 class WalkerFlow(AtomicBehavior):
     """
@@ -3822,3 +3825,57 @@ class AIWalkerBehavior(AtomicBehavior):
             self._destroy_walker(self._walker, self._controller)
         except RuntimeError:
             pass  # Actor was already destroyed
+
+
+class ScenarioTimeout(AtomicBehavior):
+
+    """
+    This class is an idle behavior that waits for a set amount of time
+    before stoping.
+
+    It is meant to be used with the `ScenarioTimeoutTest` to be used at scenarios
+    that block the ego's route (such as adding obstacles) so that if the ego is
+    incapable of surpassing them, it isn't blocked forever. Instead,
+    the scenario will timeout, but it will be penalized by the `ScenarioTimeoutTest`
+
+    Parameters:
+    - duration: Duration in seconds of this behavior
+    """
+
+    def __init__(self, duration, scenario_name, name="ScenarioTimeout"):
+        """
+        Setup actor
+        """
+        super().__init__(name)
+        self._duration = duration
+        self._scenario_name = scenario_name
+        self._start_time = 0
+        self._scenario_timeout = False
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def initialise(self):
+        """
+        Set start time
+        """
+        self._start_time = GameTime.get_time()
+        super().initialise()
+
+    def update(self):
+        """
+        Keep running until termination condition is satisfied
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if GameTime.get_time() - self._start_time > self._duration:
+            self._scenario_timeout = True
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        Modifies the blackboard to tell the `ScenarioTimeoutTest` if the timeout was triggered
+        """
+        py_trees.blackboard.Blackboard().set(f"ScenarioTimeout_{self._scenario_name}", self._scenario_timeout, overwrite=True)
+        self._scenario_timeout = False  # py_trees calls the terminate several times for some reason.
+        super().terminate(new_status)

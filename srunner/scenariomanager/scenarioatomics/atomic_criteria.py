@@ -2039,14 +2039,15 @@ class MinSpeedRouteTest(Criterion):
 
         super().terminate(new_status)
 
+
 class YieldToEmergencyVehicleTest(Criterion):
 
     """
     Atomic Criterion to detect if the actor yields its lane to the emergency vehicle behind it
 
     Args:
-        actor (carla.ACtor): CARLA actor to be used for this test
-        ev (carla.ACtor): The emergency vehicle
+        actor (carla.Actor): CARLA actor to be used for this test
+        ev (carla.Actor): The emergency vehicle
         optional (bool): If True, the result is not considered for an overall pass/fail result
     """
 
@@ -2056,7 +2057,7 @@ class YieldToEmergencyVehicleTest(Criterion):
         """
         Constructor
         """
-        super(YieldToEmergencyVehicleTest, self).__init__(name, actor, ev, optional)
+        super().__init__(name, actor, optional)
         self.units = "%"
         self.success_value = 70
         self.actual_value = 0
@@ -2068,7 +2069,7 @@ class YieldToEmergencyVehicleTest(Criterion):
 
     def initialise(self):
         # self._last_time = GameTime.get_time()
-        super(YieldToEmergencyVehicleTest, self).initialise()
+        super().initialise()
 
     def update(self):
         """
@@ -2116,5 +2117,49 @@ class YieldToEmergencyVehicleTest(Criterion):
             traffic_event.set_message(
                 f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
             self.events.append(traffic_event)
+
+        super().terminate(new_status)
+
+
+class ScenarioTimeoutTest(Criterion):
+
+    """
+    Atomic Criterion to detect if the actor has been incapable of finishing an scenario
+
+    Args:
+        actor (carla.Actor): CARLA actor to be used for this test
+        optional (bool): If True, the result is not considered for an overall pass/fail result
+    """
+
+    def __init__(self, actor, scenario_name, optional=False, name="ScenarioTimeoutTest"):
+        """
+        Constructor
+        """
+        super().__init__(name, actor, optional)
+        self.units = ""
+        self.success_value = 0
+        self.actual_value = 0
+        self._scenario_name = scenario_name
+
+    def update(self):
+        """wait"""
+        new_status = py_trees.common.Status.RUNNING
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+    def terminate(self, new_status):
+        """check the blackboard for the data and update the criteria if one found"""
+
+        blackboard_name = f"ScenarioTimeout_{self._scenario_name}"
+
+        timeout = py_trees.blackboard.Blackboard().get(blackboard_name)
+        if timeout:
+            self.actual_value = 1
+            self.test_status = "FAILURE"
+
+            traffic_event = TrafficEvent(event_type=TrafficEventType.SCENARIO_TIMEOUT)
+            traffic_event.set_message("Agent timed out a scenario")
+            self.events.append(traffic_event)
+        py_trees.blackboard.Blackboard().set(blackboard_name, None, True)
 
         super().terminate(new_status)

@@ -165,7 +165,7 @@ class RouteTimeoutBehavior(py_trees.behaviour.Behaviour):
     it increases every time the agent advanced through the route, and is dependent on the road's speed.
     """
     MIN_TIMEOUT = 180
-    TIMEOUT_ROUTE_PERC = 25
+    TIMEOUT_ROUTE_PERC = 15
 
     def __init__(self, ego_vehicle, route, debug=False, name="RouteTimeoutBehavior"):
         """

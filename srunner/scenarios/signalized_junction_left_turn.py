@@ -15,9 +15,9 @@ from numpy import random
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer, ScenarioTimeout
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
@@ -72,6 +72,12 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._init_tl_dict = {}
 
         self.timeout = timeout
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__("SignalizedJunctionLeftTurn",
                          ego_vehicles,
                          config,
@@ -173,6 +179,7 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
@@ -191,9 +198,10 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -243,6 +251,12 @@ class NonSignalizedJunctionLeftTurn(BasicScenario):
         self._sink_dist = 3 * self._flow_speed
 
         self.timeout = timeout
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__("NonSignalizedJunctionLeftTurn",
                          ego_vehicles,
                          config,
@@ -321,6 +335,7 @@ class NonSignalizedJunctionLeftTurn(BasicScenario):
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence.add_child(root)
 
@@ -334,9 +349,10 @@ class NonSignalizedJunctionLeftTurn(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
