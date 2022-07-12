@@ -15,8 +15,8 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import BicycleFlow, TrafficLightFreezer
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import BicycleFlow, TrafficLightFreezer, ScenarioTimeout
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
@@ -78,6 +78,11 @@ class CrossingBicycleFlow(BasicScenario):
             self._green_light_delay = 3 # s
 
         self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
 
         super().__init__("CrossingBicycleFlow",
                          ego_vehicles,
@@ -156,11 +161,8 @@ class CrossingBicycleFlow(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(BicycleFlow(self._plan, self._source_dist_interval, self._sink_distance, self._flow_speed, True))
-
-        # End condition, when the ego exits the junction
-        end_condition = py_trees.composites.Sequence()
-        end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
-        root.add_child(end_condition)
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
         # Freeze the traffic lights to allow the flow to populate the junction
         tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
@@ -189,9 +191,10 @@ class CrossingBicycleFlow(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """

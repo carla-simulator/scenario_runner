@@ -16,9 +16,10 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       ActorTransformSetter,
-                                                                      SwitchWrongDirectionTest)
+                                                                      SwitchWrongDirectionTest,
+                                                                      ScenarioTimeout)
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import (ChangeOppositeBehavior,
                                               RemoveRoadLane,
@@ -56,6 +57,11 @@ class ConstructionObstacle(BasicScenario):
         self._construction_wp = None
 
         self._construction_transforms = []
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
 
         super().__init__("ConstructionObstacle", ego_vehicles, config, world, debug_mode, False, criteria_enable)
 
@@ -151,7 +157,10 @@ class ConstructionObstacle(BasicScenario):
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
 
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(end_condition)
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))
 
@@ -169,9 +178,10 @@ class ConstructionObstacle(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -199,7 +209,10 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
         root = py_trees.composites.Sequence()
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(end_condition)
 
         for i, _ in enumerate(self.other_actors):
             root.add_child(ActorDestroy(self.other_actors[i]))

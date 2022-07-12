@@ -16,11 +16,12 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       OpenVehicleDoor,
-                                                                      SwitchWrongDirectionTest)
+                                                                      SwitchWrongDirectionTest,
+                                                                      ScenarioTimeout)
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
                                                                                DriveDistance)
@@ -62,6 +63,11 @@ class VehicleOpensDoor(BasicScenario):
             self._direction = 'right'
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
 
         super().__init__("VehicleOpensDoor", ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
 
@@ -119,7 +125,10 @@ class VehicleOpensDoor(BasicScenario):
 
         door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
         sequence.add_child(OpenVehicleDoor(self._parked_actor, door))
-        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        sequence.add_child(end_condition)
         sequence.add_child(ActorDestroy(self._parked_actor))
 
         return sequence
@@ -145,9 +154,10 @@ class VehicleOpensDoor(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -197,7 +207,10 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
         sequence.add_child(SwitchWrongDirectionTest(False))
         sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
 
-        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        sequence.add_child(end_condition)
         sequence.add_child(SwitchWrongDirectionTest(True))
         sequence.add_child(ChangeOppositeBehavior(spawn_dist=50))
         sequence.add_child(ActorDestroy(self._parked_actor))
