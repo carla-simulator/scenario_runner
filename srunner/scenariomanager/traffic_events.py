@@ -41,21 +41,27 @@ class TrafficEvent(object):
     TrafficEvent definition
     """
 
-    def __init__(self, event_type, message="", dictionary=None):
+    def __init__(self, event_type, frame, message="", dictionary=None):
         """
         Initialize object
 
         :param event_type: TrafficEventType defining the type of traffic event
+        :param frame: frame in which the event happened 
         :param message: optional message to inform users of the event
         :param dictionary: optional dictionary with arbitrary keys and values
         """
         self._type = event_type
+        self._frame = frame
         self._message = message
         self._dict = dictionary
 
     def get_type(self):
         """return the type"""
         return self._type
+
+    def get_frame(self):
+        """return the frame"""
+        return self._frame
 
     def set_message(self, message):
         """Set message"""

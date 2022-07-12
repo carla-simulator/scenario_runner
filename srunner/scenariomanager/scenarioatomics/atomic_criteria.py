@@ -396,7 +396,7 @@ class CollisionTest(Criterion):
         else:
             return
 
-        collision_event = TrafficEvent(event_type=actor_type)
+        collision_event = TrafficEvent(event_type=actor_type, frame=GameTime.get_frame())
         collision_event.set_dict({'other_actor': event.other_actor, 'location': actor_location})
         collision_event.set_message(
             "Agent collided against object with type={} and id={} at (x={}, y={}, z={})".format(
@@ -444,7 +444,7 @@ class ActorBlockedTest(Criterion):
                     self.test_status = "FAILURE"
 
                     vehicle_location = CarlaDataProvider.get_location(self.actor)
-                    event = TrafficEvent(event_type=TrafficEventType.VEHICLE_BLOCKED)
+                    event = TrafficEvent(event_type=TrafficEventType.VEHICLE_BLOCKED, frame=GameTime.get_frame())
                     event.set_message('Agent got blocked at (x={}, y={}, z={})'.format(
                         round(vehicle_location.x, 3),
                         round(vehicle_location.y, 3),
@@ -877,7 +877,7 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
+            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -892,7 +892,7 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
+            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -915,7 +915,7 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION)
+            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -930,7 +930,7 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION)
+            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -1140,7 +1140,7 @@ class OutsideRouteLanesTest(Criterion):
 
             percentage = self._wrong_distance / self._total_distance * 100
 
-            outside_lane = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION)
+            outside_lane = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION, frame=GameTime.get_frame())
             outside_lane.set_message(
                 "Agent went outside its route lanes for about {} meters "
                 "({}% of the completed route)".format(
@@ -1264,7 +1264,7 @@ class WrongLaneTest(Criterion):
         # Register the event
         if self._in_lane and self._wrong_distance > 0:
 
-            wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
+            wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(wrong_way_event, self._wrong_lane_start_location,
                                     self._wrong_distance, current_road_id, current_lane_id)
             self._set_event_dict(wrong_way_event, self._wrong_lane_start_location,
@@ -1292,7 +1292,7 @@ class WrongLaneTest(Criterion):
             current_lane_id = lane_waypoint.lane_id
             current_road_id = lane_waypoint.road_id
 
-            wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION)
+            wrong_way_event = TrafficEvent(event_type=TrafficEventType.WRONG_WAY_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(wrong_way_event, self._wrong_lane_start_location,
                                     self._wrong_distance, current_road_id, current_lane_id)
             self._set_event_dict(wrong_way_event, self._wrong_lane_start_location,
@@ -1362,7 +1362,7 @@ class InRadiusRegionTest(Criterion):
         if self.test_status != "SUCCESS":
             in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
             if in_radius:
-                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED)
+                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED, frame=GameTime.get_frame())
                 route_completion_event.set_message("Destination was successfully reached")
                 self.events.append(route_completion_event)
                 self.test_status = "SUCCESS"
@@ -1484,7 +1484,7 @@ class InRouteTest(Criterion):
                 blackv = py_trees.blackboard.Blackboard()
                 _ = blackv.set("InRoute", False)
 
-                route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION)
+                route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION, frame=GameTime.get_frame())
                 route_deviation_event.set_message(
                     "Agent deviated from the route at (x={}, y={}, z={})".format(
                         round(location.x, 3),
@@ -1535,7 +1535,9 @@ class RouteCompletionTest(Criterion):
 
         self.target_location = self._route_transforms[-1].location
 
-        self._traffic_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETION)
+        self._traffic_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETION, frame=0)
+        self._traffic_event.set_dict({'route_completed': self.actual_value})
+        self._traffic_event.set_message("Agent has completed {} of the route".format(self.actual_value))
         self.events.append(self._traffic_event)
 
     def _get_acummulated_percentages(self):
@@ -1577,6 +1579,10 @@ class RouteCompletionTest(Criterion):
                 if wp_veh.dot(wp_dir) > 0:
                     self._index = index
                     self.actual_value = self._route_accum_perc[self._index]
+
+            self.actual_value = round(self.actual_value, 2)
+            self._traffic_event.set_dict({'route_completed': self.actual_value})
+            self._traffic_event.set_message("Agent has completed {} of the route".format(self.actual_value))
 
             if self.actual_value > self.PERCENTAGE_THRESHOLD \
                     and location.distance(self.target_location) < self.DISTANCE_THRESHOLD:
@@ -1715,7 +1721,7 @@ class RunningRedLightTest(Criterion):
                         self.test_status = "FAILURE"
                         self.actual_value += 1
                         location = traffic_light.get_transform().location
-                        red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION)
+                        red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION, frame=GameTime.get_frame())
                         red_light_event.set_message(
                             "Agent ran a red light {} at (x={}, y={}, z={})".format(
                                 traffic_light.id,
@@ -1924,7 +1930,7 @@ class RunningStopTest(Criterion):
                     self.actual_value += 1
                     self.test_status = "FAILURE"
                     stop_location = self._target_stop_sign.get_transform().location
-                    running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION)
+                    running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION, frame=GameTime.get_frame())
                     running_stop_event.set_message(
                         "Agent ran a stop with id={} at (x={}, y={}, z={})".format(
                             self._target_stop_sign.id,
@@ -2032,7 +2038,7 @@ class MinSpeedRouteTest(Criterion):
             self.test_status = "FAILURE"
 
         if self.test_status == "FAILURE":
-            self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION)
+            self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION, frame=GameTime.get_frame())
             self._traffic_event.set_dict({'percentage': self.actual_value})
             self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
             self.events.append(self._traffic_event)
@@ -2112,7 +2118,7 @@ class YieldToEmergencyVehicleTest(Criterion):
                 self.test_status = "FAILURE"
 
         if self.test_status == "FAILURE":
-            traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE)
+            traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE, frame=GameTime.get_frame())
             traffic_event.set_dict({'percentage': self.actual_value})
             traffic_event.set_message(
                 f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
@@ -2157,7 +2163,7 @@ class ScenarioTimeoutTest(Criterion):
             self.actual_value = 1
             self.test_status = "FAILURE"
 
-            traffic_event = TrafficEvent(event_type=TrafficEventType.SCENARIO_TIMEOUT)
+            traffic_event = TrafficEvent(event_type=TrafficEventType.SCENARIO_TIMEOUT, frame=GameTime.get_frame())
             traffic_event.set_message("Agent timed out a scenario")
             self.events.append(traffic_event)
         py_trees.blackboard.Blackboard().set(blackboard_name, None, True)
