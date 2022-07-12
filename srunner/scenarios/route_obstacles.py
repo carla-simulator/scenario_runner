@@ -18,8 +18,9 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       SwitchWrongDirectionTest,
-                                                                      ConstantVelocityAgentBehavior)
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+                                                                      ConstantVelocityAgentBehavior,
+                                                                      ScenarioTimeout)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior
@@ -64,6 +65,11 @@ class Accident(BasicScenario):
 
         self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__(
             "Accident", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
 
@@ -94,6 +100,7 @@ class Accident(BasicScenario):
         lights = police_car.get_light_state()
         lights |= self._lights
         police_car.set_light_state(carla.VehicleLightState(lights))
+        police_car.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(police_car)
 
         # Create the first vehicle that has been in the accident
@@ -113,6 +120,7 @@ class Accident(BasicScenario):
             'vehicle.*', vehicle_1_transform, attribute_filter={'base_type': 'car', 'has_lights': False})
         if not vehicle_1_car:
             raise ValueError("Couldn't spawn the accident car")
+        vehicle_1_car.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(vehicle_1_car)
 
         # Create the second vehicle that has been in the accident
@@ -132,6 +140,7 @@ class Accident(BasicScenario):
             'vehicle.*', vehicle_2_transform, attribute_filter={'base_type': 'car', 'has_lights': False})
         if not vehicle_2_car:
             raise ValueError("Couldn't spawn the accident car")
+        vehicle_2_car.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(vehicle_2_car)
 
     def _create_behavior(self):
@@ -143,7 +152,11 @@ class Accident(BasicScenario):
         root = py_trees.composites.Sequence()
         if self.route_mode:
             root.add_child(LeaveSpaceInFront(total_dist))
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(end_condition)
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
@@ -154,9 +167,10 @@ class Accident(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -189,7 +203,10 @@ class AccidentTwoWays(Accident):
             root.add_child(LeaveSpaceInFront(total_dist))
             root.add_child(SwitchWrongDirectionTest(False))
             root.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(end_condition)
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
             root.add_child(ChangeOppositeBehavior(spawn_dist=50))
@@ -224,6 +241,11 @@ class ParkedObstacle(BasicScenario):
 
         self._lights = carla.VehicleLightState.RightBlinker | carla.VehicleLightState.LeftBlinker
 
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__(
             "ParkedObstacle", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
 
@@ -252,6 +274,7 @@ class ParkedObstacle(BasicScenario):
         lights = parked_car.get_light_state()
         lights |= self._lights
         parked_car.set_light_state(carla.VehicleLightState(lights))
+        parked_car.apply_control(carla.VehicleControl(hand_brake=True))
 
         pre_parked_wps = starting_wp.next(self._distance / 2)
         if not pre_parked_wps: 
@@ -268,7 +291,10 @@ class ParkedObstacle(BasicScenario):
         root = py_trees.composites.Sequence()
         if self.route_mode:
             root.add_child(LeaveSpaceInFront(total_dist))
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(end_condition)
         root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root
@@ -278,9 +304,10 @@ class ParkedObstacle(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -312,7 +339,10 @@ class ParkedObstacleTwoWays(ParkedObstacle):
             root.add_child(LeaveSpaceInFront(total_dist))
             root.add_child(SwitchWrongDirectionTest(False))
             root.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(end_condition)
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
             root.add_child(ChangeOppositeBehavior(spawn_dist=50))
@@ -351,6 +381,11 @@ class BicycleFlowAtSideLane(BasicScenario):
             ]
         else:
             self._distance_to_Trigger = [74,76,88]  # m
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
 
         super().__init__("BicycleFlowAtSideLane",
                          ego_vehicles,
@@ -410,7 +445,10 @@ class BicycleFlowAtSideLane(BasicScenario):
                 self.other_actors[0], self._target_location, target_speed = self._bicycle_speed,
                 opt_dict={'offset': self._offset[0] * self._bicycle_wp[0].lane_width / 2}))
         root.add_child(bycicle)
-        root.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(end_condition)
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
             root.add_child(ChangeOppositeBehavior(active=True))
@@ -425,9 +463,10 @@ class BicycleFlowAtSideLane(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """

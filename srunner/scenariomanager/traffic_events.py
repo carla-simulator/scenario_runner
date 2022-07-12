@@ -32,6 +32,7 @@ class TrafficEventType(Enum):
     VEHICLE_BLOCKED = 13
     MIN_SPEED_INFRACTION = 14
     YIELD_TO_EMERGENCY_VEHICLE = 15
+    SCENARIO_TIMEOUT = 16
 
 
 class TrafficEvent(object):

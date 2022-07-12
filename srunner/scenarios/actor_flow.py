@@ -16,8 +16,8 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, ScenarioTimeout
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation, WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
@@ -75,6 +75,11 @@ class EnterActorFlow(BasicScenario):
         ego_location = config.trigger_points[0].location
         self._reference_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__("EnterActorFlow",
                          ego_vehicles,
                          config,
@@ -101,6 +106,7 @@ class EnterActorFlow(BasicScenario):
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
             root.add_child(ActorFlow(
                 source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
@@ -133,9 +139,10 @@ class EnterActorFlow(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -165,6 +172,7 @@ class EnterActorFlowV2(EnterActorFlow):
                 source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
         for sink_wp in sink_wps:
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
         exit_wp = exit_wp.next(10)[0]  # just in case the junction maneuvers don't match
@@ -227,6 +235,11 @@ class HighwayExit(BasicScenario):
         else:
             self._source_dist_interval = [5, 7] # m
 
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__("HighwayExit",
                          ego_vehicles,
                          config,
@@ -253,10 +266,8 @@ class HighwayExit(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
-        end_condition = py_trees.composites.Sequence()
-        end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0], junction_id))
-
-        root.add_child(end_condition)
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(WaitEndIntersection(self.ego_vehicles[0], junction_id))
 
         sequence = py_trees.composites.Sequence()
 
@@ -271,9 +282,10 @@ class HighwayExit(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -324,6 +336,12 @@ class MergerIntoSlowTraffic(BasicScenario):
         ego_location = config.trigger_points[0].location
         self._reference_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
+
         super().__init__("MergerIntoSlowTraffic",
                          ego_vehicles,
                          config,
@@ -348,6 +366,7 @@ class MergerIntoSlowTraffic(BasicScenario):
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
         root.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
@@ -381,9 +400,10 @@ class MergerIntoSlowTraffic(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -412,6 +432,7 @@ class MergerIntoSlowTrafficV2(MergerIntoSlowTraffic):
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
         for sink_wp in sink_wps:
             root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
         exit_wp = exit_wp.next(10)[0]  # just in case the junction maneuvers don't match
@@ -476,6 +497,11 @@ class InterurbanActorFlow(BasicScenario):
         if not self._other_entry_wp or self._other_entry_wp.lane_type != carla.LaneType.Driving:
             raise ValueError("Couldn't find an end position")
 
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__("InterurbanActorFlow",
                          ego_vehicles,
                          config,
@@ -495,10 +521,8 @@ class InterurbanActorFlow(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed))
-        end_condition = py_trees.composites.Sequence()
-        end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
-
-        root.add_child(end_condition)
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
         sequence = py_trees.composites.Sequence()
 
@@ -523,9 +547,10 @@ class InterurbanActorFlow(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
@@ -572,6 +597,11 @@ class InterurbanAdvancedActorFlow(BasicScenario):
         self._reference_wp = self._map.get_waypoint(config.trigger_points[0].location)
         self._exit_wp = generate_target_waypoint_in_route(self._reference_wp, config.route)
 
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 180
+
         super().__init__("InterurbanAdvancedActorFlow",
                          ego_vehicles,
                          config,
@@ -600,6 +630,7 @@ class InterurbanAdvancedActorFlow(BasicScenario):
             source_wp_1, sink_wp_1, self._source_dist_interval, self._sink_distance, self._flow_speed))
         root.add_child(ActorFlow(
             source_wp_2, sink_wp_2, self._source_dist_interval, self._sink_distance, self._flow_speed))
+        root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
@@ -637,9 +668,10 @@ class InterurbanAdvancedActorFlow(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """

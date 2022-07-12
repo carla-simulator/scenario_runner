@@ -18,8 +18,9 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       ActorTransformSetter,
                                                                       Idle,
-                                                                      ChangeAutoPilot)
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+                                                                      ChangeAutoPilot,
+                                                                      ScenarioTimeout)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
 
@@ -102,6 +103,11 @@ class ParkingExit(BasicScenario):
         self._bp_attributes = {'base_type': 'car', 'has_lights': False}
 
         self._side_end_distance = 50
+
+        if 'timeout' in config.other_parameters:
+            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
+        else:
+            self._scenario_timeout = 120
 
         super(ParkingExit, self).__init__("ParkingExit",
                                           ego_vehicles,
@@ -191,8 +197,7 @@ class ParkingExit(BasicScenario):
 
         sequence = py_trees.composites.Sequence()
         sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_distance))
-        root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         side_actor_behavior = py_trees.composites.Sequence()
         side_actor_behavior.add_child(ChangeAutoPilot(self.other_actors[2], True))
@@ -201,9 +206,9 @@ class ParkingExit(BasicScenario):
         side_actor_behavior.add_child(Idle())
         root.add_child(side_actor_behavior)
 
-        end_condition = py_trees.composites.Sequence()
-        end_condition.add_child(DriveDistance(
-            self.ego_vehicles[0], self._end_distance))
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         root.add_child(end_condition)
 
         sequence.add_child(root)
@@ -219,10 +224,10 @@ class ParkingExit(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return[]
-
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """
