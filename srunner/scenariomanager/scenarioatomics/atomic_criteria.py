@@ -2163,7 +2163,7 @@ class ScenarioTimeoutTest(Criterion):
             self.actual_value = 1
             self.test_status = "FAILURE"
 
-            traffic_event = TrafficEvent(event_type=TrafficEventType.SCENARIO_TIMEOUT)
+            traffic_event = TrafficEvent(event_type=TrafficEventType.SCENARIO_TIMEOUT, frame=GameTime.get_frame())
             traffic_event.set_message("Agent timed out a scenario")
             self.events.append(traffic_event)
         py_trees.blackboard.Blackboard().set(blackboard_name, None, True)
