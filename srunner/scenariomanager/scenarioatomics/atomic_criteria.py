@@ -2067,15 +2067,12 @@ class YieldToEmergencyVehicleTest(Criterion):
         self.units = "%"
         self.success_value = 70
         self.actual_value = 0
-        # self._last_time = 0
         self._ev = ev
         self._target_speed = None
         self._ev_speed_log = []
         self._map = CarlaDataProvider.get_map()
 
-    def initialise(self):
-        # self._last_time = GameTime.get_time()
-        super().initialise()
+        self._terminated = False
 
     def update(self):
         """
@@ -2105,24 +2102,30 @@ class YieldToEmergencyVehicleTest(Criterion):
         return new_status
 
     def terminate(self, new_status):
-        if not len(self._ev_speed_log):
-            self.actual_value = 100
-        else:
-            mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
-            self.actual_value = mean_speed / self._target_speed *100
-            self.actual_value = round(self.actual_value, 2)
+        """Set the traffic event to the according value if needed"""
 
-            if self.actual_value >= self.success_value:
-                self.test_status = "SUCCESS"
+        # Terminates are called multiple times. Do this only once
+        if not self._terminated:
+            if not len(self._ev_speed_log):
+                self.actual_value = 100
             else:
-                self.test_status = "FAILURE"
+                mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
+                self.actual_value = mean_speed / self._target_speed *100
+                self.actual_value = round(self.actual_value, 2)
 
-        if self.test_status == "FAILURE":
-            traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE, frame=GameTime.get_frame())
-            traffic_event.set_dict({'percentage': self.actual_value})
-            traffic_event.set_message(
-                f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
-            self.events.append(traffic_event)
+                if self.actual_value >= self.success_value:
+                    self.test_status = "SUCCESS"
+                else:
+                    self.test_status = "FAILURE"
+
+            if self.test_status == "FAILURE":
+                traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE, frame=GameTime.get_frame())
+                traffic_event.set_dict({'percentage': self.actual_value})
+                traffic_event.set_message(
+                    f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
+                self.events.append(traffic_event)
+
+            self._terminated = True
 
         super().terminate(new_status)
 

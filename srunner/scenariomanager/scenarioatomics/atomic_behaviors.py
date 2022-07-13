@@ -1454,7 +1454,8 @@ class KeepVelocity(AtomicBehavior):
             self._control.hand_brake = False
         self._actor.apply_control(self._control)
 
-        self._set_collision_sensor()
+        if self._forced_speed:
+            self._set_collision_sensor()
 
         super(KeepVelocity, self).initialise()
 
@@ -2090,7 +2091,7 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
     def initialise(self):
         """Initialises the agent"""
         # Get target speed
-        self._target_speed = get_speed(self._reference_actor) + self._speed_increment*3.6
+        self._target_speed = get_speed(self._reference_actor) + self._speed_increment * 3.6
         py_trees.blackboard.Blackboard().set(
             "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
 
@@ -2813,7 +2814,7 @@ class ActorFlow(AtomicBehavior):
             return py_trees.common.Status.RUNNING
 
         actor.set_autopilot(True)
-        self._tm.set_path(actor, [self._source_transform.location, self._sink_location])
+        self._tm.set_path(actor, [self._sink_location])
         self._tm.auto_lane_change(actor, False)
         self._tm.set_desired_speed(actor, 3.6 * self._speed)
         self._tm.update_vehicle_lights(actor, True)

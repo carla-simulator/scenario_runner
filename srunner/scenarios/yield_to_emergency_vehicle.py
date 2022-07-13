@@ -42,14 +42,14 @@ class YieldToEmergencyVehicle(BasicScenario):
         self.timeout = timeout
         self._ev_drive_time = 12  # seconds
 
-        # m/s. How much the EV is expected to be faster than the EGO
+        # km/h. How much the EV is expected to be faster than the EGO
         self._speed_increment = 15
 
         if 'distance' in config.other_parameters:
             self._distance = float(
                 config.other_parameters['distance']['value'])
         else:
-            self._distance = 15  # m
+            self._distance = 100  # m
 
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(

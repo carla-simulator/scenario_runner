@@ -84,6 +84,20 @@ class ChangeJunctionBehavior(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
+class SetMaxSpeed(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that its behavior is restriced to a maximum speed
+    """
+
+    def __init__(self, max_speed, name="SetMaxSpeed"):
+        self._max_speed = max_speed
+        super().__init__(name)
+
+    def update(self):
+        py_trees.blackboard.Blackboard().set("BA_SetMaxSpeed", self._max_speed, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
 class StopFrontVehicles(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that a HardBreak scenario has to be triggered.

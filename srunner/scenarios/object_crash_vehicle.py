@@ -163,6 +163,13 @@ class DynamicObjectCrossing(BasicScenario):
         else:
             self._crossing_angle = 0  # Crossing angle of the pedestrian
 
+        if 'direction' in config.other_parameters:
+            self._direction = config.other_parameters['direction']['value']
+        else:
+            self._direction = 'right'
+        if self._direction not in ('left', 'right'):
+            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
+
         if abs(self._crossing_angle) > 90:
             raise ValueError("'crossing_angle' must be between -90 and 90º for the pedestrian to cross the road")
 
@@ -174,7 +181,7 @@ class DynamicObjectCrossing(BasicScenario):
         self._collision_wp = None
 
         self._adversary_speed = 2.0  # Speed of the adversary [m/s]
-        self._reaction_time = 1.8  # Time the agent has to react to avoid the collision [s]
+        self._reaction_time = 2.1  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
@@ -194,6 +201,9 @@ class DynamicObjectCrossing(BasicScenario):
         It first rotates the transform so that it is pointing towards the road and then moves a
         bit to the side waypoint that aren't part of sidewalks, as they might be invading the road
         """
+        if self._direction == "left":
+            offset['yaw'] *= -1
+            offset['k'] *= -1
 
         new_rotation = waypoint.transform.rotation
         new_rotation.yaw += offset['yaw']
@@ -227,10 +237,13 @@ class DynamicObjectCrossing(BasicScenario):
             # Move to the right
             sidewalk_waypoint = waypoint
             while sidewalk_waypoint.lane_type != carla.LaneType.Sidewalk:
-                right_wp = sidewalk_waypoint.get_right_lane()
-                if right_wp is None:
-                    break  # No more right lanes
-                sidewalk_waypoint = right_wp
+                if self._direction == "right":
+                    side_wp = sidewalk_waypoint.get_right_lane()
+                else:
+                    side_wp = sidewalk_waypoint.get_left_lane()
+                if side_wp is None:
+                    break  # No more side lanes
+                sidewalk_waypoint = side_wp
 
             # Get the blocker transform and spawn it
             offset = {"yaw": 90, "z": 0.0, "k": 1.5}
@@ -256,7 +269,7 @@ class DynamicObjectCrossing(BasicScenario):
                 blocker.destroy()
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
-                print("Failed adversary")
+                print("Failed to spawn an adversary")
                 continue
 
             self._collision_dist += waypoint.transform.location.distance(self._adversary_transform.location)
