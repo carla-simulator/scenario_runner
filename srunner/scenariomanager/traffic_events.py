@@ -63,6 +63,10 @@ class TrafficEvent(object):
         """return the frame"""
         return self._frame
 
+    def set_frame(self, frame):
+        """return the frame"""
+        self._frame = frame
+
     def set_message(self, message):
         """Set message"""
         self._message = message

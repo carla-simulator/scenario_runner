@@ -1006,6 +1006,8 @@ class OutsideRouteLanesTest(Criterion):
         self._wrong_distance = 0
         self._wrong_direction_active = True
 
+        self._traffic_event = None
+
     def update(self):
         """
         Transforms the actor location and its four corners to waypoints. Depending on its types,
@@ -1054,11 +1056,38 @@ class OutsideRouteLanesTest(Criterion):
                 if self._outside_lane_active or (self._wrong_direction_active and self._wrong_lane_active):
                     self._wrong_distance += new_dist
 
+                    self._set_traffic_event()
+
                 self._current_index = index
 
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
+
+    def _set_traffic_event(self):
+        """
+        Creates the traffic event / updates it
+        """
+        if self._traffic_event is None:
+            self._traffic_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION, frame=GameTime.get_frame())
+            self.events.append(self._traffic_event)
+
+        percentage = self._wrong_distance / self._total_distance * 100
+        self.actual_value = round(percentage, 2)
+
+        self._traffic_event.set_message(
+            "Agent went outside its route lanes for about {} meters "
+            "({}% of the completed route)".format(
+                round(self._wrong_distance, 3),
+                round(percentage, 2)))
+
+        self._traffic_event.set_dict({
+            'distance': self._wrong_distance,
+            'percentage': percentage
+        })
+
+        self._traffic_event.set_frame(GameTime.get_frame())
+
 
     def _is_outside_driving_lanes(self, location):
         """
@@ -1130,33 +1159,6 @@ class OutsideRouteLanesTest(Criterion):
         self._last_lane_id = current_lane_id
         self._last_road_id = current_road_id
         self._pre_ego_waypoint = current_waypoint
-
-    def terminate(self, new_status):
-        """
-        If there is currently an event running, it is registered
-        """
-
-        if self._wrong_distance > 0:
-
-            percentage = self._wrong_distance / self._total_distance * 100
-
-            outside_lane = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION, frame=GameTime.get_frame())
-            outside_lane.set_message(
-                "Agent went outside its route lanes for about {} meters "
-                "({}% of the completed route)".format(
-                    round(self._wrong_distance, 3),
-                    round(percentage, 2)))
-
-            outside_lane.set_dict({
-                'distance': self._wrong_distance,
-                'percentage': percentage
-            })
-
-            self._wrong_distance = 0
-            self.events.append(outside_lane)
-            self.actual_value = round(percentage, 2)
-
-        super(OutsideRouteLanesTest, self).terminate(new_status)
 
 
 class WrongLaneTest(Criterion):
