@@ -18,7 +18,7 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer, ScenarioTimeout
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection, DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
@@ -71,6 +71,8 @@ class SignalizedJunctionRightTurn(BasicScenario):
             self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
         else:
             self._scenario_timeout = 180
+
+        self._end_distance = 10  # Distance after the junction before the scenario ends
 
         super().__init__("SignalizedJunctionRightTurn",
                          ego_vehicles,
@@ -174,7 +176,10 @@ class SignalizedJunctionRightTurn(BasicScenario):
             ))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
+        end_condition = py_trees.composites.Sequence()
+        end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+        root.add_child(end_condition)
         root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
@@ -243,6 +248,8 @@ class NonSignalizedJunctionRightTurn(BasicScenario):
             self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
         else:
             self._scenario_timeout = 180
+
+        self._end_distance = 10  # Distance after the junction before the scenario ends
 
         super().__init__("NonSignalizedJunctionRightTurn",
                          ego_vehicles,
@@ -323,7 +330,10 @@ class NonSignalizedJunctionRightTurn(BasicScenario):
             ))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
+        end_condition = py_trees.composites.Sequence()
+        end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
+        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+        root.add_child(end_condition)
         root.add_child(ActorFlow(
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))

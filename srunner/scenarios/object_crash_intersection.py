@@ -139,7 +139,7 @@ class BaseVehicleTurning(BasicScenario):
             break
 
         if self._number_of_attempts == 0:
-            raise Exception("Couldn't find viable position for the adversary actor")
+            raise ValueError("Couldn't find viable position for the adversary")
 
         if isinstance(adversary, carla.Vehicle):
             adversary.apply_control(carla.VehicleControl(hand_brake=True))

@@ -21,7 +21,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       OpenVehicleDoor,
                                                                       SwitchWrongDirectionTest,
-                                                                      ScenarioTimeout)
+                                                                      ScenarioTimeout,
+                                                                      Idle)
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
                                                                                DriveDistance)
@@ -188,6 +189,8 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
         else:
             self._opposite_frequency = 100
 
+        self._opposite_wait_duration = 5
+
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
@@ -229,6 +232,7 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
 
         door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
         main_behavior.add_child(OpenVehicleDoor(self._parked_actor, door))
+        main_behavior.add_child(Idle(self._opposite_wait_duration))
 
         if self.route_mode:
             main_behavior.add_child(SwitchWrongDirectionTest(False))

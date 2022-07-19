@@ -19,7 +19,8 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       TrafficLightFreezer,
-                                                                      ConstantVelocityAgentBehavior)
+                                                                      ConstantVelocityAgentBehavior,
+                                                                      Idle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -50,16 +51,13 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 30
         self._sink_dist = 20
+        self._adversary_speed = 70 / 3.6 # m/s
 
         if 'direction' in config.other_parameters:
             self._direction = config.other_parameters['direction']['value']
         else:
             self._direction = "right"
 
-        if 'adversary_speed' in config.other_parameters:
-            self._adversary_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._adversary_speed = 70 / 3.6 # m/s
 
         self.timeout = timeout
 
@@ -247,16 +245,12 @@ class OppositeVehicleTakingPriority(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 30
         self._sink_dist = 20
+        self._adversary_speed = 70 / 3.6 # m/s
 
         if 'direction' in config.other_parameters:
             self._direction = config.other_parameters['direction']['value']
         else:
             self._direction = "right"
-
-        if 'adversary_speed' in config.other_parameters:
-            self._adversary_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._adversary_speed = 70 / 3.6 # m/s
 
         self._opposite_bp_wildcards = ['*firetruck*', '*ambulance*', '*police*']  # Wildcard patterns of the blueprints
         self.timeout = timeout
@@ -370,12 +364,18 @@ class OppositeVehicleTakingPriority(BasicScenario):
             self.ego_vehicles[0], self._collision_location, self._min_trigger_dist))
 
         sequence.add_child(trigger_adversary)
-        sequence.add_child(ConstantVelocityAgentBehavior(
-            self.other_actors[0], target_location=self._sink_wp.transform.location,
-            target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True, 'ignore_traffic_lights': True}, name="AdversaryCrossing"))
+
+        end_location = self._sink_wp.transform.location
+        start_location = self._spawn_wp.transform.location
+        time = self._adversary_speed / (start_location.distance(end_location))
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        main_behavior.add_child(sequence)
+        main_behavior.add_child(ConstantVelocityAgentBehavior(
+            self.other_actors[0], target_location=end_location,
+            target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True, 'ignore_traffic_lights': True}, name="AdversaryCrossing"))
+        main_behavior.add_child(Idle(time))
+
+        sequence.add_child(main_behavior)
 
         root = py_trees.composites.Sequence()
         if self.route_mode:
@@ -389,7 +389,7 @@ class OppositeVehicleTakingPriority(BasicScenario):
             ))
 
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
-        root.add_child(main_behavior)
+        root.add_child(sequence)
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 

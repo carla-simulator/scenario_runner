@@ -1056,6 +1056,7 @@ class OutsideRouteLanesTest(Criterion):
                 if self._outside_lane_active or (self._wrong_direction_active and self._wrong_lane_active):
                     self._wrong_distance += new_dist
 
+                if self._wrong_distance:
                     self._set_traffic_event()
 
                 self._current_index = index
@@ -2147,7 +2148,6 @@ class ScenarioTimeoutTest(Criterion):
         Constructor
         """
         super().__init__(name, actor, optional)
-        self.units = ""
         self.success_value = 0
         self.actual_value = 0
         self._scenario_name = scenario_name

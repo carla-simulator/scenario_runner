@@ -18,12 +18,24 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       SwitchWrongDirectionTest,
-                                                                      ConstantVelocityAgentBehavior,
-                                                                      ScenarioTimeout)
+                                                                      BasicAgentBehavior,
+                                                                      ScenarioTimeout,
+                                                                      Idle,
+                                                                      HandBrakeVehicle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, InTriggerDistanceToLocation
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (DriveDistance,
+                                                                               InTriggerDistanceToLocation,
+                                                                               InTriggerDistanceToVehicle,
+                                                                               WaitUntilInFront)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior, SetMaxSpeed
+
+
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
 
 
 class Accident(BasicScenario):
@@ -42,36 +54,25 @@ class Accident(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        if 'distance' in config.other_parameters:
-            self._distance = int(config.other_parameters['distance']['value'])
-        else:
-            self._distance = 120
-
-        if 'direction' in config.other_parameters:
-            self._direction = config.other_parameters['direction']['value']
-        else:
-            self._direction = 'right'
-        if self._direction not in ('left', 'right'):
-            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
-
         self._offset = 0.75
         self._first_distance = 10
         self._second_distance = 6
 
+        self._trigger_distance = 30
         self._takeover_max_dist = self._first_distance + self._second_distance + 40
-        self._drive_distance = self._distance + self._takeover_max_dist
+        self._drive_distance = self._trigger_distance + self._takeover_max_dist
+
+        self._wait_duration = 5
 
         self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 
-        if 'speed' in config.other_parameters:
-            self._max_speed = float(config.other_parameters['speed']['value'])
-        else:
-            self._max_speed = 60
+        self._distance = get_value_parameter(config, 'distance', float, 120)
+        self._direction = get_value_parameter(config, 'direction', str, 'right')
+        if self._direction not in ('left', 'right'):
+            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._max_speed = get_value_parameter(config, 'speed', float, 60)
+        self._scenario_timeout = get_value_parameter(config, 'timeout', float, 180)
 
         super().__init__(
             "Accident", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
@@ -91,7 +92,7 @@ class Accident(BasicScenario):
             r_vec *= -1
 
         spawn_transform = wp.transform
-        spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
+        spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
         actor = CarlaDataProvider.request_new_actor(blueprint, spawn_transform, attribute_filter=attributes)
         if not actor:
             raise ValueError("Couldn't spawn an obstacle actor")
@@ -135,23 +136,33 @@ class Accident(BasicScenario):
         """
         The vehicle has to drive the whole predetermined distance.
         """
-        total_dist = self._distance + self._first_distance + self._second_distance + 20
-
         root = py_trees.composites.Sequence()
         if self.route_mode:
+            total_dist = self._distance + self._first_distance + self._second_distance + 20
             root.add_child(LeaveSpaceInFront(total_dist))
-            root.add_child(SetMaxSpeed(self._max_speed))
 
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
-        root.add_child(end_condition)
+        timeout_parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        timeout_parallel.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+
+        behavior = py_trees.composites.Sequence()
+        behavior.add_child(InTriggerDistanceToLocation(
+            self.ego_vehicles[0], self._accident_wp.transform.location, self._trigger_distance))
+        behavior.add_child(Idle(self._wait_duration))
+
+        if self.route_mode:
+            behavior.add_child(SetMaxSpeed(self._max_speed))
+        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+
+        timeout_parallel.add_child(behavior)
+
+        root.add_child(timeout_parallel)
+
+        if self.route_mode:
+            behavior.add_child(SetMaxSpeed(0))
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
 
-        if self.route_mode:
-            root.add_child(SetMaxSpeed(0))
         return root
 
     def _create_test_criteria(self):
@@ -176,10 +187,9 @@ class AccidentTwoWays(Accident):
     Variation of the Accident scenario but the ego now has to invade the opposite lane
     """
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
-        if 'frequency' in config.other_parameters:
-            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
-        else:
-            self._opposite_frequency = 200
+
+        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 200)
+
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
@@ -187,9 +197,6 @@ class AccidentTwoWays(Accident):
         The vehicle has to drive the whole predetermined distance. Adapt the opposite flow to
         let the ego invade the opposite lane.
         """
-        self._trigger_distance = 30
-        self._drive_distance = self._trigger_distance + self._takeover_max_dist
-
         root = py_trees.composites.Sequence()
         if self.route_mode:
             total_dist = self._distance + self._first_distance + self._second_distance + 20
@@ -201,6 +208,7 @@ class AccidentTwoWays(Accident):
         behavior = py_trees.composites.Sequence()
         behavior.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._accident_wp.transform.location, self._trigger_distance))
+        behavior.add_child(Idle(self._wait_duration))
 
         if self.route_mode:
             behavior.add_child(SwitchWrongDirectionTest(False))
@@ -236,31 +244,22 @@ class ParkedObstacle(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        if 'distance' in config.other_parameters:
-            self._distance = int(config.other_parameters['distance']['value'])
-        else:
-            self._distance = 120
-        self._drive_distance = self._distance + 20
+
+        self._trigger_distance = 30
+        self._drive_distance = self._trigger_distance + 40
         self._offset = 1.0
+
+        self._wait_duration = 5
 
         self._lights = carla.VehicleLightState.RightBlinker | carla.VehicleLightState.LeftBlinker
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
-
-        if 'speed' in config.other_parameters:
-            self._max_speed = float(config.other_parameters['speed']['value'])
-        else:
-            self._max_speed = 60
-
-        if 'direction' in config.other_parameters:
-            self._direction = config.other_parameters['direction']['value']
-        else:
-            self._direction = 'right'
+        self._distance = get_value_parameter(config, 'distance', float, 120)
+        self._direction = get_value_parameter(config, 'direction', str, 'right')
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
+
+        self._max_speed = get_value_parameter(config, 'speed', float, 60)
+        self._scenario_timeout = get_value_parameter(config, 'timeout', float, 180)
 
         super().__init__(
             "ParkedObstacle", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
@@ -278,7 +277,7 @@ class ParkedObstacle(BasicScenario):
         if self._direction == 'left':
             r_vec *= -1
         spawn_transform = wp.transform
-        spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
+        spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
         actor = CarlaDataProvider.request_new_actor(blueprint, spawn_transform, attribute_filter=attributes)
         if not actor:
             raise ValueError("Couldn't spawn an obstacle actor")
@@ -306,19 +305,30 @@ class ParkedObstacle(BasicScenario):
         """
         The vehicle has to drive the whole predetermined distance.
         """
-        total_dist = self._distance + 20
-
         root = py_trees.composites.Sequence()
         if self.route_mode:
+            total_dist = self._distance + 20
             root.add_child(LeaveSpaceInFront(total_dist))
-            root.add_child(SetMaxSpeed(self._max_speed))
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
-        root.add_child(end_condition)
-        root.add_child(ActorDestroy(self.other_actors[0]))
+
+        timeout_parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        timeout_parallel.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+
+        behavior = py_trees.composites.Sequence()
+        behavior.add_child(InTriggerDistanceToLocation(
+            self.ego_vehicles[0], self._vehicle_wp.transform.location, self._trigger_distance))
+        behavior.add_child(Idle(self._wait_duration))
+
         if self.route_mode:
-            root.add_child(SetMaxSpeed(0))
+            behavior.add_child(SetMaxSpeed(self._max_speed))
+        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+
+        timeout_parallel.add_child(behavior)
+
+        root.add_child(timeout_parallel)
+
+        if self.route_mode:
+            behavior.add_child(SetMaxSpeed(0))
+        root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root
 
@@ -344,10 +354,8 @@ class ParkedObstacleTwoWays(ParkedObstacle):
     Variation of the ParkedObstacle scenario but the ego now has to invade the opposite lane
     """
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
-        if 'frequency' in config.other_parameters:
-            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
-        else:
-            self._opposite_frequency = 200
+        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 200)
+
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
@@ -355,9 +363,6 @@ class ParkedObstacleTwoWays(ParkedObstacle):
         The vehicle has to drive the whole predetermined distance. Adapt the opposite flow to
         let the ego invade the opposite lane.
         """
-        self._trigger_distance = 30
-        self._drive_distance = self._trigger_distance + 40
-
         root = py_trees.composites.Sequence()
         if self.route_mode:
             total_dist = self._distance + 20
@@ -369,6 +374,7 @@ class ParkedObstacleTwoWays(ParkedObstacle):
         behavior = py_trees.composites.Sequence()
         behavior.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._vehicle_wp.transform.location, self._trigger_distance))
+        behavior.add_child(Idle(self._wait_duration))
 
         if self.route_mode:
             behavior.add_child(SwitchWrongDirectionTest(False))
@@ -387,7 +393,7 @@ class ParkedObstacleTwoWays(ParkedObstacle):
         return root
 
 
-class BicycleFlowAtSideLane(BasicScenario):
+class HazardAtSideLane(BasicScenario):
     """
     Added the dangerous scene of ego vehicles driving on roads without sidewalks,
     with three bicycles encroaching on some roads in front.
@@ -402,28 +408,25 @@ class BicycleFlowAtSideLane(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._drive_distance = 100
-        self._offset = [0.6, 0.75, 0.9]
-        self._bicycle_wp = []
-        self._target_location = None
-        self._plan = []
-        self._bicycle_speed = 3  # m/s
 
-        if 'distance' in config.other_parameters:
-            self._distance_to_Trigger = [
-                float(config.other_parameters['distance']['first']),
-                float(config.other_parameters['distance']['second']),
-                float(config.other_parameters['distance']['third'])
-            ]
-        else:
-            self._distance_to_Trigger = [74,76,88]  # m
+        self._obstacle_distance = 9
+        self._trigger_distance = 30
+        self._end_distance = 40
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._offset = 0.75
+        self._wait_duration = 5
 
-        super().__init__("BicycleFlowAtSideLane",
+        self._target_locs = []
+
+        self._bicycle_bps = ["vehicle.bh.crossbike", "vehicle.diamondback.century", "vehicle.gazelle.omafiets"]
+
+        self._distance = get_value_parameter(config, 'distance', float, 100)
+        self._max_speed = get_value_parameter(config, 'speed', float, 60)
+        self._bicycle_speed = get_value_parameter(config, 'bicycle_speed', float, 10)
+        self._bicycle_drive_distance = get_value_parameter(config, 'bicycle_drive_distance', float, 50)
+        self._scenario_timeout = get_value_parameter(config, 'timeout', float, 180)
+
+        super().__init__("HazardAtSideLane",
                          ego_vehicles,
                          config,
                          world,
@@ -431,67 +434,117 @@ class BicycleFlowAtSideLane(BasicScenario):
                          debug_mode,
                          criteria_enable=criteria_enable)
 
+    def _move_waypoint_forward(self, wp, distance):
+        next_wps = wp.next(distance)
+        if not next_wps:
+            raise ValueError("Couldn't find a viable position to set up an accident actor")
+        return next_wps[0]
+
+    def _spawn_obstacle(self, wp, blueprint, attributes=None):
+
+        displacement = self._offset * wp.lane_width / 2
+        r_vec = wp.transform.get_right_vector()
+
+        spawn_transform = wp.transform
+        spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
+        actor = CarlaDataProvider.request_new_actor(blueprint, spawn_transform, attribute_filter=attributes)
+        if not actor:
+            raise ValueError("Couldn't spawn an obstacle actor")
+
+        return actor
+
     def _initialize_actors(self, config):
         """
         Custom initialization
         """
+        rng = CarlaDataProvider.get_random_seed()
+        self._starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
 
-        starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
-        if 'end_bycicle_distance' in config.other_parameters:
-            self._end_bycicle_distance = float(
-                config.other_parameters['end_bycicle_distance']['value'])
-        else:
-            self._end_bycicle_distance = 150
-        self._target_location = starting_wp.next(self._end_bycicle_distance)[0].transform.location
+        # Spawn the first bicycle
+        first_wp = self._move_waypoint_forward(self._starting_wp, self._distance)
+        bicycle_1 = self._spawn_obstacle(first_wp, rng.choice(self._bicycle_bps))
 
-        for offset, distance in zip(self._offset, self._distance_to_Trigger):
+        wps = first_wp.next(self._bicycle_drive_distance)
+        if not wps:
+            raise ValueError("Couldn't find an end location for the bicycles")
+        self._target_locs.append(wps[0].transform.location)
 
-            bicycle_wps = starting_wp.next(distance)
+        # Set its initial conditions
+        bicycle_1.apply_control(carla.VehicleControl(hand_brake=True))
+        self.other_actors.append(bicycle_1)
 
-            if not bicycle_wps:
-                raise ValueError("Couldn't find a viable position to set up the bicycle actors")
-            self._bicycle_wp.append(bicycle_wps[0])
-            displacement = offset* bicycle_wps[0].lane_width / 2
-            r_vec = bicycle_wps[0].transform.get_right_vector()
-            w_loc = bicycle_wps[0].transform.location
-            w_loc = w_loc + carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
-            bycicle_transform = carla.Transform(w_loc, bicycle_wps[0].transform.rotation)
-            bycicle = CarlaDataProvider.request_new_actor('vehicle.diamondback.century', bycicle_transform)
-            self.other_actors.append(bycicle)
+        # Spawn the second bicycle
+        second_wp = self._move_waypoint_forward(first_wp, self._obstacle_distance)
+        bicycle_2 = self._spawn_obstacle(second_wp, rng.choice(self._bicycle_bps))
+
+        wps = second_wp.next(self._bicycle_drive_distance)
+        if not wps:
+            raise ValueError("Couldn't find an end location for the bicycles")
+        self._target_locs.append(wps[0].transform.location)
+
+        # Set its initial conditions
+        bicycle_2.apply_control(carla.VehicleControl(hand_brake=True))
+        self.other_actors.append(bicycle_2)
 
     def _create_behavior(self):
         """
-        The vehicle has to drive the whole predetermined distance.
+        Activate the bicycles and wait for the ego to be close-by before changing the side traffic.
+        End condition is based on the ego behind in front of the bicycles, or timeout based.
+        
+        Sequence:
+        - LeaveSpaceInFront
+        - Parallel
+            - ScenarioTimeout
+            - Bicycles (Sequences)
+                - BasicAgentBehavior
+                - HandBrakeVehicle
+                - Idle
+            - Behavior (Sequence)
+                - InTriggerDistanceToVehicle
+                - Idle
+                - SetMaxSpeed
+                - WaitUntilInFront
+                - DriveDistance
+        - SetMaxSpeed
+        - ActorDestroys
         """
-
         root = py_trees.composites.Sequence()
         if self.route_mode:
-            total_dist = self._distance_to_Trigger[2] + 30
+            total_dist = self._distance + self._obstacle_distance + 20
             root.add_child(LeaveSpaceInFront(total_dist))
-            root.add_child(SwitchWrongDirectionTest(False))
-            root.add_child(ChangeOppositeBehavior(active=False))
-        bycicle = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        bycicle.add_child(ConstantVelocityAgentBehavior(
-                self.other_actors[2], self._target_location, target_speed = self._bicycle_speed,
-                opt_dict={'offset': self._offset[2] * self._bicycle_wp[2].lane_width / 2}))
-        bycicle.add_child(ConstantVelocityAgentBehavior(
-                self.other_actors[1], self._target_location, target_speed = self._bicycle_speed,
-                opt_dict={'offset': self._offset[1] * self._bicycle_wp[1].lane_width / 2}))
-        bycicle.add_child(ConstantVelocityAgentBehavior(
-                self.other_actors[0], self._target_location, target_speed = self._bicycle_speed,
-                opt_dict={'offset': self._offset[0] * self._bicycle_wp[0].lane_width / 2}))
-        root.add_child(bycicle)
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
-        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
-        root.add_child(end_condition)
+
+        timeout_parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        timeout_parallel.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+
+        # Bicycle movement. Move them for a set distance, then 
+        offset = self._offset * self._starting_wp.lane_width / 2
+        opt_dict = {'offset': offset}
+        for actor, target_loc in zip(self.other_actors, self._target_locs):
+            bicycle = py_trees.composites.Sequence()
+            bicycle.add_child(BasicAgentBehavior(actor, target_loc, target_speed=self._bicycle_speed, opt_dict=opt_dict))
+            bicycle.add_child(HandBrakeVehicle(actor, 1))  # In case of collisions
+            bicycle.add_child(Idle())  # Don't make the bicycle stop the parallel behavior
+            timeout_parallel.add_child(bicycle)
+
+        behavior = py_trees.composites.Sequence()
+        behavior.add_child(InTriggerDistanceToVehicle(
+            self.ego_vehicles[0], self.other_actors[0], self._trigger_distance))
+        behavior.add_child(Idle(self._wait_duration))
+
         if self.route_mode:
-            root.add_child(SwitchWrongDirectionTest(True))
-            root.add_child(ChangeOppositeBehavior(active=True))
-        root.add_child(ActorDestroy(self.other_actors[0]))
-        root.add_child(ActorDestroy(self.other_actors[1]))
-        root.add_child(ActorDestroy(self.other_actors[2]))
+            behavior.add_child(SetMaxSpeed(self._max_speed))
+        behavior.add_child(WaitUntilInFront(self.ego_vehicles[0], self.other_actors[-1], check_distance=False))
+        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+
+        timeout_parallel.add_child(behavior)
+
+        root.add_child(timeout_parallel)
+
+        if self.route_mode:
+            behavior.add_child(SetMaxSpeed(0))
+
+        for actor in self.other_actors:
+            root.add_child(ActorDestroy(actor))
 
         return root
 
@@ -510,3 +563,83 @@ class BicycleFlowAtSideLane(BasicScenario):
         Remove all actors and traffic lights upon deletion
         """
         self.remove_all_actors()
+
+
+class HazardAtSideLaneTwoWays(HazardAtSideLane):
+    """
+    Variation of the HazardAtSideLane scenario but the ego now has to invade the opposite lane
+    """
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
+
+        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 200)
+
+        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
+
+    def _create_behavior(self):
+        """
+        Activate the bicycles and wait for the ego to be close-by before changing the opposite traffic.
+        End condition is based on the ego behind in front of the bicycles, or timeout based.
+        
+        Sequence:
+        - LeaveSpaceInFront
+        - Parallel
+            - ScenarioTimeout
+            - Bicycles (Sequences)
+                - BasicAgentBehavior
+                - HandBrakeVehicle
+                - Idle
+            - Behavior (Sequence)
+                - InTriggerDistanceToVehicle
+                - Idle
+                - SwitchWrongDirectionTest
+                - ChangeOppositeBehavior
+                - WaitUntilInFront
+                - DriveDistance
+        - SwitchWrongDirectionTest
+        - ChangeOppositeBehavior
+        - ActorDestroys
+        """
+        root = py_trees.composites.Sequence()
+        if self.route_mode:
+            total_dist = self._distance + self._obstacle_distance + 20
+            root.add_child(LeaveSpaceInFront(total_dist))
+
+        timeout_parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        timeout_parallel.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+
+        # Bicycle movement. Move them for a set distance, then 
+        offset = self._offset * self._starting_wp.lane_width / 2
+        opt_dict = {'offset': offset}
+        for actor, target_loc in zip(self.other_actors, self._target_locs):
+            bicycle = py_trees.composites.Sequence()
+            movement = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            movement.add_child(BasicAgentBehavior(actor, target_speed=self._bicycle_speed, opt_dict=opt_dict))
+            movement.add_child(InTriggerDistanceToLocation(actor, target_loc, 5))
+            bicycle.add_child(movement)
+            bicycle.add_child(HandBrakeVehicle(actor, 1))  # In case of collisions
+            bicycle.add_child(Idle())  # Don't make the bicycle stop the parallel behavior
+            timeout_parallel.add_child(bicycle)
+
+        behavior = py_trees.composites.Sequence()
+        behavior.add_child(InTriggerDistanceToVehicle(
+            self.ego_vehicles[0], self.other_actors[0], self._trigger_distance))
+        behavior.add_child(Idle(self._wait_duration))
+
+        if self.route_mode:
+            behavior.add_child(SwitchWrongDirectionTest(False))
+            behavior.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
+        behavior.add_child(WaitUntilInFront(self.ego_vehicles[0], self.other_actors[-1], check_distance=False))
+        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+
+        timeout_parallel.add_child(behavior)
+
+        root.add_child(timeout_parallel)
+
+        if self.route_mode:
+            root.add_child(SwitchWrongDirectionTest(True))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
+
+        for actor in self.other_actors:
+            root.add_child(ActorDestroy(actor))
+
+        return root

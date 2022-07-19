@@ -132,6 +132,7 @@ class ParkingExit(BasicScenario):
         if actor_front is None:
             raise ValueError(
                 "Couldn't spawn the vehicle in front of the parking point")
+        actor_front.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(actor_front)
 
         # And move it to the side
@@ -148,8 +149,10 @@ class ParkingExit(BasicScenario):
         actor_behind = CarlaDataProvider.request_new_actor(
             'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter=self._bp_attributes)
         if actor_behind is None:
+            actor_front.destroy()
             raise ValueError(
                 "Couldn't spawn the vehicle behind the parking point")
+        actor_behind.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(actor_behind)
 
         # And move it to the side

@@ -1431,17 +1431,6 @@ class KeepVelocity(AtomicBehavior):
         self._start_time = 0
         self._location = None
 
-        self._collision_sensor = None
-
-    def _set_collision_sensor(self):
-        blueprint = self._world.get_blueprint_library().find('sensor.other.collision')
-        self._collision_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self._actor)
-        self._collision_sensor.listen(lambda event: self._stop_constant_velocity(event))
-
-    def _stop_constant_velocity(self, event):
-        """Stops the constant velocity behavior"""
-        self._forced_speed = False
-
     def initialise(self):
         self._location = CarlaDataProvider.get_location(self._actor)
         self._start_time = GameTime.get_time()
@@ -1453,9 +1442,6 @@ class KeepVelocity(AtomicBehavior):
         elif self._type == 'vehicle':
             self._control.hand_brake = False
         self._actor.apply_control(self._control)
-
-        if self._forced_speed:
-            self._set_collision_sensor()
 
         super(KeepVelocity, self).initialise()
 
@@ -1508,9 +1494,6 @@ class KeepVelocity(AtomicBehavior):
                 self._control.speed = 0.0
             if self._actor is not None and self._actor.is_alive:
                 self._actor.apply_control(self._control)
-            if self._collision_sensor:
-                self._collision_sensor.stop()
-                self._collision_sensor.destroy()
         except RuntimeError:
             pass
         super(KeepVelocity, self).terminate(new_status)
@@ -1957,7 +1940,7 @@ class BasicAgentBehavior(AtomicBehavior):
         self._agent = None
 
         if self._target_location and self._plan:
-            raise ValueError("Choose either a destiantion or a plan, but not both")
+            raise ValueError("Choose either a destination or a plan, but not both")
 
     def initialise(self):
         """Initialises the agent"""

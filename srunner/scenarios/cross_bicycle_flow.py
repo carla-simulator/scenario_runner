@@ -59,6 +59,8 @@ class CrossingBicycleFlow(BasicScenario):
 
         self._end_distance = 40
 
+        self._signalized_junction = False
+
         if 'flow_speed' in config.other_parameters:
             self._flow_speed = float(config.other_parameters['flow_speed']['value'])
         else:
@@ -131,13 +133,15 @@ class CrossingBicycleFlow(BasicScenario):
             elif plan_step == 2 and exit_loc.distance(wp.transform.location) > self._end_dist_flow:
                 break
 
-        self._get_traffic_lights(junction, ego_junction_dist)
-
-    def _get_traffic_lights(self, junction, ego_dist):
-        """Get the traffic light of the junction, mapping their states"""
         tls = self._world.get_traffic_lights_in_junction(junction.id)
         if not tls:
-            raise ValueError("No traffic lights found, use the NonSignalized version instead")
+            self._signalized_junction = False
+        else:
+            self._signalized_junction = True
+            self._get_traffic_lights(tls, ego_junction_dist)
+
+    def _get_traffic_lights(self, tls, ego_dist):
+        """Get the traffic light of the junction, mapping their states"""
 
         ego_landmark = self._ego_wp.get_landmarks_of_type(ego_dist + 2, "1000001")[0]
         ego_tl = self._world.get_traffic_light(ego_landmark)
@@ -165,10 +169,11 @@ class CrossingBicycleFlow(BasicScenario):
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
         # Freeze the traffic lights to allow the flow to populate the junction
-        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
-        tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
-        tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
-        root.add_child(tl_freezer_sequence)
+        if self._signalized_junction:
+            tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
+            tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
+            tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
+            root.add_child(tl_freezer_sequence)
 
         # Add the BackgroundActivity behaviors
         if not self.route_mode:
