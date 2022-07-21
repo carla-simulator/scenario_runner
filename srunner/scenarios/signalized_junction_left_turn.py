@@ -26,6 +26,20 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
 
 from srunner.tools.background_manager import HandleJunctionScenario, ChangeOppositeBehavior
 
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
+
+def get_interval_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return [
+            p_type(config.other_parameters[name]['from']),
+            p_type(config.other_parameters[name]['to'])
+        ]
+    else:
+        return default
 
 class SignalizedJunctionLeftTurn(BasicScenario):
 
@@ -48,37 +62,22 @@ class SignalizedJunctionLeftTurn(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._rng = random.RandomState(2000)
 
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 20 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [25, 50] # m
+        self.timeout = timeout
 
         self._direction = 'opposite'
-
-        # The faster the flow, the further they are spawned, leaving time to react to them
-        self._source_dist = 5 * self._flow_speed
-        self._sink_dist = 3 * self._flow_speed
 
         self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
         self._flow_tl_dict = {}
         self._init_tl_dict = {}
-
-        self.timeout = timeout
-
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
-
         self._end_distance = 10
+
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 20)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [25, 50])
+        self._scenario_timeout = 240
+
+        # The faster the flow, the further they are spawned, leaving time to react to them
+        self._source_dist = 5 * self._flow_speed
+        self._sink_dist = 3 * self._flow_speed
 
         super().__init__("SignalizedJunctionLeftTurn",
                          ego_vehicles,
@@ -236,33 +235,22 @@ class NonSignalizedJunctionLeftTurn(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._rng = random.RandomState(2000)
 
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 20 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [25, 50] # m
+        self.timeout = timeout
 
         self._direction = 'opposite'
+
+        self._green_light_delay = 5  # Wait before the ego's lane traffic light turns green
+        self._flow_tl_dict = {}
+        self._init_tl_dict = {}
+        self._end_distance = 10
+
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 20)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [25, 50])
+        self._scenario_timeout = 240
 
         # The faster the flow, the further they are spawned, leaving time to react to them
         self._source_dist = 5 * self._flow_speed
         self._sink_dist = 3 * self._flow_speed
-
-        self.timeout = timeout
-
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
-
-        self._end_distance = 10
 
         super().__init__("NonSignalizedJunctionLeftTurn",
                          ego_vehicles,

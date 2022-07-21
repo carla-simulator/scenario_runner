@@ -1466,7 +1466,7 @@ class KeepVelocity(AtomicBehavior):
                     math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
 
                 # Add a throttle. Useless speed-wise, but makes the bicycle riders pedal.
-                self._actor.apply_control(carla.VehicleControl(throttle=1.0)) 
+                self._actor.apply_control(carla.VehicleControl(throttle=1.0))
 
         new_location = CarlaDataProvider.get_location(self._actor)
         self._distance += calculate_distance(self._location, new_location)
@@ -2598,7 +2598,8 @@ class ActorTransformSetter(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
 
         if calculate_distance(self._actor.get_location(), self._transform.location) < 1.0:
-            self._actor.set_simulate_physics(self._physics)
+            if self._physics is not None:
+                self._actor.set_simulate_physics(self._physics)
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
@@ -2782,6 +2783,8 @@ class ActorFlow(AtomicBehavior):
 
             ref_loc = plan[0][0].transform.location
             for wp, _ in plan:
+                if wp.is_junction:
+                    continue  # Spawning at junctions might break the path, so don't
                 if wp.transform.location.distance(ref_loc) < self._spawn_dist:
                     continue
                 self._spawn_actor(wp.transform)
@@ -2902,6 +2905,8 @@ class BicycleFlow(AtomicBehavior):
         if self._add_initial_actors:
             ref_loc = self._plan[0][0].transform.location
             for wp, _ in self._plan:
+                if wp.is_junction:
+                    continue  # Spawning at junctions might break the path, so don't
                 if wp.transform.location.distance(ref_loc) < self._spawn_dist:
                     continue
                 self._spawn_actor(wp.transform)
@@ -2910,7 +2915,7 @@ class BicycleFlow(AtomicBehavior):
 
     def _spawn_actor(self, transform):
         actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', transform, rolename='scenario',
+            'vehicle.*', transform, rolename='scenario no lights',
             attribute_filter={'base_type': 'bicycle'}, tick=False
         )
         if actor is None:

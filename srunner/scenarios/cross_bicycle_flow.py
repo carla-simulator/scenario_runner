@@ -36,6 +36,22 @@ def convert_dict_to_location(actor_dict):
     return location
 
 
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
+
+
+def get_interval_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return [
+            p_type(config.other_parameters[name]['from']),
+            p_type(config.other_parameters[name]['to'])
+        ]
+    else:
+        return default
+
 class CrossingBicycleFlow(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
@@ -61,30 +77,12 @@ class CrossingBicycleFlow(BasicScenario):
 
         self._signalized_junction = False
 
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 10 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [5, 7] # m
-
-        if 'green_light_delay' in config.other_parameters:
-            self._green_light_delay = float(config.other_parameters['green_light_delay']['value'])
-        else:
-            self._green_light_delay = 3 # s
-
         self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._green_light_delay = 5
+        self._scenario_timeout = 240
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 10)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [20, 50])
 
         super().__init__("CrossingBicycleFlow",
                          ego_vehicles,

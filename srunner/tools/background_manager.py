@@ -192,7 +192,7 @@ class RemoveRoadLane(AtomicBehavior):
     and stop generating new ones on this lane, or recover from stopping.
 
     Args:
-        lane_id (str): A carla.Waypoint.lane_id
+        lane_wp (carla.Waypoint): A carla.Waypoint
         active (bool)
     """
     def __init__(self, lane_wp, name="RemoveRoadLane"):
@@ -205,20 +205,21 @@ class RemoveRoadLane(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class ReAddEgoRoadLane(AtomicBehavior):
+class ReAddRoadLane(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to readd the ego road lane.
 
     Args:
-        lane_id (str): A carla.Waypoint.lane_id
+        offset: 0 to readd the ego lane, 1 for the right side lane, -1 for the left...
         active (bool)
     """
-    def __init__(self, name="BA_ReAddEgoRoadLane"):
+    def __init__(self, offset, name="BA_ReAddRoadLane"):
+        self._offset = offset
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_ReAddEgoRoadLane", True, overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_ReAddRoadLane", self._offset, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 

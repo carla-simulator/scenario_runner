@@ -18,7 +18,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, AdaptiveConstantVelocityAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import RemoveRoadLane, ReAddEgoRoadLane
+from srunner.tools.background_manager import RemoveRoadLane, ReAddRoadLane
 
 
 class YieldToEmergencyVehicle(BasicScenario):
@@ -128,7 +128,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         if self.route_mode:
-            sequence.add_child(ReAddEgoRoadLane())
+            sequence.add_child(ReAddRoadLane(0))
 
         return sequence
 

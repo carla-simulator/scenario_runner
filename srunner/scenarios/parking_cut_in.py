@@ -125,7 +125,7 @@ class ParkingCutIn(BasicScenario):
         After invoking this scenario, a parked vehicle will wait for the ego to
         be close-by, merging into its lane, forcing it to break.
         """
-        sequence = py_trees.composites.Sequence(name="CrossingActor")
+        sequence = py_trees.composites.Sequence(name="ParkingCutIn")
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._cut_in_distance + 10))
 

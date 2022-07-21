@@ -196,7 +196,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._road_front_vehicles = 2  # Amount of vehicles in front of the ego
         self._road_back_vehicles = 2  # Amount of vehicles behind the ego
-        self._radius_increase_ratio = 1.6  # Meters the radius increases per m/s of the ego
+        self._radius_increase_ratio = 1.4  # Meters the radius increases per m/s of the ego
 
         self._base_junction_detection = 30
         self._detection_ratio = 1.5  # Meters the radius increases per m/s of the ego
@@ -1626,11 +1626,11 @@ class BackgroundBehavior(AtomicBehavior):
             self._remove_road_lane(remove_road_lane_data)
             py_trees.blackboard.Blackboard().set('BA_RemoveRoadLane', None, True)
 
-        # Re add ego road lane
-        add_ego_road_lane_data = py_trees.blackboard.Blackboard().get('BA_ReAddEgoRoadLane')
-        if add_ego_road_lane_data is not None:
-            self._add_ego_road_lane()
-            py_trees.blackboard.Blackboard().set('BA_ReAddEgoRoadLane', None, True)
+        # Readd road lane
+        readd_road_lane_data = py_trees.blackboard.Blackboard().get('BA_ReAddRoadLane')
+        if readd_road_lane_data is not None:
+            self._readd_road_lane(readd_road_lane_data)
+            py_trees.blackboard.Blackboard().set('BA_ReAddRoadLane', None, True)
 
         # Adapt the BA to the junction scenario
         junction_scenario_data = py_trees.blackboard.Blackboard().get('BA_HandleJunctionScenario')
@@ -1786,10 +1786,25 @@ class BackgroundBehavior(AtomicBehavior):
             self._destroy_actor(actor)
         self._road_dict.pop(lane_key, None)
 
-    def _add_ego_road_lane(self):
+    def _readd_road_lane(self, lane_offset):
         """Adds a ego road lane. This is expected to be used after having previously removed such lane"""
-        if self._ego_key in list(self._road_dict):
-            print(f"WARNING: Couldn't add a lane {self._ego_key} as it is already part of the road")
+
+        if lane_offset == 0:
+            add_lane_wp = self._ego_wp
+            add_lane_key = self._ego_key
+        else:
+            side_wp = self._ego_wp
+            for _ in range(abs(lane_offset)):
+                side_wp = side_wp.get_right_lane() if lane_offset > 0 else side_wp.get_left_lane()
+                if not side_wp:
+                    print(f"WARNING: Couldn't find a lane with the desired offset")
+                    return
+
+            add_lane_wp = side_wp
+            add_lane_key = get_lane_key(side_wp)
+
+        if add_lane_key in list(self._road_dict):
+            print(f"WARNING: Couldn't add a lane {add_lane_key} as it is already part of the road")
             return
 
         ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
@@ -1797,7 +1812,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         spawn_wps = []
 
-        next_wp = self._ego_wp
+        next_wp = add_lane_wp
         for _ in range(self._road_front_vehicles):
             next_wps = next_wp.next(spawn_dist)
             if len(next_wps) != 1 or self._is_junction(next_wps[0]):
@@ -1806,7 +1821,7 @@ class BackgroundBehavior(AtomicBehavior):
             spawn_wps.insert(0, next_wp)
 
         source_dist = 0
-        prev_wp = self._ego_wp
+        prev_wp = add_lane_wp
         for _ in range(self._road_back_vehicles):
             prev_wps = prev_wp.previous(spawn_dist)
             if len(prev_wps) != 1 or self._is_junction(prev_wps[0]):
@@ -2076,7 +2091,7 @@ class BackgroundBehavior(AtomicBehavior):
         ego_transform = self._route[self._route_index].transform
         ego_heading = ego_transform.get_forward_vector()
         ego_actor_vec = location - ego_transform.location
-        if ego_heading.x * ego_actor_vec.x + ego_heading.y * ego_actor_vec.y < - 0.17:  # 100º
+        if ego_heading.dot(ego_actor_vec) < - 0.17:  # 100º
             return True
         return False
 

@@ -54,7 +54,7 @@ class Accident(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._offset = 0.75
+        self._offset = 0.6
         self._first_distance = 10
         self._second_distance = 6
 
@@ -72,7 +72,7 @@ class Accident(BasicScenario):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
         self._max_speed = get_value_parameter(config, 'speed', float, 60)
-        self._scenario_timeout = get_value_parameter(config, 'timeout', float, 180)
+        self._scenario_timeout = 240
 
         super().__init__(
             "Accident", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
@@ -83,9 +83,36 @@ class Accident(BasicScenario):
             raise ValueError("Couldn't find a viable position to set up an accident actor")
         return next_wps[0]
 
+    def _spawn_side_prop(self, wp):
+        # Spawn the accident indication signal
+        prop_wp = wp
+        while True:
+            if self._direction == "right":
+                wp = prop_wp.get_right_lane()
+            else:
+                wp = prop_wp.get_right_lane()
+            if wp is None or wp.lane_type not in (carla.LaneType.Driving, carla.LaneType.Parking):
+                break
+            prop_wp = wp
 
-    def _spawn_obstacle(self, wp, blueprint, attributes=None):
+        displacement = prop_wp.lane_width / 2
+        r_vec = prop_wp.transform.get_right_vector()
+        if self._direction == 'left':
+            r_vec *= -1
 
+        spawn_transform = wp.transform
+        spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=0.2)
+        spawn_transform.rotation.yaw += 90
+        signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningaccident', spawn_transform)
+        if not signal_prop:
+            raise ValueError("Couldn't spawn the indication prop asset")
+        # signal_prop.set_simulate_physics(True)
+        self.other_actors.append(signal_prop)
+
+    def _spawn_obstacle(self, wp, blueprint, accident_actor=False):
+        """
+        Spawns the obstacle actor by displacing its position to the right
+        """
         displacement = self._offset * wp.lane_width / 2
         r_vec = wp.transform.get_right_vector()
         if self._direction == 'left':
@@ -93,7 +120,12 @@ class Accident(BasicScenario):
 
         spawn_transform = wp.transform
         spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
-        actor = CarlaDataProvider.request_new_actor(blueprint, spawn_transform, attribute_filter=attributes)
+        if accident_actor:
+            actor = CarlaDataProvider.request_new_actor(
+                blueprint, spawn_transform, rolename='scenario no lights', attribute_filter={'base_type': 'car'})
+        else:
+            actor = CarlaDataProvider.request_new_actor(
+                blueprint, spawn_transform, rolename='scenario')
         if not actor:
             raise ValueError("Couldn't spawn an obstacle actor")
 
@@ -104,6 +136,9 @@ class Accident(BasicScenario):
         Custom initialization
         """
         starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
+
+        # Spawn the accident indication signal
+        self._spawn_side_prop(starting_wp)
 
         # Spawn the police vehicle
         self._accident_wp = self._move_waypoint_forward(starting_wp, self._distance)
@@ -118,7 +153,7 @@ class Accident(BasicScenario):
 
         # Create the first vehicle that has been in the accident
         first_vehicle_wp = self._move_waypoint_forward(self._accident_wp, self._first_distance)
-        first_actor = self._spawn_obstacle(first_vehicle_wp, 'vehicle.*', {'base_type': 'car', 'has_lights': False})
+        first_actor = self._spawn_obstacle(first_vehicle_wp, 'vehicle.*', True)
 
         # Set its initial conditions
         first_actor.apply_control(carla.VehicleControl(hand_brake=True))
@@ -126,7 +161,7 @@ class Accident(BasicScenario):
 
         # Create the second vehicle that has been in the accident
         second_vehicle_wp = self._move_waypoint_forward(first_vehicle_wp, self._second_distance)
-        second_actor = self._spawn_obstacle(second_vehicle_wp, 'vehicle.*', {'base_type': 'car', 'has_lights': False})
+        second_actor = self._spawn_obstacle(second_vehicle_wp, 'vehicle.*', True)
 
         # Set its initial conditions
         second_actor.apply_control(carla.VehicleControl(hand_brake=True))
@@ -162,6 +197,7 @@ class Accident(BasicScenario):
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
+        root.add_child(ActorDestroy(self.other_actors[3]))
 
         return root
 
@@ -247,7 +283,7 @@ class ParkedObstacle(BasicScenario):
 
         self._trigger_distance = 30
         self._drive_distance = self._trigger_distance + 40
-        self._offset = 1.0
+        self._offset = 0.7
 
         self._wait_duration = 5
 
@@ -259,7 +295,7 @@ class ParkedObstacle(BasicScenario):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
         self._max_speed = get_value_parameter(config, 'speed', float, 60)
-        self._scenario_timeout = get_value_parameter(config, 'timeout', float, 180)
+        self._scenario_timeout = 240
 
         super().__init__(
             "ParkedObstacle", ego_vehicles, config, world, randomize, debug_mode, criteria_enable=criteria_enable)
@@ -270,15 +306,45 @@ class ParkedObstacle(BasicScenario):
             raise ValueError("Couldn't find a viable position to set up an accident actor")
         return next_wps[0]
 
+    def _spawn_side_prop(self, wp):
+        # Spawn the accident indication signal
+        prop_wp = wp
+        while True:
+            if self._direction == "right":
+                wp = prop_wp.get_right_lane()
+            else:
+                wp = prop_wp.get_right_lane()
+            if wp is None or wp.lane_type not in (carla.LaneType.Driving, carla.LaneType.Parking):
+                break
+            prop_wp = wp
 
-    def _spawn_obstacle(self, wp, blueprint, attributes=None):
+        displacement = prop_wp.lane_width / 2
+        r_vec = prop_wp.transform.get_right_vector()
+        if self._direction == 'left':
+            r_vec *= -1
+
+        spawn_transform = wp.transform
+        spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=0.2)
+        spawn_transform.rotation.yaw += 90
+        signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningaccident', spawn_transform)
+        if not signal_prop:
+            raise ValueError("Couldn't spawn the indication prop asset")
+        # signal_prop.set_simulate_physics(True)
+        self.other_actors.append(signal_prop)
+
+    def _spawn_obstacle(self, wp, blueprint):
+        """
+        Spawns the obstacle actor by displacing its position to the right
+        """
         displacement = self._offset * wp.lane_width / 2
         r_vec = wp.transform.get_right_vector()
         if self._direction == 'left':
             r_vec *= -1
+
         spawn_transform = wp.transform
         spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
-        actor = CarlaDataProvider.request_new_actor(blueprint, spawn_transform, attribute_filter=attributes)
+        actor = CarlaDataProvider.request_new_actor(
+            blueprint, spawn_transform, rolename='scenario no lights', attribute_filter={'base_type': 'car'})
         if not actor:
             raise ValueError("Couldn't spawn an obstacle actor")
 
@@ -290,9 +356,12 @@ class ParkedObstacle(BasicScenario):
         """
         starting_wp = self._map.get_waypoint(config.trigger_points[0].location)
 
+        # Create the side prop
+        self._spawn_side_prop(starting_wp)
+
         # Create the first vehicle that has been in the accident
         self._vehicle_wp = self._move_waypoint_forward(starting_wp, self._distance)
-        parked_actor = self._spawn_obstacle(self._vehicle_wp, 'vehicle.*', {'base_type': 'car', 'has_lights': True})
+        parked_actor = self._spawn_obstacle(self._vehicle_wp, 'vehicle.*')
 
         lights = parked_actor.get_light_state()
         lights |= self._lights
@@ -329,6 +398,7 @@ class ParkedObstacle(BasicScenario):
         if self.route_mode:
             behavior.add_child(SetMaxSpeed(0))
         root.add_child(ActorDestroy(self.other_actors[0]))
+        root.add_child(ActorDestroy(self.other_actors[1]))
 
         return root
 
@@ -413,7 +483,7 @@ class HazardAtSideLane(BasicScenario):
         self._trigger_distance = 30
         self._end_distance = 40
 
-        self._offset = 0.75
+        self._offset = 0.55
         self._wait_duration = 5
 
         self._target_locs = []
@@ -424,7 +494,7 @@ class HazardAtSideLane(BasicScenario):
         self._max_speed = get_value_parameter(config, 'speed', float, 60)
         self._bicycle_speed = get_value_parameter(config, 'bicycle_speed', float, 10)
         self._bicycle_drive_distance = get_value_parameter(config, 'bicycle_drive_distance', float, 50)
-        self._scenario_timeout = get_value_parameter(config, 'timeout', float, 180)
+        self._scenario_timeout = 240
 
         super().__init__("HazardAtSideLane",
                          ego_vehicles,
@@ -440,14 +510,16 @@ class HazardAtSideLane(BasicScenario):
             raise ValueError("Couldn't find a viable position to set up an accident actor")
         return next_wps[0]
 
-    def _spawn_obstacle(self, wp, blueprint, attributes=None):
-
+    def _spawn_obstacle(self, wp, blueprint):
+        """
+        Spawns the obstacle actor by displacing its position to the right
+        """
         displacement = self._offset * wp.lane_width / 2
         r_vec = wp.transform.get_right_vector()
 
         spawn_transform = wp.transform
         spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
-        actor = CarlaDataProvider.request_new_actor(blueprint, spawn_transform, attribute_filter=attributes)
+        actor = CarlaDataProvider.request_new_actor(blueprint, spawn_transform)
         if not actor:
             raise ValueError("Couldn't spawn an obstacle actor")
 

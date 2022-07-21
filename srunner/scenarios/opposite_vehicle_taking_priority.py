@@ -50,8 +50,8 @@ class OppositeVehicleRunningRedLight(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 30
-        self._sink_dist = 20
-        self._adversary_speed = 70 / 3.6 # m/s
+        self._sink_dist = 10
+        self._adversary_speed = 60 / 3.6 # m/s
 
         if 'direction' in config.other_parameters:
             self._direction = config.other_parameters['direction']['value']
@@ -63,8 +63,6 @@ class OppositeVehicleRunningRedLight(BasicScenario):
 
         self._sync_time = 2.2  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
-        self._speed_duration_ratio = 2.0
-        self._speed_distance_ratio = 1.5
 
         self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 
@@ -187,13 +185,23 @@ class OppositeVehicleRunningRedLight(BasicScenario):
             self.ego_vehicles[0], self._collision_location, self._min_trigger_dist))
 
         sequence.add_child(trigger_adversary)
-        sequence.add_child(ConstantVelocityAgentBehavior(
-            self.other_actors[0], target_location=self._sink_wp.transform.location,
-            target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True, 'ignore_traffic_lights': True}, name="AdversaryCrossing"))
+
+
+        end_location = self._sink_wp.transform.location
+        start_location = self._spawn_wp.transform.location
+        time = start_location.distance(end_location) / self._adversary_speed
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        main_behavior.add_child(TrafficLightFreezer(self._tl_dict))
-        main_behavior.add_child(sequence)
+        main_behavior.add_child(ConstantVelocityAgentBehavior(
+            self.other_actors[0], target_location=end_location,
+            target_speed=self._adversary_speed, opt_dict={'ignore_vehicles': True, 'ignore_traffic_lights': True}, name="AdversaryCrossing"))
+        main_behavior.add_child(Idle(time))
+
+        sequence.add_child(main_behavior)
+
+        tls_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        tls_behavior.add_child(TrafficLightFreezer(self._tl_dict))
+        tls_behavior.add_child(sequence)
 
         root = py_trees.composites.Sequence()
         if self.route_mode:
@@ -206,7 +214,7 @@ class OppositeVehicleRunningRedLight(BasicScenario):
                 extend_road_exit=0
             ))
         root.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_location))
-        root.add_child(main_behavior)
+        root.add_child(tls_behavior)
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
@@ -244,8 +252,8 @@ class OppositeVehicleTakingPriority(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 30
-        self._sink_dist = 20
-        self._adversary_speed = 70 / 3.6 # m/s
+        self._sink_dist = 10
+        self._adversary_speed = 60 / 3.6 # m/s
 
         if 'direction' in config.other_parameters:
             self._direction = config.other_parameters['direction']['value']
@@ -257,8 +265,6 @@ class OppositeVehicleTakingPriority(BasicScenario):
 
         self._sync_time = 2.2  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
-        self._speed_duration_ratio = 2.0
-        self._speed_distance_ratio = 1.5
 
         self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 
@@ -367,7 +373,7 @@ class OppositeVehicleTakingPriority(BasicScenario):
 
         end_location = self._sink_wp.transform.location
         start_location = self._spawn_wp.transform.location
-        time = self._adversary_speed / (start_location.distance(end_location))
+        time = start_location.distance(end_location) / self._adversary_speed
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         main_behavior.add_child(ConstantVelocityAgentBehavior(

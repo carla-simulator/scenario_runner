@@ -31,6 +31,12 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior, SetMaxSpeed
 
 
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
+
 
 class VehicleOpensDoor(BasicScenario):
     """
@@ -48,33 +54,19 @@ class VehicleOpensDoor(BasicScenario):
         self._map = CarlaDataProvider.get_map()
 
         self.timeout = timeout
-        self._wait_duration = 15
         self._takeover_distance = 60
         self._min_trigger_dist = 10
         self._reaction_time = 3.0
 
-        if 'distance' in config.other_parameters:
-            self._parked_distance = float(config.other_parameters['distance']['value'])
-        else:
-            self._parked_distance = 50
+        self._opposite_wait_duration = 5
 
-        if 'direction' in config.other_parameters:
-            self._direction = config.other_parameters['direction']['value']
-        else:
-            self._direction = 'right'
+        self._parked_distance = get_value_parameter(config, 'distance', float, 50)
+        self._direction = get_value_parameter(config, 'direction', str, 'right')
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
-
-        if 'speed' in config.other_parameters:
-            self._max_speed = float(config.other_parameters['speed']['value'])
-        else:
-            self._max_speed = 60
-
+        self._max_speed = get_value_parameter(config, 'speed', float, 60)
+        self._scenario_timeout = 240
 
         super().__init__("VehicleOpensDoor", ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
 
@@ -184,12 +176,8 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
-        if 'frequency' in config.other_parameters:
-            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
-        else:
-            self._opposite_frequency = 100
 
-        self._opposite_wait_duration = 5
+        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 100)
 
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
