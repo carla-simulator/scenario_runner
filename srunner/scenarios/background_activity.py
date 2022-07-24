@@ -2016,7 +2016,8 @@ class BackgroundBehavior(AtomicBehavior):
         """
         self._tm.auto_lane_change(actor, False)
         self._tm.update_vehicle_lights(actor, True)
-        self._tm.distance_to_leading_vehicle(actor, 5)
+        self._tm.distance_to_leading_vehicle(actor, 10)
+        self._tm.vehicle_lane_offset(actor, 0.1)
         self._actors_speed_perc[actor] = 100
         self._all_actors.append(actor)
 
