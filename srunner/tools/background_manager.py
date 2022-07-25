@@ -238,6 +238,21 @@ class LeaveSpaceInFront(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
+class LeaveCrossingSpace(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity that the ego needs more space in front.
+    This only works at roads, not junctions.
+    """
+    def __init__(self, collision_wp, name="LeaveCrossingSpace"):
+        self._collision_wp = collision_wp
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_LeaveCrossingSpace", self._collision_wp, overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
 class HandleJunctionScenario(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to adapt to a junction scenario

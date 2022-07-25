@@ -227,7 +227,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._opposite_route_index = 0
 
         self._opposite_sources_dist = 100  # Distance from the ego to the opposite sources [m]
-        self._opposite_spawn_dist = 50  # Distance between spawned vehicles [m]
+        self._opposite_spawn_dist = 10  # Distance between spawned vehicles [m]
 
         self._active_opposite_sources = True  # Flag to (de)activate all opposite sources
 
@@ -1620,6 +1620,12 @@ class BackgroundBehavior(AtomicBehavior):
             self._leave_space_in_front(leave_space_data)
             py_trees.blackboard.Blackboard().set('BA_LeaveSpaceInFront', None, True)
 
+        # Leave space in front
+        leave_crossing_space_data = py_trees.blackboard.Blackboard().get('BA_LeaveCrossingSpace')
+        if leave_crossing_space_data is not None:
+            self._leave_crossing_space(leave_crossing_space_data)
+            py_trees.blackboard.Blackboard().set('BA_LeaveCrossingSpace', None, True)
+
         # Remove road lane
         remove_road_lane_data = py_trees.blackboard.Blackboard().get('BA_RemoveRoadLane')
         if remove_road_lane_data is not None:
@@ -1773,6 +1779,28 @@ class BackgroundBehavior(AtomicBehavior):
         step = space - min_distance
         if step > 0:  # Only move them if needed and only the minimum required distance
             self._move_actors_forward(front_actors, step)
+
+    def _leave_crossing_space(self, collision_wp):
+        """Removes all vehicle in the middle of crossing trajectory and stops the nearby ones"""
+        destruction_dist = 10
+        stop_dist = 15
+
+        opposite_wp = collision_wp.get_left_lane()
+        opposite_loc = opposite_wp.transform.location
+        if not opposite_wp:
+            return  # Nothing else to do
+
+        for actor in list(self._opposite_actors):
+            location = actor.get_location()
+            if not location:
+                continue
+
+            collision_dist = location.distance(opposite_loc)
+            print(collision_dist)
+            if collision_dist < destruction_dist:
+                self._destroy_actor(actor)
+            elif collision_dist < stop_dist:
+                actor.set_target_velocity(carla.Vector3D())
 
     def _remove_road_lane(self, lane_wp):
         """Removes a road lane"""

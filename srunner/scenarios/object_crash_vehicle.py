@@ -25,7 +25,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 
-from srunner.tools.background_manager import LeaveSpaceInFront
+from srunner.tools.background_manager import LeaveSpaceInFront, LeaveCrossingSpace
 
 
 def get_value_parameter(config, name, p_type, default):
@@ -301,6 +301,8 @@ class DynamicObjectCrossing(BasicScenario):
         # Move the adversary
         move_distance = 2 * self._collision_dist  # Cross the whole road (supposing symetry in both directions)
         move_duration = move_distance / self._adversary_speed
+        if self.route_mode:
+            sequence.add_child(LeaveCrossingSpace(self._collision_wp))
         sequence.add_child(KeepVelocity(
             self.other_actors[0], self._adversary_speed,
             duration=move_duration, distance=move_distance, name="AdversaryCrossing"))

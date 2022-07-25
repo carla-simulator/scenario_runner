@@ -1820,15 +1820,8 @@ class RunningStopTest(Criterion):
             if 'traffic.stop' in _actor.type_id:
                 self._list_stop_signs.append(_actor)
 
-    @staticmethod
-    def point_inside_boundingbox(point, bb_center, bb_extent):
-        """
-        X
-        :param point:
-        :param bb_center:
-        :param bb_extent:
-        :return:
-        """
+    def point_inside_boundingbox(self, point, bb_center, bb_extent):
+        """Checks whether or not a point is inside a bounding box"""
         bb_extent = self.EXTENT_MULTIPLIER * bb_extent
 
         # pylint: disable=invalid-name
