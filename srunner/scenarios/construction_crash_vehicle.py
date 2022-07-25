@@ -311,7 +311,7 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
 
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=40))
             root.add_child(ReAddRoadLane(0))
 
         return root

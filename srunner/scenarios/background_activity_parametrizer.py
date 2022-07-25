@@ -38,7 +38,7 @@ class BackgroundActivityParametrizer(BasicScenario):
         # Road
         self._num_front_vehicles = get_parameter(config, "num_front_vehicles")
         self._num_back_vehicles = get_parameter(config, "num_back_vehicles")
-        self.road_spawn_dist = get_parameter(config, "road_spawn_dist")
+        self._road_spawn_dist = get_parameter(config, "road_spawn_dist")
 
         # Opposite
         self._opposite_source_dist = get_parameter(config, "opposite_source_dist")

@@ -257,7 +257,7 @@ class AccidentTwoWays(Accident):
 
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=40))
         root.add_child(ActorDestroy(self.other_actors[0]))
         root.add_child(ActorDestroy(self.other_actors[1]))
         root.add_child(ActorDestroy(self.other_actors[2]))
@@ -457,7 +457,7 @@ class ParkedObstacleTwoWays(ParkedObstacle):
 
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=40))
         root.add_child(ActorDestroy(self.other_actors[0]))
 
         return root
@@ -709,7 +709,7 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
 
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=50))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=40))
 
         for actor in self.other_actors:
             root.add_child(ActorDestroy(actor))

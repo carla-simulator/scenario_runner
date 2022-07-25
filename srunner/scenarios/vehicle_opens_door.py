@@ -239,7 +239,7 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
 
         if self.route_mode:
             sequence.add_child(SwitchWrongDirectionTest(True))
-            sequence.add_child(ChangeOppositeBehavior(spawn_dist=50))
+            sequence.add_child(ChangeOppositeBehavior(spawn_dist=40))
         sequence.add_child(ActorDestroy(self._parked_actor))
 
         return sequence

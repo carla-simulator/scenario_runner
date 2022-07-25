@@ -227,7 +227,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._opposite_route_index = 0
 
         self._opposite_sources_dist = 100  # Distance from the ego to the opposite sources [m]
-        self._opposite_spawn_dist = 10  # Distance between spawned vehicles [m]
+        self._opposite_spawn_dist = 40  # Distance between spawned vehicles [m]
 
         self._active_opposite_sources = True  # Flag to (de)activate all opposite sources
 
@@ -1796,7 +1796,6 @@ class BackgroundBehavior(AtomicBehavior):
                 continue
 
             collision_dist = location.distance(opposite_loc)
-            print(collision_dist)
             if collision_dist < destruction_dist:
                 self._destroy_actor(actor)
             elif collision_dist < stop_dist:
