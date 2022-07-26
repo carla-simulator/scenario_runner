@@ -1431,17 +1431,6 @@ class KeepVelocity(AtomicBehavior):
         self._start_time = 0
         self._location = None
 
-        self._collision_sensor = None
-
-    def _set_collision_sensor(self):
-        blueprint = self._world.get_blueprint_library().find('sensor.other.collision')
-        self._collision_sensor = self._world.spawn_actor(blueprint, carla.Transform(), attach_to=self._actor)
-        self._collision_sensor.listen(lambda event: self._stop_constant_velocity(event))
-
-    def _stop_constant_velocity(self, event):
-        """Stops the constant velocity behavior"""
-        self._forced_speed = False
-
     def initialise(self):
         self._location = CarlaDataProvider.get_location(self._actor)
         self._start_time = GameTime.get_time()
@@ -1453,8 +1442,6 @@ class KeepVelocity(AtomicBehavior):
         elif self._type == 'vehicle':
             self._control.hand_brake = False
         self._actor.apply_control(self._control)
-
-        self._set_collision_sensor()
 
         super(KeepVelocity, self).initialise()
 
@@ -1479,7 +1466,7 @@ class KeepVelocity(AtomicBehavior):
                     math.cos(yaw) * self._target_velocity, math.sin(yaw) * self._target_velocity, 0))
 
                 # Add a throttle. Useless speed-wise, but makes the bicycle riders pedal.
-                self._actor.apply_control(carla.VehicleControl(throttle=1.0)) 
+                self._actor.apply_control(carla.VehicleControl(throttle=1.0))
 
         new_location = CarlaDataProvider.get_location(self._actor)
         self._distance += calculate_distance(self._location, new_location)
@@ -1507,9 +1494,6 @@ class KeepVelocity(AtomicBehavior):
                 self._control.speed = 0.0
             if self._actor is not None and self._actor.is_alive:
                 self._actor.apply_control(self._control)
-            if self._collision_sensor:
-                self._collision_sensor.stop()
-                self._collision_sensor.destroy()
         except RuntimeError:
             pass
         super(KeepVelocity, self).terminate(new_status)
@@ -1956,7 +1940,7 @@ class BasicAgentBehavior(AtomicBehavior):
         self._agent = None
 
         if self._target_location and self._plan:
-            raise ValueError("Choose either a destiantion or a plan, but not both")
+            raise ValueError("Choose either a destination or a plan, but not both")
 
     def initialise(self):
         """Initialises the agent"""
@@ -2090,7 +2074,7 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
     def initialise(self):
         """Initialises the agent"""
         # Get target speed
-        self._target_speed = get_speed(self._reference_actor) + self._speed_increment*3.6
+        self._target_speed = get_speed(self._reference_actor) + self._speed_increment * 3.6
         py_trees.blackboard.Blackboard().set(
             "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
 
@@ -2614,7 +2598,8 @@ class ActorTransformSetter(AtomicBehavior):
             new_status = py_trees.common.Status.FAILURE
 
         if calculate_distance(self._actor.get_location(), self._transform.location) < 1.0:
-            self._actor.set_simulate_physics(self._physics)
+            if self._physics is not None:
+                self._actor.set_simulate_physics(self._physics)
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
@@ -2798,6 +2783,8 @@ class ActorFlow(AtomicBehavior):
 
             ref_loc = plan[0][0].transform.location
             for wp, _ in plan:
+                if wp.is_junction:
+                    continue  # Spawning at junctions might break the path, so don't
                 if wp.transform.location.distance(ref_loc) < self._spawn_dist:
                     continue
                 self._spawn_actor(wp.transform)
@@ -2813,7 +2800,7 @@ class ActorFlow(AtomicBehavior):
             return py_trees.common.Status.RUNNING
 
         actor.set_autopilot(True)
-        self._tm.set_path(actor, [self._source_transform.location, self._sink_location])
+        self._tm.set_path(actor, [self._sink_location])
         self._tm.auto_lane_change(actor, False)
         self._tm.set_desired_speed(actor, 3.6 * self._speed)
         self._tm.update_vehicle_lights(actor, True)
@@ -2918,6 +2905,8 @@ class BicycleFlow(AtomicBehavior):
         if self._add_initial_actors:
             ref_loc = self._plan[0][0].transform.location
             for wp, _ in self._plan:
+                if wp.is_junction:
+                    continue  # Spawning at junctions might break the path, so don't
                 if wp.transform.location.distance(ref_loc) < self._spawn_dist:
                     continue
                 self._spawn_actor(wp.transform)
@@ -2926,7 +2915,7 @@ class BicycleFlow(AtomicBehavior):
 
     def _spawn_actor(self, transform):
         actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', transform, rolename='scenario',
+            'vehicle.*', transform, rolename='scenario no lights',
             attribute_filter={'base_type': 'bicycle'}, tick=False
         )
         if actor is None:

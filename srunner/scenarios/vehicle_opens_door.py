@@ -21,14 +21,21 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       OpenVehicleDoor,
                                                                       SwitchWrongDirectionTest,
-                                                                      ScenarioTimeout)
+                                                                      ScenarioTimeout,
+                                                                      Idle)
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
                                                                                DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior
+from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior, SetMaxSpeed
 
+
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
 
 
 class VehicleOpensDoor(BasicScenario):
@@ -47,27 +54,19 @@ class VehicleOpensDoor(BasicScenario):
         self._map = CarlaDataProvider.get_map()
 
         self.timeout = timeout
-        self._wait_duration = 15
         self._takeover_distance = 60
         self._min_trigger_dist = 10
         self._reaction_time = 3.0
 
-        if 'distance' in config.other_parameters:
-            self._parked_distance = float(config.other_parameters['distance']['value'])
-        else:
-            self._parked_distance = 50
+        self._opposite_wait_duration = 5
 
-        if 'direction' in config.other_parameters:
-            self._direction = config.other_parameters['direction']['value']
-        else:
-            self._direction = 'right'
+        self._parked_distance = get_value_parameter(config, 'distance', float, 50)
+        self._direction = get_value_parameter(config, 'direction', str, 'right')
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._max_speed = get_value_parameter(config, 'speed', float, 60)
+        self._scenario_timeout = 240
 
         super().__init__("VehicleOpensDoor", ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
 
@@ -111,6 +110,7 @@ class VehicleOpensDoor(BasicScenario):
 
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._parked_distance))
+            sequence.add_child(SetMaxSpeed(self._max_speed))
 
         collision_location = self._front_wp.transform.location
 
@@ -130,6 +130,9 @@ class VehicleOpensDoor(BasicScenario):
         end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         sequence.add_child(end_condition)
         sequence.add_child(ActorDestroy(self._parked_actor))
+
+        if self.route_mode:
+            sequence.add_child(SetMaxSpeed(0))
 
         return sequence
 
@@ -173,10 +176,8 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
-        if 'frequency' in config.other_parameters:
-            self._opposite_frequency = float(config.other_parameters['frequency']['value'])
-        else:
-            self._opposite_frequency = 100
+
+        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 100)
 
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
@@ -184,35 +185,61 @@ class VehicleOpensDoorTwoWays(VehicleOpensDoor):
         """
         Leave space in front, as the TM doesn't detect open doors, and change the opposite frequency 
         so that the ego can pass
+
+        Sequence:
+        - LeaveSpaceInFront
+        - Parallel:
+            - ScenarioTimeout:
+            - Sequence
+                - Trigger adversary
+                - OpenVehicleDoor
+                - SwitchWrongDirectionTest
+                - ChangeOppositeBehavior
+                - DriveDistance
+        - SwitchWrongDirectionTest
+        - ChangeOppositeBehavior
+        - ActorDestroy
         """
+
         sequence = py_trees.composites.Sequence(name="VehicleOpensDoorTwoWays")
 
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._parked_distance))
 
-        collision_location = self._front_wp.transform.location
+        main_behavior = py_trees.composites.Sequence()
 
         # Wait until ego is close to the adversary
+        collision_location = self._front_wp.transform.location
         trigger_adversary = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerOpenDoor")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
             self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], collision_location, self._min_trigger_dist))
-        sequence.add_child(trigger_adversary)
+        main_behavior.add_child(trigger_adversary)
 
         door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
+        main_behavior.add_child(OpenVehicleDoor(self._parked_actor, door))
+        main_behavior.add_child(Idle(self._opposite_wait_duration))
 
-        sequence.add_child(OpenVehicleDoor(self._parked_actor, door))
-        sequence.add_child(SwitchWrongDirectionTest(False))
-        sequence.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
+        if self.route_mode:
+            main_behavior.add_child(SwitchWrongDirectionTest(False))
+            main_behavior.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
 
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
-        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
-        sequence.add_child(end_condition)
-        sequence.add_child(SwitchWrongDirectionTest(True))
-        sequence.add_child(ChangeOppositeBehavior(spawn_dist=50))
+        main_behavior.add_child(DriveDistance(self.ego_vehicles[0], self._takeover_distance))
+
+        # Add the main behavior to the scenario timeout
+        timeout_parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+
+        timeout_parallel.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        timeout_parallel.add_child(main_behavior)
+
+        sequence.add_child(timeout_parallel)
+
+        if self.route_mode:
+            sequence.add_child(SwitchWrongDirectionTest(True))
+            sequence.add_child(ChangeOppositeBehavior(spawn_dist=40))
         sequence.add_child(ActorDestroy(self._parked_actor))
 
         return sequence

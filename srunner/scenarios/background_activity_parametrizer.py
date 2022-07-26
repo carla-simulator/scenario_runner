@@ -16,6 +16,12 @@ from srunner.tools.background_manager import (ChangeRoadBehavior,
                                               ChangeOppositeBehavior,
                                               ChangeJunctionBehavior)
 
+def get_parameter(config, name):
+    if name in config.other_parameters:
+        return float(config.other_parameters[name]['value'])
+    else:
+        return None
+
 class BackgroundActivityParametrizer(BasicScenario):
     """
     This class holds everything required to change the parameters of the background activity.
@@ -30,43 +36,21 @@ class BackgroundActivityParametrizer(BasicScenario):
         and instantiate scenario manager
         """
         # Road
-        self._num_front_vehicles = None
-        if 'num_front_vehicles' in config.other_parameters:
-            self._num_front_vehicles = float(config.other_parameters['num_front_vehicles']['value'])
-        self._num_back_vehicles = None
-        if 'num_back_vehicles' in config.other_parameters:
-            self._num_back_vehicles = float(config.other_parameters['num_back_vehicles']['value'])
-        self._road_spawn_dist = None
-        if 'road_spawn_dist' in config.other_parameters:
-            self._road_spawn_dist = float(config.other_parameters['road_spawn_dist']['value'])
+        self._num_front_vehicles = get_parameter(config, "num_front_vehicles")
+        self._num_back_vehicles = get_parameter(config, "num_back_vehicles")
+        self._road_spawn_dist = get_parameter(config, "road_spawn_dist")
 
         # Opposite
-        self._opposite_source_dist = None
-        if 'opposite_source_dist' in config.other_parameters:
-            self._opposite_source_dist = float(config.other_parameters['opposite_source_dist']['value'])
-        self._opposite_max_actors = None
-        if 'opposite_max_actors' in config.other_parameters:
-            self._opposite_max_actors = float(config.other_parameters['opposite_max_actors']['value'])
-        self._opposite_spawn_dist = None
-        if 'opposite_spawn_dist' in config.other_parameters:
-            self._opposite_spawn_dist = float(config.other_parameters['opposite_spawn_dist']['value'])
-        self._opposite_active = None
-        if 'opposite_active' in config.other_parameters:
-            self._opposite_active = float(config.other_parameters['opposite_active']['value'])
+        self._opposite_source_dist = get_parameter(config, "opposite_source_dist")
+        self._opposite_max_actors = get_parameter(config, "opposite_max_actors")
+        self._opposite_spawn_dist = get_parameter(config, "opposite_spawn_dist")
+        self._opposite_active = get_parameter(config, "opposite_active")
 
         # Junction
-        self._junction_source_dist = None
-        if 'junction_source_dist' in config.other_parameters:
-            self._junction_source_dist = float(config.other_parameters['junction_source_dist']['value'])
-        self._junction_max_actors = None
-        if 'junction_max_actors' in config.other_parameters:
-            self._junction_max_actors = float(config.other_parameters['junction_max_actors']['value'])
-        self._junction_spawn_dist = None
-        if 'junction_spawn_dist' in config.other_parameters:
-            self._junction_spawn_dist = float(config.other_parameters['junction_spawn_dist']['value'])
-        self._junction_source_perc = None
-        if 'junction_source_perc' in config.other_parameters:
-            self._junction_source_perc = float(config.other_parameters['junction_source_perc']['value'])
+        self._junction_source_dist = get_parameter(config, "junction_source_dist")
+        self._junction_max_actors = get_parameter(config, "junction_max_actors")
+        self._junction_spawn_dist = get_parameter(config, "junction_spawn_dist")
+        self._junction_source_perc = get_parameter(config, "junction_source_perc")
 
         super().__init__("BackgroundActivityParametrizer",
                           ego_vehicles,

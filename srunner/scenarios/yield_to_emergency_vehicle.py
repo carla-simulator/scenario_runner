@@ -18,7 +18,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, AdaptiveConstantVelocityAgentBehavior
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import RemoveRoadLane, ReAddEgoRoadLane
+from srunner.tools.background_manager import RemoveRoadLane, ReAddRoadLane
 
 
 class YieldToEmergencyVehicle(BasicScenario):
@@ -42,14 +42,14 @@ class YieldToEmergencyVehicle(BasicScenario):
         self.timeout = timeout
         self._ev_drive_time = 12  # seconds
 
-        # m/s. How much the EV is expected to be faster than the EGO
+        # km/h. How much the EV is expected to be faster than the EGO
         self._speed_increment = 15
 
         if 'distance' in config.other_parameters:
             self._distance = float(
                 config.other_parameters['distance']['value'])
         else:
-            self._distance = 15  # m
+            self._distance = 100  # m
 
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(
@@ -128,7 +128,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         if self.route_mode:
-            sequence.add_child(ReAddEgoRoadLane())
+            sequence.add_child(ReAddRoadLane(0))
 
         return sequence
 

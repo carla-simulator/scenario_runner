@@ -39,6 +39,13 @@ def convert_dict_to_location(actor_dict):
     return location
 
 
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
+
+
 class ParkingExit(BasicScenario):
     """
     This class holds everything required for a scenario in which the ego would be teleported to the parking lane.
@@ -64,29 +71,20 @@ class ParkingExit(BasicScenario):
             CarlaDataProvider.get_traffic_manager_port())
         self.timeout = timeout
 
-        if 'front_vehicle_distance' in config.other_parameters:
-            self._front_vehicle_distance = float(
-                config.other_parameters['front_vehicle_distance']['value'])
-        else:
-            self._front_vehicle_distance = 20  # m
+        self._bp_attributes = {'base_type': 'car'}
+        self._side_end_distance = 50
 
-        if 'behind_vehicle_distance' in config.other_parameters:
-            self._behind_vehicle_distance = float(
-                config.other_parameters['behind_vehicle_distance']['value'])
-        else:
-            self._behind_vehicle_distance = 5  # m
+        self._front_vehicle_distance = get_value_parameter(config, 'front_vehicle_distance', float, 20)
+        self._behind_vehicle_distance = get_value_parameter(config, 'behind_vehicle_distance', float, 10)
+        self._direction = get_value_parameter(config, 'direction', str, 'right')
+        if self._direction not in ('left', 'right'):
+            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
+
+        self._flow_distance = get_value_parameter(config, 'flow_distance', float, 25)
+        self._max_speed = get_value_parameter(config, 'speed', float, 60)
+        self._scenario_timeout = 120
 
         self._end_distance = self._front_vehicle_distance + 15
-
-        if 'direction' in config.other_parameters:
-            self._direction = config.other_parameters['direction']['value']
-        else:
-            self._direction = "right"
-
-        if 'flow_distance' in config.other_parameters:
-            self._flow_distance = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._flow_distance = 25
 
         # Get parking_waypoint based on trigger_point
         self._trigger_location = config.trigger_points[0].location
@@ -100,21 +98,12 @@ class ParkingExit(BasicScenario):
             raise Exception(
                 "Couldn't find parking point on the {} side".format(self._direction))
 
-        self._bp_attributes = {'base_type': 'car', 'has_lights': False}
-
-        self._side_end_distance = 50
-
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 120
-
-        super(ParkingExit, self).__init__("ParkingExit",
-                                          ego_vehicles,
-                                          config,
-                                          world,
-                                          debug_mode,
-                                          criteria_enable=criteria_enable)
+        super().__init__("ParkingExit",
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
@@ -128,10 +117,11 @@ class ParkingExit(BasicScenario):
                 "Couldn't find viable position for the vehicle in front of the parking point")
 
         actor_front = CarlaDataProvider.request_new_actor(
-            'vehicle.*', front_points[0].transform, rolename='scenario', attribute_filter=self._bp_attributes)
+            'vehicle.*', front_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
         if actor_front is None:
             raise ValueError(
                 "Couldn't spawn the vehicle in front of the parking point")
+        actor_front.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(actor_front)
 
         # And move it to the side
@@ -146,10 +136,12 @@ class ParkingExit(BasicScenario):
                 "Couldn't find viable position for the vehicle behind the parking point")
 
         actor_behind = CarlaDataProvider.request_new_actor(
-            'vehicle.*', behind_points[0].transform, rolename='scenario', attribute_filter=self._bp_attributes)
+            'vehicle.*', behind_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
         if actor_behind is None:
+            actor_front.destroy()
             raise ValueError(
                 "Couldn't spawn the vehicle behind the parking point")
+        actor_behind.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(actor_behind)
 
         # And move it to the side
@@ -195,7 +187,7 @@ class ParkingExit(BasicScenario):
         After ego drives away, activate OutsideRouteLanesTest, end scenario.
         """
 
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence(name="ParkingExit")
         sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_distance))
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 

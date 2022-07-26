@@ -1056,10 +1056,10 @@ class OutsideRouteLanesTest(Criterion):
                 if self._outside_lane_active or (self._wrong_direction_active and self._wrong_lane_active):
                     self._wrong_distance += new_dist
 
+                if self._wrong_distance:
                     self._set_traffic_event()
 
                 self._current_index = index
-
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
@@ -1800,9 +1800,9 @@ class RunningStopTest(Criterion):
     - actor: CARLA actor to be used for this test
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    PROXIMITY_THRESHOLD = 50.0  # meters
+    PROXIMITY_THRESHOLD = 5.0  # meters
     SPEED_THRESHOLD = 0.1
-    WAYPOINT_STEP = 1.0  # meters
+    EXTENT_MULTIPLIER = 1.5
 
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
         """
@@ -1813,22 +1813,15 @@ class RunningStopTest(Criterion):
         self._list_stop_signs = []
         self._target_stop_sign = None
         self._stop_completed = False
-        self._affected_by_stop = False
 
         all_actors = self._world.get_actors()
         for _actor in all_actors:
             if 'traffic.stop' in _actor.type_id:
                 self._list_stop_signs.append(_actor)
 
-    @staticmethod
-    def point_inside_boundingbox(point, bb_center, bb_extent):
-        """
-        X
-        :param point:
-        :param bb_center:
-        :param bb_extent:
-        :return:
-        """
+    def point_inside_boundingbox(self, point, bb_center, bb_extent):
+        """Checks whether or not a point is inside a bounding box"""
+        bb_extent = self.EXTENT_MULTIPLIER * bb_extent
 
         # pylint: disable=invalid-name
         A = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y - bb_extent.y)
@@ -1846,56 +1839,40 @@ class RunningStopTest(Criterion):
 
         return am_ab > 0 and am_ab < ab_ab and am_ad > 0 and am_ad < ad_ad  # pylint: disable=chained-comparison
 
-    def is_actor_affected_by_stop(self, actor, stop, multi_step=20):
+    def is_actor_affected_by_stop(self, location, stop):
         """
         Check if the given actor is affected by the stop
         """
-        affected = False
-        # first we run a fast coarse test
-        current_location = actor.get_location()
-        stop_location = stop.get_transform().location
-        if stop_location.distance(current_location) > self.PROXIMITY_THRESHOLD:
-            return affected
+        # Quick distance test
+        stop_transform = stop.get_transform()
+        if stop_transform.location.distance(location) > self.PROXIMITY_THRESHOLD:
+            return False
 
+        # Check if the actor is inside the stop's bounding box
         stop_t = stop.get_transform()
         transformed_tv = stop_t.transform(stop.trigger_volume.location)
+        if self.point_inside_boundingbox(location, transformed_tv, stop.trigger_volume.extent):
+            return True
 
-        # slower and accurate test based on waypoint's horizon and geometric test
-        list_locations = [current_location]
-        waypoint = self._map.get_waypoint(current_location)
-        for _ in range(multi_step):
-            if waypoint:
-                next_wps = waypoint.next(self.WAYPOINT_STEP)
-                if not next_wps:
-                    break
-                waypoint = next_wps[0]
-                if not waypoint:
-                    break
-                list_locations.append(waypoint.transform.location)
+        return False
 
-        for actor_location in list_locations:
-            if self.point_inside_boundingbox(actor_location, transformed_tv, stop.trigger_volume.extent):
-                affected = True
-
-        return affected
-
-    def _scan_for_stop_sign(self):
-        target_stop_sign = None
-
+    def _scan_for_stop_sign(self, location):
         ve_tra = CarlaDataProvider.get_transform(self.actor)
         ve_dir = ve_tra.get_forward_vector()
 
         wp = self._map.get_waypoint(ve_tra.location)
         wp_dir = wp.transform.get_forward_vector()
 
-        if ve_dir.dot(wp_dir) > 0:  # Ignore all when going in a wrong lane
-            for stop_sign in self._list_stop_signs:
-                if self.is_actor_affected_by_stop(self.actor, stop_sign):
-                    # this stop sign is affecting the vehicle
-                    target_stop_sign = stop_sign
-                    break
+        if ve_dir.dot(wp_dir) < 0:  # Ignore all when going in a wrong lane
+            return None
 
-        return target_stop_sign
+        ve_vec = self.actor.get_velocity()
+        if ve_vec.dot(wp_dir) < 0:  # Ignore all when going backwards
+            return None
+
+        for stop_sign in self._list_stop_signs:
+            if self.is_actor_affected_by_stop(location, stop_sign):
+                return stop_sign  # This stop sign is affecting the vehicle
 
     def update(self):
         """
@@ -1908,45 +1885,34 @@ class RunningStopTest(Criterion):
             return new_status
 
         if not self._target_stop_sign:
-            # scan for stop signs
-            self._target_stop_sign = self._scan_for_stop_sign()
-        else:
-            # we were in the middle of dealing with a stop sign
+            self._target_stop_sign = self._scan_for_stop_sign(location)
+            return new_status
+
+        if not self._stop_completed:
+            current_speed = CarlaDataProvider.get_velocity(self.actor)
+            if current_speed < self.SPEED_THRESHOLD:
+                self._stop_completed = True
+
+        if not self.is_actor_affected_by_stop(location, self._target_stop_sign):
             if not self._stop_completed:
-                # did the ego-vehicle stop?
-                current_speed = CarlaDataProvider.get_velocity(self.actor)
-                if current_speed < self.SPEED_THRESHOLD:
-                    self._stop_completed = True
+                # did we stop?
+                self.actual_value += 1
+                self.test_status = "FAILURE"
+                stop_location = self._target_stop_sign.get_transform().location
+                running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION, frame=GameTime.get_frame())
+                running_stop_event.set_message(
+                    "Agent ran a stop with id={} at (x={}, y={}, z={})".format(
+                        self._target_stop_sign.id,
+                        round(stop_location.x, 3),
+                        round(stop_location.y, 3),
+                        round(stop_location.z, 3)))
+                running_stop_event.set_dict({'id': self._target_stop_sign.id, 'location': stop_location})
 
-            if not self._affected_by_stop:
-                stop_location = self._target_stop_sign.get_location()
-                stop_extent = self._target_stop_sign.trigger_volume.extent
+                self.events.append(running_stop_event)
 
-                if self.point_inside_boundingbox(location, stop_location, stop_extent):
-                    self._affected_by_stop = True
-
-            if not self.is_actor_affected_by_stop(self.actor, self._target_stop_sign):
-                # is the vehicle out of the influence of this stop sign now?
-                if not self._stop_completed and self._affected_by_stop:
-                    # did we stop?
-                    self.actual_value += 1
-                    self.test_status = "FAILURE"
-                    stop_location = self._target_stop_sign.get_transform().location
-                    running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION, frame=GameTime.get_frame())
-                    running_stop_event.set_message(
-                        "Agent ran a stop with id={} at (x={}, y={}, z={})".format(
-                            self._target_stop_sign.id,
-                            round(stop_location.x, 3),
-                            round(stop_location.y, 3),
-                            round(stop_location.z, 3)))
-                    running_stop_event.set_dict({'id': self._target_stop_sign.id, 'location': stop_location})
-
-                    self.events.append(running_stop_event)
-
-                # reset state
-                self._target_stop_sign = None
-                self._stop_completed = False
-                self._affected_by_stop = False
+            # Reset state
+            self._target_stop_sign = None
+            self._stop_completed = False
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
@@ -2069,15 +2035,12 @@ class YieldToEmergencyVehicleTest(Criterion):
         self.units = "%"
         self.success_value = 70
         self.actual_value = 0
-        # self._last_time = 0
         self._ev = ev
         self._target_speed = None
         self._ev_speed_log = []
         self._map = CarlaDataProvider.get_map()
 
-    def initialise(self):
-        # self._last_time = GameTime.get_time()
-        super().initialise()
+        self._terminated = False
 
     def update(self):
         """
@@ -2107,24 +2070,30 @@ class YieldToEmergencyVehicleTest(Criterion):
         return new_status
 
     def terminate(self, new_status):
-        if not len(self._ev_speed_log):
-            self.actual_value = 100
-        else:
-            mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
-            self.actual_value = mean_speed / self._target_speed *100
-            self.actual_value = round(self.actual_value, 2)
+        """Set the traffic event to the according value if needed"""
 
-            if self.actual_value >= self.success_value:
-                self.test_status = "SUCCESS"
+        # Terminates are called multiple times. Do this only once
+        if not self._terminated:
+            if not len(self._ev_speed_log):
+                self.actual_value = 100
             else:
-                self.test_status = "FAILURE"
+                mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
+                self.actual_value = mean_speed / self._target_speed *100
+                self.actual_value = round(self.actual_value, 2)
 
-        if self.test_status == "FAILURE":
-            traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE, frame=GameTime.get_frame())
-            traffic_event.set_dict({'percentage': self.actual_value})
-            traffic_event.set_message(
-                f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
-            self.events.append(traffic_event)
+                if self.actual_value >= self.success_value:
+                    self.test_status = "SUCCESS"
+                else:
+                    self.test_status = "FAILURE"
+
+            if self.test_status == "FAILURE":
+                traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE, frame=GameTime.get_frame())
+                traffic_event.set_dict({'percentage': self.actual_value})
+                traffic_event.set_message(
+                    f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
+                self.events.append(traffic_event)
+
+            self._terminated = True
 
         super().terminate(new_status)
 
@@ -2144,7 +2113,6 @@ class ScenarioTimeoutTest(Criterion):
         Constructor
         """
         super().__init__(name, actor, optional)
-        self.units = ""
         self.success_value = 0
         self.actual_value = 0
         self._scenario_name = scenario_name

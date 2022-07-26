@@ -15,6 +15,8 @@ from __future__ import print_function
 import py_trees
 import carla
 
+from agents.navigation.local_planner import RoadOption
+
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, ScenarioTimeout
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
@@ -38,6 +40,21 @@ def convert_dict_to_location(actor_dict):
     )
     return location
 
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
+
+def get_interval_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return [
+            p_type(config.other_parameters[name]['from']),
+            p_type(config.other_parameters[name]['to'])
+        ]
+    else:
+        return default
+
 class EnterActorFlow(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
@@ -55,30 +72,17 @@ class EnterActorFlow(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
 
-        self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
-        self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
-        self._sink_distance = 2
-
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 10 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [5, 7] # m
-
         ego_location = config.trigger_points[0].location
         self._reference_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._sink_distance = 2
+
+        self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
+        self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
+
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 10)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [20, 50])
+        self._scenario_timeout = 240
 
         super().__init__("EnterActorFlow",
                          ego_vehicles,
@@ -218,27 +222,13 @@ class HighwayExit(BasicScenario):
 
         self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
         self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
-        self._sink_distance = 2
 
+        self._sink_distance = 2
         self._end_distance = 40
 
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 10 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [5, 7] # m
-
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 10)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [20, 50])
+        self._scenario_timeout = 240
 
         super().__init__("HighwayExit",
                          ego_vehicles,
@@ -314,33 +304,18 @@ class MergerIntoSlowTraffic(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
 
+        ego_location = config.trigger_points[0].location
+        self._reference_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
+
         self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
         self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
         self._trigger_point=config.trigger_points[0].location
 
         self._sink_distance = 2
 
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 10 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [5, 7] # m
-
-        ego_location = config.trigger_points[0].location
-        self._reference_waypoint = CarlaDataProvider.get_map().get_waypoint(ego_location)
-
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
-
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 10)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [20, 50])
+        self._scenario_timeout = 240
 
         super().__init__("MergerIntoSlowTraffic",
                          ego_vehicles,
@@ -473,34 +448,24 @@ class InterurbanActorFlow(BasicScenario):
 
         self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
         self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
-        self._sink_distance = 2
 
+        self._sink_distance = 2
         self._end_distance = 40
 
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 10 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [5, 7] # m
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 10)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [20, 50])
+        self._scenario_timeout = 240
 
         self._reference_wp = self._map.get_waypoint(config.trigger_points[0].location)
-        exit_wp = generate_target_waypoint_in_route(self._reference_wp, config.route)
+
+        self._middle_entry_wp, exit_wp = self._get_entry_exit_route_lanes(self._reference_wp, config.route)
         exit_wp = exit_wp.next(10)[0]  # just in case the junction maneuvers don't match
         self._other_entry_wp = exit_wp.get_left_lane()
         if not self._other_entry_wp or self._other_entry_wp.lane_type != carla.LaneType.Driving:
             raise ValueError("Couldn't find an end position")
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._source_wp = self._map.get_waypoint(self._start_actor_flow)
+        self._sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
         super().__init__("InterurbanActorFlow",
                          ego_vehicles,
@@ -509,18 +474,48 @@ class InterurbanActorFlow(BasicScenario):
                          debug_mode,
                          criteria_enable=criteria_enable)
 
+    def _get_entry_exit_route_lanes(self, wp, route):
+
+        entry_wp = None
+        exit_wp = None
+
+        # Get the middle entry
+        dist = float('inf')
+        index = 0
+        for route_index, route_pos in enumerate(route):
+            route_location = route_pos[0].location
+            trigger_location = wp.transform.location
+
+            route_dist = trigger_location.distance(route_location)
+            if route_dist <= dist:
+                index = route_index
+                dist = route_dist
+
+        for i in range(index, len(route)):
+            route_transform, road_option = route[i]
+
+            # Enter the junction
+            if not reached_junction and (road_option in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
+                reached_junction = True
+                entry_wp = self._map.get_waypoint(route[i - 1][0].location)
+
+            # End condition for the behavior, at the end of the junction
+            if reached_junction and (road_option not in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
+                exit_wp = self._map.get_waypoint(route_transform.location)
+                break
+
+        return (entry_wp, exit_wp)
+
+
     def _create_behavior(self):
         """
         Create an actor flow at the opposite lane which the ego has to cross
         """
-        source_wp = self._map.get_waypoint(self._start_actor_flow)
-        sink_wp = self._map.get_waypoint(self._end_actor_flow)
-
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(ActorFlow(
-            source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed))
+            self._source_wp, self._sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
@@ -530,7 +525,7 @@ class InterurbanActorFlow(BasicScenario):
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
                 clear_ego_entry=False,
-                remove_entries=[source_wp, self._other_entry_wp],
+                remove_entries=[self._source_wp, self._middle_entry_wp, self._other_entry_wp],
                 remove_exits=[],
                 stop_entries=False,
                 extend_road_exit=0
@@ -576,31 +571,17 @@ class InterurbanAdvancedActorFlow(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
 
-        self._start_actor_flow_1 = convert_dict_to_location(config.other_parameters['start_actor_flow'])
-        self._end_actor_flow_1 = convert_dict_to_location(config.other_parameters['end_actor_flow'])
-
         self._sink_distance = 2
-
-        if 'flow_speed' in config.other_parameters:
-            self._flow_speed = float(config.other_parameters['flow_speed']['value'])
-        else:
-            self._flow_speed = 10 # m/s
-
-        if 'source_dist_interval' in config.other_parameters:
-            self._source_dist_interval = [
-                float(config.other_parameters['source_dist_interval']['from']),
-                float(config.other_parameters['source_dist_interval']['to'])
-            ]
-        else:
-            self._source_dist_interval = [5, 7] # m
 
         self._reference_wp = self._map.get_waypoint(config.trigger_points[0].location)
         self._exit_wp = generate_target_waypoint_in_route(self._reference_wp, config.route)
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._start_actor_flow_1 = convert_dict_to_location(config.other_parameters['start_actor_flow'])
+        self._end_actor_flow_1 = convert_dict_to_location(config.other_parameters['end_actor_flow'])
+
+        self._flow_speed = get_value_parameter(config, 'flow_speed', float, 10)
+        self._source_dist_interval = get_interval_parameter(config, 'source_dist_interval', float, [20, 50])
+        self._scenario_timeout = 240
 
         super().__init__("InterurbanAdvancedActorFlow",
                          ego_vehicles,
@@ -644,10 +625,30 @@ class InterurbanAdvancedActorFlow(BasicScenario):
                 if current_wp.is_junction:
                     break
 
+            # Get the junction entry lane (1)
+            entry_wp_1 = source_wp_1
+            while True:
+                next_wps = entry_wp_1.next(1)
+                if not next_wps:
+                    break
+                if next_wps[0].is_junction:
+                    break
+                entry_wp_1 = next_wps[0]
+
+            # Get the junction entry lane (1)
+            entry_wp_2 = source_wp_2
+            while True:
+                next_wps = entry_wp_2.next(1)
+                if not next_wps:
+                    break
+                if next_wps[0].is_junction:
+                    break
+                entry_wp_2 = next_wps[0]
+
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
                 clear_ego_entry=True,
-                remove_entries=[source_wp_1, source_wp_2],
+                remove_entries=[entry_wp_1, entry_wp_2],
                 remove_exits=[self._exit_wp],
                 stop_entries=False,
                 extend_road_exit=extra_space

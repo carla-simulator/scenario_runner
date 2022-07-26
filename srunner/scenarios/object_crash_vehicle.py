@@ -25,7 +25,14 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_location_in_distance_from_wp
 
-from srunner.tools.background_manager import LeaveSpaceInFront
+from srunner.tools.background_manager import LeaveSpaceInFront, LeaveCrossingSpace
+
+
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
 
 
 class StationaryObjectCrossing(BasicScenario):
@@ -148,24 +155,6 @@ class DynamicObjectCrossing(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
         self._num_lane_changes = 0
 
-        if 'distance' in config.other_parameters:
-            self._distance = int(config.other_parameters['distance']['value'])
-        else:
-            self._distance = 12
-
-        if 'blocker_model' in config.other_parameters:
-            self._blocker_model = config.other_parameters['blocker_model']['value']
-        else:
-            self._blocker_model = 'static.prop.vendingmachine'  # blueprint filter of the blocker
-
-        if 'crossing_angle' in config.other_parameters:
-            self._crossing_angle = float(config.other_parameters['crossing_angle']['value'])
-        else:
-            self._crossing_angle = 0  # Crossing angle of the pedestrian
-
-        if abs(self._crossing_angle) > 90:
-            raise ValueError("'crossing_angle' must be between -90 and 90º for the pedestrian to cross the road")
-
         self._blocker_shift = 0.9
         self._retry_dist = 0.4
 
@@ -174,12 +163,21 @@ class DynamicObjectCrossing(BasicScenario):
         self._collision_wp = None
 
         self._adversary_speed = 2.0  # Speed of the adversary [m/s]
-        self._reaction_time = 1.8  # Time the agent has to react to avoid the collision [s]
+        self._reaction_time = 2.1  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
 
         self._number_of_attempts = 6
+
+        self._distance = get_value_parameter(config, 'distance', float, 12)
+        self._blocker_model = get_value_parameter(config, 'blocker_model', str, 'static.prop.vendingmachine')
+        self._crossing_angle = get_value_parameter(config, 'crossing_angle', float, 0)
+        if abs(self._crossing_angle) > 90:
+            raise ValueError("'crossing_angle' must be between -90 and 90º for the pedestrian to cross the road")
+        self._direction = get_value_parameter(config, 'direction', str, 'right')
+        if self._direction not in ('left', 'right'):
+            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
         super(DynamicObjectCrossing, self).__init__("DynamicObjectCrossing",
                                                     ego_vehicles,
@@ -194,6 +192,9 @@ class DynamicObjectCrossing(BasicScenario):
         It first rotates the transform so that it is pointing towards the road and then moves a
         bit to the side waypoint that aren't part of sidewalks, as they might be invading the road
         """
+        if self._direction == "left":
+            offset['yaw'] *= -1
+            offset['k'] *= -1
 
         new_rotation = waypoint.transform.rotation
         new_rotation.yaw += offset['yaw']
@@ -227,19 +228,23 @@ class DynamicObjectCrossing(BasicScenario):
             # Move to the right
             sidewalk_waypoint = waypoint
             while sidewalk_waypoint.lane_type != carla.LaneType.Sidewalk:
-                right_wp = sidewalk_waypoint.get_right_lane()
-                if right_wp is None:
-                    break  # No more right lanes
-                sidewalk_waypoint = right_wp
+                if self._direction == "right":
+                    side_wp = sidewalk_waypoint.get_right_lane()
+                else:
+                    side_wp = sidewalk_waypoint.get_left_lane()
+                if side_wp is None:
+                    break  # No more side lanes
+                sidewalk_waypoint = side_wp
 
             # Get the blocker transform and spawn it
-            offset = {"yaw": 90, "z": 0.0, "k": 1.5}
+            offset = {"yaw": 0 if 'vehicle' in self._blocker_model else 90, "z": 0.0, "k": 1.5}
             self._blocker_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
-            blocker = CarlaDataProvider.request_new_actor(self._blocker_model, self._blocker_transform)
+            blocker = CarlaDataProvider.request_new_actor(
+                self._blocker_model, self._blocker_transform, rolename="scenario no lights")
             if not blocker:
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
-                print("Failed blocker")
+                print("Failed to spawn the blocker")
                 continue
 
             # Get the adversary transform and spawn it
@@ -256,7 +261,7 @@ class DynamicObjectCrossing(BasicScenario):
                 blocker.destroy()
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
-                print("Failed adversary")
+                print("Failed to spawn an adversary")
                 continue
 
             self._collision_dist += waypoint.transform.location.distance(self._adversary_transform.location)
@@ -296,6 +301,8 @@ class DynamicObjectCrossing(BasicScenario):
         # Move the adversary
         move_distance = 2 * self._collision_dist  # Cross the whole road (supposing symetry in both directions)
         move_duration = move_distance / self._adversary_speed
+        if self.route_mode:
+            sequence.add_child(LeaveCrossingSpace(self._collision_wp))
         sequence.add_child(KeepVelocity(
             self.other_actors[0], self._adversary_speed,
             duration=move_duration, distance=move_distance, name="AdversaryCrossing"))
@@ -344,24 +351,21 @@ class ParkingCrossingPedestrian(BasicScenario):
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
         self._num_lane_changes = 0
 
-        if 'distance' in config.other_parameters:
-            self._distance = int(config.other_parameters['distance']['value'])
-        else:
-            self._distance = 12
-
-        if 'direction' in config.other_parameters:
-            self._direction = config.other_parameters['direction']['value']
-        else:
-            self._direction = 'right'
-        
-        if self._direction not in ('right', 'left'):
-            raise ValueError("'direction' value must be either 'left' or 'right'")
-
-        self._adversary_speed = 3.0  # Speed of the adversary [m/s]
-        self._reaction_time = 1.9  # Time the agent has to react to avoid the collision [s]
+        self._adversary_speed = 2.0  # Speed of the adversary [m/s]
+        self._reaction_time = 2.1  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
+
+        self._bp_attributes = {'base_type': 'car', 'has_lights': False}
+
+        self._distance = get_value_parameter(config, 'distance', float, 12)
+        self._crossing_angle = get_value_parameter(config, 'crossing_angle', float, 0)
+        if abs(self._crossing_angle) > 90:
+            raise ValueError("'crossing_angle' must be between -90 and 90º for the pedestrian to cross the road")
+        self._direction = get_value_parameter(config, 'direction', str, 'right')
+        if self._direction not in ('left', 'right'):
+            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
         super().__init__("ParkingCrossingPedestrian",
                          ego_vehicles,
@@ -389,7 +393,7 @@ class ParkingCrossingPedestrian(BasicScenario):
         """Processes the driving wp to get a waypoint at the side that looks at the road"""
 
         new_rotation = waypoint.transform.rotation
-        new_rotation.yaw += 270 if self._direction == 'right' else 90
+        new_rotation.yaw += 270 - self._crossing_angle if self._direction == 'right' else 90 + self._crossing_angle
 
         if waypoint.lane_type == carla.LaneType.Sidewalk:
             new_location = waypoint.transform.location
@@ -416,7 +420,8 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         # Get the adversary transform and spawn it
         self._blocker_transform = self._get_blocker_transform(blocker_wp)
-        blocker = CarlaDataProvider.request_new_actor('vehicle.*', self._blocker_transform, attribute_filter={'base_type': 'car'})
+        blocker = CarlaDataProvider.request_new_actor(
+            'vehicle.*', self._blocker_transform, attribute_filter=self._bp_attributes)
         if blocker is None:
             raise ValueError("Couldn't spawn the adversary")
         self.other_actors.append(blocker)

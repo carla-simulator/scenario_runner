@@ -44,7 +44,7 @@ class ParkingCutIn(BasicScenario):
         self._adversary_speed = 13.0  # Speed of the adversary [m/s]
         self._reaction_time = 2.5  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 10.0  # Min distance to the collision location that triggers the adversary [m]
-        self._end_distance = 40
+        self._end_distance = 30
         self.timeout = timeout
 
         if 'direction' in config.other_parameters:
@@ -125,7 +125,7 @@ class ParkingCutIn(BasicScenario):
         After invoking this scenario, a parked vehicle will wait for the ego to
         be close-by, merging into its lane, forcing it to break.
         """
-        sequence = py_trees.composites.Sequence(name="CrossingActor")
+        sequence = py_trees.composites.Sequence(name="ParkingCutIn")
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._cut_in_distance + 10))
 
@@ -143,7 +143,7 @@ class ParkingCutIn(BasicScenario):
         # Move the adversary
         cut_in = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Cut in behavior")
-        cut_in.add_child(BasicAgentBehavior(self.other_actors[1]))
+        cut_in.add_child(BasicAgentBehavior(self.other_actors[1], opt_dict={'ignore_traffic_lights': True}))
         cut_in.add_child(DriveDistance(self.other_actors[1], self._end_distance))
         sequence.add_child(cut_in)
 

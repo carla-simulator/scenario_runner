@@ -26,7 +26,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
 
-from srunner.tools.background_manager import LeaveSpaceInFront
+from srunner.tools.background_manager import LeaveCrossingSpace
 
 
 def get_sidewalk_transform(waypoint):
@@ -139,7 +139,7 @@ class BaseVehicleTurning(BasicScenario):
             break
 
         if self._number_of_attempts == 0:
-            raise Exception("Couldn't find viable position for the adversary actor")
+            raise ValueError("Couldn't find viable position for the adversary")
 
         if isinstance(adversary, carla.Vehicle):
             adversary.apply_control(carla.VehicleControl(hand_brake=True))
@@ -173,6 +173,8 @@ class BaseVehicleTurning(BasicScenario):
         # Move the adversary.
         speed_duration = 2.0 * collision_duration
         speed_distance = 2.0 * collision_distance
+        if self.route_mode:
+            sequence.add_child(LeaveCrossingSpace(self._collision_wp))
         sequence.add_child(KeepVelocity(
             self.other_actors[0], self._adversary_speed, True,
             speed_duration, speed_distance, name="AdversaryCrossing")

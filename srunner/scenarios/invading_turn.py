@@ -20,6 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTrans
                                                                       ActorDestroy,
                                                                       BasicAgentBehavior,
                                                                       ScenarioTimeout)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import LeaveSpaceInFront
@@ -59,6 +60,8 @@ class InvadingTurn(BasicScenario):
         self._reference_waypoint = self._map.get_waypoint(
             self._trigger_location)
 
+        self._speed = 30 # Km/h
+
         # Distance between the trigger point and the start location of the adversary
         if 'distance' in config.other_parameters:
             self._distance = float(
@@ -75,10 +78,7 @@ class InvadingTurn(BasicScenario):
         else:
             self._offset = 0.5
 
-        if 'timeout' in config.other_parameters:
-            self._scenario_timeout = float(config.other_parameters['flow_distance']['value'])
-        else:
-            self._scenario_timeout = 180
+        self._scenario_timeout = 240
 
         super(InvadingTurn, self).__init__("InvadingTurn",
                                            ego_vehicles,
@@ -140,7 +140,7 @@ class InvadingTurn(BasicScenario):
 
         behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         behavior.add_child(BasicAgentBehavior(
-            self.other_actors[0], self._adversary_end, opt_dict={'offset': self._offset}))
+            self.other_actors[0], self._adversary_end, target_speed=self._speed, opt_dict={'offset': self._offset}))
         behavior.add_child(DriveDistance(self.ego_vehicles[0], self._distance))
         behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
