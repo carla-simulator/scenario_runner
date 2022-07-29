@@ -13,6 +13,7 @@ behavior of the sun.
 
 import py_trees
 import carla
+import nvtx
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
@@ -44,6 +45,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
 
         self._prev_night_mode = False
 
+    @nvtx.annotate("SR.lights", color="blue")
     def update(self):
         """
         Turns on / off all the lghts around a radius of the ego vehicle

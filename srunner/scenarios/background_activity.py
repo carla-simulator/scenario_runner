@@ -12,6 +12,7 @@ from collections import OrderedDict
 import py_trees
 
 import carla
+import nvtx
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior
@@ -277,6 +278,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._initialise_opposite_sources()
         self._initialise_road_checker()
 
+    @nvtx.annotate("BA.update", color="blue")
     def update(self):
         prev_ego_index = self._route_index
 
@@ -324,6 +326,7 @@ class BackgroundBehavior(AtomicBehavior):
             self._destroy_actor(actor)
         super(BackgroundBehavior, self).terminate(new_status)
 
+    @nvtx.annotate("BA.check_actors", color="blue")
     def _check_background_actors(self):
         """Checks if the Traffic Manager has removed a backgroudn actor"""
         alive_ids = [actor.id for actor in self._world.get_actors().filter('vehicle*')]

@@ -21,6 +21,7 @@ import py_trees
 import shapely.geometry
 
 import carla
+import nvtx
 from agents.tools.misc import get_speed
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -1008,6 +1009,7 @@ class OutsideRouteLanesTest(Criterion):
 
         self._traffic_event = None
 
+    @nvtx.annotate("SR.outside_lanes", color="yellow")
     def update(self):
         """
         Transforms the actor location and its four corners to waypoints. Depending on its types,
@@ -1651,6 +1653,7 @@ class RunningRedLightTest(Criterion):
 
         return not inter.is_empty
 
+    @nvtx.annotate("SR.running_red_light", color="yellow")
     def update(self):
         """
         Check if the actor is running a red light
@@ -1874,6 +1877,7 @@ class RunningStopTest(Criterion):
             if self.is_actor_affected_by_stop(location, stop_sign):
                 return stop_sign  # This stop sign is affecting the vehicle
 
+    @nvtx.annotate("SR.running_stop", color="yellow")
     def update(self):
         """
         Check if the actor is running a red light
@@ -1950,6 +1954,7 @@ class MinSpeedRouteTest(Criterion):
 
         self._active = True
 
+    @nvtx.annotate("SR.min_speed", color="yellow")
     def update(self):
         """
         Check if the actor location is within trigger region

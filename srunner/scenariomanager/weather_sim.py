@@ -18,6 +18,7 @@ import operator
 import ephem
 import py_trees
 import carla
+import nvtx
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
@@ -68,6 +69,7 @@ class Weather(object):
 
         self.update()
 
+    @nvtx.annotate("SR.weather", color="blue")
     def update(self, delta_time=0):
         """
         If the weather animation is true, the new sun position is calculated w.r.t delta_time
