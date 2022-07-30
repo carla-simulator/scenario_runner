@@ -109,12 +109,15 @@ class ParkingExit(BasicScenario):
         """
         Custom initialization
         """
+
         # Spawn the actor in front of the ego
         front_points = self._parking_waypoint.next(
             self._front_vehicle_distance)
         if not front_points:
             raise ValueError(
                 "Couldn't find viable position for the vehicle in front of the parking point")
+
+        self._remove_parked_vehicles(front_points[0].transform.location)
 
         actor_front = CarlaDataProvider.request_new_actor(
             'vehicle.*', front_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
@@ -135,6 +138,8 @@ class ParkingExit(BasicScenario):
             raise ValueError(
                 "Couldn't find viable position for the vehicle behind the parking point")
 
+        self._remove_parked_vehicles(behind_points[0].transform.location)
+
         actor_behind = CarlaDataProvider.request_new_actor(
             'vehicle.*', behind_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
         if actor_behind is None:
@@ -149,8 +154,9 @@ class ParkingExit(BasicScenario):
         actor_behind.set_location(side_location)
 
         # Move the ego to its side position
-        self._ego_transform = self._get_displaced_location(self.ego_vehicles[0], self._parking_waypoint)
-        self.ego_vehicles[0].set_location(self._ego_transform)
+        self._ego_location = self._get_displaced_location(self.ego_vehicles[0], self._parking_waypoint)
+        self._remove_parked_vehicles(self._ego_location)
+        self.ego_vehicles[0].set_location(self._ego_location)
 
         # Spawn the actor at the side of the ego
         actor_side = CarlaDataProvider.request_new_actor(
@@ -163,6 +169,15 @@ class ParkingExit(BasicScenario):
 
         self._end_side_location = self.ego_vehicles[0].get_transform()
         self._end_side_location.location.z -= 500
+
+    def _remove_parked_vehicles(self, actor_location):
+        """Removes the parked vehicles that might have conflicts with the scenario"""
+        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
+        vehicles_to_destroy = set()
+        for v in parked_vehicles:
+            if v.transform.location.distance(actor_location) < 10:
+                vehicles_to_destroy.add(v)
+        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _get_displaced_location(self, actor, wp):
         """

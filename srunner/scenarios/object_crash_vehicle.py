@@ -13,6 +13,7 @@ from __future__ import print_function
 import math
 import py_trees
 import carla
+from math import floor
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
@@ -352,7 +353,6 @@ class ParkingCrossingPedestrian(BasicScenario):
         self._num_lane_changes = 0
 
         self._adversary_speed = 2.0  # Speed of the adversary [m/s]
-        self._reaction_time = 2.1  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
@@ -366,6 +366,10 @@ class ParkingCrossingPedestrian(BasicScenario):
         self._direction = get_value_parameter(config, 'direction', str, 'right')
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
+
+        # Time the agent has to react to avoid the collision [s]
+        self._reaction_time = 2.2
+        self._reaction_time += 0.1 * floor(self._crossing_angle / 5)
 
         super().__init__("ParkingCrossingPedestrian",
                          ego_vehicles,
@@ -420,6 +424,7 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         # Get the adversary transform and spawn it
         self._blocker_transform = self._get_blocker_transform(blocker_wp)
+        self._remove_parked_vehicles(self._blocker_transform.location)
         blocker = CarlaDataProvider.request_new_actor(
             'vehicle.*', self._blocker_transform, attribute_filter=self._bp_attributes)
         if blocker is None:
@@ -435,12 +440,22 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         # Get the adversary transform and spawn it
         self._walker_transform = self._get_walker_transform(walker_wp)
+        self._remove_parked_vehicles(self._walker_transform.location)
         walker = CarlaDataProvider.request_new_actor('walker.*', self._walker_transform)
         if walker is None:
             raise ValueError("Couldn't spawn the adversary")
         self.other_actors.append(walker)
         
         self._collision_wp = walker_wp
+
+    def _remove_parked_vehicles(self, actor_location):
+        """Removes the parked vehicles that might have conflicts with the scenario"""
+        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
+        vehicles_to_destroy = set()
+        for v in parked_vehicles:
+            if v.transform.location.distance(actor_location) < 10:
+                vehicles_to_destroy.add(v)
+        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _create_behavior(self):
         """

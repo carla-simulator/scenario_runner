@@ -40,16 +40,16 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._ev_drive_time = 12  # seconds
+        self._ev_drive_time = 10  # seconds
 
         # km/h. How much the EV is expected to be faster than the EGO
-        self._speed_increment = 15
+        self._speed_increment = 10
 
         if 'distance' in config.other_parameters:
             self._distance = float(
                 config.other_parameters['distance']['value'])
         else:
-            self._distance = 100  # m
+            self._distance = 80  # m
 
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(
@@ -115,15 +115,12 @@ class YieldToEmergencyVehicle(BasicScenario):
             self.other_actors[0], self._ev_start_transform))
 
         # Emergency Vehicle runs for self._ev_drive_time seconds
-        ev_end_condition = py_trees.composites.Parallel("Waiting for emergency vehicle driving for a certein distance",
-                                                        policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-
-        ev_end_condition.add_child(Idle(self._ev_drive_time))
-
-        ev_end_condition.add_child(AdaptiveConstantVelocityAgentBehavior(
+        main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        main_behavior.add_child(Idle(self._ev_drive_time))
+        main_behavior.add_child(AdaptiveConstantVelocityAgentBehavior(
             self.other_actors[0], self.ego_vehicles[0], speed_increment=self._speed_increment))
 
-        sequence.add_child(ev_end_condition)
+        sequence.add_child(main_behavior)
 
         sequence.add_child(ActorDestroy(self.other_actors[0]))
 

@@ -77,7 +77,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
     def _turn_close_lights_on(self, location):
         """Turns on the lights of all the objects close to the ego vehicle"""
         ego_speed = CarlaDataProvider.get_velocity(self._ego_vehicle)
-        radius = max(self._radius, 5 * ego_speed)
+        radius = max(self._radius, 10 * ego_speed)
 
         # Street lights
         on_lights = []
@@ -96,7 +96,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         self._light_manager.turn_off(off_lights)
 
         # Vehicles
-        all_vehicles = self._world.get_actors().filter('*vehicle.*')
+        all_vehicles = CarlaDataProvider.get_all_actors().filter('*vehicle.*')
         scenario_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'scenario']
 
         for vehicle in scenario_vehicles:
@@ -121,7 +121,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         self._light_manager.turn_off(off_lights)
 
         # Vehicles
-        all_vehicles = self._world.get_actors().filter('*vehicle.*')
+        all_vehicles = CarlaDataProvider.get_all_actors().filter('*vehicle.*')
         scenario_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'scenario']
 
         for vehicle in scenario_vehicles:

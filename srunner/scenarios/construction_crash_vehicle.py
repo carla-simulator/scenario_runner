@@ -92,12 +92,12 @@ class ConstructionObstacle(BasicScenario):
             if self._direction == "right":
                 wp = prop_wp.get_right_lane()
             else:
-                wp = prop_wp.get_right_lane()
+                wp = prop_wp.get_left_lane()
             if wp is None or wp.lane_type not in (carla.LaneType.Driving, carla.LaneType.Parking):
                 break
             prop_wp = wp
 
-        displacement = prop_wp.lane_width / 2
+        displacement = 0.3 * prop_wp.lane_width
         r_vec = prop_wp.transform.get_right_vector()
         if self._direction == 'left':
             r_vec *= -1
@@ -108,7 +108,7 @@ class ConstructionObstacle(BasicScenario):
         signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningconstruction', spawn_transform)
         if not signal_prop:
             raise ValueError("Couldn't spawn the indication prop asset")
-        # signal_prop.set_simulate_physics(True)
+        signal_prop.set_simulate_physics(True)
         self.other_actors.append(signal_prop)
 
     def _create_cones_side(self, start_transform, forward_vector, z_inc=0, cone_length=0, cone_offset=0):
@@ -134,14 +134,14 @@ class ConstructionObstacle(BasicScenario):
     def _create_construction_setup(self, start_transform, lane_width):
         """Create construction setup"""
 
-        _initial_offset = {'cones': {'yaw': 180, 'k': lane_width / 2.0},
+        _initial_offset = {'cones': {'yaw': 270, 'k': lane_width / 2.0},
                            'warning_sign': {'yaw': 180, 'k': 5, 'z': 0},
                            'debris': {'yaw': 0, 'k': 2, 'z': 1}}
         _prop_names = {'warning_sign': 'static.prop.trafficwarning',
                        'debris': 'static.prop.dirtdebris02'}
 
         _perp_angle = 90
-        _setup = {'lengths': [0, 6, 3], 'offsets': [0, 2, 1]}
+        _setup = {'lengths': [6, 3], 'offsets': [2, 1]}
         _z_increment = 0.1
 
         # Traffic warning and debris 
@@ -171,8 +171,12 @@ class ConstructionObstacle(BasicScenario):
             start_transform.location,
             start_transform.rotation)
         side_transform.rotation.yaw += _perp_angle
-        side_transform.location -= _initial_offset['cones']['k'] * \
-            side_transform.rotation.get_forward_vector()
+        offset_vec = _initial_offset['cones']['k'] * side_transform.rotation.get_forward_vector()
+        if self._direction == 'right':
+            side_transform.location -= offset_vec
+        else:
+            side_transform.location += offset_vec
+
         side_transform.rotation.yaw += _initial_offset['cones']['yaw']
 
         for i in range(len(_setup['lengths'])):
@@ -184,7 +188,10 @@ class ConstructionObstacle(BasicScenario):
                 cone_offset=_setup['offsets'][i])
             side_transform.location += side_transform.get_forward_vector() * \
                 _setup['lengths'][i] * _setup['offsets'][i]
-            side_transform.rotation.yaw += _perp_angle
+            if i == 0 and self._direction == 'left':
+                side_transform.rotation.yaw -= _perp_angle
+            else:
+                side_transform.rotation.yaw += _perp_angle
 
     def _create_behavior(self):
         """

@@ -13,6 +13,8 @@ import py_trees
 
 import carla
 
+from agents.navigation.local_planner import RoadOption
+
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior
 from srunner.tools.scenario_helper import get_same_dir_lanes, get_opposite_dir_lanes
@@ -196,7 +198,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._road_front_vehicles = 2  # Amount of vehicles in front of the ego
         self._road_back_vehicles = 2  # Amount of vehicles behind the ego
-        self._radius_increase_ratio = 1.4  # Meters the radius increases per m/s of the ego
+        self._radius_increase_ratio = 1.7  # Meters the radius increases per m/s of the ego
 
         self._base_junction_detection = 30
         self._detection_ratio = 1.5  # Meters the radius increases per m/s of the ego
@@ -236,16 +238,20 @@ class BackgroundBehavior(AtomicBehavior):
         self._scenario_max_speed = 0  # Max speed of the Background Activity. Deactivated with a value of 0
         self._scenario_junction_entry = False  # Flag indicating the ego is entering a junction
         self._scenario_junction_entry_distance = self._road_spawn_dist  # Min distance between vehicles and ego
+        self._scenario_removed_lane = False  # Flag indicating a scenario has removed a lane
+        self._scenario_remove_lane_offset = 0
 
         self._route_sources_active = True
 
     def _get_route_data(self, route):
         """Extract the information from the route"""
         self._route = []  # Transform the route into a list of waypoints
+        self._route_options = []  # Extract the RoadOptions from the route
         self._accum_dist = []  # Save the total traveled distance for each waypoint
         prev_trans = None
-        for trans, _ in route:
+        for trans, option in route:
             self._route.append(self._map.get_waypoint(trans.location))
+            self._route_options.append(option)
             if prev_trans:
                 dist = trans.location.distance(prev_trans.location)
                 self._accum_dist.append(dist + self._accum_dist[-1])
@@ -301,7 +307,9 @@ class BackgroundBehavior(AtomicBehavior):
             self._update_junction_sources()
         else:
             self._update_road_actors()
-            self._update_road_sources(prev_ego_index)
+
+            self._move_road_sources(prev_ego_index)
+            self._update_road_sources()
 
             self._monitor_topology_changes(prev_ego_index)
             self._monitor_road_changes(prev_ego_index)
@@ -326,7 +334,7 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _check_background_actors(self):
         """Checks if the Traffic Manager has removed a backgroudn actor"""
-        alive_ids = [actor.id for actor in self._world.get_actors().filter('vehicle*')]
+        alive_ids = [actor.id for actor in CarlaDataProvider.get_all_actors().filter('vehicle*')]
         for actor in list(self._all_actors):
             if actor.id not in alive_ids:
                 self._remove_actor_info(actor)
@@ -947,6 +955,10 @@ class BackgroundBehavior(AtomicBehavior):
         self._initialise_connecting_lanes(junction)
         self._active_junctions.append(junction)
 
+        # Forget the fact that a lane was removed, so that it isn't readded in the middle of the junction
+        self._scenario_removed_lane = False
+        self._scenario_remove_lane_offset = 0
+
     def _monitor_ego_junction_exit(self):
         """
         Monitors when the ego exits the junctions, preparing the road mode when that happens
@@ -986,12 +998,9 @@ class BackgroundBehavior(AtomicBehavior):
 
             return actor
 
-    def _update_road_sources(self, prev_ego_index):
+    def _move_road_sources(self, prev_ego_index):
         """
-        Manages the sources that spawn actors behind the ego.
-        These are always behind the ego and will continuously spawn actors.
-        These sources also track the amount of vehicles in front of the ego,
-        removing actors if the amount is too high.
+        Moves the road sources so that they are always following the ego from behind
         """
         if prev_ego_index != self._route_index:
             min_distance = self._road_back_vehicles * self._road_spawn_dist
@@ -1027,6 +1036,13 @@ class BackgroundBehavior(AtomicBehavior):
                         continue
                     source.wp = new_source_wps[0]
 
+    def _update_road_sources(self):
+        """
+        Manages the sources that spawn actors behind the ego.
+        These are always behind the ego and will continuously spawn actors.
+        These sources also track the amount of vehicles in front of the ego,
+        removing actors if the amount is too high.
+        """
         for lane_key in self._road_dict:
             source = self._road_dict[lane_key]
             if self.debug:
@@ -1062,9 +1078,12 @@ class BackgroundBehavior(AtomicBehavior):
                 if actor is None:
                     continue
 
-                # Set their initial speed, so that they don't lag behind the ego
+                # Set their initial speed, so that they don't lag behind the ego.
+                # Set the speed to the ego's one, but never surpassing by the lane's last vehicle's one
                 forward_vec = source.wp.transform.get_forward_vector()
                 speed = self._ego_actor.get_velocity().length()
+                if len(source.actors):
+                    speed = min(speed, source.actors[-1].get_velocity().length())
                 actor.set_target_velocity(speed * forward_vec)
 
                 source.actors.append(actor)
@@ -1803,6 +1822,8 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _remove_road_lane(self, lane_wp):
         """Removes a road lane"""
+        self._scenario_removed_lane = True
+        self._scenario_remove_lane_offset = 0
         lane_key = get_lane_key(lane_wp)
         if lane_key not in list(self._road_dict):
             print(f"WARNING: Couldn't find the lane to be removed, '{lane_key}' isn't part of the road behavior")
@@ -1815,6 +1836,11 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _readd_road_lane(self, lane_offset):
         """Adds a ego road lane. This is expected to be used after having previously removed such lane"""
+        # Check that the ego hasn't moved close to a junction, where we don't want to reinitialize the lane
+        if not self._scenario_removed_lane:
+            return
+
+        lane_offset += self._scenario_remove_lane_offset
 
         if lane_offset == 0:
             add_lane_wp = self._ego_wp
@@ -1865,9 +1891,10 @@ class BackgroundBehavior(AtomicBehavior):
             actor.set_target_velocity(spawn_wp.transform.get_forward_vector() * ego_speed)
             actors.append(actor)
 
-        self._road_dict[self._ego_key] = Source(
-            prev_wp, actors, active=self._route_sources_active
-        )
+        self._road_dict[add_lane_key] = Source(prev_wp, actors, active=self._route_sources_active)
+
+        self._scenario_removed_lane = False
+        self._scenario_remove_lane_offset = 0
 
     def _handle_junction_scenario(self, junction_data):
         """
@@ -1893,6 +1920,9 @@ class BackgroundBehavior(AtomicBehavior):
 
         if extend_road_exit:
             self._extent_road_exit_space(extend_road_exit)
+
+        self._scenario_removed_lane = False
+        self._scenario_remove_lane_offset = 0
 
     def _clear_junction_middle(self):
         """Clears the junction, and all subsequent actors that enter it"""
@@ -2393,6 +2423,9 @@ class BackgroundBehavior(AtomicBehavior):
             speed = self._ego_target_speed * percentage / 100
             if self._scenario_max_speed:
                 speed = min(speed, self._scenario_max_speed)
+
+            # TODO: Fix very high speed traffic
+            speed = min(speed, 90)
             self._tm.set_desired_speed(actor, speed)
 
     def _remove_actor_info(self, actor):
@@ -2448,6 +2481,7 @@ class BackgroundBehavior(AtomicBehavior):
         """
         location = CarlaDataProvider.get_location(self._ego_actor)
 
+        prev_index = self._route_index
         for index in range(self._route_index, min(self._route_index + self._route_buffer, self._route_length)):
             route_wp = self._route[index]
 
@@ -2458,12 +2492,27 @@ class BackgroundBehavior(AtomicBehavior):
             if dot_ve_wp > 0:
                 self._route_index = index
 
+        # Monitor route changes for those scenario that remove and readd a specific lane
+        if self._scenario_removed_lane:
+            for i in range(prev_index, self._route_index):
+                option_1 = self._route_options[i]
+                option_2 = self._route_options[i+1]
+                if option_1 == RoadOption.CHANGELANELEFT or option_2 == RoadOption.CHANGELANELEFT:
+                    loc_1 = self._route[i].transform.location
+                    loc_2 = self._route[i+1].transform.location
+                    if abs(loc_1.distance(loc_2)) > 2.5:  # Lane offset plus a bit forward
+                        self._scenario_remove_lane_offset += 1
+                elif option_1 == RoadOption.CHANGELANERIGHT or option_2 == RoadOption.CHANGELANERIGHT:
+                    loc_1 = self._route[i].transform.location
+                    loc_2 = self._route[i+1].transform.location
+                    if abs(loc_1.distance(loc_2)) > 2.5:  # Lane offset plus a bit forward
+                        self._scenario_remove_lane_offset -= 1
+
         self._ego_wp = self._route[self._route_index]
         self._ego_key = get_lane_key(self._ego_wp)
+        self._ego_target_speed = self._ego_actor.get_speed_limit()
 
         if self.debug:
             string = 'EGO_' + self._ego_state[0].upper()
             debug_name = DEBUG_ROAD if self._ego_state == EGO_ROAD else DEBUG_JUNCTION
             draw_string(self._world, location, string, debug_name, False)
-
-        self._ego_target_speed = self._ego_actor.get_speed_limit()

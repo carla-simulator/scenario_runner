@@ -90,12 +90,12 @@ class Accident(BasicScenario):
             if self._direction == "right":
                 wp = prop_wp.get_right_lane()
             else:
-                wp = prop_wp.get_right_lane()
+                wp = prop_wp.get_left_lane()
             if wp is None or wp.lane_type not in (carla.LaneType.Driving, carla.LaneType.Parking):
                 break
             prop_wp = wp
 
-        displacement = prop_wp.lane_width / 2
+        displacement = 0.3 * prop_wp.lane_width
         r_vec = prop_wp.transform.get_right_vector()
         if self._direction == 'left':
             r_vec *= -1
@@ -106,7 +106,7 @@ class Accident(BasicScenario):
         signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningaccident', spawn_transform)
         if not signal_prop:
             raise ValueError("Couldn't spawn the indication prop asset")
-        # signal_prop.set_simulate_physics(True)
+        signal_prop.set_simulate_physics(True)
         self.other_actors.append(signal_prop)
 
     def _spawn_obstacle(self, wp, blueprint, accident_actor=False):
@@ -313,12 +313,12 @@ class ParkedObstacle(BasicScenario):
             if self._direction == "right":
                 wp = prop_wp.get_right_lane()
             else:
-                wp = prop_wp.get_right_lane()
+                wp = prop_wp.get_left_lane()
             if wp is None or wp.lane_type not in (carla.LaneType.Driving, carla.LaneType.Parking):
                 break
             prop_wp = wp
 
-        displacement = prop_wp.lane_width / 2
+        displacement = 0.3 * prop_wp.lane_width
         r_vec = prop_wp.transform.get_right_vector()
         if self._direction == 'left':
             r_vec *= -1
@@ -329,7 +329,7 @@ class ParkedObstacle(BasicScenario):
         signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningaccident', spawn_transform)
         if not signal_prop:
             raise ValueError("Couldn't spawn the indication prop asset")
-        # signal_prop.set_simulate_physics(True)
+        signal_prop.set_simulate_physics(True)
         self.other_actors.append(signal_prop)
 
     def _spawn_obstacle(self, wp, blueprint):

@@ -116,7 +116,7 @@ class CrossingBicycleFlow(BasicScenario):
         plan_step = 0
         wp = self._source_wp
         while True:
-            next_wps = wp.next(1)
+            next_wps = wp.next(2)
             if not next_wps:
                 raise ValueError("Couldn't find a proper plan for the bicycle flow")
             next_wp = next_wps

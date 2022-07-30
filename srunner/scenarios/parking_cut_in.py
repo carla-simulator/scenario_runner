@@ -74,6 +74,8 @@ class ParkingCutIn(BasicScenario):
         else:
             parking_wp = self._blocker_wp.get_right_lane()
 
+        self._remove_parked_vehicles(parking_wp.transform.location)
+
         self._blocker_actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', parking_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
         if not self._blocker_actor:
@@ -95,6 +97,8 @@ class ParkingCutIn(BasicScenario):
         else:
             parking_wp = self._collision_wp.get_right_lane()
 
+        self._remove_parked_vehicles(parking_wp.transform.location)
+
         self._parked_actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', parking_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
         if not self._parked_actor:
@@ -103,6 +107,15 @@ class ParkingCutIn(BasicScenario):
 
         side_location = self._get_displaced_location(self._parked_actor, parking_wp)
         self._parked_actor.set_location(side_location)
+
+    def _remove_parked_vehicles(self, actor_location):
+        """Removes the parked vehicles that might have conflicts with the scenario"""
+        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
+        vehicles_to_destroy = set()
+        for v in parked_vehicles:
+            if v.transform.location.distance(actor_location) < 10:
+                vehicles_to_destroy.add(v)
+        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _get_displaced_location(self, actor, wp):
         """

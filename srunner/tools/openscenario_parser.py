@@ -261,7 +261,7 @@ class OpenScenarioParser(object):
         # Given by id
         if name.startswith("id="):
             tl_id = int(name[3:])
-            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+            for carla_tl in CarlaDataProvider.get_all_actors().filter('traffic.traffic_light'):
                 if carla_tl.id == tl_id:
                     traffic_light = carla_tl
                     break
@@ -269,7 +269,7 @@ class OpenScenarioParser(object):
         elif name.startswith("pos="):
             tl_pos = name[4:]
             pos = tl_pos.split(",")
-            for carla_tl in CarlaDataProvider.get_world().get_actors().filter('traffic.traffic_light'):
+            for carla_tl in CCarlaDataProvider.get_all_actors().filter('traffic.traffic_light'):
                 carla_tl_location = carla_tl.get_transform().location
                 distance = carla_tl_location.distance(carla.Location(float(pos[0]),
                                                                      float(pos[1]),
@@ -621,7 +621,7 @@ class OpenScenarioParser(object):
                         obj_actor = actor
                         actor_transform = actor.transform
             else:
-                for actor in CarlaDataProvider.get_world().get_actors():
+                for actor in CarlaDataProvider.get_all_actors():
                     if 'role_name' in actor.attributes and actor.attributes['role_name'] == obj:
                         obj_actor = actor
                         actor_transform = obj_actor.get_transform()
