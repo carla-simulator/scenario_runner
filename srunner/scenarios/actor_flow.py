@@ -332,13 +332,12 @@ class MergerIntoSlowTraffic(BasicScenario):
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
         # Get all lanes
-        source_wps = get_same_dir_lanes(source_wp)
         sink_wps = get_same_dir_lanes(sink_wp)
 
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        for source_wp, sink_wp in zip(source_wps, sink_wps):
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+        for wp in sink_wps:
+            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], wp.transform.location, self._sink_distance))
         root.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance, self._flow_speed, add_initial_actors=True))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))

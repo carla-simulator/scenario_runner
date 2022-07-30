@@ -59,7 +59,7 @@ class HighwayCutIn(BasicScenario):
         self._other_lane_time = 3
         self._change_time = 2
         self._speed_perc = 80
-        self._cut_in_distance = 15
+        self._cut_in_distance = 7
         self._extra_space = 170
 
         self._start_location = convert_dict_to_location(config.other_parameters['other_actor_location'])

@@ -424,10 +424,11 @@ class ActorBlockedTest(Criterion):
         """
         Class constructor
         """
-        super(ActorBlockedTest, self).__init__(name, actor, optional, terminate_on_failure)
+        super().__init__(name, actor, optional, terminate_on_failure)
         self._min_speed = min_speed
         self._max_time = max_time
         self._time_last_valid_state = None
+        self._active = True
         self.units = None  # We care about whether or not it fails, no units attached
 
     def update(self):
@@ -436,24 +437,32 @@ class ActorBlockedTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        linear_speed = CarlaDataProvider.get_velocity(self.actor)
-        if linear_speed is not None:
-            if linear_speed < self._min_speed and self._time_last_valid_state:
-                if (GameTime.get_time() - self._time_last_valid_state) > self._max_time:
-                    # The actor has been "blocked" for too long, save the data
-                    self.test_status = "FAILURE"
+        # Deactivate/Activate checking by blackboard message
+        active = py_trees.blackboard.Blackboard().get('AC_SwitchActorBlockedTest')
+        if active is not None:
+            self._active = active
+            self._time_last_valid_state = GameTime.get_time()
+            py_trees.blackboard.Blackboard().set("AC_SwitchActorBlockedTest", None, overwrite=True)
 
-                    vehicle_location = CarlaDataProvider.get_location(self.actor)
-                    event = TrafficEvent(event_type=TrafficEventType.VEHICLE_BLOCKED, frame=GameTime.get_frame())
-                    event.set_message('Agent got blocked at (x={}, y={}, z={})'.format(
-                        round(vehicle_location.x, 3),
-                        round(vehicle_location.y, 3),
-                        round(vehicle_location.z, 3))
-                    )
-                    event.set_dict({'location': vehicle_location})
-                    self.events.append(event)
-            else:
-                self._time_last_valid_state = GameTime.get_time()
+        if self._active:
+            linear_speed = CarlaDataProvider.get_velocity(self.actor)
+            if linear_speed is not None:
+                if linear_speed < self._min_speed and self._time_last_valid_state:
+                    if (GameTime.get_time() - self._time_last_valid_state) > self._max_time:
+                        # The actor has been "blocked" for too long, save the data
+                        self.test_status = "FAILURE"
+
+                        vehicle_location = CarlaDataProvider.get_location(self.actor)
+                        event = TrafficEvent(event_type=TrafficEventType.VEHICLE_BLOCKED, frame=GameTime.get_frame())
+                        event.set_message('Agent got blocked at (x={}, y={}, z={})'.format(
+                            round(vehicle_location.x, 3),
+                            round(vehicle_location.y, 3),
+                            round(vehicle_location.z, 3))
+                        )
+                        event.set_dict({'location': vehicle_location})
+                        self.events.append(event)
+                else:
+                    self._time_last_valid_state = GameTime.get_time()
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
@@ -1024,7 +1033,7 @@ class OutsideRouteLanesTest(Criterion):
         if location is None:
             return new_status
 
-        # Deactivate/Activate checking by blackboard message
+        # Deactivate / activate checking by blackboard message
         active = py_trees.blackboard.Blackboard().get('AC_SwitchWrongDirectionTest')
         if active is not None:
             self._wrong_direction_active = active
@@ -1634,7 +1643,7 @@ class RunningRedLightTest(Criterion):
         self._last_red_light_id = None
         self.debug = False
 
-        all_actors = self._world.get_actors()
+        all_actors = CarlaDataProvider.get_all_actors()
         for _actor in all_actors:
             if 'traffic_light' in _actor.type_id:
                 center, waypoints = self.get_traffic_light_waypoints(_actor)
@@ -1814,7 +1823,7 @@ class RunningStopTest(Criterion):
         self._target_stop_sign = None
         self._stop_completed = False
 
-        all_actors = self._world.get_actors()
+        all_actors = CarlaDataProvider.get_all_actors()
         for _actor in all_actors:
             if 'traffic.stop' in _actor.type_id:
                 self._list_stop_signs.append(_actor)
@@ -1968,7 +1977,7 @@ class MinSpeedRouteTest(Criterion):
 
         if self._active:
             # Get the speed of the surrounding Background Activity
-            all_vehicles = self._world.get_actors().filter('vehicle*')
+            all_vehicles = CarlaDataProvider.get_all_actors().filter('vehicle*')
             background_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'background']
 
             if background_vehicles:
@@ -2033,14 +2042,19 @@ class YieldToEmergencyVehicleTest(Criterion):
         """
         super().__init__(name, actor, optional)
         self.units = "%"
-        self.success_value = 70
+        self.success_value = 95
         self.actual_value = 0
         self._ev = ev
         self._target_speed = None
         self._ev_speed_log = []
         self._map = CarlaDataProvider.get_map()
 
+        self.initialized = False
         self._terminated = False
+
+    def initialise(self):
+        self.initialized = True
+        return super().initialise()
 
     def update(self):
         """
@@ -2073,7 +2087,7 @@ class YieldToEmergencyVehicleTest(Criterion):
         """Set the traffic event to the according value if needed"""
 
         # Terminates are called multiple times. Do this only once
-        if not self._terminated:
+        if not self._terminated and self.initialized:
             if not len(self._ev_speed_log):
                 self.actual_value = 100
             else:
@@ -2094,6 +2108,7 @@ class YieldToEmergencyVehicleTest(Criterion):
                 self.events.append(traffic_event)
 
             self._terminated = True
+            print(f"ACTUAL VALUE: {self.actual_value}")
 
         super().terminate(new_status)
 

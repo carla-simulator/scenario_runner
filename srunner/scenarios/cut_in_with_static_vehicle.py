@@ -50,12 +50,14 @@ class StaticCutIn(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
 
-        self._reaction_time = 3.0  # Time the agent has to react to avoid the collision [s]
+        self._reaction_time = 3.1  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 15.0  # Min distance to the collision location that triggers the adversary [m]
 
         self._back_vehicles = 2
         self._front_vehicles = 3
         self._vehicle_gap = 11
+
+        self._speed = 60 # Km/h
 
         self._adversary_end_distance = 70
 
@@ -65,7 +67,6 @@ class StaticCutIn(BasicScenario):
         self._attributes = {'base_type': 'car', 'has_lights': True}
 
         self._blocker_distance = get_value_parameter(config, 'distance', float, 100)
-        self._speed = get_value_parameter(config, 'speed', float, 60 / 3.6)
         self._direction = get_value_parameter(config, 'direction', str, 'right')
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
@@ -121,17 +122,21 @@ class StaticCutIn(BasicScenario):
                 raise ValueError("Couldn't find a proper position for the cut in vehicle")
             blocker_wp = next_wps[0]
 
-        # Get the cut in behavior
         self._collision_wp = blocker_wp
-        next_wps = self._collision_wp.next(self._adversary_end_distance)
-        if not next_wps:
-            for actor in self.other_actors:
-                actor.destroy()
-            raise ValueError("Couldn't find a proper position for the cut in vehicle")
-        end_wp = next_wps[0]
 
-        self._plan = [[self._collision_wp, RoadOption.STRAIGHT],
-                      [end_wp, RoadOption.STRAIGHT]]
+        # Get the cut in behavior
+        self._plan, dist, step = ([], 0, 5)
+        next_wp = self._collision_wp
+        while dist < self._adversary_end_distance:
+            next_wps = next_wp.next(step)
+            if not next_wps:
+                for actor in self.other_actors:
+                    actor.destroy()
+                raise ValueError("Couldn't find a proper position for the cut in vehicle")
+            next_wp = next_wps[0]
+            self._plan.append([next_wp, RoadOption.STRAIGHT])
+
+            dist += step
 
         # Spawn the cut in vehicle
         side_wp = blocker_wp.get_left_lane() if self._direction == 'left' else blocker_wp.get_right_lane()
@@ -201,7 +206,6 @@ class StaticCutIn(BasicScenario):
             total_dist = self._blocker_distance
             total_dist += self._vehicle_gap * (self._back_vehicles + self._front_vehicles + 1)
             sequence.add_child(LeaveSpaceInFront(total_dist))
-            sequence.add_child(RemoveRoadLane(self._side_wp))
 
         for actor, transform in self._side_transforms:
             sequence.add_child(ActorTransformSetter(actor, transform))
@@ -218,18 +222,21 @@ class StaticCutIn(BasicScenario):
 
         sequence.add_child(trigger_adversary)
 
+        if self.route_mode:
+            sequence.add_child(RemoveRoadLane(self._side_wp))
+
         cut_in_behavior = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="CutIn")
         cut_in_direction = 'right' if self._direction == 'left' else 'left'
 
         cut_in_movement = py_trees.composites.Sequence()
         cut_in_movement.add_child(CutIn(
-            self._adversary_actor, self.ego_vehicles[0], cut_in_direction))
+            self._adversary_actor, self.ego_vehicles[0], cut_in_direction, change_time=3, other_lane_time=2))
         cut_in_movement.add_child(BasicAgentBehavior(
-            self._adversary_actor, plan=self._plan, target_speed=3.6 * self._speed))
+            self._adversary_actor, plan=self._plan, target_speed=self._speed))
 
         cut_in_behavior.add_child(cut_in_movement)
-        cut_in_behavior.add_child(Idle(self._adversary_end_distance / self._speed))
+        cut_in_behavior.add_child(Idle(30))  # One minute timeout in case a collision happened
 
         sequence.add_child(cut_in_behavior)
 

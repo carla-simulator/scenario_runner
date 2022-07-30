@@ -492,8 +492,7 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
     """
     This function identifies if an obstacle is present in front of the reference actor
     """
-    world = CarlaDataProvider.get_world()
-    world_actors = world.get_actors().filter('vehicle.*')
+    world_actors = CarlaDataProvider.get_all_actors().filter('vehicle.*')
     actor_bbox = actor.bounding_box
     actor_transform = actor.get_transform()
     actor_location = actor_transform.location
@@ -607,7 +606,7 @@ def get_closest_traffic_light(waypoint, traffic_lights=None):
     Checks all traffic lights part of 'traffic_lights', or all the town ones, if None are passed.
     """
     if not traffic_lights:
-        traffic_lights = CarlaDataProvider.get_world().get_actors().filter('*traffic_light*')
+        traffic_lights = CarlaDataProvider.get_all_actors().filter('*traffic_light*')
 
     closest_dist = float('inf')
     closest_tl = None

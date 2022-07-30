@@ -56,14 +56,14 @@ class PedestrianCrossing(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
 
-        self._adversary_speed = 1.1  # Speed of the adversary [m/s]
+        self._adversary_speed = 1.3  # Speed of the adversary [m/s]
         self._reaction_time = 4.0  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 12.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
 
         self._crosswalk_dist = 1
-        self._crosswalk_right_dist = 1.5
+        self._crosswalk_right_dist = 1
 
         super().__init__("PedestrianCrossing",
                           ego_vehicles,
@@ -101,28 +101,8 @@ class PedestrianCrossing(BasicScenario):
         spawn_loc = start_wp.transform.location + carla.Location(
             self._crosswalk_dist * start_vec.x + self._crosswalk_right_dist * start_right_vec.x,
             self._crosswalk_dist * start_vec.y + self._crosswalk_right_dist * start_right_vec.y,
-            self._crosswalk_dist * start_vec.z + self._crosswalk_right_dist * start_right_vec.z + 0.5
+            self._crosswalk_dist * start_vec.z + self._crosswalk_right_dist * start_right_vec.z + 1.0
         )
-
-        # left_wp = get_opposite_dir_lanes(collision_wp)[-1]
-
-        # # Get the crosswalk end point
-        # end_wp = left_wp
-        # while end_wp.lane_type != carla.LaneType.Sidewalk:
-        #     wp = end_wp.get_right_lane()
-        #     if wp is None:
-        #         raise ValueError("Couldn't find a waypoint to start the flow")
-        #     end_wp = wp
-
-        # # Displace it to the crosswalk. Move backwards towards the crosswalk
-        # end_vec = end_wp.transform.get_forward_vector()
-        # end_right_vec = end_wp.transform.get_right_vector()
-
-        # end_loc = end_wp.transform.location + carla.Location(
-        #     - self._crosswalk_dist * end_vec.x + self._crosswalk_right_dist * end_right_vec.x,
-        #     - self._crosswalk_dist * end_vec.y + self._crosswalk_right_dist * end_right_vec.y,
-        #     - self._crosswalk_dist * end_vec.z + self._crosswalk_right_dist * end_right_vec.z
-        # )
 
         spawn_rotation = start_wp.transform.rotation
         spawn_rotation.yaw += 270

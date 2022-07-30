@@ -91,6 +91,8 @@ class VehicleOpensDoor(BasicScenario):
         if parked_wp is None:
             raise ValueError("Couldn't find a spot to place the adversary vehicle")
 
+        self._remove_parked_vehicles(parked_wp.transform.location)
+
         self._parked_actor = CarlaDataProvider.request_new_actor(
             "*vehicle.*", parked_wp.transform, attribute_filter={'has_dynamic_doors': True, 'base_type': 'car'})
         if not self._parked_actor:
@@ -135,6 +137,15 @@ class VehicleOpensDoor(BasicScenario):
             sequence.add_child(SetMaxSpeed(0))
 
         return sequence
+
+    def _remove_parked_vehicles(self, actor_location):
+        """Removes the parked vehicles that might have conflicts with the scenario"""
+        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
+        vehicles_to_destroy = set()
+        for v in parked_vehicles:
+            if v.transform.location.distance(actor_location) < 10:
+                vehicles_to_destroy.add(v)
+        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _get_displaced_location(self, actor, wp):
         """

@@ -290,7 +290,7 @@ class ChangeRoadFriction(AtomicBehavior):
             py_trees.common.Status.SUCCESS
         """
 
-        for actor in CarlaDataProvider.get_world().get_actors().filter('static.trigger.friction'):
+        for actor in CarlaDataProvider.get_all_actors().filter('static.trigger.friction'):
             actor.destroy()
 
         friction_bp = CarlaDataProvider.get_world().get_blueprint_library().find('static.trigger.friction')
@@ -2679,7 +2679,7 @@ class ActorSource(AtomicBehavior):
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         if self._actor_limit > 0:
-            world_actors = self._world.get_actors()
+            world_actors = CarlaDataProvider.get_all_actors()
             spawn_point_blocked = False
             if (self._last_blocking_actor and
                     self._spawn_point.location.distance(self._last_blocking_actor.get_location()) < self._threshold):
@@ -2889,7 +2889,6 @@ class BicycleFlow(AtomicBehavior):
 
         self._source_transform = self._plan[0][0].transform
         self._source_location = self._source_transform.location
-        self._source_vector = self._source_transform.get_forward_vector()
         self._sink_location = self._plan[-1][0].transform.location
 
         self._min_spawn_dist = spawn_dist_interval[0]
@@ -2897,6 +2896,8 @@ class BicycleFlow(AtomicBehavior):
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
         self._add_initial_actors = add_initial_actors
+
+        self._opt_dict = {"ignore_traffic_lights": True, "ignore_vehicles": True}
 
         self._actor_data = []
         self._grp = CarlaDataProvider.get_global_route_planner()
@@ -2914,6 +2915,23 @@ class BicycleFlow(AtomicBehavior):
                 self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
     def _spawn_actor(self, transform):
+        """Spawn the actor"""
+        # Initial actors don't want all the plan. Remove the points behind them
+        plan = self._plan
+        actor_loc = transform.location
+        while len(plan) > 0:
+            wp, _ = plan[0]
+            loc = wp.transform.location
+            actor_heading = transform.get_forward_vector()
+            actor_wp_vec = loc - actor_loc
+            if actor_heading.dot(actor_wp_vec) < 0 or loc.distance(actor_loc) < 10:
+                plan.pop(0)
+            else:
+                break
+
+        if not plan:
+            return
+
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', transform, rolename='scenario no lights',
             attribute_filter={'base_type': 'bicycle'}, tick=False
@@ -2921,10 +2939,12 @@ class BicycleFlow(AtomicBehavior):
         if actor is None:
             return
 
-        actor.set_target_velocity(self._speed * self._source_vector)
-        controller = BasicAgent(actor, 3.6 * self._speed,
+        controller = BasicAgent(actor, 3.6 * self._speed, opt_dict=self._opt_dict,
             map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
-        controller.set_global_plan(self._plan)
+        controller.set_global_plan(plan)
+
+        initial_vec = plan[0][0].transform.get_forward_vector()
+        actor.set_target_velocity(self._speed * initial_vec)
 
         self._actor_data.append([actor, controller])
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
@@ -3840,6 +3860,7 @@ class ScenarioTimeout(AtomicBehavior):
         self._scenario_name = scenario_name
         self._start_time = 0
         self._scenario_timeout = False
+        self._terminated = False
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
     def initialise(self):
@@ -3847,6 +3868,7 @@ class ScenarioTimeout(AtomicBehavior):
         Set start time
         """
         self._start_time = GameTime.get_time()
+        py_trees.blackboard.Blackboard().set("AC_SwitchActorBlockedTest", False, overwrite=True)
         super().initialise()
 
     def update(self):
@@ -3865,6 +3887,8 @@ class ScenarioTimeout(AtomicBehavior):
         """
         Modifies the blackboard to tell the `ScenarioTimeoutTest` if the timeout was triggered
         """
-        py_trees.blackboard.Blackboard().set(f"ScenarioTimeout_{self._scenario_name}", self._scenario_timeout, overwrite=True)
-        self._scenario_timeout = False  # py_trees calls the terminate several times for some reason.
+        if not self._terminated:  # py_trees calls the terminate several times for some reason.
+            py_trees.blackboard.Blackboard().set(f"ScenarioTimeout_{self._scenario_name}", self._scenario_timeout, overwrite=True)
+            py_trees.blackboard.Blackboard().set("AC_SwitchActorBlockedTest", True, overwrite=True)
+            self._terminated = True
         super().terminate(new_status)
