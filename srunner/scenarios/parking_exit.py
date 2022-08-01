@@ -71,7 +71,7 @@ class ParkingExit(BasicScenario):
             CarlaDataProvider.get_traffic_manager_port())
         self.timeout = timeout
 
-        self._bp_attributes = {'base_type': 'car'}
+        self._bp_attributes = {'base_type': 'car', 'generation': 2}
         self._side_end_distance = 50
 
         self._front_vehicle_distance = get_value_parameter(config, 'front_vehicle_distance', float, 20)
