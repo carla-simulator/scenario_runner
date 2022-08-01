@@ -490,6 +490,7 @@ class InterurbanActorFlow(BasicScenario):
                 index = route_index
                 dist = route_dist
 
+        reached_junction = False
         for i in range(index, len(route)):
             route_transform, road_option = route[i]
 

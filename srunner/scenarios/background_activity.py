@@ -22,7 +22,8 @@ from srunner.tools.scenario_helper import get_same_dir_lanes, get_opposite_dir_l
 JUNCTION_ENTRY = 'entry'
 JUNCTION_MIDDLE = 'middle'
 JUNCTION_EXIT = 'exit'
-JUNCTION_ROAD = 'road'
+JUNCTION_EXIT_ROAD = 'exit_road'
+JUNCTION_EXIT_INACTIVE = 'exit_inactive'
 
 EGO_JUNCTION = 'junction'
 EGO_ROAD = 'road'
@@ -218,7 +219,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._active_junctions = []  # List of all the active junctions
 
         self._junction_sources_dist = 40  # Distance from the entry sources to the junction [m]
-        self._junction_sources_max_actors = 4  # Maximum vehicles alive at the same time per source
+        self._junction_sources_max_actors = 6  # Maximum vehicles alive at the same time per source
         self._junction_spawn_dist = 15  # Distance between spawned vehicles [m]
 
         self._junction_source_perc = 70  # Probability [%] of the source being created
@@ -2060,7 +2061,7 @@ class BackgroundBehavior(AtomicBehavior):
             actors = junction.exit_dict[exit_lane_key]['actors']
             self._move_actors_forward(actors, space)
             for actor in actors:
-                if junction.actor_dict[actor]['state'] == JUNCTION_ROAD:
+                if junction.actor_dict[actor]['state'] == JUNCTION_EXIT_ROAD:
                     self._actors_speed_perc[actor] = 100
                     junction.actor_dict[actor]['state'] = JUNCTION_EXIT
 
@@ -2383,11 +2384,19 @@ class BackgroundBehavior(AtomicBehavior):
                 elif state == JUNCTION_EXIT:
                     distance = location.distance(exit_dict[exit_lane_key]['ref_wp'].transform.location)
                     if distance > exit_dict[exit_lane_key]['max_distance']:
-                        actor_dict[actor]['state'] = JUNCTION_ROAD
+                        if exit_lane_key in junction.route_exit_keys:
+                            actor_dict[actor]['state'] = JUNCTION_EXIT_ROAD
+                        else:
+                            self._actors_speed_perc[actor] = 0
+                            actor_dict[actor]['state'] = JUNCTION_EXIT_INACTIVE
 
                 # Set them ready to move so that the ego can smoothly cross the junction
-                elif state == JUNCTION_ROAD:
+                elif state == JUNCTION_EXIT_ROAD:
                     self._set_road_actor_speed(location, actor, multiplier=1.5)
+                    pass
+
+                # Wait
+                elif state == JUNCTION_EXIT_INACTIVE:
                     pass
 
     def _update_opposite_actors(self):

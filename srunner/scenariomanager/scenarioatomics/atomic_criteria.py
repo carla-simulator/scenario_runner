@@ -2108,7 +2108,6 @@ class YieldToEmergencyVehicleTest(Criterion):
                 self.events.append(traffic_event)
 
             self._terminated = True
-            print(f"ACTUAL VALUE: {self.actual_value}")
 
         super().terminate(new_status)
 
