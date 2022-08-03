@@ -164,7 +164,9 @@ class DynamicObjectCrossing(BasicScenario):
         self._collision_wp = None
 
         self._adversary_speed = 2.0  # Speed of the adversary [m/s]
-        self._reaction_time = 2.1  # Time the agent has to react to avoid the collision [s]
+        self._crossing_angle = get_value_parameter(config, 'crossing_angle', float, 0)
+        self._reaction_time = 2.3  # Time the agent has to react to avoid the collision [s]
+        self._reaction_time += 0.1 * floor(self._crossing_angle / 5)
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
@@ -173,7 +175,6 @@ class DynamicObjectCrossing(BasicScenario):
 
         self._distance = get_value_parameter(config, 'distance', float, 12)
         self._blocker_model = get_value_parameter(config, 'blocker_model', str, 'static.prop.vendingmachine')
-        self._crossing_angle = get_value_parameter(config, 'crossing_angle', float, 0)
         if abs(self._crossing_angle) > 90:
             raise ValueError("'crossing_angle' must be between -90 and 90º for the pedestrian to cross the road")
         self._direction = get_value_parameter(config, 'direction', str, 'right')
@@ -368,7 +369,7 @@ class ParkingCrossingPedestrian(BasicScenario):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
         # Time the agent has to react to avoid the collision [s]
-        self._reaction_time = 2.2
+        self._reaction_time = 2.3
         self._reaction_time += 0.1 * floor(self._crossing_angle / 5)
 
         super().__init__("ParkingCrossingPedestrian",

@@ -72,8 +72,8 @@ class JunctionLeftTurn(BasicScenario):
         self._scenario_timeout = 240
 
         # The faster the flow, the further they are spawned, leaving time to react to them
-        self._source_dist = 5 * self._flow_speed
-        self._sink_dist = 3 * self._flow_speed
+        self._source_dist = 4 * self._flow_speed
+        self._sink_dist = 2.5 * self._flow_speed
 
         super().__init__("JunctionLeftTurn",
                          ego_vehicles,

@@ -1045,9 +1045,8 @@ class WaitUntilInFront(AtomicCondition):
         # Wait for the vehicle to be in front
         other_dir = other_next_waypoint.transform.get_forward_vector()
         act_other_dir = actor_location - other_next_waypoint.transform.location
-        dot_ve_wp = other_dir.x * act_other_dir.x + other_dir.y * act_other_dir.y + other_dir.z * act_other_dir.z
 
-        if dot_ve_wp > 0.0:
+        if other_dir.dot(act_other_dir) > 0.0:
             in_front = True
 
         # Wait for it to be close-by
@@ -1055,6 +1054,58 @@ class WaitUntilInFront(AtomicCondition):
             close_by = True
         elif actor_location.distance(other_next_waypoint.transform.location) < self._distance:
             close_by = True
+
+        if in_front and close_by:
+            new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
+class WaitUntilInFrontPosition(AtomicCondition):
+
+    """
+    Behavior that support the creation of cut ins. It waits until the actor has passed another actor
+
+    Parameters:
+    - actor: the one getting in front of the other actor
+    - transform: the reference transform that the actor will have to get in front of
+    """
+
+    def __init__(self, actor, transform, check_distance=True, name="WaitUntilInFrontPosition"):
+        """
+        Init
+        """
+        super().__init__(name)
+
+        self._actor = actor
+        self._ref_transform = transform
+        self._ref_location = transform.location
+        self._ref_vector = transform.get_forward_vector()
+        self._check_distance = check_distance
+
+        self._distance = 10
+
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Checks if the two actors meet the requirements
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        # Is the actor in front?
+        location = CarlaDataProvider.get_location(self._actor)
+        if location is None:
+            return new_status
+
+        actor_dir = location - self._ref_location
+        in_front = actor_dir.dot(self._ref_vector) > 0.0
+
+        # Is the actor close-by?
+        if not self._check_distance or location.distance(self._ref_location) < self._distance:
+            close_by = True
+        else:
+            close_by = False
 
         if in_front and close_by:
             new_status = py_trees.common.Status.SUCCESS

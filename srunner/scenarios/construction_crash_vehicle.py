@@ -18,14 +18,16 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestr
                                                                       ActorTransformSetter,
                                                                       SwitchWrongDirectionTest,
                                                                       ScenarioTimeout,
-                                                                      Idle)
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, InTriggerDistanceToLocation
+                                                                      Idle, WaitForever,
+                                                                      OppositeActorFlow)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
+                                                                               WaitUntilInFrontPosition)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import (ChangeOppositeBehavior,
-                                              RemoveRoadLane,
+from srunner.tools.background_manager import (RemoveRoadLane,
                                               ReAddRoadLane,
-                                              SetMaxSpeed)
+                                              SetMaxSpeed,
+                                              ChangeOppositeBehavior)
 
 
 def get_value_parameter(config, name, p_type, default):
@@ -34,6 +36,14 @@ def get_value_parameter(config, name, p_type, default):
     else:
         return default
 
+def get_interval_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return [
+            p_type(config.other_parameters[name]['from']),
+            p_type(config.other_parameters[name]['to'])
+        ]
+    else:
+        return default
 
 class ConstructionObstacle(BasicScenario):
     """
@@ -56,10 +66,8 @@ class ConstructionObstacle(BasicScenario):
         self.timeout = timeout
 
         self._trigger_distance = 30
-        self._takeover_max_dist = 60
-        self._drive_distance = self._trigger_distance + self._takeover_max_dist
-
         self._opposite_wait_duration = 5
+        self._end_distance = 50
 
         self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._construction_wp = None
@@ -84,6 +92,19 @@ class ConstructionObstacle(BasicScenario):
             raise ValueError("Couldn't find a viable position to set up the construction actors")
         self._construction_wp = wps[0]
         self._create_construction_setup(self._construction_wp.transform, self._reference_waypoint.lane_width)
+
+        self._end_wp = self._move_waypoint_forward(self._construction_wp, self._end_distance)
+
+    def _move_waypoint_forward(self, wp, distance):
+        dist = 0
+        next_wp = wp
+        while dist < distance:
+            next_wps = next_wp.next(1)
+            if not next_wps or next_wps[0].is_junction:
+                break
+            next_wp = next_wps[0]
+            dist += 1
+        return next_wp
 
     def _spawn_side_prop(self, wp):
         """Spawn the accident indication signal"""
@@ -144,7 +165,7 @@ class ConstructionObstacle(BasicScenario):
         _setup = {'lengths': [6, 3], 'offsets': [2, 1]}
         _z_increment = 0.1
 
-        # Traffic warning and debris 
+        # Traffic warning and debris
         for key, value in _initial_offset.items():
             if key == 'cones':
                 continue
@@ -198,51 +219,36 @@ class ConstructionObstacle(BasicScenario):
         Remove the lane that would collide with the construction and add the construction props.
         Wait until the ego is close to the construction (and a bit more) before changing the side traffic
         Readd the traffic at the end
-
-        Sequence:
-          - RemoveRoadLane
-          - TimeoutParallel (Parallel):
-            - ScenarioTimeout
-            - Behavior (Sequence):
-                - ActorTransformSetter (1 for each prop)
-                - InTriggerDistanceToLocation
-                - Idle
-                - BA stuff
-          - ActorDestory
-          - SwitchWrongDirectionTest
-          - ChangeOppositeBehavior
-          - ReAddRoadLane
         """
         root = py_trees.composites.Sequence(name="ConstructionObstacle")
         if self.route_mode:
             root.add_child(RemoveRoadLane(self._reference_waypoint))
 
-        timeout_parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        timeout_parallel.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        for actor, transform in self._construction_transforms:
+            root.add_child(ActorTransformSetter(actor, transform, True))
+    
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        end_condition.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._end_wp.transform, False))
 
         behavior = py_trees.composites.Sequence()
-        for actor, transform in self._construction_transforms:
-            behavior.add_child(ActorTransformSetter(actor, transform, True))
         behavior.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._construction_wp.transform.location, self._trigger_distance))
         behavior.add_child(Idle(self._opposite_wait_duration))
-
         if self.route_mode:
             behavior.add_child(SetMaxSpeed(self._max_speed))
-        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+        behavior.add_child(WaitForever())
 
-        timeout_parallel.add_child(behavior)
-
-        root.add_child(timeout_parallel)
-        for i, _ in enumerate(self.other_actors):
-            root.add_child(ActorDestroy(self.other_actors[i]))
+        end_condition.add_child(behavior)
+        root.add_child(end_condition)
 
         if self.route_mode:
-            root.add_child(SetMaxSpeed(self._max_speed))
+            root.add_child(SetMaxSpeed(0))
             root.add_child(ReAddRoadLane(0))
+        for actor in self.other_actors:
+            root.add_child(ActorDestroy(actor))
 
         return root
-
 
     def _create_test_criteria(self):
         """
@@ -267,8 +273,7 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
     """
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
 
-        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 200)
-
+        self._opposite_interval = get_interval_parameter(config, 'frequency', float, [20, 100])
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
@@ -276,49 +281,39 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
         Remove the lane that would collide with the construction and add the construction props.
         Wait until the ego is close to the construction (and a bit more) before changing the opposite traffic
         Readd the traffic at the end, and allow the ego to invade the opposite lane by deactivating the criteria
-
-        Sequence:
-          - RemoveRoadLane
-          - TimeoutParallel (Parallel):
-            - ScenarioTimeout
-            - Behavior (Sequence):
-                - ActorTransformSetter (1 for each prop)
-                - InTriggerDistanceToLocation
-                - Idle
-                - BA stuff
-          - ActorDestory
-          - SwitchWrongDirectionTest
-          - ChangeOppositeBehavior
-          - ReAddRoadLane
         """
-        root = py_trees.composites.Sequence(name="ConstructionObstacle")
+        reference_wp = self._construction_wp.get_left_lane()
+        if not reference_wp:
+            raise ValueError("Couldnt find a left lane to spawn the opposite traffic")
+
+        root = py_trees.composites.Sequence(name="ConstructionObstacleTwoWays")
         if self.route_mode:
             root.add_child(RemoveRoadLane(self._reference_waypoint))
 
-        timeout_parallel = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        timeout_parallel.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        for actor, transform in self._construction_transforms:
+            root.add_child(ActorTransformSetter(actor, transform, True))
+    
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        end_condition.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._end_wp.transform, False))
 
         behavior = py_trees.composites.Sequence()
-        for actor, transform in self._construction_transforms:
-            behavior.add_child(ActorTransformSetter(actor, transform, True))
         behavior.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._construction_wp.transform.location, self._trigger_distance))
         behavior.add_child(Idle(self._opposite_wait_duration))
-
         if self.route_mode:
             behavior.add_child(SwitchWrongDirectionTest(False))
-            behavior.add_child(ChangeOppositeBehavior(spawn_dist=self._opposite_frequency))
-        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._drive_distance))
+            behavior.add_child(ChangeOppositeBehavior(active=False))
+            behavior.add_child(OppositeActorFlow(reference_wp, self.ego_vehicles[0], self._opposite_interval))
 
-        timeout_parallel.add_child(behavior)
-
-        root.add_child(timeout_parallel)
-        for i, _ in enumerate(self.other_actors):
-            root.add_child(ActorDestroy(self.other_actors[i]))
+        end_condition.add_child(behavior)
+        root.add_child(end_condition)
 
         if self.route_mode:
             root.add_child(SwitchWrongDirectionTest(True))
-            root.add_child(ChangeOppositeBehavior(spawn_dist=40))
+            root.add_child(ChangeOppositeBehavior(active=True))
             root.add_child(ReAddRoadLane(0))
+        for actor in self.other_actors:
+            root.add_child(ActorDestroy(actor))
 
         return root

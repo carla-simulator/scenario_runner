@@ -11,6 +11,8 @@ removing its interference with other scenarios
 
 import py_trees
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AtomicBehavior
+from srunner.scenariomanager.timer import GameTime
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
 class ChangeRoadBehavior(AtomicBehavior):
@@ -286,3 +288,57 @@ class HandleJunctionScenario(AtomicBehavior):
              self._remove_exits, self._stop_entries, self._extend_road_exit],
             overwrite=True)
         return py_trees.common.Status.SUCCESS
+
+
+class AddOppositeVariabilityBehavior(AtomicBehavior):
+    """
+    Updates the blackboard to periodically change the parameters opposite road spawn distance.
+
+    Args:
+        interval (list): Two element list with the minimum and maximum distance of the opposite lane
+    """
+
+    def __init__(self, interval, end_value, name="AddOppositeVariabilityBehavior"):
+        self._min_spawn_dist = interval[0]
+        self._max_spawn_dist = interval[1]
+        self._end_value = end_value
+
+        self._spawn_dist = 0
+        self._change_time = 0
+        self._change_frequency = 0
+        self._rng = CarlaDataProvider.get_random_seed()
+
+        self._terminated = False
+        super().__init__(name)
+
+    def initialise(self):
+        """Change the opposite frequency and start the timer"""
+        self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+        self._change_time = GameTime.get_time()
+        self._change_frequency = self._spawn_dist / 4
+
+        py_trees.blackboard.Blackboard().set(
+            "BA_ChangeOppositeBehavior", [None, self._spawn_dist, None], overwrite=True
+        )
+        super().initialise()
+
+    def update(self):
+        """Periodically change the frequency of the opposite traffic"""
+        if GameTime.get_time() - self._change_time > self._change_frequency:
+            self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+            self._change_time = GameTime.get_time()
+            self._change_frequency = self._spawn_dist / 4
+            py_trees.blackboard.Blackboard().set(
+                "BA_ChangeOppositeBehavior", [None, self._spawn_dist, None], overwrite=True
+            )
+
+        return py_trees.common.Status.RUNNING
+
+    def terminate(self, new_status):
+
+        if not self._terminated:
+            py_trees.blackboard.Blackboard().set(
+                "BA_ChangeOppositeBehavior", [None, self._end_value, None], overwrite=True
+            )
+            self._terminated = True
+        return super().terminate(new_status)
