@@ -148,7 +148,7 @@ class Junction(object):
         self.inactive_exit_keys = []
 
     def contains_wp(self, wp):
-        """Checks whether or not a carla.Junction is part of the class"""
+        """Checks whether or not a carla.Waypoint is inside the junction"""
         if not wp.is_junction:
             return False
         other_id = wp.get_junction().id
@@ -229,8 +229,8 @@ class BackgroundBehavior(AtomicBehavior):
         self._opposite_sources = []
         self._opposite_route_index = 0
 
-        self._opposite_sources_dist = 100  # Distance from the ego to the opposite sources [m]
         self._opposite_spawn_dist = 40  # Distance between spawned vehicles [m]
+        self._opposite_sources_dist = 80  # Distance from the ego to the opposite sources [m]. Twice the spawn distance
 
         self._active_opposite_sources = True  # Flag to (de)activate all opposite sources
 
@@ -1580,6 +1580,7 @@ class BackgroundBehavior(AtomicBehavior):
                     self._opposite_sources_dist = source_dist
             if spawn_dist is not None:
                 self._opposite_spawn_dist = spawn_dist
+                self._opposite_sources_dist = 2 * spawn_dist
             if active is not None:
                 self._active_opposite_sources = active
                 for source in self._opposite_sources:

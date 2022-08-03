@@ -16,14 +16,14 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (InvadingActorFlow,
+                                                                      ScenarioTimeout,
                                                                       ActorDestroy,
-                                                                      BasicAgentBehavior,
-                                                                      ScenarioTimeout)
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
+                                                                      ActorTransformSetter)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitUntilInFrontPosition
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import LeaveSpaceInFront
+from srunner.tools.background_manager import RemoveRoadLane, ChangeOppositeBehavior, ReAddRoadLane
 
 
 def convert_dict_to_location(actor_dict):
@@ -36,6 +36,13 @@ def convert_dict_to_location(actor_dict):
         z=float(actor_dict['z'])
     )
     return location
+
+
+def get_value_parameter(config, name, p_type, default):
+    if name in config.other_parameters:
+        return p_type(config.other_parameters[name]['value'])
+    else:
+        return default
 
 
 class InvadingTurn(BasicScenario):
@@ -60,92 +67,100 @@ class InvadingTurn(BasicScenario):
         self._reference_waypoint = self._map.get_waypoint(
             self._trigger_location)
 
-        self._speed = 30 # Km/h
+        self._flow_frequency = 40 # m
+        self._source_dist = 30 # Distance between source and end point
 
-        # Distance between the trigger point and the start location of the adversary
-        if 'distance' in config.other_parameters:
-            self._distance = float(
-                config.other_parameters['distance']['value'])
-        else:
-            self._distance = 120  # m
-
-        self._adversary_end = self._reference_waypoint.get_left_lane().transform.location
-
-        # The width (m) of the vehicle invading the opposite lane.
-        if 'offset' in config.other_parameters:
-            self._offset = float(
-                config.other_parameters['offset']['value'])
-        else:
-            self._offset = 0.5
-
+        self._distance = get_value_parameter(config, 'distance', float, 100)
+        self._offset = get_value_parameter(config, 'offset', float, 0.5)  # meters invaded in the opposite direction
         self._scenario_timeout = 240
 
-        super(InvadingTurn, self).__init__("InvadingTurn",
-                                           ego_vehicles,
-                                           config,
-                                           world,
-                                           debug_mode,
-                                           criteria_enable=criteria_enable)
+        self._obstacle_transforms = []
+
+        super().__init__("InvadingTurn",
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
         Custom initialization
         """
         # Spawn adversary actor
-        self._adversary_start_waypoint = self._reference_waypoint.next(self._distance)[
-            0]
-        self._adversary_start_waypoint = self._adversary_start_waypoint.get_left_lane()
-        if self._adversary_start_waypoint:
-            self._adversary_start_transform = self._adversary_start_waypoint.transform
-        else:
-            raise Exception(
-                "Couldn't find viable position for the adversary vehicle")
-        spawn_transform = carla.Transform(
-            self._adversary_start_transform.location, self._adversary_start_transform.rotation)
+        next_wps = self._reference_waypoint.next(self._distance + self._source_dist)
+        if not next_wps:
+            raise ValueError("Couldn't find the source location for the actor flow")
+        self._forward_wp = next_wps[0]
+        self._source_wp = self._forward_wp.get_left_lane()
+        if not self._source_wp:
+            raise ValueError("Couldn't find the source location for the actor flow")
 
-        spawn_transform.location.z += 5  # Avoid colliding with BA actors
-        actor = CarlaDataProvider.request_new_actor(
-            "vehicle.*", spawn_transform, rolename='scenario', attribute_filter={'base_type': 'car', 'has_lights': True})
-        if actor is None:
-            raise Exception(
-                "Couldn't spawn the adversary vehicle")
+        self._sink_wp = self._reference_waypoint.get_left_lane()
+        if not self._sink_wp:
+            raise ValueError("Couldn't find the sink location for the actor flow")
 
-        # Remove its physics so that it doesn't fall
-        actor.set_simulate_physics(False)
-        # Move the actor underground
-        new_location = actor.get_location()
-        new_location.z -= 500
-        actor.set_location(new_location)
+        # Lane offset
+        self._offset_constant = 0.7  # Ideally, half the vehicle lane width
+        self._true_offset = self._offset + self._sink_wp.lane_width / 2 - self._offset_constant
+        self._true_offset *= -1 # Cause left direction
 
-        self.other_actors.append(actor)
+        self._create_obstacle()
 
-        # Calculate the real offset
-        lane_width = self._adversary_start_waypoint.lane_width
-        car_width = actor.bounding_box.extent.y*2
-        self._offset = -1*(self._offset + 0.5*lane_width - 0.5*car_width)
+    def _create_obstacle(self):
+
+        next_wp = self._source_wp.next(10)[0]
+        obstacle_distance = 0.5 * self._distance
+        dist = 0
+        while dist < obstacle_distance:
+            next_wp = next_wp.next(5)[0]
+
+            displacement = 0.8 * next_wp.lane_width / 2
+            r_vec = next_wp.transform.get_right_vector()
+            spawn_transform = next_wp.transform
+            spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=0.3)
+
+            cone = CarlaDataProvider.request_new_actor('*constructioncone*', spawn_transform)
+            self.other_actors.append(cone)
+
+            self._obstacle_transforms.append([cone, spawn_transform])
+
+            transform = carla.Transform(spawn_transform.location, spawn_transform.rotation)
+            transform.location.z -= 200
+            cone.set_transform(transform)
+            cone.set_simulate_physics(False)
+
+            dist += 5
+
+        self._obstacle_transforms.reverse()  # So that the closest cones are spawned first
 
     def _create_behavior(self):
         """
         The adversary vehicle will go to the target place while invading another lane.
         """
+        sequence = py_trees.composites.Sequence("InvadingTurn")
 
-        sequence = py_trees.composites.Sequence()
+        for actor, transform in self._obstacle_transforms:
+            sequence.add_child(ActorTransformSetter(actor, transform))
 
         if self.route_mode:
-            sequence.add_child(LeaveSpaceInFront(self._distance))
+            sequence.add_child(RemoveRoadLane(self._reference_waypoint))
+            sequence.add_child(ChangeOppositeBehavior(active=False))
 
-        # Teleport adversary
-        sequence.add_child(ActorTransformSetter(
-            self.other_actors[0], self._adversary_start_transform))
+        main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        main_behavior.add_child(InvadingActorFlow(
+            self._source_wp, self._sink_wp, self.ego_vehicles[0], self._flow_frequency, offset=self._true_offset))
 
-        behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        behavior.add_child(BasicAgentBehavior(
-            self.other_actors[0], self._adversary_end, target_speed=self._speed, opt_dict={'offset': self._offset}))
-        behavior.add_child(DriveDistance(self.ego_vehicles[0], self._distance))
-        behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+        main_behavior.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._forward_wp.transform, True))
+        main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
-        sequence.add_child(behavior)
-        sequence.add_child(ActorDestroy(self.other_actors[0]))
+        sequence.add_child(main_behavior)
+        if self.route_mode:
+            sequence.add_child(ReAddRoadLane(0))
+            sequence.add_child(ChangeOppositeBehavior(active=True))
+
+        for actor in self.other_actors:
+            sequence.add_child(ActorDestroy(actor))
 
         return sequence
 
