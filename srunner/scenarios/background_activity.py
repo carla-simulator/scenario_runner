@@ -207,6 +207,8 @@ class BackgroundBehavior(AtomicBehavior):
         self._road_extra_front_actors = 0  # For cases where we want more space but not more vehicles
         self._road_spawn_dist = 15  # Distance between spawned vehicles [m]
 
+        self._active_road_sources = True
+
         self._base_min_radius = 0
         self._base_max_radius = 0
         self._min_radius = 0
@@ -241,8 +243,6 @@ class BackgroundBehavior(AtomicBehavior):
         self._scenario_junction_entry_distance = self._road_spawn_dist  # Min distance between vehicles and ego
         self._scenario_removed_lane = False  # Flag indicating a scenario has removed a lane
         self._scenario_remove_lane_offset = 0
-
-        self._route_sources_active = True
 
     def _get_route_data(self, route):
         """Extract the information from the route"""
@@ -831,17 +831,25 @@ class BackgroundBehavior(AtomicBehavior):
         self._ego_state = EGO_JUNCTION
         for lane in self._road_dict:
             for actor in self._road_dict[lane].actors:
-                # TODO: Map the actors to the junction entry to have full control of them. This should remove the 'at_oppo_entry_lane'
+                # TODO: Map the actors to the junction entry to have full control of them.
+                # This should remove the 'at_oppo_entry_lane'.
                 self._add_actor_dict_element(junction.actor_dict, actor)
                 if actor not in self._scenario_stopped_actors:
                     self._actors_speed_perc[actor] = 100
 
         for lane_key in self._road_dict:
             source = self._road_dict[lane_key]
-            if get_lane_key(source.wp) in junction.route_entry_keys:
+            source_key = get_lane_key(source.wp)
+            if source_key in junction.route_entry_keys:
                 junction.entry_sources.append(Source(
-                    source.wp, source.actors, entry_lane_wp=source.wp, active=self._route_sources_active)
+                    source.wp, source.actors, entry_lane_wp=source.wp, active=source.active)
                 )
+                if source_key in junction.inactive_entry_keys:
+                    for actor in source.actors:
+                        self._destroy_actor(actor)
+                    source.active = False
+                    junction.inactive_entry_keys.remove(source_key)
+
             # TODO: Else should map the source to the entry and add it
 
         self._road_dict.clear()
@@ -861,14 +869,14 @@ class BackgroundBehavior(AtomicBehavior):
         if not self._active_junctions:
             for wp in junction.exit_wps:
                 if get_lane_key(wp) in route_exit_keys:
-                    self._road_dict[get_lane_key(wp)] = Source(wp, [], active=self._route_sources_active)
+                    self._road_dict[get_lane_key(wp)] = Source(wp, [], active=self._active_road_sources)
 
         else:
             for wp in junction.exit_wps:
                 if get_lane_key(wp) in route_exit_keys:
                     # TODO: entry_lane_wp isn't really this one (for cases with road changes)
                     self._active_junctions[0].entry_sources.append(
-                        Source(wp, [], entry_lane_wp=wp, active=self._route_sources_active)
+                        Source(wp, [], entry_lane_wp=wp, active=self._active_road_sources)
                     )
 
         # Handle the actors
@@ -1061,6 +1069,8 @@ class BackgroundBehavior(AtomicBehavior):
 
             if not source.active:
                 continue
+            if not self._is_location_behind_ego(source.wp.transform.location):
+                continue  # Stop the sources in front of the ego (created by new lanes)
             if len(source.actors) >= self._road_back_vehicles + self._road_front_vehicles:
                 continue
 
@@ -1127,7 +1137,7 @@ class BackgroundBehavior(AtomicBehavior):
             actors = self._spawn_actors(spawn_wps)
 
             self._road_dict[get_lane_key(wp)] = Source(
-                prev_wp, actors, active=self._route_sources_active
+                prev_wp, actors, active=self._active_road_sources
             )
 
     def _initialise_opposite_sources(self):
@@ -1373,16 +1383,33 @@ class BackgroundBehavior(AtomicBehavior):
         route_move_dist = max(new_accum_dist - prev_accum_dist, 0.1)
 
         if len(new_wps) > len(old_wps):
-            for new_wp in list(new_wps):
-                prev_wps = new_wp.previous(2 * route_move_dist)  # x2, just in case
-                if prev_wps:
-                    continue
+            # Don't add anything in front if the junction entry has to be empty
+            if not self._scenario_junction_entry:
 
-                # Found the new lane, add a Source
-                source_wp = get_source_wp(new_wp)
-                if not source_wp:
-                    continue
-                self._road_dict[get_lane_key(new_wp)] = Source(source_wp, [], active=self._route_sources_active)
+                for new_wp in list(new_wps):
+
+                    prev_wps = new_wp.previous(2 * route_move_dist)  # x2, just in case
+                    if prev_wps:
+                        continue
+
+                    # Found the new lane, add the actors and source.
+                    # Don't spawn actors while the source is in front of the ego
+                    source_wp = get_source_wp(new_wp)
+                    if not source_wp:
+                        continue
+
+                    next_wp = source_wp
+                    spawn_wps = []
+                    spawn_dist = self._road_front_vehicles + CarlaDataProvider.get_velocity(self._ego_actor)
+                    for _ in range(self._road_front_vehicles):
+                        next_wps = next_wp.next(spawn_dist)
+                        if len(next_wps) != 1 or self._is_junction(next_wps[0]):
+                            break  # Stop when there's no next or found a junction
+                        next_wp = next_wps[0]
+                        spawn_wps.insert(0, next_wp)
+
+                    actors = self._spawn_actors(spawn_wps)
+                    self._road_dict[get_lane_key(source_wp)] = Source(source_wp, actors, active=self._active_road_sources)
 
         elif len(new_wps) < len(old_wps):
             for old_wp in list(old_wps):
@@ -1768,7 +1795,7 @@ class BackgroundBehavior(AtomicBehavior):
         """
         Disables all sources that are part of the ego's route
         """
-        self._route_sources_active = enabled
+        self._active_road_sources = enabled
         for lane in self._road_dict:
             self._road_dict[lane].active = enabled
 
@@ -1807,9 +1834,9 @@ class BackgroundBehavior(AtomicBehavior):
         stop_dist = 15
 
         opposite_wp = collision_wp.get_left_lane()
-        opposite_loc = opposite_wp.transform.location
         if not opposite_wp:
             return  # Nothing else to do
+        opposite_loc = opposite_wp.transform.location
 
         for actor in list(self._opposite_actors):
             location = actor.get_location()
@@ -1863,7 +1890,7 @@ class BackgroundBehavior(AtomicBehavior):
             return
 
         ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
-        spawn_dist = self._road_spawn_dist + 2.5 * ego_speed
+        spawn_dist = self._road_spawn_dist + 2 * ego_speed
 
         spawn_wps = []
 
@@ -1893,7 +1920,7 @@ class BackgroundBehavior(AtomicBehavior):
             actor.set_target_velocity(spawn_wp.transform.get_forward_vector() * ego_speed)
             actors.append(actor)
 
-        self._road_dict[add_lane_key] = Source(prev_wp, actors, active=self._route_sources_active)
+        self._road_dict[add_lane_key] = Source(prev_wp, actors, active=self._active_road_sources)
 
         self._scenario_removed_lane = False
         self._scenario_remove_lane_offset = 0
@@ -1941,8 +1968,7 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _clear_ego_entry(self):
         """
-        Remove all actors in front of the vehicle, and stops those behind,
-        letting the ego smoothly enter the junction.
+        Remove all actors in front of the vehicle.
         """
         def handle_actors(actor_list):
             for actor in list(actor_list):
@@ -1950,6 +1976,7 @@ class BackgroundBehavior(AtomicBehavior):
                 if location and not self._is_location_behind_ego(location):
                     self._destroy_actor(actor)
 
+        # This will make the actors behind never overtake the ego
         self._scenario_junction_entry = True
 
         if self._active_junctions:
@@ -1957,7 +1984,9 @@ class BackgroundBehavior(AtomicBehavior):
                 handle_actors(source.actors)
         else:
             for lane_key in list(self._road_dict):
-                handle_actors(self._road_dict[lane_key].actors)
+                source = self._road_dict[lane_key]
+                handle_actors(source.actors)
+                source.active = False
 
     def _remove_junction_entries(self, wps):
         """Removes a list of entries of the closest junction (or marks them so that they aren't spawned)"""
@@ -2125,7 +2154,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         return actors
 
-    def _spawn_source_actor(self, source, ego_dist=0):
+    def _spawn_source_actor(self, source, ego_dist=20):
         """Given a source, spawns an actor at that source"""
         ego_location = CarlaDataProvider.get_location(self._ego_actor)
         source_transform = source.wp.transform
