@@ -12,7 +12,7 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, KeepVelocity
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, KeepVelocity, WaitForever, Idle
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -20,8 +20,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenarios.basic_scenario import BasicScenario
 
 from srunner.tools.background_manager import HandleJunctionScenario
-
-from srunner.tools.scenario_helper import get_same_dir_lanes, get_opposite_dir_lanes
 
 
 def convert_dict_to_location(actor_dict):
@@ -55,6 +53,7 @@ class PedestrianCrossing(BasicScenario):
         self._wmap = CarlaDataProvider.get_map()
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
+        self._rng = CarlaDataProvider.get_random_seed()
 
         self._adversary_speed = 1.3  # Speed of the adversary [m/s]
         self._reaction_time = 4.0  # Time the agent has to react to avoid the collision [s]
@@ -62,8 +61,15 @@ class PedestrianCrossing(BasicScenario):
         self._ego_end_distance = 40
         self.timeout = timeout
 
-        self._crosswalk_dist = 1
-        self._crosswalk_right_dist = 1
+        self._walker_data = [
+            {'x': 0.4, 'y': 1.5, 'z': 1, 'yaw': 270},
+            {'x': 1, 'y': 2.5, 'z': 1, 'yaw': 270},
+            {'x': 1.6, 'y': 0.5, 'z': 1, 'yaw': 270}
+        ]
+
+        for walker_data in self._walker_data:
+            walker_data['idle_time'] = self._rng.uniform(0, 1.5)
+            walker_data['speed'] = self._rng.uniform(1.3, 2.0)
 
         super().__init__("PedestrianCrossing",
                           ego_vehicles,
@@ -71,6 +77,26 @@ class PedestrianCrossing(BasicScenario):
                           world,
                           debug_mode,
                           criteria_enable=criteria_enable)
+
+    def _get_walker_transform(self, wp, displacement):
+        disp_x = displacement['x']
+        disp_y = displacement['y']
+        disp_z = displacement['z']
+        disp_yaw = displacement['yaw']
+
+        # Displace it to the crosswalk. Move forwards towards the crosswalk
+        start_vec = wp.transform.get_forward_vector()
+        start_right_vec = wp.transform.get_right_vector()
+
+        spawn_loc = wp.transform.location + carla.Location(
+            disp_x * start_vec.x + disp_y * start_right_vec.x,
+            disp_x * start_vec.y + disp_y * start_right_vec.y,
+            disp_x * start_vec.z + disp_y * start_right_vec.z + disp_z
+        )
+
+        spawn_rotation = wp.transform.rotation
+        spawn_rotation.yaw += disp_yaw
+        return carla.Transform(spawn_loc, spawn_rotation)
 
     def _initialize_actors(self, config):
 
@@ -94,27 +120,22 @@ class PedestrianCrossing(BasicScenario):
                 raise ValueError("Couldn't find a waypoint to start the flow")
             start_wp = wp
 
-        # Displace it to the crosswalk. Move forwards towards the crosswalk
-        start_vec = start_wp.transform.get_forward_vector()
-        start_right_vec = start_wp.transform.get_right_vector()
+        # Spawn the walkers
+        for walker_data in self._walker_data:
+            spawn_transform = self._get_walker_transform(start_wp, walker_data)
+            walker = CarlaDataProvider.request_new_actor('walker.*', spawn_transform)
+            if walker is None:
+                for walker in self.other_actors:
+                    walker.destroy()
+                raise ValueError("Failed to spawn an adversary")
+            self.other_actors.append(walker)
 
-        spawn_loc = start_wp.transform.location + carla.Location(
-            self._crosswalk_dist * start_vec.x + self._crosswalk_right_dist * start_right_vec.x,
-            self._crosswalk_dist * start_vec.y + self._crosswalk_right_dist * start_right_vec.y,
-            self._crosswalk_dist * start_vec.z + self._crosswalk_right_dist * start_right_vec.z + 1.0
-        )
+            collision_dist = spawn_transform.location.distance(self._collision_wp.transform.location)
 
-        spawn_rotation = start_wp.transform.rotation
-        spawn_rotation.yaw += 270
-        spawn_transform = carla.Transform(spawn_loc, spawn_rotation)
-
-        adversary = CarlaDataProvider.request_new_actor('walker.*', spawn_transform)
-        if adversary is None:
-            raise ValueError("Failed to spawn an adversary")
-
-        self._collision_dist = spawn_transform.location.distance(self._collision_wp.transform.location)
-
-        self.other_actors.append(adversary)
+            # Distance and duration to cross the whole road + a bit more (supposing symetry in both directions)
+            move_dist = 2.3 * collision_dist
+            walker_data['distance'] = move_dist
+            walker_data['duration'] = move_dist / walker_data['speed']
 
     def _create_behavior(self):
         """
@@ -123,7 +144,7 @@ class PedestrianCrossing(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
         """
-        sequence = py_trees.composites.Sequence(name="CrossingActor")
+        sequence = py_trees.composites.Sequence(name="PedestrianCrossing")
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
@@ -145,16 +166,24 @@ class PedestrianCrossing(BasicScenario):
             self.ego_vehicles[0], collision_location, self._min_trigger_dist))
         sequence.add_child(trigger_adversary)
 
-        # Move the adversary
-        move_distance = 2 * self._collision_dist  # Cross the whole road (supposing symetry in both directions)
-        move_duration = move_distance / self._adversary_speed
-        sequence.add_child(KeepVelocity(
-            self.other_actors[0], self._adversary_speed,
-            duration=move_duration, distance=move_distance, name="AdversaryCrossing"))
+        # Move the walkers
+        main_behavior = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="WalkerMovement")
+
+        for walker_actor, walker_data in zip(self.other_actors, self._walker_data):
+            walker_sequence = py_trees.composites.Sequence(name="WalkerCrossing")
+            walker_sequence.add_child(Idle(walker_data['idle_time']))
+            walker_sequence.add_child(KeepVelocity(
+                walker_actor, walker_data['speed'], False, walker_data['duration'], walker_data['distance']))
+            walker_sequence.add_child(ActorDestroy(walker_actor, name="DestroyAdversary"))
+            walker_sequence.add_child(WaitForever())
+
+            main_behavior.add_child(walker_sequence)
+
+        main_behavior.add_child(DriveDistance(self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))
+        sequence.add_child(main_behavior)
 
         # Remove everything
-        sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
-        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))
 
         return sequence
 

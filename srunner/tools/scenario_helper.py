@@ -738,7 +738,10 @@ def get_distance_between_actors(current, target, distance_type="euclidianDistanc
 
 
 def get_same_dir_lanes(waypoint):
-    """Gets all the lanes with the same direction of the road of a wp"""
+    """
+    Gets all the lanes with the same direction of the road of a wp.
+    Ordered from the edge lane to the center one (from outwards to inwards)
+    """
     same_dir_wps = [waypoint]
 
     # Check roads on the right
@@ -765,7 +768,10 @@ def get_same_dir_lanes(waypoint):
 
 
 def get_opposite_dir_lanes(waypoint):
-    """Gets all the lanes with opposite direction of the road of a wp"""
+    """
+    Gets all the lanes with opposite direction of the road of a wp
+    Ordered from the center lane to the edge one (from inwards to outwards)
+    """
     other_dir_wps = []
     other_dir_wp = None
 

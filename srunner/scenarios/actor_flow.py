@@ -457,14 +457,16 @@ class InterurbanActorFlow(BasicScenario):
 
         self._reference_wp = self._map.get_waypoint(config.trigger_points[0].location)
 
-        self._middle_entry_wp, exit_wp = self._get_entry_exit_route_lanes(self._reference_wp, config.route)
-        exit_wp = exit_wp.next(10)[0]  # just in case the junction maneuvers don't match
-        self._other_entry_wp = exit_wp.get_left_lane()
-        if not self._other_entry_wp or self._other_entry_wp.lane_type != carla.LaneType.Driving:
+        route_entry_wp, route_exit_wp = self._get_entry_exit_route_lanes(self._reference_wp, config.route)
+        route_exit_wp = route_exit_wp.next(8)[0]  # Just in case the junction maneuvers don't match
+        other_entry_wp = route_exit_wp.get_left_lane()
+        if not other_entry_wp or other_entry_wp.lane_type != carla.LaneType.Driving:
             raise ValueError("Couldn't find an end position")
 
         self._source_wp = self._map.get_waypoint(self._start_actor_flow)
         self._sink_wp = self._map.get_waypoint(self._end_actor_flow)
+
+        self._remove_entries = [route_entry_wp, other_entry_wp, self._source_wp]
 
         super().__init__("InterurbanActorFlow",
                          ego_vehicles,
@@ -497,11 +499,13 @@ class InterurbanActorFlow(BasicScenario):
             # Enter the junction
             if not reached_junction and (road_option in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
                 reached_junction = True
-                entry_wp = self._map.get_waypoint(route[i - 1][0].location)
+                entry_wp = self._map.get_waypoint(route[i-1][0].location)
+                entry_wp = entry_wp.previous(2)[0]  # Just in case
 
             # End condition for the behavior, at the end of the junction
             if reached_junction and (road_option not in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
                 exit_wp = self._map.get_waypoint(route_transform.location)
+                exit_wp = exit_wp.next(2)[0]  # Just in case
                 break
 
         return (entry_wp, exit_wp)
@@ -524,8 +528,8 @@ class InterurbanActorFlow(BasicScenario):
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=False,
-                clear_ego_entry=False,
-                remove_entries=[self._source_wp, self._middle_entry_wp, self._other_entry_wp],
+                clear_ego_entry=True,
+                remove_entries=self._remove_entries,
                 remove_exits=[],
                 stop_entries=False,
                 extend_road_exit=0
@@ -590,68 +594,108 @@ class InterurbanAdvancedActorFlow(BasicScenario):
                          debug_mode,
                          criteria_enable=criteria_enable)
 
+    def get_lane_key(self, waypoint):
+        return str(waypoint.road_id) + '*' + str(waypoint.lane_id)
+
+    def _get_junction_entry_wp(self, entry_wp):
+        while entry_wp.is_junction:
+            entry_wps = entry_wp.previous(0.2)
+            if len(entry_wps) == 0:
+                return None  # Stop when there's no prev
+            entry_wp = entry_wps[0]
+        return entry_wp
+
+    def _get_junction_exit_wp(self, exit_wp):
+        while exit_wp.is_junction:
+            exit_wps = exit_wp.next(0.2)
+            if len(exit_wps) == 0:
+                return None  # Stop when there's no prev
+            exit_wp = exit_wps[0]
+        return exit_wp
+
+    def _initialize_actors(self, config):
+        
+        self._source_wp_1 = self._map.get_waypoint(self._start_actor_flow_1)
+        self._sink_wp_1 = self._map.get_waypoint(self._end_actor_flow_1)
+
+        self._source_wp_2 = self._sink_wp_1.get_left_lane()
+        if not self._source_wp_2 or self._source_wp_2.lane_type != carla.LaneType.Driving:
+            raise ValueError("Couldn't find a position for the actor flow")
+        self._sink_wp_2 = self._source_wp_1.get_left_lane()
+        if not self._sink_wp_2 or self._sink_wp_2.lane_type != carla.LaneType.Driving:
+            raise ValueError("Couldn't find a position for the actor flow")
+
+        if self.route_mode:
+            grp = CarlaDataProvider.get_global_route_planner()
+            route = grp.trace_route(self._source_wp_2.transform.location, self._sink_wp_2.transform.location)
+            self._extra_space = 10
+            route_exit_wp = None
+            for i in range(-2, -len(route)-1, -1):
+                current_wp = route[i][0]
+                self._extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
+                if current_wp.is_junction:
+                    junction = current_wp.get_junction()
+                    break
+                route_exit_wp = current_wp
+
+            route_exit_key = self.get_lane_key(route_exit_wp)
+
+            # Get the route entry waypoint
+            route_entry_wp = self._reference_wp
+            while True:
+                next_wps = route_entry_wp.next(1)
+                if not next_wps:
+                    break
+                if next_wps[0].is_junction:
+                    break
+                route_entry_wp = next_wps[0]
+            route_entry_key = self.get_lane_key(route_entry_wp)
+
+        entry_wps = []
+        entry_keys = []
+        exit_wps = []
+        exit_keys = []
+
+        for entry_wp, exit_wp in junction.get_waypoints(carla.LaneType.Driving):
+
+            entry_wp = self._get_junction_entry_wp(entry_wp)
+            entry_key = self.get_lane_key(entry_wp)
+            if entry_key != route_entry_key and entry_key not in entry_keys:
+                entry_wps.append(entry_wp)
+                entry_keys.append(entry_key)
+
+            exit_wp = self._get_junction_exit_wp(exit_wp)
+            exit_key = self.get_lane_key(exit_wp)
+            if exit_key != route_exit_key and exit_key not in exit_keys:
+                exit_wps.append(exit_wp)
+                exit_keys.append(exit_key)
+
+        self._remove_entries = entry_wps
+        self._remove_exits = exit_wps
+
     def _create_behavior(self):
         """
         the ego vehicle mergers into a slow traffic flow from the freeway entrance.
         """
-        source_wp_1 = self._map.get_waypoint(self._start_actor_flow_1)
-        sink_wp_1 = self._map.get_waypoint(self._end_actor_flow_1)
-
-        source_wp_2 = sink_wp_1.get_left_lane()
-        if not source_wp_2 or source_wp_2.lane_type != carla.LaneType.Driving:
-            raise ValueError("Couldn't find a position for the actor flow")
-        sink_wp_2 = source_wp_1.get_left_lane()
-        if not sink_wp_2 or sink_wp_2.lane_type != carla.LaneType.Driving:
-            raise ValueError("Couldn't find a position for the actor flow")
-
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp_2.transform.location, self._sink_distance))
+        root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], self._sink_wp_2.transform.location, self._sink_distance))
         root.add_child(ActorFlow(
-            source_wp_1, sink_wp_1, self._source_dist_interval, self._sink_distance, self._flow_speed))
+            self._source_wp_1, self._sink_wp_1, self._source_dist_interval, self._sink_distance, self._flow_speed))
         root.add_child(ActorFlow(
-            source_wp_2, sink_wp_2, self._source_dist_interval, self._sink_distance, self._flow_speed))
+            self._source_wp_2, self._sink_wp_2, self._source_dist_interval, self._sink_distance, self._flow_speed))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence = py_trees.composites.Sequence()
         if self.route_mode:
 
-            grp = CarlaDataProvider.get_global_route_planner()
-            route = grp.trace_route(source_wp_2.transform.location, sink_wp_2.transform.location)
-            extra_space = 0
-            for i in range(-2, -len(route)-1, -1):
-                current_wp = route[i][0]
-                extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
-                if current_wp.is_junction:
-                    break
-
-            # Get the junction entry lane (1)
-            entry_wp_1 = source_wp_1
-            while True:
-                next_wps = entry_wp_1.next(1)
-                if not next_wps:
-                    break
-                if next_wps[0].is_junction:
-                    break
-                entry_wp_1 = next_wps[0]
-
-            # Get the junction entry lane (1)
-            entry_wp_2 = source_wp_2
-            while True:
-                next_wps = entry_wp_2.next(1)
-                if not next_wps:
-                    break
-                if next_wps[0].is_junction:
-                    break
-                entry_wp_2 = next_wps[0]
-
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
                 clear_ego_entry=True,
-                remove_entries=[entry_wp_1, entry_wp_2],
-                remove_exits=[self._exit_wp],
+                remove_entries=self._remove_entries,
+                remove_exits=self._remove_exits,
                 stop_entries=False,
-                extend_road_exit=extra_space
+                extend_road_exit=self._extra_space
             ))
             sequence.add_child(SwitchRouteSources(False))
             sequence.add_child(ChangeOppositeBehavior(active=False))

@@ -287,7 +287,8 @@ class DynamicObjectCrossing(BasicScenario):
         """
         sequence = py_trees.composites.Sequence(name="CrossingActor")
         if self.route_mode:
-            sequence.add_child(LeaveSpaceInFront(self._distance))
+            total_dist = self._distance + 10
+            sequence.add_child(LeaveSpaceInFront(total_dist))
 
         collision_location = self._collision_wp.transform.location
 

@@ -24,19 +24,20 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                InTimeToArrivalToLocation,
                                                                                DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route
+from srunner.tools.scenario_helper import (generate_target_waypoint,
+                                           generate_target_waypoint_in_route,
+                                           get_same_dir_lanes,
+                                           get_opposite_dir_lanes)
 
 from srunner.tools.background_manager import LeaveCrossingSpace
 
 
-def get_sidewalk_transform(waypoint):
+def get_sidewalk_transform(waypoint, offset):
     """
     Processes the waypoint transform to find a suitable spawning one at the sidewalk.
     It first rotates the transform so that it is pointing towards the road and then moves a
     bit to the side waypoint that aren't part of sidewalks, as they might be invading the road
     """
-
-    offset = {"yaw": -90, "z": 0.2, "k": 1.5}
 
     new_rotation = waypoint.transform.rotation
     new_rotation.yaw += offset['yaw']
@@ -83,10 +84,12 @@ class BaseVehicleTurning(BasicScenario):
         self._adversary_transform = None
 
         self._collision_wp = None
-        self._adversary_speed = 2.0  # Speed of the adversary [m/s]
-        self._reaction_time = 1.6  # Time the agent has to react to avoid the collision [s]
+        self._adversary_speed = 1.8  # Speed of the adversary [m/s]
+        self._reaction_time = 1.8  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
+
+        self._offset = {"yaw": 270, "z": 0.2, "k": 1.5}
 
         self.timeout = timeout
         super(BaseVehicleTurning, self).__init__(
@@ -127,7 +130,7 @@ class BaseVehicleTurning(BasicScenario):
                 sidewalk_waypoint = right_wp
 
             # Get the adversary transform and spawn it
-            self._adversary_transform = get_sidewalk_transform(sidewalk_waypoint)
+            self._adversary_transform = get_sidewalk_transform(sidewalk_waypoint, self._offset)
             adversary = CarlaDataProvider.request_new_actor('vehicle.diamondback.century', self._adversary_transform)
             if adversary is None:
                 self._number_of_attempts -= 1
@@ -252,3 +255,135 @@ class VehicleTurningRoute(BaseVehicleTurning):
         Empty, the route already has a collision criteria
         """
         return []
+
+
+class VehicleTurningRoutePedestrian(BasicScenario):
+
+    """
+    This class holds everything required for a simple object crash
+    with prior vehicle action involving a vehicle and a cyclist.
+    The ego vehicle is passing through a road and encounters
+    a cyclist after taking a turn.
+
+    This is a single ego vehicle scenario
+    """
+    _subtype = None
+
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=60, name="VehicleTurningRoutePedestrian"):
+        """
+        Setup all relevant parameters and create scenario
+        """
+
+        self._wmap = CarlaDataProvider.get_map()
+        self._trigger_location = config.trigger_points[0].location
+        self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
+        self._ego_route = config.route
+
+        self._collision_wp = None
+        self._adversary_speed = 1.8  # Speed of the adversary [m/s]
+        self._reaction_time = 1.8  # Time the agent has to react to avoid the collision [s]
+        self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
+        self._ego_end_distance = 40
+
+        self._offset = {"yaw": 270, "z": 0.2, "k": 1.5}
+
+        self.timeout = timeout
+        super().__init__(name, ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
+
+    def _initialize_actors(self, config):
+        """
+        Custom initialization
+        """
+        # Get the waypoint right after the junction
+        waypoint = generate_target_waypoint_in_route(self._reference_waypoint, self._ego_route)
+        self._collision_wp = waypoint.next(0.5)[0]  # Some wps are still part of the junction
+
+        # Get the right waypoint at the sidewalk
+        same_dir_wps = get_same_dir_lanes(self._collision_wp)
+        right_wp = same_dir_wps[0]
+        while right_wp.lane_type != carla.LaneType.Sidewalk:
+            side_wp = right_wp.get_right_lane()
+            if side_wp is None:
+                break
+            right_wp = side_wp
+
+        # Get the left waypoint at the sidewalk
+        other_dir_wps = get_opposite_dir_lanes(self._collision_wp)
+        if other_dir_wps:
+            # With opposite lane
+            left_wp = other_dir_wps[-1]
+            while left_wp.lane_type != carla.LaneType.Sidewalk:
+                side_wp = left_wp.get_right_lane()
+                if side_wp is None:
+                    break
+                left_wp = side_wp
+        else:
+            # Without opposite lane
+            self._offset['yaw'] = 90
+            left_wp = same_dir_wps[-1]
+            while left_wp.lane_type != carla.LaneType.Sidewalk:
+                side_wp = left_wp.get_left_lane()
+                if side_wp is None:
+                    break
+                left_wp = side_wp
+
+        self._adversary_distance = right_wp.transform.location.distance(left_wp.transform.location)
+
+        entry_vec = self._reference_waypoint.transform.get_forward_vector()
+        exit_vec = waypoint.transform.get_forward_vector()
+        cross_prod = entry_vec.cross(exit_vec)
+        spawn_wp = right_wp if cross_prod.z < 0 else left_wp
+
+        # Get the adversary transform and spawn it
+        spawn_transform = get_sidewalk_transform(spawn_wp, self._offset)
+        adversary = CarlaDataProvider.request_new_actor('walker.*', spawn_transform)
+        if adversary is None:
+            raise ValueError("Couldn't spawn adversary")
+
+        self.other_actors.append(adversary)
+
+    def _create_behavior(self):
+        """
+        """
+        sequence = py_trees.composites.Sequence(name="VehicleTurningRoutePedestrian")
+        collision_location = self._collision_wp.transform.location
+
+        # Adversary trigger behavior
+        trigger_adversary = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+        trigger_adversary.add_child(InTimeToArrivalToLocation(
+            self.ego_vehicles[0], self._reaction_time, collision_location))
+        trigger_adversary.add_child(InTriggerDistanceToLocation(
+            self.ego_vehicles[0], collision_location, self._min_trigger_dist))
+
+        sequence.add_child(trigger_adversary)
+        if self.route_mode:
+            sequence.add_child(LeaveCrossingSpace(self._collision_wp))
+
+        # Move the adversary.
+        speed_distance = self._adversary_distance
+        speed_duration = self._adversary_distance / self._adversary_speed
+        sequence.add_child(KeepVelocity(
+            self.other_actors[0], self._adversary_speed, True,
+            speed_duration, speed_distance, name="AdversaryCrossing")
+        )
+
+        # Remove everything
+        sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
+        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))
+
+        return sequence
+
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        return [CollisionTest(self.ego_vehicles[0])]
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()
