@@ -987,10 +987,10 @@ class OutsideRouteLanesTest(Criterion):
         optional (bool): If True, the result is not considered for an overall pass/fail result
     """
 
-    ALLOWED_OUT_DISTANCE = 1.3          # At least 0.5, due to the mini-shoulder between lanes and sidewalks
-    MAX_ALLOWED_VEHICLE_ANGLE = 120.0   # Maximum angle between the yaw and waypoint lane
-    MAX_ALLOWED_WAYPOINT_ANGLE = 150.0  # Maximum change between the yaw-lane angle between frames
-    WINDOWS_SIZE = 3                    # Amount of additional waypoints checked (in case the first on fails)
+    ALLOWED_OUT_DISTANCE = 0.5  # At least 0.5, due to the mini-shoulder between lanes and sidewalks
+    MAX_VEHICLE_ANGLE = 120.0  # Maximum angle between the yaw and waypoint lane
+    MAX_WAYPOINT_ANGLE = 150.0  # Maximum change between the yaw-lane angle between frames
+    WINDOWS_SIZE = 3  # Amount of additional waypoints checked (in case the first on fails)
 
     def __init__(self, actor, route, optional=False, name="OutsideRouteLanesTest"):
         """
@@ -1005,7 +1005,7 @@ class OutsideRouteLanesTest(Criterion):
         self._route_transforms, _ = zip(*self._route)
 
         self._map = CarlaDataProvider.get_map()
-        self._pre_ego_waypoint = self._map.get_waypoint(self.actor.get_location())
+        self._last_ego_waypoint = self._map.get_waypoint(self.actor.get_location())
 
         self._outside_lane_active = False
         self._wrong_lane_active = False
@@ -1097,27 +1097,25 @@ class OutsideRouteLanesTest(Criterion):
 
         self._traffic_event.set_frame(GameTime.get_frame())
 
-
     def _is_outside_driving_lanes(self, location):
         """
         Detects if the ego_vehicle is outside driving lanes
         """
+        driving_wp = self._map.get_waypoint(location, lane_type=carla.LaneType.Driving)
+        parking_wp = self._map.get_waypoint(location, lane_type=carla.LaneType.Parking)
 
-        current_driving_wp = self._map.get_waypoint(location, lane_type=carla.LaneType.Driving, project_to_road=True)
-        current_parking_wp = self._map.get_waypoint(location, lane_type=carla.LaneType.Parking, project_to_road=True)
-
-        driving_distance = location.distance(current_driving_wp.transform.location)
-        if current_parking_wp is not None:  # Some towns have no parking
-            parking_distance = location.distance(current_parking_wp.transform.location)
+        driving_distance = location.distance(driving_wp.transform.location)
+        if parking_wp is not None:  # Some towns have no parking
+            parking_distance = location.distance(parking_wp.transform.location)
         else:
             parking_distance = float('inf')
 
         if driving_distance >= parking_distance:
             distance = parking_distance
-            lane_width = current_parking_wp.lane_width
+            lane_width = parking_wp.lane_width
         else:
             distance = driving_distance
-            lane_width = current_driving_wp.lane_width
+            lane_width = driving_wp.lane_width
 
         self._outside_lane_active = bool(distance > (lane_width / 2 + self.ALLOWED_OUT_DISTANCE))
 
@@ -1125,49 +1123,41 @@ class OutsideRouteLanesTest(Criterion):
         """
         Detects if the ego_vehicle has invaded a wrong lane
         """
-        current_waypoint = self._map.get_waypoint(location, lane_type=carla.LaneType.Driving, project_to_road=True)
-        current_lane_id = current_waypoint.lane_id
-        current_road_id = current_waypoint.road_id
+        waypoint = self._map.get_waypoint(location, lane_type=carla.LaneType.Driving)
+        lane_id = waypoint.lane_id
+        road_id = waypoint.road_id
 
         # Lanes and roads are too chaotic at junctions
-        if current_waypoint.is_junction:
+        if waypoint.is_junction:
             self._wrong_lane_active = False
-        elif self._last_road_id != current_road_id or self._last_lane_id != current_lane_id:
+        elif self._last_road_id != road_id or self._last_lane_id != lane_id:
 
-            # Route direction can be considered continuous, except after exiting a junction.
-            if self._pre_ego_waypoint.is_junction:
-                yaw_waypt = current_waypoint.transform.rotation.yaw % 360
-                yaw_actor = self.actor.get_transform().rotation.yaw % 360
+            if self._last_ego_waypoint.is_junction:
+                # Just exited a junction, check the wp direction vs the ego's one
+                wp_yaw = waypoint.transform.rotation.yaw % 360
+                actor_yaw = self.actor.get_transform().rotation.yaw % 360
+                angle = (wp_yaw - actor_yaw) % 360
 
-                vehicle_lane_angle = (yaw_waypt - yaw_actor) % 360
-
-                if vehicle_lane_angle < self.MAX_ALLOWED_VEHICLE_ANGLE \
-                        or vehicle_lane_angle > (360 - self.MAX_ALLOWED_VEHICLE_ANGLE):
+                if angle < self.MAX_VEHICLE_ANGLE or angle > (360 - self.MAX_VEHICLE_ANGLE):
                     self._wrong_lane_active = False
                 else:
                     self._wrong_lane_active = True
 
             else:
-                # Check for a big gap in waypoint directions.
-                yaw_pre_wp = self._pre_ego_waypoint.transform.rotation.yaw % 360
-                yaw_cur_wp = current_waypoint.transform.rotation.yaw % 360
+                # Route direction can be considered continuous, check for a big gap.
+                last_wp_yaw = self._last_ego_waypoint.transform.rotation.yaw % 360
+                wp_yaw = waypoint.transform.rotation.yaw % 360
+                angle = (last_wp_yaw - wp_yaw) % 360
 
-                waypoint_angle = (yaw_pre_wp - yaw_cur_wp) % 360
-
-                if waypoint_angle >= self.MAX_ALLOWED_WAYPOINT_ANGLE \
-                        and waypoint_angle <= (360 - self.MAX_ALLOWED_WAYPOINT_ANGLE):  # pylint: disable=chained-comparison
+                if angle > self.MAX_WAYPOINT_ANGLE and angle < (360 - self.MAX_WAYPOINT_ANGLE):
 
                     # Is the ego vehicle going back to the lane, or going out? Take the opposite
                     self._wrong_lane_active = not bool(self._wrong_lane_active)
-                else:
-
-                    # Changing to a lane with the same direction
-                    self._wrong_lane_active = False
 
         # Remember the last state
-        self._last_lane_id = current_lane_id
-        self._last_road_id = current_road_id
-        self._pre_ego_waypoint = current_waypoint
+        self._last_lane_id = lane_id
+        self._last_road_id = road_id
+        self._last_ego_waypoint = waypoint
 
 
 class WrongLaneTest(Criterion):
@@ -1180,7 +1170,7 @@ class WrongLaneTest(Criterion):
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
     MAX_ALLOWED_ANGLE = 120.0
-    MAX_ALLOWED_WAYPOINT_ANGLE = 150.0
+    MAX_WAYPOINT_ANGLE = 150.0
 
     def __init__(self, actor, optional=False, name="WrongLaneTest"):
         """
@@ -1232,7 +1222,7 @@ class WrongLaneTest(Criterion):
                 math.acos(np.clip(np.dot(p_lane_vector, c_lane_vector) /
                                   (np.linalg.norm(p_lane_vector) * np.linalg.norm(c_lane_vector)), -1.0, 1.0)))
 
-            if waypoint_angle > self.MAX_ALLOWED_WAYPOINT_ANGLE and self._in_lane:
+            if waypoint_angle > self.MAX_WAYPOINT_ANGLE and self._in_lane:
 
                 self.test_status = "FAILURE"
                 self._in_lane = False
@@ -1673,10 +1663,10 @@ class RunningRedLightTest(Criterion):
 
         veh_extent = self.actor.bounding_box.extent.x
 
-        tail_close_pt = self.rotate_point(carla.Vector3D(-0.8 * veh_extent, 0.0, location.z), transform.rotation.yaw)
+        tail_close_pt = self.rotate_point(carla.Vector3D(-0.8 * veh_extent, 0, 0), transform.rotation.yaw)
         tail_close_pt = location + carla.Location(tail_close_pt)
 
-        tail_far_pt = self.rotate_point(carla.Vector3D(-veh_extent - 1, 0.0, location.z), transform.rotation.yaw)
+        tail_far_pt = self.rotate_point(carla.Vector3D(-veh_extent - 1, 0, 0), transform.rotation.yaw)
         tail_far_pt = location + carla.Location(tail_far_pt)
 
         for traffic_light, center, waypoints in self._list_traffic_lights:
@@ -1721,9 +1711,9 @@ class RunningRedLightTest(Criterion):
                     lane_width = wp.lane_width
                     location_wp = wp.transform.location
 
-                    lft_lane_wp = self.rotate_point(carla.Vector3D(0.4 * lane_width, 0.0, location_wp.z), yaw_wp + 90)
+                    lft_lane_wp = self.rotate_point(carla.Vector3D(0.6 * lane_width, 0, 0), yaw_wp + 90)
                     lft_lane_wp = location_wp + carla.Location(lft_lane_wp)
-                    rgt_lane_wp = self.rotate_point(carla.Vector3D(0.4 * lane_width, 0.0, location_wp.z), yaw_wp - 90)
+                    rgt_lane_wp = self.rotate_point(carla.Vector3D(0.6 * lane_width, 0, 0), yaw_wp - 90)
                     rgt_lane_wp = location_wp + carla.Location(rgt_lane_wp)
 
                     # Is the vehicle traversing the stop line?
@@ -1809,9 +1799,9 @@ class RunningStopTest(Criterion):
     - actor: CARLA actor to be used for this test
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
-    PROXIMITY_THRESHOLD = 5.0  # meters
-    SPEED_THRESHOLD = 0.1
-    EXTENT_MULTIPLIER = 1.5
+    PROXIMITY_THRESHOLD = 4.0  # Stops closer than this distance will be detected [m]
+    SPEED_THRESHOLD = 0.1 # Minimum speed to consider the actor has stopped [m/s]
+    WAYPOINT_STEP = 0.5  # m
 
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
         """
@@ -1823,14 +1813,12 @@ class RunningStopTest(Criterion):
         self._target_stop_sign = None
         self._stop_completed = False
 
-        all_actors = CarlaDataProvider.get_all_actors()
-        for _actor in all_actors:
+        for _actor in CarlaDataProvider.get_all_actors():
             if 'traffic.stop' in _actor.type_id:
                 self._list_stop_signs.append(_actor)
 
     def point_inside_boundingbox(self, point, bb_center, bb_extent):
         """Checks whether or not a point is inside a bounding box"""
-        bb_extent = self.EXTENT_MULTIPLIER * bb_extent
 
         # pylint: disable=invalid-name
         A = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y - bb_extent.y)
@@ -1848,40 +1836,66 @@ class RunningStopTest(Criterion):
 
         return am_ab > 0 and am_ab < ab_ab and am_ad > 0 and am_ad < ad_ad  # pylint: disable=chained-comparison
 
-    def is_actor_affected_by_stop(self, location, stop):
+    def is_actor_affected_by_stop(self, wp_list, stop):
         """
-        Check if the given actor is affected by the stop
+        Check if the given actor is affected by the stop.
+        Without using waypoints, a stop might not be detected if the actor is moving at the lane edge.
         """
         # Quick distance test
-        stop_transform = stop.get_transform()
-        if stop_transform.location.distance(location) > self.PROXIMITY_THRESHOLD:
+        stop_location = stop.get_transform().transform(stop.trigger_volume.location)
+        actor_location = wp_list[0].transform.location
+        if stop_location.distance(actor_location) > self.PROXIMITY_THRESHOLD:
             return False
 
-        # Check if the actor is inside the stop's bounding box
-        stop_t = stop.get_transform()
-        transformed_tv = stop_t.transform(stop.trigger_volume.location)
-        if self.point_inside_boundingbox(location, transformed_tv, stop.trigger_volume.extent):
-            return True
+        # Check if the any of the actor wps is inside the stop's bounding box.
+        # Using more than one waypoint removes issues with small trigger volumes and backwards movement
+        stop_extent = stop.trigger_volume.extent
+        for actor_wp in wp_list:
+            if self.point_inside_boundingbox(actor_wp.transform.location, stop_location, stop_extent):
+                return True
 
         return False
 
-    def _scan_for_stop_sign(self, location):
-        ve_tra = CarlaDataProvider.get_transform(self.actor)
-        ve_dir = ve_tra.get_forward_vector()
+    def _scan_for_stop_sign(self, actor_transform, wp_list):
+        """
+        Check the stop signs to see if any of them affect the actor.
+        Ignore all checks when going backwards or through an opposite direction"""
 
-        wp = self._map.get_waypoint(ve_tra.location)
-        wp_dir = wp.transform.get_forward_vector()
+        actor_direction = actor_transform.get_forward_vector()
 
-        if ve_dir.dot(wp_dir) < 0:  # Ignore all when going in a wrong lane
+        # Ignore all when going backwards
+        actor_velocity = self.actor.get_velocity()
+        if actor_velocity.dot(actor_direction) < -0.17:  # 100º, just in case
             return None
 
-        ve_vec = self.actor.get_velocity()
-        if ve_vec.dot(wp_dir) < 0:  # Ignore all when going backwards
+        # Ignore all when going in the opposite direction
+        lane_direction = wp_list[0].transform.get_forward_vector()
+        if actor_direction.dot(lane_direction) < -0.17:  # 100º, just in case
             return None
 
-        for stop_sign in self._list_stop_signs:
-            if self.is_actor_affected_by_stop(location, stop_sign):
-                return stop_sign  # This stop sign is affecting the vehicle
+        for stop in self._list_stop_signs:
+            if self.is_actor_affected_by_stop(wp_list, stop):
+                return stop
+
+    def _get_waypoints(self, actor):
+        """Returns a list of waypoints starting from the ego location and a set amount forward"""
+        wp_list = []
+        steps = int(self.PROXIMITY_THRESHOLD / self.WAYPOINT_STEP)
+
+        # Add the actor location
+        wp = self._map.get_waypoint(actor.get_location())
+        wp_list.append(wp)
+
+        # And its forward waypoints
+        next_wp = wp
+        for _ in range(steps):
+            next_wps = next_wp.next(self.WAYPOINT_STEP)
+            if not next_wps:
+                break
+            next_wp = next_wps[0]
+            wp_list.append(next_wp)
+
+        return wp_list
 
     def update(self):
         """
@@ -1889,12 +1903,11 @@ class RunningStopTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        location = self.actor.get_location()
-        if location is None:
-            return new_status
+        actor_transform = self.actor.get_transform()
+        check_wps = self._get_waypoints(self.actor)
 
         if not self._target_stop_sign:
-            self._target_stop_sign = self._scan_for_stop_sign(location)
+            self._target_stop_sign = self._scan_for_stop_sign(actor_transform, check_wps)
             return new_status
 
         if not self._stop_completed:
@@ -1902,7 +1915,7 @@ class RunningStopTest(Criterion):
             if current_speed < self.SPEED_THRESHOLD:
                 self._stop_completed = True
 
-        if not self.is_actor_affected_by_stop(location, self._target_stop_sign):
+        if not self.is_actor_affected_by_stop(check_wps, self._target_stop_sign):
             if not self._stop_completed:
                 # did we stop?
                 self.actual_value += 1
@@ -2026,7 +2039,8 @@ class MinSpeedRouteTest(Criterion):
 class YieldToEmergencyVehicleTest(Criterion):
 
     """
-    Atomic Criterion to detect if the actor yields its lane to the emergency vehicle behind it
+    Atomic Criterion to detect if the actor yields its lane to the emergency vehicle behind it.
+    Detection is done by checking if the ev is in front of the actor
 
     Args:
         actor (carla.Actor): CARLA actor to be used for this test
@@ -2040,71 +2054,44 @@ class YieldToEmergencyVehicleTest(Criterion):
         """
         Constructor
         """
-        super().__init__(name, actor, optional)
-        self.units = "%"
-        self.success_value = 95
-        self.actual_value = 0
         self._ev = ev
-        self._target_speed = None
-        self._ev_speed_log = []
-        self._map = CarlaDataProvider.get_map()
-
-        self.initialized = False
         self._terminated = False
-
-    def initialise(self):
-        self.initialized = True
-        return super().initialise()
+        super().__init__(name, actor, optional)
 
     def update(self):
         """
-        Collect ev's actual speed on each time-step
+        Monitor that the EV ends up in front of the actor
 
         returns:
             py_trees.common.Status.RUNNING
         """
         new_status = py_trees.common.Status.RUNNING
 
-        # Get target speed from Blackboard
-        # The value is expected to be set by AdaptiveConstantVelocityAgentBehavior
-        if self._target_speed is None:
-            target_speed = py_trees.blackboard.Blackboard().get("ACVAB_speed_{}".format(self.actor.id))
-            if target_speed is not None:
-                self._target_speed = target_speed
-                py_trees.blackboard.Blackboard().set("ACVAB_speed_{}".format(self.actor.id), None, overwrite=True)
-            else:
-                return new_status
+        actor_location = CarlaDataProvider.get_location(self.actor)
+        if not actor_location:
+            return new_status
+        ev_location = CarlaDataProvider.get_location(self._ev)
+        if not ev_location:
+            return new_status
 
-        if self._ev.is_alive:
-            ev_speed = get_speed(self._ev)
-            # Record ev's speed in this moment
-            self._ev_speed_log.append(ev_speed)
+        ev_direction = CarlaDataProvider.get_transform(self._ev).get_forward_vector()
+        actor_ev_vector = actor_location - ev_location
+
+        if ev_direction.dot(actor_ev_vector) > 0:
+            self.test_status = "FAILURE"
+        else:
+            self.test_status = "SUCCESS"
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 
     def terminate(self, new_status):
-        """Set the traffic event to the according value if needed"""
-
+        """Set the traffic event, if needed"""
         # Terminates are called multiple times. Do this only once
-        if not self._terminated and self.initialized:
-            if not len(self._ev_speed_log):
-                self.actual_value = 100
-            else:
-                mean_speed = sum(self._ev_speed_log) / len(self._ev_speed_log)
-                self.actual_value = mean_speed / self._target_speed *100
-                self.actual_value = round(self.actual_value, 2)
-
-                if self.actual_value >= self.success_value:
-                    self.test_status = "SUCCESS"
-                else:
-                    self.test_status = "FAILURE"
-
+        if not self._terminated:
             if self.test_status == "FAILURE":
-                traffic_event = TrafficEvent(event_type=TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE, frame=GameTime.get_frame())
-                traffic_event.set_dict({'percentage': self.actual_value})
-                traffic_event.set_message(
-                    f"Agent failed to yield to an emergency vehicle, slowing it to {self.actual_value}% of its velocity)")
+                traffic_event = TrafficEvent(TrafficEventType.YIELD_TO_EMERGENCY_VEHICLE, GameTime.get_frame())
+                traffic_event.set_message("Agent failed to yield to an emergency vehicle")
                 self.events.append(traffic_event)
 
             self._terminated = True

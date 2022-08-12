@@ -15,8 +15,14 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorTransformSetter, ActorDestroy, Idle, AdaptiveConstantVelocityAgentBehavior
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
+                                                                      ActorDestroy,
+                                                                      Idle,
+                                                                      AdaptiveConstantVelocityAgentBehavior)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, YieldToEmergencyVehicleTest
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
+                                                                               WaitUntilInFront,
+                                                                               DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import RemoveRoadLane, ReAddRoadLane
 
@@ -40,21 +46,31 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        self._ev_drive_time = 10  # seconds
+        self._ev_idle_time = 10  # seconds
 
         # km/h. How much the EV is expected to be faster than the EGO
-        self._speed_increment = 10
+        self._speed_increment = 25
+
+        self._trigger_distance = 50
 
         if 'distance' in config.other_parameters:
-            self._distance = float(
-                config.other_parameters['distance']['value'])
+            self._distance = float(config.other_parameters['distance']['value'])
         else:
-            self._distance = 80  # m
+            self._distance = 140  # m
+
+        # Change some of the parameters to adapt its behavior.
+        # 1) ConstantVelocityAgent = infinite acceleration -> reduce the detection radius to pressure the ego
+        # 2) Always use the bb check to ensure the EV doesn't run over the ego when it is lane changing
+        # 3) Add more wps to improve BB detection
+        self._opt_dict = {
+            'base_vehicle_threshold': 15, 'detection_speed_ratio': 0.2, 'use_bbs_detection': True,
+            'base_min_distance': 1, 'distance_ratio': 0.2
+            }
 
         self._trigger_location = config.trigger_points[0].location
-        self._reference_waypoint = self._map.get_waypoint(
-            self._trigger_location)
-        self._ev_start_transform = None
+        self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
+
+        self._end_distance = 50
 
         super().__init__("YieldToEmergencyVehicle",
                          ego_vehicles,
@@ -68,57 +84,70 @@ class YieldToEmergencyVehicle(BasicScenario):
         Custom initialization
         """
         # Spawn emergency vehicle
-        ev_points = self._reference_waypoint.previous(
-            self._distance)
-        if ev_points:
-            self._ev_start_transform = ev_points[0].transform
-        else:
-            raise Exception(
-                "Couldn't find viable position for the emergency vehicle")
+        ev_points = self._reference_waypoint.previous(self._distance)
+        if not ev_points:
+            raise ValueError("Couldn't find viable position for the emergency vehicle")
+
+        self._ev_start_transform = ev_points[0].transform
 
         actor = CarlaDataProvider.request_new_actor(
-            "vehicle.*.*", self._ev_start_transform, rolename='scenario', attribute_filter={'special_type': 'emergency'})
+            "vehicle.*.*", self._ev_start_transform, attribute_filter={'special_type': 'emergency'})
         if actor is None:
-            raise Exception(
-                "Couldn't spawn the emergency vehicle")
-        # Remove its physics so that it doesn't fall
+            raise Exception("Couldn't spawn the emergency vehicle")
+
+        # Move the actor underground and remove its physics so that it doesn't fall
         actor.set_simulate_physics(False)
-        # Move the actor underground
         new_location = actor.get_location()
         new_location.z -= 500
         actor.set_location(new_location)
+
         # Turn on special lights
         actor.set_light_state(carla.VehicleLightState(
             carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2))
+
         self.other_actors.append(actor)
 
     def _create_behavior(self):
         """
-        - Remove BA from current lane
-        - Teleport Emergency Vehicle(EV) behind the ego
-        - [Parallel SUCCESS_ON_ONE]
-            - Idle(20 seconds)
+        Spawn the EV behind and wait for it to be close-by. After it has approached,
+        give the ego a certain amount of time to yield to it.
+        
+        Sequence:
+        - RemoveRoadLane
+        - ActorTransformSetter
+        - Parallel:
             - AdaptiveConstantVelocityAgentBehavior
-        - Destroy EV
-        - [Parallel SUCCESS_ON_ONE]
-            - DriveDistance(ego, 30)
-        - Recover BA
+            - Sequence: (End condition 1)
+                - InTriggerDistanceToVehicle:
+                - Idle
+            - Sequence: (End condition 2)
+                - WaitUntilInFront
+                - DriveDistance
+        - ReAddRoadLane
         """
-
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence(name="YieldToEmergencyVehicle")
 
         if self.route_mode:
             sequence.add_child(RemoveRoadLane(self._reference_waypoint))
 
-        # Teleport EV behind the ego
-        sequence.add_child(ActorTransformSetter(
-            self.other_actors[0], self._ev_start_transform))
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._ev_start_transform))
 
-        # Emergency Vehicle runs for self._ev_drive_time seconds
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        main_behavior.add_child(Idle(self._ev_drive_time))
+
+        end_condition_1 = py_trees.composites.Sequence()
+        end_condition_1.add_child(InTriggerDistanceToVehicle(
+            self.ego_vehicles[0], self.other_actors[0], self._trigger_distance))
+        end_condition_1.add_child(Idle(self._ev_idle_time))
+
+        end_condition_2 = py_trees.composites.Sequence()
+        end_condition_2.add_child(WaitUntilInFront(self.other_actors[0], self.ego_vehicles[0]))
+        end_condition_2.add_child(DriveDistance(self.other_actors[0], self._end_distance))
+
+        main_behavior.add_child(end_condition_1)
+        main_behavior.add_child(end_condition_2)
+
         main_behavior.add_child(AdaptiveConstantVelocityAgentBehavior(
-            self.other_actors[0], self.ego_vehicles[0], speed_increment=self._speed_increment))
+            self.other_actors[0], self.ego_vehicles[0], speed_increment=self._speed_increment, opt_dict=self._opt_dict))
 
         sequence.add_child(main_behavior)
 
@@ -135,8 +164,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         in parallel behavior tree.
         """
         criterias = []
-        criterias.append(YieldToEmergencyVehicleTest(
-            self.ego_vehicles[0], self.other_actors[0]))
+        criterias.append(YieldToEmergencyVehicleTest(self.ego_vehicles[0], self.other_actors[0]))
         if not self.route_mode:
             criterias.append(CollisionTest(self.ego_vehicles[0]))
 
