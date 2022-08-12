@@ -82,7 +82,7 @@ class ParkingExit(BasicScenario):
 
         self._flow_distance = get_value_parameter(config, 'flow_distance', float, 25)
         self._max_speed = get_value_parameter(config, 'speed', float, 60)
-        self._scenario_timeout = 120
+        self._scenario_timeout = 240
 
         self._end_distance = self._front_vehicle_distance + 15
 

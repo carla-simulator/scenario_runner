@@ -1873,6 +1873,52 @@ class AddNoiseToVehicle(AtomicBehavior):
         return new_status
 
 
+class AddNoiseToRouteEgo(AtomicBehavior):
+
+    """
+    This class contains an atomic jitter behavior.
+    To add noise to steer as well as throttle of the vehicle.
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - steer_value: Applied steering noise in [0,1]
+    - throttle_value: Applied throttle noise in [0,1]
+
+    The behavior terminates after setting the new actor controls
+    """
+
+    def __init__(self, actor, throttle_mean, throttle_std, steer_mean, steer_std, name="AddNoiseToVehicle"):
+        """
+        Setup actor , maximum steer value and throttle value
+        """
+        super().__init__(name, actor)
+        self._throttle_mean = throttle_mean
+        self._throttle_std = throttle_std
+        self._steer_mean = steer_mean
+        self._steer_std = steer_std
+
+        self._rng = CarlaDataProvider.get_random_seed()
+
+    def update(self):
+        """
+        Set steer to steer_value and throttle to throttle_value until reaching full stop
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        control = py_trees.blackboard.Blackboard().get("AV_control")
+
+        throttle_noise = random.normal(self._throttle_mean, self._throttle_std)
+        control.throttle = max(-1, min(1, control.throttle + throttle_noise))
+
+        steer_noise = random.normal(self._steer_mean, self._steer_std)
+        control.steer = max(0, min(1, control.steer + steer_noise))
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        self._actor.apply_control(control)
+
+        return new_status
+
+
 class ChangeNoiseParameters(AtomicBehavior):
 
     """
@@ -2054,29 +2100,27 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
     The behavior terminates after reaching the target_location (within 2 meters)
     """
 
-    def __init__(self, actor, reference_actor,  target_location=None, speed_increment=10,
-                 opt_dict=None, name="ConstantVelocityAgentBehavior"):
+    def __init__(self, actor, reference_actor, target_location=None, speed_increment=10,
+                 opt_dict=None, name="AdaptiveConstantVelocityAgentBehavior"):
         """
         Set up actor and local planner
         """
-        super(AdaptiveConstantVelocityAgentBehavior, self).__init__(name, actor)
+        super().__init__(name, actor)
         self._speed_increment = speed_increment
         self._reference_actor = reference_actor
-        self._map = CarlaDataProvider.get_map()
         self._target_location = target_location
         self._opt_dict = opt_dict if opt_dict else {}
         self._control = carla.VehicleControl()
         self._agent = None
         self._plan = None
 
+        self._map = CarlaDataProvider.get_map()
         self._grp = CarlaDataProvider.get_global_route_planner()
 
     def initialise(self):
         """Initialises the agent"""
         # Get target speed
         self._target_speed = get_speed(self._reference_actor) + self._speed_increment * 3.6
-        py_trees.blackboard.Blackboard().set(
-            "ACVAB_speed_{}".format(self._reference_actor.id), self._target_speed, overwrite=True)
 
         self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict,
                                             map_inst=self._map, grp_inst=self._grp)

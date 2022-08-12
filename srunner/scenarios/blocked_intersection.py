@@ -15,8 +15,8 @@ import carla
 import py_trees
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy, Idle)
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy, Idle, ScenarioTimeout)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToVehicle
 
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -56,9 +56,11 @@ class BlockedIntersection(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
 
-        self._blocker_distance = 9
-        self._trigger_distance = 13
+        self._blocker_distance = 7
+        self._trigger_distance = 12
         self._stop_time = 10
+
+        self._scenario_timeout = 240
 
         super().__init__("BlockedIntersection",
                          ego_vehicles,
@@ -99,9 +101,17 @@ class BlockedIntersection(BasicScenario):
                 extend_road_exit=0
             ))
         # Ego go behind the blocker
-        sequence.add_child(InTriggerDistanceToVehicle(
+        main_behavior = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
+
+        behavior = py_trees.composites.Sequence(name="Approach and Wait")
+        behavior.add_child(InTriggerDistanceToVehicle(
             self.other_actors[-1], self.ego_vehicles[0], self._trigger_distance))
-        sequence.add_child(Idle(self._stop_time))
+        behavior.add_child(Idle(self._stop_time))
+        main_behavior.add_child(behavior)
+
+        sequence.add_child(main_behavior)
         sequence.add_child(ActorDestroy(self.other_actors[-1]))
 
         return sequence
@@ -111,10 +121,10 @@ class BlockedIntersection(BasicScenario):
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        if self.route_mode:
-            return []
-
-        return [CollisionTest(self.ego_vehicles[0])]
+        criteria = [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
+        if not self.route_mode:
+            criteria.append(CollisionTest(self.ego_vehicles[0]))
+        return criteria
 
     def __del__(self):
         """

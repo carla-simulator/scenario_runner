@@ -31,7 +31,7 @@ from agents.navigation.global_route_planner import GlobalRoutePlanner
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import calculate_distance
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
-from srunner.tools.scenario_helper import get_distance_along_route
+from srunner.tools.scenario_helper import get_distance_along_route, get_distance_between_actors
 
 import srunner.tools as sr_tools
 
@@ -586,7 +586,7 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         self._comparison_operator = comparison_operator
 
         if distance_type == "longitudinal":
-            self._global_rp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 1.0)
+            self._global_rp = CarlaDataProvider.get_global_route_planner()
         else:
             self._global_rp = None
 
@@ -602,11 +602,8 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         if location is None or reference_location is None:
             return new_status
 
-        distance = sr_tools.scenario_helper.get_distance_between_actors(self._actor,
-                                                                        self._reference_actor,
-                                                                        distance_type=self._distance_type,
-                                                                        freespace=self._freespace,
-                                                                        global_planner=self._global_rp)
+        distance = get_distance_between_actors(
+            self._actor, self._reference_actor, self._distance_type, self._freespace, self._global_rp)
 
         if self._comparison_operator(distance, self._distance):
             new_status = py_trees.common.Status.SUCCESS
