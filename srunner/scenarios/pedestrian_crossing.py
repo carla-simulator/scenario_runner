@@ -12,7 +12,7 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, KeepVelocity, WaitForever, Idle
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, KeepVelocity, WaitForever, Idle, ActorTransformSetter
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -130,10 +130,13 @@ class PedestrianCrossing(BasicScenario):
                 raise ValueError("Failed to spawn an adversary")
             self.other_actors.append(walker)
 
+            walker.set_location(spawn_transform + carla.Location(z=-200))
+
             collision_dist = spawn_transform.location.distance(self._collision_wp.transform.location)
 
             # Distance and duration to cross the whole road + a bit more (supposing symetry in both directions)
             move_dist = 2.3 * collision_dist
+            walker_data['transform'] = spawn_transform
             walker_data['distance'] = move_dist
             walker_data['duration'] = move_dist / walker_data['speed']
 
@@ -154,6 +157,9 @@ class PedestrianCrossing(BasicScenario):
                 stop_entries=False,
                 extend_road_exit=0
             ))
+
+        for walker_actor, walker_data in zip(self.other_actors, self._walker_data):
+            sequence.add_child(ActorTransformSetter(walker_actor, walker_data['transform'], True))
 
         collision_location = self._collision_wp.transform.location
 

@@ -294,6 +294,7 @@ class CollisionTest(Criterion):
 
     COLLISION_RADIUS = 5  # Two collisions that happen within this distance count as one
     MAX_ID_TIME = 5  # Two collisions with the same id that happen within this time count as one
+    EPSILON = 0.1  # Collisions at lower this speed won't be counted as the actor's fault
 
     def __init__(self, actor, other_actor=None, other_actor_type=None,
                  optional=False, terminate_on_failure=False, name="CollisionTest"):
@@ -376,6 +377,10 @@ class CollisionTest(Criterion):
             distance_vector = actor_location - self._collision_location
             if distance_vector.length() <= self.COLLISION_RADIUS:
                 return
+
+        # If the actor speed is 0, the collision isn't its fault
+        if CarlaDataProvider.get_velocity(self.actor) < self.EPSILON:
+            return
 
         # The collision is valid, save the data
         self.test_status = "FAILURE"
