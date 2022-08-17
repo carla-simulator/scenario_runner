@@ -1906,6 +1906,9 @@ class AddNoiseToRouteEgo(AtomicBehavior):
         new_status = py_trees.common.Status.RUNNING
 
         control = py_trees.blackboard.Blackboard().get("AV_control")
+        if not control:
+            print("WARNING: Couldn't add noise to the ego because the control couldn't be found")
+            return new_status
 
         throttle_noise = random.normal(self._throttle_mean, self._throttle_std)
         control.throttle = max(-1, min(1, control.throttle + throttle_noise))

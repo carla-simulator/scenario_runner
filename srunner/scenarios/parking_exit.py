@@ -17,7 +17,7 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       ActorTransformSetter,
-                                                                      Idle,
+                                                                      WaitForever,
                                                                       ChangeAutoPilot,
                                                                       ScenarioTimeout)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
@@ -114,16 +114,14 @@ class ParkingExit(BasicScenario):
         front_points = self._parking_waypoint.next(
             self._front_vehicle_distance)
         if not front_points:
-            raise ValueError(
-                "Couldn't find viable position for the vehicle in front of the parking point")
+            raise ValueError("Couldn't find viable position for the vehicle in front of the parking point")
 
         self._remove_parked_vehicles(front_points[0].transform.location)
 
         actor_front = CarlaDataProvider.request_new_actor(
             'vehicle.*', front_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
         if actor_front is None:
-            raise ValueError(
-                "Couldn't spawn the vehicle in front of the parking point")
+            raise ValueError("Couldn't spawn the vehicle in front of the parking point")
         actor_front.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(actor_front)
 
@@ -135,8 +133,7 @@ class ParkingExit(BasicScenario):
         behind_points = self._parking_waypoint.previous(
             self._behind_vehicle_distance)
         if not behind_points:
-            raise ValueError(
-                "Couldn't find viable position for the vehicle behind the parking point")
+            raise ValueError("Couldn't find viable position for the vehicle behind the parking point")
 
         self._remove_parked_vehicles(behind_points[0].transform.location)
 
@@ -144,8 +141,7 @@ class ParkingExit(BasicScenario):
             'vehicle.*', behind_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
         if actor_behind is None:
             actor_front.destroy()
-            raise ValueError(
-                "Couldn't spawn the vehicle behind the parking point")
+            raise ValueError("Couldn't spawn the vehicle behind the parking point")
         actor_behind.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(actor_behind)
 
@@ -160,15 +156,14 @@ class ParkingExit(BasicScenario):
 
         # Spawn the actor at the side of the ego
         actor_side = CarlaDataProvider.request_new_actor(
-            'vehicle.*', self._reference_waypoint.transform, rolename='scenario', attribute_filter=self._bp_attributes)
+            'vehicle.*', self._reference_waypoint.transform, attribute_filter=self._bp_attributes)
         if actor_side is None:
-            raise ValueError(
-                "Couldn't spawn the vehicle at the side of the parking point")
+            raise ValueError("Couldn't spawn the vehicle at the side of the parking point")
         self.other_actors.append(actor_side)
         self._tm.update_vehicle_lights(actor_side, True)
 
-        self._end_side_location = self.ego_vehicles[0].get_transform()
-        self._end_side_location.location.z -= 500
+        self._end_side_transform = self.ego_vehicles[0].get_transform()
+        self._end_side_transform.location.z -= 500
 
     def _remove_parked_vehicles(self, actor_location):
         """Removes the parked vehicles that might have conflicts with the scenario"""
@@ -209,8 +204,8 @@ class ParkingExit(BasicScenario):
         side_actor_behavior = py_trees.composites.Sequence()
         side_actor_behavior.add_child(ChangeAutoPilot(self.other_actors[2], True))
         side_actor_behavior.add_child(DriveDistance(self.other_actors[2], self._side_end_distance))
-        side_actor_behavior.add_child(ActorTransformSetter(self.other_actors[2], self._end_side_location, False))
-        side_actor_behavior.add_child(Idle())
+        side_actor_behavior.add_child(ActorTransformSetter(self.other_actors[2], self._end_side_transform, False))
+        side_actor_behavior.add_child(WaitForever())
         root.add_child(side_actor_behavior)
 
         end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)

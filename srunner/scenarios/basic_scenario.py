@@ -309,6 +309,8 @@ class BasicScenario(object):
         """
         Remove all actors
         """
+        if not hasattr(self, 'other_actors'):
+            return
         for i, _ in enumerate(self.other_actors):
             if self.other_actors[i] is not None:
                 if CarlaDataProvider.actor_id_exists(self.other_actors[i].id):

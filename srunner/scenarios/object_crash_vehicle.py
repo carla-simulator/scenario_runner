@@ -18,7 +18,8 @@ from math import floor
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       KeepVelocity,
-                                                                      Idle)
+                                                                      Idle,
+                                                                      ActorTransformSetter)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -278,6 +279,8 @@ class DynamicObjectCrossing(BasicScenario):
         self.other_actors.append(adversary)
         self.other_actors.append(blocker)
 
+        adversary.set_location(self._adversary_transform.location + carla.Location(z=-200))
+
     def _create_behavior(self):
         """
         After invoking this scenario, cyclist will wait for the user
@@ -290,6 +293,7 @@ class DynamicObjectCrossing(BasicScenario):
             total_dist = self._distance + 10
             sequence.add_child(LeaveSpaceInFront(total_dist))
 
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._adversary_transform, True))
         collision_location = self._collision_wp.transform.location
 
         # Wait until ego is close to the adversary

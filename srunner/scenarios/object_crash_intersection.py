@@ -18,7 +18,8 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       HandBrakeVehicle,
-                                                                      KeepVelocity)
+                                                                      KeepVelocity,
+                                                                      ActorTransformSetter)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -336,17 +337,20 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         spawn_wp = right_wp if cross_prod.z < 0 else left_wp
 
         # Get the adversary transform and spawn it
-        spawn_transform = get_sidewalk_transform(spawn_wp, self._offset)
-        adversary = CarlaDataProvider.request_new_actor('walker.*', spawn_transform)
+        self._spawn_transform = get_sidewalk_transform(spawn_wp, self._offset)
+        adversary = CarlaDataProvider.request_new_actor('walker.*', self._spawn_transform)
         if adversary is None:
             raise ValueError("Couldn't spawn adversary")
 
         self.other_actors.append(adversary)
+        adversary.set_location(self._spawn_transform.location + carla.Location(z=-200))
 
     def _create_behavior(self):
         """
         """
         sequence = py_trees.composites.Sequence(name="VehicleTurningRoutePedestrian")
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_transform, True))
+
         collision_location = self._collision_wp.transform.location
 
         # Adversary trigger behavior

@@ -94,7 +94,7 @@ class BlockedIntersection(BasicScenario):
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
-                clear_ego_entry=False,
+                clear_ego_entry=True,
                 remove_entries=[],
                 remove_exits=[],
                 stop_entries=True,

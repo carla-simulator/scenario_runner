@@ -27,8 +27,11 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
     SUN_ALTITUDE_THRESHOLD_2 = 165
 
     # For higher fog and cloudness values, the amount of light in scene starts to rapidly decrease
-    CLOUDINESS_THRESHOLD = 95
+    CLOUDINESS_THRESHOLD = 80
     FOG_THRESHOLD = 40
+
+    # In cases where more than one weather conditition is active, decrease the thresholds
+    COMBINED_THRESHOLD = 10
 
     def __init__(self, ego_vehicle, radius=50, name="LightsBehavior"):
         """
@@ -65,13 +68,23 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
 
     def _get_night_mode(self, weather):
         """Check wheather or not the street lights need to be turned on"""
-        if weather.sun_altitude_angle <= self.SUN_ALTITUDE_THRESHOLD_1 \
-                or weather.sun_altitude_angle >= self.SUN_ALTITUDE_THRESHOLD_2:
+        altitude_dist = weather.sun_altitude_angle - self.SUN_ALTITUDE_THRESHOLD_1
+        altitude_dist = min(altitude_dist, self.SUN_ALTITUDE_THRESHOLD_2 - weather.sun_altitude_angle)
+        cloudiness_dist = self.CLOUDINESS_THRESHOLD - weather.cloudiness
+        fog_density_dist = self.FOG_THRESHOLD - weather.fog_density
+
+        # Check each parameter independetly
+        if altitude_dist < 0 or cloudiness_dist < 0 or fog_density_dist < 0:
             return True
-        if weather.cloudiness >= self.CLOUDINESS_THRESHOLD:
+
+        # Check if two or more values are close to their threshold
+        joined_threshold = int(altitude_dist < self.COMBINED_THRESHOLD)
+        joined_threshold += int(cloudiness_dist < self.COMBINED_THRESHOLD)
+        joined_threshold += int(fog_density_dist < self.COMBINED_THRESHOLD)
+
+        if joined_threshold >= 2:
             return True
-        if weather.fog_density >= self.FOG_THRESHOLD:
-            return True
+
         return False
 
     def _turn_close_lights_on(self, location):
