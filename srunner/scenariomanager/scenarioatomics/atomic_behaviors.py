@@ -4208,3 +4208,45 @@ class ScenarioTimeout(AtomicBehavior):
             py_trees.blackboard.Blackboard().set("AC_SwitchActorBlockedTest", True, overwrite=True)
             self._terminated = True
         super().terminate(new_status)
+
+
+class MovePedestrianWithEgo(AtomicBehavior):
+
+    def __init__(self, reference_actor, actor, distance, displacement=0, name="TrackActor"):
+        """
+        Setup actor
+        """
+        super().__init__(name)
+        self._actor = actor
+        self._reference_actor = reference_actor
+        self._distance = distance
+        self._displacement = displacement
+
+        added_location = carla.Location(x=self._displacement, z=-self._distance)
+        self._actor.set_location(self._reference_actor.get_location() + added_location)
+
+        self._start_time = 0
+        self._teleport_time = 5
+
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def initialise(self):
+        """
+        Set start time
+        """
+        self._start_time = GameTime.get_time()
+        added_location = carla.Location(x=self._displacement, z=-self._distance)
+        self._actor.set_location(self._reference_actor.get_location() + added_location)
+        super().initialise()
+
+    def update(self):
+        """
+        Keep running until termination condition is satisfied
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if GameTime.get_time() - self._start_time > self._teleport_time:
+            added_location = carla.Location(x=self._displacement, z=-self._distance)
+            self._actor.set_location(self._reference_actor.get_location() + added_location)
+            self._start_time = GameTime.get_time()
+        return new_status

@@ -18,6 +18,7 @@ import carla
 
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (WaitForBlackboardVariable,
                                                                                InTimeToArrivalToLocation)
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import WaitForever
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import UpdateAllActorControls
@@ -194,8 +195,8 @@ class BasicScenario(object):
         if not self.route_mode:
             return None
 
-        set_name = "Reset Blackboard Variable: {} ".format(config.route_var_name)
-        return py_trees.blackboard.SetBlackboardVariable(set_name, config.route_var_name, False)
+        # At routes, scenarios should never stop the route
+        return WaitForever()
 
     def _create_behavior(self):
         """

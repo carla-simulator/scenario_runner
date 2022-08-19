@@ -1949,7 +1949,7 @@ class RunningStopTest(Criterion):
         return new_status
 
 
-class MinSpeedRouteTest(Criterion):
+class MinimumSpeedRouteTest(Criterion):
 
     """
     Check at which stage of the route is the actor at each tick
@@ -1961,21 +1961,38 @@ class MinSpeedRouteTest(Criterion):
     """
     WINDOWS_SIZE = 2
 
-    # Thresholds to return that a route has been completed
-    MULTIPLIER = 1.5  # %
-
-    def __init__(self, actor, name="MinSpeedRouteTest", terminate_on_failure=False):
+    def __init__(self, actor, route, checkpoints=1, name="MinimumSpeedRouteTest", terminate_on_failure=False):
         """
         """
         super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self.units = "%"
         self.success_value = 100
-        self._world = CarlaDataProvider.get_world()
+        self.actual_value = 100
+
+        self._route = route
+        self._accum_dist = []
+        prev_trans = None
+        for trans, _ in route:
+            if prev_trans:
+                dist = trans.location.distance(prev_trans.location)
+                self._accum_dist.append(dist + self._accum_dist[-1])
+            else:
+                self._accum_dist.append(0)
+            prev_trans = trans
+        self._route_length = len(self._route)
+
+        self._checkpoints = checkpoints
+        self._checkpoint_dist = self._accum_dist[-1] / self._checkpoints
+
         self._mean_speed = 0
         self._actor_speed = 0
         self._speed_points = 0
 
-        self._active = True
+        self._current_dist = 0
+        self._checkpoint_values = []
+
+        self._index = 0
+
 
     def update(self):
         """
@@ -1983,61 +2000,87 @@ class MinSpeedRouteTest(Criterion):
         """
         new_status = py_trees.common.Status.RUNNING
 
+        if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            new_status = py_trees.common.Status.FAILURE
+
+        # Check the actor progress through the route 
+        location = CarlaDataProvider.get_location(self.actor)
+        if location is None:
+            return new_status
+
+        for index in range(self._index, min(self._index + self.WINDOWS_SIZE + 1, self._route_length)):
+            # Get the dot product to know if it has passed this location
+            route_transform = self._route[index][0]
+            route_location = route_transform.location
+            wp_dir = route_transform.get_forward_vector()
+            wp_veh = location - route_location
+
+            if wp_veh.dot(wp_dir) > 0:
+                self._index = index
+
+        if self._accum_dist[self._index] - self._current_dist > self._checkpoint_dist:
+            self._set_traffic_event()
+            self._current_dist = self._accum_dist[self._index]
+            self._mean_speed = 0
+            self._actor_speed = 0
+            self._speed_points = 0
+
         # Get the actor speed
         velocity = CarlaDataProvider.get_velocity(self.actor)
         if velocity is None:
             return new_status
 
-        set_speed_data = py_trees.blackboard.Blackboard().get('BA_MinSpeedRouteTest')
-        if set_speed_data is not None:
-            self._active = set_speed_data
-            py_trees.blackboard.Blackboard().set('BA_MinSpeedRouteTest', None, True)
+        # Get the speed of the surrounding Background Activity
+        all_vehicles = CarlaDataProvider.get_all_actors().filter('vehicle*')
+        background_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'background']
 
-        if self._active:
-            # Get the speed of the surrounding Background Activity
-            all_vehicles = CarlaDataProvider.get_all_actors().filter('vehicle*')
-            background_vehicles = [v for v in all_vehicles if v.attributes['role_name'] == 'background']
+        if background_vehicles:
+            frame_mean_speed = 0
+            for vehicle in background_vehicles:
+                frame_mean_speed += CarlaDataProvider.get_velocity(vehicle)
+            frame_mean_speed /= len(background_vehicles)
 
-            if background_vehicles:
-                frame_mean_speed = 0
-                for vehicle in background_vehicles:
-                    frame_mean_speed += CarlaDataProvider.get_velocity(vehicle)
-                frame_mean_speed /= len(background_vehicles)
-
-                # Record the data
-                self._mean_speed += frame_mean_speed
-                self._actor_speed += velocity
-                self._speed_points += 1
+            # Record the data
+            self._mean_speed += frame_mean_speed
+            self._actor_speed += velocity
+            self._speed_points += 1
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
+    def _set_traffic_event(self):
+
+        if self._speed_points > 0 and self._mean_speed:
+            self._mean_speed /= self._speed_points
+            self._actor_speed /= self._speed_points
+            checkpoint_value = round(self._actor_speed / self._mean_speed * 100, 2)
+        else:
+            checkpoint_value = 100
+
+        if checkpoint_value >= self.success_value:
+            self.test_status = "SUCCESS"
+        else:
+            self.test_status = "FAILURE"
+
+            self._traffic_event = TrafficEvent(TrafficEventType.MIN_SPEED_INFRACTION, GameTime.get_frame())
+            self._traffic_event.set_dict({'percentage': checkpoint_value})
+            self._traffic_event.set_message(f"Average speed is {checkpoint_value} of the surrounding traffic's one")
+            self.events.append(self._traffic_event)
+
+        self._checkpoint_values.append(checkpoint_value)
 
     def terminate(self, new_status):
         """
         Set the actual value as a percentage of the two mean speeds,
         the test status to failure if not successful and terminate
         """
-        if self._mean_speed == 0:
-            self.actual_value = 0
-        elif self._speed_points > 0:
-            self._mean_speed /= self._speed_points
-            self._actor_speed /= self._speed_points
-            self.actual_value = round(self._actor_speed / self._mean_speed * 100, 2)
-        else:
-            self.actual_value = 100
+        # Routes end at around 99%, so make sure the last checkpoint is recorded
+        if self._accum_dist[self._index] / self._accum_dist[-1] > 0.95:
+            self._set_traffic_event()
 
-        if self.actual_value >= self.success_value:
-            self.test_status = "SUCCESS"
-        else:
-            self.test_status = "FAILURE"
-
-        if self.test_status == "FAILURE":
-            self._traffic_event = TrafficEvent(event_type=TrafficEventType.MIN_SPEED_INFRACTION, frame=GameTime.get_frame())
-            self._traffic_event.set_dict({'percentage': self.actual_value})
-            self._traffic_event.set_message("Average agent speed is {} of the surrounding traffic's one".format(self.actual_value))
-            self.events.append(self._traffic_event)
-
+        if len(self._checkpoint_values):
+            self.actual_value = sum(self._checkpoint_values) / len(self._checkpoint_values)
         super().terminate(new_status)
 
 

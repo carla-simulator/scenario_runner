@@ -12,7 +12,12 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorDestroy, KeepVelocity, WaitForever, Idle, ActorTransformSetter
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
+                                                                      KeepVelocity,
+                                                                      WaitForever,
+                                                                      Idle,
+                                                                      ActorTransformSetter,
+                                                                      MovePedestrianWithEgo)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation,
@@ -128,9 +133,11 @@ class PedestrianCrossing(BasicScenario):
                 for walker in self.other_actors:
                     walker.destroy()
                 raise ValueError("Failed to spawn an adversary")
-            self.other_actors.append(walker)
 
-            walker.set_location(spawn_transform + carla.Location(z=-200))
+            walker.set_location(spawn_transform.location + carla.Location(z=-200))
+            walker = self._replace_walker(walker)
+
+            self.other_actors.append(walker)
 
             collision_dist = spawn_transform.location.distance(self._collision_wp.transform.location)
 
@@ -201,3 +208,39 @@ class PedestrianCrossing(BasicScenario):
         if self.route_mode:
             return []
         return [CollisionTest(self.ego_vehicles[0])]
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()
+
+    # TODO: Pedestrian have an issue with large maps were setting them to dormant breaks them,
+    # so all functions below are meant to patch it until the fix is done
+    def _replace_walker(self, walker):
+        """As the adversary is probably, replace it with another one"""
+        type_id = walker.type_id
+        walker.destroy()
+        spawn_transform = self._reference_waypoint.transform
+        spawn_transform.location.z += -100
+        walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
+        if not walker:
+            raise ValueError("Couldn't spawn the walker substitute")
+        walker.set_simulate_physics(False)
+        return walker
+
+    def _setup_scenario_trigger(self, config):
+        """Normal scenario trigger but in parallel, a behavior that ensures the pedestrian stays active"""
+        trigger_tree = super()._setup_scenario_trigger(config)
+
+        if not self.route_mode:
+            return trigger_tree
+
+        parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
+
+        for walker in self.other_actors:
+            parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], walker, 100))
+
+        parallel.add_child(trigger_tree)
+        return parallel
