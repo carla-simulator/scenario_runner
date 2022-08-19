@@ -36,7 +36,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
                                                                      RunningRedLightTest,
                                                                      RunningStopTest,
                                                                      ActorBlockedTest,
-                                                                     MinSpeedRouteTest)
+                                                                     MinimumSpeedRouteTest)
 
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.scenarios.background_activity import BackgroundBehavior
@@ -303,7 +303,7 @@ class RouteScenario(BasicScenario):
         criteria.add_child(CollisionTest(self.ego_vehicles[0], name="CollisionTest"))
         criteria.add_child(RunningRedLightTest(self.ego_vehicles[0]))
         criteria.add_child(RunningStopTest(self.ego_vehicles[0]))
-        criteria.add_child(MinSpeedRouteTest(self.ego_vehicles[0], name="MinSpeedTest"))
+        criteria.add_child(MinimumSpeedRouteTest(self.ego_vehicles[0], route=self.route, checkpoints=4, name="MinSpeedTest"))
 
         # These stop the route early to save computational time
         criteria.add_child(InRouteTest(
