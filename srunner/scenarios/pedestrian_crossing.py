@@ -126,7 +126,7 @@ class PedestrianCrossing(BasicScenario):
             start_wp = wp
 
         # Spawn the walkers
-        for walker_data in self._walker_data:
+        for i, walker_data in enumerate(self._walker_data):
             spawn_transform = self._get_walker_transform(start_wp, walker_data)
             walker = CarlaDataProvider.request_new_actor('walker.*', spawn_transform)
             if walker is None:
@@ -135,7 +135,8 @@ class PedestrianCrossing(BasicScenario):
                 raise ValueError("Failed to spawn an adversary")
 
             walker.set_location(spawn_transform.location + carla.Location(z=-200))
-            walker = self._replace_walker(walker)
+            distance = 100 + 5 * i
+            walker = self._replace_walker(walker, distance)
 
             self.other_actors.append(walker)
 
@@ -217,12 +218,12 @@ class PedestrianCrossing(BasicScenario):
 
     # TODO: Pedestrian have an issue with large maps were setting them to dormant breaks them,
     # so all functions below are meant to patch it until the fix is done
-    def _replace_walker(self, walker):
+    def _replace_walker(self, walker, distance):
         """As the adversary is probably, replace it with another one"""
         type_id = walker.type_id
         walker.destroy()
         spawn_transform = self._reference_waypoint.transform
-        spawn_transform.location.z += -100
+        spawn_transform.location.z -= distance
         walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
         if not walker:
             raise ValueError("Couldn't spawn the walker substitute")
