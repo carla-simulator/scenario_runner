@@ -114,7 +114,7 @@ class ParkingCutIn(BasicScenario):
         vehicles_to_destroy = set()
         for v in parked_vehicles:
             if v.transform.location.distance(actor_location) < 10:
-                vehicles_to_destroy.add(v)
+                vehicles_to_destroy.add(v.id)
         self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _get_displaced_location(self, actor, wp):

@@ -221,7 +221,9 @@ class DynamicObjectCrossing(BasicScenario):
         # Get the waypoint in front of the ego.
         move_dist = self._distance
         waypoint = self._reference_waypoint
+
         while self._number_of_attempts > 0:
+            parking_location = None
             self._collision_dist = 0
 
             # Move to the front
@@ -239,6 +241,8 @@ class DynamicObjectCrossing(BasicScenario):
                 if side_wp is None:
                     break  # No more side lanes
                 sidewalk_waypoint = side_wp
+                if side_wp.lane_type == carla.LaneType.Parking:
+                    parking_location = side_wp.transform.location
 
             # Get the blocker transform and spawn it
             offset = {"yaw": 0 if 'vehicle' in self._blocker_model else 90, "z": 0.0, "k": 1.5}
@@ -280,8 +284,20 @@ class DynamicObjectCrossing(BasicScenario):
         adversary.set_location(self._adversary_transform.location + carla.Location(z=-200))
         adversary = self._replace_walker(adversary)
 
+        if parking_location:
+            self._remove_parked_vehicles(parking_location)
+
         self.other_actors.append(adversary)
         self.other_actors.append(blocker)
+
+    def _remove_parked_vehicles(self, actor_location):
+        """Removes the parked vehicles that might have conflicts with the scenario"""
+        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
+        vehicles_to_destroy = set()
+        for v in parked_vehicles:
+            if v.transform.location.distance(actor_location) < 10:
+                vehicles_to_destroy.add(v.id)
+        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _create_behavior(self):
         """
@@ -491,7 +507,7 @@ class ParkingCrossingPedestrian(BasicScenario):
         vehicles_to_destroy = set()
         for v in parked_vehicles:
             if v.transform.location.distance(actor_location) < 10:
-                vehicles_to_destroy.add(v)
+                vehicles_to_destroy.add(v.id)
         self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _create_behavior(self):
