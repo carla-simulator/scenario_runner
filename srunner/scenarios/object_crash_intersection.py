@@ -151,20 +151,11 @@ class BaseVehicleTurning(BasicScenario):
             raise ValueError("Couldn't find viable position for the adversary")
 
         if parking_location:
-            self._remove_parked_vehicles(parking_location)
+            self.parking_slots.append(parking_location)
 
         if isinstance(adversary, carla.Vehicle):
             adversary.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(adversary)
-
-    def _remove_parked_vehicles(self, actor_location):
-        """Removes the parked vehicles that might have conflicts with the scenario"""
-        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
-        vehicles_to_destroy = set()
-        for v in parked_vehicles:
-            if v.transform.location.distance(actor_location) < 10:
-                vehicles_to_destroy.add(v.id)
-        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _create_behavior(self):
         """
@@ -304,7 +295,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
 
-        self._offset = {"yaw": 270, "z": 0.2, "k": 1.5}
+        self._offset = {"yaw": 270, "z": 1.2, "k": 1.5}
 
         self.timeout = timeout
         super().__init__(name, ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
@@ -370,24 +361,15 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         adversary = self._replace_walker(adversary)
 
         if parking_location:
-            self._remove_parked_vehicles(parking_location)
+            self.parking_slots.append(parking_location)
 
         self.other_actors.append(adversary)
-
-    def _remove_parked_vehicles(self, actor_location):
-        """Removes the parked vehicles that might have conflicts with the scenario"""
-        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
-        vehicles_to_destroy = set()
-        for v in parked_vehicles:
-            if v.transform.location.distance(actor_location) < 10:
-                vehicles_to_destroy.add(v.id)
-        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _create_behavior(self):
         """
         """
         sequence = py_trees.composites.Sequence(name="VehicleTurningRoutePedestrian")
-        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_transform, True))
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_transform, None))
 
         collision_location = self._collision_wp.transform.location
 
@@ -436,13 +418,22 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         """As the adversary is probably, replace it with another one"""
         type_id = adversary.type_id
         adversary.destroy()
-        spawn_transform = self._reference_waypoint.transform
-        spawn_transform.location.z += -100
-        adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
-        if not adversary:
-            raise ValueError("Couldn't spawn the walker substitute")
-        adversary.set_simulate_physics(False)
-        return adversary
+
+        self._walker_displacement = 0
+        self._walker_distance = 100
+
+        i = 0
+        while i < 100:
+            self._walker_displacement += 5*i
+
+            spawn_transform = self.ego_vehicles[0].get_transform()
+            spawn_transform.location.x += self._walker_displacement
+            spawn_transform.location.z -= self._walker_distance
+            adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
+            if adversary:
+                return adversary
+            i+=1
+        raise ValueError("Couldn't spawn the walker substitute")
 
     def _setup_scenario_trigger(self, config):
         """Normal scenario trigger but in parallel, a behavior that ensures the pedestrian stays active"""
@@ -454,7 +445,8 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
 
-        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0], 100))
+        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0],
+            self._walker_distance, self._walker_displacement))
 
         parallel.add_child(trigger_tree)
         return parallel
