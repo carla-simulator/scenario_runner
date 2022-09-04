@@ -119,6 +119,8 @@ class BaseVehicleTurning(BasicScenario):
         waypoint = self._get_target_waypoint()
         move_dist = self._start_distance
         while self._number_of_attempts > 0:
+            parking_location = None
+
             # Move to the front
             waypoint = waypoint.next(move_dist)[0]
             self._collision_wp = waypoint
@@ -130,6 +132,8 @@ class BaseVehicleTurning(BasicScenario):
                 if right_wp is None:
                     break  # No more right lanes
                 sidewalk_waypoint = right_wp
+                if sidewalk_waypoint.lane_type == carla.LaneType.Parking:
+                    parking_location = sidewalk_waypoint.transform.location
 
             # Get the adversary transform and spawn it
             self._adversary_transform = get_sidewalk_transform(sidewalk_waypoint, self._offset)
@@ -145,6 +149,9 @@ class BaseVehicleTurning(BasicScenario):
 
         if self._number_of_attempts == 0:
             raise ValueError("Couldn't find viable position for the adversary")
+
+        if parking_location:
+            self.parking_slots.append(parking_location)
 
         if isinstance(adversary, carla.Vehicle):
             adversary.apply_control(carla.VehicleControl(hand_brake=True))
@@ -288,7 +295,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
 
-        self._offset = {"yaw": 270, "z": 0.2, "k": 1.5}
+        self._offset = {"yaw": 270, "z": 1.2, "k": 1.5}
 
         self.timeout = timeout
         super().__init__(name, ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
@@ -298,6 +305,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         Custom initialization
         """
         # Get the waypoint right after the junction
+        parking_location = None
         waypoint = generate_target_waypoint_in_route(self._reference_waypoint, self._ego_route)
         self._collision_wp = waypoint.next(0.5)[0]  # Some wps are still part of the junction
 
@@ -309,6 +317,8 @@ class VehicleTurningRoutePedestrian(BasicScenario):
             if side_wp is None:
                 break
             right_wp = side_wp
+            if right_wp.lane_type == carla.LaneType.Parking:
+                parking_location = right_wp.transform.location
 
         # Get the left waypoint at the sidewalk
         other_dir_wps = get_opposite_dir_lanes(self._collision_wp)
@@ -320,6 +330,8 @@ class VehicleTurningRoutePedestrian(BasicScenario):
                 if side_wp is None:
                     break
                 left_wp = side_wp
+                if left_wp.lane_type == carla.LaneType.Parking:
+                    parking_location = left_wp.transform.location
         else:
             # Without opposite lane
             self._offset['yaw'] = 90
@@ -329,6 +341,8 @@ class VehicleTurningRoutePedestrian(BasicScenario):
                 if side_wp is None:
                     break
                 left_wp = side_wp
+                if left_wp.lane_type == carla.LaneType.Parking:
+                    parking_location = left_wp.transform.location
 
         self._adversary_distance = right_wp.transform.location.distance(left_wp.transform.location)
 
@@ -345,6 +359,10 @@ class VehicleTurningRoutePedestrian(BasicScenario):
 
         adversary.set_location(self._spawn_transform.location + carla.Location(z=-200))
         adversary = self._replace_walker(adversary)
+
+        if parking_location:
+            self.parking_slots.append(parking_location)
+
         self.other_actors.append(adversary)
 
     def _create_behavior(self):
@@ -400,12 +418,13 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         """As the adversary is probably, replace it with another one"""
         type_id = adversary.type_id
         adversary.destroy()
-        spawn_transform = self._reference_waypoint.transform
-        spawn_transform.location.z += -100
+        spawn_transform = self.ego_vehicles[0].get_transform()
+        spawn_transform.location.z -= 50
         adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
         if not adversary:
             raise ValueError("Couldn't spawn the walker substitute")
         adversary.set_simulate_physics(False)
+        adversary.set_location(spawn_transform.location + carla.Location(z=-50))
         return adversary
 
     def _setup_scenario_trigger(self, config):

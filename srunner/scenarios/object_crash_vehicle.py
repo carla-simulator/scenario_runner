@@ -221,7 +221,9 @@ class DynamicObjectCrossing(BasicScenario):
         # Get the waypoint in front of the ego.
         move_dist = self._distance
         waypoint = self._reference_waypoint
+
         while self._number_of_attempts > 0:
+            parking_location = None
             self._collision_dist = 0
 
             # Move to the front
@@ -239,6 +241,8 @@ class DynamicObjectCrossing(BasicScenario):
                 if side_wp is None:
                     break  # No more side lanes
                 sidewalk_waypoint = side_wp
+                if side_wp.lane_type == carla.LaneType.Parking:
+                    parking_location = side_wp.transform.location
 
             # Get the blocker transform and spawn it
             offset = {"yaw": 0 if 'vehicle' in self._blocker_model else 90, "z": 0.0, "k": 1.5}
@@ -258,7 +262,7 @@ class DynamicObjectCrossing(BasicScenario):
                 raise ValueError("Couldn't find a location to spawn the adversary")
             walker_wp = wps[0]
 
-            offset = {"yaw": 270 - self._crossing_angle, "z": 0.5, "k": 1.2}
+            offset = {"yaw": 270 - self._crossing_angle, "z": 1.2, "k": 1.2}
             self._adversary_transform = self._get_sidewalk_transform(walker_wp, offset)
             adversary = CarlaDataProvider.request_new_actor('walker.*', self._adversary_transform)
             if adversary is None:
@@ -279,6 +283,9 @@ class DynamicObjectCrossing(BasicScenario):
         blocker.set_simulate_physics(False)
         adversary.set_location(self._adversary_transform.location + carla.Location(z=-200))
         adversary = self._replace_walker(adversary)
+
+        if parking_location:
+            self.parking_slots.append(parking_location)
 
         self.other_actors.append(adversary)
         self.other_actors.append(blocker)
@@ -344,12 +351,13 @@ class DynamicObjectCrossing(BasicScenario):
         """As the adversary is probably, replace it with another one"""
         type_id = adversary.type_id
         adversary.destroy()
-        spawn_transform = self._reference_waypoint.transform
-        spawn_transform.location.z += -100
+        spawn_transform = self.ego_vehicles[0].get_transform()
+        spawn_transform.location.z -= 50
         adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
         if not adversary:
             raise ValueError("Couldn't spawn the walker substitute")
         adversary.set_simulate_physics(False)
+        adversary.set_location(spawn_transform.location + carla.Location(z=-50))
         return adversary
 
     def _setup_scenario_trigger(self, config):
@@ -445,7 +453,7 @@ class ParkingCrossingPedestrian(BasicScenario):
 
             offset_location = carla.Location(waypoint.lane_width * vector.x, waypoint.lane_width * vector.y)
             new_location = waypoint.transform.location + offset_location
-        new_location.z += 0.5
+        new_location.z += 1.2
 
         return carla.Transform(new_location, new_rotation)
 
@@ -461,7 +469,7 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         # Get the adversary transform and spawn it
         self._blocker_transform = self._get_blocker_transform(blocker_wp)
-        self._remove_parked_vehicles(self._blocker_transform.location)
+        self.parking_slots.append(self._blocker_transform.location)
         blocker = CarlaDataProvider.request_new_actor(
             'vehicle.*', self._blocker_transform, attribute_filter=self._bp_attributes)
         if blocker is None:
@@ -477,22 +485,18 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         # Get the adversary transform and spawn it
         self._walker_transform = self._get_walker_transform(walker_wp)
-        self._remove_parked_vehicles(self._walker_transform.location)
+        self.parking_slots.append(self._walker_transform.location)
+
         walker = CarlaDataProvider.request_new_actor('walker.*', self._walker_transform)
         if walker is None:
             raise ValueError("Couldn't spawn the adversary")
-        self.other_actors.append(walker)
-        
-        self._collision_wp = walker_wp
 
-    def _remove_parked_vehicles(self, actor_location):
-        """Removes the parked vehicles that might have conflicts with the scenario"""
-        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
-        vehicles_to_destroy = set()
-        for v in parked_vehicles:
-            if v.transform.location.distance(actor_location) < 10:
-                vehicles_to_destroy.add(v)
-        self.world.enable_environment_objects(vehicles_to_destroy, False)
+        walker.set_location(self._walker_transform.location + carla.Location(z=-200))
+        walker = self._replace_walker(walker)
+ 
+        self.other_actors.append(walker)
+
+        self._collision_wp = walker_wp
 
     def _create_behavior(self):
         """
@@ -505,6 +509,7 @@ class ParkingCrossingPedestrian(BasicScenario):
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._distance))
 
+        sequence.add_child(ActorTransformSetter(self.other_actors[1], self._walker_transform, True))
         collision_location = self._collision_wp.transform.location
 
         # Wait until ego is close to the adversary
@@ -525,8 +530,8 @@ class ParkingCrossingPedestrian(BasicScenario):
             duration=duration, distance=distance, name="AdversaryCrossing"))
 
         # Remove everything
-        sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
-        sequence.add_child(ActorDestroy(self.other_actors[1], name="DestroyBlocker"))
+        sequence.add_child(ActorDestroy(self.other_actors[1], name="DestroyAdversary"))
+        sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyBlocker"))
         sequence.add_child(DriveDistance(self.ego_vehicles[0], self._ego_end_distance, name="EndCondition"))
 
         return sequence
@@ -545,3 +550,33 @@ class ParkingCrossingPedestrian(BasicScenario):
         Remove all actors upon deletion
         """
         self.remove_all_actors()
+
+    # TODO: Pedestrian have an issue with large maps were setting them to dormant breaks them,
+    # so all functions below are meant to patch it until the fix is done
+    def _replace_walker(self, walker):
+        """As the adversary is probably, replace it with another one"""
+        type_id = walker.type_id
+        walker.destroy()
+        spawn_transform = self.ego_vehicles[0].get_transform()
+        spawn_transform.location.z -= 50
+        walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
+        if not walker:
+            raise ValueError("Couldn't spawn the walker substitute")
+        walker.set_simulate_physics(False)
+        walker.set_location(spawn_transform.location + carla.Location(z=-50))
+        return walker
+
+    def _setup_scenario_trigger(self, config):
+        """Normal scenario trigger but in parallel, a behavior that ensures the pedestrian stays active"""
+        trigger_tree = super()._setup_scenario_trigger(config)
+
+        if not self.route_mode:
+            return trigger_tree
+
+        parallel = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
+
+        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[1], 100))
+
+        parallel.add_child(trigger_tree)
+        return parallel

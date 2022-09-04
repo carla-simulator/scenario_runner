@@ -116,7 +116,7 @@ class ParkingExit(BasicScenario):
         if not front_points:
             raise ValueError("Couldn't find viable position for the vehicle in front of the parking point")
 
-        self._remove_parked_vehicles(front_points[0].transform.location)
+        self.parking_slots.append(front_points[0].transform.location)
 
         actor_front = CarlaDataProvider.request_new_actor(
             'vehicle.*', front_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
@@ -135,7 +135,7 @@ class ParkingExit(BasicScenario):
         if not behind_points:
             raise ValueError("Couldn't find viable position for the vehicle behind the parking point")
 
-        self._remove_parked_vehicles(behind_points[0].transform.location)
+        self.parking_slots.append(behind_points[0].transform.location)
 
         actor_behind = CarlaDataProvider.request_new_actor(
             'vehicle.*', behind_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
@@ -151,7 +151,7 @@ class ParkingExit(BasicScenario):
 
         # Move the ego to its side position
         self._ego_location = self._get_displaced_location(self.ego_vehicles[0], self._parking_waypoint)
-        self._remove_parked_vehicles(self._ego_location)
+        self.parking_slots.append(self._ego_location)
         self.ego_vehicles[0].set_location(self._ego_location)
 
         # Spawn the actor at the side of the ego
@@ -164,15 +164,6 @@ class ParkingExit(BasicScenario):
 
         self._end_side_transform = self.ego_vehicles[0].get_transform()
         self._end_side_transform.location.z -= 500
-
-    def _remove_parked_vehicles(self, actor_location):
-        """Removes the parked vehicles that might have conflicts with the scenario"""
-        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
-        vehicles_to_destroy = set()
-        for v in parked_vehicles:
-            if v.transform.location.distance(actor_location) < 10:
-                vehicles_to_destroy.add(v)
-        self.world.enable_environment_objects(vehicles_to_destroy, False)
 
     def _get_displaced_location(self, actor, wp):
         """

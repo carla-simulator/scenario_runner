@@ -83,15 +83,6 @@ class VehicleOpensDoorTwoWays(BasicScenario):
 
         super().__init__("VehicleOpensDoorTwoWays", ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
 
-    def _remove_parked_vehicles(self, actor_location):
-        """Removes the parked vehicles that might have conflicts with the scenario"""
-        parked_vehicles = self.world.get_environment_objects(carla.CityObjectLabel.Vehicles)
-        vehicles_to_destroy = set()
-        for v in parked_vehicles:
-            if v.transform.location.distance(actor_location) < 10:
-                vehicles_to_destroy.add(v)
-        self.world.enable_environment_objects(vehicles_to_destroy, False)
-
     def _get_displaced_location(self, actor, wp):
         """
         Calculates the transforming such that the actor is at the sidemost part of the lane
@@ -140,7 +131,7 @@ class VehicleOpensDoorTwoWays(BasicScenario):
         if self._parked_wp is None:
             raise ValueError("Couldn't find a spot to place the adversary vehicle")
 
-        self._remove_parked_vehicles(self._parked_wp.transform.location)
+        self.parking_slots.append(self._parked_wp.transform.location)
 
         self._parked_actor = CarlaDataProvider.request_new_actor(
             "*vehicle.*", self._parked_wp.transform, attribute_filter={'has_dynamic_doors': True, 'base_type': 'car'})

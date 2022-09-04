@@ -40,6 +40,7 @@ class BasicScenario(object):
         self.name = name
         self.ego_vehicles = ego_vehicles
         self.other_actors = []
+        self.parking_slots = []
         self.config = config
         self.world = world
         self.debug_mode = debug_mode
@@ -318,3 +319,9 @@ class BasicScenario(object):
                     CarlaDataProvider.remove_actor_by_id(self.other_actors[i].id)
                 self.other_actors[i] = None
         self.other_actors = []
+
+    def get_parking_slots(self):
+        """
+        Returns occupied parking slots.
+        """
+        return self.parking_slots

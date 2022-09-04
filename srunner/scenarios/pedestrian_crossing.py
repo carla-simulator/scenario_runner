@@ -67,9 +67,9 @@ class PedestrianCrossing(BasicScenario):
         self.timeout = timeout
 
         self._walker_data = [
-            {'x': 0.4, 'y': 1.5, 'z': 1, 'yaw': 270},
-            {'x': 1, 'y': 2.5, 'z': 1, 'yaw': 270},
-            {'x': 1.6, 'y': 0.5, 'z': 1, 'yaw': 270}
+            {'x': 0.4, 'y': 1.5, 'z': 1.2, 'yaw': 270},
+            {'x': 1, 'y': 2.5, 'z': 1.2, 'yaw': 270},
+            {'x': 1.6, 'y': 0.5, 'z': 1.2, 'yaw': 270}
         ]
 
         for walker_data in self._walker_data:
@@ -135,8 +135,7 @@ class PedestrianCrossing(BasicScenario):
                 raise ValueError("Failed to spawn an adversary")
 
             walker.set_location(spawn_transform.location + carla.Location(z=-200))
-            distance = 100 + 5 * i
-            walker = self._replace_walker(walker, distance)
+            walker = self._replace_walker(walker)
 
             self.other_actors.append(walker)
 
@@ -218,16 +217,17 @@ class PedestrianCrossing(BasicScenario):
 
     # TODO: Pedestrian have an issue with large maps were setting them to dormant breaks them,
     # so all functions below are meant to patch it until the fix is done
-    def _replace_walker(self, walker, distance):
+    def _replace_walker(self, walker):
         """As the adversary is probably, replace it with another one"""
         type_id = walker.type_id
         walker.destroy()
-        spawn_transform = self._reference_waypoint.transform
-        spawn_transform.location.z -= distance
+        spawn_transform = self.ego_vehicles[0].get_transform()
+        spawn_transform.location.z -= 50
         walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
         if not walker:
             raise ValueError("Couldn't spawn the walker substitute")
         walker.set_simulate_physics(False)
+        walker.set_location(spawn_transform.location + carla.Location(z=-50))
         return walker
 
     def _setup_scenario_trigger(self, config):
@@ -240,7 +240,7 @@ class PedestrianCrossing(BasicScenario):
         parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
 
-        for walker in self.other_actors:
+        for i, walker in enumerate(reversed(self.other_actors)):
             parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], walker, 100))
 
         parallel.add_child(trigger_tree)
