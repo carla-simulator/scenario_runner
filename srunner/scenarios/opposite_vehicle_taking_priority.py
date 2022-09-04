@@ -116,6 +116,7 @@ class OppositeVehicleJunction(BasicScenario):
             source_transform.location + carla.Location(z=0.1),
             source_transform.rotation
         )
+        self.parking_slots.append(source_transform.location)
 
         # Spawn the actor and move it below ground
         opposite_actor = CarlaDataProvider.request_new_actor(

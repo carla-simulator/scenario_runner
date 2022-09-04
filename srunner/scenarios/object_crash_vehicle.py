@@ -302,7 +302,7 @@ class DynamicObjectCrossing(BasicScenario):
             total_dist = self._distance + 10
             sequence.add_child(LeaveSpaceInFront(total_dist))
 
-        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._adversary_transform, None))
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._adversary_transform, True))
         collision_location = self._collision_wp.transform.location
 
         # Wait until ego is close to the adversary
@@ -351,24 +351,14 @@ class DynamicObjectCrossing(BasicScenario):
         """As the adversary is probably, replace it with another one"""
         type_id = adversary.type_id
         adversary.destroy()
-
-        self._walker_displacement = 0
-        self._walker_distance = 110
-
-        i = 0
-        while i < 100:
-            self._walker_displacement += 5*i
-
-            spawn_transform = self.ego_vehicles[0].get_transform()
-            spawn_transform.location.x += self._walker_displacement
-            spawn_transform.location.z -= self._walker_distance
-            adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
-            if adversary:
-                return adversary
-            i+=1
-
-        raise ValueError("Couldn't spawn the walker substitute")
-
+        spawn_transform = self.ego_vehicles[0].get_transform()
+        spawn_transform.location.z -= 50
+        adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
+        if not adversary:
+            raise ValueError("Couldn't spawn the walker substitute")
+        adversary.set_simulate_physics(False)
+        adversary.set_location(spawn_transform.location + carla.Location(z=-50))
+        return adversary
 
     def _setup_scenario_trigger(self, config):
         """Normal scenario trigger but in parallel, a behavior that ensures the pedestrian stays active"""
@@ -380,8 +370,7 @@ class DynamicObjectCrossing(BasicScenario):
         parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
 
-        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0],
-            self._walker_distance, self._walker_displacement))
+        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0], 100))
 
         parallel.add_child(trigger_tree)
         return parallel
@@ -520,7 +509,7 @@ class ParkingCrossingPedestrian(BasicScenario):
         if self.route_mode:
             sequence.add_child(LeaveSpaceInFront(self._distance))
 
-        sequence.add_child(ActorTransformSetter(self.other_actors[1], self._walker_transform, None))
+        sequence.add_child(ActorTransformSetter(self.other_actors[1], self._walker_transform, True))
         collision_location = self._collision_wp.transform.location
 
         # Wait until ego is close to the adversary
@@ -568,23 +557,14 @@ class ParkingCrossingPedestrian(BasicScenario):
         """As the adversary is probably, replace it with another one"""
         type_id = walker.type_id
         walker.destroy()
-
-        self._walker_displacement = 0
-        self._walker_distance = 120
-
-        i = 0
-        while i < 100:
-            self._walker_displacement += 5*i
-
-            spawn_transform = self.ego_vehicles[0].get_transform()
-            spawn_transform.location.x += self._walker_displacement
-            spawn_transform.location.z -= self._walker_distance
-            walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
-            if walker:
-                return walker
-            i+=1
-
-        raise ValueError("Couldn't spawn the walker substitute")
+        spawn_transform = self.ego_vehicles[0].get_transform()
+        spawn_transform.location.z -= 50
+        walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
+        if not walker:
+            raise ValueError("Couldn't spawn the walker substitute")
+        walker.set_simulate_physics(False)
+        walker.set_location(spawn_transform.location + carla.Location(z=-50))
+        return walker
 
     def _setup_scenario_trigger(self, config):
         """Normal scenario trigger but in parallel, a behavior that ensures the pedestrian stays active"""
@@ -596,8 +576,7 @@ class ParkingCrossingPedestrian(BasicScenario):
         parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
 
-        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[1],
-            self._walker_distance, self._walker_displacement))
+        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[1], 100))
 
         parallel.add_child(trigger_tree)
         return parallel

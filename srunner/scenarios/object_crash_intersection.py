@@ -369,7 +369,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         """
         """
         sequence = py_trees.composites.Sequence(name="VehicleTurningRoutePedestrian")
-        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_transform, None))
+        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_transform, True))
 
         collision_location = self._collision_wp.transform.location
 
@@ -418,22 +418,14 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         """As the adversary is probably, replace it with another one"""
         type_id = adversary.type_id
         adversary.destroy()
-
-        self._walker_displacement = 0
-        self._walker_distance = 100
-
-        i = 0
-        while i < 100:
-            self._walker_displacement += 5*i
-
-            spawn_transform = self.ego_vehicles[0].get_transform()
-            spawn_transform.location.x += self._walker_displacement
-            spawn_transform.location.z -= self._walker_distance
-            adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
-            if adversary:
-                return adversary
-            i+=1
-        raise ValueError("Couldn't spawn the walker substitute")
+        spawn_transform = self.ego_vehicles[0].get_transform()
+        spawn_transform.location.z -= 50
+        adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
+        if not adversary:
+            raise ValueError("Couldn't spawn the walker substitute")
+        adversary.set_simulate_physics(False)
+        adversary.set_location(spawn_transform.location + carla.Location(z=-50))
+        return adversary
 
     def _setup_scenario_trigger(self, config):
         """Normal scenario trigger but in parallel, a behavior that ensures the pedestrian stays active"""
@@ -445,8 +437,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
         parallel = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
 
-        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0],
-            self._walker_distance, self._walker_displacement))
+        parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0], 100))
 
         parallel.add_child(trigger_tree)
         return parallel
