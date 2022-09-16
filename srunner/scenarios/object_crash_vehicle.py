@@ -507,7 +507,8 @@ class ParkingCrossingPedestrian(BasicScenario):
         """
         sequence = py_trees.composites.Sequence(name="ParkingCrossingPedestrian")
         if self.route_mode:
-            sequence.add_child(LeaveSpaceInFront(self._distance))
+            total_dist = self._distance + 15
+            sequence.add_child(LeaveSpaceInFront(total_dist))
 
         sequence.add_child(ActorTransformSetter(self.other_actors[1], self._walker_transform, True))
         collision_location = self._collision_wp.transform.location

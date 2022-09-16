@@ -179,7 +179,7 @@ class BasicScenario(object):
             return None
 
         # Scenario is not part of a route, wait for the ego to move
-        if not self.route_mode:
+        if not self.route_mode or config.route_var_name is None:
             return InTimeToArrivalToLocation(self.ego_vehicles[0], 2.0, start_location)
 
         # Scenario is part of a route.
@@ -189,15 +189,19 @@ class BasicScenario(object):
     def _setup_scenario_end(self, config):
         """
         This function adds and additional behavior to the scenario, which is triggered
-        after it has ended.
-
+        after it has ended. The Blackboard variable is set to False to indicate the scenario has ended.
         The function can be overloaded by a user implementation inside the user-defined scenario class.
         """
-        if not self.route_mode:
+        if not self.route_mode or config.route_var_name is None:
             return None
 
-        # At routes, scenarios should never stop the route
-        return WaitForever()
+        # Scenario is part of a route.
+        end_sequence = py_trees.composites.Sequence()
+        name = "Reset Blackboard Variable: {} ".format(config.route_var_name)
+        end_sequence.add_child(py_trees.blackboard.SetBlackboardVariable(name, config.route_var_name, False))
+        end_sequence.add_child(WaitForever())  # scenario can't stop the route
+
+        return end_sequence
 
     def _create_behavior(self):
         """
