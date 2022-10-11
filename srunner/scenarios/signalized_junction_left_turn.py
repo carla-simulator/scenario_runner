@@ -200,7 +200,7 @@ class SignalizedJunctionLeftTurn(JunctionLeftTurn):
                 remove_entries=get_same_dir_lanes(self._source_wp),
                 remove_exits=get_same_dir_lanes(self._sink_wp),
                 stop_entries=False,
-                extend_road_exit=self._sink_dist
+                extend_road_exit=self._sink_dist + 20
             ))
             sequence.add_child(ChangeOppositeBehavior(active=False))
 
@@ -250,7 +250,7 @@ class NonSignalizedJunctionLeftTurn(JunctionLeftTurn):
                 remove_entries=get_same_dir_lanes(self._source_wp),
                 remove_exits=get_same_dir_lanes(self._sink_wp),
                 stop_entries=True,
-                extend_road_exit=self._sink_dist
+                extend_road_exit=self._sink_dist + 20
             ))
             sequence.add_child(ChangeOppositeBehavior(active=False))
 

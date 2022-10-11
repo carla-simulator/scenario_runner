@@ -201,7 +201,7 @@ class SignalizedJunctionRightTurn(JunctionRightTurn):
                 remove_entries=get_same_dir_lanes(self._source_wp),
                 remove_exits=[],
                 stop_entries=False,
-                extend_road_exit=self._sink_dist
+                extend_road_exit=self._sink_dist + 20
             ))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -210,7 +210,7 @@ class SignalizedJunctionRightTurn(JunctionRightTurn):
         end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         root.add_child(end_condition)
         root.add_child(ActorFlow(
-            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed, add_initial_actors=True))
+            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed, initial_actors=True))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
@@ -244,7 +244,7 @@ class NonSignalizedJunctionRightTurn(JunctionRightTurn):
                 remove_entries=get_same_dir_lanes(self._source_wp),
                 remove_exits=[],
                 stop_entries=True,
-                extend_road_exit=self._sink_dist
+                extend_road_exit=self._sink_dist + 20
             ))
 
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
@@ -253,7 +253,7 @@ class NonSignalizedJunctionRightTurn(JunctionRightTurn):
         end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         root.add_child(end_condition)
         root.add_child(ActorFlow(
-            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed, add_initial_actors=True))
+            self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed, initial_actors=True))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence.add_child(root)

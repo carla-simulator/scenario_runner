@@ -30,7 +30,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (D
                                                                                WaitUntilInFront,
                                                                                WaitUntilInFrontPosition)
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import LeaveSpaceInFront, SetMaxSpeed, ChangeOppositeBehavior
+from srunner.tools.background_manager import LeaveSpaceInFront, SetMaxSpeed, ChangeOppositeBehavior, ChangeRoadBehavior
 
 
 def get_value_parameter(config, name, p_type, default):
@@ -69,7 +69,7 @@ class Accident(BasicScenario):
         self._first_distance = 10
         self._second_distance = 6
 
-        self._trigger_distance = 30
+        self._trigger_distance = 50
         self._end_distance = 50
         self._wait_duration = 5
         self._offset = 0.6
@@ -121,7 +121,7 @@ class Accident(BasicScenario):
         signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningaccident', spawn_transform)
         if not signal_prop:
             raise ValueError("Couldn't spawn the indication prop asset")
-        signal_prop.set_simulate_physics(True)
+        signal_prop.set_simulate_physics(False)
         self.other_actors.append(signal_prop)
 
     def _spawn_obstacle(self, wp, blueprint, accident_actor=False):
@@ -274,8 +274,8 @@ class AccidentTwoWays(Accident):
         root.add_child(end_condition)
 
         if self.route_mode:
-            behavior.add_child(SwitchWrongDirectionTest(True))
-            behavior.add_child(ChangeOppositeBehavior(active=True))
+            root.add_child(SwitchWrongDirectionTest(True))
+            root.add_child(ChangeOppositeBehavior(active=True))
         for actor in self.other_actors:
             root.add_child(ActorDestroy(actor))
 
@@ -297,7 +297,7 @@ class ParkedObstacle(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
 
-        self._trigger_distance = 30
+        self._trigger_distance = 50
         self._end_distance = 50
         self._wait_duration = 5
         self._offset = 0.7
@@ -349,7 +349,7 @@ class ParkedObstacle(BasicScenario):
         signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningaccident', spawn_transform)
         if not signal_prop:
             raise ValueError("Couldn't spawn the indication prop asset")
-        signal_prop.set_simulate_physics(True)
+        signal_prop.set_simulate_physics(False)
         self.other_actors.append(signal_prop)
 
     def _spawn_obstacle(self, wp, blueprint):
@@ -504,8 +504,9 @@ class HazardAtSideLane(BasicScenario):
         self.timeout = timeout
 
         self._obstacle_distance = 9
-        self._trigger_distance = 30
-        self._end_distance = 40
+        self._trigger_distance = 50
+        self._end_distance = 50
+        self._extra_space = 30
 
         self._offset = 0.55
         self._wait_duration = 5
@@ -596,6 +597,7 @@ class HazardAtSideLane(BasicScenario):
         if self.route_mode:
             total_dist = self._distance + self._obstacle_distance + 20
             root.add_child(LeaveSpaceInFront(total_dist))
+            root.add_child(ChangeRoadBehavior(extra_space=self._extra_space))
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
@@ -629,6 +631,7 @@ class HazardAtSideLane(BasicScenario):
         root.add_child(main_behavior)
         if self.route_mode:
             root.add_child(SetMaxSpeed(0))
+            root.add_child(ChangeRoadBehavior(extra_space=0))
 
         for actor in self.other_actors:
             root.add_child(ActorDestroy(actor))
@@ -658,7 +661,7 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
     """
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
 
-        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 200)
+        self._opposite_frequency = get_value_parameter(config, 'frequency', float, 100)
 
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
@@ -672,6 +675,7 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
         if self.route_mode:
             total_dist = self._distance + self._obstacle_distance + 20
             root.add_child(LeaveSpaceInFront(total_dist))
+            root.add_child(ChangeRoadBehavior(extra_space=self._extra_space))
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
@@ -705,8 +709,9 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
 
         root.add_child(main_behavior)
         if self.route_mode:
-            behavior.add_child(SwitchWrongDirectionTest(False))
-            behavior.add_child(ChangeOppositeBehavior(spawn_dist=40))
+            root.add_child(SwitchWrongDirectionTest(False))
+            root.add_child(ChangeOppositeBehavior(spawn_dist=40))
+            root.add_child(ChangeRoadBehavior(extra_space=0))
 
         for actor in self.other_actors:
             root.add_child(ActorDestroy(actor))

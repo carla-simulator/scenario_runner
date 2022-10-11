@@ -206,6 +206,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         self._road_extra_front_actors = 0  # For cases where we want more space but not more vehicles
         self._road_spawn_dist = 15  # Distance between spawned vehicles [m]
+        self._road_extra_space = 0  # Extra space for the road vehicles
 
         self._active_road_sources = True
 
@@ -271,8 +272,8 @@ class BackgroundBehavior(AtomicBehavior):
         stopped. Between the two, the velocity decreases linearly"""
         self._base_min_radius = (self._road_front_vehicles + self._road_extra_front_actors) * self._road_spawn_dist
         self._base_max_radius = (self._road_front_vehicles + self._road_extra_front_actors + 1) * self._road_spawn_dist
-        self._min_radius = self._base_min_radius
-        self._max_radius = self._base_max_radius
+        self._min_radius = self._base_min_radius + self._road_extra_space
+        self._max_radius = self._base_max_radius + self._road_extra_space
 
     def initialise(self):
         """Creates the background activity actors. Pressuposes that the ego is at a road"""
@@ -1586,13 +1587,15 @@ class BackgroundBehavior(AtomicBehavior):
         # Road behavior
         road_behavior_data = py_trees.blackboard.Blackboard().get('BA_ChangeRoadBehavior')
         if road_behavior_data is not None:
-            num_front_vehicles, num_back_vehicles, spawn_dist = road_behavior_data
+            num_front_vehicles, num_back_vehicles, spawn_dist, extra_space = road_behavior_data
             if num_front_vehicles is not None:
                 self._road_front_vehicles = num_front_vehicles
             if num_back_vehicles is not None:
                 self._road_back_vehicles = num_back_vehicles
             if spawn_dist is not None:
                 self._road_spawn_dist = spawn_dist
+            if extra_space is not None:
+                self._road_extra_space = extra_space
             self._get_road_radius()
             py_trees.blackboard.Blackboard().set('BA_ChangeRoadBehavior', None, True)
 
@@ -1703,8 +1706,8 @@ class BackgroundBehavior(AtomicBehavior):
     def _compute_parameters(self):
         """Computes the parameters that are dependent on the speed of the ego. """
         ego_speed = CarlaDataProvider.get_velocity(self._ego_actor)
-        self._min_radius = self._base_min_radius + self._radius_increase_ratio * ego_speed
-        self._max_radius = self._base_max_radius + self._radius_increase_ratio * ego_speed
+        self._min_radius = self._base_min_radius + self._radius_increase_ratio * ego_speed + self._road_extra_space
+        self._max_radius = self._base_max_radius + self._radius_increase_ratio * ego_speed + self._road_extra_space
         self._detection_dist = self._base_junction_detection + self._detection_ratio * ego_speed
 
     def _stop_road_front_vehicles(self):
