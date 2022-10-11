@@ -18,7 +18,8 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       Idle,
                                                                       ScenarioTimeout,
-                                                                      ActorTransformSetter)
+                                                                      ActorTransformSetter,
+                                                                      HandBrakeVehicle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToVehicle
 
@@ -117,6 +118,7 @@ class BlockedIntersection(BasicScenario):
 
         behavior = py_trees.composites.Sequence(name="Approach and Wait")
         behavior.add_child(ActorTransformSetter(self.other_actors[0], self._blocker_transform, True))
+        behavior.add_child(HandBrakeVehicle(self.other_actors[0], 1))
         behavior.add_child(InTriggerDistanceToVehicle(
             self.other_actors[-1], self.ego_vehicles[0], self._trigger_distance))
         behavior.add_child(Idle(self._stop_time))
