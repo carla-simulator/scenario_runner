@@ -2123,9 +2123,9 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
     def initialise(self):
         """Initialises the agent"""
         # Get target speed
-        self._target_speed = get_speed(self._reference_actor) + self._speed_increment * 3.6
+        target_speed = get_speed(self._reference_actor) + self._speed_increment * 3.6
 
-        self._agent = ConstantVelocityAgent(self._actor, self._target_speed, opt_dict=self._opt_dict,
+        self._agent = ConstantVelocityAgent(self._actor, target_speed, opt_dict=self._opt_dict,
                                             map_inst=self._map, grp_inst=self._grp)
 
         if self._target_location is not None:
@@ -2137,6 +2137,8 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
     def update(self):
         """Moves the actor and waits for it to finish the plan"""
         new_status = py_trees.common.Status.RUNNING
+        target_speed = get_speed(self._reference_actor) + self._speed_increment * 3.6
+        self._agent.set_target_speed(target_speed)
 
         if self._agent.done():
             new_status = py_trees.common.Status.SUCCESS
@@ -2153,7 +2155,7 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
         self._control.throttle = 0.0
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
-        super(AdaptiveConstantVelocityAgentBehavior, self).terminate(new_status)
+        super().terminate(new_status)
 
 class Idle(AtomicBehavior):
 
@@ -2630,7 +2632,7 @@ class ActorTransformSetter(AtomicBehavior):
     Important parameters:
     - actor: CARLA actor to execute the behavior
     - transform: New target transform (position + orientation) of the actor
-    - physics [optional]: If physics is true, the actor physics will be reactivated upon success
+    - physics [optional]: Change the physics of the actors to true / false. To not change the physics, use None.
 
     The behavior terminates when actor is set to the new actor transform (closer than 1 meter)
 
@@ -2672,6 +2674,43 @@ class ActorTransformSetter(AtomicBehavior):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+
+class BatchActorTransformSetter(AtomicBehavior):
+
+    """
+    This class contains an atomic behavior to set the transform
+    of an actor.
+
+    Important parameters:
+    - actor_transform_list: list [carla.Actor, carla.Transform]
+    - physics [optional]: Change the physics of the actors to true / false. To not change the physics, use None.
+
+    The behavior terminates immediately
+    """
+
+    def __init__(self, actor_transform_list, physics=True, name="BatchActorTransformSetter"):
+        """
+        Init
+        """
+        super().__init__(name)
+        self._actor_transform_list = actor_transform_list
+        self._physics = physics
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def update(self):
+        """
+        Transform actor
+        """
+
+        for actor, transform in self._actor_transform_list:
+            actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
+            actor.set_transform(transform)
+            if self._physics is not None:
+                actor.set_simulate_physics(self._physics)
+
+        return py_trees.common.Status.SUCCESS
 
 
 class TrafficLightStateSetter(AtomicBehavior):
@@ -2812,11 +2851,11 @@ class ActorFlow(AtomicBehavior):
     - spawn_distance: Distance between spawned actors
     - sink_distance: Actors closer to the sink than this distance will be deleted
     - actors_speed: Speed of the actors part of the flow [m/s]
-    - add_initial_actors: Populates all the flow trajectory at the start
+    - initial_actors: Populates all the flow trajectory at the start
     """
 
     def __init__(self, source_wp, sink_wp, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, add_initial_actors=False, name="ActorFlow"):
+                 actor_speed=20 / 3.6, initial_actors=False, initial_junction=False, name="ActorFlow"):
         """
         Setup class members
         """
@@ -2837,7 +2876,8 @@ class ActorFlow(AtomicBehavior):
 
         self._sink_dist = sink_dist
         self._speed = actor_speed
-        self._add_initial_actors = add_initial_actors
+        self._initial_actors = initial_actors
+        self._initial_junction = initial_junction
 
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
@@ -2847,13 +2887,13 @@ class ActorFlow(AtomicBehavior):
         self._collision_sensor_list = []
 
     def initialise(self):
-        if self._add_initial_actors:
+        if self._initial_actors:
             grp = CarlaDataProvider.get_global_route_planner()
             plan = grp.trace_route(self._source_location, self._sink_location)
 
             ref_loc = plan[0][0].transform.location
             for wp, _ in plan:
-                if wp.is_junction:
+                if wp.is_junction and not self._initial_junction:
                     continue  # Spawning at junctions might break the path, so don't
                 if wp.transform.location.distance(ref_loc) < self._spawn_dist:
                     continue
@@ -2885,6 +2925,8 @@ class ActorFlow(AtomicBehavior):
             sensor = self._world.spawn_actor(self._collision_bp, carla.Transform(), attach_to=actor)
             sensor.listen(lambda _: self.stop_constant_velocity())
 
+        self._tm.ignore_lights_percentage(actor, 100)
+        self._tm.ignore_signs_percentage(actor, 100)
         self._collision_sensor_list.append(sensor)
         self._actor_list.append(actor)
 
@@ -3188,11 +3230,11 @@ class BicycleFlow(AtomicBehavior):
     - spawn_distance_interval (list(float, float)): Distance between spawned actors
     - sink_distance (float): Actors at this distance from the sink will be deleted
     - actors_speed (float): Speed of the actors part of the flow [m/s]
-    - add_initial_actors (bool): Boolean to initialy populate all the flow with bicycles
+    - initial_actors (bool): Boolean to initialy populate all the flow with bicycles
     """
 
     def __init__(self, plan, spawn_dist_interval, sink_dist=2,
-                 actor_speed=20 / 3.6, add_initial_actors=False, name="BicycleFlow"):
+                 actor_speed=20 / 3.6, initial_actors=False, name="BicycleFlow"):
         """
         Setup class members
         """
@@ -3211,7 +3253,7 @@ class BicycleFlow(AtomicBehavior):
         self._max_spawn_dist = spawn_dist_interval[1]
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
-        self._add_initial_actors = add_initial_actors
+        self._initial_actors = initial_actors
 
         self._opt_dict = {"ignore_traffic_lights": True, "ignore_vehicles": True}
 
@@ -3219,7 +3261,7 @@ class BicycleFlow(AtomicBehavior):
         self._grp = CarlaDataProvider.get_global_route_planner()
 
     def initialise(self):
-        if self._add_initial_actors:
+        if self._initial_actors:
             ref_loc = self._plan[0][0].transform.location
             for wp, _ in self._plan:
                 if wp.is_junction:
@@ -3261,6 +3303,7 @@ class BicycleFlow(AtomicBehavior):
 
         initial_vec = plan[0][0].transform.get_forward_vector()
         actor.set_target_velocity(self._speed * initial_vec)
+        actor.apply_control(carla.VehicleControl(throttle=1, gear=1, manual_gear_shift=True))
 
         self._actor_data.append([actor, controller])
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)

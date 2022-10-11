@@ -15,7 +15,7 @@ from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
-                                                                      ActorTransformSetter,
+                                                                      BatchActorTransformSetter,
                                                                       CutIn,
                                                                       BasicAgentBehavior,
                                                                       Idle)
@@ -23,7 +23,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                InTimeToArrivalToLocation)
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import RemoveRoadLane, LeaveSpaceInFront, ReAddRoadLane
+from srunner.tools.background_manager import RemoveRoadLane, LeaveSpaceInFront, ReAddRoadLane, ChangeRoadBehavior
 
 
 def get_value_parameter(config, name, p_type, default):
@@ -60,6 +60,8 @@ class StaticCutIn(BasicScenario):
         self._speed = 60 # Km/h
 
         self._adversary_end_distance = 70
+
+        self._extra_space = 30  # Leave extra space as a vehicle is invading the ego's lane (BA parameter)
 
         self._side_transforms = []
         self._side_wp = None
@@ -210,8 +212,7 @@ class StaticCutIn(BasicScenario):
             total_dist += self._vehicle_gap * (self._back_vehicles + self._front_vehicles + 1)
             sequence.add_child(LeaveSpaceInFront(total_dist))
 
-        for actor, transform in self._side_transforms:
-            sequence.add_child(ActorTransformSetter(actor, transform))
+        sequence.add_child(BatchActorTransformSetter(self._side_transforms))
 
         collision_location = self._collision_wp.transform.location
 
@@ -224,6 +225,8 @@ class StaticCutIn(BasicScenario):
             self.ego_vehicles[0], collision_location, self._min_trigger_dist))
 
         sequence.add_child(trigger_adversary)
+        if self.route_mode:
+            sequence.add_child(ChangeRoadBehavior(extra_space=self._extra_space))
 
         if self.route_mode:
             sequence.add_child(RemoveRoadLane(self._side_wp))
@@ -239,14 +242,15 @@ class StaticCutIn(BasicScenario):
             self._adversary_actor, plan=self._plan, target_speed=self._speed))
 
         cut_in_behavior.add_child(cut_in_movement)
-        cut_in_behavior.add_child(Idle(30))  # One minute timeout in case a collision happened
+        cut_in_behavior.add_child(Idle(30))  # Timeout in case a collision happened
 
         sequence.add_child(cut_in_behavior)
 
         for actor in self.other_actors:
             sequence.add_child(ActorDestroy(actor))
-        
+
         if self.route_mode:
+            sequence.add_child(ChangeRoadBehavior(extra_space=0))
             sequence.add_child(ReAddRoadLane(1 if self._direction == 'right' else -1))
 
         return sequence

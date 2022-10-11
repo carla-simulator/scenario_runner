@@ -19,7 +19,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (InvadingActorFlow,
                                                                       ScenarioTimeout,
                                                                       ActorDestroy,
-                                                                      ActorTransformSetter)
+                                                                      BatchActorTransformSetter)
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitUntilInFrontPosition
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -71,7 +71,7 @@ class InvadingTurn(BasicScenario):
         self._source_dist = 30 # Distance between source and end point
 
         self._distance = get_value_parameter(config, 'distance', float, 100)
-        self._offset = get_value_parameter(config, 'offset', float, 0.5)  # meters invaded in the opposite direction
+        self._offset = get_value_parameter(config, 'offset', float, 0.25)  # meters invaded in the opposite direction
         self._scenario_timeout = 240
 
         self._obstacle_transforms = []
@@ -140,12 +140,11 @@ class InvadingTurn(BasicScenario):
         """
         sequence = py_trees.composites.Sequence("InvadingTurn")
 
-        for actor, transform in self._obstacle_transforms:
-            sequence.add_child(ActorTransformSetter(actor, transform))
-
         if self.route_mode:
             sequence.add_child(RemoveRoadLane(self._reference_waypoint))
             sequence.add_child(ChangeOppositeBehavior(active=False))
+
+        sequence.add_child(BatchActorTransformSetter(self._obstacle_transforms))
 
         main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         main_behavior.add_child(InvadingActorFlow(

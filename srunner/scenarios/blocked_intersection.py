@@ -15,7 +15,10 @@ import carla
 import py_trees
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy, Idle, ScenarioTimeout)
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
+                                                                      Idle,
+                                                                      ScenarioTimeout,
+                                                                      ActorTransformSetter)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToVehicle
 
@@ -56,11 +59,13 @@ class BlockedIntersection(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
 
-        self._blocker_distance = 7
-        self._trigger_distance = 12
+        self._blocker_distance = 5
+        self._trigger_distance = 13
         self._stop_time = 10
 
         self._scenario_timeout = 240
+
+        self._blocker_transform = None
 
         super().__init__("BlockedIntersection",
                          ego_vehicles,
@@ -76,14 +81,19 @@ class BlockedIntersection(BasicScenario):
         waypoint = generate_target_waypoint_in_route(self._reference_waypoint, config.route)
         waypoint = waypoint.next(self._blocker_distance)[0]
 
+        self._blocker_transform = waypoint.transform
+
         # Spawn the blocker vehicle
-        actor = CarlaDataProvider.request_new_actor(
-            "vehicle.*.*", waypoint.transform,
+        blocker = CarlaDataProvider.request_new_actor(
+            "vehicle.*.*", self._blocker_transform,
             attribute_filter={'base_type': 'car', 'has_lights': True}
         )
-        if actor is None:
+        if blocker is None:
             raise Exception("Couldn't spawn the blocker vehicle")
-        self.other_actors.append(actor)
+        self.other_actors.append(blocker)
+
+        blocker.set_simulate_physics(False)
+        blocker.set_location(self._blocker_transform.location + carla.Location(z=-200))
 
     def _create_behavior(self):
         """
@@ -106,13 +116,14 @@ class BlockedIntersection(BasicScenario):
         main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         behavior = py_trees.composites.Sequence(name="Approach and Wait")
+        behavior.add_child(ActorTransformSetter(self.other_actors[0], self._blocker_transform, True))
         behavior.add_child(InTriggerDistanceToVehicle(
             self.other_actors[-1], self.ego_vehicles[0], self._trigger_distance))
         behavior.add_child(Idle(self._stop_time))
         main_behavior.add_child(behavior)
 
         sequence.add_child(main_behavior)
-        sequence.add_child(ActorDestroy(self.other_actors[-1]))
+        sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
 

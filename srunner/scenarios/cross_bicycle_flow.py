@@ -183,7 +183,7 @@ class CrossingBicycleFlow(BasicScenario):
             clear_ego_entry=True,
             remove_entries=[],
             remove_exits=[],
-            stop_entries=False,
+            stop_entries=True,
             extend_road_exit=0
         ))
         sequence.add_child(root)
