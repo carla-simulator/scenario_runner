@@ -155,7 +155,7 @@ class ConstructionObstacle(BasicScenario):
     def _create_construction_setup(self, start_transform, lane_width):
         """Create construction setup"""
 
-        _initial_offset = {'cones': {'yaw': 270, 'k': 0.75 * lane_width / 2.0},
+        _initial_offset = {'cones': {'yaw': 270, 'k': 0.85 * lane_width / 2.0},
                            'warning_sign': {'yaw': 180, 'k': 5, 'z': 0},
                            'debris': {'yaw': 0, 'k': 2, 'z': 1}}
         _prop_names = {'warning_sign': 'static.prop.trafficwarning',
