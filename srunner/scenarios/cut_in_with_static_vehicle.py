@@ -50,7 +50,7 @@ class StaticCutIn(BasicScenario):
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._wmap.get_waypoint(self._trigger_location)
 
-        self._reaction_time = 3.1  # Time the agent has to react to avoid the collision [s]
+        self._reaction_time = 2.7  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 15.0  # Min distance to the collision location that triggers the adversary [m]
 
         self._back_vehicles = 2

@@ -162,7 +162,7 @@ class ConstructionObstacle(BasicScenario):
                        'debris': 'static.prop.dirtdebris02'}
 
         _perp_angle = 90
-        _setup = {'lengths': [6, 3], 'offsets': [2, 1]}
+        _setup = {'lengths': [4, 3], 'offsets': [2, 1]}
         _z_increment = 0.1
 
         # Traffic warning and debris

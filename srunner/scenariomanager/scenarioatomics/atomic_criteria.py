@@ -1818,6 +1818,8 @@ class RunningStopTest(Criterion):
         self._target_stop_sign = None
         self._stop_completed = False
 
+        self._last_failed_stop = None
+
         for _actor in CarlaDataProvider.get_all_actors():
             if 'traffic.stop' in _actor.type_id:
                 self._list_stop_signs.append(_actor)
@@ -1921,7 +1923,7 @@ class RunningStopTest(Criterion):
                 self._stop_completed = True
 
         if not self.is_actor_affected_by_stop(check_wps, self._target_stop_sign):
-            if not self._stop_completed:
+            if not self._stop_completed and self._last_failed_stop != self._target_stop_sign.id:
                 # did we stop?
                 self.actual_value += 1
                 self.test_status = "FAILURE"
@@ -1936,6 +1938,8 @@ class RunningStopTest(Criterion):
                 running_stop_event.set_dict({'id': self._target_stop_sign.id, 'location': stop_location})
 
                 self.events.append(running_stop_event)
+
+                self._last_failed_stop = self._target_stop_sign.id
 
             # Reset state
             self._target_stop_sign = None
@@ -2065,7 +2069,7 @@ class MinimumSpeedRouteTest(Criterion):
 
             self._traffic_event = TrafficEvent(TrafficEventType.MIN_SPEED_INFRACTION, GameTime.get_frame())
             self._traffic_event.set_dict({'percentage': checkpoint_value})
-            self._traffic_event.set_message(f"Average speed is {checkpoint_value} of the surrounding traffic's one")
+            self._traffic_event.set_message(f"Average speed is {checkpoint_value}% of the surrounding traffic's one")
             self.events.append(self._traffic_event)
 
         self._checkpoint_values.append(checkpoint_value)

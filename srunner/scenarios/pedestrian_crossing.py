@@ -61,7 +61,7 @@ class PedestrianCrossing(BasicScenario):
         self._rng = CarlaDataProvider.get_random_seed()
 
         self._adversary_speed = 1.3  # Speed of the adversary [m/s]
-        self._reaction_time = 4.0  # Time the agent has to react to avoid the collision [s]
+        self._reaction_time = 3.5  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 12.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
         self.timeout = timeout
