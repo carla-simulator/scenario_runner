@@ -63,7 +63,7 @@ class OppositeVehicleJunction(BasicScenario):
         self.timeout = timeout
 
         self._sync_time = 2.2  # Time the agent has to react to avoid the collision [s]
-        self._min_trigger_dist = 9.0  # Min distance to the collision location that triggers the adversary [m]
+        self._min_trigger_dist = 12.0  # Min distance to the collision location that triggers the adversary [m]
 
         self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2
 

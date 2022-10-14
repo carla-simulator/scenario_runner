@@ -158,37 +158,6 @@ class SwitchRouteSources(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
-class StartObstacleScenario(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that the road behavior has to be initialized
-    """
-    def __init__(self, accident_wp, distance, direction='left', stop_back_vehicles=False, name="StartObstacleScenario"):
-        self._accident_wp = accident_wp
-        self._distance = distance
-        self._direction = direction
-        self._stop_back_vehicles = stop_back_vehicles
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_StartObstacleScenario",
-            [self._accident_wp, self._distance, self._direction, self._stop_back_vehicles], overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
-class EndObstacleScenario(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that the road behavior has to be initialized
-    """
-    def __init__(self, name="EndObstacleScenario"):
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_EndObstacleScenario", True, overwrite=True)
-        return py_trees.common.Status.SUCCESS
-
-
 class RemoveRoadLane(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to remove its actors from the given lane 
