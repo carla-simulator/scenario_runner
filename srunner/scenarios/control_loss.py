@@ -47,10 +47,10 @@ class ControlLoss(BasicScenario):
         self._end_distance = 110
 
         # Friction loss tends to have a much stronger steering compoenent then a throttle one
-        self._throttle_mean = 0.035
-        self._throttle_std = 0.035
-        self._steer_mean = 0.07
-        self._steer_std = 0.07
+        self._throttle_mean = 0.03
+        self._throttle_std = 0.01
+        self._steer_mean = 0.055
+        self._steer_std = 0.015
 
         self._trigger_dist = 2
 
