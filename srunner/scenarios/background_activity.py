@@ -1652,19 +1652,6 @@ class BackgroundBehavior(AtomicBehavior):
             self._start_road_front_vehicles()
             py_trees.blackboard.Blackboard().set("BA_StartFrontVehicles", None, True)
 
-        # Handles road accident scenario
-        handle_start_accident_data = py_trees.blackboard.Blackboard().get('BA_StartObstacleScenario')
-        if handle_start_accident_data is not None:
-            accident_wp, distance, direction, stop_back_vehicles = handle_start_accident_data
-            self._handle_lanechange_scenario(accident_wp, distance, direction, stop_back_vehicles)
-            py_trees.blackboard.Blackboard().set('BA_StartObstacleScenario', None, True)
-
-        # Handles road accident scenario
-        handle_end_accident_data = py_trees.blackboard.Blackboard().get('BA_EndObstacleScenario')
-        if handle_end_accident_data is not None:
-            self._road_extra_front_actors = 0
-            py_trees.blackboard.Blackboard().set('BA_EndObstacleScenario', None, True)
-
         # Leave space in front
         leave_space_data = py_trees.blackboard.Blackboard().get('BA_LeaveSpaceInFront')
         if leave_space_data is not None:
@@ -1754,45 +1741,6 @@ class BackgroundBehavior(AtomicBehavior):
                 actor.set_transform(new_transform)
             else:
                 self._destroy_actor(actor)
-
-    def _handle_lanechange_scenario(self, accident_wp, distance, direction, stop_back_vehicles=False):
-        """
-        Handles the scenarios in which the BA has to change lane,
-        generally due to an obstacle in the road (accident / construction / stopped vehicle...)
-        """
-        ego_wp = self._route[self._route_index]
-        lane_change_actors = self._road_dict[get_lane_key(ego_wp)].actors
-
-        if direction == 'left':
-            first_wp = accident_wp.get_left_lane().next(distance / 4)[0]
-            second_wp = first_wp.next(distance / 2)[0]
-            third_wp = second_wp.get_right_lane().next(distance / 4)[0]
-        else:
-            first_wp = accident_wp.get_right_lane().next(distance / 4)[0]
-            second_wp = first_wp.next(distance / 2)[0]
-            third_wp = second_wp.get_left_lane().next(distance / 4)[0]
-
-        vehicle_path = [first_wp.transform.location,
-                        second_wp.transform.location,
-                        third_wp.transform.location]
-
-        for i, actor in enumerate(lane_change_actors):
-
-            location = CarlaDataProvider.get_location(actor)
-
-            if i == 0:
-                # First actor might get blocked by the accident, so teleport it
-                distance = location.distance(third_wp.transform.location)
-                if distance > 0:
-                    self._move_actors_forward([actor], distance)
-
-            elif not self._is_location_behind_ego(location):
-                # The others can just lane change, which will also teach the ego what to do
-                self._tm.set_path(actor, vehicle_path)
-                self._road_extra_front_actors += 1
-            elif stop_back_vehicles:
-                # Stop the vehicles behind
-                self._actors_speed_perc[actor] = 0
 
     def _switch_route_sources(self, enabled):
         """
