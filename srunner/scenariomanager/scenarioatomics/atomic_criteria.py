@@ -1824,13 +1824,13 @@ class RunningStopTest(Criterion):
             if 'traffic.stop' in _actor.type_id:
                 self._list_stop_signs.append(_actor)
 
-    def point_inside_boundingbox(self, point, bb_center, bb_extent):
-        """Checks whether or not a point is inside a bounding box"""
+    def point_inside_boundingbox(self, point, bb_center, bb_extent, multiplier=1.2):
+        """Checks whether or not a point is inside a bounding box."""
 
         # pylint: disable=invalid-name
-        A = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y - bb_extent.y)
-        B = carla.Vector2D(bb_center.x + bb_extent.x, bb_center.y - bb_extent.y)
-        D = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y + bb_extent.y)
+        A = carla.Vector2D(bb_center.x - multiplier * bb_extent.x, bb_center.y - multiplier * bb_extent.y)
+        B = carla.Vector2D(bb_center.x + multiplier * bb_extent.x, bb_center.y - multiplier * bb_extent.y)
+        D = carla.Vector2D(bb_center.x - multiplier * bb_extent.x, bb_center.y + multiplier * bb_extent.y)
         M = carla.Vector2D(point.x, point.y)
 
         AB = B - A
@@ -2084,7 +2084,7 @@ class MinimumSpeedRouteTest(Criterion):
             self._set_traffic_event()
 
         if len(self._checkpoint_values):
-            self.actual_value = sum(self._checkpoint_values) / len(self._checkpoint_values)
+            self.actual_value = round(sum(self._checkpoint_values) / len(self._checkpoint_values), 2)
         super().terminate(new_status)
 
 
