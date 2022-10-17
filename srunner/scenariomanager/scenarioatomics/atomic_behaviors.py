@@ -3054,7 +3054,7 @@ class OppositeActorFlow(AtomicBehavior):
 
     def initialise(self):
         """Get the actor flow source and sink, depending on the reference actor speed"""
-        self._speed = self._reference_actor.get_speed_limit()
+        self._speed = self._reference_actor.get_speed_limit() # Km / h
         self._flow_distance = self._time_distance * self._speed
 
         self._sink_wp = self._move_waypoint_forward(self._reference_wp, self._flow_distance)
@@ -3076,7 +3076,7 @@ class OppositeActorFlow(AtomicBehavior):
         if actor is None:
             return py_trees.common.Status.RUNNING
 
-        controller = BasicAgent(actor, 3.6 * self._speed, self._opt_dict, self._map, self._grp)
+        controller = BasicAgent(actor, self._speed, self._opt_dict, self._map, self._grp)
         controller.set_global_plan(self._route)
         self._actor_list.append([actor, controller])
 
@@ -3166,7 +3166,7 @@ class InvadingActorFlow(AtomicBehavior):
 
     def initialise(self):
         """Get the actor flow source and sink, depending on the reference actor speed"""
-        self._speed = self._reference_actor.get_speed_limit()
+        self._speed = self._reference_actor.get_speed_limit()  # Km / h
         self._route = self._grp.trace_route(self._source_location, self._sink_location)
         return super().initialise()
 
@@ -3178,7 +3178,7 @@ class InvadingActorFlow(AtomicBehavior):
         if actor is None:
             return py_trees.common.Status.RUNNING
 
-        controller = BasicAgent(actor, 3.6 * self._speed, self._opt_dict, self._map, self._grp)
+        controller = BasicAgent(actor, self._speed, self._opt_dict, self._map, self._grp)
         controller.set_global_plan(self._route)
         self._actor_list.append([actor, controller])
 
