@@ -3000,7 +3000,7 @@ class OppositeActorFlow(AtomicBehavior):
     """
 
     def __init__(self, reference_wp, reference_actor, spawn_dist_interval,
-                 time_distance=3.5, sink_dist=2, name="OppositeActorFlow"):
+                 time_distance=2, base_distance=25, sink_dist=2, name="OppositeActorFlow"):
         """
         Setup class members
         """
@@ -3012,7 +3012,7 @@ class OppositeActorFlow(AtomicBehavior):
         self._reference_wp = reference_wp
         self._reference_actor = reference_actor
         self._time_distance = time_distance
-
+        self._base_distance = base_distance
         self._min_spawn_dist = spawn_dist_interval[0]
         self._max_spawn_dist = spawn_dist_interval[1]
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
@@ -3055,7 +3055,7 @@ class OppositeActorFlow(AtomicBehavior):
     def initialise(self):
         """Get the actor flow source and sink, depending on the reference actor speed"""
         self._speed = self._reference_actor.get_speed_limit() # Km / h
-        self._flow_distance = self._time_distance * self._speed
+        self._flow_distance = self._time_distance * self._speed + self._base_distance
 
         self._sink_wp = self._move_waypoint_forward(self._reference_wp, self._flow_distance)
         self._source_wp = self._move_waypoint_backwards(self._reference_wp, self._flow_distance)

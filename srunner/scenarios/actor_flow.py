@@ -20,7 +20,9 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, ScenarioTimeout, WaitForever
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation, WaitEndIntersection
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
+                                                                               WaitEndIntersection,
+                                                                               WaitUntilInFrontPosition)
 from srunner.scenarios.basic_scenario import BasicScenario
 
 from srunner.tools.background_manager import (SwitchRouteSources,
@@ -730,7 +732,7 @@ class InterurbanAdvancedActorFlow(BasicScenario):
         """
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], self._sink_wp_2.transform.location, self._sink_distance))
+        root.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._sink_wp_2.transform))
         root.add_child(ActorFlow(
             self._source_wp_1, self._sink_wp_1, self._source_dist_interval, self._sink_distance, self._flow_speed))
         root.add_child(ActorFlow(
