@@ -291,7 +291,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
 
         self._collision_wp = None
         self._adversary_speed = 1.8  # Speed of the adversary [m/s]
-        self._reaction_time = 1.8  # Time the agent has to react to avoid the collision [s]
+        self._reaction_time = 2.2  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 6.0  # Min distance to the collision location that triggers the adversary [m]
         self._ego_end_distance = 40
 
