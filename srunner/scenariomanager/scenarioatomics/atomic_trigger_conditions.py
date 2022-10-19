@@ -1068,7 +1068,7 @@ class WaitUntilInFrontPosition(AtomicCondition):
     - transform: the reference transform that the actor will have to get in front of
     """
 
-    def __init__(self, actor, transform, check_distance=True, name="WaitUntilInFrontPosition"):
+    def __init__(self, actor, transform, check_distance=True, distance=10, name="WaitUntilInFrontPosition"):
         """
         Init
         """
@@ -1079,8 +1079,7 @@ class WaitUntilInFrontPosition(AtomicCondition):
         self._ref_location = transform.location
         self._ref_vector = transform.get_forward_vector()
         self._check_distance = check_distance
-
-        self._distance = 10
+        self._distance = distance
 
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 

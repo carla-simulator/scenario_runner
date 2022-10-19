@@ -20,7 +20,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                InTimeToArrivalToLocation,
                                                                                DriveDistance)
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.background_manager import LeaveSpaceInFront
+from srunner.tools.background_manager import LeaveSpaceInFront, ChangeRoadBehavior
 
 
 class ParkingCutIn(BasicScenario):
@@ -45,6 +45,10 @@ class ParkingCutIn(BasicScenario):
         self._reaction_time = 2.35  # Time the agent has to react to avoid the collision [s]
         self._min_trigger_dist = 10.0  # Min distance to the collision location that triggers the adversary [m]
         self._end_distance = 30
+        self._extra_space = 20
+
+        self._bp_attributes = {'base_type': 'car', 'generation': 2}
+
         self.timeout = timeout
 
         if 'direction' in config.other_parameters:
@@ -77,7 +81,7 @@ class ParkingCutIn(BasicScenario):
         self.parking_slots.append(parking_wp.transform.location)
 
         self._blocker_actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', parking_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
+            'vehicle.*', parking_wp.transform, 'scenario no lights', attribute_filter={'base_type': 'car', 'generation': 2})
         if not self._blocker_actor:
             raise ValueError("Couldn't spawn the parked actor")
         self._blocker_actor.apply_control(carla.VehicleControl(hand_brake=True))
@@ -100,7 +104,7 @@ class ParkingCutIn(BasicScenario):
         self.parking_slots.append(parking_wp.transform.location)
 
         self._parked_actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', parking_wp.transform, 'scenario', attribute_filter={'base_type': 'car', 'has_lights':True})
+            'vehicle.*', parking_wp.transform, 'scenario', attribute_filter=self._bp_attributes)
         if not self._parked_actor:
             raise ValueError("Couldn't spawn the parked actor")
         self.other_actors.append(self._parked_actor)
@@ -144,6 +148,9 @@ class ParkingCutIn(BasicScenario):
             self.ego_vehicles[0], collision_location, self._min_trigger_dist))
         sequence.add_child(trigger_adversary)
 
+        if self.route_mode:
+            sequence.add_child(ChangeRoadBehavior(extra_space=self._extra_space))
+
         # Move the adversary
         cut_in = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="Cut in behavior")
@@ -154,6 +161,9 @@ class ParkingCutIn(BasicScenario):
         # Remove everything
         sequence.add_child(ActorDestroy(self.other_actors[0], name="DestroyAdversary"))
         sequence.add_child(ActorDestroy(self.other_actors[1], name="DestroyBlocker"))
+
+        if self.route_mode:
+            sequence.add_child(ChangeRoadBehavior(extra_space=0))
 
         return sequence
 
