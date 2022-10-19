@@ -402,7 +402,7 @@ class ParkingCrossingPedestrian(BasicScenario):
         self._ego_end_distance = 40
         self.timeout = timeout
 
-        self._bp_attributes = {'base_type': 'car', 'has_lights': False}
+        self._bp_attributes = {'base_type': 'car', 'generation': 2}
 
         self._distance = get_value_parameter(config, 'distance', float, 12)
         self._crossing_angle = get_value_parameter(config, 'crossing_angle', float, 0)

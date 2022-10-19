@@ -3000,7 +3000,7 @@ class OppositeActorFlow(AtomicBehavior):
     """
 
     def __init__(self, reference_wp, reference_actor, spawn_dist_interval,
-                 time_distance=2, base_distance=25, sink_dist=2, name="OppositeActorFlow"):
+                 time_distance=1.5, base_distance=30, sink_dist=2, name="OppositeActorFlow"):
         """
         Setup class members
         """

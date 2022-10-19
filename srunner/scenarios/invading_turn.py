@@ -70,6 +70,8 @@ class InvadingTurn(BasicScenario):
         self._flow_frequency = 40 # m
         self._source_dist = 30 # Distance between source and end point
 
+        self._check_distance = 50
+
         self._distance = get_value_parameter(config, 'distance', float, 100)
         self._offset = get_value_parameter(config, 'offset', float, 0.25)  # meters invaded in the opposite direction
         self._scenario_timeout = 240
@@ -150,7 +152,7 @@ class InvadingTurn(BasicScenario):
         main_behavior.add_child(InvadingActorFlow(
             self._source_wp, self._sink_wp, self.ego_vehicles[0], self._flow_frequency, offset=self._true_offset))
 
-        main_behavior.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._forward_wp.transform, True))
+        main_behavior.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._forward_wp.transform, True, self._check_distance))
         main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence.add_child(main_behavior)
