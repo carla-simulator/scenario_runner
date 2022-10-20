@@ -23,6 +23,7 @@
     - Eliminated unnecessary reloads of OpenDRIVE maps
 * Additional Scenarios:
     - Added Construction setup scenario.
+* Add waypoint reached threshold so that the precision of the actor reaching to waypoints can be adjusted based on object types.
 ### :bug: Bug Fixes
 * Fixed LaneOffset (+ vs. -) for OpenSCENARIO
 * Fixed RelativeLanePosition for OpenSCENARIO causing exception when using ds != 0
