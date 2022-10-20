@@ -51,6 +51,8 @@ class SimpleVehicleControl(BasicControl):
                            May include: (consider_obstacles, true/false)     - Enable consideration of obstacles
                                         (proximity_threshold, distance)      - Distance in front of actor in which
                                                                                obstacles are considered
+                                        (waypoint_reached_threshold, distance) - Distance between actor and waypoint
+                                                                               determining reached or not
                                         (consider_trafficlights, true/false) - Enable consideration of traffic lights
                                         (max_deceleration, float)            - Use a reasonable deceleration value for
                                                                                this vehicle
@@ -70,6 +72,8 @@ class SimpleVehicleControl(BasicControl):
             Defaults to False.
         _proximity_threshold (float): Distance in front of actor in which obstacles are considered
             Defaults to infinity.
+        _waypoint_reached_threshold(float): Distance between actor and waypoint determining reached or not
+            Defaults to 4.0 meters.
         _cv_image (CV Image): Contains the OpenCV image, in case a debug camera is attached to the actor
             Defaults to None.
         _camera (sensor.camera.rgb): Debug camera attached to actor
@@ -89,6 +93,7 @@ class SimpleVehicleControl(BasicControl):
         self._consider_traffic_lights = False
         self._consider_obstacles = False
         self._proximity_threshold = float('inf')
+        self._waypoint_reached_threshold = 4.0
         self._max_deceleration = None
         self._max_acceleration = None
 
@@ -115,6 +120,9 @@ class SimpleVehicleControl(BasicControl):
 
         if args and 'consider_trafficlights' in args and strtobool(args['consider_trafficlights']):
             self._consider_traffic_lights = strtobool(args['consider_trafficlights'])
+
+        if args and 'waypoint_reached_threshold' in args:
+            self._waypoint_reached_threshold = float(args['waypoint_reached_threshold'])
 
         if args and 'max_deceleration' in args:
             self._max_deceleration = float(args['max_deceleration'])
@@ -213,7 +221,7 @@ class SimpleVehicleControl(BasicControl):
                 self._reached_goal = True
             else:
                 direction_norm = self._set_new_velocity(self._offset_waypoint(self._waypoints[0]))
-                if direction_norm < 4.0:
+                if direction_norm < self._waypoint_reached_threshold:
                     self._waypoints = self._waypoints[1:]
                     if not self._waypoints:
                         self._reached_goal = True
