@@ -14,6 +14,7 @@ import math
 import carla
 
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
 class PedestrianControl(BasicControl):
@@ -30,6 +31,17 @@ class PedestrianControl(BasicControl):
             raise RuntimeError("PedestrianControl: The to be controlled actor is not a pedestrian")
 
         super(PedestrianControl, self).__init__(actor)
+
+        bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.other.collision')
+        self._collision_sensor = CarlaDataProvider.get_world().spawn_actor(
+                bp, carla.Transform(carla.Location(x=self._actor.bounding_box.extent.x, z=1.0)), attach_to=self._actor)
+        self._collision_sensor.listen(lambda event: self._on_collision(event))  # pylint: disable=unnecessary-lambda
+        self._colliding_actor = None
+
+    def _on_collision(self, event):
+        if not event:
+            return
+        self._colliding_actor = event.other_actor
 
     def reset(self):
         """
@@ -66,12 +78,31 @@ class PedestrianControl(BasicControl):
             location = self._waypoints[0].location
             direction = location - self._actor.get_location()
             direction_norm = math.sqrt(direction.x**2 + direction.y**2)
+            # It may happen that a pedestrian gets stuck when stepping on a sidewalk
+            # Use an upwards direction to improve behavior
+            if self._colliding_actor is not None and self._colliding_actor.type_id == "static.sidewalk":
+                current_transform = self._actor.get_transform()
+                new_transform = current_transform
+                new_transform.location = new_transform.location + carla.Location(z=0.3)
+                self._actor.set_transform(new_transform)
+                self._colliding_actor = None
+                return
+                #direction = direction + carla.Location(z=0.3)
             control.direction = direction / direction_norm
             self._actor.apply_control(control)
             if direction_norm < 1.0:
                 self._waypoints = self._waypoints[1:]
                 if not self._waypoints:
                     self._reached_goal = True
+
+            #for wpt in self._waypoints:
+            #    begin = wpt.location + carla.Location(z=1.0)
+            #    angle = math.radians(wpt.rotation.yaw)
+            #    end = begin + carla.Location(x=math.cos(angle), y=math.sin(angle))
+            #    CarlaDataProvider.get_world().debug.draw_arrow(begin, end, arrow_size=0.3, life_time=1.0)
+
         else:
             control.direction = self._actor.get_transform().rotation.get_forward_vector()
             self._actor.apply_control(control)
+
+        self._colliding_actor = None
