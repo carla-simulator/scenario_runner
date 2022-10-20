@@ -51,8 +51,8 @@ class SimpleVehicleControl(BasicControl):
                            May include: (consider_obstacles, true/false)     - Enable consideration of obstacles
                                         (proximity_threshold, distance)      - Distance in front of actor in which
                                                                                obstacles are considered
-                                        (waypoint_reached_threshold, distance) - Distance between actor and waypoint 
-                                                                               determining reached or not                               
+                                        (waypoint_reached_threshold, distance) - Distance between actor and waypoint
+                                                                               determining reached or not
                                         (consider_trafficlights, true/false) - Enable consideration of traffic lights
                                         (max_deceleration, float)            - Use a reasonable deceleration value for
                                                                                this vehicle
@@ -72,7 +72,7 @@ class SimpleVehicleControl(BasicControl):
             Defaults to False.
         _proximity_threshold (float): Distance in front of actor in which obstacles are considered
             Defaults to infinity.
-        _waypoint_reached_threshold(float): Distance between actor and waypoint determining reached or not 
+        _waypoint_reached_threshold(float): Distance between actor and waypoint determining reached or not
             Defaults to 4.0 meters.
         _cv_image (CV Image): Contains the OpenCV image, in case a debug camera is attached to the actor
             Defaults to None.
