@@ -17,6 +17,7 @@
 * Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
 * SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
 * The BackgroundActivity has been readded to the routes, which the objective of creating the sensation of traffic around the ego
+* Add waypoint reached threshold so that the precision of the actor reaching to waypoints can be adjusted based on object types.
 
 ### :bug: Bug Fixes
 * Fixed bug at OtherLeadingVehicle scenario causing the vehicles to move faster than intended
