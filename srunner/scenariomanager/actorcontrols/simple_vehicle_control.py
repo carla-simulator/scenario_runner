@@ -93,6 +93,7 @@ class SimpleVehicleControl(BasicControl):
         self._consider_traffic_lights = False
         self._consider_obstacles = False
         self._proximity_threshold = float('inf')
+        self._waypoint_reached_threshold = 4.0
         self._max_deceleration = None
         self._max_acceleration = None
 
@@ -119,6 +120,9 @@ class SimpleVehicleControl(BasicControl):
 
         if args and 'consider_trafficlights' in args and strtobool(args['consider_trafficlights']):
             self._consider_traffic_lights = strtobool(args['consider_trafficlights'])
+
+        if args and 'waypoint_reached_threshold' in args:
+            self._waypoint_reached_threshold = float(args['waypoint_reached_threshold'])
 
         if args and 'max_deceleration' in args:
             self._max_deceleration = float(args['max_deceleration'])
@@ -217,7 +221,7 @@ class SimpleVehicleControl(BasicControl):
                 self._reached_goal = True
             else:
                 direction_norm = self._set_new_velocity(self._offset_waypoint(self._waypoints[0]))
-                if direction_norm < 4.0:
+                if direction_norm < self._waypoint_reached_threshold:
                     self._waypoints = self._waypoints[1:]
                     if not self._waypoints:
                         self._reached_goal = True
