@@ -176,6 +176,8 @@ class BackgroundBehavior(AtomicBehavior):
         self._tm.global_percentage_speed_difference(0.0)
         self._rng = CarlaDataProvider.get_random_seed()
 
+        self._attribute_filter = {'base_type': 'car', 'special_type': '', 'has_lights': True, }
+
         # Global variables
         self._ego_actor = ego_actor
         self._ego_state = EGO_ROAD
@@ -2095,7 +2097,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         actors = CarlaDataProvider.request_new_batch_actors(
             'vehicle.*', len(spawn_transforms), spawn_transforms, True, False, 'background',
-            attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False)
+            attribute_filter=self._attribute_filter, tick=False)
 
         if not actors:
             return actors
@@ -2118,7 +2120,7 @@ class BackgroundBehavior(AtomicBehavior):
         )
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', new_transform, rolename='background',
-            autopilot=True, random_location=False, attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False)
+            autopilot=True, random_location=False, attribute_filter=self._attribute_filter, tick=False)
 
         if not actor:
             return actor

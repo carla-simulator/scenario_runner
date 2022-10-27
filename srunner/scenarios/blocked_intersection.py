@@ -87,7 +87,7 @@ class BlockedIntersection(BasicScenario):
         # Spawn the blocker vehicle
         blocker = CarlaDataProvider.request_new_actor(
             "vehicle.*.*", self._blocker_transform,
-            attribute_filter={'base_type': 'car', 'has_lights': True}
+            attribute_filter={'base_type': 'car', 'has_lights': True, 'special_type': ''}
         )
         if blocker is None:
             raise Exception("Couldn't spawn the blocker vehicle")

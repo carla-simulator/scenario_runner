@@ -2883,6 +2883,8 @@ class ActorFlow(AtomicBehavior):
         self._max_spawn_dist = spawn_dist_interval[1]
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
+        self._attribute_filter = {'base_type': 'car', 'has_lights': True, 'special_type': ''}
+
         self._actor_list = []
         self._collision_sensor_list = []
 
@@ -2904,7 +2906,7 @@ class ActorFlow(AtomicBehavior):
     def _spawn_actor(self, transform):
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', transform, rolename='scenario',
-            attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False
+            attribute_filter=self._attribute_filter, tick=False
         )
         if actor is None:
             return py_trees.common.Status.RUNNING
@@ -3019,6 +3021,8 @@ class OppositeActorFlow(AtomicBehavior):
 
         self._sink_dist = sink_dist
 
+        self._attribute_filter = {'base_type': 'car', 'has_lights': True, 'special_type': ''}
+
         # Opposite direction needs earlier vehicle detection
         self._opt_dict = {'base_vehicle_threshold': 10, 'detection_speed_ratio': 1.6}
 
@@ -3071,7 +3075,7 @@ class OppositeActorFlow(AtomicBehavior):
     def _spawn_actor(self):
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', self._source_transform, rolename='scenario',
-            attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False
+            attribute_filter=self._attribute_filter, tick=False
         )
         if actor is None:
             return py_trees.common.Status.RUNNING
@@ -3155,6 +3159,8 @@ class InvadingActorFlow(AtomicBehavior):
 
         self._sink_dist = sink_dist
 
+        self._attribute_filter = {'base_type': 'car', 'has_lights': True, 'special_type': ''}
+
         self._actor_list = []
 
         # Opposite direction needs earlier vehicle detection
@@ -3173,7 +3179,7 @@ class InvadingActorFlow(AtomicBehavior):
     def _spawn_actor(self):
         actor = CarlaDataProvider.request_new_actor(
             'vehicle.*', self._source_transform, rolename='scenario',
-            attribute_filter={'base_type': 'car', 'has_lights': True}, tick=False
+            attribute_filter=self._attribute_filter, tick=False
         )
         if actor is None:
             return py_trees.common.Status.RUNNING
