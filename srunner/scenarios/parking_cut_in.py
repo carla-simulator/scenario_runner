@@ -47,7 +47,7 @@ class ParkingCutIn(BasicScenario):
         self._end_distance = 30
         self._extra_space = 20
 
-        self._bp_attributes = {'base_type': 'car', 'generation': 2}
+        self._bp_attributes = {'base_type': 'car', 'generation': 2, 'special_type': ''}
 
         self.timeout = timeout
 
