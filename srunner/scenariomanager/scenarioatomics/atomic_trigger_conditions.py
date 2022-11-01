@@ -259,7 +259,7 @@ class StandStill(AtomicCondition):
 
         velocity = CarlaDataProvider.get_velocity(self._actor)
 
-        if velocity > EPSILON:
+        if velocity > 0.1:
             self._start_time = GameTime.get_time()
 
         if GameTime.get_time() - self._start_time > self._duration:
