@@ -33,13 +33,14 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
     # In cases where more than one weather conditition is active, decrease the thresholds
     COMBINED_THRESHOLD = 10
 
-    def __init__(self, ego_vehicle, radius=50, name="LightsBehavior"):
+    def __init__(self, ego_vehicle, radius=50, radius_increase=15, name="LightsBehavior"):
         """
         Setup parameters
         """
         super().__init__(name)
         self._ego_vehicle = ego_vehicle
         self._radius = radius
+        self._radius_increase = radius_increase
         self._world = CarlaDataProvider.get_world()
         self._light_manager = self._world.get_lightmanager()
         self._light_manager.set_day_night_cycle(False)
@@ -90,7 +91,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
     def _turn_close_lights_on(self, location):
         """Turns on the lights of all the objects close to the ego vehicle"""
         ego_speed = CarlaDataProvider.get_velocity(self._ego_vehicle)
-        radius = max(self._radius, 10 * ego_speed)
+        radius = max(self._radius, self._radius_increase * ego_speed)
 
         # Street lights
         on_lights = []

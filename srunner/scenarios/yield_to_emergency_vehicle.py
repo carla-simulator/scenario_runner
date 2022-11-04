@@ -63,7 +63,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         # 2) Always use the bb check to ensure the EV doesn't run over the ego when it is lane changing
         # 3) Add more wps to improve BB detection
         self._opt_dict = {
-            'base_vehicle_threshold': 15, 'detection_speed_ratio': 0.2, 'use_bbs_detection': True,
+            'base_vehicle_threshold': 10, 'detection_speed_ratio': 0.15, 'use_bbs_detection': True,
             'base_min_distance': 1, 'distance_ratio': 0.2
             }
 

@@ -127,7 +127,7 @@ class EnterActorFlow(BasicScenario):
                     break
 
             sequence.add_child(HandleJunctionScenario(
-                clear_junction=False,
+                clear_junction=True,
                 clear_ego_entry=True,
                 remove_entries=source_wps,
                 remove_exits=[],
@@ -384,7 +384,7 @@ class MergerIntoSlowTraffic(BasicScenario):
                     break
 
             sequence.add_child(HandleJunctionScenario(
-                clear_junction=False,
+                clear_junction=True,
                 clear_ego_entry=True,
                 remove_entries=[source_wp],
                 remove_exits=[],
