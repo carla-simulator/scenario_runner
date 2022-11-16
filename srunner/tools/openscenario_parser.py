@@ -30,6 +30,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       ChangeAutoPilot,
                                                                       ChangeRoadFriction,
                                                                       ChangeActorTargetSpeed,
+                                                                      ChangeActorSpeedTransition,
                                                                       ChangeActorControl,
                                                                       ChangeActorWaypoints,
                                                                       ChangeActorLateralMotion,
@@ -1220,26 +1221,36 @@ class OpenScenarioParser(object):
                 if private_action.find('SpeedAction') is not None:
                     long_maneuver = private_action.find('SpeedAction')
 
-                    # duration and distance
-                    distance = float('inf')
-                    duration = float('inf')
+                    # duration, distance and shape
+                    distance, duration, rate = None, None, None
                     dimension = long_maneuver.find("SpeedActionDynamics").attrib.get('dynamicsDimension')
+                    shape = long_maneuver.find("SpeedActionDynamics").attrib.get('dynamicsShape', "step")
+                    
                     if dimension == "distance":
                         distance = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
                             'value', float("inf")))
-                    else:
+                    elif dimension == "time" :
                         duration = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
                             'value', float("inf")))
+                    elif dimension == "rate":
+                        rate = ParameterRef(long_maneuver.find("SpeedActionDynamics").attrib.get(
+                            'value', float("inf")))
 
-                    # absolute velocity with given target speed
                     if long_maneuver.find("SpeedActionTarget").find("AbsoluteTargetSpeed") is not None:
                         target_speed = ParameterRef(long_maneuver.find("SpeedActionTarget").find(
                             "AbsoluteTargetSpeed").attrib.get('value', 0))
-                        atomic = ChangeActorTargetSpeed(
-                            actor, float(target_speed), distance=distance, duration=duration, name=maneuver_name)
+                        
+                        if shape == "step" and dimension in ["distance", "time"]:
+                            # keep ChangeActorTargetSpeed for backwards compatibility 
+                            # absolute velocity with given target speed
+                            atomic = ChangeActorTargetSpeed(
+                                actor, float(target_speed), distance=distance, duration=duration, name=maneuver_name)
+                        else:
+                            atomic = ChangeActorSpeedTransition(
+                                actor, float(target_speed), rate=rate, duration=duration, name=maneuver_name, shape=shape)
 
                     # relative velocity to given actor
-                    if long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed") is not None:
+                    elif long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed") is not None:
                         relative_speed = long_maneuver.find("SpeedActionTarget").find("RelativeTargetSpeed")
                         obj = relative_speed.attrib.get('entityRef')
                         value = ParameterRef(relative_speed.attrib.get('value', 0))

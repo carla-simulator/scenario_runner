@@ -568,6 +568,133 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         return new_status
 
 
+class ChangeActorSpeedTransition(AtomicBehavior):
+    """
+    Smooth speed change behaviors.
+
+    The behavior is in RUNNING state until the curve execution is finished.
+    If both 'rate' and 'duration' are absent, defaults to "step".  
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        target_speed (float): The target speed 'VT' [m/s].
+        duration (float): Maneuver duration 'T' [s].
+        rate (float): Average acceleration [m/s^2].
+        shape (string): Transition curve either 'step', 'linear', 'cubic' or 'sinusoidal'.
+            - 'step' changes the velocity insantly
+            - 'linear' changes the velocity with a linear acceleration: v = v0 + (VT - V0) * t / T
+            - 'sinusoidal' changes the velocity over a sinusoidal profile: 
+              v = V0 + (1 - cos(PI * t / T)) * (VT - V0) / 2
+            - 'cubic'  changes the velocity with over a cubic curve:
+              v = V0 + (3*(t/T)^2 - 2*(t/T)^3) * (VT - V0) 
+            Defaults to 'step'.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorSpeedTransition'.
+    """
+
+    def __init__(self, actor, target_speed, duration=None, rate=None, shape='step', name="ChangeActorSpeedTransition"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorSpeedTransition, self).__init__(name, actor)
+
+        self._target_speed = target_speed
+        self._duration = duration
+        self._shape = shape 
+        self._rate = rate
+
+    def initialise(self):
+        """
+        Set initial parameters such as _start_time and _start_location,
+        and get (actor, controller) pair from Blackboard.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        if self._duration is not None and self._duration < 0: 
+            raise RuntimeError("Behavior overall duration cannot be negative")
+
+        self._start_time = GameTime.get_time()
+        self._start_location = CarlaDataProvider.get_location(self._actor)
+        self._init_speed = CarlaDataProvider.get_velocity(self._actor)
+
+        if self._duration is None and self._rate is None:
+            self._duration = 0
+        elif self._duration is None and self._rate is not None:
+            self._duration = (self._target_speed - self._init_speed) / self._rate
+            if self._duration < 0: 
+                self._duration = 0 
+
+        # Setting the same speed to set _start_time identifier in the actor
+        # for override behavior compatibility with ChangeActorTargetSpeed
+        actor_dict[self._actor.id].update_target_speed(self._init_speed, start_time=self._start_time)
+
+        super(ChangeActorSpeedTransition, self).initialise()
+
+    def update(self):
+        """
+        Check the actor's current state and update target speed.
+
+        returns:
+            py_trees.common.Status.SUCCESS, if the transition is over
+            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
+            py_trees.common.Status.FAILURE, else.
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or not self._actor.id in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        # Another speed action fired - overriding
+        if actor_dict[self._actor.id].get_last_longitudinal_command() != self._start_time:
+            return py_trees.common.Status.SUCCESS
+
+        # Step and duration = 0 behaviors instantly change the speed and SUCCEED
+        if self._shape == 'step' or self._duration == 0:
+            actor_dict[self._actor.id].update_target_speed(self._target_speed)
+            return py_trees.common.Status.SUCCESS
+
+        delta = self._target_speed - self._init_speed # (VT - V0)
+        tau = (GameTime.get_time() - self._start_time) / self._duration # (t / T)
+
+        new_status = py_trees.common.Status.RUNNING
+        v = CarlaDataProvider.get_velocity(self._actor)
+        if tau >= 1.0:
+            tau = 1.0
+            new_status = py_trees.common.Status.SUCCESS
+
+        speed = self._init_speed
+        if self._shape == 'linear':
+            speed += delta * tau
+        elif self._shape == 'sinusoidal':
+            speed += delta * (1.0 - math.cos(math.pi*tau)) / 2
+        elif self._shape == 'cubic':
+            speed += (3*tau**2 - 2*tau**3)*delta
+        else:
+            print('Unknown transition shape {}'.format(self._shape))
+            speed = self._target_speed
+            new_status = py_trees.common.Status.SUCCESS
+
+        actor_dict[self._actor.id].update_target_speed(speed)
+        return new_status
+
+
+
 class SyncArrivalOSC(AtomicBehavior):
 
     """
