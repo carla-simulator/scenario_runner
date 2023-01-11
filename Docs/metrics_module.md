@@ -342,7 +342,7 @@ Returns a dictionary where the keys are the frame number, and the values are the
 
 - <a name="get_vehicle_control"></a>__<font color="#7fb800">get_vehicle_control</font>__(<font color="#00a6ed">__self__</font>, <font color="#00a6ed">__vehicle_id__</font>, <font color="#00a6ed">__frame__</font>)  
 Returns the control of a vehicle at a given frame. The `manual_gear_shift` attribute will always be False.
-    - __Return —__ [carla.VehicleCotnrol](https://carla.readthedocs.io/en/latest/python_api/#carlavehiclecontrol)
+    - __Return —__ [carla.VehicleControl](https://carla.readthedocs.io/en/latest/python_api/#carlavehiclecontrol)
     - __Parameters__
         - `vehicle_id` (_int_) — `id` of the vehicle.
         - `frame` (_int_) — Frame number.
