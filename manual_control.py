@@ -127,6 +127,7 @@ class World(object):
             sys.exit(1)
         self.hud = hud
         self.player = None
+        self.rolename = args.rolename
         self.collision_sensor = None
         self.lane_invasion_sensor = None
         self.gnss_sensor = None
@@ -157,7 +158,7 @@ class World(object):
             time.sleep(1)
             possible_vehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in possible_vehicles:
-                if vehicle.attributes['role_name'] == 'hero':
+                if vehicle.attributes['role_name'] == self.rolename:
                     print("Ego vehicle found")
                     self.player = vehicle
                     break
