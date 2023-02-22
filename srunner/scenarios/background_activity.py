@@ -242,6 +242,7 @@ class BackgroundBehavior(AtomicBehavior):
 
         # Scenario variables:
         self._scenario_stopped_actors = []  # Actors stopped by a hard break scenario
+        self._scenario_stopped_back_actors = []  # Actors stopped by a open doors scenario
         self._scenario_max_speed = 0  # Max speed of the Background Activity. Deactivated with a value of 0
         self._scenario_junction_entry = False  # Flag indicating the ego is entering a junction
         self._scenario_junction_entry_distance = self._road_spawn_dist  # Min distance between vehicles and ego
@@ -1659,13 +1660,25 @@ class BackgroundBehavior(AtomicBehavior):
             self._start_road_front_vehicles()
             py_trees.blackboard.Blackboard().set("BA_StartFrontVehicles", None, True)
 
+        # Stop back vehicles
+        stop_back_data = py_trees.blackboard.Blackboard().get('BA_StopBackVehicles')
+        if stop_back_data is not None:
+            self._stop_road_back_vehicles()
+            py_trees.blackboard.Blackboard().set('BA_StopBackVehicles', None, True)
+
+        # Start back vehicles
+        start_back_data = py_trees.blackboard.Blackboard().get('BA_StartBackVehicles')
+        if start_back_data is not None:
+            self._start_road_back_vehicles()
+            py_trees.blackboard.Blackboard().set("BA_StartBackVehicles", None, True)
+
         # Leave space in front
         leave_space_data = py_trees.blackboard.Blackboard().get('BA_LeaveSpaceInFront')
         if leave_space_data is not None:
             self._leave_space_in_front(leave_space_data)
             py_trees.blackboard.Blackboard().set('BA_LeaveSpaceInFront', None, True)
 
-        # Leave space in front
+        # Leave crosssing space
         leave_crossing_space_data = py_trees.blackboard.Blackboard().get('BA_LeaveCrossingSpace')
         if leave_crossing_space_data is not None:
             self._leave_crossing_space(leave_crossing_space_data)
@@ -1706,8 +1719,7 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _stop_road_front_vehicles(self):
         """
-        Manages the break scenario, where all road vehicles in front of the ego suddenly stop,
-        wait for a bit, and start moving again. This will never trigger unless done so from outside.
+        Stops all road vehicles in front of the ego. Use `_start_road_front_vehicles` to make them move again.
         """
         for lane in self._road_dict:
             for actor in self._road_dict[lane].actors:
@@ -1722,8 +1734,7 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _start_road_front_vehicles(self):
         """
-        Manages the break scenario, where all road vehicles in front of the ego suddenly stop,
-        wait for a bit, and start moving again. This will never trigger unless done so from outside.
+        Restarts all road vehicles stopped by `_stop_road_front_vehicles`.
         """
         for actor in self._scenario_stopped_actors:
             self._actors_speed_perc[actor] = 100
@@ -1731,6 +1742,25 @@ class BackgroundBehavior(AtomicBehavior):
             lights = actor.get_light_state()
             lights &= ~carla.VehicleLightState.Brake
             actor.set_light_state(carla.VehicleLightState(lights))
+        self._scenario_stopped_actors = []
+
+    def _stop_road_back_vehicles(self):
+        """
+        Stops all road vehicles behind the ego. Use `_start_road_back_vehicles` to make them move again.
+        """
+        for lane in self._road_dict:
+            for actor in self._road_dict[lane].actors:
+                location = CarlaDataProvider.get_location(actor)
+                if location and self._is_location_behind_ego(location):
+                    self._actors_speed_perc[actor] = 0
+                    self._scenario_stopped_back_actors = []
+
+    def _start_road_back_vehicles(self):
+        """
+        Restarts all road vehicles stopped by `_stop_road_back_vehicles`.
+        """
+        for actor in self._scenario_stopped_actors:
+            self._actors_speed_perc[actor] = 100
         self._scenario_stopped_actors = []
 
     def _move_actors_forward(self, actors, space):
@@ -1788,8 +1818,8 @@ class BackgroundBehavior(AtomicBehavior):
 
     def _leave_crossing_space(self, collision_wp):
         """Removes all vehicle in the middle of crossing trajectory and stops the nearby ones"""
-        destruction_dist = 10
-        stop_dist = 15
+        destruction_dist = 20
+        stop_dist = 30
 
         opposite_wp = collision_wp.get_left_lane()
         if not opposite_wp:

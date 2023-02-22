@@ -30,7 +30,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                WaitUntilInFrontPosition)
 from srunner.scenarios.basic_scenario import BasicScenario
 
-from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior
+from srunner.tools.background_manager import LeaveSpaceInFront, ChangeOppositeBehavior, StopBackVehicles, StartBackVehicles
 
 
 def get_value_parameter(config, name, p_type, default):
@@ -178,6 +178,7 @@ class VehicleOpensDoorTwoWays(BasicScenario):
 
         door = carla.VehicleDoor.FR if self._direction == 'left' else carla.VehicleDoor.FL
         behavior.add_child(OpenVehicleDoor(self._parked_actor, door))
+        behavior.add_child(StopBackVehicles())
         behavior.add_child(Idle(self._opposite_wait_duration))
         if self.route_mode:
             behavior.add_child(SwitchWrongDirectionTest(False))
@@ -192,6 +193,7 @@ class VehicleOpensDoorTwoWays(BasicScenario):
             root.add_child(ChangeOppositeBehavior(active=True))
         for actor in self.other_actors:
             root.add_child(ActorDestroy(actor))
+            root.add_child(StartBackVehicles())
 
         return root
 
