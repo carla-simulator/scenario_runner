@@ -129,6 +129,33 @@ class StartFrontVehicles(AtomicBehavior):
         return py_trees.common.Status.SUCCESS
 
 
+class StopBackVehicles(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to stop the vehicles behind the ego as to
+    not interfere with the scenarios. This only works at roads, not junctions.
+    """
+    def __init__(self, name="StopBackVehicles"):
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_StopBackVehicles", overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
+class StartBackVehicles(AtomicBehavior):
+    """
+    Updates the blackboard to tell the background activity to restart the vehicles behind the ego.
+    """
+    def __init__(self, name="StartBackVehicles"):
+        super().__init__(name)
+
+    def update(self):
+        """Updates the blackboard and succeds"""
+        py_trees.blackboard.Blackboard().set("BA_StartBackVehicles", overwrite=True)
+        return py_trees.common.Status.SUCCESS
+
+
 class LeaveSpaceInFront(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity that the ego needs more space in front.
@@ -223,7 +250,6 @@ class LeaveCrossingSpace(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_LeaveCrossingSpace", self._collision_wp, overwrite=True)
         return py_trees.common.Status.SUCCESS
-
 
 class HandleJunctionScenario(AtomicBehavior):
     """
