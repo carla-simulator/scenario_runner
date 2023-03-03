@@ -1753,15 +1753,15 @@ class BackgroundBehavior(AtomicBehavior):
                 location = CarlaDataProvider.get_location(actor)
                 if location and self._is_location_behind_ego(location):
                     self._actors_speed_perc[actor] = 0
-                    self._scenario_stopped_back_actors = []
+                    self._scenario_stopped_back_actors.append(actor)
 
     def _start_road_back_vehicles(self):
         """
         Restarts all road vehicles stopped by `_stop_road_back_vehicles`.
         """
-        for actor in self._scenario_stopped_actors:
+        for actor in self._scenario_stopped_back_actors:
             self._actors_speed_perc[actor] = 100
-        self._scenario_stopped_actors = []
+        self._scenario_stopped_back_actors = []
 
     def _move_actors_forward(self, actors, space):
         """Teleports the actors forward a set distance"""
@@ -2178,6 +2178,7 @@ class BackgroundBehavior(AtomicBehavior):
         Not applied to those behind it so that they can catch up it
         """
         # Updates their speed
+        scenario_actors = self._scenario_stopped_actors + self._scenario_stopped_back_actors
         for lane_key in self._road_dict:
             for i, actor in enumerate(self._road_dict[lane_key].actors):
                 location = CarlaDataProvider.get_location(actor)
@@ -2191,7 +2192,7 @@ class BackgroundBehavior(AtomicBehavior):
                     draw_string(self._world, location, string, DEBUG_ROAD, False)
 
                 # Actors part of scenarios are their own category, ignore them
-                if actor in self._scenario_stopped_actors:
+                if actor in scenario_actors:
                     continue
 
                 # TODO: Lane changes are weird with the TM, so just stop them
@@ -2484,6 +2485,8 @@ class BackgroundBehavior(AtomicBehavior):
             self._opposite_actors.remove(actor)
         if actor in self._scenario_stopped_actors:
             self._scenario_stopped_actors.remove(actor)
+        if actor in self._scenario_stopped_back_actors:
+            self._scenario_stopped_back_actors.remove(actor)
 
         for opposite_source in self._opposite_sources:
             if actor in opposite_source.actors:

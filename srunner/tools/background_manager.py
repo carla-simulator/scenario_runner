@@ -139,7 +139,7 @@ class StopBackVehicles(AtomicBehavior):
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_StopBackVehicles", overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_StopBackVehicles", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
@@ -152,7 +152,7 @@ class StartBackVehicles(AtomicBehavior):
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_StartBackVehicles", overwrite=True)
+        py_trees.blackboard.Blackboard().set("BA_StartBackVehicles", True, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
 
