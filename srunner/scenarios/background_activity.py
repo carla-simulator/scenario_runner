@@ -33,15 +33,19 @@ def get_lane_key(waypoint):
     object and used to compare waypoint lanes"""
     return '' if waypoint is None else get_road_key(waypoint) + '*' + str(waypoint.lane_id)
 
-
 def get_road_key(waypoint):
     """Returns a key corresponding to the waypoint road. Equivalent to a 'Road'
     object and used to compare waypoint roads"""
     return '' if waypoint is None else str(waypoint.road_id)
 
 def is_lane_at_road(lane_key, road_key):
-    """Returns whther or not a lane is part of a road"""
+    """Returns whether or not a lane is part of a road"""
     return lane_key.startswith(road_key)
+
+def get_lane_key_from_ids(road_id, lane_id):
+    """Returns the lane corresping to a given road and lane ids"""
+    return str(road_id) + '*' + str(lane_id)
+
 
 # Debug variables
 DEBUG_ROAD = 'road'
@@ -194,6 +198,12 @@ class BackgroundBehavior(AtomicBehavior):
         self._spawn_free_radius = 20  # Sources closer to the ego will not spawn actors
         self._fake_junction_ids = []
         self._fake_lane_pair_keys = []
+
+        # Initialisation values
+        self._vehicle_lane_change = False
+        self._vehicle_lights = True
+        self._vehicle_leading_distance = 10
+        self._vehicle_offset = 0.1
 
         # Road variables
         self._road_dict = {}  # Dictionary lane key -> actor source
@@ -1418,7 +1428,17 @@ class BackgroundBehavior(AtomicBehavior):
                         spawn_wps.insert(0, next_wp)
 
                     actors = self._spawn_actors(spawn_wps)
-                    self._road_dict[get_lane_key(source_wp)] = Source(source_wp, actors, active=self._active_road_sources)
+
+                    if get_lane_key(source_wp) not in self._road_dict:
+                        # Lanes created away from the center won't affect the ids of other lanes, so just add the new id
+                        self._road_dict[get_lane_key(source_wp)] = Source(source_wp, actors, active=self._active_road_sources)
+                    else:
+                        # If the lane is inwards, all lanes have their id shifted by 1 outwards
+                        # TODO: Doesn't work for more than one lane.
+                        added_id = 1 if source_wp.lane_id > 0 else -1
+                        new_lane_key = get_lane_key_from_ids(source_wp.road_id, source_wp.lane_id + added_id)
+                        self._road_dict[new_lane_key] = self._road_dict[get_lane_key(source_wp)]
+                        self._road_dict[get_lane_key(source_wp)] = Source(source_wp, actors, active=self._active_road_sources)
 
         elif len(new_wps) < len(old_wps):
             for old_wp in list(old_wps):
@@ -2090,11 +2110,10 @@ class BackgroundBehavior(AtomicBehavior):
         """
         Save the actor into the needed structures, disable its lane changes and set the leading distance.
         """
-        self._tm.auto_lane_change(actor, False)
-        self._tm.update_vehicle_lights(actor, True)
-        self._tm.distance_to_leading_vehicle(actor, 10)
-        self._tm.vehicle_lane_offset(actor, 0.1)
-        self._actors_speed_perc[actor] = 100
+        self._tm.auto_lane_change(actor, self._vehicle_lane_change)
+        self._tm.update_vehicle_lights(actor, self._vehicle_lights)
+        self._tm.distance_to_leading_vehicle(actor, self._vehicle_leading_distance)
+        self._tm.vehicle_lane_offset(actor, self._vehicle_offset)
         self._all_actors.append(actor)
 
     def _spawn_actor(self, spawn_wp, ego_dist=0):
@@ -2284,13 +2303,24 @@ class BackgroundBehavior(AtomicBehavior):
             if get_road_key(prev_wp) != get_road_key(current_wp):
                 return True
 
-            # Some roads have ending lanes in the middle. Remap if that is detected
+            # Some roads have starting / ending lanes in the middle. Remap if that is detected
             prev_wps = get_same_dir_lanes(prev_wp)
             current_wps = get_same_dir_lanes(current_wp)
             if len(prev_wps) != len(current_wps):
                 return True
 
             return False
+
+        def is_road_dict_unchanging(wp_pairs):
+            """Sometimes 'monitor_topology_changes' has already done the necessary changes"""
+            road_dict_keys = list(self._road_dict)
+            if len(wp_pairs) != len(road_dict_keys):
+                return False
+
+            for _, new_wp in wp_pairs:
+                if get_lane_key(new_wp) not in road_dict_keys:
+                    return False
+            return True
 
         if prev_route_index == self._route_index:
             return
@@ -2305,7 +2335,10 @@ class BackgroundBehavior(AtomicBehavior):
         new_wps = get_lane_waypoints(route_wp, 0)
         check_dist = 1.1 * route_wp.transform.location.distance(prev_route_wp.transform.location)
         wp_pairs = get_wp_pairs(old_wps, new_wps, check_dist)
-        # TODO: these pairs are sometimes wrong as some fake intersections have overlapping lanes (highway entries)
+        # TODO: These pairs are sometimes wrong as some fake intersections have overlapping lanes (highway entries)
+
+        if is_road_dict_unchanging(wp_pairs):
+            return
 
         for old_wp, new_wp in wp_pairs:
             old_key = get_lane_key(old_wp)
