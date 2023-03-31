@@ -2943,12 +2943,12 @@ class ActorFlow(AtomicBehavior):
                 continue
             sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
-                actor.destroy()
-                self._actor_list.remove(actor)
                 if sensor is not None:
                     sensor.stop()
                     sensor.destroy()
                 self._collision_sensor_list.remove(sensor)
+                actor.destroy()
+                self._actor_list.remove(actor)
 
         # Spawn new actors if needed
         if len(self._actor_list) == 0:
