@@ -134,7 +134,7 @@ def main():
 
     parser = argparse.ArgumentParser(description=description,
                                     formatter_class=RawTextHelpFormatter)
-    parser.add_argument('--host', default='127.0.0.1',
+    parser.add_argument('--host', default='10.108.13.186',
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', '-p', default=2000,
                         help='TCP port to listen to (default: 2000)')

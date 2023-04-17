@@ -82,6 +82,8 @@ class BasicScenario(object):
 
         self.scenario = Scenario(behavior_seq, criteria, self.name, self.timeout, self.terminate_on_failure)
 
+
+
     def _initialize_environment(self, world):
         """
         Default initialization of weather and road friction.
@@ -228,6 +230,8 @@ class Scenario(object):
         self.timeout = timeout
         self.name = name
 
+        # print("name:"+name)
+
         if self.test_criteria is not None and not isinstance(self.test_criteria, py_trees.composites.Parallel):
             # list of nodes
             for criterion in self.test_criteria:
@@ -257,6 +261,9 @@ class Scenario(object):
         if criteria is not None:
             self.scenario_tree.add_child(self.criteria_tree)
         self.scenario_tree.setup(timeout=1)
+
+        py_trees.display.render_dot_tree(self.scenario_tree)
+
 
     def _extract_nodes_from_tree(self, tree):  # pylint: disable=no-self-use
         """

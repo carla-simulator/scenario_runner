@@ -375,6 +375,7 @@ class ScenarioRunner(object):
 
         # Prepare scenario
         print("Preparing scenario: " + config.name)
+        
         try:
             self._prepare_ego_vehicles(config.ego_vehicles)
             if self._args.openscenario:
@@ -408,7 +409,10 @@ class ScenarioRunner(object):
                 self.client.start_recorder(recorder_name, True)
 
             # Load scenario and run it
+            # 在load的时候加载行为树
             self.manager.load_scenario(scenario, self.agent_instance)
+
+
             self.manager.run_scenario()
 
             # Provide outputs if required
@@ -492,9 +496,14 @@ class ScenarioRunner(object):
             for entry in self._args.openscenarioparams.split(','):
                 [key, val] = [m.strip() for m in entry.split(':')]
                 openscenario_params[key] = val
+
+        # 读取文件
         config = OpenScenarioConfiguration(self._args.openscenario, self.client, openscenario_params)
 
+        # 加载并运行
         result = self._load_and_run_scenario(config)
+
+        
         self._cleanup()
         return result
 
@@ -525,7 +534,7 @@ def main():
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=RawTextHelpFormatter)
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
-    parser.add_argument('--host', default='127.0.0.1',
+    parser.add_argument('--host', default='10.108.13.186',
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')

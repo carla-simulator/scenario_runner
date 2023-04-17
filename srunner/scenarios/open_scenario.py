@@ -458,14 +458,22 @@ class OpenScenario(BasicScenario):
                 condition_group_sequence = py_trees.composites.Parallel(
                     name="Condition Group", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
             for condition in condition_group.iter("Condition"):
+                
+                
                 criterion = OpenScenarioParser.convert_condition_to_atomic(
                     condition, self.other_actors + self.ego_vehicles)
+
+
                 if sequence is not None and maneuver is not None:
                     xml_path = get_xml_path(story, sequence) + '>' + \
                         get_xml_path(maneuver, condition)  # See note in get_xml_path
                 else:
                     xml_path = get_xml_path(story, condition)
+
+
                 criterion = oneshot_with_check(variable_name=xml_path, behaviour=criterion)
+
+                print('----------------------')
                 condition_group_sequence.add_child(criterion)
 
             if condition_group_sequence.children:

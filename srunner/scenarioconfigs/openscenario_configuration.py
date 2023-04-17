@@ -47,16 +47,20 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.trigger_points = []
         self.weather = carla.WeatherParameters()
 
+        # 从xml文档中解析出部分标签
         self.storyboard = self.xml_tree.find("Storyboard")
         self.stories = self.storyboard.findall("Story")
         self.init = self.storyboard.find("Init")
+
 
         logging.basicConfig()
         self.logger = logging.getLogger("[SR:OpenScenarioConfiguration]")
 
         self._global_parameters = {}
 
+        # 对引用值做替换，设置所有参数
         self._set_parameters()
+        # 
         self._parse_openscenario_configuration()
 
     def _validate_openscenario_configuration(self):
@@ -88,7 +92,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._check_version()
         self._load_catalogs()
         self._set_scenario_name()
+
+        # 设置场景地图
         self._set_carla_town()
+        
+        # 设置实体信息
         self._set_actor_information()
 
         self._validate_result()

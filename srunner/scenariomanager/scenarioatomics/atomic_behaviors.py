@@ -28,6 +28,10 @@ import py_trees
 from py_trees.blackboard import Blackboard
 import networkx
 
+import sys
+
+sys.path.insert(0,'D:\work\ADS\carla\PythonAPI\carla')
+
 import carla
 from agents.navigation.basic_agent import BasicAgent, LocalPlanner
 from agents.navigation.local_planner import RoadOption
