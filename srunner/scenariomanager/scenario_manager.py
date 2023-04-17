@@ -128,14 +128,17 @@ class ScenarioManager(object):
         self._running = True
 
         while self._running:
+            
             timestamp = None
             world = CarlaDataProvider.get_world()
             if world:
                 snapshot = world.get_snapshot()
                 if snapshot:
                     timestamp = snapshot.timestamp
+            
             if timestamp:
                 self._tick_scenario(timestamp)
+            
 
         self.cleanup()
 
@@ -149,6 +152,8 @@ class ScenarioManager(object):
         if self.scenario_tree.status == py_trees.common.Status.FAILURE:
             print("ScenarioManager: Terminated due to failure")
 
+
+    # 运行一帧仿真的函数
     def _tick_scenario(self, timestamp):
         """
         Run next tick of scenario and the agent.
