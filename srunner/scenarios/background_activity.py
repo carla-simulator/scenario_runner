@@ -2547,8 +2547,8 @@ class BackgroundBehavior(AtomicBehavior):
     def _destroy_actor(self, actor):
         """Destroy the actor and all its references"""
         self._remove_actor_info(actor)
-        actor.set_autopilot(False)
         try:
+            actor.set_autopilot(False)
             actor.destroy()
         except RuntimeError:
             pass
