@@ -175,8 +175,8 @@ class BackgroundBehavior(AtomicBehavior):
         self.debug = debug
         self._map = CarlaDataProvider.get_map()
         self._world = CarlaDataProvider.get_world()
-        self._tm = CarlaDataProvider.get_client().get_trafficmanager(
-            CarlaDataProvider.get_traffic_manager_port())
+        self._tm_port = CarlaDataProvider.get_traffic_manager_port()
+        self._tm = CarlaDataProvider.get_client().get_trafficmanager(self._tm_port)
         self._tm.global_percentage_speed_difference(0.0)
         self._rng = CarlaDataProvider.get_random_seed()
 
@@ -2228,7 +2228,7 @@ class BackgroundBehavior(AtomicBehavior):
                         lights |= carla.VehicleLightState.LeftBlinker
                         lights |= carla.VehicleLightState.Position
                         actor.set_light_state(carla.VehicleLightState(lights))
-                        actor.set_autopilot(False)
+                        actor.set_autopilot(False, self._tm_port)
                         continue
 
                 self._set_road_actor_speed(location, actor)
@@ -2548,7 +2548,7 @@ class BackgroundBehavior(AtomicBehavior):
         """Destroy the actor and all its references"""
         self._remove_actor_info(actor)
         try:
-            actor.set_autopilot(False)
+            actor.set_autopilot(False, self._tm_port)
             actor.destroy()
         except RuntimeError:
             pass
