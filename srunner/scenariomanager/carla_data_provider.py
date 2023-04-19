@@ -722,8 +722,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             if spawn_point:
                 batch.append(SpawnActor(blueprint, spawn_point).then(
-                    SetAutopilot(FutureActor, autopilot,
-                                 CarlaDataProvider._traffic_manager_port)))
+                    SetAutopilot(FutureActor, autopilot, CarlaDataProvider._traffic_manager_port)))
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
         for actor in actors:
