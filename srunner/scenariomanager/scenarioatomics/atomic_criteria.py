@@ -351,6 +351,7 @@ class CollisionTest(Criterion):
         Cleanup sensor
         """
         if self._collision_sensor is not None:
+            self._collision_sensor.stop()
             self._collision_sensor.destroy()
         self._collision_sensor = None
         super(CollisionTest, self).terminate(new_status)

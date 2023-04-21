@@ -2083,6 +2083,8 @@ class ConstantVelocityAgentBehavior(AtomicBehavior):
         self._control.throttle = 0.0
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
+        if self._agent:
+            self._agent.destroy_sensor()
         super(ConstantVelocityAgentBehavior, self).terminate(new_status)
 
 class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
@@ -2155,6 +2157,8 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
         self._control.throttle = 0.0
         self._control.brake = 0.0
         self._actor.apply_control(self._control)
+        if self._agent:
+            self._agent.destroy_sensor()
         super().terminate(new_status)
 
 class Idle(AtomicBehavior):
