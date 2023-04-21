@@ -92,9 +92,9 @@ class ResultOutputProvider(object):
 
         list_statistics = [["Start Time", "{}".format(self._start_time)]]
         list_statistics.extend([["End Time", "{}".format(self._end_time)]])
-        list_statistics.extend([["Duration (System Time)", "{}s".format(system_time)]])
-        list_statistics.extend([["Duration (Game Time)", "{}s".format(game_time)]])
-        list_statistics.extend([["Ratio (System Time / Game Time)", "{}s".format(ratio)]])
+        list_statistics.extend([["System Time", "{}s".format(system_time)]])
+        list_statistics.extend([["Game Time", "{}s".format(game_time)]])
+        list_statistics.extend([["Ratio (Game / System)", "{}".format(ratio)]])
 
         output += tabulate(list_statistics, tablefmt='fancy_grid')
         output += "\n\n"

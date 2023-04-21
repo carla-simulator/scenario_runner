@@ -71,7 +71,7 @@ class RouteScenario(BasicScenario):
         self.timeout = self._estimate_route_timeout()
 
         if debug_mode:
-            self._draw_waypoints(world, self.route, vertical_shift=0.1, size=0.1, persistency=self.timeout)
+            self._draw_waypoints(world, self.route, vertical_shift=0.1, size=0.1, persistency=self.timeout, downsample=5)
 
         self._build_scenarios(
             world, ego_vehicle, sampled_scenario_definitions, timeout=self.timeout, debug=debug_mode > 0
@@ -142,12 +142,14 @@ class RouteScenario(BasicScenario):
 
         return int(SECONDS_GIVEN_PER_METERS * route_length)
 
-    # pylint: disable=no-self-use
-    def _draw_waypoints(self, world, waypoints, vertical_shift, size, persistency=-1):
+    def _draw_waypoints(self, world, waypoints, vertical_shift, size, persistency=-1, downsample=1):
         """
         Draw a list of waypoints at a certain height given in vertical_shift.
         """
-        for w in waypoints:
+        for i, w in enumerate(waypoints):
+            if i % downsample != 0:
+                continue
+
             wp = w[0].location + carla.Location(z=vertical_shift)
 
             if w[1] == RoadOption.LEFT:  # Yellow
