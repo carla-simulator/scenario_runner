@@ -1,0 +1,56 @@
+# Test binary logical expressions
+
+scenario test_expression:
+    # define some parameters
+    a :int = 1
+    b :int = 2
+    # test simple logical computations
+    # =>
+    # false
+    binary_logic_1: bool = true => false
+    # true
+    binary_logic_2: bool = true => true
+    # true
+    binary_logic_3: bool = false => true
+    # true
+    binary_logic_4: bool = false => false
+
+    # or
+    # false
+    binary_logic_5: bool = false or false
+    # true
+    binary_logic_6: bool = false or a - b >0
+    # true
+    binary_logic_7: bool = false or true
+    # true
+    binary_logic_8: bool = false or a - b <0
+
+    # and
+    # false
+    binary_logic_9: bool = false and false
+    # true
+    binary_logic_10: bool = false and a - b < 0
+    # true
+    binary_logic_11: bool = true and true
+    # true
+    binary_logic_12: bool = true and a - b <0
+
+
+    # Test composite logical operations
+    # true
+    binary_logic_13: bool = true => true => a - b < 0
+    # false
+    binary_logic_14: bool = true => true => a - b > 0
+    #false
+    binary_logic_15: bool = true and a - b <0 and false
+    # false
+    binary_logic_16: bool = true => true => a - b < 0 and false
+    # true
+    binary_logic_17: bool = true or a - b >0 or false
+    # true
+    binary_logic_18: bool = true => true => a - b < 0 and a - b <0 and true or a - b >0 or false
+
+
+
+
+

@@ -1,0 +1,10 @@
+# test ternaryOpExp
+#	 : implication '?' expression ':' expression;
+
+scenario test_expression:
+    a: int = 10
+    line1: int = 1
+    line2: int = 2
+    name: string = a>10?"name":"name2"
+    line: int = a!=10?line1:line2
+

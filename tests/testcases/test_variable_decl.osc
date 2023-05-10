@@ -1,0 +1,12 @@
+scenario main:
+
+    # variable declaration without default valueExp
+    var time1: hour = 10
+    # variable declaration with default valueExp
+    var time2: hour = 10
+
+    # variable_declaration with sample
+    # without default value
+    var dist1: length = sample(ego.object_distance(reference: car1, direction: longitudinal), every(2s), 100km)
+    # with default value
+    var dist2: length = sample(ego.object_distance(reference: car1, direction: longitudinal), every(2s))

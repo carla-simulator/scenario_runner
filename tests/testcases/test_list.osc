@@ -1,0 +1,11 @@
+enum traffic_light_colors: [red, amber, green]
+
+struct traffic_light:
+    id: int
+    name: string
+    car_list: list of vehicle = [car1, car2]
+
+scenario test_expression:
+
+    do ego.change_speed(target: [10kph, 15kph, 20kph, 25kph])
+    do ego.change_line(target: [1, 2, 3, 4])

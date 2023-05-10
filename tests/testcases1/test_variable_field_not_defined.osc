@@ -1,0 +1,8 @@
+struct position:
+    x: float
+    y: float
+    z: float
+
+actor car:
+    var current_position: position
+    keep(current_position.x1 < 100) 

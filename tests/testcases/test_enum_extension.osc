@@ -1,0 +1,6 @@
+enum rgb_color: [red, green, blue]
+
+enum cmyk_color: [cyan = 1, magenta = 2, yellow, black]
+
+extend rgb_color: [alpha]
+

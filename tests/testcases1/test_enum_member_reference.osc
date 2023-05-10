@@ -1,0 +1,10 @@
+enum color: [red = 0, black = 1]
+
+actor car1:
+    car_color: color = color!black
+
+# undefined enum member
+
+actor car2:
+    car_color: color = color!green
+

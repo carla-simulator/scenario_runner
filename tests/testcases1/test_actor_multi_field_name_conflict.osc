@@ -1,0 +1,4 @@
+enum car_types: [type1, type2]
+
+actor vehicle:
+    category,category,category1: int = car_types!type1

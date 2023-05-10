@@ -1,0 +1,15 @@
+actor Path
+
+scenario cut_in_and_slow:
+    path: Path                             # A path in the map
+
+extend cut_in_and_slow:
+    path: Path   
+
+actor dut 
+
+scenario dut.cut_in_and_slow:
+    path: Path                             # A path in the map
+
+extend dut.cut_in_and_slow:
+    path: Path   

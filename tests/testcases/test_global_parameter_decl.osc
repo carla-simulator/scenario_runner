@@ -1,0 +1,7 @@
+global map: map
+global environment: environment
+
+scenario foo:
+    my_field: temperature = environment.weather.air.temperature
+    do parallel:
+        bar(newfield: 0.5)

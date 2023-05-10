@@ -1,0 +1,12 @@
+modifier force_lane:
+   vehicle: vehicle
+   lane: int
+
+modifier vehicle.change_lane:
+   vehicle: vehicle
+   lane: int
+
+# 'of' qualifiedBehaviorName
+modifier vehicle.change_lane of cut:
+   vehicle: vehicle
+   lane: int

@@ -1,0 +1,6 @@
+# action
+action base :
+    position: position_3d
+    route_point: route_point
+    odr_point: odr_point
+

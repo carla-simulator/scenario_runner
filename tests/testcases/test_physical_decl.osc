@@ -1,0 +1,15 @@
+type length is SI(m: 1)
+
+unit m of length is SI(m: 1)
+unit foot of length is SI(m: 1, factor: 0.3048)
+
+type speed is SI(m: 1, s: -1)
+type acceleration is SI(m: 1, s: -2)
+
+unit |foot/s| of speed is SI(m: 1, s: -1, factor: 0.3048)
+unit |foot/s^2| of acceleration is SI(m: 1, s: -2)
+unit |foot/s/s| of acceleration is SI(m: 1, s: -2)
+unit g of acceleration is SI(m: 1, s: -2, factor: 9.80665)
+unit kmh of speed is SI(m: 1, s: -1, factor: 0.27777777778, offset: 0.0)
+unit deg of angle is SI(rad: 1, factor: 0.0174532925199, offset: 0.0)
+unit F of temperature is SI(K: 1, factor: 0.5555555556, offset: 255.372222222)

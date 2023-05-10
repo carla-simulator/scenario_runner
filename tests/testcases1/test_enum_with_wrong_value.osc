@@ -1,0 +1,4 @@
+enum rgb_color: [red, green, blue]
+# the default values of enum members must be succeeding integer values 
+enum cmyk_color: [cyan = 1, magenta = 2, yellow, black = 5]
+

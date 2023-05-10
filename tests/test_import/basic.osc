@@ -1,0 +1,19 @@
+# map
+global my_map: string = "Town04"
+
+### physical unit define ###
+# distance
+type length is SI(m: 1)
+unit m of length is SI(m: 1)
+# time
+type time is SI(s: 1)
+unit s of time is SI(s: 1)
+# speed
+type speed is SI(m: 1, s: -1)
+unit kph of speed is SI(m: 1, s: 1, factor: 0.277777777778)
+
+### actor define ###
+actor dut
+actor Path
+actor Model3
+actor Rubicon

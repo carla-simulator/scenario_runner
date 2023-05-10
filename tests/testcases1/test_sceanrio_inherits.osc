@@ -1,0 +1,6 @@
+actor dut
+actor vehicle
+# scenario base:
+#     npc: vehicle
+# scenario dut.super_action inherits base:
+#     car: vehicle

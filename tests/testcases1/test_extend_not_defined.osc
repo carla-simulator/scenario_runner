@@ -1,0 +1,4 @@
+enum car_type:[car1]
+# actor my_vehicle
+extend my_vehicle:
+    vehicle_type: car_type = car_type!car1

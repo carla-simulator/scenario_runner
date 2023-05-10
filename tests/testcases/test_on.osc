@@ -1,0 +1,8 @@
+scenario car.test_drive:
+    event go
+    event brk(dx: length)
+    car1: car
+    def measure(d: length) is external myext("measure")
+
+    on @brk as s if s.dx > 5m:
+        call measure(s.dx)

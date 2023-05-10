@@ -1,0 +1,2 @@
+struct driving_speed:
+    area: area_kind

@@ -1,0 +1,17 @@
+enum color: [
+    white,
+    purple]
+
+# actor
+actor base:
+    kind: string
+
+# actor inherit
+actor rock inherits base(exp == true):
+    weight: mass
+    extent: length
+    position: position_3d
+
+
+# The member statement is currently undefined
+
