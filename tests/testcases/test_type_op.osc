@@ -1,0 +1,10 @@
+#  Type conversion testing, type checking, function calling, element accessing, member accessing
+
+scenario my_scenario:
+    # 类型判断
+    keep(my_car.is(vehicle) == true)
+    # 类型转换
+    keep(my_car.as(emergency_vehicle).sirens_active == true)
+
+
+

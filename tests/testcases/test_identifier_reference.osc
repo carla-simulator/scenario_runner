@@ -1,0 +1,11 @@
+scenario test_expression:
+
+    line1: int = 1
+    line2: int = 2
+
+    name1: string = "name1"
+    name2: string = "name2"
+
+    do ego.change_line(target: [line1, line2])
+    do ego.set_name(target: [name1, name2])
+

@@ -33,12 +33,16 @@ import pkg_resources
 import carla
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
+from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.scenarios.open_scenario import OpenScenario
+from srunner.scenarios.osc2_scenario import OSC2Scenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
+from srunner.tools.osc2_helper import OSC2Helper
+from data_bridge import DataBridge
 
 # Version of scenario_runner
 VERSION = '0.9.13'
@@ -90,9 +94,11 @@ class ScenarioRunner(object):
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
 
-        dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
-            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
+        self.traffic_manager = self.client.get_trafficmanager(int(self._args.trafficManagerPort))
+
+        #dist = pkg_resources.get_distribution("carla")
+        #if LooseVersion(dist.version) < LooseVersion('0.9.12'):
+        #    raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -133,6 +139,9 @@ class ScenarioRunner(object):
         self._shutdown_requested = True
         if self.manager:
             self.manager.stop_scenario()
+            self._cleanup()
+            if not self.manager.get_running_status():
+                raise RuntimeError("Timeout occured during scenario execution")
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -209,6 +218,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles.append(CarlaDataProvider.request_new_actor(vehicle.model,
                                                                              vehicle.transform,
                                                                              vehicle.rolename,
+                                                                             random_location=vehicle.random_location,
                                                                              color=vehicle.color,
                                                                              actor_category=vehicle.category))
         else:
@@ -229,7 +239,8 @@ class ScenarioRunner(object):
                         break
 
             for i, _ in enumerate(self.ego_vehicles):
-                self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
+                #self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
+                CarlaDataProvider.register_ego_actor(self.ego_vehicles[i])
                 CarlaDataProvider.register_actor(self.ego_vehicles[i])
 
         # sync state
@@ -330,8 +341,12 @@ class ScenarioRunner(object):
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
 
+            self.traffic_manager.set_synchronous_mode(True)
+            self.traffic_manager.set_random_device_seed(int(self._args.trafficManagerSeed))
+
         CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
+        CarlaDataProvider.set_traffic_manager_port(int(self._args.trafficManagerPort))
 
         # Wait for the world to be ready
         if CarlaDataProvider.is_sync_mode():
@@ -347,6 +362,7 @@ class ScenarioRunner(object):
 
         return True
 
+    # 这里顺序必须是先加载世界，然后调用行为树
     def _load_and_run_scenario(self, config):
         """
         Load and run the scenario given by config
@@ -387,6 +403,13 @@ class ScenarioRunner(object):
                 scenario = RouteScenario(world=self.world,
                                          config=config,
                                          debug_mode=self._args.debug)
+            #OSC2
+            elif self._args.osc2:
+                scenario = OSC2Scenario(world=self.world,
+                                        ego_vehicles=self.ego_vehicles,
+                                        config=config,
+                                        osc2_file=self._args.osc2,
+                                        timeout=100000)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
                 scenario = scenario_class(self.world,
@@ -403,13 +426,20 @@ class ScenarioRunner(object):
 
         try:
             if self._args.record:
-                recorder_name = "{}/{}/{}.log".format(
-                    os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.record, config.name)
+                # recorder_name = "{}/{}.log".format(
+                #     os.getenv('SCENARIO_RUNNER_ROOT'), self._args.record)
+                
+                # 保存至当前目录下
+                recorder_name = "{}/{}.log".format(
+                    os.path.abspath('.'), self._args.record)
                 self.client.start_recorder(recorder_name, True)
 
             # Load scenario and run it
             self.manager.load_scenario(scenario, self.agent_instance)
+            self.manager.data_bridge = DataBridge(self.world)
+            
             self.manager.run_scenario()
+            self.manager.data_bridge.end_trace()
 
             # Provide outputs if required
             self._analyze_scenario(config)
@@ -498,6 +528,24 @@ class ScenarioRunner(object):
         self._cleanup()
         return result
 
+    def _run_osc2(self):
+        """
+        Run a scenario based on osc2
+        """
+
+        # Load the scenario configurations provided in the config file
+        if not os.path.isfile(self._args.osc2):
+            print("File does not exist")
+            self._cleanup()
+            return False
+
+        config = OSC2ScenarioConfiguration(self._args.osc2, self.client)
+
+        result = self._load_and_run_scenario(config)
+        self._cleanup()
+
+        return result
+
     def run(self):
         """
         Run all scenarios according to provided commandline args
@@ -507,6 +555,9 @@ class ScenarioRunner(object):
             result = self._run_openscenario()
         elif self._args.route:
             result = self._run_route()
+        #OSC2
+        elif self._args.osc2:
+            result = self._run_osc2()
         else:
             result = self._run_scenarios()
 
@@ -543,6 +594,7 @@ def main():
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
+    parser.add_argument('--osc2', help='Provide an osc2 definition')
     parser.add_argument(
         '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
 
@@ -571,12 +623,14 @@ def main():
     arguments = parser.parse_args()
     # pylint: enable=line-too-long
 
+    OSC2Helper.wait_for_ego = arguments.waitForEgo
+
     if arguments.list:
         print("Currently the following scenarios are supported:")
         print(*ScenarioConfigurationParser.get_list_of_scenarios(arguments.configFile), sep='\n')
         return 1
 
-    if not arguments.scenario and not arguments.openscenario and not arguments.route:
+    if not arguments.scenario and not arguments.openscenario and not arguments.route and not arguments.osc2:
         print("Please specify either a scenario or use the route mode\n\n")
         parser.print_help(sys.stdout)
         return 1

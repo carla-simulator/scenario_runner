@@ -1,0 +1,5 @@
+actor rock:
+    kind: string
+    weight: mass
+    extent: length
+    position: position_3d

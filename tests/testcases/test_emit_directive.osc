@@ -1,0 +1,6 @@
+
+scenario vehicle.two_phases:
+    event vehicle_reached_speed(vehicle : vehicle, vehicle_speed : speed) # event definition
+    do serial:
+        emit vehicle_reached_speed(car, car.speed)
+

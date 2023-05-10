@@ -1,0 +1,5 @@
+extend cut_in_and_slow:
+    var rel_d_slow_end: distance = sample(ego.space_gap(car1), @slow)
+    record(rel_d_slow_end, expression: rel_d_slow_end > 50cm, text: "car1 position relative to ego at slow end (in centimeter)",
+            unit: cm, range: [0..6000], every: 50,
+            ignore: (rel_d_slow_end < 0cm or rel_d_slow_end > 6000cm))

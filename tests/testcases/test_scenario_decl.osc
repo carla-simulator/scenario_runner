@@ -1,0 +1,12 @@
+scenario pass_ego:
+    ego: vehicle
+    passing_car: vehicle
+
+    do parallel:
+        ego.drive() with:
+            lane(right_of: ego, at: start)
+            speed(50kph)
+
+        passing_car.drive() with:
+            lane(left_of: ego)
+            speed(70kph)

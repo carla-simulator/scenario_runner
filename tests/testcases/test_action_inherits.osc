@@ -1,0 +1,12 @@
+# action declaration
+action base :
+    position: position_3d
+    route_point: route_point
+    odr_point: odr_point
+
+# action inherit
+action movable_object.assign_position inherits base (condition == true):
+    position: position_3d
+    route_point: route_point
+    odr_point: odr_point
+

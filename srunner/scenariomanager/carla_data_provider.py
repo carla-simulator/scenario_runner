@@ -63,6 +63,17 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _traffic_manager_port = 8000
     _random_seed = 2000
     _rng = random.RandomState(_random_seed)
+    _local_planner = None
+    
+    @staticmethod
+    def set_local_planner(plan):
+        
+        CarlaDataProvider._local_planner = plan
+        
+    @staticmethod
+    def get_local_planner():
+        
+        return CarlaDataProvider._local_planner    
 
     @staticmethod
     def register_actor(actor):
@@ -166,6 +177,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         for key in CarlaDataProvider._actor_transform_map:
             if key.id == actor.id:
+                # The velocity location information is the entire behavior tree updated every tick
+                # The ego vehicle is created before the behavior tree tick, so exception handling needs to be added
+                if CarlaDataProvider._actor_transform_map[key] == None:
+                    return actor.get_transform()
                 return CarlaDataProvider._actor_transform_map[key]
 
         # We are intentionally not throwing here
@@ -426,10 +441,145 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Generate spawn points for the current map
         """
-        spawn_points = list(CarlaDataProvider.get_map(CarlaDataProvider._world).get_spawn_points())
-        CarlaDataProvider._rng.shuffle(spawn_points)
+        if CarlaDataProvider._spawn_points is not None:
+            return
+
+        map = CarlaDataProvider.get_map(CarlaDataProvider._world)
+        # According to the map constraints, filter out the generation points that do not meet the requirements
+        wps = map.get_spawn_points()
+        spawn_points = []
+        import srunner.osc2_stdlib.path as osc2_path
+        for p in wps:
+            if osc2_path.Path.check(p): 
+                spawn_points.append(p)
+
+                wp = map.get_waypoint(p.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+
+        # print(len(wps))
+        # spawn_points = list(filter(osc2_path.Path.check, map.get_spawn_points()))
+
+        # valid_points = []
+        # _count = 0
+        # for pos in spawn_points:
+        #     print('-------------------------------------')
+        #     if osc2_path.Path.check(pos):
+        #         valid_points.append(pos)
+        #     _count += 1
+        #     # if _count == 50:
+        #     #     break
+                
+        # spawn_points = list(map.get_spawn_points())
+        # According to the map constraints, filter out the generation points that do not meet the requirements
+        # print('before path check', len(spawn_points))
+        # new_pos_list = filter(osc2_path.Path.check, spawn_points)
+        # print('fdsafdsafds')
+        # # print(type(new_pos_list))
+        # # spawn_points = list(new_pos_list)
+        # print(len(new_pos_list.__sizeof__))
+        # spawn_points = []
+        # for p in new_pos_list:
+        #     spawn_points.append(p)
+        # print('after path check', len(spawn_points))
+        import random as rd
+
+        # CarlaDataProvider._rng.shuffle(spawn_points)
+        print(f"{len(spawn_points)} spawn_points avialable")
+        rd.shuffle(spawn_points)
         CarlaDataProvider._spawn_points = spawn_points
+
+
         CarlaDataProvider._spawn_index = 0
+
+
+    @staticmethod
+    def check_road_length(wp, length: float):
+        waypoint_separation = 5
+
+        cur_len = 0
+        road_id, lane_id = wp.road_id, wp.lane_id
+        while True:
+            wps = wp.next(waypoint_separation)
+            # The same roadid and laneid，judged to be in the same section to be tested
+            next_wp = None
+            for p in wps:
+                if p.road_id == road_id and p.lane_id == lane_id:
+                    next_wp = p
+                    break
+            if next_wp is None:
+                break
+            # print(f"next wp roadid={next_wp.road_id},laneid={next_wp.lane_id}")
+            cur_len += waypoint_separation
+            if cur_len >= length:
+                return True
+            wp = next_wp
+        return False
+
+    @staticmethod
+    def get_road_lanes(wp):
+        if wp.is_junction:
+            return []
+        # find the most left lane's waypoint
+
+        lane_id_set = set()
+        pre_left = wp
+        while wp and wp.lane_type == carla.LaneType.Driving:
+
+            if wp.lane_id in lane_id_set:
+                break
+            lane_id_set.add(wp.lane_id)
+
+            # carla bug: get_left_lane returns error，and never returns none. It's a infinite loop.
+            pre_left = wp
+            wp = wp.get_left_lane()
+
+        # print(lane_id_set)
+        # # Store data from the left lane to the right lane
+        # # list<key, value>, key=laneid, value=waypoint
+        lane_list = []
+        lane_id_set.clear()
+        # print(wp.lane_id)
+        # wp = wp.get_right_lane() if wp else None
+        # print(wp.lane_id)
+        wp = pre_left
+        while wp and wp.lane_type == carla.LaneType.Driving:
+            
+            if wp.lane_id in lane_id_set:
+                break
+            lane_id_set.add(wp.lane_id)
+            
+            lane_list.append(wp)
+
+            # carla bug: returns error, never return none, endless loop
+            wp = wp.get_right_lane()
+
+        return lane_list
+
+    @staticmethod
+    def get_road_lane_cnt(wp):
+        lanes = CarlaDataProvider.get_road_lanes(wp)
+        return len(lanes)
+
+    @staticmethod
+    def get_waypoint_by_laneid(lane_num: int):
+        if CarlaDataProvider._spawn_points is None:
+            CarlaDataProvider.generate_spawn_points()
+        
+        if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
+            print("No more spawn points to use")
+            return None
+        else:
+            pos = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
+            CarlaDataProvider._spawn_index += 1
+            wp = CarlaDataProvider.get_map().get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+
+            road_lanes = CarlaDataProvider.get_road_lanes(wp)
+
+            lane = int(float(lane_num))
+            if lane > len(road_lanes):
+                return None
+            else:
+                return road_lanes[lane -1]
+
 
     @staticmethod
     def create_blueprint(model, rolename='scenario', color=None, actor_category="car", safe=False):
@@ -579,6 +729,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         else:
             CarlaDataProvider._world.wait_for_tick()
 
+        if actor is None:
+            return None
+
         CarlaDataProvider._carla_actor_pool[actor.id] = actor
         CarlaDataProvider.register_actor(actor)
         return actor
@@ -601,6 +754,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         SetVehicleLightState = carla.command.SetVehicleLightState  # pylint: disable=invalid-name
 
         batch = []
+        actors = []
 
         CarlaDataProvider.generate_spawn_points()
 
@@ -650,6 +804,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             batch.append(command)
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
+
+        if not actors:
+            return None
+
         for actor in actors:
             if actor is None:
                 continue
@@ -751,6 +909,15 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             return CarlaDataProvider._carla_actor_pool[actor_id]
 
         print("Non-existing actor id {}".format(actor_id))
+        return None
+
+    @staticmethod
+    def get_actor_by_name(role_name: str):
+
+        for actor_id in CarlaDataProvider._carla_actor_pool:
+            if CarlaDataProvider._carla_actor_pool[actor_id].attributes['role_name'] == role_name:
+                return CarlaDataProvider._carla_actor_pool[actor_id]
+        print(f"Non-existing actor name {role_name}")
         return None
 
     @staticmethod
