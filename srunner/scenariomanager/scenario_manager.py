@@ -64,8 +64,6 @@ class ScenarioManager(object):
         self.scenario_duration_game = 0.0
         self.start_system_time = None
         self.end_system_time = None
-        
-        self.data_bridge = None
 
     def _reset(self):
         """
@@ -128,8 +126,6 @@ class ScenarioManager(object):
         self._watchdog = Watchdog(float(self._timeout))
         self._watchdog.start()
         self._running = True
-        
-        self.data_bridge.update_ego_vehicle_start(self.ego_vehicles[0])
 
         while self._running:
             timestamp = None
@@ -140,7 +136,6 @@ class ScenarioManager(object):
                     timestamp = snapshot.timestamp
             if timestamp:
                 self._tick_scenario(timestamp)
-                self.data_bridge.update_trace()
 
         self.cleanup()
 
