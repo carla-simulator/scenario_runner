@@ -42,7 +42,6 @@ from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 from srunner.tools.osc2_helper import OSC2Helper
-from data_bridge import DataBridge
 
 # Version of scenario_runner
 VERSION = '0.9.13'
@@ -404,11 +403,11 @@ class ScenarioRunner(object):
                                          config=config,
                                          debug_mode=self._args.debug)
             #OSC2
-            elif self._args.osc2:
+            elif self._args.openscenario2:
                 scenario = OSC2Scenario(world=self.world,
                                         ego_vehicles=self.ego_vehicles,
                                         config=config,
-                                        osc2_file=self._args.osc2,
+                                        osc2_file=self._args.openscenario2,
                                         timeout=100000)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
@@ -436,10 +435,8 @@ class ScenarioRunner(object):
 
             # Load scenario and run it
             self.manager.load_scenario(scenario, self.agent_instance)
-            self.manager.data_bridge = DataBridge(self.world)
             
             self.manager.run_scenario()
-            self.manager.data_bridge.end_trace()
 
             # Provide outputs if required
             self._analyze_scenario(config)
@@ -534,12 +531,12 @@ class ScenarioRunner(object):
         """
 
         # Load the scenario configurations provided in the config file
-        if not os.path.isfile(self._args.osc2):
+        if not os.path.isfile(self._args.openscenario2):
             print("File does not exist")
             self._cleanup()
             return False
 
-        config = OSC2ScenarioConfiguration(self._args.osc2, self.client)
+        config = OSC2ScenarioConfiguration(self._args.openscenario2, self.client)
 
         result = self._load_and_run_scenario(config)
         self._cleanup()
@@ -556,7 +553,7 @@ class ScenarioRunner(object):
         elif self._args.route:
             result = self._run_route()
         #OSC2
-        elif self._args.osc2:
+        elif self._args.openscenario2:
             result = self._run_osc2()
         else:
             result = self._run_scenarios()
@@ -594,7 +591,7 @@ def main():
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
-    parser.add_argument('--osc2', help='Provide an osc2 definition')
+    parser.add_argument('--openscenario2', help='Provide an openscenario2 definition')
     parser.add_argument(
         '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
 
@@ -630,7 +627,7 @@ def main():
         print(*ScenarioConfigurationParser.get_list_of_scenarios(arguments.configFile), sep='\n')
         return 1
 
-    if not arguments.scenario and not arguments.openscenario and not arguments.route and not arguments.osc2:
+    if not arguments.scenario and not arguments.openscenario and not arguments.route and not arguments.openscenario2:
         print("Please specify either a scenario or use the route mode\n\n")
         parser.print_help(sys.stdout)
         return 1
