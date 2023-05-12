@@ -1,120 +1,64 @@
-# osc2-runner
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/carla-simulator/scenario_runner.svg)
+[![Build Status](https://travis-ci.com/carla-simulator/scenario_runner.svg?branch=master)](https://travis-ci.com/carla/scenario_runner)
 
-This project is aimed at autonomous driving simulation, 
-using OpenScenario2.0 as the scene description language specification, 
-designing and implementing a corresponding compilation system, 
-which can automatically convert the test scenario described in OpenScenario2.0 
-into a scenario runner-based test scenario, 
-thereby using Carla for autonomous driving testing.
+ScenarioRunner for CARLA
+========================
+This repository contains traffic scenario definition and an execution engine
+for CARLA. It also allows the execution of a simulation of the CARLA Challenge.
+You can use this system to prepare your agent for the CARLA Challenge.
 
-## Install
+Scenarios can be defined through a Python interface, and with the newest version
+the scenario_runner also the upcoming [OpenSCENARIO](http://www.openscenario.org/) standard and [OpenSCENARIO 2.0](https://www.asam.net/standards/detail/openscenario/v200/) standard is supported.
 
-**1. Install Carla**
+[![Scenario_Runner for CARLA](Docs/img/scenario_runner_video.png)](https://youtu.be/ChmF8IFagpo?t=68)
 
-Currently, the project is being developed using scenario runner 0.9.13, so it is necessary to install Carla-0.9.13 accordingly.
+Getting the ScenarioRunner
+---------------------------
 
-```bash
-wget https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.13.tar.gz
-tar -zxvf CARLA_0.9.13.tar.gz
-```
+Use `git clone` or download the project from this page. Note that the master
+branch contains the latest fixes and features, and may be required to use the latest features from CARLA.
 
-Add at the end of "~/.bashrc".
+It is important to also consider the release version that has to match the CARLA version.
 
-```bash
-export CARLA_ROOT=/home/xxx/CARLA_0.9.13
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.13-py3.7-linux-x86_64.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla/agents/navigation:${CARLA_ROOT}/PythonAPI/carla:${CARLA_ROOT}/PythonAPI/examples:${CARLA_ROOT}/PythonAPI
-```
+* [Version 0.9.13](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.13) and the 0.9.13 Branch: Compatible with [CARLA 0.9.13](https://github.com/carla-simulator/carla/releases/tag/0.9.13)
+* [Version 0.9.12](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.12) and the 0.9.12 Branch: Compatible with [CARLA 0.9.12](https://github.com/carla-simulator/carla/releases/tag/0.9.12)
+* [Version 0.9.11](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.11) and the 0.9.11 Branch: Compatible with [CARLA 0.9.11](https://github.com/carla-simulator/carla/releases/tag/0.9.11)
+* [Version 0.9.10](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.10) and the 0.9.10 Branch: Compatible with [CARLA 0.9.10](https://github.com/carla-simulator/carla/releases/tag/0.9.10)
+* [Version 0.9.9](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.9) and the 0.9.9 Branch: Compatible with [CARLA 0.9.9](https://github.com/carla-simulator/carla/releases/tag/0.9.9). Use the 0.9.9 branch, if you use CARLA 0.9.9.4.
+* [Version 0.9.8](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.8) and the 0.9.8 Branch: Compatible with [CARLA 0.9.8](https://github.com/carla-simulator/carla/releases/tag/0.9.8)
+* [Version 0.9.7](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.7) and the 0.9.7 Branch: Compatible with [CARLA 0.9.7](https://github.com/carla-simulator/carla/releases/tag/0.9.7) but not with the later release patch versions.
+* [Version 0.9.6](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.6) and the 0.9.6 Branch: Compatible with [CARLA 0.9.6](https://github.com/carla-simulator/carla/releases/tag/0.9.6)
+* [Version 0.9.5](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.5) and [Version 0.9.5.1](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.5.1): Compatible with [CARLA 0.9.5](https://github.com/carla-simulator/carla/releases/tag/0.9.5)
+* [Version 0.9.2](https://github.com/carla-simulator/scenario_runner/releases/tag/0.9.2): Compatible with [CARLA 0.9.2](https://github.com/carla-simulator/carla/releases/tag/0.9.2)
 
-**2. Install JDK**
-```
-sudo apt install openjdk-17-jdk
-```
-After installation is complete, execute the command to confirm.
-```
-$ java -version
-```
-The output is as follows.
-```
-openjdk version "17.0.5" 2022-10-18
-OpenJDK Runtime Environment (build 17.0.5+8-Ubuntu-2ubuntu120.04)
-OpenJDK 64-Bit Server VM (build 17.0.5+8-Ubuntu-2ubuntu120.04, mixed mode, sharing)
-```
+To use a particular version you can either download the corresponding tarball or simply checkout the version tag associated to the release (e.g. git checkout v0.9.5)
 
-**3. Install Antlr**
-```
-sudo apt install curl
-curl -O https://www.antlr.org/download/antlr-4.10.1-complete.jar
-```
-```
-$ sudo cp antlr-4.10.1-complete.jar /usr/local/lib/
-```
-The following three steps are used to configure environment variables and create aliases so that antlr4 can be easily used from the command line.
-```
-$ sudo gedit ~/.bashrc
-```
-Add the following content at the end.
-```
-export CLASSPATH=".:/usr/local/lib/antlr-4.10.1-complete.jar:$CLASSPATH"
-alias antlr4='java -jar /usr/local/lib/antlr-4.10.1-complete.jar'
-alias grun='java org.antlr.v4.gui.TestRig'
-```
-Execute the command to make the changes take effect.
-```
-source ~/.bashrc
-```
-Enter "antlr4" in the terminal to verify.
-```
-$ antlr4
-ANTLR Parser Generator  Version 4.10.1
- -o ___              specify output directory where all output is generated
- -lib ___            specify location of grammars, tokens files
- -atn                generate rule augmented transition network diagrams
- -encoding ___       specify grammar file encoding; e.g., euc-jp
- -message-format ___ specify output style for messages in antlr, gnu, vs2005
- -long-messages      show exception details when available for errors and warnings
- -listener           generate parse tree listener (default)
- -no-listener        don't generate parse tree listener
- -visitor            generate parse tree visitor
- -no-visitor         don't generate parse tree visitor (default)
- -package ___        specify a package/namespace for the generated code
- -depend             generate file dependencies
- -D<option>=value    set/override a grammar-level option
- -Werror             treat warnings as errors
- -XdbgST             launch StringTemplate visualizer on generated code
- -XdbgSTWait         wait for STViz to close before continuing
- -Xforce-atn         use the ATN simulator for all predictions
- -Xlog               dump lots of logging info to antlr-timestamp.log
- -Xexact-output-dir  all output goes into -o dir regardless of paths/package
-```
+Currently no build is required, as all code is in Python.
 
-**4. Install python dependencies**
+Using the ScenarioRunner
+------------------------
 
-Execute in the project directory.
-```
-pip install -r requirements.txt
-```
+Please take a look at our [Getting started](Docs/getting_scenariorunner.md)
+documentation.
 
-**5. Install graphviz**
-```
-sudo apt-get install graphviz
-```
+Challenge Evaluation
+---------------------
 
-## QuickStart
+The CARLA Challenge has moved to the [CARLA Autonomous Driving Leaderboard](https://leaderboard.carla.org/). Please see the [leaderboard repository](https://github.com/carla-simulator/leaderboard) and the [getting started guide](https://leaderboard.carla.org/get_started/) for more information.
 
-**1. Run carla**
+Contributing
+------------
 
-Execute in the Carla directory.
-```bash
-./CarlaUE4.sh &
-```
+Please take a look at our [Contribution guidelines](https://carla.readthedocs.io/en/latest/#contributing).
 
-**2. Start manual_control**
-```
-python manual_control.py -a 
-```
+FAQ
+------
 
-**3. Run a scenario**
-```
-python scenario_runner.py --sync  --osc2 srunner/examples/cut_in_and_slow_right.osc --reloadWorld 
-```
+If you run into problems, check our
+[FAQ](http://carla.readthedocs.io/en/latest/faq/).
 
+License
+-------
+
+ScenarioRunner specific code is distributed under MIT License.
