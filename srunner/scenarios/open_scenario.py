@@ -333,39 +333,73 @@ class OpenScenario(BasicScenario):
                                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
                                 name="Maneuver " + maneuver.attrib.get('name'))
                             for event in maneuver.iter("Event"):
+
                                 event_sequence = py_trees.composites.Sequence(
                                     name="Event " + event.attrib.get('name'))
                                 parallel_actions = py_trees.composites.Parallel(
                                     policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="Actions")
+                                
+                                # 判断是否存在action标签
+                                ifAction=False
                                 for child in event.iter():
-                                    if child.tag == "Action":
-                                        for actor_id in actor_ids:
-                                            maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
-                                                child, joint_actor_list[actor_id],
-                                                joint_actor_list, self.config.catalogs)
-                                            maneuver_behavior = StoryElementStatusToBlackboard(
-                                                maneuver_behavior, "ACTION", child.attrib.get('name'))
-                                            parallel_actions.add_child(
-                                                oneshot_with_check(variable_name=  # See note in get_xml_path
-                                                                   get_xml_path(story, sequence) + '>' + \
-                                                                   get_xml_path(maneuver, child) + '>' + \
-                                                                   str(actor_id),
-                                                                   behaviour=maneuver_behavior))
+                                    if child.tag=="Action":
+                                        ifAction=True
 
-                                    if child.tag == "StartTrigger":
-                                        # There is always one StartConditions block per Event
-                                        parallel_condition_groups = self._create_condition_container(
-                                            child, story, "Parallel Condition Groups", sequence, maneuver)
-                                        event_sequence.add_child(
-                                            parallel_condition_groups)
+                                # 如果存在正常构建
+                                if ifAction:
+                                    for child in event.iter():
 
-                                parallel_actions = StoryElementStatusToBlackboard(
-                                    parallel_actions, "EVENT", event.attrib.get('name'))
-                                event_sequence.add_child(parallel_actions)
+                                        if child.tag == "Action":
+                                            for actor_id in actor_ids:
+                                                maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
+                                                    child, joint_actor_list[actor_id],
+                                                    joint_actor_list, self.config.catalogs)
+                                                maneuver_behavior = StoryElementStatusToBlackboard(
+                                                    maneuver_behavior, "ACTION", child.attrib.get('name'))
+                                                parallel_actions.add_child(
+                                                    oneshot_with_check(variable_name=  # See note in get_xml_path
+                                                                    get_xml_path(story, sequence) + '>' + \
+                                                                    get_xml_path(maneuver, child) + '>' + \
+                                                                    str(actor_id),
+                                                                    behaviour=maneuver_behavior))
+
+                                        if child.tag == "StartTrigger":
+                                            # There is always one StartConditions block per Event
+                                            parallel_condition_groups = self._create_condition_container(
+                                                child, story, "Parallel Condition Groups", sequence, maneuver)
+                                            event_sequence.add_child(
+                                                parallel_condition_groups)
+                                    
+                                    # event_start=self._create_event_start(event.attrib.get('name'))
+                                    # event_sequence.add_child(event_start)
+
+                                    parallel_actions = StoryElementStatusToBlackboard(parallel_actions, "EVENT", event.attrib.get('name'))
+                                    event_sequence.add_child(parallel_actions)
+
+
+                                    
+                                if not ifAction:
+                                    # 如果不存在，则特殊构建action
+                                    for child in event.iter():
+                                        if child.tag == "StartTrigger":
+                                            # There is always one StartConditions block per Event
+                                            parallel_condition_groups = self._create_condition_container(
+                                                child, story, "Parallel Condition Groups", sequence, maneuver)
+                                            event_sequence.add_child(
+                                                parallel_condition_groups)
+                                            
+                                            eventExecution=self._create_event_execution(get_xml_path(act,event))
+                                            event_sequence.add_child(eventExecution)
+                                            
+
+                                
                                 maneuver_parallel.add_child(
                                     oneshot_with_check(variable_name=get_xml_path(story, sequence) + '>' +
                                                        get_xml_path(maneuver, event),  # See get_xml_path
                                                        behaviour=event_sequence))
+                                
+
+
                             maneuver_parallel = StoryElementStatusToBlackboard(
                                 maneuver_parallel, "MANEUVER", maneuver.attrib.get('name'))
                             single_sequence_iteration.add_child(
@@ -473,13 +507,22 @@ class OpenScenario(BasicScenario):
 
                 criterion = oneshot_with_check(variable_name=xml_path, behaviour=criterion)
 
-                print('----------------------')
                 condition_group_sequence.add_child(criterion)
 
             if condition_group_sequence.children:
                 parallel_condition_groups.add_child(condition_group_sequence)
 
         return parallel_condition_groups
+    
+    def _create_event_execution(self,name):
+        criterion = OpenScenarioParser.create_event_execution(name)
+        return criterion
+    
+    def _create_event_start(self,name):
+        criterion = OpenScenarioParser.create_event_start(name)
+        return criterion
+
+
 
     def _create_test_criteria(self):
         """

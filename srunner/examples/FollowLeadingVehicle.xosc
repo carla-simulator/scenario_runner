@@ -127,15 +127,9 @@
               <StartTrigger>
                 <ConditionGroup>
                   <Condition name="StartConditionLeadingVehicleKeepsVelocity" delay="0" conditionEdge="rising">
-                    <ByEntityCondition>
-                      <TriggeringEntities triggeringEntitiesRule="any">
-                        <EntityRef entityRef="hero"/>
-                      </TriggeringEntities>
-                      <EntityCondition>
-<!--                        <RelativeDistanceCondition entityRef="adversary" relativeDistanceType="cartesianDistance" value="40.0" freespace="false" rule="lessThan"/>-->
-                        <RelativeDistanceCondition entityRef="adversary" relativeDistanceType="longitudinal" value="40.0" freespace="true" rule="lessThan"/>
-                      </EntityCondition>
-                    </ByEntityCondition>
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="3" rule="greaterThan"/>                   
+                    </ByValueCondition>
                   </Condition>
                 </ConditionGroup>
               </StartTrigger>
@@ -155,9 +149,9 @@
               </Action>
               <StartTrigger>
                 <ConditionGroup>
-                  <Condition name="AfterLeadingVehicleKeepsVelocity" delay="0" conditionEdge="rising">
+                  <Condition name="StartConditionLeadingVehicleKeepsVelocity" delay="0" conditionEdge="rising">
                     <ByValueCondition>
-                      <StoryboardElementStateCondition storyboardElementType="action" storyboardElementRef="LeadingVehicleKeepsVelocity" state="endTransition"/>
+                      <SimulationTimeCondition value="5" rule="greaterThan"/>                   
                     </ByValueCondition>
                   </Condition>
                 </ConditionGroup>
@@ -167,16 +161,6 @@
         </ManeuverGroup>
         <StartTrigger>
           <ConditionGroup>
-            <Condition name="OverallStartCondition" delay="0" conditionEdge="rising">
-              <ByEntityCondition>
-                <TriggeringEntities triggeringEntitiesRule="any">
-                  <EntityRef entityRef="hero"/>
-                </TriggeringEntities>
-                <EntityCondition>
-                  <TraveledDistanceCondition value="1.0"/>
-                </EntityCondition>
-              </ByEntityCondition>
-            </Condition>
             <Condition name="StartTime" delay="0" conditionEdge="rising">
               <ByValueCondition>
                 <SimulationTimeCondition value="0" rule="equalTo"/>

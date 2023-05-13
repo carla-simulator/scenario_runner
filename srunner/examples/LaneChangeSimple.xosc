@@ -132,29 +132,13 @@
           </Actors>
           <Maneuver name="LaneChangeSimpleManeuver">
             <Event name="AdversaryAccelerates" priority="overwrite">
-              <Action name="AdversaryAccelerates">
-                <PrivateAction>
-                  <LongitudinalAction>
-                    <SpeedAction>
-                      <SpeedActionDynamics dynamicsShape="step" value="50" dynamicsDimension="distance"/>
-                      <SpeedActionTarget>
-                        <AbsoluteTargetSpeed value="5.0"/>
-                      </SpeedActionTarget>
-                    </SpeedAction>
-                  </LongitudinalAction>
-                </PrivateAction>
-              </Action>
+
               <StartTrigger>
                 <ConditionGroup>
-                  <Condition name="StartCondition" delay="0" conditionEdge="rising">
-                    <ByEntityCondition>
-                      <TriggeringEntities triggeringEntitiesRule="any">
-                        <EntityRef entityRef="hero"/>
-                      </TriggeringEntities>
-                      <EntityCondition>
-                        <RelativeDistanceCondition entityRef="adversary" relativeDistanceType="cartesianDistance" value="40.0" freespace="false" rule="lessThan"/>
-                      </EntityCondition>
-                    </ByEntityCondition>
+                  <Condition name="StartTime" delay="0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="3" rule="greaterThan"/>
+                    </ByValueCondition>
                   </Condition>
                 </ConditionGroup>
               </StartTrigger>
@@ -174,9 +158,14 @@
               </Action>
               <StartTrigger>
                 <ConditionGroup>
-                  <Condition name="AfterAdversaryAccelerates" delay="0" conditionEdge="rising">
+                  <!-- <Condition name="AfterAdversaryAccelerates" delay="0" conditionEdge="rising">
                     <ByValueCondition>
                       <StoryboardElementStateCondition storyboardElementType="action" storyboardElementRef="AdversaryAccelerates" state="completeState"/>
+                    </ByValueCondition>
+                  </Condition> -->
+                  <Condition name="StartTime" delay="0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="2" rule="greaterThan"/>
                     </ByValueCondition>
                   </Condition>
                 </ConditionGroup>
@@ -186,16 +175,7 @@
         </ManeuverGroup>
         <StartTrigger>
           <ConditionGroup>
-            <Condition name="OverallStartCondition" delay="0" conditionEdge="rising">
-              <ByEntityCondition>
-                <TriggeringEntities triggeringEntitiesRule="any">
-                  <EntityRef entityRef="hero"/>
-                </TriggeringEntities>
-                <EntityCondition>
-                  <TraveledDistanceCondition value="1.0"/>
-                </EntityCondition>
-              </ByEntityCondition>
-            </Condition>
+
             <Condition name="StartTime" delay="0" conditionEdge="rising">
               <ByValueCondition>
                 <SimulationTimeCondition value="0" rule="equalTo"/>

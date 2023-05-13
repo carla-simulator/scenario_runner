@@ -37,7 +37,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.filename = filename
         self._custom_params = custom_params if custom_params is not None else {}
 
-        self._validate_openscenario_configuration()
+        # self._validate_openscenario_configuration()
         self.client = client
 
         self.catalogs = {}
@@ -179,6 +179,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         wmap = None
         if world:
             world.get_settings()
+            
             wmap = world.get_map()
 
         if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):

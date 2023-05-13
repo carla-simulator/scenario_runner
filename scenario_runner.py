@@ -29,7 +29,9 @@ import sys
 import time
 import json
 import pkg_resources
-
+import socket
+import struct
+import pickle
 import carla
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
@@ -550,7 +552,7 @@ def main():
 
     parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
-    parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
+    parser.add_argument('--openscenario',default='temp.xosc', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
     parser.add_argument(
         '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
@@ -623,6 +625,27 @@ def main():
             del scenario_runner
     return not result
 
+def listen():
+    server = socket.socket()         
+    server.bind(('127.0.0.1', 9001)) 
+    server.listen() 
+
+
+    # while True:
+    print("start.......")
+    sock,adddr = server.accept()
+    d = sock.recv(struct.calcsize("l"))
+    total_size = struct.unpack("l",d)
+    num  = total_size[0]//1024
+    data = b''
+    for i in range(num):
+        data += sock.recv(1024)
+    data += sock.recv(total_size[0]%1024)
+
+    scenefile=pickle.loads(data)
+    scenefile.write('temp.xosc')
+    
+    sock.close()
 
 if __name__ == "__main__":
     sys.exit(main())

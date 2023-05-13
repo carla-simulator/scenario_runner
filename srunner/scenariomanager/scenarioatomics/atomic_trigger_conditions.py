@@ -24,6 +24,7 @@ import operator
 import datetime
 import math
 import py_trees
+
 import carla
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -75,6 +76,42 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
         Default terminate. Can be extended in derived class
         """
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+class Eventexecute(AtomicCondition):
+    def __init__(self, name):
+        super(Eventexecute,self).__init__(name)
+        self.blackboard=py_trees.blackboard.Blackboard()
+
+    def update(self):
+        print(self.name)
+        print('----------------')
+
+        print(self.blackboard.__str__())
+        
+        # 在此处中断仿真并收集仿真状态
+        # 需要获取
+        # 1.当前事件的name
+        # 2.黑板字典
+        # 3.所有物体的位置速度等状态
+        # 4.记录历史状态类数据
+
+
+        return py_trees.common.Status.SUCCESS
+    
+    
+class Eventstart(AtomicCondition):
+    def __init__(self, name):
+        super(Eventexecute,self).__init__(name)
+        self.blackboard=py_trees.blackboard.Blackboard()
+
+    def update(self):
+        print("event to execute")
+
+        print(self.blackboard.keys())
+        
+        # 在此处中断仿真并收集仿真状态
+
+        return py_trees.common.Status.SUCCESS
 
 
 class InTriggerDistanceToOSCPosition(AtomicCondition):
@@ -576,6 +613,7 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         """
         Setup trigger distance
         """
+
         super(InTriggerDistanceToVehicle, self).__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._reference_actor = reference_actor
@@ -595,7 +633,7 @@ class InTriggerDistanceToVehicle(AtomicCondition):
         Check if the ego vehicle is within trigger distance to other actor
         """
         new_status = py_trees.common.Status.RUNNING
-
+        
         location = CarlaDataProvider.get_location(self._actor)
         reference_location = CarlaDataProvider.get_location(self._reference_actor)
 
@@ -610,6 +648,8 @@ class InTriggerDistanceToVehicle(AtomicCondition):
 
         if self._comparison_operator(distance, self._distance):
             new_status = py_trees.common.Status.SUCCESS
+            print('-------------RelativeDistanceCondition success----------------')
+            
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -1102,6 +1142,7 @@ class DriveDistance(AtomicCondition):
         if self._distance > self._target_distance:
             new_status = py_trees.common.Status.SUCCESS
 
+            
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
 

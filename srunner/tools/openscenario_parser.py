@@ -57,6 +57,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
                                                                      EndofRoadTest)
 # pylint: enable=unused-import
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
+                                                                               Eventexecute,
+                                                                               Eventstart,
                                                                                InTriggerDistanceToOSCPosition,
                                                                                InTimeToArrivalToOSCPosition,
                                                                                InTimeToArrivalToVehicle,
@@ -805,6 +807,18 @@ class OpenScenarioParser(object):
             raise NotImplementedError("Route positions are not yet supported")
         else:
             raise AttributeError("Unknown position")
+
+    @staticmethod
+    def create_event_execution(name):
+        atomic = Eventexecute(name)
+
+        return atomic
+    
+    @staticmethod
+    def create_event_start(name):
+        atomic = Eventstart(name)
+
+        return atomic
 
     @staticmethod
     def convert_condition_to_atomic(condition, actor_list):
