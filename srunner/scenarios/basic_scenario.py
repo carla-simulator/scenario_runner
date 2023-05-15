@@ -57,7 +57,10 @@ class BasicScenario(object):
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-        self._initialize_environment(world)
+        if self.route_mode:
+            # Only init env for route mode, avoid duplicate initialization during runtime
+            self._initialize_environment(world)
+            
         self._initialize_actors(config)
 
         if CarlaDataProvider.is_sync_mode():
