@@ -95,9 +95,9 @@ class ScenarioRunner(object):
 
         self.traffic_manager = self.client.get_trafficmanager(int(self._args.trafficManagerPort))
 
-        #dist = pkg_resources.get_distribution("carla")
-        #if LooseVersion(dist.version) < LooseVersion('0.9.12'):
-        #    raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
+        dist = pkg_resources.get_distribution("carla")
+        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
+            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -140,7 +140,7 @@ class ScenarioRunner(object):
             self.manager.stop_scenario()
             self._cleanup()
             if not self.manager.get_running_status():
-                raise RuntimeError("Timeout occured during scenario execution")
+                raise RuntimeError("Timeout occurred during scenario execution")
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -238,8 +238,6 @@ class ScenarioRunner(object):
                         break
 
             for i, _ in enumerate(self.ego_vehicles):
-                #self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
-                CarlaDataProvider.register_ego_actor(self.ego_vehicles[i])
                 CarlaDataProvider.register_actor(self.ego_vehicles[i])
 
         # sync state
@@ -361,7 +359,6 @@ class ScenarioRunner(object):
 
         return True
 
-    # 这里顺序必须是先加载世界，然后调用行为树
     def _load_and_run_scenario(self, config):
         """
         Load and run the scenario given by config
@@ -402,7 +399,6 @@ class ScenarioRunner(object):
                 scenario = RouteScenario(world=self.world,
                                          config=config,
                                          debug_mode=self._args.debug)
-            #OSC2
             elif self._args.openscenario2:
                 scenario = OSC2Scenario(world=self.world,
                                         ego_vehicles=self.ego_vehicles,
@@ -425,17 +421,12 @@ class ScenarioRunner(object):
 
         try:
             if self._args.record:
-                # recorder_name = "{}/{}.log".format(
-                #     os.getenv('SCENARIO_RUNNER_ROOT'), self._args.record)
-                
-                # 保存至当前目录下
-                recorder_name = "{}/{}.log".format(
-                    os.path.abspath('.'), self._args.record)
+                recorder_name = "{}/{}/{}.log".format(
+                    os.getenv('SCENARIO_RUNNER_ROOT', "./"), self._args.record, config.name)
                 self.client.start_recorder(recorder_name, True)
 
             # Load scenario and run it
             self.manager.load_scenario(scenario, self.agent_instance)
-            
             self.manager.run_scenario()
 
             # Provide outputs if required
@@ -527,9 +518,9 @@ class ScenarioRunner(object):
 
     def _run_osc2(self):
         """
-        Run a scenario based on osc2
+        Run a scenario based on ASAM OpenSCENARIO 2.0.
+        https://www.asam.net/static_downloads/public/asam-openscenario/2.0.0/welcome.html
         """
-
         # Load the scenario configurations provided in the config file
         if not os.path.isfile(self._args.openscenario2):
             print("File does not exist")
@@ -552,7 +543,6 @@ class ScenarioRunner(object):
             result = self._run_openscenario()
         elif self._args.route:
             result = self._run_route()
-        #OSC2
         elif self._args.openscenario2:
             result = self._run_osc2()
         else:
