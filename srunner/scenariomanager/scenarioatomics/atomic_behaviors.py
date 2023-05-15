@@ -41,7 +41,6 @@ from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
 from srunner.tools.scenario_helper import generate_target_waypoint_list_multilane
-from srunner.tools.osc2_helper import OSC2Helper
 
 
 import srunner.tools as sr_tools
@@ -885,6 +884,8 @@ class ChangeActorWaypoints(AtomicBehavior):
         remaining_dist = calculate_distance(CarlaDataProvider.get_location(self._actor), target_location)
         target_speed = remaining_dist / max(remaining_time, 0.001)
         actor.update_target_speed(target_speed)
+
+
 class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
 
     """
@@ -943,6 +944,7 @@ class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
             self._waypoints.append(elem[0].transform)
 
         super(ChangeActorWaypointsToReachPosition, self).initialise()
+
 
 class ChangeActorLateralMotion(AtomicBehavior):
 
@@ -1386,7 +1388,6 @@ class AccelerateToVelocity(AtomicBehavior):
         return new_status
 
 
-# by liusp
 class UniformAcceleration(AtomicBehavior):
 
     """
@@ -1458,7 +1459,6 @@ class UniformAcceleration(AtomicBehavior):
         return new_status
 
 
-# add by zyy
 class ChangeTargetSpeed(AtomicBehavior):
 
     """
@@ -1520,7 +1520,6 @@ class ChangeTargetSpeed(AtomicBehavior):
         return new_status
 
 
-# add by zyy, used in cut_in.py
 class DecelerateToVelocity(AtomicBehavior):
 
     """
@@ -1575,6 +1574,7 @@ class DecelerateToVelocity(AtomicBehavior):
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
         return new_status
+
 
 class AccelerateToCatchUp(AtomicBehavior):
 
@@ -2118,13 +2118,6 @@ class Idle(AtomicBehavior):
         return new_status
 
 
-def send_actor_control(actor, control):
-    
-    if OSC2Helper.wait_for_ego and actor.attributes['role_name'] == OSC2Helper.ego_name:
-        pass
-    else:
-        actor.apply_control(control)
-
 class WaypointFollower(AtomicBehavior):
 
     """
@@ -2194,7 +2187,6 @@ class WaypointFollower(AtomicBehavior):
         If this is the case, a termination signal is sent to the running behavior.
         """
         super(WaypointFollower, self).initialise()
-        # add by zyy
         self._start_time = GameTime.get_time()
         self._unique_id = int(round(time.time() * 1e9))
         try:
@@ -2252,8 +2244,6 @@ class WaypointFollower(AtomicBehavior):
 
             self._local_planner_dict[actor] = local_planner
             self._actor_dict[actor] = self._plan
-            if actor is CarlaDataProvider.get_actor_by_name("ego_vehicle"):
-                CarlaDataProvider.set_local_planner(local_planner)
 
     def update(self):
         """

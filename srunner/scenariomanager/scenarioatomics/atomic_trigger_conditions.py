@@ -77,7 +77,6 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
 
-# extra add
 class IfTriggerer(AtomicCondition):
 
     def __init__(self, actor_ego, actor_npc, comparison_operator=operator.gt, name="IfTriggerer"):
@@ -101,7 +100,6 @@ class IfTriggerer(AtomicCondition):
         return new_status
 
 
-# extra add
 class TimeOfWaitComparison(AtomicCondition):
     def __init__(self, duration_time, name="TimeOfWaitComparison"):
         super(TimeOfWaitComparison, self).__init__(name)
@@ -120,7 +118,6 @@ class TimeOfWaitComparison(AtomicCondition):
         return new_status
 
 
-# extra add
 class InTriggerNearCollision(AtomicCondition):
     def __init__(self, reference_actor, actor, distance, comparison_operator=operator.lt,
                  name="InTriggerNearCollision"):
@@ -128,7 +125,7 @@ class InTriggerNearCollision(AtomicCondition):
         Setup trigger distance
         """
         super(InTriggerNearCollision, self).__init__(name)
-        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self.logger.debug("%s.__init__()" % self.__class__.__name__)
         self._reference_actor = reference_actor
         self._actor = actor
         self._distance = distance

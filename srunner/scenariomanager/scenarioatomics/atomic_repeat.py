@@ -1,53 +1,3 @@
-# import typing
-# from py_trees import behaviour, composites, common
-#
-# # add by zyy
-# class Repeat(behaviour.Behaviour):
-#     def __init__(self, name: str="Repeat", count: int=1, children=None):
-#         super().__init__(name)
-#         self.period = count
-#         self.count = 0
-#         self.child = []
-#         # if children is None:
-#         #     self.children = []
-#         #     self.child = None
-#         # else:
-#             # self.children.append(composites.Sequence("Sequence", children=children))
-#             # self.child = self.children[0]
-#         if children is not None:
-#             for child in children:
-#                 self.add_child(child)
-#         else:
-#             self.children = []
-#
-#     def add_child(self, child):
-#         """
-#         Adds a child.
-#
-#         Args:
-#             child (:class:`~py_trees.behaviour.Behaviour`): child to add
-#
-#         Returns:
-#             uuid.UUID: unique id of the child
-#         """
-#         assert isinstance(child, behaviour.Behaviour), "children must be behaviours, but you passed in %s" % type(child)
-#         self.child.append(child)
-#         child.parent = self
-#         return child.id
-#
-#     def update(self):
-#         self.logger.debug("%s.update()" % self.__class__.__name__)
-#         # for child in self.children:
-#         #     child.tick_once()
-#         self.child.tick_once()
-#
-#         if self.child.status == common.Status.FAILURE or self.child.status == common.Status.SUCCESS:
-#             self.count += 1
-#
-#         if self.count < self.period:
-#             return common.Status.RUNNING
-#         else:
-#             return common.Status.SUCCESS
 from py_trees import behaviour, common
 
 
@@ -131,7 +81,6 @@ class Decorator(behaviour.Behaviour):
             return self.decorated.tip()
         else:
             return super().tip()
-
 
 
 class SuccessIsRunning(Decorator):
