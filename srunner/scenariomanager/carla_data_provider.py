@@ -67,12 +67,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     
     @staticmethod
     def set_local_planner(plan):
-        
         CarlaDataProvider._local_planner = plan
         
     @staticmethod
     def get_local_planner():
-        
         return CarlaDataProvider._local_planner    
 
     @staticmethod
@@ -179,7 +177,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if key.id == actor.id:
                 # The velocity location information is the entire behavior tree updated every tick
                 # The ego vehicle is created before the behavior tree tick, so exception handling needs to be added
-                if CarlaDataProvider._actor_transform_map[key] == None:
+                if CarlaDataProvider._actor_transform_map[key] is None:
                     return actor.get_transform()
                 return CarlaDataProvider._actor_transform_map[key]
 
@@ -441,55 +439,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Generate spawn points for the current map
         """
-        if CarlaDataProvider._spawn_points is not None:
-            return
-
-        map = CarlaDataProvider.get_map(CarlaDataProvider._world)
-        # According to the map constraints, filter out the generation points that do not meet the requirements
-        wps = map.get_spawn_points()
-        spawn_points = []
-        import srunner.osc2_stdlib.path as osc2_path
-        for p in wps:
-            if osc2_path.Path.check(p): 
-                spawn_points.append(p)
-
-                wp = map.get_waypoint(p.location, project_to_road=True, lane_type=carla.LaneType.Driving)
-
-        # print(len(wps))
-        # spawn_points = list(filter(osc2_path.Path.check, map.get_spawn_points()))
-
-        # valid_points = []
-        # _count = 0
-        # for pos in spawn_points:
-        #     print('-------------------------------------')
-        #     if osc2_path.Path.check(pos):
-        #         valid_points.append(pos)
-        #     _count += 1
-        #     # if _count == 50:
-        #     #     break
-                
-        # spawn_points = list(map.get_spawn_points())
-        # According to the map constraints, filter out the generation points that do not meet the requirements
-        # print('before path check', len(spawn_points))
-        # new_pos_list = filter(osc2_path.Path.check, spawn_points)
-        # print('fdsafdsafds')
-        # # print(type(new_pos_list))
-        # # spawn_points = list(new_pos_list)
-        # print(len(new_pos_list.__sizeof__))
-        # spawn_points = []
-        # for p in new_pos_list:
-        #     spawn_points.append(p)
-        # print('after path check', len(spawn_points))
-        import random as rd
-
-        # CarlaDataProvider._rng.shuffle(spawn_points)
-        print(f"{len(spawn_points)} spawn_points avialable")
-        rd.shuffle(spawn_points)
+        spawn_points = list(CarlaDataProvider.get_map(CarlaDataProvider._world).get_spawn_points())
+        CarlaDataProvider._rng.shuffle(spawn_points)
         CarlaDataProvider._spawn_points = spawn_points
-
-
         CarlaDataProvider._spawn_index = 0
-
 
     @staticmethod
     def check_road_length(wp, length: float):
@@ -507,7 +460,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     break
             if next_wp is None:
                 break
-            # print(f"next wp roadid={next_wp.road_id},laneid={next_wp.lane_id}")
             cur_len += waypoint_separation
             if cur_len >= length:
                 return True
@@ -532,14 +484,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             pre_left = wp
             wp = wp.get_left_lane()
 
-        # print(lane_id_set)
         # # Store data from the left lane to the right lane
         # # list<key, value>, key=laneid, value=waypoint
         lane_list = []
         lane_id_set.clear()
-        # print(wp.lane_id)
-        # wp = wp.get_right_lane() if wp else None
-        # print(wp.lane_id)
         wp = pre_left
         while wp and wp.lane_type == carla.LaneType.Driving:
             
@@ -578,8 +526,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if lane > len(road_lanes):
                 return None
             else:
-                return road_lanes[lane -1]
-
+                return road_lanes[lane - 1]
 
     @staticmethod
     def create_blueprint(model, rolename='scenario', color=None, actor_category="car", safe=False):
