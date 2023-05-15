@@ -60,8 +60,6 @@ import datetime
 import logging
 import math
 import weakref
-from srunner.scenariomanager.carla_data_provider import calculate_velocity
-import pygame
 
 try:
     import pygame
@@ -114,10 +112,6 @@ def get_actor_display_name(actor, truncate=250):
 # -- World ---------------------------------------------------------------------
 # ==============================================================================
 
-npc_car = None
-ego_name = 'ego_vehicle'
-carname = ego_name
-
 class World(object):
 
     restarted = False
@@ -139,12 +133,12 @@ class World(object):
         self.imu_sensor = None
         self.radar_sensor = None
         self.camera_manager = None
-        self.restart()
+        self.restart(args)
         self.world.on_tick(hud.on_world_tick)
         self.recording_enabled = False
         self.recording_start = 0
 
-    def restart(self):
+    def restart(self, args):
 
         if self.restarted:
             return
@@ -163,26 +157,10 @@ class World(object):
             time.sleep(1)
             possible_vehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in possible_vehicles:
-                #if vehicle.attributes['role_name'] == 'hero':
-                if vehicle.attributes['role_name'] == carname:
+                if vehicle.attributes['role_name'] == args.rolename:
                     print("Ego vehicle found")
                     self.player = vehicle
-                    transform = self.player.get_transform()
-                    print(f"ego transform = {transform}")
-                    yaw = transform.rotation.yaw * (math.pi / 180)
-
-                    vx = math.cos(yaw) * 20
-                    vy = math.sin(yaw) * 20
                     break
-            
-            possible_vehicles = self.world.get_actors().filter('vehicle.jeep.*')
-            for vehicle in possible_vehicles:
-                print("find npc******************")
-                global npc_car
-                npc_car = vehicle
-                print(f"npc transform = {npc_car.get_transform()}")
-                # print(npc_car.id)
-                break
         
         self.player_name = self.player.type_id
 
@@ -197,7 +175,7 @@ class World(object):
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
 
-        #self.world.wait_for_tick()
+        self.world.wait_for_tick()
 
     def tick(self, clock):
         if len(self.world.get_actors().filter(self.player_name)) < 1:
@@ -919,13 +897,8 @@ def game_loop(args):
 
     try:
         client = carla.Client(args.host, args.port)
-        client.set_timeout(2.0)
+        client.set_timeout(20.0)
         sim_world = client.get_world()
-        
-        if carname == ego_name:
-            os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (60, 60)
-        else:
-            os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (70+args.width, 60)
 
         display = pygame.display.set_mode(
             (args.width, args.height),
@@ -936,26 +909,16 @@ def game_loop(args):
         hud = HUD(args.width, args.height)
         world = World(client.get_world(), hud, args)
         controller = KeyboardControl(world, args.autopilot)
-        world2 = client.get_world()
-        world2.set_weather(carla.WeatherParameters.ClearSunset)
-        map = world2.get_map()
-        wp_list = map.get_spawn_points()
-        sim_world.wait_for_tick()
-        clock = pygame.time.Clock()
 
+        sim_world.wait_for_tick()
+
+        clock = pygame.time.Clock()
         while True:
             clock.tick_busy_loop(60)
             if controller.parse_events(client, world, clock):
                 return
             if not world.tick(clock):
                 return
-            global npc_car
-            if npc_car is not None:
-                npc_speed = calculate_velocity(npc_car)
-                print("npc speed = %d km/h" %(npc_speed * 3.6))
-                control = npc_car.get_control()
-                print("npc control", control)
-
             world.render(display)
             pygame.display.flip()
 
@@ -998,11 +961,6 @@ def main():
         type=int,
         help='TCP port to listen to (default: 2000)')
     argparser.add_argument(
-        '--carname',
-        metavar='C',
-        default=ego_name,
-        help='name of car')
-    argparser.add_argument(
         '-a', '--autopilot',
         action='store_true',
         help='enable autopilot. This does not autocomplete the scenario')
@@ -1014,22 +972,15 @@ def main():
     argparser.add_argument(
         '--res',
         metavar='WIDTHxHEIGHT',
-        default='900x700',
-        help='window resolution (default: 900x700)')
+        default='1280x720',
+        help='window resolution (default: 1280x720)')
     argparser.add_argument(
         '--keep_ego_vehicle',
         action='store_true',
         help='do not destroy ego vehicle on exit')
     args = argparser.parse_args()
 
-    args.rolename = 'hero'      # Needed for CARLA version
-    args.filter = "vehicle.*"   # Needed for CARLA version
-    # args.gamma = 2.2   # Needed for CARLA version
     args.width, args.height = [int(x) for x in args.res.split('x')]
-
-    # zyy
-    global carname
-    carname = args.carname
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
