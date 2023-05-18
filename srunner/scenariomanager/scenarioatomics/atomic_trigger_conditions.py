@@ -1142,6 +1142,9 @@ class DriveDistance(AtomicCondition):
         """
         new_status = py_trees.common.Status.RUNNING
 
+        if self._location is None:
+            return new_status
+
         new_location = CarlaDataProvider.get_location(self._actor)
         self._distance += calculate_distance(self._location, new_location)
         self._location = new_location
