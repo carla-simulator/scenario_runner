@@ -233,7 +233,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_target_velocity(carla.Vector3D())
                 self.ego_vehicles[i].set_target_angular_velocity(carla.Vector3D())
                 self.ego_vehicles[i].apply_control(carla.VehicleControl())
-                CarlaDataProvider.register_actor(self.ego_vehicles[i])
+                CarlaDataProvider.register_actor(self.ego_vehicles[i], ego_vehicles[i].transform)
 
         # sync state
         if CarlaDataProvider.is_sync_mode():
