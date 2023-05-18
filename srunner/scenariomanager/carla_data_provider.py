@@ -68,7 +68,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _grp = None
 
     @staticmethod
-    def register_actor(actor):
+    def register_actor(actor, transform=None):
         """
         Add new actor to dictionaries
         If actor already exists, throw an exception
@@ -82,6 +82,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         if actor in CarlaDataProvider._actor_location_map:
             raise KeyError(
                 "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+        elif transform:
+            CarlaDataProvider._actor_location_map[actor] = transform.location
         else:
             CarlaDataProvider._actor_location_map[actor] = None
 
@@ -89,7 +91,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             raise KeyError(
                 "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
         else:
-            CarlaDataProvider._actor_transform_map[actor] = None
+            CarlaDataProvider._actor_transform_map[actor] = transform
 
     @staticmethod
     def update_osc_global_params(parameters):
@@ -106,12 +108,15 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return CarlaDataProvider._global_osc_parameters.get(ref.replace("$", ""))
 
     @staticmethod
-    def register_actors(actors):
+    def register_actors(actors, transforms=None):
         """
         Add new set of actors to dictionaries
         """
-        for actor in actors:
-            CarlaDataProvider.register_actor(actor)
+        if transforms is None:
+            transforms = [None] * len(actors)
+
+        for actor, transform in zip(actors, transforms):
+            CarlaDataProvider.register_actor(actor, transform)
 
     @staticmethod
     def on_carla_tick():
@@ -602,7 +607,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             CarlaDataProvider._world.wait_for_tick()
 
         CarlaDataProvider._carla_actor_pool[actor.id] = actor
-        CarlaDataProvider.register_actor(actor)
+        CarlaDataProvider.register_actor(actor, spawn_point)
         return actor
 
     @staticmethod
@@ -676,7 +681,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if actor is None:
                 continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
-            CarlaDataProvider.register_actor(actor)
+            CarlaDataProvider.register_actor(actor, _spawn_point)
 
         return actors
 
@@ -729,7 +734,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if actor is None:
                 continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
-            CarlaDataProvider.register_actor(actor)
+            CarlaDataProvider.register_actor(actor, spawn_point)
 
         return actors
 
