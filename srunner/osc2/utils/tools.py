@@ -16,7 +16,6 @@ def render_symbol(node, nodes, pindex, g):
 
         g.node(str(index), name)
         if index != pindex:
-            # g.edge(str(index), str(pindex))
             g.edge(str(pindex), str(index))  # The edge is from father to son, if there is no upside down tree
         for i in range(0, node.get_number_of_symbols()):
             render_symbol(node.get_child_symbol(i), nodes, index, g)

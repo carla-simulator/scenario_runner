@@ -55,9 +55,9 @@ class Vehicle:
         elif type(pos) is misc.LanePosition:
             pass
         else:
-            print("no impletment position type")
+            print("no implement position type")
 
-    def get_transtorm(self) -> carla.Transform:
+    def get_transform(self) -> carla.Transform:
         if OSC2Helper.wait_for_ego and self.rolename == OSC2Helper.ego_name:
             actor = carla_provider.CarlaDataProvider.get_actor_by_name(self.rolename)
             ret = carla_provider.CarlaDataProvider.get_transform(actor)

@@ -263,7 +263,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
         # location reprents npc at ego_vehicle left, right, same, ahead
         relative_car_name, location = modifier.get_refer_car()
         relative_car_conf = config.get_car_config(relative_car_name)
-        relative_car_location = relative_car_conf.get_transtorm().location
+        relative_car_location = relative_car_conf.get_transform().location
 
         relative_wp = CarlaDataProvider.get_map().get_waypoint(relative_car_location)
 
@@ -315,7 +315,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
 
         relative_car_name, location = modifier.get_refer_car()
         relative_car_conf = config.get_car_config(relative_car_name)
-        relative_car_location = relative_car_conf.get_transtorm().location
+        relative_car_location = relative_car_conf.get_transform().location
         LOG_WARNING(f"{relative_car_name} pos = {relative_car_location}")
 
         relative_car_wp = CarlaDataProvider.get_map().get_waypoint(relative_car_location)
@@ -329,9 +329,6 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             raise RuntimeError('the road is not long enough')
 
         end_position = end_position[0]
-
-        # debug
-        # print("npc to ego finish drive distance is", calculate_distance(npc_location, end_position.transform.location))
 
         if location == 'ahead_of' or location == 'behind':
             # End position constraint
@@ -358,9 +355,6 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             raise RuntimeError('relative position is igeal')
 
     if end_wp:
-        # debug
-        # print("npc to ego ahead distance is", calculate_distance(npc_location, end_wp.transform.location))
-
         current_car_conf = config.get_car_config(npc_name)
         current_car_transform = current_car_conf.get_arg('init_transform')
 
@@ -484,7 +478,6 @@ class OSC2Scenario(BasicScenario):
 
         def bool_result(self, option):
             # wait(x < y) @drive_distance Handling of Boolean expressions x < y
-            # print(option)
             expression_value = re.split('\W+', option)
             symbol = re.search('\W+', option).group()
             if symbol == "<":
@@ -507,7 +500,6 @@ class OSC2Scenario(BasicScenario):
         def visit_do_member(self, node: ast_node.DoMember):
             self.__duration = 1000000000.0
             composition_operator = node.composition_operator
-            # print("----------------", composition_operator)
             sub_node = None
             if composition_operator in ['serial', 'parallel', 'one_of']:
                 if composition_operator == 'serial':
@@ -954,7 +946,6 @@ class OSC2Scenario(BasicScenario):
 
         def visit_logical_expression(self, node: ast_node.LogicalExpression):
             arguments = [self.visit_children(node), node.operator]
-            # print(arguments)
             flat_arguments = flat_list(arguments)
             temp_stack = []
             for ex in flat_arguments:

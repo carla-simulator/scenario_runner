@@ -1,8 +1,8 @@
 from typing import Set
 import carla
 import srunner.scenariomanager.carla_data_provider as carla_data
-from srunner.osc2_stdlib.path_check import OverLanesDecreaseCheck, PathCurve, PathExpicit, PathOverDiffLimitMarks
-from srunner.osc2_stdlib.path_check import OverJuctionCheck, PathTrafficSign, PathDiffDest, PathDiffOrigin
+from srunner.osc2_stdlib.path_check import OverLanesDecreaseCheck, PathCurve, PathExplicit, PathOverDiffLimitMarks
+from srunner.osc2_stdlib.path_check import OverJunctionCheck, PathTrafficSign, PathDiffDest, PathDiffOrigin
 from srunner.osc2_dm.physical_types import Physical
 
 
@@ -75,7 +75,7 @@ class Path:
         # #dis_in m
         # #dis_after m
 
-        cls.over_junction_check = OverJuctionCheck(direction, distance_before, distance_in, distance_after)
+        cls.over_junction_check = OverJunctionCheck(direction, distance_before, distance_in, distance_after)
 
     @classmethod
     def path_over_lanes_decrease(cls, distance: Physical) -> None:
@@ -85,7 +85,7 @@ class Path:
     def path_explicit(cls, start_point, end_point, tolerance):
         start_point = start_point.split(',')
         end_point = end_point.split(',')
-        cls.is_explicit = PathExpicit(start_point, end_point, tolerance)
+        cls.is_explicit = PathExplicit(start_point, end_point, tolerance)
         print(cls.is_explicit)
 
     @classmethod
@@ -102,23 +102,23 @@ class Path:
     @classmethod
     def check(cls, pos) -> bool:
 
-        map = carla_data.CarlaDataProvider.get_map(carla_data.CarlaDataProvider._world)
-        wp = map.get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+        _map = carla_data.CarlaDataProvider.get_map(carla_data.CarlaDataProvider.world)
+        wp = _map.get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
         # Remove the intersection
 
         road_lanes = carla_data.CarlaDataProvider.get_road_lanes(wp)
         lane_cnt = len(road_lanes)
 
         # Check whether the number of lanes is satisfied
-        if cls.min_driving_lanes != None and lane_cnt < cls.min_driving_lanes:
+        if cls.min_driving_lanes is not None and lane_cnt < cls.min_driving_lanes:
             return False
-        if cls.max_lanes != None and lane_cnt > cls.max_lanes:
+        if cls.max_lanes is not None and lane_cnt > cls.max_lanes:
             return False
 
         # Check whether the length of the test road meets the constraints
         if cls._length:
             len_ok = carla_data.CarlaDataProvider.check_road_length(wp, cls._length)
-            if len_ok == False:
+            if not len_ok:
                 return False
         # Check if the test road is signposted
         if cls.sign_type:
@@ -144,12 +144,12 @@ class Path:
                 return False
 
         if cls.is_path_dest:
-            dest = PathDiffDest().get_diff_dest_piont(wp, cls._length)
+            dest = PathDiffDest().get_diff_dest_point(wp, cls._length)
             if not dest:
                 return False
 
         if cls.is_path_origin:
-            origin = PathDiffOrigin().get_diff_origin_piont(wp)
+            origin = PathDiffOrigin().get_diff_origin_point(wp)
             if not origin:
                 return False
 

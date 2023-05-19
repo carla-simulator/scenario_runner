@@ -47,12 +47,9 @@ class SpeedModifier(Modifier):
             sys.exit(1)
 
     def set_relative_car(self, car: Vehicle, side: AVCarSide) -> None:
-        # self.relative_car = car
-        # self.side = side
         self.args[side] = car
 
     def set_trigger_point(self, trigger_point: ScenarioEvent) -> None:
-        # self.trigger_point = trigger_point
         self.args['at'] = trigger_point
 
 
@@ -71,9 +68,9 @@ class PositionModifier(Modifier):
 
     def get_refer_car(self):
         if self.args.get('ahead_of'):
-            return (self.args.get('ahead_of'), 'ahead_of')
+            return self.args.get('ahead_of'), 'ahead_of'
         elif self.args.get('behind'):
-            return (self.args.get('behind'), 'behind')
+            return self.args.get('behind'), 'behind'
         else:
             print('PositionModifier key error')
 
@@ -89,13 +86,13 @@ class LaneModifier(Modifier):
 
     def get_refer_car(self):
         if self.args.get('right_of'):
-            return (self.args.get('right_of'), 'right_of')
+            return self.args.get('right_of'), 'right_of'
         elif self.args.get('left_of'):
-            return (self.args.get('left_of'), 'left_of')
+            return self.args.get('left_of'), 'left_of'
         elif self.args.get('same_as'):
-            return (self.args.get('same_as'), 'same_as')
+            return self.args.get('same_as'), 'same_as'
         elif self.args.get('side_of'):
-            return (self.args.get('side_of'), self.args.get('side'))
+            return self.args.get('side_of'), self.args.get('side')
         else:
             return None
 
@@ -121,7 +118,6 @@ class ChangeSpeedModifier(Modifier):
 
 
 class ChangeLaneModifier(Modifier):
-    # change_lane
     def __init__(self, actor_name: str, name: str) -> None:
         super().__init__(actor_name, name)
 
