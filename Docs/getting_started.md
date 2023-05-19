@@ -61,7 +61,7 @@ python scenario_runner.py --help
 
 To control the ego vehicle within the scenario, open another terminal and run:
 ```
-python manual_control.py
+python manual_control.py --rolename=hero
 ```
 
 Note: If you do not wish to automatically (re-)load the CARLA world, you can
@@ -93,7 +93,12 @@ More information you can find in [OpenSCENARIO support](openscenario_support.md)
 ## Running scenarios using the OpenSCENARIO 2.0 format
 To run a scenario, which is based on the OpenSCENARIO 2.0 format, please run the ScenarioRunner as follows:
 ```
-python scenario_runner.py --openscenario2 <path/to/osc-file> --rolename=ego_vehicle
+python scenario_runner.py --openscenario2 <path/to/osc-file>
+```
+
+To control the ego vehicle within the scenario or observe it, open another terminal and run:
+```
+python manual_control.py -a --rolename=ego_vehicle
 ```
 
 ### Running scenarios using the OpenSCENARIO format with Global ParameterDeclaration overwrite
