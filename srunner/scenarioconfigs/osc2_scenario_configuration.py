@@ -250,7 +250,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                         position_args.append(self.father_ins.variables.get(arguments))
                     else:
                         position_args.append(arguments)
-                # print(path_function, position_args, keyword_args)
                 path_function(*position_args, **keyword_args)
             if actor_name == "ego_vehicle":
                 if hasattr(vehicles.Vehicle, function_name):
@@ -268,7 +267,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                                     keyword_args[arg[0]] = arg[1].gen_physical_value()
                             else:
                                 if isinstance(arg, Physical):
-                                    # print(arg)
                                     position_args.append(arg.gen_physical_value())
                     else:
                         if isinstance(arguments, Physical):
@@ -327,7 +325,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         def visit_binary_expression(self, node: ast_node.BinaryExpression):
             arguments = [self.visit_children(node), node.operator]
             flat_arguments = flat_list(arguments)
-            # print(flat_arguments)
             temp_stack = []
             for ex in flat_arguments:
                 if ex == '+' or ex == '-' or ex == '*' or ex == '/' or ex == '%' :
@@ -339,8 +336,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     temp_stack.append(ex)
             flat_arguments.clear()
             binary_expression = temp_stack.pop()
-            # print("BinaryExpression: ", binary_expression)
-            # return [self.visit_children(node), node.operator]
             return binary_expression
 
         def visit_named_argument(self,  node: ast_node.NamedArgument):
@@ -456,7 +451,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         if world:
             world.get_settings()
             wmap = world.get_map()
-        # print(self.town)
         if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):
             self.client.load_world(self.town)
             world = self.client.get_world()

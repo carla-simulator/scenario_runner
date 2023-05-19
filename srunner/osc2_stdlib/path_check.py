@@ -7,8 +7,8 @@ from carla import Waypoint, LandmarkType
 from srunner.osc2_dm.physical_types import Physical
 
 
-class OverJuctionCheck:
-    def __init__(self, direction: Physical, distance_before: Physical = None, \
+class OverJunctionCheck:
+    def __init__(self, direction: Physical, distance_before: Physical = None,
                  distance_in: Physical = None, distance_after: Physical = None) -> None:
         self.direction = direction
         self.distance_before = distance_before
@@ -167,20 +167,15 @@ class OverLanesDecreaseCheck:
         """
         distance = int(self.distance.gen_single_value())
         lane_cnt = CarlaDataProvider.get_road_lane_cnt(wp)
-        # print('current lane cnt = ', lane_cnt)
 
         for dis in range(1, distance + 1):
-            # print("distance = ", dis)
             next_wps = wp.next(dis)
 
             if len(next_wps) == 1:
                 next_wp = next_wps[0]
-                # print("next wp = ",next_wp)
-                # print(next_wp.is_junction)
                 if next_wp.is_junction:
                     return False
                 next_lanes_cnt = CarlaDataProvider.get_road_lane_cnt(next_wp)
-                # print('next wp lane cnt = ', next_lanes_cnt)
                 if next_lanes_cnt < lane_cnt:
                     return True
             else:
@@ -229,7 +224,7 @@ class PathDiffDest(object):
         self.path_length = 30.0
         self.current_length = float(0)
 
-    def get_diff_dest_piont(self, wp: Waypoint, length: float) -> bool:
+    def get_diff_dest_point(self, wp: Waypoint, length: float) -> bool:
         if length and length > self.path_length:
             self.path_length = length
         # Stay away from the road reference line
@@ -263,7 +258,7 @@ class PathDiffOrigin(object):
         self.path_length = 30.0
         self.current_length = float(0)
 
-    def get_diff_origin_piont(self, wp):
+    def get_diff_origin_point(self, wp):
         temp_wp = wp
         wp_id = wp.road_id
         path1_wps = []
@@ -282,12 +277,12 @@ class PathDiffOrigin(object):
 
         # Find all generative points on the map except the one you just made.
         # Each point generates a path of the specified length
-        map = CarlaDataProvider.get_map(CarlaDataProvider._world)
-        wps = map.get_spawn_points()
+        _map = CarlaDataProvider.get_map(CarlaDataProvider.world)
+        wps = _map.get_spawn_points()
         all_path = []
         path_wps = []
         for pos in wps:
-            pont = map.get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+            pont = _map.get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
             if pont.road_id == wp.road_id:
                 continue
             for j in range(step_num):
@@ -305,7 +300,7 @@ class PathDiffOrigin(object):
                         return True
 
 
-class PathExpicit(object):
+class PathExplicit(object):
     def __init__(self, start, end, tolerance):
         self.start_point_parm = start
         self.end_point_parm = end
@@ -391,7 +386,6 @@ class PathCurve:
                     if r is None:
                         continue
                     loc = OSC2Helper.point_line_location(point1, point2, point3)
-                    # print(r, loc)
                     if self.min_radius.gen_single_value() <= r <= self.max_radius.gen_single_value() \
                             and loc == self.side:
                         return True

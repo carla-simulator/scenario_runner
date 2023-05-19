@@ -26,10 +26,7 @@ from srunner.osc2.symbol_manager.constraint_decl_scope import *
 from srunner.osc2.symbol_manager.variable_symbol import VariableSymbol
 from srunner.osc2.symbol_manager.event_symbol import *
 from srunner.osc2.symbol_manager.argument_symbol import *
-from srunner.osc2.symbol_manager.behavior_symbol import *
 from srunner.osc2.symbol_manager.wait_symbol import *
-from srunner.osc2.symbol_manager.default_value_scope import DefaultValueScope
-from srunner.osc2.symbol_manager.identifier_scope import IdentifierScope
 from srunner.osc2.symbol_manager.method_symbol import MethodSymbol
 
 
@@ -419,7 +416,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
         # Since there is no function to process bool_literal,
         # so we manually add a bool literal node to ast.
-        bool_literal = None
         bool_literal_node = None
         if ctx.BoolLiteral():
             bool_literal = ctx.BoolLiteral().getText()
@@ -550,7 +546,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
         actor_inherits = ActorInhertsSymbol(actor_name, self.__current_scope, scope)
         self.__current_scope.define(actor_inherits, ctx.start)
-        # actor_inherits.symbols  = copy.deepcopy(scope.symbols)
 
         node = ast_node.ActorInherts(actor_name)
         node.set_loc(ctx.start.line, ctx.start.column)
@@ -1233,14 +1228,10 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#defaultValue.
     def enterDefaultValue(self, ctx: OpenSCENARIO2Parser.DefaultValueContext):
-        # default_value_scope = DefaultValueScope(self.__current_scope)
-        # self.__current_scope.define(default_value_scope, ctx.start)
-        # self.__current_scope = default_value_scope
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#defaultValue.
     def exitDefaultValue(self, ctx: OpenSCENARIO2Parser.DefaultValueContext):
-        # self.__current_scope = self.__current_scope.get_enclosing_scope()
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterWithDeclaration.
@@ -1500,7 +1491,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
             pass
         else:
             msg = "behavior name: " + name + " is not defined!"
-            # LOG_ERROR(msg, ctx.start)   
             pass
 
         node = ast_node.BehaviorInvocation(actor, behavior_name)
@@ -1516,9 +1506,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorWithDeclaration.
     def enterBehaviorWithDeclaration(self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext):
-        # scope = BehaviorWithScope(self.__current_scope)
-        # self.__current_scope.define(scope, ctx.start)
-        # self.__current_scope = scope
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorWithDeclaration.
@@ -1631,12 +1618,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
         if ctx.returnType():
             return_type = ctx.returnType().getText()
 
-        # type_name = ""
-        # if ctx.argumentListSpecification():
-        #     for fn in ctx.argumentListSpecification().argumentSpecification():
-        #         type_name += "#" + fn.typeDeclarator().getText()
-
-        # name = method_name + type_name
         method = MethodSymbol(method_name, self.__current_scope)
 
         node = ast_node.MethodDeclaration(method_name, return_type)
@@ -1670,19 +1651,18 @@ class ASTBuilder(OpenSCENARIO2Listener):
         if ctx.methodQualifier():
             qualifier = ctx.methodQualifier().getText()
 
-        type = None
         if ctx.expression():
-            type = "expression"
+            _type = "expression"
         elif ctx.structuredIdentifier():
-            type = "external"
+            _type = "external"
         else:
-            type = "undefined"
+            _type = "undefined"
 
         external_name = None
         if ctx.structuredIdentifier():
             external_name = ctx.structuredIdentifier().getText()
 
-        node = ast_node.MethodBody(qualifier, type, external_name)
+        node = ast_node.MethodBody(qualifier, _type, external_name)
         node.set_loc(ctx.start.line, ctx.start.column)
         node.set_scope(self.__current_scope)
 
@@ -2166,22 +2146,13 @@ class ASTBuilder(OpenSCENARIO2Listener):
         if ctx.FloatLiteral():
             value = ctx.FloatLiteral().getText()
             node = ast_node.FloatLiteral(value)
-            # float_symbol = FloatSymbol(self.__current_scope, value)
-            # self.__current_scope.define(float_symbol, ctx.start)
-            # self.__current_scope = float_symbol
         elif ctx.BoolLiteral():
             value = ctx.BoolLiteral().getText()
             node = ast_node.BoolLiteral(value)
-            # bool_symbol = BoolSymbol(self.__current_scope, value)
-            # self.__current_scope.define(bool_symbol, ctx.start)
-            # self.__current_scope = bool_symbol
         elif ctx.StringLiteral():
             value = ctx.StringLiteral().getText()
             value = value.strip('"')
             node = ast_node.StringLiteral(value)
-            # string_symbol = StringSymbol(self.__current_scope, value)
-            # self.__current_scope.define(string_symbol, ctx.start)
-            # self.__current_scope = string_symbol
 
         if node is not None:
             node.set_loc(ctx.start.line, ctx.start.column)
@@ -2193,9 +2164,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
     # Exit a parse tree produced by OpenSCENARIO2Parser#valueExp.
     def exitValueExp(self, ctx: OpenSCENARIO2Parser.ValueExpContext):
         self.__cur_node = self.__node_stack.pop()
-
-        # if ctx.FloatLiteral() or ctx.BoolLiteral() or ctx.StringLiteral():
-        #     self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#listConstructor.
     def enterListConstructor(self, ctx: OpenSCENARIO2Parser.ListConstructorContext):
@@ -2259,14 +2227,8 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
         id_name = ".".join(field_name)
 
-        # identifier = IdentifierScope(id_name, scope)
-        # identifier = IdentifierScope(id_name, self.__current_scope)
-        # self.__current_scope.define(identifier, ctx.start)
-        # self.__current_scope = identifier
-
         node = ast_node.identifierReference(id_name)
         node.set_loc(ctx.start.line, ctx.start.column)
-        # node.set_scope(self.__current_scope)
         node.set_scope(scope)
 
         self.__cur_node.set_children(node)
@@ -2275,7 +2237,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
     # Exit a parse tree produced by OpenSCENARIO2Parser#identifierReference.
     def exitIdentifierReference(self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext):
         self.__cur_node = self.__node_stack.pop()
-        # self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#argumentListSpecification.
     def enterArgumentListSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext):
@@ -2383,10 +2344,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
             msg = "Unit " + unit_name + " is not defined!"
             LOG_WARNING(msg, ctx.start)
 
-        # physical = PhysicalSymbol(self.__current_scope, unit_name, value=None)
-        # self.__current_scope.define(physical, ctx.start)
-        # self.__current_scope = physical
-
         node = ast_node.PhysicalLiteral(unit_name, value)
         node.set_loc(ctx.start.line, ctx.start.column)
         node.set_scope(self.__current_scope)
@@ -2424,10 +2381,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
         else:  # only the above three types of integer literal
             pass
 
-        # integer = IntSymbol(self.__current_scope, type, value)
-        # self.__current_scope.define(integer, ctx.start)
-        # self.__current_scope = integer
-
         node = ast_node.IntegerLiteral(type, value)
         node.set_loc(ctx.start.line, ctx.start.column)
         node.set_scope(self.__current_scope)
@@ -2438,7 +2391,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
     # Exit a parse tree produced by OpenSCENARIO2Parser#integerLiteral.
     def exitIntegerLiteral(self, ctx: OpenSCENARIO2Parser.IntegerLiteralContext):
         self.__cur_node = self.__node_stack.pop()
-        # self.__current_scope = self.__current_scope.get_enclosing_scope()
 
 
 del OpenSCENARIO2Parser
