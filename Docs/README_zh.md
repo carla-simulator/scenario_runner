@@ -172,7 +172,7 @@ python generate_traffic.py -n 40
 执行如下代码，启动manual_control，其中‘-a’选项表示自动仿真模式，不加则可手动控制。
 
 ```
-python manual_control.py -a 
+python manual_control.py -a --rolename=ego_vehicle
 ```
 
 **3、加载场景**
