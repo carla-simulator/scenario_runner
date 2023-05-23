@@ -369,7 +369,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             self.logger.warning(
                 " Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)", actor_name)
             # pylint: enable=line-too-long
-
+            return False
         return actor_transform
 
     def _get_actor_speed(self, actor_name):
