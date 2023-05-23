@@ -869,7 +869,6 @@ class OpenScenarioParser(object):
 
         atomic = None
         delay_atomic = None
-        collision_delay = None
         condition_name = condition.attrib.get('name')
 
         if condition.attrib.get('delay') is not None and float(condition.attrib.get('delay')) != 0:
@@ -896,7 +895,6 @@ class OpenScenarioParser(object):
                     atomic = atomic_cls(trigger_actor, condition_duration, terminate_on_failure=True,
                                         name=condition_name)
                 elif entity_condition.find('CollisionCondition') is not None:
-                    collision_delay = 3
                     collision_condition = entity_condition.find('CollisionCondition')
 
                     if collision_condition.find('EntityRef') is not None:
@@ -1186,12 +1184,6 @@ class OpenScenarioParser(object):
             new_atomic.add_child(atomic)
         else:
             new_atomic = atomic
-
-        if collision_delay is not None:
-            final_atomic = py_trees.composites.Sequence("collision_delay sequence")
-            final_atomic.add_child(new_atomic)
-            final_atomic.add_child(Idle(collision_delay))
-            return final_atomic
 
         return new_atomic
 
