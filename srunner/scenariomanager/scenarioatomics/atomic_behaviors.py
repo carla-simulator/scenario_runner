@@ -3432,7 +3432,6 @@ class AddActor(AtomicBehavior):
         self._spawn_point = transform
         self._color = color
 
-    @property
     def update(self):
         new_status = py_trees.common.Status.RUNNING
         try:

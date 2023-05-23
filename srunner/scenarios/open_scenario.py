@@ -339,12 +339,11 @@ class OpenScenario(BasicScenario):
                                         atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
                                                                       name="AcquirePositionAction")
 
-                    if atomic is not None:
-                        actor_init_behavior.add_child(atomic)
                     if controller_atomic is None:
                         controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
-
                     actor_init_behavior.add_child(controller_atomic)
+                    if atomic is not None:
+                        actor_init_behavior.add_child(atomic)
 
                     if actor.speed > 0:
                         actor_init_behavior.add_child(ChangeActorTargetSpeed(carla_actor, actor.speed, init_speed=True))
@@ -581,3 +580,30 @@ class OpenScenario(BasicScenario):
         Remove all actors upon deletion
         """
         self.remove_all_actors()
+
+    def _initialize_actors(self, config):
+        """
+        Override the superclass method to initialize other actors
+        """
+        if config.other_actors:
+            for global_action in self.config.init.find("Actions").iter("GlobalAction"):
+                if global_action.find("EntityAction") is not None:
+                    entity_action = global_action.find("EntityAction")
+                    entity_ref = entity_action.attrib.get("entityRef")
+                    if entity_action.find('AddEntityAction') is not None:
+                        position = entity_action.find('AddEntityAction').find("Position")
+                        actor_transform = OpenScenarioParser.convert_position_to_transform(
+                            position, actor_list=config.other_actors + config.ego_vehicles)
+                        for actor in config.other_actors:
+                            if actor.rolename == entity_ref:
+                                actor.transform = actor_transform
+                    elif entity_action.find('DeleteEntityAction') is not None:
+                        for actor in config.other_actors:
+                            if actor.rolename == entity_ref:
+                                config.other_actors.remove(actor)
+
+            new_actors = CarlaDataProvider.request_new_actors(config.other_actors)
+            if not new_actors:
+                raise Exception("Error: Unable to add actors")
+            for new_actor in new_actors:
+                self.other_actors.append(new_actor)
