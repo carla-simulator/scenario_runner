@@ -16,6 +16,7 @@ import itertools
 import os
 import py_trees
 
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction, ChangeParameter, \
     ChangeActorLaneOffset, ChangeActorWaypoints, ChangeLateralDistance
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorControl, ChangeActorTargetSpeed
