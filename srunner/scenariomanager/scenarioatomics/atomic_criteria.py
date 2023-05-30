@@ -26,7 +26,7 @@ import carla
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.traffic_events import TrafficEvent, TrafficEventType
-
+from srunner.tools.history import history
 
 class Criterion(py_trees.behaviour.Behaviour):
 
@@ -634,7 +634,7 @@ class OffRoadTest(Criterion):
             If terminate_on_failure isn't active, this is ignored.
         optional (bool): If True, the result is not considered for an overall pass/fail result
             when using the output argument
-        terminate_on_failure (bool): If True, the atomic will fail when the duration condition has been met.
+        terminate_on_failure (bool): If True, the atomic will fail when      duration condition has been met.
     """
 
     def __init__(self, actor, duration=0, optional=False, terminate_on_failure=False, name="OffRoadTest"):
@@ -650,6 +650,16 @@ class OffRoadTest(Criterion):
         self._duration = duration
         self._prev_time = None
         self._time_offroad = 0
+
+        self.history = history('offroad',self.name)
+        
+    def initialise(self):
+        """
+        Initialize the start time of this condition
+        """
+
+        self.history.createHistory()
+
 
     def update(self):
         """
@@ -677,22 +687,29 @@ class OffRoadTest(Criterion):
         )
         if drive_waypoint or park_waypoint:
             self._offroad = False
+
+            self.history.setHistory2(0,0)
         else:
             self._offroad = True
 
-        # Counts the time offroad
         if self._offroad:
+
             if self._prev_time is None:
                 self._prev_time = GameTime.get_time()
             else:
                 curr_time = GameTime.get_time()
                 self._time_offroad += curr_time - self._prev_time
                 self._prev_time = curr_time
+
+            self.history.setHistory(self._time_offroad)
         else:
             self._prev_time = None
 
-        if self._time_offroad > self._duration:
+        if self.history.getHistory() > self._duration:
+            self.history.deleteHistory()
+
             self.test_status = "FAILURE"
+            return py_trees.common.Status.SUCCESS
 
         if self._terminate_on_failure and self.test_status == "FAILURE":
             new_status = py_trees.common.Status.FAILURE
@@ -731,6 +748,16 @@ class EndofRoadTest(Criterion):
         self._time_end_road = 0
         self._road_id = None
 
+        self.history = history('endofroad',self.name)
+
+    def initialise(self):
+        """
+        Initialize the start time of this condition
+        """
+        self.history.createHistory()
+        
+
+
     def update(self):
         """
         First, transforms the actor's current position to its corresponding waypoint. Then the road id
@@ -749,6 +776,12 @@ class EndofRoadTest(Criterion):
         if self._road_id is None:
             self._road_id = current_waypoint.road_id
 
+
+    
+        if not self.history.getHistorydata(0) == 0:
+            self._start_time = GameTime.get_time()
+        
+
         else:
             # Wait until the actor has left the road
             if self._road_id != current_waypoint.road_id or self._start_time:
@@ -761,10 +794,16 @@ class EndofRoadTest(Criterion):
                 curr_time = GameTime.get_time()
                 self._time_end_road = curr_time - self._start_time
 
-                if self._time_end_road > self._duration:
+                self.history.setHistory(self._time_end_road)
+
+                if self.history.getHistory() > self._duration:
+                    
+                    self.history.deleteHistory()
                     self.test_status = "FAILURE"
                     self.actual_value += 1
                     return py_trees.common.Status.SUCCESS
+                
+
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 

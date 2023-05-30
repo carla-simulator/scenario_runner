@@ -1,0 +1,67 @@
+<template>
+   <Storyboard>
+   </Storyboard>
+   <Story>
+   </Story>
+   <Act>
+   </Act>
+   <ManeuverGroup>
+   </ManeuverGroup>
+   <Maneuver>
+   </Maneuver>
+   <Event>
+   </Event>
+   <Action>
+   </Action>
+   <Init>
+      <Actions>
+
+      </Actions>
+   </Init>
+
+   <Private entityRef="">
+      <PrivateAction>
+         <TeleportAction>
+            <Position>
+               <WorldPosition x="" y="" z="" h="" p="" r=""/>
+            </Position>
+         </TeleportAction>
+      </PrivateAction>
+      <PrivateAction>
+         <LongitudinalAction>
+            <SpeedAction>
+               <SpeedActionDynamics dynamicsShape="step" dynamicsDimension="time" value="0.0" />
+               <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="" />
+               </SpeedActionTarget>
+            </SpeedAction>
+         </LongitudinalAction>
+      </PrivateAction>
+   </Private>
+
+
+
+
+   <StartTrigger>
+      <ConditionGroup>
+         <Condition name="" delay="0" conditionEdge="rising">
+            <ByValueCondition>
+               <SimulationTimeCondition value="0.001" rule="greaterThan" />
+            </ByValueCondition>
+         </Condition>
+      </ConditionGroup>
+   </StartTrigger>
+
+   <StartTrigger>
+      <ConditionGroup>
+         <Condition name="" delay="0" conditionEdge="rising">
+            <ByValueCondition>
+               <StoryboardElementStateCondition storyboardElementType="" storyboardElementRef=""
+                  state="startTransition" />
+            </ByValueCondition>
+         </Condition>
+      </ConditionGroup>
+   </StartTrigger>
+
+
+</template>

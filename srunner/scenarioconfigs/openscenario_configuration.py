@@ -31,7 +31,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
     - Only one Story + Init is supported per Storyboard
     """
 
-    def __init__(self, filename, client, custom_params):
+    def __init__(self, filename, client, custom_params,parameters):
 
         self.xml_tree = ET.parse(filename)
         self.filename = filename
@@ -58,9 +58,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         self._global_parameters = {}
 
-        # 对引用值做替换，设置所有参数
-        self._set_parameters()
-        # 
+        # 对引用值做替换，设置所有参数  
+        self._set_parameters(parameters)
+        
+
+
         self._parse_openscenario_configuration()
 
     def _validate_openscenario_configuration(self):
@@ -221,13 +223,18 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         else:
             CarlaDataProvider.set_world(world)
 
-    def _set_parameters(self):
+    def _set_parameters(self,params=None):
         """
         Parse the complete scenario definition file, and replace all parameter references
         with the actual values
 
         Set _global_parameters.
         """
+        if params:
+            OpenScenarioParser.set_global_parameters(params)
+
+            return
+
         self.xml_tree, self._global_parameters = OpenScenarioParser.set_parameters(self.xml_tree, self._custom_params)
 
         for elem in self.xml_tree.iter():
@@ -235,6 +242,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 elem, _ = OpenScenarioParser.set_parameters(elem)
 
         OpenScenarioParser.set_global_parameters(self._global_parameters)
+
+
 
     def _set_actor_information(self):
         """

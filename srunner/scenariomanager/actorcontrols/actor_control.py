@@ -88,6 +88,8 @@ class ActorControl(object):
 
             self.control_instance = getattr(module_control, control_class_name)(actor, args)
 
+
+
     def reset(self):
         """
         Reset the controller

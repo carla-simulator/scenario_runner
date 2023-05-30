@@ -522,6 +522,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             CarlaDataProvider._world.wait_for_tick()
 
         actor_ids = [r.actor_id for r in responses if not r.error]
+
+
         for r in responses:
             if r.error:
                 print("WARNING: Not all actors were spawned")
@@ -598,6 +600,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider.generate_spawn_points()
 
         for actor in actor_list:
+            
 
             # Get the blueprint
             blueprint = CarlaDataProvider.create_blueprint(
@@ -642,7 +645,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             batch.append(command)
 
+
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
+  
         for actor in actors:
             if actor is None:
                 continue

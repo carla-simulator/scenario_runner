@@ -105,22 +105,22 @@
     </Init>
     <Story name="MyStory">
       <Act name="Behavior">
-        <ManeuverGroup maximumExecutionCount="1" name="ManeuverSequence">
+        <ManeuverGroup maximumExecutionCount="4" name="ManeuverSequence">
           <Actors selectTriggeringEntities="false">
             <EntityRef entityRef="adversary" />
           </Actors>
           <Maneuver name="FollowLeadingVehicleManeuver">
-            <Event name="LeadingVehicleKeepsVelocity" priority="overwrite">
+            <Event maximumExecutionCount="1" name="LeadingVehicleKeepsVelocity" priority="overwrite">
               <StartTrigger>
                 <ConditionGroup>
                   <Condition conditionEdge="rising" delay="0" name="StartConditionLeadingVehicleKeepsVelocity">
                     <ByValueCondition>
-                      <SimulationTimeCondition rule="greaterThan" value="3" />                   
+                      <SimulationTimeCondition rule="greaterThan" value="3" />
                     </ByValueCondition>
                   </Condition>
                 </ConditionGroup>
               </StartTrigger>
-            <Action name="LeadingVehicleKeepsVelocity">
+              <Action name="LeadingVehicleKeepsVelocity">
                 <PrivateAction>
                   <LongitudinalAction>
                     <SpeedAction>
@@ -132,18 +132,20 @@
                   </LongitudinalAction>
                 </PrivateAction>
               </Action>
-              </Event>
-            <Event name="LeadingVehicleWaits" priority="overwrite">
+            </Event>
+
+            <Event maximumExecutionCount="1" name="LeadingVehicleWaits" priority="overwrite">
               <StartTrigger>
                 <ConditionGroup>
                   <Condition conditionEdge="rising" delay="0" name="StartConditionLeadingVehicleKeepsVelocity">
                     <ByValueCondition>
-                      <SimulationTimeCondition rule="greaterThan" value="5" />                   
+                      <SimulationTimeCondition rule="greaterThan" value="5" />
                     </ByValueCondition>
                   </Condition>
                 </ConditionGroup>
               </StartTrigger>
             </Event>
+
           </Maneuver>
         </ManeuverGroup>
         <StartTrigger>

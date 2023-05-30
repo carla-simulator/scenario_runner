@@ -33,6 +33,7 @@ import socket
 import struct
 import pickle
 import carla
+import xml.etree.ElementTree as ET
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -41,7 +42,9 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
+from storyboard import *
 
+import py_trees
 # Version of scenario_runner
 VERSION = '0.9.13'
 
@@ -76,12 +79,17 @@ class ScenarioRunner(object):
     agent_instance = None
     module_agent = None
 
-    def __init__(self, args):
+    def __init__(self, args,ip,port,parameters = None,tempOSC = None):
         """
         Setup CARLA client and world
         Setup ScenarioManager
         """
+
+        self.resdata =None
+
         self._args = args
+        self.parameters = parameters
+        self.tempOSC = tempOSC
 
         if args.timeout:
             self.client_timeout = float(args.timeout)
@@ -89,7 +97,9 @@ class ScenarioRunner(object):
         # First of all, we need to create the client that will send the requests
         # to the simulator. Here we'll assume the simulator is accepting
         # requests in the localhost at port 2000.
-        self.client = carla.Client(args.host, int(args.port))
+
+        self.client = carla.Client(ip, port)
+
         self.client.set_timeout(self.client_timeout)
 
         dist = pkg_resources.get_distribution("carla")
@@ -186,7 +196,7 @@ class ScenarioRunner(object):
                 sys.exit(-1)
 
         self.manager.cleanup()
-
+        
         CarlaDataProvider.cleanup()
 
         for i, _ in enumerate(self.ego_vehicles):
@@ -381,11 +391,21 @@ class ScenarioRunner(object):
         try:
             self._prepare_ego_vehicles(config.ego_vehicles)
             if self._args.openscenario:
-                scenario = OpenScenario(world=self.world,
-                                        ego_vehicles=self.ego_vehicles,
-                                        config=config,
-                                        config_file=self._args.openscenario,
-                                        timeout=100000)
+                if self.tempOSC:
+                    scenario = OpenScenario(world=self.world,
+                                            ego_vehicles=self.ego_vehicles,
+                                            config=config,
+                                            config_file=self.tempOSC,
+                                            timeout=100000,
+                                            client=self)
+                    
+                else:
+                    scenario = OpenScenario(world=self.world,
+                                            ego_vehicles=self.ego_vehicles,
+                                            config=config,
+                                            config_file=self._args.openscenario,
+                                            timeout=100000,
+                                            client=self)          
             elif self._args.route:
                 scenario = RouteScenario(world=self.world,
                                          config=config,
@@ -422,6 +442,7 @@ class ScenarioRunner(object):
 
             # Remove all actors, stop the recorder and save all criterias (if needed)
             scenario.remove_all_actors()
+            
             if self._args.record:
                 self.client.stop_recorder()
                 self._record_criteria(self.manager.scenario.get_criteria(), recorder_name)
@@ -488,7 +509,7 @@ class ScenarioRunner(object):
         """
 
         # Load the scenario configurations provided in the config file
-        if not os.path.isfile(self._args.openscenario):
+        if (not self.tempOSC and not os.path.isfile(self._args.openscenario)) or (self.tempOSC and not os.path.isfile(self.tempOSC)):
             print("File does not exist")
             self._cleanup()
             return False
@@ -500,7 +521,10 @@ class ScenarioRunner(object):
                 openscenario_params[key] = val
 
         # 读取文件
-        config = OpenScenarioConfiguration(self._args.openscenario, self.client, openscenario_params)
+        if not self.tempOSC:
+            config = OpenScenarioConfiguration(self._args.openscenario, self.client, openscenario_params,self.parameters)
+        else:
+            config = OpenScenarioConfiguration(self.tempOSC, self.client, openscenario_params,self.parameters)
 
         # 加载并运行
         result = self._load_and_run_scenario(config)
@@ -523,6 +547,18 @@ class ScenarioRunner(object):
 
         print("No more scenarios .... Exiting")
         return result
+    
+    def setResData(self,resdata):
+        self.resdata=resdata
+    
+    def getResData(self):
+        
+        if self.resdata is not None:
+            return self.resdata
+        else:
+            return {}
+
+
 
 
 def main():
@@ -532,14 +568,22 @@ def main():
     description = ("CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
                    "Current version: " + VERSION)
 
+    # if not res_simulator_config:
+    #     res_simulator_config=[0,{
+    #         'ip':'10.108.13.182',
+    #         'port':2000
+    #     }]
+
     # pylint: disable=line-too-long
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=RawTextHelpFormatter)
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
-    parser.add_argument('--host', default='10.108.13.186',
+
+    parser.add_argument('--host',
                         help='IP of the host server (default: localhost)')
-    parser.add_argument('--port', default='2000',
+    parser.add_argument('--port',
                         help='TCP port to listen to (default: 2000)')
+    
     parser.add_argument('--timeout', default="10.0",
                         help='Set the CARLA client timeout value in seconds')
     parser.add_argument('--trafficManagerPort', default='8000',
@@ -552,7 +596,11 @@ def main():
 
     parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
-    parser.add_argument('--openscenario',default='temp.xosc', help='Provide an OpenSCENARIO definition')
+    
+    parser.add_argument('--openscenario',default=r'F:\C\V6\scenario_runner\srunner\examples\CreatorExample.xosc', help='Provide an OpenSCENARIO definition')
+
+    parser.add_argument('--tempOpenscenario',default=r'F:\C\V6\scenario_runner\srunner\examples\temp.xosc', help='Provide an OpenSCENARIO definition')
+
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
     parser.add_argument(
         '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
@@ -579,8 +627,23 @@ def main():
     parser.add_argument('--repetitions', default=1, type=int, help='Number of scenario executions')
     parser.add_argument('--waitForEgo', action="store_true", help='Connect the scenario to an existing ego vehicle')
 
-    arguments = parser.parse_args()
+    parser.add_argument('--preExecute', action="store_true", help='generate event list')
+
+    parser.add_argument('--temp', action="store_true", help='generate event list')
+
+    parser.add_argument('--eventListOutput', default='eventlist.json', help='output json file')
+
+    parser.add_argument('--eventListInput', default='eventlist.json', help='output json file')
+
+    parser.add_argument('--simulatorConfigFile',default=r'F:\C\V6\scenario_runner\simulator_config.json', help='simulator infomation')
+
+    parser.add_argument('--simulation_times',default=1,help='simulator infomation')
+
     # pylint: enable=line-too-long
+
+    arguments = parser.parse_args()
+
+
 
     if arguments.list:
         print("Currently the following scenarios are supported:")
@@ -610,12 +673,49 @@ def main():
 
     if arguments.agent:
         arguments.sync = True
+    
 
+    if arguments.preExecute:
+    # if True:
+        runScenarioOnce(arguments)
+
+    elif arguments.temp:
+    # elif True:
+        runTempScenario(arguments)
+
+    else:
+        runScenario(arguments)
+
+
+def runScenarioOnce(arguments):
     scenario_runner = None
     result = True
+    ip =None
+    port= None
+
+    if arguments.host and arguments.port:
+        ip = arguments.host
+        port = arguments.port
+    
+    elif arguments.simulatorConfigFile:
+        with open(arguments.simulatorConfigFile,'r') as f:
+            config_str = f.read()
+            simulator_config = json.loads(config_str)
+            res_simulator = chooseSimulator(simulator_config)
+
+            ip = res_simulator[1]['ip']
+            port = res_simulator[1]['port']
+
+    else:
+        raise ValueError('No simulator infomation provided')
+    
     try:
-        scenario_runner = ScenarioRunner(arguments)
+        scenario_runner = ScenarioRunner(arguments,ip,port)
         result = scenario_runner.run()
+        
+        generateEventList(arguments.eventListOutput)
+        
+
     except Exception:   # pylint: disable=broad-except
         traceback.print_exc()
 
@@ -623,29 +723,169 @@ def main():
         if scenario_runner is not None:
             scenario_runner.destroy()
             del scenario_runner
+
     return not result
 
-def listen():
-    server = socket.socket()         
-    server.bind(('127.0.0.1', 9001)) 
-    server.listen() 
+
+def runScenario(arguments):
+    res_simulator_config=None
+
+    simulator_configs = None
+
+    parameters=None
+
+    storyborad,tree=analyseOpenscenario(arguments.openscenario,arguments.eventListInput)
+
+    with open(arguments.simulatorConfigFile,'r') as f:
+        config_str = f.read()
+        simulator_configs = json.loads(config_str)
 
 
-    # while True:
-    print("start.......")
-    sock,adddr = server.accept()
-    d = sock.recv(struct.calcsize("l"))
-    total_size = struct.unpack("l",d)
-    num  = total_size[0]//1024
-    data = b''
-    for i in range(num):
-        data += sock.recv(1024)
-    data += sock.recv(total_size[0]%1024)
+    res_simulator_config=chooseSimulator(simulator_configs=simulator_configs,res_simualator=res_simulator_config)
 
-    scenefile=pickle.loads(data)
-    scenefile.write('temp.xosc')
+    ip = res_simulator_config[1]['ip']
+    port = res_simulator_config[1]['port']
+
+    writeOpenscenario(temppath=arguments.tempOpenscenario,storyboard=storyborad.getSceneFile(),tree=tree)
+
+    scenario_runner = ScenarioRunner(arguments,ip,port,parameters=parameters,tempOSC=arguments.tempOpenscenario)
+
+    scenario_runner.run()
+
+    resdata = scenario_runner.getResData()
+
+
+    with open('resdata','wb') as f:
+        f.write(pickle.dumps(resdata))
+
+
+def runTempScenario(arguments):
+    resdata =None
+    with open('resdata','rb') as f:
+        resdata = pickle.loads(f.read())
+
     
-    sock.close()
+    res_simulator_config=None
+
+    simulator_configs = None
+
+    parameters=resdata['parameters']
+
+    storyborad,tree=analyseOpenscenario(arguments.openscenario,arguments.eventListInput,int(arguments.simulation_times))
+
+    with open(arguments.simulatorConfigFile,'r') as f:
+        config_str = f.read()
+        simulator_configs = json.loads(config_str)
+
+
+    res_simulator_config=chooseSimulator(simulator_configs=simulator_configs,res_simualator=res_simulator_config)
+
+    ip = res_simulator_config[1]['ip']
+    # ip='10.108.13.106'
+    port = res_simulator_config[1]['port']
+
+    storyborad.update(resdata=resdata)
+
+    writeOpenscenario(temppath=arguments.tempOpenscenario,storyboard=storyborad.getSceneFile(),tree=tree)
+
+    scenario_runner = ScenarioRunner(arguments,ip,port,parameters=parameters,tempOSC=arguments.tempOpenscenario)
+
+    for key in resdata['blackboard']:
+        if key =='ActorsWithController' or key.startswith('Init'):
+            continue
+        py_trees.blackboard.Blackboard().set(key,resdata['blackboard'][key])
+
+    scenario_runner.run()
+
+    resdata = scenario_runner.getResData()
+
+    # with open('resdata','wb') as f:
+    #     f.write(pickle.dumps(resdata))
+
+
+def generateEventList(path):
+    dict = py_trees.blackboard.Blackboard().dict()
+
+    event_list=[]
+    for key in dict:
+        if key.startswith('(EVENT)') and key.endswith('-START'):
+            event_list.append(key[7:-6])
+
+    with open(path,'w') as f:
+        f.write(json.dumps(event_list))
+        
+
+def chooseSimulator(simulator_configs,res_simualator = None):
+    if simulator_configs==None:
+        raise ValueError('无仿真器信息')
+    
+    if res_simualator==None:
+        return [0,simulator_configs[0]]
+    
+    else:
+        return [(res_simualator[0]+1)%len(simulator_configs),simulator_configs[(res_simualator[0]+1)%len(simulator_configs)]]
+
+
+def analyseOpenscenario(file_path,eventListPath=None,simulation_times=0):
+    tree = ET.parse(file_path)
+    sb = tree.getroot().find('Storyboard')
+    tree.getroot().remove(sb)
+
+    if not eventListPath:
+        return storyborad(sb,simulation_times=simulation_times),tree
+    else:
+        with open(eventListPath, 'r') as f:
+            eventList = json.loads(f.read())
+            
+            return storyborad(sb,eventList=eventList,simulation_times=simulation_times),tree
+
+def writeOpenscenario(temppath,tree,storyboard):
+
+    tree.getroot().append(storyboard)
+
+    tree.write(temppath)
+
+    tree.getroot().remove(storyboard)
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
+
+
+    # simulator_configs=
+
+    # file_path=r'D:\work\ADS\carla\runner\scenario_runner\srunner\examples\FollowLeadingVehicle.xosc'
+
+    # file_path=r'D:\work\ADS\carla\runner\scenario_runner\srunner\examples\CreatorExample.xosc'
+    # # file_path=r'D:\work\ADS\carla\runner\scenario_runner\srunner\examples\CatalogExample.xosc'
+    # # file_temppath=r'D:\work\ADS\carla\runner\scenario_runner\temp.xosc'
+
+    # simulation_end=False
+
+    # res_simulator_config=None
+    
+    # # 解析场景文件
+    # # storyborad,tree=analyseOpenscenario(file_path=file_path)
+
+    # parameters = None
+    
+    # # while not simulation_end:
+
+    #     # 得到simulator信息
+    # res_simulator_config=chooseSimulator(simulator_configs=simulator_configs,res_simualator=res_simulator_config)
+
+    # # 生成场景文件
+    # # writeOpenscenario(temppath=file_temppath,storyboard=storyborad.getSceneFile(),tree=tree)
+
+    # # 仿真
+    # resdata = main(file_path,res_simulator_config,parameters)
+
+    # # print(py_trees.blackboard.Blackboard())
+
+    # parameters = resdata['parameters']
+
+    # print(resdata)
+
+    #     # 更新
+    # simulation_end = storyborad.update(resdata)
+
+

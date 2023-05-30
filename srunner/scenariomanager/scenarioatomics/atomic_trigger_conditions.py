@@ -34,7 +34,14 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import get_distance_along_route
 
+from actor_info import *
+
+import pickle
+import socket
+import struct
+
 import srunner.tools as sr_tools
+from srunner.tools.history import history
 
 EPSILON = 0.001
 
@@ -78,41 +85,61 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
 class Eventexecute(AtomicCondition):
-    def __init__(self, name):
+    def __init__(self, name,runner):
         super(Eventexecute,self).__init__(name)
+        self.runner=runner
         self.blackboard=py_trees.blackboard.Blackboard()
 
-    def update(self):
-        print(self.name)
-        print('----------------')
 
-        print(self.blackboard.__str__())
-        
+    def update(self):
+        py_trees.blackboard.Blackboard().set('end_time',GameTime.get_time())
         # 在此处中断仿真并收集仿真状态
         # 需要获取
         # 1.当前事件的name
         # 2.黑板字典
-        # 3.所有物体的位置速度等状态
-        # 4.记录历史状态类数据
+        # 3.物体的位置速度等状态信息等
 
-
-        return py_trees.common.Status.SUCCESS
-    
-    
-class Eventstart(AtomicCondition):
-    def __init__(self, name):
-        super(Eventexecute,self).__init__(name)
-        self.blackboard=py_trees.blackboard.Blackboard()
-
-    def update(self):
-        print("event to execute")
-
-        print(self.blackboard.keys())
+        # 1.
+        resdata={}
+        resdata["trigger"]=self.name
+        # 2.
+        dic=self.blackboard.dict()
         
-        # 在此处中断仿真并收集仿真状态
+
+        
+        resdata["blackboard"]=dic
+        # 3.
+        res_json = ActorsInfo.getstate()
+        res_load = json.loads(res_json)
+
+        resdata['actor_info']=res_load
+
+        resdata['parameters'] = CarlaDataProvider._global_osc_parameters
+
+
+        print(resdata)
+
+        runner=self.runner
+        runner.manager.stop_scenario()
+        runner.setResData(resdata)
 
         return py_trees.common.Status.SUCCESS
+    
+    def send(self,data):
+        print("-----------返回场景结果---------")
+        data = pickle.dumps(data)
+        data_size=len(data)
 
+        client=socket.socket()
+        client.connect(('127.0.0.1', 9002))
+
+        f= struct.pack("l",data_size)
+        client.send(f)
+        
+        client.sendall(data)
+        print("-----------返回成功---------")
+
+        client.close()
 
 class InTriggerDistanceToOSCPosition(AtomicCondition):
 
@@ -257,7 +284,7 @@ class InTimeToArrivalToOSCPosition(AtomicCondition):
         return new_status
 
 
-class StandStill(AtomicCondition):
+class   StandStill(AtomicCondition):
 
     """
     This class contains a standstill behavior of a scenario
@@ -281,11 +308,17 @@ class StandStill(AtomicCondition):
         self._duration = duration
         self._start_time = 0
 
+        self.history = history('standstill',self.name)
+
     def initialise(self):
         """
         Initialize the start time of this condition
         """
         self._start_time = GameTime.get_time()
+
+        self.history.createHistory()
+
+
         super(StandStill, self).initialise()
 
     def update(self):
@@ -295,12 +328,21 @@ class StandStill(AtomicCondition):
         new_status = py_trees.common.Status.RUNNING
 
         velocity = CarlaDataProvider.get_velocity(self._actor)
-
         if velocity > EPSILON:
             self._start_time = GameTime.get_time()
 
-        if GameTime.get_time() - self._start_time > self._duration:
+            self.history.setHistory2(0,0)
+
+        standstilltime = GameTime.get_time() - self._start_time
+
+        self.history.setHistory(standstilltime)
+
+
+        if self.history.getHistory() > self._duration:
             new_status = py_trees.common.Status.SUCCESS
+
+            self.history.deleteHistory()
+            
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
@@ -648,7 +690,7 @@ class InTriggerDistanceToVehicle(AtomicCondition):
 
         if self._comparison_operator(distance, self._distance):
             new_status = py_trees.common.Status.SUCCESS
-            print('-------------RelativeDistanceCondition success----------------')
+
             
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
@@ -1125,8 +1167,13 @@ class DriveDistance(AtomicCondition):
         self._location = None
         self._actor = actor
 
+        self.history = history('drivedistance',self.name)
+
     def initialise(self):
         self._location = CarlaDataProvider.get_location(self._actor)
+
+        self.history.createHistory()
+
         super(DriveDistance, self).initialise()
 
     def update(self):
@@ -1139,9 +1186,12 @@ class DriveDistance(AtomicCondition):
         self._distance += calculate_distance(self._location, new_location)
         self._location = new_location
 
-        if self._distance > self._target_distance:
+        self.history.setHistory(self._distance)
+
+        if self.history.getHistory() > self._target_distance:
             new_status = py_trees.common.Status.SUCCESS
 
+            self.history.deleteHistory()
             
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status

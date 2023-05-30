@@ -1,5 +1,6 @@
+<?xml version="1.0"?>
 <OpenSCENARIO>
-	<FileHeader author="Jian" date="2023-05-07T12:00:00" description="CARLA:TEST" revMajor="1" revMinor="0" />
+	<FileHeader revMajor="1" revMinor="0" date="2023-05-07T12:00:00" description="CARLA:TEST" author="Jian" />
 	<ParameterDeclarations>
 		<ParameterDeclaration name="cruiserCollisionHeroTime" parameterType="integer" value="0" />
 		<ParameterDeclaration name="weather" parameterType="string" value="ClearNoon" />
@@ -30,7 +31,7 @@
 		</ControllerCatalog>
 	</CatalogLocations>
 	<RoadNetwork>
-		
+		<!-- Town04 Town05 Town06 -->
 		<LogicFile filepath="Town05" />
 		<SceneGraphFile filepath="" />
 	</RoadNetwork>
@@ -72,7 +73,7 @@
 		</ScenarioObject>
 	</Entities>
 	<Storyboard>
-   <Init>
+		<Init>
 			<Actions>
 				<GlobalAction>
 					<EnvironmentAction>
@@ -83,7 +84,7 @@
 					<PrivateAction>
 						<TeleportAction>
 							<Position>
-								<LanePosition laneId="-3" offset="0" roadId="37" s="200" />
+								<LanePosition roadId="37" laneId="-3" offset="0" s="200" />
 							</Position>
 						</TeleportAction>
 					</PrivateAction>
@@ -93,12 +94,12 @@
 								<CatalogReference catalogName="ControllerCatalog" entryName="ExternalControl" />
 							</AssignControllerAction>
 							<OverrideControllerValueAction>
-								<Throttle active="false" value="0" />
-								<Brake active="false" value="0" />
-								<Clutch active="false" value="0" />
-								<ParkingBrake active="false" value="0" />
-								<SteeringWheel active="false" value="0" />
-								<Gear active="false" number="0" />
+								<Throttle value="0" active="false" />
+								<Brake value="0" active="false" />
+								<Clutch value="0" active="false" />
+								<ParkingBrake value="0" active="false" />
+								<SteeringWheel value="0" active="false" />
+								<Gear number="0" active="false" />
 							</OverrideControllerValueAction>
 						</ControllerAction>
 					</PrivateAction>
@@ -107,7 +108,7 @@
 					<PrivateAction>
 						<TeleportAction>
 							<Position>
-								<LanePosition laneId="-1" offset="0" roadId="37" s="400" />
+								<LanePosition roadId="37" laneId="-1" offset="0" s="400" />
 							</Position>
 						</TeleportAction>
 					</PrivateAction>
@@ -116,7 +117,7 @@
 					<PrivateAction>
 						<TeleportAction>
 							<Position>
-								<LanePosition laneId="-2" offset="0" roadId="37" s="200" />
+								<LanePosition roadId="37" laneId="-2" offset="0" s="200" />
 							</Position>
 						</TeleportAction>
 					</PrivateAction>
@@ -125,7 +126,7 @@
 					<PrivateAction>
 						<TeleportAction>
 							<Position>
-								<LanePosition laneId="-2" offset="0" roadId="37" s="300" />
+								<LanePosition roadId="37" laneId="-2" offset="0" s="300" />
 							</Position>
 						</TeleportAction>
 					</PrivateAction>
@@ -152,27 +153,18 @@
 			</Actions>
 		</Init>
 		<Story name="MyStory">
-   <Act name="Behavior">
-   <ManeuverGroup maximumExecutionCount="1" name="heroCircle">
-   <Actors selectTriggeringEntities="false">
+			<Act name="Behavior">
+				<ManeuverGroup maximumExecutionCount="1" name="heroCircle">
+					<Actors selectTriggeringEntities="false">
 						<EntityRef entityRef="hero" />
 					</Actors>
 					<Maneuver name="heroManeuver">
-   <Event maximumExecutionCount="1" name="heroStartSpeedEvent" priority="parallel">
-   <StartTrigger>
-								<ConditionGroup>
-									<Condition conditionEdge="none" delay="0" name="heroStartSpeedCondition">
-										<ByValueCondition>
-											<SimulationTimeCondition rule="greaterThan" value="2" />
-										</ByValueCondition>
-									</Condition>
-								</ConditionGroup>
-							</StartTrigger>
-						<Action name="heroStartSpeedAction">
-   <PrivateAction>
+						<Event name="heroStartSpeedEvent" priority="parallel">
+							<Action name="heroStartSpeedAction">
+								<PrivateAction>
 									<LongitudinalAction>
 										<SpeedAction>
-											<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="linear" value="10.0" />
+											<SpeedActionDynamics dynamicsShape="linear" value="10.0" dynamicsDimension="time" />
 											<SpeedActionTarget>
 												<AbsoluteTargetSpeed value="3" />
 											</SpeedActionTarget>
@@ -180,57 +172,57 @@
 									</LongitudinalAction>
 								</PrivateAction>
 							</Action>
-   </Event>
-   <Event maximumExecutionCount="1" name="heroSpeedUpEvent" priority="parallel">
-   <StartTrigger>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="HeroChangeLaneCondition">
-										<ByEntityCondition>
-											<TriggeringEntities triggeringEntitiesRule="any">
-												<EntityRef entityRef="hero" />
-											</TriggeringEntities>
-											<EntityCondition>
-												<TimeHeadwayCondition alongRoute="false" entityRef="cruiser" freespace="false" rule="lessThan" value="10" />
-											</EntityCondition>
-										</ByEntityCondition>
+									<Condition name="heroStartSpeedCondition" delay="0" conditionEdge="none">
+										<ByValueCondition>
+											<SimulationTimeCondition rule="greaterThan" value="2" />
+										</ByValueCondition>
 									</Condition>
 								</ConditionGroup>
 							</StartTrigger>
-						<Action name="heroSpeedUpAction">
-   <PrivateAction>
+						</Event>
+						<Event name="heroSpeedUpEvent" priority="parallel">
+							<Action name="heroSpeedUpAction">
+								<PrivateAction>
 									<LongitudinalAction>
 										<SpeedAction>
-											<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="step" value="0" />
+											<SpeedActionDynamics dynamicsShape="step" dynamicsDimension="time" value="0" />
 											<SpeedActionTarget>
-												<RelativeTargetSpeed continuous="false" entityRef="cruiser" speedTargetValueType="delta" value="0" />
+												<RelativeTargetSpeed entityRef="cruiser" value="0" speedTargetValueType="delta" continuous="false" />
 											</SpeedActionTarget>
 										</SpeedAction>
 									</LongitudinalAction>
 								</PrivateAction>
 							</Action>
-   </Event>
-   </Maneuver>
-   </ManeuverGroup>
-   <ManeuverGroup maximumExecutionCount="1" name="cruiserCircle">
-   <Actors selectTriggeringEntities="false">
-						<EntityRef entityRef="cruiser" />
-					</Actors>
-					<Maneuver name="cruiserCircleManeuver">
-   <Event maximumExecutionCount="1" name="cruiserStartSpeedEvent" priority="overwrite">
-   <StartTrigger>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="none" delay="0" name="cruiserStartSpeedCondition">
-										<ByValueCondition>
-											<SimulationTimeCondition rule="greaterThan" value="0" />
-										</ByValueCondition>
+									<Condition name="HeroChangeLaneCondition" delay="0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="hero" />
+											</TriggeringEntities>
+											<EntityCondition>
+												<TimeHeadwayCondition alongRoute="false" entityRef="cruiser" value="10" freespace="false" rule="lessThan" />
+											</EntityCondition>
+										</ByEntityCondition>
 									</Condition>
 								</ConditionGroup>
 							</StartTrigger>
-						<Action name="cruiserStartSpeedAction">
-   <PrivateAction>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+				<ManeuverGroup maximumExecutionCount="1" name="cruiserCircle">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="cruiser" />
+					</Actors>
+					<Maneuver name="cruiserCircleManeuver">
+						<Event name="cruiserStartSpeedEvent" priority="overwrite">
+							<Action name="cruiserStartSpeedAction">
+								<PrivateAction>
 									<LongitudinalAction>
 										<SpeedAction>
-											<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="linear" value="1" />
+											<SpeedActionDynamics dynamicsShape="linear" value="1" dynamicsDimension="time" />
 											<SpeedActionTarget>
 												<AbsoluteTargetSpeed value="16" />
 											</SpeedActionTarget>
@@ -238,28 +230,19 @@
 									</LongitudinalAction>
 								</PrivateAction>
 							</Action>
-   </Event>
-   <Event maximumExecutionCount="1" name="cruiserChangeLane" priority="parallel">
-   <StartTrigger>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="cruiserToCollisionVehicleCondition">
-										<ByEntityCondition>
-											<TriggeringEntities triggeringEntitiesRule="any">
-												<EntityRef entityRef="cruiser" />
-											</TriggeringEntities>
-											<EntityCondition>
-												<TimeToCollisionCondition alongRoute="false" freespace="false" rule="lessThan" value="10">
-													<TimeToCollisionConditionTarget>
-														<EntityRef entityRef="vehicle" />
-													</TimeToCollisionConditionTarget>
-												</TimeToCollisionCondition>
-											</EntityCondition>
-										</ByEntityCondition>
+									<Condition name="cruiserStartSpeedCondition" delay="0" conditionEdge="none">
+										<ByValueCondition>
+											<SimulationTimeCondition value="0" rule="greaterThan" />
+										</ByValueCondition>
 									</Condition>
 								</ConditionGroup>
 							</StartTrigger>
-						<Action name="cruiserChangeLane">
-   <PrivateAction>
+						</Event>
+						<Event name="cruiserChangeLane" priority="parallel">
+							<Action name="cruiserChangeLane">
+								<PrivateAction>
 									<LateralAction>
 										<LaneChangeAction>
 											<LaneChangeActionDynamics dynamicsDimension="distance" dynamicsShape="linear" value="20" />
@@ -270,11 +253,41 @@
 									</LateralAction>
 								</PrivateAction>
 							</Action>
-   </Event>
-   <Event maximumExecutionCount="1" name="cruiserCollisionHeroStopEvent1" priority="overwrite">
-   <StartTrigger>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="CollisionCondition1">
+									<Condition name="cruiserToCollisionVehicleCondition" delay="0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="cruiser" />
+											</TriggeringEntities>
+											<EntityCondition>
+												<TimeToCollisionCondition alongRoute="false" value="10" freespace="false" rule="lessThan">
+													<TimeToCollisionConditionTarget>
+														<EntityRef entityRef="vehicle" />
+													</TimeToCollisionConditionTarget>
+												</TimeToCollisionCondition>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+						<Event name="cruiserCollisionHeroStopEvent1" priority="overwrite">
+							<Action name="cruiserCollisionHeroStopAction1">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time" />
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="0" />
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="CollisionCondition1" delay="0" conditionEdge="rising">
 										<ByEntityCondition>
 											<TriggeringEntities triggeringEntitiesRule="any">
 												<EntityRef entityRef="hero" />
@@ -289,15 +302,27 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   <Event maximumExecutionCount="1" name="cruiserCollisionRestart" priority="overwrite">
-   <StartTrigger>
+						<Event name="cruiserCollisionRestart" priority="overwrite">
+							<Action name="cruiserCollisionRestart">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="0.0" dynamicsDimension="time" />
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="16" />
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="CutInStartCondition">
+									<Condition name="CutInStartCondition" delay="0" conditionEdge="rising">
 										<ByValueCondition>
-											<StoryboardElementStateCondition state="completeState" storyboardElementRef="cruiserCollisionHeroStopEvent1" storyboardElementType="event" />
+											<StoryboardElementStateCondition storyboardElementRef="cruiserCollisionHeroStopEvent1" state="completeState" storyboardElementType="event" />
 										</ByValueCondition>
 									</Condition>
-									<Condition conditionEdge="rising" delay="0" name="collisionStandByCondition">
+									<Condition name="collisionStandByCondition" delay="0" conditionEdge="rising">
 										<ByEntityCondition>
 											<EntityCondition>
 												<StandStillCondition duration="4" />
@@ -310,15 +335,27 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   <Event maximumExecutionCount="1" name="cruisernearhero" priority="overwrite">
-   <StartTrigger>
+						<Event name="cruisernearhero" priority="overwrite">
+							<Action name="cruisernearhero">
+								<PrivateAction>
+									<LateralAction>
+										<LaneChangeAction>
+											<LaneChangeActionDynamics dynamicsDimension="distance" dynamicsShape="linear" value="40" />
+											<LaneChangeTarget>
+												<RelativeTargetLane entityRef="cruiser" value="-2" />
+											</LaneChangeTarget>
+										</LaneChangeAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="CollisionAndStart">
+									<Condition name="CollisionAndStart" delay="0" conditionEdge="rising">
 										<ByValueCondition>
-											<StoryboardElementStateCondition state="completeState" storyboardElementRef="cruiserCollisionRestart" storyboardElementType="event" />
+											<StoryboardElementStateCondition storyboardElementType="event" storyboardElementRef="cruiserCollisionRestart" state="completeState" />
 										</ByValueCondition>
 									</Condition>
-									<Condition conditionEdge="rising" delay="0" name="CollisionCondition2">
+									<Condition name="CollisionCondition2" delay="0" conditionEdge="rising">
 										<ByEntityCondition>
 											<TriggeringEntities triggeringEntitiesRule="any">
 												<EntityRef entityRef="hero" />
@@ -333,10 +370,22 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   <Event maximumExecutionCount="1" name="cruiserBreakThenStopEvent1" priority="overwrite">
-   <StartTrigger>
+						<Event name="cruiserBreakThenStopEvent1" priority="overwrite">
+							<Action name="cruiserBreakThenStopAction1">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="3.0" dynamicsDimension="time" />
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="0" />
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="cruiserBreakCondition1">
+									<Condition name="cruiserBreakCondition1" delay="0" conditionEdge="rising">
 										<ByEntityCondition>
 											<TriggeringEntities triggeringEntitiesRule="any">
 												<EntityRef entityRef="cruiser" />
@@ -344,7 +393,7 @@
 											<EntityCondition>
 												<DistanceCondition alongRoute="false" freespace="false" rule="lessThan" value="20">
 													<Position>
-														<LanePosition laneId="-1" roadId="37" s="600" />
+														<LanePosition roadId="37" laneId="-1" s="600" />
 													</Position>
 												</DistanceCondition>
 											</EntityCondition>
@@ -353,10 +402,22 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   <Event maximumExecutionCount="1" name="cruiserRestartFromStopEvent" priority="overwrite">
-   <StartTrigger>
+						<Event name="cruiserRestartFromStopEvent" priority="overwrite">
+							<Action name="cruiserRestartFromStopAction">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="1.0" dynamicsDimension="time" />
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="8" />
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="4" name="cruiserCollisionEnd">
+									<Condition name="cruiserCollisionEnd" delay="4" conditionEdge="rising">
 										<ByEntityCondition>
 											<TriggeringEntities triggeringEntitiesRule="any">
 												<EntityRef entityRef="cruiser" />
@@ -369,15 +430,27 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   </Maneuver>
-   </ManeuverGroup>
-   <ManeuverGroup maximumExecutionCount="1" name="vehicleCircle">
-   <Actors selectTriggeringEntities="false">
+					</Maneuver>
+				</ManeuverGroup>
+				<ManeuverGroup maximumExecutionCount="1" name="vehicleCircle">
+					<Actors selectTriggeringEntities="false">
 						<EntityRef entityRef="vehicle" />
 					</Actors>
 					<Maneuver name="vehicleManeuver">
-   <Event maximumExecutionCount="1" name="vehicleSpeedOn" priority="overwrite">
-   <StartTrigger>
+						<Event name="vehicleSpeedOn" priority="overwrite">
+							<Action name="vehicleSpeedOn">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="10.0" dynamicsDimension="time" />
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="6.4" />
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
 									<Condition conditionEdge="rising" delay="0" name="timeCondition">
 										<ByValueCondition>
@@ -386,29 +459,29 @@
 									</Condition>
 								</ConditionGroup>
 							</StartTrigger>
-						<Action name="vehicleSpeedOn">
-   <PrivateAction>
+						</Event>
+						<Event name="vehicleSpeedUp" priority="parallel" maximumExecutionCount="1">
+							<Action name="vehicleSpeedUp">
+								<PrivateAction>
 									<LongitudinalAction>
 										<SpeedAction>
-											<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="linear" value="10.0" />
+											<SpeedActionDynamics dynamicsShape="linear" dynamicsDimension="time" value="2" />
 											<SpeedActionTarget>
-												<AbsoluteTargetSpeed value="6.4" />
+												<AbsoluteTargetSpeed value="6" />
 											</SpeedActionTarget>
 										</SpeedAction>
 									</LongitudinalAction>
 								</PrivateAction>
 							</Action>
-   </Event>
-   <Event maximumExecutionCount="1" name="vehicleSpeedUp" priority="parallel">
-   <StartTrigger>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="cruiserToCollisionVehicle">
+									<Condition name="cruiserToCollisionVehicle" delay="0" conditionEdge="rising">
 										<ByEntityCondition>
 											<TriggeringEntities triggeringEntitiesRule="any">
 												<EntityRef entityRef="cruiser" />
 											</TriggeringEntities>
 											<EntityCondition>
-												<TimeToCollisionCondition alongRoute="false" freespace="false" rule="lessThan" value="3">
+												<TimeToCollisionCondition alongRoute="false" value="3" freespace="false" rule="lessThan">
 													<TimeToCollisionConditionTarget>
 														<EntityRef entityRef="vehicle" />
 													</TimeToCollisionConditionTarget>
@@ -419,25 +492,16 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   </Maneuver>
-   </ManeuverGroup>
-   <ManeuverGroup maximumExecutionCount="1" name="NPCManeuverGroup">
-   <Actors selectTriggeringEntities="false">
+					</Maneuver>
+				</ManeuverGroup>
+				<ManeuverGroup maximumExecutionCount="1" name="NPCManeuverGroup">
+					<Actors selectTriggeringEntities="false">
 						<EntityRef entityRef="NPC" />
 					</Actors>
 					<Maneuver name="NPCManeuver">
-   <Event maximumExecutionCount="1" name="NPCSpeedOn" priority="overwrite">
-   <StartTrigger>
-								<ConditionGroup>
-									<Condition conditionEdge="none" delay="0" name="NPCSpeedOnCondition2">
-										<ByValueCondition>
-											<SimulationTimeCondition rule="greaterThan" value="2" />
-										</ByValueCondition>
-									</Condition>
-								</ConditionGroup>
-							</StartTrigger>
-						<Action name="NPCSpeedOn">
-   <PrivateAction>
+						<Event name="NPCSpeedOn" priority="overwrite">
+							<Action name="NPCSpeedOn">
+								<PrivateAction>
 									<LongitudinalAction>
 										<SpeedAction>
 											<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="step" value="0" />
@@ -448,9 +512,30 @@
 									</LongitudinalAction>
 								</PrivateAction>
 							</Action>
-   </Event>
-   <Event maximumExecutionCount="1" name="NPCChangeLane" priority="overwrite">
-   <StartTrigger>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition conditionEdge="none" delay="0" name="NPCSpeedOnCondition2">
+										<ByValueCondition>
+											<SimulationTimeCondition rule="greaterThan" value="2" />
+										</ByValueCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+						<Event name="NPCChangeLane" priority="overwrite">
+							<Action name="NPCChangeLane">
+								<PrivateAction>
+									<LateralAction>
+										<LaneChangeAction>
+											<LaneChangeActionDynamics dynamicsDimension="distance" dynamicsShape="linear" value="30" />
+											<LaneChangeTarget>
+												<RelativeTargetLane entityRef="NPC" value="1" />
+											</LaneChangeTarget>
+										</LaneChangeAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
 									<Condition conditionEdge="none" delay="0" name="NPCTraveleDistance">
 										<ByEntityCondition>
@@ -465,8 +550,17 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   <Event maximumExecutionCount="1" name="NPCTeleport" priority="overwrite">
-   <StartTrigger>
+						<Event name="NPCTeleport" priority="overwrite">
+							<Action name="NPCTeleport">
+								<PrivateAction>
+									<TeleportAction>
+										<Position>
+											<LanePosition laneId="-2" roadId="37" s="650" />
+										</Position>
+									</TeleportAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
 									<Condition conditionEdge="none" delay="0" name="findVehiclePosition">
 										<ByEntityCondition>
@@ -486,8 +580,20 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   <Event maximumExecutionCount="1" name="NPCChangeLane2" priority="overwrite">
-   <StartTrigger>
+						<Event name="NPCChangeLane2" priority="overwrite">
+							<Action name="NPCChangeLane2">
+								<PrivateAction>
+									<LateralAction>
+										<LaneChangeAction>
+											<LaneChangeActionDynamics dynamicsDimension="distance" dynamicsShape="linear" value="30" />
+											<LaneChangeTarget>
+												<RelativeTargetLane entityRef="NPC" value="1" />
+											</LaneChangeTarget>
+										</LaneChangeAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
 									<Condition conditionEdge="none" delay="1" name="NPCChangeLaneCondition">
 										<ByEntityCondition>
@@ -502,10 +608,22 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
-   <Event maximumExecutionCount="1" name="NPCByEgo" priority="overwrite">
-   <StartTrigger>
+						<Event priority="overwrite" name="NPCByEgo">
+							<Action name="NPCByEgo">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="10" dynamicsDimension="time" />
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="20" />
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
 								<ConditionGroup>
-									<Condition conditionEdge="rising" delay="0" name="NPCInfluenceByEgo">
+									<Condition name="NPCInfluenceByEgo" delay="0" conditionEdge="rising">
 										<ByEntityCondition>
 											<TriggeringEntities triggeringEntitiesRule="any">
 												<EntityRef entityRef="free" />
@@ -519,49 +637,37 @@
 									</Condition>
 								</ConditionGroup>
 							</StartTrigger>
-						<Action name="NPCByEgo">
-   <PrivateAction>
-									<LongitudinalAction>
-										<SpeedAction>
-											<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="linear" value="10" />
-											<SpeedActionTarget>
-												<AbsoluteTargetSpeed value="20" />
-											</SpeedActionTarget>
-										</SpeedAction>
-									</LongitudinalAction>
-								</PrivateAction>
-							</Action>
-   </Event>
-   </Maneuver>
-   </ManeuverGroup>
-   <StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+				<StartTrigger>
 					<ConditionGroup>
-						<Condition conditionEdge="rising" delay="0" name="OverallStartCondition">
+						<Condition name="OverallStartCondition" delay="0" conditionEdge="rising">
 							<ByValueCondition>
-								<SimulationTimeCondition rule="greaterThan" value="0" />
+								<SimulationTimeCondition value="0" rule="greaterThan" />
 							</ByValueCondition>
 						</Condition>
 					</ConditionGroup>
 				</StartTrigger>
 				<StopTrigger>
 					<ConditionGroup>
-						<Condition conditionEdge="rising" delay="0" name="EndCondition">
+						<Condition name="EndCondition" delay="0" conditionEdge="rising">
 							<ByValueCondition>
-								<SimulationTimeCondition rule="greaterThan" value="60.0" />
+								<SimulationTimeCondition value="60.0" rule="greaterThan" />
 							</ByValueCondition>
 						</Condition>
 					</ConditionGroup>
 				</StopTrigger>
 			</Act>
-   </Story>
-   <StopTrigger>
+		</Story>
+		<StopTrigger>
 			<ConditionGroup>
-				<Condition conditionEdge="rising" delay="0" name="criteria_CollisionTest">
+				<Condition name="criteria_CollisionTest" delay="0" conditionEdge="rising">
 					<ByValueCondition>
-						<ParameterCondition parameterRef="" rule="lessThan" value="" />
+						<ParameterCondition parameterRef="" value="" rule="lessThan" />
 					</ByValueCondition>
 				</Condition>
 			</ConditionGroup>
 		</StopTrigger>
 	</Storyboard>
-   </OpenSCENARIO>
+</OpenSCENARIO>

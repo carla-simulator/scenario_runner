@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="1" revMinor="0" date="2020-03-20T12:00:00" description="CARLA:FollowLeadingVehicle" author="" />
+  <FileHeader author="" date="2020-03-20T12:00:00" description="CARLA:FollowLeadingVehicle" revMajor="1" revMinor="0" />
   <ParameterDeclarations>
     <ParameterDeclaration name="leadingSpeed" parameterType="double" value="2.0" />
   </ParameterDeclarations>
@@ -13,14 +12,14 @@
     <ScenarioObject name="hero">
       <Vehicle name="vehicle.lincoln.mkz_2017" vehicleCategory="car">
         <ParameterDeclarations />
-        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0" />
+        <Performance maxAcceleration="200" maxDeceleration="10.0" maxSpeed="69.444" />
         <BoundingBox>
           <Center x="1.5" y="0.0" z="0.9" />
-          <Dimensions width="2.1" length="4.5" height="1.8" />
+          <Dimensions height="1.8" length="4.5" width="2.1" />
         </BoundingBox>
         <Axles>
-          <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3" />
-          <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3" />
+          <FrontAxle maxSteering="0.5" positionX="3.1" positionZ="0.3" trackWidth="1.8" wheelDiameter="0.6" />
+          <RearAxle maxSteering="0.0" positionX="0.0" positionZ="0.3" trackWidth="1.8" wheelDiameter="0.6" />
         </Axles>
         <Properties>
           <Property name="type" value="ego_vehicle" />
@@ -31,14 +30,14 @@
     <ScenarioObject name="adversary">
       <Vehicle name="vehicle.tesla.model3" vehicleCategory="car">
         <ParameterDeclarations />
-        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0" />
+        <Performance maxAcceleration="200" maxDeceleration="10.0" maxSpeed="69.444" />
         <BoundingBox>
           <Center x="1.5" y="0.0" z="0.9" />
-          <Dimensions width="2.1" length="4.5" height="1.8" />
+          <Dimensions height="1.8" length="4.5" width="2.1" />
         </BoundingBox>
         <Axles>
-          <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3" />
-          <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3" />
+          <FrontAxle maxSteering="0.5" positionX="3.1" positionZ="0.3" trackWidth="1.8" wheelDiameter="0.6" />
+          <RearAxle maxSteering="0.0" positionX="0.0" positionZ="0.3" trackWidth="1.8" wheelDiameter="0.6" />
         </Axles>
         <Properties>
           <Property name="type" value="simulation" />
@@ -55,9 +54,9 @@
             <Environment name="Environment1">
               <TimeOfDay animation="false" dateTime="2020-03-20T12:00:00" />
               <Weather cloudState="free">
-                <Sun intensity="0.85" azimuth="0" elevation="1.31" />
+                <Sun azimuth="0" elevation="1.31" intensity="0.85" />
                 <Fog visualRange="100000.0" />
-                <Precipitation precipitationType="dry" intensity="0.0" />
+                <Precipitation intensity="0.0" precipitationType="dry" />
               </Weather>
               <RoadCondition frictionScaleFactor="1.0" />
             </Environment>
@@ -68,7 +67,7 @@
             <TeleportAction>
               <Position>
                 <RoadPosition roadId="4" s="48.58" t="2.75" />
-                <!--                <LanePosition roadId="4" laneId="-1" offset="1.0" s="48.58"/>-->
+
               </Position>
             </TeleportAction>
           </PrivateAction>
@@ -82,12 +81,12 @@
                 </Controller>
               </AssignControllerAction>
               <OverrideControllerValueAction>
-                <Throttle value="0" active="false" />
-                <Brake value="0" active="false" />
-                <Clutch value="0" active="false" />
-                <ParkingBrake value="0" active="false" />
-                <SteeringWheel value="0" active="false" />
-                <Gear number="0" active="false" />
+                <Throttle active="false" value="0" />
+                <Brake active="false" value="0" />
+                <Clutch active="false" value="0" />
+                <ParkingBrake active="false" value="0" />
+                <SteeringWheel active="false" value="0" />
+                <Gear active="false" number="0" />
               </OverrideControllerValueAction>
             </ControllerAction>
           </PrivateAction>
@@ -96,74 +95,54 @@
           <PrivateAction>
             <TeleportAction>
               <Position>
-                <RelativeRoadPosition entityRef="hero" ds="50" dt="-1.0" />
-                <!--                <WorldPosition x="190" y="133" z="0" h="0"/>-->
+                <RelativeRoadPosition ds="50" dt="-1.0" entityRef="hero" />
+
               </Position>
             </TeleportAction>
           </PrivateAction>
-          <PrivateAction>
-            <LongitudinalAction>
-              <SpeedAction>
-                <SpeedActionDynamics dynamicsShape="step" dynamicsDimension="time" value="0.0" />
-                <SpeedActionTarget>
-                  <AbsoluteTargetSpeed value="0" />
-                </SpeedActionTarget>
-              </SpeedAction>
-            </LongitudinalAction>
-          </PrivateAction>
         </Private>
-
-
       </Actions>
     </Init>
     <Story name="MyStory">
       <Act name="Behavior">
-        <ManeuverGroup name="ManeuverSequence" maximumExecutionCount="1">
+        <ManeuverGroup maximumExecutionCount="3" name="ManeuverSequence">
           <Actors selectTriggeringEntities="false">
             <EntityRef entityRef="adversary" />
           </Actors>
           <Maneuver name="FollowLeadingVehicleManeuver">
             <Event name="LeadingVehicleKeepsVelocity" priority="overwrite">
-              <!-- <Action name="LeadingVehicleKeepsVelocity">
+              <Action name="LeadingVehicleKeepsVelocity">
                 <PrivateAction>
                   <LongitudinalAction>
                     <SpeedAction>
-                      <SpeedActionDynamics dynamicsShape="step" value="20" dynamicsDimension="distance" />
+                      <SpeedActionDynamics dynamicsDimension="distance" dynamicsShape="step" value="20" />
                       <SpeedActionTarget>
                         <AbsoluteTargetSpeed value="$leadingSpeed" />
                       </SpeedActionTarget>
                     </SpeedAction>
                   </LongitudinalAction>
                 </PrivateAction>
-              </Action> -->
-              <StartTrigger>
-                <ConditionGroup>
-                  <Condition name="StartTime1" delay="2" conditionEdge="rising">
-                    <ByValueCondition>
-                      <SimulationTimeCondition value="3" rule="equalTo" />
-                    </ByValueCondition>
-                  </Condition>
-                </ConditionGroup>
-              </StartTrigger>
+              </Action>
             </Event>
             <Event name="LeadingVehicleWaits" priority="overwrite">
-              <!-- <Action name="LeadingVehicleWaits">
+              <Action name="LeadingVehicleWaits">
                 <PrivateAction>
                   <LongitudinalAction>
                     <SpeedAction>
-                      <SpeedActionDynamics dynamicsShape="step" value="10" dynamicsDimension="time" />
+                      <SpeedActionDynamics dynamicsDimension="time" dynamicsShape="step" value="10" />
                       <SpeedActionTarget>
                         <AbsoluteTargetSpeed value="0.0" />
                       </SpeedActionTarget>
                     </SpeedAction>
                   </LongitudinalAction>
                 </PrivateAction>
-              </Action> -->
+              </Action>
               <StartTrigger>
                 <ConditionGroup>
-                  <Condition name="StartTime2" delay="0" conditionEdge="rising">
+                  <Condition conditionEdge="rising" delay="0" name="triggerEvent">
                     <ByValueCondition>
-                      <SimulationTimeCondition value="5" rule="greaterThan" />
+                      <StoryboardElementStateCondition state="startTransition"
+                        storyboardElementRef="LeadingVehicleKeepsVelocity" storyboardElementType="event" />
                     </ByValueCondition>
                   </Condition>
                 </ConditionGroup>
@@ -173,19 +152,24 @@
         </ManeuverGroup>
         <StartTrigger>
           <ConditionGroup>
-            <Condition name="StartTime3" delay="0" conditionEdge="rising">
+            <Condition conditionEdge="rising" delay="0" name="StartTime">
               <ByValueCondition>
-                <SimulationTimeCondition value="0" rule="greaterThan" />
+                <SimulationTimeCondition rule="equalTo" value="0" />
               </ByValueCondition>
             </Condition>
           </ConditionGroup>
         </StartTrigger>
         <StopTrigger>
           <ConditionGroup>
-            <Condition name="StartTime4" delay="0" conditionEdge="rising">
-              <ByValueCondition>
-                <SimulationTimeCondition value="4" rule="equalTo" />
-              </ByValueCondition>
+            <Condition conditionEdge="rising" delay="0" name="EndCondition">
+              <ByEntityCondition>
+                <TriggeringEntities triggeringEntitiesRule="any">
+                  <EntityRef entityRef="hero" />
+                </TriggeringEntities>
+                <EntityCondition>
+                  <TraveledDistanceCondition value="200.0" />
+                </EntityCondition>
+              </ByEntityCondition>
             </Condition>
           </ConditionGroup>
         </StopTrigger>
@@ -193,39 +177,39 @@
     </Story>
     <StopTrigger>
       <ConditionGroup>
-        <Condition name="criteria_RunningStopTest" delay="0" conditionEdge="rising">
+        <Condition conditionEdge="rising" delay="0" name="criteria_RunningStopTest">
           <ByValueCondition>
-            <ParameterCondition parameterRef="" value="" rule="lessThan" />
+            <ParameterCondition parameterRef="" rule="lessThan" value="" />
           </ByValueCondition>
         </Condition>
-        <Condition name="criteria_RunningRedLightTest" delay="0" conditionEdge="rising">
+        <Condition conditionEdge="rising" delay="0" name="criteria_RunningRedLightTest">
           <ByValueCondition>
-            <ParameterCondition parameterRef="" value="" rule="lessThan" />
+            <ParameterCondition parameterRef="" rule="lessThan" value="" />
           </ByValueCondition>
         </Condition>
-        <Condition name="criteria_WrongLaneTest" delay="0" conditionEdge="rising">
+        <Condition conditionEdge="rising" delay="0" name="criteria_WrongLaneTest">
           <ByValueCondition>
-            <ParameterCondition parameterRef="" value="" rule="lessThan" />
+            <ParameterCondition parameterRef="" rule="lessThan" value="" />
           </ByValueCondition>
         </Condition>
-        <Condition name="criteria_OnSidewalkTest" delay="0" conditionEdge="rising">
+        <Condition conditionEdge="rising" delay="0" name="criteria_OnSidewalkTest">
           <ByValueCondition>
-            <ParameterCondition parameterRef="" value="" rule="lessThan" />
+            <ParameterCondition parameterRef="" rule="lessThan" value="" />
           </ByValueCondition>
         </Condition>
-        <Condition name="criteria_KeepLaneTest" delay="0" conditionEdge="rising">
+        <Condition conditionEdge="rising" delay="0" name="criteria_KeepLaneTest">
           <ByValueCondition>
-            <ParameterCondition parameterRef="" value="" rule="lessThan" />
+            <ParameterCondition parameterRef="" rule="lessThan" value="" />
           </ByValueCondition>
         </Condition>
-        <Condition name="criteria_CollisionTest" delay="0" conditionEdge="rising">
+        <Condition conditionEdge="rising" delay="0" name="criteria_CollisionTest">
           <ByValueCondition>
-            <ParameterCondition parameterRef="" value="" rule="lessThan" />
+            <ParameterCondition parameterRef="" rule="lessThan" value="" />
           </ByValueCondition>
         </Condition>
-        <Condition name="criteria_DrivenDistanceTest" delay="0" conditionEdge="rising">
+        <Condition conditionEdge="rising" delay="0" name="criteria_DrivenDistanceTest">
           <ByValueCondition>
-            <ParameterCondition parameterRef="distance_success" value="100" rule="lessThan" />
+            <ParameterCondition parameterRef="distance_success" rule="lessThan" value="100" />
           </ByValueCondition>
         </Condition>
       </ConditionGroup>

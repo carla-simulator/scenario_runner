@@ -34,7 +34,6 @@ class NpcVehicleControl(BasicControl):
 
     def __init__(self, actor, args=None):
         super(NpcVehicleControl, self).__init__(actor)
-
         self._local_planner = LocalPlanner(  # pylint: disable=undefined-variable
             self._actor, opt_dict={
                 'target_speed': self._target_speed * 3.6,
@@ -72,6 +71,8 @@ class NpcVehicleControl(BasicControl):
                 self._local_planner = None
             self._actor = None
 
+        # print('reset一次')
+
     def run_step(self):
         """
         Execute on tick of the controller's control loop
@@ -103,6 +104,7 @@ class NpcVehicleControl(BasicControl):
         # If target speed is negavite, raise an exception
         if target_speed < 0:
             raise NotImplementedError("Negative target speeds are not yet supported")
+
 
         self._local_planner.set_speed(target_speed * 3.6)
         control = self._local_planner.run_step(debug=False)

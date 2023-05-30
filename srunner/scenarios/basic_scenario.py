@@ -60,7 +60,7 @@ class BasicScenario(object):
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-        behavior = self._create_behavior()
+        behavior_start,behavior ,behavior_end= self._create_behavior()
 
         criteria = None
         if criteria_enable:
@@ -73,7 +73,9 @@ class BasicScenario(object):
             behavior_seq.add_child(trigger_behavior)
 
         if behavior is not None:
+            behavior_seq.add_child(behavior_start)
             behavior_seq.add_child(behavior)
+            behavior_seq.add_child(behavior_end)
             behavior_seq.name = behavior.name
 
         end_behavior = self._setup_scenario_end(config)
@@ -116,6 +118,7 @@ class BasicScenario(object):
             new_actors = CarlaDataProvider.request_new_actors(config.other_actors)
             if not new_actors:
                 raise Exception("Error: Unable to add actors")
+                # pass
 
             for new_actor in new_actors:
                 self.other_actors.append(new_actor)

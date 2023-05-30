@@ -13,6 +13,7 @@ It must not be modified and is for reference only!
 from __future__ import print_function
 import sys
 import time
+import carla
 
 import py_trees
 
@@ -110,7 +111,7 @@ class ScenarioManager(object):
         self.other_actors = scenario.other_actors
 
         # To print the scenario tree uncomment the next line
-        # py_trees.display.render_dot_tree(self.scenario_tree)
+        py_trees.display.render_dot_tree(self.scenario_tree)
 
         if self._agent is not None:
             self._agent.setup_sensors(self.ego_vehicles[0], self._debug_mode)
@@ -120,6 +121,13 @@ class ScenarioManager(object):
         Trigger the start of the scenario and wait for it to finish/fail
         """
         print("ScenarioManager: Running scenario {}".format(self.scenario_tree.name))
+        world = CarlaDataProvider.get_world()
+
+        spectator = world.get_spectator()
+
+        spectator.set_transform(carla.Transform(carla.Location(x=-83.95643615722656, y=23.750804901123047, z=195.0438995361328), carla.Rotation(yaw=-123.29074096679688, roll=2.0062678231624886e-05,pitch=-47.08714294433594)))
+
+
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
 

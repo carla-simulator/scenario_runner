@@ -1,6 +1,8 @@
-import py_trees.blackboard as bp
+import pickle
+import json
 
-bp1 = bp.Blackboard()
-bp1.set("key1",value=1)
-
-print(bp1.keys())
+with open('resdata','rb') as f:
+    res = pickle.loads(f.read())
+    
+    with open('resdata.json','w') as fs:
+        fs.write(str(res))

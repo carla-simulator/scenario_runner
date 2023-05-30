@@ -58,7 +58,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTe
 # pylint: enable=unused-import
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
                                                                                Eventexecute,
-                                                                               Eventstart,
+                                                                               
                                                                                InTriggerDistanceToOSCPosition,
                                                                                InTimeToArrivalToOSCPosition,
                                                                                InTimeToArrivalToVehicle,
@@ -71,7 +71,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                TriggerVelocity,
                                                                                WaitForTrafficLightState,
                                                                                CheckParameter)
-from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
+from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition, Delay
 from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
 
@@ -590,9 +590,15 @@ class OpenScenarioParser(object):
             x = float(ParameterRef(world_pos.attrib.get('x', 0)))
             y = float(ParameterRef(world_pos.attrib.get('y', 0)))
             z = float(ParameterRef(world_pos.attrib.get('z', 0)))
-            yaw = math.degrees(float(ParameterRef(world_pos.attrib.get('h', 0))))
-            pitch = math.degrees(float(ParameterRef(world_pos.attrib.get('p', 0))))
-            roll = math.degrees(float(ParameterRef(world_pos.attrib.get('r', 0))))
+            # yaw = math.degrees(float(ParameterRef(world_pos.attrib.get('h', 0))))
+            yaw=-float(ParameterRef(world_pos.attrib.get('h', 0)))
+
+            # pitch = math.degrees(float(ParameterRef(world_pos.attrib.get('p', 0))))
+            # roll = math.degrees(float(ParameterRef(world_pos.attrib.get('r', 0))))
+
+            pitch = float(ParameterRef(world_pos.attrib.get('p', 0)))
+            roll = float(ParameterRef(world_pos.attrib.get('r', 0)))
+
             if not OpenScenarioParser.use_carla_coordinate_system:
                 y = y * (-1.0)
                 yaw = yaw * (-1.0)
@@ -809,16 +815,13 @@ class OpenScenarioParser(object):
             raise AttributeError("Unknown position")
 
     @staticmethod
-    def create_event_execution(name):
-        atomic = Eventexecute(name)
+    def create_event_execution(name,client):
+        atomic = Eventexecute(name,client)
 
         return atomic
     
-    @staticmethod
-    def create_event_start(name):
-        atomic = Eventstart(name)
 
-        return atomic
+
 
     @staticmethod
     def convert_condition_to_atomic(condition, actor_list):
@@ -837,7 +840,7 @@ class OpenScenarioParser(object):
 
         if condition.attrib.get('delay') is not None and float(condition.attrib.get('delay')) != 0:
             delay = float(condition.attrib.get('delay'))
-            delay_atomic = TimeOut(delay)
+            delay_atomic = Delay(delay,condition_name)
 
         if condition.find('ByEntityCondition') is not None:
 
@@ -866,6 +869,7 @@ class OpenScenarioParser(object):
                         collision_entity = collision_condition.find('EntityRef')
 
                         for actor in actor_list:
+
                             if collision_entity.attrib.get('entityRef', None) == actor.attributes['role_name']:
                                 triggered_actor = actor
                                 break
@@ -904,7 +908,7 @@ class OpenScenarioParser(object):
 
                     condition_rule = headtime_condition.attrib.get('rule')
                     condition_operator = OpenScenarioParser.operators[condition_rule]
-
+    
                     condition_freespace = strtobool(headtime_condition.attrib.get('freespace', False))
                     condition_along_route = strtobool(headtime_condition.attrib.get('alongRoute', False))
 
@@ -1067,7 +1071,8 @@ class OpenScenarioParser(object):
                 simtime_condition = value_condition.find('SimulationTimeCondition')
                 value = ParameterRef(simtime_condition.attrib.get('value'))
                 rule = OpenScenarioParser.operators[simtime_condition.attrib.get('rule')]
-                atomic = SimulationTimeCondition(value, comparison_operator=rule)
+
+                atomic = SimulationTimeCondition(value, comparison_operator=rule,name=condition_name)
             elif value_condition.find('TimeOfDayCondition') is not None:
                 tod_condition = value_condition.find('TimeOfDayCondition')
                 condition_date = tod_condition.attrib.get('dateTime')
@@ -1353,6 +1358,7 @@ class OpenScenarioParser(object):
                 activate = strtobool(private_action.attrib.get('longitudinal'))
                 atomic = ChangeAutoPilot(actor, activate, name=maneuver_name)
             elif private_action.find('ControllerAction') is not None:
+
                 controller_action = private_action.find('ControllerAction')
                 module, args = OpenScenarioParser.get_controller(controller_action, catalogs)
                 atomic = ChangeActorControl(actor, control_py_module=module, args=args,
