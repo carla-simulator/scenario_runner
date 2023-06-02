@@ -238,7 +238,7 @@ __3. Test the scenario with manual control.__ Open a new terminal and run the `m
 
 ```sh
 # Inside the ScenarioRunner root directory
-python manual_control.py --rolename=[hero/ego_vehicle]
+python manual_control.py
 ```
 
 The scenarios have a timeout of one minute approximately, for the agent to be launched. If the timeout appears, the follow leading vehicle example should be launched again.  
