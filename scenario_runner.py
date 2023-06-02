@@ -33,15 +33,15 @@ import pkg_resources
 import carla
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
-from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.scenarios.open_scenario import OpenScenario
-from srunner.scenarios.osc2_scenario import OSC2Scenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 from srunner.tools.osc2_helper import OSC2Helper
+from srunner.scenarios.osc2_scenario import OSC2Scenario
+from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 
 # Version of scenario_runner
 VERSION = '0.9.13'
@@ -235,6 +235,7 @@ class ScenarioRunner(object):
                         break
 
             for i, _ in enumerate(self.ego_vehicles):
+                self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
                 CarlaDataProvider.register_actor(self.ego_vehicles[i])
 
         # sync state
