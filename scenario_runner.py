@@ -92,9 +92,6 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-
-        self.traffic_manager = self.client.get_trafficmanager(int(self._args.trafficManagerPort))
-
         dist = pkg_resources.get_distribution("carla")
         if LooseVersion(dist.version) < LooseVersion('0.9.12'):
             raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
@@ -338,12 +335,8 @@ class ScenarioRunner(object):
             settings.fixed_delta_seconds = 1.0 / self.frame_rate
             self.world.apply_settings(settings)
 
-            self.traffic_manager.set_synchronous_mode(True)
-            self.traffic_manager.set_random_device_seed(int(self._args.trafficManagerSeed))
-
         CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
-        CarlaDataProvider.set_traffic_manager_port(int(self._args.trafficManagerPort))
 
         # Wait for the world to be ready
         if CarlaDataProvider.is_sync_mode():
