@@ -193,3 +193,13 @@ class OSC2Helper(object):
         w = math.cos(pitch / 2) * math.cos(yaw / 2) * math.cos(roll / 2) - math.sin(pitch / 2) * math.sin(
             yaw / 2) * math.sin(roll / 2)
         return x, y, z, w
+
+    @staticmethod
+    def flat_list(list_of_lists):
+        if len(list_of_lists) == 0:
+            return list_of_lists
+
+        if isinstance(list_of_lists[0], list):
+            return OSC2Helper.flat_list(list_of_lists[0]) + OSC2Helper.flat_list(list_of_lists[1:])
+
+        return list_of_lists[:1] + OSC2Helper.flat_list(list_of_lists[1:])

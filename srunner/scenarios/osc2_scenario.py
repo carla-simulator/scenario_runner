@@ -65,16 +65,6 @@ from srunner.osc2.utils.log_manager import *
 from srunner.osc2.symbol_manager.method_symbol import MethodSymbol
 
 
-def flat_list(list_of_lists):
-    if len(list_of_lists) == 0:
-        return list_of_lists
-
-    if isinstance(list_of_lists[0], list):
-        return flat_list(list_of_lists[0]) + flat_list(list_of_lists[1:])
-
-    return list_of_lists[:1] + flat_list(list_of_lists[1:])
-
-
 def para_type_str_sequence(config, arguments, line, column, node):
     retrieval_name = ''
     if isinstance(arguments, List):
@@ -718,7 +708,7 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins = SpeedModifier(actor, modifier_name)
                         keyword_args = {}
                         if isinstance(arguments, list):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
 
                             for arg in arguments:
                                 if isinstance(arg, tuple):
@@ -742,7 +732,7 @@ class OSC2Scenario(BasicScenario):
 
                         keyword_args = {}
                         if isinstance(arguments, list):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, tuple):
                                     keyword_args[arg[0]] = arg[1]
@@ -764,7 +754,7 @@ class OSC2Scenario(BasicScenario):
 
                         keyword_args = {}
                         if isinstance(arguments, List):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, Tuple):
                                     keyword_args[arg[0]] = arg[1]
@@ -783,7 +773,7 @@ class OSC2Scenario(BasicScenario):
 
                         keyword_args = {}
                         if isinstance(arguments, List):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, Tuple):
                                     keyword_args[arg[0]] = arg[1]
@@ -921,32 +911,9 @@ class OSC2Scenario(BasicScenario):
                     pass
             return expression
 
-        def visit_relation_expression(self, node: ast_node.RelationExpression):
-            arguments = [self.visit_children(node), node.operator]
-            flat_arguments = flat_list(arguments)
-            temp_stack = []
-            for ex in flat_arguments:
-                if ex == '>' or ex == '>=' or ex == '==' or ex == '<=' or ex == '<' or ex == '!=':
-                    right = temp_stack.pop()
-                    left = temp_stack.pop()
-                    # expression = left + ' ' + ex + ' ' + right
-                    expression = left + ex + right
-                    temp_stack.append(expression)
-                elif ex == 'in':
-                    right = temp_stack.pop()
-                    left = temp_stack.pop()
-                    innum = temp_stack.pop()
-                    expression = innum + ' ' + ex + ' [' + left + ', ' + right + ']'
-                    temp_stack.append(expression)
-                else:
-                    temp_stack.append(ex)
-            relation_expression = temp_stack.pop()
-            # return [node.operator, self.visit_children(node)]
-            return relation_expression
-
         def visit_logical_expression(self, node: ast_node.LogicalExpression):
             arguments = [self.visit_children(node), node.operator]
-            flat_arguments = flat_list(arguments)
+            flat_arguments = OSC2Helper.flat_list(arguments)
             temp_stack = []
             for ex in flat_arguments:
                 if ex == 'and' or ex == 'or' or ex == '=>':
@@ -979,7 +946,7 @@ class OSC2Scenario(BasicScenario):
 
         def visit_binary_expression(self, node: ast_node.BinaryExpression):
             arguments = [self.visit_children(node), node.operator]
-            flat_arguments = flat_list(arguments)
+            flat_arguments = OSC2Helper.flat_list(arguments)
             LOG_INFO(f'{flat_arguments}')
             temp_stack = []
             for ex in flat_arguments:
@@ -1198,7 +1165,7 @@ class OSC2Scenario(BasicScenario):
             LOG_INFO("visit function application expression!")
             LOG_INFO("func name:" + node.func_name)
 
-            arguments = flat_list(self.visit_children(node))
+            arguments = OSC2Helper.flat_list(self.visit_children(node))
             line, column = node.get_loc()
             # retrieval_name = para_type_str_sequence(config=self.father_ins.config, arguments=arguments, line=line, column=column, node=node)
             retrieval_name = arguments[0].split('.')[-1]

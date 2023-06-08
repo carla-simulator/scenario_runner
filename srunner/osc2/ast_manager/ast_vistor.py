@@ -1,6 +1,7 @@
 import ast
 import srunner.osc2.ast_manager.ast_node as ast_node
 from srunner.osc2.ast_manager.ast_node import AST
+from srunner.tools.osc2_helper import OSC2Helper
 
 
 class BaseVisitor(object):
@@ -239,3 +240,26 @@ class ASTVisitor(BaseVisitor):
 
     def visit_identifier_reference(self, node: ast_node.identifierReference):
         return self.visit_children(node)
+
+    def visit_relation_expression(self, node: ast_node.RelationExpression):
+        arguments = [self.visit_children(node), node.operator]
+        flat_arguments = OSC2Helper.flat_list(arguments)
+        temp_stack = []
+        for ex in flat_arguments:
+            if ex == '>' or ex == '>=' or ex == '==' or ex == '<=' or ex == '<' or ex == '!=':
+                right = temp_stack.pop()
+                left = temp_stack.pop()
+                # expression = left + ' ' + ex + ' ' + right
+                expression = left + ex + right
+                temp_stack.append(expression)
+            elif ex == 'in':
+                right = temp_stack.pop()
+                left = temp_stack.pop()
+                innum = temp_stack.pop()
+                expression = innum + ' ' + ex + ' [' + left + ', ' + right + ']'
+                temp_stack.append(expression)
+            else:
+                temp_stack.append(ex)
+        relation_expression = temp_stack.pop()
+        # return [node.operator, self.visit_children(node)]
+        return relation_expression
