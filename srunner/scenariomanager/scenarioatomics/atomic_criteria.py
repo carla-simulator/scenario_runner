@@ -1965,6 +1965,7 @@ class MinimumSpeedRouteTest(Criterion):
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
     WINDOWS_SIZE = 2
+    RATIO = 1
 
     def __init__(self, actor, route, checkpoints=1, name="MinimumSpeedRouteTest", terminate_on_failure=False):
         """
@@ -2059,7 +2060,7 @@ class MinimumSpeedRouteTest(Criterion):
         if self._speed_points > 0 and self._mean_speed:
             self._mean_speed /= self._speed_points
             self._actor_speed /= self._speed_points
-            checkpoint_value = round(self._actor_speed / self._mean_speed * 100, 2)
+            checkpoint_value = round(self._actor_speed / (self.RATIO * self._mean_speed * 100), 2)
         else:
             checkpoint_value = 100
 
