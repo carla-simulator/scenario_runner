@@ -248,6 +248,20 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return CarlaDataProvider._grp
 
     @staticmethod
+    def set_ego_route(route):
+        """
+        set the ego route
+        """
+        CarlaDataProvider._route = route
+
+    @staticmethod
+    def get_ego_route():
+        """
+        @return the ego route
+        """
+        return CarlaDataProvider._route
+
+    @staticmethod
     def get_all_actors():
         """
         @return all the world actors. This is an expensive call, hence why it is part of the CDP,
