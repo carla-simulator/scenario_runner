@@ -31,7 +31,6 @@ class ActorsInfo:
         state_json = dict()
         actors = dict(CarlaDataProvider.get_actors())
         for _, actor in actors.items():
-            print(actor)
             state_json[actor.attributes['role_name']] = ActorInfo(
                 CarlaDataProvider.get_transform(actor),
                 CarlaDataProvider.get_velocity(actor)

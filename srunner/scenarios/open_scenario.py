@@ -106,6 +106,8 @@ class StoryElementStatusToBlackboard(Decorator):
         """
         Record the elements's start time on the blackboard
         """
+        if self.story_element_type.upper() == 'EVENT':
+            print("mark:",self.element_name,GameTime.get_time())
         self.blackboard.set(
             name="({}){}-{}".format(self.story_element_type.upper(),
                                     self.element_name, "START"),

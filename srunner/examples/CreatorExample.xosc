@@ -434,7 +434,7 @@
 				</ManeuverGroup>
 				<ManeuverGroup maximumExecutionCount="1" name="vehicleCircle">
 					<Actors selectTriggeringEntities="false">
-						<EntityRef entityRef="vehicle" />
+						<EntityRef entityRef="vehicle" />todo
 					</Actors>
 					<Maneuver name="vehicleManeuver">
 						<Event name="vehicleSpeedOn" priority="overwrite">

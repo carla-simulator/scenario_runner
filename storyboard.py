@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-
+import random
 # 切割粒度
 cut_level='Event'   # 'Act'  'Event'
 
@@ -783,6 +783,9 @@ class maneuver():
             emp_tag.append(self.parameterdeclaration)
 
         for i in range(self.event_num):
+            print(self.events[i].name)
+            print(self.event_states[i]['state'])
+
             if self.event_states[i]['state'] == 'toadd': 
                 if self.events[i].name in eventList:
                     emp_tag.append(self.events[i].getFullTag())
@@ -927,7 +930,8 @@ class event():
         emp_tag.attrib['priority']=self.priority
 
         # 子标签
-        emp_tag.append(self.starttrigger.getTag())
+        # emp_tag.append(self.starttrigger.getTag())
+        emp_tag.append(defaultstarttriiger1('defaultstarttriiger_'+self.name).getTag())
         for i in range(self.action_num):
             if self.action_states[i]['actionstate'] == 'run':
                 state= self.action_states[i]['state']

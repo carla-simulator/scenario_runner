@@ -23,6 +23,8 @@ from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.watchdog import Watchdog
 
+from actor_info import ActorsInfo
+
 
 class ScenarioManager(object):
 
@@ -130,13 +132,15 @@ class ScenarioManager(object):
 
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
+        print("AAAAAAAAAAAAAAAAAAA", start_game_time)
 
         self._watchdog = Watchdog(float(self._timeout))
         self._watchdog.start()
         self._running = True
 
+
         while self._running:
-            
+
             timestamp = None
             world = CarlaDataProvider.get_world()
             if world:
@@ -146,8 +150,15 @@ class ScenarioManager(object):
             
             if timestamp:
                 self._tick_scenario(timestamp)
-            
 
+            state = ActorsInfo.getstate()
+            state_time = GameTime.get_time()
+            
+        print()
+        print('---------------res -------------- ')
+        print(state_time, state)
+        print()
+        
         self.cleanup()
 
         self.end_system_time = time.time()
