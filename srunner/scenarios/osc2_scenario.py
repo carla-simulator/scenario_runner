@@ -14,6 +14,8 @@ import copy
 from typing import Tuple, List
 
 import py_trees
+
+from srunner.osc2.symbol_manager.parameter_symbol import ParameterSymbol
 # from sqlalchemy import true
 from srunner.osc2_stdlib import event, variables
 from srunner.osc2_stdlib.event import NearCollision
@@ -462,6 +464,8 @@ class OSC2Scenario(BasicScenario):
                     self.visit_modifier_invocation(child)
                 elif isinstance(child, ast_node.ParameterDeclaration):
                     self.visit_parameter_declaration(child)
+                elif isinstance(child, ast_node.KeepConstraintDeclaration):
+                    self.visit_keep_constraint_declaration(child)
 
         def visit_do_directive(self, node: ast_node.DoDirective):
             self.visit_children(node)
@@ -859,10 +863,11 @@ class OSC2Scenario(BasicScenario):
             LOG_INFO(f'modifier invocation name {node.modifier_name}')
             arguments = self.visit_children(node)
             line, column = node.get_loc()
-            # retrieval_name = modifier_name + para_type_str_sequence(config=self.father_ins.config, arguments=arguments, line=line, column=column, node=node)
+            # retrieval_name = modifier_name + para_type_str_sequence(config=self.father_ins.config,
+            # arguments=arguments, line=line, column=column, node=node)
             retrieval_name = modifier_name
             method_scope = node.get_scope().resolve(retrieval_name)
-            if method_scope == None and modifier_name not in dir(self.father_ins.config.path) \
+            if method_scope is None and modifier_name not in dir(self.father_ins.config.path) \
                     and modifier_name not in (
                     'speed', 'lane', 'position', 'acceleration', 'keep_lane', 'change_speed', 'change_lane'):
                 line, column = node.get_loc()
@@ -910,6 +915,30 @@ class OSC2Scenario(BasicScenario):
                 else:
                     pass
             return expression
+
+        def visit_relation_expression(self, node: ast_node.RelationExpression):
+            arguments = [self.visit_children(node), node.operator]
+            flat_arguments = OSC2Helper.flat_list(arguments)
+            temp_stack = []
+            for ex in flat_arguments:
+                if ex == '>' or ex == '>=' or ex == '==' or ex == '<=' or ex == '<' or ex == '!=':
+                    right = temp_stack.pop()
+                    left = temp_stack.pop()
+                    # expression = left + ' ' + ex + ' ' + right
+                    print(f"left: {type(left)}:{left}, ex: {type(ex)}:{ex}, right: {type(right)},{right}")
+                    expression = left + ex + str(right)
+                    temp_stack.append(expression)
+                elif ex == 'in':
+                    right = temp_stack.pop()
+                    left = temp_stack.pop()
+                    innum = temp_stack.pop()
+                    expression = innum + ' ' + ex + ' [' + left + ', ' + right + ']'
+                    temp_stack.append(expression)
+                else:
+                    temp_stack.append(ex)
+            relation_expression = temp_stack.pop()
+            # return [node.operator, self.visit_children(node)]
+            return relation_expression
 
         def visit_logical_expression(self, node: ast_node.LogicalExpression):
             arguments = [self.visit_children(node), node.operator]
@@ -1174,7 +1203,6 @@ class OSC2Scenario(BasicScenario):
             method_name = arguments[0]
             if method_scope == None:
                 LOG_ERROR("Not Find " + method_name + " Method Declaration", token=None, line=line, column=column)
-
             para_value = None
             if isinstance(method_scope, MethodSymbol):
                 method_declaration_node = copy.deepcopy(method_scope.declaration_address)
@@ -1198,6 +1226,13 @@ class OSC2Scenario(BasicScenario):
                 return para_value
             else:
                 pass
+
+        def visit_keep_constraint_declaration(self, node: ast_node.KeepConstraintDeclaration):
+            _arguments = self.visit_children(node)
+            retrieval_name = _arguments.split("==")[0]
+            param_scope = node.get_scope().resolve(retrieval_name)
+            if param_scope is not None and isinstance(param_scope, ParameterSymbol):
+                param_scope.value = _arguments.split("==")[1]
 
     def _create_behavior(self):
         """
