@@ -226,7 +226,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             return
     # start
     # Deal with absolute positioning vehicles first，such as lane(1, at: start)
-    event_start = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() == None]
+    event_start = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() is None]
 
     for m in event_start:
         car_name = m.get_actor_name()
@@ -244,7 +244,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             raise RuntimeError(f'no valid position to spawn {car_name} car')
 
     # Handle relative positioning vehicles
-    start_group = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() != None]
+    start_group = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() is not None]
 
     init_wp = None
     npc_name = None
@@ -451,10 +451,10 @@ class OSC2Scenario(BasicScenario):
         def visit_scenario_declaration(self, node: ast_node.ScenarioDeclaration):
             scenario_name = node.qualified_behavior_name
 
-            if scenario_name != 'top' and self.father_ins.visit_power == False:
+            if scenario_name != 'top' and not self.father_ins.visit_power:
                 return
 
-            if scenario_name == 'top' and self.father_ins.visit_power == True:
+            if scenario_name == 'top' and self.father_ins.visit_power:
                 return
 
             for child in node.get_children():
@@ -516,10 +516,10 @@ class OSC2Scenario(BasicScenario):
             else:
                 raise NotImplementedError(f'no supported scenario operator {composition_operator}')
 
-            if self.root_behavior == None:
+            if self.root_behavior is None:
                 self.root_behavior = self.__cur_behavior
                 self.__parent_behavior[node] = self.__cur_behavior
-            elif self.root_behavior != None and self.__parent_behavior.get(node) == None:
+            elif self.root_behavior is not None and self.__parent_behavior.get(node) is None:
                 self.__parent_behavior[node] = self.root_behavior
                 parent = self.__parent_behavior[node]
                 parent.add_child(self.__cur_behavior)
@@ -535,7 +535,7 @@ class OSC2Scenario(BasicScenario):
                         child, ast_node.EmitDirective):
                     self.__parent_behavior[child] = self.__cur_behavior
 
-            if sub_node == None:
+            if sub_node is None:
                 for child in node.get_children():
                     if not isinstance(child, ast_node.AST):
                         continue
@@ -641,7 +641,7 @@ class OSC2Scenario(BasicScenario):
             else:
                 behavior_invocation_name = behavior_name
 
-            if self.father_ins.scenario_declaration.get(behavior_invocation_name) != None:
+            if self.father_ins.scenario_declaration.get(behavior_invocation_name) is not None:
                 self.father_ins.visit_power = True
                 scenario_declaration_node = copy.deepcopy(node.get_scope().declaration_address)
                 # scenario_declaration_node = self.father_ins.scenario_declaration.get(behavior_invocation_name)
@@ -888,7 +888,7 @@ class OSC2Scenario(BasicScenario):
                     if isinstance(child, ast_node.MethodBody):
                         method_value = self.visit_method_body(child)
                 del method_declaration_node
-                if method_value != None:
+                if method_value is not None:
                     return method_value
                 return
             else:
@@ -1034,7 +1034,7 @@ class OSC2Scenario(BasicScenario):
                 start_num = start
                 end_num = end
 
-            if start_unit != None and end_unit != None:
+            if start_unit is not None and end_unit is not None:
                 if start_unit == end_unit:
                     unit_name = start_unit
                 else:
@@ -1077,22 +1077,22 @@ class OSC2Scenario(BasicScenario):
             para_name = node.name
             para_type = None
             para_value = None
-            if node.get_scope() != None:
+            if node.get_scope() is not None:
                 if not hasattr(node.get_scope(), 'type'):
                     return para_name
                 para_type = node.get_scope().type
                 symbol = node.get_scope()
                 last_value = None
                 cur_value = node.get_scope().value
-                while last_value != cur_value and symbol.resolve(cur_value) != None:
+                while last_value != cur_value and symbol.resolve(cur_value) is not None:
                     symbol = symbol.resolve(cur_value)
                     last_value = cur_value
                     cur_value = symbol.value
-                if cur_value == None:
+                if cur_value is None:
                     return symbol.name
                 else:
                     para_value = cur_value
-            if para_value != None:
+            if para_value is not None:
                 if isinstance(para_value, Physical) or isinstance(para_value, int) or isinstance(para_value, float):
                     return para_value
                 para_value = para_value.strip('"')
@@ -1132,7 +1132,7 @@ class OSC2Scenario(BasicScenario):
             for child in node.get_children():
                 if isinstance(child, ast_node.FunctionApplicationExpression):
                     para_value = self.visit_function_application_expression(child)
-            if para_value != None:
+            if para_value is not None:
                 node.get_scope().value = para_value
             LOG_INFO(f'{para_name}, {para_type}, {para_value}')
 
@@ -1187,7 +1187,7 @@ class OSC2Scenario(BasicScenario):
                 for child in node.get_children():
                     if isinstance(child, ast_node.BinaryExpression):
                         method_value = self.visit_binary_expression(child)
-            if method_value != None:
+            if method_value is not None:
                 return method_value
 
         def visit_function_application_expression(self, node: ast_node.FunctionApplicationExpression):
@@ -1201,7 +1201,7 @@ class OSC2Scenario(BasicScenario):
             method_scope = node.get_scope().resolve(retrieval_name)
 
             method_name = arguments[0]
-            if method_scope == None:
+            if method_scope is None:
                 LOG_ERROR("Not Find " + method_name + " Method Declaration", token=None, line=line, column=column)
             para_value = None
             if isinstance(method_scope, MethodSymbol):
@@ -1221,7 +1221,7 @@ class OSC2Scenario(BasicScenario):
                         para_value = self.visit_method_body(child)
                         break
                 del method_declaration_node
-                if para_value != None:
+                if para_value is not None:
                     return para_value
                 return para_value
             else:
