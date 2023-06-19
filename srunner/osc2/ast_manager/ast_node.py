@@ -1664,7 +1664,7 @@ class Identifier(AST):
             return visitor.visit_children(self)
 
 
-class identifierReference(AST):
+class IdentifierReference(AST):
 
     def __init__(self, name):
         super().__init__()

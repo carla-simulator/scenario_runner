@@ -406,8 +406,8 @@ class ASTListener:
     def exit_identifier(self, node: ast_node.Identifier):
         pass
 
-    def enter_identifier_reference(self, node: ast_node.identifierReference):
+    def enter_identifier_reference(self, node: ast_node.IdentifierReference):
         pass
 
-    def exit_identifier_reference(self, node: ast_node.identifierReference):
+    def exit_identifier_reference(self, node: ast_node.IdentifierReference):
         pass

@@ -238,5 +238,5 @@ class ASTVisitor(BaseVisitor):
     def visit_identifier(self, node: ast_node.Identifier):
         return self.visit_children(node)
 
-    def visit_identifier_reference(self, node: ast_node.identifierReference):
+    def visit_identifier_reference(self, node: ast_node.IdentifierReference):
         return self.visit_children(node)
