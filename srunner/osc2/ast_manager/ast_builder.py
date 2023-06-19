@@ -2227,7 +2227,7 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
         id_name = ".".join(field_name)
 
-        node = ast_node.identifierReference(id_name)
+        node = ast_node.IdentifierReference(id_name)
         node.set_loc(ctx.start.line, ctx.start.column)
         node.set_scope(scope)
 

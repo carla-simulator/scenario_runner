@@ -16,6 +16,7 @@ from typing import Tuple, List
 import py_trees
 
 from srunner.osc2.symbol_manager.parameter_symbol import ParameterSymbol
+from srunner.osc2.utils.relational_operator import RelationalOperator
 # from sqlalchemy import true
 from srunner.osc2_stdlib import event, variables
 from srunner.osc2_stdlib.event import NearCollision
@@ -907,7 +908,23 @@ class OSC2Scenario(BasicScenario):
             expression = ''
             for child in node.get_children():
                 if isinstance(child, ast_node.RelationExpression):
-                    expression = self.visit_relation_expression(child)
+                    flat_arguments = self.visit_relation_expression(child)
+                    temp_stack = []
+                    for ex in flat_arguments:
+                        if ex in RelationalOperator.values():
+                            right = temp_stack.pop()
+                            left = temp_stack.pop()
+                            expression = left + ex + str(right)
+                            temp_stack.append(expression)
+                        elif ex == 'in':
+                            right = temp_stack.pop()
+                            left = temp_stack.pop()
+                            innum = temp_stack.pop()
+                            expression = innum + ' ' + ex + ' [' + left + ', ' + right + ']'
+                            temp_stack.append(expression)
+                        else:
+                            temp_stack.append(ex)
+                    expression = temp_stack.pop()
                 elif isinstance(child, ast_node.LogicalExpression):
                     expression = self.visit_logical_expression(child)
                 elif isinstance(child, ast_node.ElapsedExpression):
@@ -919,26 +936,7 @@ class OSC2Scenario(BasicScenario):
         def visit_relation_expression(self, node: ast_node.RelationExpression):
             arguments = [self.visit_children(node), node.operator]
             flat_arguments = OSC2Helper.flat_list(arguments)
-            temp_stack = []
-            for ex in flat_arguments:
-                if ex == '>' or ex == '>=' or ex == '==' or ex == '<=' or ex == '<' or ex == '!=':
-                    right = temp_stack.pop()
-                    left = temp_stack.pop()
-                    # expression = left + ' ' + ex + ' ' + right
-                    print(f"left: {type(left)}:{left}, ex: {type(ex)}:{ex}, right: {type(right)},{right}")
-                    expression = left + ex + str(right)
-                    temp_stack.append(expression)
-                elif ex == 'in':
-                    right = temp_stack.pop()
-                    left = temp_stack.pop()
-                    innum = temp_stack.pop()
-                    expression = innum + ' ' + ex + ' [' + left + ', ' + right + ']'
-                    temp_stack.append(expression)
-                else:
-                    temp_stack.append(ex)
-            relation_expression = temp_stack.pop()
-            # return [node.operator, self.visit_children(node)]
-            return relation_expression
+            return flat_arguments
 
         def visit_logical_expression(self, node: ast_node.LogicalExpression):
             arguments = [self.visit_children(node), node.operator]
@@ -1073,7 +1071,7 @@ class OSC2Scenario(BasicScenario):
         def visit_identifier(self, node: ast_node.Identifier):
             return node.name
 
-        def visit_identifier_reference(self, node: ast_node.identifierReference):
+        def visit_identifier_reference(self, node: ast_node.IdentifierReference):
             para_name = node.name
             para_type = None
             para_value = None
@@ -1228,11 +1226,24 @@ class OSC2Scenario(BasicScenario):
                 pass
 
         def visit_keep_constraint_declaration(self, node: ast_node.KeepConstraintDeclaration):
-            _arguments = self.visit_children(node)
-            retrieval_name = _arguments.split("==")[0]
+            arguments = self.visit_children(node)
+            retrieval_name = arguments[0]
             param_scope = node.get_scope().resolve(retrieval_name)
             if param_scope is not None and isinstance(param_scope, ParameterSymbol):
-                param_scope.value = _arguments.split("==")[1]
+                if arguments[2] == RelationalOperator.EQUALITY.value:
+                    param_scope.value = arguments[1]
+                elif arguments[2] == RelationalOperator.INEQUALITY.value:
+                    pass
+                elif arguments[2] == RelationalOperator.LESS_THAN.value:
+                    pass
+                elif arguments[2] == RelationalOperator.LESS_OR_EQUAL.value:
+                    pass
+                elif arguments[2] == RelationalOperator.GREATER_THAN.value:
+                    pass
+                elif arguments[2] == RelationalOperator.GREATER_OR_EQUAL.value:
+                    pass
+                elif arguments[2] == RelationalOperator.MEMBERSHIP.value:
+                    pass
 
     def _create_behavior(self):
         """

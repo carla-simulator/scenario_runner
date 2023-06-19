@@ -391,7 +391,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         def visit_identifier(self, node: ast_node.Identifier):
             return node.name
 
-        def visit_identifier_reference(self, node: ast_node.identifierReference):
+        def visit_identifier_reference(self, node: ast_node.IdentifierReference):
             return node.name
 
         def visit_type(self, node: ast_node.Type):
