@@ -136,7 +136,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
             self.father_ins.store_variable(self.father_ins.variables)
 
         def visit_struct_declaration(self, node: ast_node.StructDeclaration):
-
             struct_name = node.struct_name
             self.father_ins.struct_declaration[struct_name] = node
             for child in node.get_children():
