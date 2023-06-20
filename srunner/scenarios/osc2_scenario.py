@@ -430,6 +430,9 @@ class OSC2Scenario(BasicScenario):
         self.visit_power = False
         self.scenario_declaration = config.scenario_declaration
         self.struct_declaration = config.struct_declaration
+        # Use struct_parameters to store parameters of type struct, so that we can recognize it in keep constraint
+        self.struct_parameters = {}
+
         super(OSC2Scenario, self).__init__("OSC2Scenario", ego_vehicles=ego_vehicles, config=config,
                                            world=world, debug_mode=debug_mode,
                                            terminate_on_failure=False, criteria_enable=criteria_enable)
@@ -1122,8 +1125,6 @@ class OSC2Scenario(BasicScenario):
                 return para_name
 
         def visit_parameter_declaration(self, node: ast_node.ParameterDeclaration):
-            LOG_INFO("visit parameter declaration!")
-            LOG_INFO(f'parameter name: {node.field_name}')
             para_name = node.field_name
             para_type = node.field_type
             para_value = None
@@ -1132,7 +1133,14 @@ class OSC2Scenario(BasicScenario):
                     para_value = self.visit_function_application_expression(child)
             if para_value is not None:
                 node.get_scope().value = para_value
-            LOG_INFO(f'{para_name}, {para_type}, {para_value}')
+
+            # Save variables of type struct for later access
+            if para_type in self.father_ins.struct_declaration:
+                self.father_ins.struct_parameters.update({
+                    para_name[0]: {
+                        'declaration_node': self.father_ins.struct_declaration[para_type]
+                    }
+                })
 
         def visit_method_declaration(self, node: ast_node.MethodDeclaration):
             pass
@@ -1141,8 +1149,6 @@ class OSC2Scenario(BasicScenario):
             return node.argument_name, self.visit_children(node)
 
         def visit_method_body(self, node: ast_node.MethodBody):
-            LOG_INFO("visit method body!")
-            LOG_INFO(f'method type: {node.type}')
             type = node.type
             method_value = None
             if type == 'external':
@@ -1171,7 +1177,6 @@ class OSC2Scenario(BasicScenario):
                         exec_context += str(elem[1])
                 exec_context += ')\n'
 
-                LOG_INFO(exec_context)
                 try:
                     exec_data = {}
                     exec(exec_context, globals(), exec_data)
@@ -1228,6 +1233,22 @@ class OSC2Scenario(BasicScenario):
         def visit_keep_constraint_declaration(self, node: ast_node.KeepConstraintDeclaration):
             arguments = self.visit_children(node)
             retrieval_name = arguments[0]
+
+            # Struct parameter or actor parameter contains '.'
+            if '.' in retrieval_name:
+                layered_names = retrieval_name.split('.')
+                param_name = layered_names[0]
+                if param_name == 'it':
+                    pass
+                elif param_name in self.father_ins.struct_parameters:
+                    # param_name is the name of the struct variable, and param_scope is a ParameterSymbol
+                    param_scope = node.get_scope().resolve(param_name)
+                    param_scope.value = copy.deepcopy(self.father_ins
+                                                      .struct_parameters[param_name]['declaration_node']).get_scope()
+                    print(f"param_name: {param_name}, param_scope: {param_scope}, "
+                          f"param_scope_type: {type(param_scope)}, param_value: {param_scope.value}")
+                    print(f"struct symbol child symbols: {param_scope.value.symbols}")
+                    print(str(param_scope.value.symbols['fog']))
             param_scope = node.get_scope().resolve(retrieval_name)
             if param_scope is not None and isinstance(param_scope, ParameterSymbol):
                 if arguments[2] == RelationalOperator.EQUALITY.value:
@@ -1244,6 +1265,13 @@ class OSC2Scenario(BasicScenario):
                     pass
                 elif arguments[2] == RelationalOperator.MEMBERSHIP.value:
                     pass
+
+        # For variables of struct type, it is necessary to construct its struct variable tree in the symbol table.
+        def _build_struct_tree(self, param_symbol: ParameterSymbol):
+            param_symbol.value = copy.deepcopy(self.father_ins
+                                               .struct_parameters[param_symbol.name]['declaration_node']).get_scope()
+            # TODO 如果子符号也是struct类型，递归调用当前方法
+            pass
 
     def _create_behavior(self):
         """
