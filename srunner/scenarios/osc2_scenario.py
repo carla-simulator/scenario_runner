@@ -1137,9 +1137,7 @@ class OSC2Scenario(BasicScenario):
             # Save variables of type struct for later access
             if para_type in self.father_ins.struct_declaration:
                 self.father_ins.struct_parameters.update({
-                    para_name[0]: {
-                        'declaration_node': self.father_ins.struct_declaration[para_type]
-                    }
+                    para_name[0]: self.father_ins.struct_declaration[para_type]
                 })
 
         def visit_method_declaration(self, node: ast_node.MethodDeclaration):
@@ -1237,17 +1235,15 @@ class OSC2Scenario(BasicScenario):
             # Struct parameter or actor parameter contains '.'
             if '.' in retrieval_name:
                 layered_names = retrieval_name.split('.')
-                param_name = layered_names[0]
-                if param_name == 'it':
+                prefix = layered_names[0]
+                suffix = layered_names[1:]
+                if prefix == 'it':
                     pass
-                elif param_name in self.father_ins.struct_parameters:
+                elif prefix in self.father_ins.struct_parameters:
                     # param_name is the name of the struct variable, and param_scope is a ParameterSymbol
-                    param_scope = node.get_scope().resolve(param_name)
-                    param_scope.value = copy.deepcopy(self.father_ins
-                                                      .struct_parameters[param_name]['declaration_node']).get_scope()
-                    print(f"param_name: {param_name}, param_scope: {param_scope}, "
-                          f"param_scope_type: {type(param_scope)}, param_value: {param_scope.value}")
-                    print(f"struct symbol child symbols: {param_scope.value.symbols}")
+                    param_scope = node.get_scope().resolve(prefix)
+                    self._build_struct_tree(param_scope, arguments[1])
+                    self._visit_struct_tree(param_scope, suffix, 0, arguments[1])
                     print(str(param_scope.value.symbols['fog']))
             param_scope = node.get_scope().resolve(retrieval_name)
             if param_scope is not None and isinstance(param_scope, ParameterSymbol):
@@ -1266,12 +1262,34 @@ class OSC2Scenario(BasicScenario):
                 elif arguments[2] == RelationalOperator.MEMBERSHIP.value:
                     pass
 
-        # For variables of struct type, it is necessary to construct its struct variable tree in the symbol table.
-        def _build_struct_tree(self, param_symbol: ParameterSymbol):
-            param_symbol.value = copy.deepcopy(self.father_ins
-                                               .struct_parameters[param_symbol.name]['declaration_node']).get_scope()
-            # TODO 如果子符号也是struct类型，递归调用当前方法
-            pass
+        # For variables of struct type, it is necessary to construct its struct variable tree in the symbol table
+        # The struct variable tree is a subtree of the symbol tree
+        # When traversing the leaf node, it is assigned the value
+        def _build_struct_tree(self, param_symbol: ParameterSymbol, value):
+            if param_symbol.value is None:
+                param_symbol.value = copy.deepcopy(self.father_ins
+                                                   .struct_parameters[param_symbol.name]).get_scope()
+            for key in param_symbol.value.symbols:
+                child_symbol = param_symbol.value.symbols[key]
+                if isinstance(child_symbol, ParameterSymbol):
+                    # If the child parameter is of struct type, the current method is called recursively
+                    if child_symbol.type in self.father_ins.struct_declaration:
+                        self._build_struct_tree(child_symbol, value)
+                    else:
+                        child_symbol.value = value
+
+        # visit struct variable tree and assign value
+        def _visit_struct_tree(self, root: ParameterSymbol, suffix: list, index: int, value):
+            if root.type not in self.father_ins.struct_declaration:
+                root.value = value
+                return
+            if index >= len(suffix):
+                return
+            to_visit_param = suffix[index]
+            child_symbols = root.value.symbols
+            if to_visit_param not in child_symbols:
+                return
+            self._visit_struct_tree(child_symbols[to_visit_param], suffix, index + 1, value)
 
     def _create_behavior(self):
         """
