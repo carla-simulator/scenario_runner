@@ -66,6 +66,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _random_seed = 2000
     _rng = random.RandomState(_random_seed)
     _grp = None
+    _runtime_init_flag = False
 
     @staticmethod
     def register_actor(actor, transform=None):
@@ -266,6 +267,20 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         @return true if syncronuous mode is used
         """
         return CarlaDataProvider._sync_flag
+    
+    @staticmethod
+    def set_runtime_init_mode(flag):
+        """
+        Set the runtime init mode
+        """
+        CarlaDataProvider._runtime_init_flag = flag
+
+    @staticmethod
+    def is_runtime_init_mode():
+        """
+        @return true if runtime init mode is used
+        """
+        return CarlaDataProvider._runtime_init_flag
 
     @staticmethod
     def find_weather_presets():
@@ -548,6 +563,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Wait (or not) for the actors to be spawned properly before we do anything
         if not tick:
             pass
+        elif CarlaDataProvider.is_runtime_init_mode():
+            CarlaDataProvider._world.wait_for_tick()
         elif sync_mode:
             CarlaDataProvider._world.tick()
         else:
@@ -601,6 +618,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Wait for the actor to be spawned properly before we do anything
         if not tick:
             pass
+        elif CarlaDataProvider.is_runtime_init_mode():
+            CarlaDataProvider._world.wait_for_tick()
         elif CarlaDataProvider.is_sync_mode():
             CarlaDataProvider._world.tick()
         else:
@@ -856,3 +875,4 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
         CarlaDataProvider._rng = random.RandomState(CarlaDataProvider._random_seed)
         CarlaDataProvider._grp = None
+        CarlaDataProvider._runtime_init_flag = False
