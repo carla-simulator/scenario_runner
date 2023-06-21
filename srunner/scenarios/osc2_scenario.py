@@ -1242,9 +1242,8 @@ class OSC2Scenario(BasicScenario):
                 elif prefix in self.father_ins.struct_parameters:
                     # param_name is the name of the struct variable, and param_scope is a ParameterSymbol
                     param_scope = node.get_scope().resolve(prefix)
-                    self._build_struct_tree(param_scope, arguments[1])
+                    self._build_struct_tree(param_scope)
                     self._visit_struct_tree(param_scope, suffix, 0, arguments[1])
-                    print(str(param_scope.value.symbols['fog']))
             param_scope = node.get_scope().resolve(retrieval_name)
             if param_scope is not None and isinstance(param_scope, ParameterSymbol):
                 if arguments[2] == RelationalOperator.EQUALITY.value:
@@ -1264,8 +1263,7 @@ class OSC2Scenario(BasicScenario):
 
         # For variables of struct type, it is necessary to construct its struct variable tree in the symbol table
         # The struct variable tree is a subtree of the symbol tree
-        # When traversing the leaf node, it is assigned the value
-        def _build_struct_tree(self, param_symbol: ParameterSymbol, value):
+        def _build_struct_tree(self, param_symbol: ParameterSymbol):
             if param_symbol.value is None:
                 param_symbol.value = copy.deepcopy(self.father_ins
                                                    .struct_parameters[param_symbol.name]).get_scope()
@@ -1274,9 +1272,7 @@ class OSC2Scenario(BasicScenario):
                 if isinstance(child_symbol, ParameterSymbol):
                     # If the child parameter is of struct type, the current method is called recursively
                     if child_symbol.type in self.father_ins.struct_declaration:
-                        self._build_struct_tree(child_symbol, value)
-                    else:
-                        child_symbol.value = value
+                        self._build_struct_tree(child_symbol)
 
         # visit struct variable tree and assign value
         def _visit_struct_tree(self, root: ParameterSymbol, suffix: list, index: int, value):
