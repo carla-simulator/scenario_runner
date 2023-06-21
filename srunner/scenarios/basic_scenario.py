@@ -63,7 +63,9 @@ class BasicScenario(object):
             
         self._initialize_actors(config)
 
-        if CarlaDataProvider.is_sync_mode():
+        if CarlaDataProvider.is_runtime_init_mode():
+            world.wait_for_tick()
+        elif CarlaDataProvider.is_sync_mode():
             world.tick()
         else:
             world.wait_for_tick()
