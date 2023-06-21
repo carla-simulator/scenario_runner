@@ -20,7 +20,7 @@ class NamedArgumentSymbol(ArgumentSymbol):
         return buf
 
 
-class PostionalArgumentSymbol(ArgumentSymbol):
+class PositionalArgumentSymbol(ArgumentSymbol):
 
     def __init__(self, scope):
         super().__init__(None, scope)

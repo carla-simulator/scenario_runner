@@ -1,6 +1,7 @@
 import ast
 import srunner.osc2.ast_manager.ast_node as ast_node
 from srunner.osc2.ast_manager.ast_node import AST
+from srunner.tools.osc2_helper import OSC2Helper
 
 
 class BaseVisitor(object):
@@ -237,5 +238,5 @@ class ASTVisitor(BaseVisitor):
     def visit_identifier(self, node: ast_node.Identifier):
         return self.visit_children(node)
 
-    def visit_identifier_reference(self, node: ast_node.identifierReference):
+    def visit_identifier_reference(self, node: ast_node.IdentifierReference):
         return self.visit_children(node)

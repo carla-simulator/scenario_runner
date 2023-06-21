@@ -14,6 +14,9 @@ import copy
 from typing import Tuple, List
 
 import py_trees
+
+from srunner.osc2.symbol_manager.parameter_symbol import ParameterSymbol
+from srunner.osc2.utils.relational_operator import RelationalOperator
 # from sqlalchemy import true
 from srunner.osc2_stdlib import event, variables
 from srunner.osc2_stdlib.event import NearCollision
@@ -63,16 +66,6 @@ from srunner.osc2_dm.physical_types import Physical
 
 from srunner.osc2.utils.log_manager import *
 from srunner.osc2.symbol_manager.method_symbol import MethodSymbol
-
-
-def flat_list(list_of_lists):
-    if len(list_of_lists) == 0:
-        return list_of_lists
-
-    if isinstance(list_of_lists[0], list):
-        return flat_list(list_of_lists[0]) + flat_list(list_of_lists[1:])
-
-    return list_of_lists[:1] + flat_list(list_of_lists[1:])
 
 
 def para_type_str_sequence(config, arguments, line, column, node):
@@ -234,7 +227,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             return
     # start
     # Deal with absolute positioning vehicles first，such as lane(1, at: start)
-    event_start = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() == None]
+    event_start = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() is None]
 
     for m in event_start:
         car_name = m.get_actor_name()
@@ -252,7 +245,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             raise RuntimeError(f'no valid position to spawn {car_name} car')
 
     # Handle relative positioning vehicles
-    start_group = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() != None]
+    start_group = [m for m in modifiers if m.get_trigger_point() == 'start' and m.get_refer_car() is not None]
 
     init_wp = None
     npc_name = None
@@ -437,6 +430,9 @@ class OSC2Scenario(BasicScenario):
         self.visit_power = False
         self.scenario_declaration = config.scenario_declaration
         self.struct_declaration = config.struct_declaration
+        # Use struct_parameters to store parameters of type struct, so that we can recognize it in keep constraint
+        self.struct_parameters = {}
+
         super(OSC2Scenario, self).__init__("OSC2Scenario", ego_vehicles=ego_vehicles, config=config,
                                            world=world, debug_mode=debug_mode,
                                            terminate_on_failure=False, criteria_enable=criteria_enable)
@@ -459,10 +455,10 @@ class OSC2Scenario(BasicScenario):
         def visit_scenario_declaration(self, node: ast_node.ScenarioDeclaration):
             scenario_name = node.qualified_behavior_name
 
-            if scenario_name != 'top' and self.father_ins.visit_power == False:
+            if scenario_name != 'top' and not self.father_ins.visit_power:
                 return
 
-            if scenario_name == 'top' and self.father_ins.visit_power == True:
+            if scenario_name == 'top' and self.father_ins.visit_power:
                 return
 
             for child in node.get_children():
@@ -472,6 +468,8 @@ class OSC2Scenario(BasicScenario):
                     self.visit_modifier_invocation(child)
                 elif isinstance(child, ast_node.ParameterDeclaration):
                     self.visit_parameter_declaration(child)
+                elif isinstance(child, ast_node.KeepConstraintDeclaration):
+                    self.visit_keep_constraint_declaration(child)
 
         def visit_do_directive(self, node: ast_node.DoDirective):
             self.visit_children(node)
@@ -522,10 +520,10 @@ class OSC2Scenario(BasicScenario):
             else:
                 raise NotImplementedError(f'no supported scenario operator {composition_operator}')
 
-            if self.root_behavior == None:
+            if self.root_behavior is None:
                 self.root_behavior = self.__cur_behavior
                 self.__parent_behavior[node] = self.__cur_behavior
-            elif self.root_behavior != None and self.__parent_behavior.get(node) == None:
+            elif self.root_behavior is not None and self.__parent_behavior.get(node) is None:
                 self.__parent_behavior[node] = self.root_behavior
                 parent = self.__parent_behavior[node]
                 parent.add_child(self.__cur_behavior)
@@ -541,7 +539,7 @@ class OSC2Scenario(BasicScenario):
                         child, ast_node.EmitDirective):
                     self.__parent_behavior[child] = self.__cur_behavior
 
-            if sub_node == None:
+            if sub_node is None:
                 for child in node.get_children():
                     if not isinstance(child, ast_node.AST):
                         continue
@@ -647,7 +645,7 @@ class OSC2Scenario(BasicScenario):
             else:
                 behavior_invocation_name = behavior_name
 
-            if self.father_ins.scenario_declaration.get(behavior_invocation_name) != None:
+            if self.father_ins.scenario_declaration.get(behavior_invocation_name) is not None:
                 self.father_ins.visit_power = True
                 scenario_declaration_node = copy.deepcopy(node.get_scope().declaration_address)
                 # scenario_declaration_node = self.father_ins.scenario_declaration.get(behavior_invocation_name)
@@ -718,7 +716,7 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins = SpeedModifier(actor, modifier_name)
                         keyword_args = {}
                         if isinstance(arguments, list):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
 
                             for arg in arguments:
                                 if isinstance(arg, tuple):
@@ -742,7 +740,7 @@ class OSC2Scenario(BasicScenario):
 
                         keyword_args = {}
                         if isinstance(arguments, list):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, tuple):
                                     keyword_args[arg[0]] = arg[1]
@@ -764,7 +762,7 @@ class OSC2Scenario(BasicScenario):
 
                         keyword_args = {}
                         if isinstance(arguments, List):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, Tuple):
                                     keyword_args[arg[0]] = arg[1]
@@ -783,7 +781,7 @@ class OSC2Scenario(BasicScenario):
 
                         keyword_args = {}
                         if isinstance(arguments, List):
-                            arguments = flat_list(arguments)
+                            arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, Tuple):
                                     keyword_args[arg[0]] = arg[1]
@@ -869,10 +867,11 @@ class OSC2Scenario(BasicScenario):
             LOG_INFO(f'modifier invocation name {node.modifier_name}')
             arguments = self.visit_children(node)
             line, column = node.get_loc()
-            # retrieval_name = modifier_name + para_type_str_sequence(config=self.father_ins.config, arguments=arguments, line=line, column=column, node=node)
+            # retrieval_name = modifier_name + para_type_str_sequence(config=self.father_ins.config,
+            # arguments=arguments, line=line, column=column, node=node)
             retrieval_name = modifier_name
             method_scope = node.get_scope().resolve(retrieval_name)
-            if method_scope == None and modifier_name not in dir(self.father_ins.config.path) \
+            if method_scope is None and modifier_name not in dir(self.father_ins.config.path) \
                     and modifier_name not in (
                     'speed', 'lane', 'position', 'acceleration', 'keep_lane', 'change_speed', 'change_lane'):
                 line, column = node.get_loc()
@@ -893,7 +892,7 @@ class OSC2Scenario(BasicScenario):
                     if isinstance(child, ast_node.MethodBody):
                         method_value = self.visit_method_body(child)
                 del method_declaration_node
-                if method_value != None:
+                if method_value is not None:
                     return method_value
                 return
             else:
@@ -912,7 +911,23 @@ class OSC2Scenario(BasicScenario):
             expression = ''
             for child in node.get_children():
                 if isinstance(child, ast_node.RelationExpression):
-                    expression = self.visit_relation_expression(child)
+                    flat_arguments = self.visit_relation_expression(child)
+                    temp_stack = []
+                    for ex in flat_arguments:
+                        if ex in RelationalOperator.values():
+                            right = temp_stack.pop()
+                            left = temp_stack.pop()
+                            expression = left + ex + str(right)
+                            temp_stack.append(expression)
+                        elif ex == 'in':
+                            right = temp_stack.pop()
+                            left = temp_stack.pop()
+                            innum = temp_stack.pop()
+                            expression = innum + ' ' + ex + ' [' + left + ', ' + right + ']'
+                            temp_stack.append(expression)
+                        else:
+                            temp_stack.append(ex)
+                    expression = temp_stack.pop()
                 elif isinstance(child, ast_node.LogicalExpression):
                     expression = self.visit_logical_expression(child)
                 elif isinstance(child, ast_node.ElapsedExpression):
@@ -923,30 +938,12 @@ class OSC2Scenario(BasicScenario):
 
         def visit_relation_expression(self, node: ast_node.RelationExpression):
             arguments = [self.visit_children(node), node.operator]
-            flat_arguments = flat_list(arguments)
-            temp_stack = []
-            for ex in flat_arguments:
-                if ex == '>' or ex == '>=' or ex == '==' or ex == '<=' or ex == '<' or ex == '!=':
-                    right = temp_stack.pop()
-                    left = temp_stack.pop()
-                    # expression = left + ' ' + ex + ' ' + right
-                    expression = left + ex + right
-                    temp_stack.append(expression)
-                elif ex == 'in':
-                    right = temp_stack.pop()
-                    left = temp_stack.pop()
-                    innum = temp_stack.pop()
-                    expression = innum + ' ' + ex + ' [' + left + ', ' + right + ']'
-                    temp_stack.append(expression)
-                else:
-                    temp_stack.append(ex)
-            relation_expression = temp_stack.pop()
-            # return [node.operator, self.visit_children(node)]
-            return relation_expression
+            flat_arguments = OSC2Helper.flat_list(arguments)
+            return flat_arguments
 
         def visit_logical_expression(self, node: ast_node.LogicalExpression):
             arguments = [self.visit_children(node), node.operator]
-            flat_arguments = flat_list(arguments)
+            flat_arguments = OSC2Helper.flat_list(arguments)
             temp_stack = []
             for ex in flat_arguments:
                 if ex == 'and' or ex == 'or' or ex == '=>':
@@ -979,7 +976,7 @@ class OSC2Scenario(BasicScenario):
 
         def visit_binary_expression(self, node: ast_node.BinaryExpression):
             arguments = [self.visit_children(node), node.operator]
-            flat_arguments = flat_list(arguments)
+            flat_arguments = OSC2Helper.flat_list(arguments)
             LOG_INFO(f'{flat_arguments}')
             temp_stack = []
             for ex in flat_arguments:
@@ -1038,7 +1035,7 @@ class OSC2Scenario(BasicScenario):
                 start_num = start
                 end_num = end
 
-            if start_unit != None and end_unit != None:
+            if start_unit is not None and end_unit is not None:
                 if start_unit == end_unit:
                     unit_name = start_unit
                 else:
@@ -1077,26 +1074,26 @@ class OSC2Scenario(BasicScenario):
         def visit_identifier(self, node: ast_node.Identifier):
             return node.name
 
-        def visit_identifier_reference(self, node: ast_node.identifierReference):
+        def visit_identifier_reference(self, node: ast_node.IdentifierReference):
             para_name = node.name
             para_type = None
             para_value = None
-            if node.get_scope() != None:
+            if node.get_scope() is not None:
                 if not hasattr(node.get_scope(), 'type'):
                     return para_name
                 para_type = node.get_scope().type
                 symbol = node.get_scope()
                 last_value = None
                 cur_value = node.get_scope().value
-                while last_value != cur_value and symbol.resolve(cur_value) != None:
+                while last_value != cur_value and symbol.resolve(cur_value) is not None:
                     symbol = symbol.resolve(cur_value)
                     last_value = cur_value
                     cur_value = symbol.value
-                if cur_value == None:
+                if cur_value is None:
                     return symbol.name
                 else:
                     para_value = cur_value
-            if para_value != None:
+            if para_value is not None:
                 if isinstance(para_value, Physical) or isinstance(para_value, int) or isinstance(para_value, float):
                     return para_value
                 para_value = para_value.strip('"')
@@ -1128,17 +1125,20 @@ class OSC2Scenario(BasicScenario):
                 return para_name
 
         def visit_parameter_declaration(self, node: ast_node.ParameterDeclaration):
-            LOG_INFO("visit parameter declaration!")
-            LOG_INFO(f'parameter name: {node.field_name}')
             para_name = node.field_name
             para_type = node.field_type
             para_value = None
             for child in node.get_children():
                 if isinstance(child, ast_node.FunctionApplicationExpression):
                     para_value = self.visit_function_application_expression(child)
-            if para_value != None:
+            if para_value is not None:
                 node.get_scope().value = para_value
-            LOG_INFO(f'{para_name}, {para_type}, {para_value}')
+
+            # Save variables of type struct for later access
+            if para_type in self.father_ins.struct_declaration:
+                self.father_ins.struct_parameters.update({
+                    para_name[0]: self.father_ins.struct_declaration[para_type]
+                })
 
         def visit_method_declaration(self, node: ast_node.MethodDeclaration):
             pass
@@ -1147,8 +1147,6 @@ class OSC2Scenario(BasicScenario):
             return node.argument_name, self.visit_children(node)
 
         def visit_method_body(self, node: ast_node.MethodBody):
-            LOG_INFO("visit method body!")
-            LOG_INFO(f'method type: {node.type}')
             type = node.type
             method_value = None
             if type == 'external':
@@ -1177,7 +1175,6 @@ class OSC2Scenario(BasicScenario):
                         exec_context += str(elem[1])
                 exec_context += ')\n'
 
-                LOG_INFO(exec_context)
                 try:
                     exec_data = {}
                     exec(exec_context, globals(), exec_data)
@@ -1191,23 +1188,22 @@ class OSC2Scenario(BasicScenario):
                 for child in node.get_children():
                     if isinstance(child, ast_node.BinaryExpression):
                         method_value = self.visit_binary_expression(child)
-            if method_value != None:
+            if method_value is not None:
                 return method_value
 
         def visit_function_application_expression(self, node: ast_node.FunctionApplicationExpression):
             LOG_INFO("visit function application expression!")
             LOG_INFO("func name:" + node.func_name)
 
-            arguments = flat_list(self.visit_children(node))
+            arguments = OSC2Helper.flat_list(self.visit_children(node))
             line, column = node.get_loc()
             # retrieval_name = para_type_str_sequence(config=self.father_ins.config, arguments=arguments, line=line, column=column, node=node)
             retrieval_name = arguments[0].split('.')[-1]
             method_scope = node.get_scope().resolve(retrieval_name)
 
             method_name = arguments[0]
-            if method_scope == None:
+            if method_scope is None:
                 LOG_ERROR("Not Find " + method_name + " Method Declaration", token=None, line=line, column=column)
-
             para_value = None
             if isinstance(method_scope, MethodSymbol):
                 method_declaration_node = copy.deepcopy(method_scope.declaration_address)
@@ -1226,11 +1222,70 @@ class OSC2Scenario(BasicScenario):
                         para_value = self.visit_method_body(child)
                         break
                 del method_declaration_node
-                if para_value != None:
+                if para_value is not None:
                     return para_value
                 return para_value
             else:
                 pass
+
+        def visit_keep_constraint_declaration(self, node: ast_node.KeepConstraintDeclaration):
+            arguments = self.visit_children(node)
+            retrieval_name = arguments[0]
+
+            # Struct parameter or actor parameter contains '.'
+            if '.' in retrieval_name:
+                layered_names = retrieval_name.split('.')
+                prefix = layered_names[0]
+                suffix = layered_names[1:]
+                if prefix == 'it':
+                    pass
+                elif prefix in self.father_ins.struct_parameters:
+                    # param_name is the name of the struct variable, and param_scope is a ParameterSymbol
+                    param_scope = node.get_scope().resolve(prefix)
+                    self._build_struct_tree(param_scope)
+                    self._visit_struct_tree(param_scope, suffix, 0, arguments[1])
+            param_scope = node.get_scope().resolve(retrieval_name)
+            if param_scope is not None and isinstance(param_scope, ParameterSymbol):
+                if arguments[2] == RelationalOperator.EQUALITY.value:
+                    param_scope.value = arguments[1]
+                elif arguments[2] == RelationalOperator.INEQUALITY.value:
+                    pass
+                elif arguments[2] == RelationalOperator.LESS_THAN.value:
+                    pass
+                elif arguments[2] == RelationalOperator.LESS_OR_EQUAL.value:
+                    pass
+                elif arguments[2] == RelationalOperator.GREATER_THAN.value:
+                    pass
+                elif arguments[2] == RelationalOperator.GREATER_OR_EQUAL.value:
+                    pass
+                elif arguments[2] == RelationalOperator.MEMBERSHIP.value:
+                    pass
+
+        # For variables of struct type, it is necessary to construct its struct variable tree in the symbol table
+        # The struct variable tree is a subtree of the symbol tree
+        def _build_struct_tree(self, param_symbol: ParameterSymbol):
+            if param_symbol.value is None:
+                param_symbol.value = copy.deepcopy(self.father_ins
+                                                   .struct_parameters[param_symbol.name]).get_scope()
+            for key in param_symbol.value.symbols:
+                child_symbol = param_symbol.value.symbols[key]
+                if isinstance(child_symbol, ParameterSymbol):
+                    # If the child parameter is of struct type, the current method is called recursively
+                    if child_symbol.type in self.father_ins.struct_declaration:
+                        self._build_struct_tree(child_symbol)
+
+        # visit struct variable tree and assign value
+        def _visit_struct_tree(self, root: ParameterSymbol, suffix: list, index: int, value):
+            if root.type not in self.father_ins.struct_declaration:
+                root.value = value
+                return
+            if index >= len(suffix):
+                return
+            to_visit_param = suffix[index]
+            child_symbols = root.value.symbols
+            if to_visit_param not in child_symbols:
+                return
+            self._visit_struct_tree(child_symbols[to_visit_param], suffix, index + 1, value)
 
     def _create_behavior(self):
         """
