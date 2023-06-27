@@ -3867,6 +3867,12 @@ class ScenarioTriggerer(AtomicBehavior):
         self._route_length = len(self._route)
         self._waypoints, _ = zip(*self._route)
 
+    def add_blackboard(self, blackboard):
+        """
+        Adds new blackboards to the list. Used by the runtime initialization of scenarios
+        """
+        self._blackboard_list.append(blackboard)
+
     def update(self):
         new_status = py_trees.common.Status.RUNNING
 
