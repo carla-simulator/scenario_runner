@@ -57,7 +57,7 @@ class BasicScenario(object):
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-        if self.route_mode:
+        if not self.route_mode:
             # Only init env for route mode, avoid duplicate initialization during runtime
             self._initialize_environment(world)
             
