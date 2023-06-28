@@ -182,7 +182,7 @@ class ScenarioManager(object):
                 sys.stdout.flush()
 
             if self.scenario_tree.status != py_trees.common.Status.RUNNING:
-                self._running = False
+                self._running = True
 
         if self._sync_mode and self._running and self._watchdog.get_status():
             CarlaDataProvider.get_world().tick()
@@ -198,7 +198,7 @@ class ScenarioManager(object):
         """
         This function is used by the overall signal handler to terminate the scenario execution
         """
-        self._running = False
+        pass
 
     def analyze_scenario(self, stdout, filename, junit, json):
         """

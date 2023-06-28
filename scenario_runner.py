@@ -132,7 +132,7 @@ class ScenarioRunner(object):
         """
         self._shutdown_requested = True
         if self.manager:
-            self.manager.stop_scenario()
+            self.manager._running = False
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -186,14 +186,6 @@ class ScenarioRunner(object):
         self.manager.cleanup()
 
         CarlaDataProvider.cleanup()
-
-        for i, _ in enumerate(self.ego_vehicles):
-            if self.ego_vehicles[i]:
-                if not self._args.waitForEgo and self.ego_vehicles[i] is not None and self.ego_vehicles[i].is_alive:
-                    print("Destroying ego vehicle {}".format(self.ego_vehicles[i].id))
-                    self.ego_vehicles[i].destroy()
-                self.ego_vehicles[i] = None
-        self.ego_vehicles = []
 
         if self.agent_instance:
             self.agent_instance.destroy()
@@ -415,7 +407,7 @@ class ScenarioRunner(object):
             self._analyze_scenario(config)
 
             # Remove all actors, stop the recorder and save all criterias (if needed)
-            scenario.remove_all_actors()
+            # scenario.remove_all_actors()
             if self._args.record:
                 self.client.stop_recorder()
                 self._record_criteria(self.manager.scenario.get_criteria(), recorder_name)
