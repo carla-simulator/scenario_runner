@@ -93,7 +93,7 @@ class SimpleVehicleControl(BasicControl):
         self._consider_traffic_lights = False
         self._consider_obstacles = False
         self._proximity_threshold = float('inf')
-        self._waypoint_reached_threshold = 4.0
+        self._waypoint_reached_threshold = 0.2 # don't know if this is a reasonable value but it's better than 4m (previous).
         self._max_deceleration = None
         self._max_acceleration = None
 
@@ -321,31 +321,47 @@ class SimpleVehicleControl(BasicControl):
         velocity.x = direction.x / direction_norm * target_speed
         velocity.y = direction.y / direction_norm * target_speed
 
+        if target_speed < 0:
+            velocity.x = -velocity.x
+            velocity.y = -velocity.y
+
         self._actor.set_target_velocity(velocity)
 
         # set new angular velocity
         current_yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw
+        # print(f"Current yaw: {current_yaw}")
         # When we have a waypoint list, use the direction between the waypoints to calculate the heading (change)
         # otherwise use the waypoint heading directly
         if self._waypoints:
-            delta_yaw = math.degrees(math.atan2(direction.y, direction.x)) - current_yaw
+            if target_speed < 0:
+                new_yaw = math.degrees(math.atan2(direction.y, direction.x)) - 180
+                # print(f"New yaw: {new_yaw}")
+                delta_yaw = new_yaw - current_yaw
+            else:
+                delta_yaw = math.degrees(math.atan2(direction.y, direction.x)) - current_yaw
         else:
             new_yaw = CarlaDataProvider.get_map().get_waypoint(next_location).transform.rotation.yaw
             delta_yaw = new_yaw - current_yaw
 
+        # print(f"Delta yaw: {delta_yaw}")
         if math.fabs(delta_yaw) > 360:
             delta_yaw = delta_yaw % 360
-
+        # print(f"Delta yaw after modulo function: {delta_yaw}")
+        
         if delta_yaw > 180:
             delta_yaw = delta_yaw - 360
         elif delta_yaw < -180:
             delta_yaw = delta_yaw + 360
+        # print(f"Delta yaw after half circle function: {delta_yaw}")
 
         angular_velocity = carla.Vector3D(0, 0, 0)
         if target_speed == 0:
             angular_velocity.z = 0
+        elif target_speed < 0:
+            angular_velocity.z = delta_yaw / (direction_norm / -target_speed)
         else:
             angular_velocity.z = delta_yaw / (direction_norm / target_speed)
+        # print(f"Angular velocity: {angular_velocity.z}")
         self._actor.set_target_angular_velocity(angular_velocity)
 
         self._last_update = current_time

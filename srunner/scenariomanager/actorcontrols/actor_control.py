@@ -21,7 +21,7 @@ import sys
 import carla
 
 from srunner.scenariomanager.actorcontrols.external_control import ExternalControl
-from srunner.scenariomanager.actorcontrols.npc_vehicle_control import NpcVehicleControl
+from srunner.scenariomanager.actorcontrols.simple_vehicle_control import SimpleVehicleControl
 from srunner.scenariomanager.actorcontrols.pedestrian_control import PedestrianControl
 
 
@@ -69,7 +69,7 @@ class ActorControl(object):
             if isinstance(actor, carla.Walker):
                 self.control_instance = PedestrianControl(actor)
             elif isinstance(actor, carla.Vehicle):
-                self.control_instance = NpcVehicleControl(actor)
+                self.control_instance = SimpleVehicleControl(actor)
             else:
                 # use ExternalControl for all misc objects to handle all actors the same way
                 self.control_instance = ExternalControl(actor)
