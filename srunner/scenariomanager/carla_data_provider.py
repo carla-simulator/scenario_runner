@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import math
 import re
+import threading
 from numpy import random
 from six import iteritems
 
@@ -67,6 +68,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _rng = random.RandomState(_random_seed)
     _grp = None
     _runtime_init_flag = False
+    _lock = threading.Lock()
 
     @staticmethod
     def register_actor(actor, transform=None):
@@ -74,25 +76,25 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Add new actor to dictionaries
         If actor already exists, throw an exception
         """
-        if actor in CarlaDataProvider._actor_velocity_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        else:
-            CarlaDataProvider._actor_velocity_map[actor] = 0.0
+        with CarlaDataProvider._lock:
+            if actor in CarlaDataProvider._actor_velocity_map:
+                raise KeyError(
+                    "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+            else:
+                CarlaDataProvider._actor_velocity_map[actor] = 0.0
+            if actor in CarlaDataProvider._actor_location_map:
+                raise KeyError(
+                    "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+            elif transform:
+                CarlaDataProvider._actor_location_map[actor] = transform.location
+            else:
+                CarlaDataProvider._actor_location_map[actor] = None
 
-        if actor in CarlaDataProvider._actor_location_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        elif transform:
-            CarlaDataProvider._actor_location_map[actor] = transform.location
-        else:
-            CarlaDataProvider._actor_location_map[actor] = None
-
-        if actor in CarlaDataProvider._actor_transform_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        else:
-            CarlaDataProvider._actor_transform_map[actor] = transform
+            if actor in CarlaDataProvider._actor_transform_map:
+                raise KeyError(
+                    "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+            else:
+                CarlaDataProvider._actor_transform_map[actor] = transform
 
     @staticmethod
     def update_osc_global_params(parameters):
@@ -124,23 +126,24 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Callback from CARLA
         """
-        for actor in CarlaDataProvider._actor_velocity_map:
-            if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
+        with CarlaDataProvider._lock:
+            for actor in CarlaDataProvider._actor_velocity_map:
+                if actor is not None and actor.is_alive:
+                    CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
 
-        for actor in CarlaDataProvider._actor_location_map:
-            if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_location_map[actor] = actor.get_location()
+            for actor in CarlaDataProvider._actor_location_map:
+                if actor is not None and actor.is_alive:
+                    CarlaDataProvider._actor_location_map[actor] = actor.get_location()
 
-        for actor in CarlaDataProvider._actor_transform_map:
-            if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
+            for actor in CarlaDataProvider._actor_transform_map:
+                if actor is not None and actor.is_alive:
+                    CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
 
-        world = CarlaDataProvider._world
-        if world is None:
-            print("WARNING: CarlaDataProvider couldn't find the world")
+            world = CarlaDataProvider._world
+            if world is None:
+                print("WARNING: CarlaDataProvider couldn't find the world")
 
-        CarlaDataProvider._all_actors = None
+            CarlaDataProvider._all_actors = None
 
     @staticmethod
     def get_velocity(actor):
