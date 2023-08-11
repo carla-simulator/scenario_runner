@@ -119,5 +119,5 @@ python manual_control.py -a --rolename=ego_vehicle
 
 **3、Run a OpenSCENARIO 2.0 scenario**
 ```
-python scenario_runner.py --sync  --osc2 srunner/examples/cut_in_and_slow_right.osc --reloadWorld 
+python scenario_runner.py --sync  --openscenario2 srunner/examples/cut_in_and_slow_right.osc --reloadWorld 
 ```
