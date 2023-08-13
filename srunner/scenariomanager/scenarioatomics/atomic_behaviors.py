@@ -1250,8 +1250,7 @@ class ChangeLateralDistance(AtomicBehavior):
     OFFSET_THRESHOLD = 0.3
 
     def __init__(self, actor, offset, relative_actor=None, freespace=False,
-                 continuous=True, name="ChangeActorWaypoints", event_name=None,
-                 log_etcd=None, action_type=None):
+                 continuous=True, name="ChangeActorWaypoints", event_name=None):
         """
         Setup parameters
         """
@@ -1272,10 +1271,8 @@ class ChangeLateralDistance(AtomicBehavior):
                 self._offset -= self._relative_actor.bounding_box.extent.y + self._actor.bounding_box.extent.y
         self._actor_name = actor.attributes.get("role_name")
         self._event_name = event_name
-        self.log_etcd = log_etcd
         if relative_actor:
             self._ref_actor_name = relative_actor.attributes.get("role_name")
-        self._action_type = action_type
 
     def initialise(self):
         """
@@ -1371,29 +1368,6 @@ class ChangeLateralDistance(AtomicBehavior):
             # Check if the offset has been reached
             if abs(actor_offset - self._current_target_offset) < self.OFFSET_THRESHOLD:
                 # reach_offset = abs(actor_offset - self._current_target_offset)
-                curr_time = round(GameTime.get_time(), 4)
-                dic = {"info": {
-                    "action_type": self._action_type,
-                    "action_name": self.name,
-                    "actor": self._actor_name,
-                    "action_object": self._ref_actor_name,
-                    "action_distance": float(self._offset),
-                    "start_game_time": round(self._start_time, 4),
-                    "finish_distance": round(actor_offset, 2),
-                    "finish_game_time": curr_time,
-                    "status": "SUCCESS",
-                    "desc": "The action:{}-{} is triggered and the current distance:{}".format(
-                        self.name, self._action_type, actor_offset)
-                },
-                    "msg": {
-                        "desc": "At the {}s  the action:{}-{} is triggered and the current distance:{}".format(
-                            curr_time, self.name, self._action_type, actor_offset),
-                        "game_time": curr_time,
-                        "log_level": "INFO"}
-                }
-                self.log.info(json.dumps(dic))
-                if self.log_etcd:
-                    self.log_etcd.log(dic)
                 return py_trees.common.Status.SUCCESS
 
         # TODO: As their is no way to check the distance to a specific lane, both checks will fail if the

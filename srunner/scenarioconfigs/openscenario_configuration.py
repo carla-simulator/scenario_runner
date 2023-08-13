@@ -91,6 +91,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._set_carla_town()
         self._set_actor_information()
 
+        self._set_traffic_signal_controller()
         self._validate_result()
 
     def _check_version(self):
@@ -369,7 +370,6 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             self.logger.warning(
                 " Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)", actor_name)
             # pylint: enable=line-too-long
-            return False
         return actor_transform
 
     def _get_actor_speed(self, actor_name):
@@ -412,3 +412,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         if not self.ego_vehicles:
             self.logger.warning(" No ego vehicles defined in scenario")
+
+    def _set_traffic_signal_controller(self):
+        if self.xml_tree.find("RoadNetwork") is not None:
+            rnw = self.xml_tree.find("RoadNetwork")
+            controller = rnw.find("TrafficSignals")
+            if controller is not None:
+                OpenScenarioParser.set_traffic_signal_controller(controller)
+                

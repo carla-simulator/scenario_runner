@@ -1523,3 +1523,34 @@ class OpenScenarioParser(object):
                 return Idle(duration=0, name=maneuver_name)
 
         return atomic
+
+    @staticmethod
+    def set_traffic_signal_controller(controller):
+        """set traffic signal controller"""
+        tl_states_dict = {1: "RED", 2: "YELLOW", 3: "GREEN"}
+
+        sl_state = None
+        ts_controler = controller.find("TrafficSignalController")
+        controller_name = ts_controler.attrib.get("name")
+        controller_delay = ts_controler.attrib.get("delay")
+        controller_reference = ts_controler.attrib.get("reference")
+        phase = ts_controler.find("Phase")
+        phase_name = phase.attrib.get("name")
+        phase_duration = phase.attrib.get("duration")
+        ts_states = phase.find("TrafficSignalState")
+        states = ts_states.attrib.get("state")
+        # state: off;off;on
+        states = list(states.split(";"))
+        for i, state in enumerate(states):
+            if state == "on":
+                sl_state = tl_states_dict[int(i + 1)]
+        traffic_signal_id = ts_states.attrib.get("trafficSignalId")
+
+        OpenScenarioParser.osc_traffic_signal_controller["name"] = controller_name
+        OpenScenarioParser.osc_traffic_signal_controller["delay"] = controller_delay
+        OpenScenarioParser.osc_traffic_signal_controller["ref"] = controller_reference
+
+        OpenScenarioParser.osc_traffic_signal_phase["name"] = phase_name
+        OpenScenarioParser.osc_traffic_signal_phase["duration"] = phase_duration
+        OpenScenarioParser.osc_traffic_signal_phase["state"] = sl_state
+        OpenScenarioParser.osc_traffic_signal_phase["traffic_signal_id"] = traffic_signal_id
