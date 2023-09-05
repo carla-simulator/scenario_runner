@@ -1,11 +1,10 @@
-from srunner.osc2.symbol_manager.scope import Scope
-from srunner.osc2.symbol_manager.qualifiedBehavior_symbol import QualifiedBehaviorSymbol
-from srunner.osc2.utils.log_manager import *
 from srunner.osc2.symbol_manager.inherits_condition_symbol import ActionInhertsSymbol
+from srunner.osc2.symbol_manager.qualifiedBehavior_symbol import QualifiedBehaviorSymbol
+from srunner.osc2.symbol_manager.scope import Scope
+from srunner.osc2.utils.log_manager import *
 
 
 class ActionSymbol(QualifiedBehaviorSymbol, Scope):
-
     def __init__(self, QualifiedBehaviorSymbol):
         super().__init__(QualifiedBehaviorSymbol.name, QualifiedBehaviorSymbol.scope)
 

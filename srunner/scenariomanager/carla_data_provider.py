@@ -64,14 +64,14 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _random_seed = 2000
     _rng = random.RandomState(_random_seed)
     _local_planner = None
-    
+
     @staticmethod
     def set_local_planner(plan):
         CarlaDataProvider._local_planner = plan
-        
+
     @staticmethod
     def get_local_planner():
-        return CarlaDataProvider._local_planner    
+        return CarlaDataProvider._local_planner
 
     @staticmethod
     def register_actor(actor):
@@ -490,11 +490,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         lane_id_set.clear()
         wp = pre_left
         while wp and wp.lane_type == carla.LaneType.Driving:
-            
+
             if wp.lane_id in lane_id_set:
                 break
             lane_id_set.add(wp.lane_id)
-            
+
             lane_list.append(wp)
 
             # carla bug: returns error, never return none, endless loop
@@ -511,12 +511,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     def get_waypoint_by_laneid(lane_num: int):
         if CarlaDataProvider._spawn_points is None:
             CarlaDataProvider.generate_spawn_points()
-        
+
         if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
             print("No more spawn points to use")
             return None
         else:
-            pos = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]
+            pos = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]  # pylint: disable=unsubscriptable-object
             CarlaDataProvider._spawn_index += 1
             wp = CarlaDataProvider.get_map().get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
 

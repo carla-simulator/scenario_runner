@@ -1,9 +1,8 @@
-from srunner.osc2.symbol_manager.base_symbol import BaseSymbol
 from srunner.osc2.symbol_manager.argument_symbol import ArgumentSpecificationSymbol
+from srunner.osc2.symbol_manager.base_symbol import BaseSymbol
 
 
 class MethodSymbol(BaseSymbol):
-
     def __init__(self, name, scope):
         super().__init__(name, scope)
         self.declaration_address = None

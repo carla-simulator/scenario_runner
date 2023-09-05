@@ -3,7 +3,6 @@ from srunner.osc2.symbol_manager.inherits_condition_symbol import StructInhertsS
 
 
 class StructSymbol(BaseSymbol):
-
     def __init__(self, name, scope):
         super().__init__(name, scope)
 

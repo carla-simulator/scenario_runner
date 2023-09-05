@@ -3,13 +3,11 @@ from srunner.osc2.symbol_manager.typed_symbol import TypedSymbol
 
 
 class ArgumentSymbol(BaseSymbol):
-
     def __init__(self, name, scope):
         super().__init__(name, scope)
 
 
 class NamedArgumentSymbol(ArgumentSymbol):
-
     def __init__(self, name, scope):
         super().__init__(name, scope)
 
@@ -21,7 +19,6 @@ class NamedArgumentSymbol(ArgumentSymbol):
 
 
 class PositionalArgumentSymbol(ArgumentSymbol):
-
     def __init__(self, scope):
         super().__init__(None, scope)
 
@@ -31,7 +28,6 @@ class PositionalArgumentSymbol(ArgumentSymbol):
 
 
 class ArgumentSpecificationSymbol(TypedSymbol):
-
     def __init__(self, name, scope, type, value=None):
         super().__init__(name, scope, type, value)
 

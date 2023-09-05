@@ -1,11 +1,12 @@
 import re
+
 from antlr4.error.ErrorListener import *
 from antlr4.Token import Token
+
 from srunner.osc2.utils.log_manager import LOG_ERROR
 
 
 class OscErrorListener(ErrorListener):
-
     def __init__(self, src):
         super(ErrorListener, self).__init__()
         self.src = src
@@ -50,7 +51,7 @@ class OscErrorListener(ErrorListener):
         token_name = self.getWrongToken(token)
 
         if re.match("^extraneous", msg):
-            if token_name == "\'\\n\'":
+            if token_name == "'\\n'":
                 self.reportIndentationError(line, column, None)
             else:
                 self.reportSyntaxErrorWithTokenName(line, column, token_name)
@@ -67,11 +68,17 @@ class OscErrorListener(ErrorListener):
             self.reportCommonSyntaxError(line, column, msg)
 
     # Ambiguity error
-    def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
+    def reportAmbiguity(
+        self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs
+    ):
         pass
 
-    def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
+    def reportAttemptingFullContext(
+        self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs
+    ):
         pass
 
-    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
+    def reportContextSensitivity(
+        self, recognizer, dfa, startIndex, stopIndex, prediction, configs
+    ):
         pass

@@ -1,4 +1,5 @@
 import ast
+
 import srunner.osc2.ast_manager.ast_node as ast_node
 from srunner.osc2.ast_manager.ast_node import AST
 from srunner.tools.osc2_helper import OSC2Helper
@@ -36,7 +37,6 @@ class BaseVisitor(object):
 
 
 class ASTVisitor(BaseVisitor):
-
     def visit_compilation_unit(self, node: ast_node.CompilationUnit):
         return self.visit_children(node)
 
@@ -94,7 +94,9 @@ class ASTVisitor(BaseVisitor):
     def visit_structured_type_extension(self, node: ast_node.StructuredTypeExtension):
         return self.visit_children(node)
 
-    def visit_global_parameter_declaration(self, node: ast_node.GlobalParameterDeclaration):
+    def visit_global_parameter_declaration(
+        self, node: ast_node.GlobalParameterDeclaration
+    ):
         return self.visit_children(node)
 
     def visit_parameter_declaration(self, node: ast_node.ParameterDeclaration):
@@ -142,7 +144,9 @@ class ASTVisitor(BaseVisitor):
     def visit_variable_declaration(self, node: ast_node.VariableDeclaration):
         return self.visit_children(node)
 
-    def visit_keep_constraint_declaration(self, node: ast_node.KeepConstraintDeclaration):
+    def visit_keep_constraint_declaration(
+        self, node: ast_node.KeepConstraintDeclaration
+    ):
         return self.visit_children(node)
 
     def visit_remove_default_declaration(self, node: ast_node.RemoveDefaultDeclaration):
@@ -199,7 +203,9 @@ class ASTVisitor(BaseVisitor):
     def visit_element_access_expression(self, node: ast_node.ElementAccessExpression):
         return self.visit_children(node)
 
-    def visit_function_application_expression(self, node: ast_node.FunctionApplicationExpression):
+    def visit_function_application_expression(
+        self, node: ast_node.FunctionApplicationExpression
+    ):
         return self.visit_children(node)
 
     def visit_binary_expression(self, node: ast_node.BinaryExpression):

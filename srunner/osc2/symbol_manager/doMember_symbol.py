@@ -5,7 +5,6 @@ from srunner.osc2.symbol_manager.wait_symbol import WaitSymbol
 
 # domember scope
 class DoMemberSymbol(BaseSymbol):
-
     def __init__(self, name, scope, op):
         super().__init__(name, scope)
         self.op = op

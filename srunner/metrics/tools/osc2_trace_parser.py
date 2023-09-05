@@ -21,10 +21,11 @@ def parse_actor(info):
         "location": carla.Location(
             x=float(info[5][1:-1]) / 100,
             y=float(info[6][:-1]) / 100,
-            z=float(info[7][:-1]) / 100
-        )
+            z=float(info[7][:-1]) / 100,
+        ),
     }
     return actor
+
 
 def parse_transform(info):
     """Parses a list into a carla.Transform"""
@@ -36,11 +37,12 @@ def parse_transform(info):
         ),
         carla.Rotation(
             roll=float(info[7][1:-1]),
-            pitch=float(info[8][:-1]), 
-            yaw=float(info[9][:-1])
-        )
+            pitch=float(info[8][:-1]),
+            yaw=float(info[9][:-1]),
+        ),
     )
     return transform
+
 
 def parse_control(info):
     """Parses a list into a carla.VehicleControl"""
@@ -54,6 +56,7 @@ def parse_control(info):
         gear=int(info[11]),
     )
     return control
+
 
 def parse_vehicle_lights(info):
     """Parses a list into a carla.VehicleLightState"""
@@ -78,6 +81,7 @@ def parse_vehicle_lights(info):
 
     return lights
 
+
 def parse_traffic_light(info):
     """Parses a list into a dictionary with all the traffic light's information"""
     number_to_state = {
@@ -94,23 +98,22 @@ def parse_traffic_light(info):
     }
     return traffic_light
 
+
 def parse_velocity(info):
     """Parses a list into a carla.Vector3D with the velocity"""
     velocity = carla.Vector3D(
-        x=float(info[3][1:-1]),
-        y=float(info[4][:-1]),
-        z=float(info[5][:-1])
+        x=float(info[3][1:-1]), y=float(info[4][:-1]), z=float(info[5][:-1])
     )
     return velocity
+
 
 def parse_angular_velocity(info):
     """Parses a list into a carla.Vector3D with the angular velocity"""
     velocity = carla.Vector3D(
-        x=float(info[7][1:-1]),
-        y=float(info[8][:-1]),
-        z=float(info[9][:-1])
+        x=float(info[7][1:-1]), y=float(info[8][:-1]), z=float(info[9][:-1])
     )
     return velocity
+
 
 def parse_scene_lights(info):
     """Parses a list into a carla.VehicleLightState"""
@@ -123,36 +126,38 @@ def parse_scene_lights(info):
         intensity=int(float(info[5])),
         color=carla.Color(red, green, blue),
         group=carla.LightGroup.NONE,
-        active=bool(info[3])
+        active=bool(info[3]),
     )
     return scene_light
+
 
 def parse_bounding_box(info):
     """
     Parses a list into a carla.BoundingBox.
     Some actors like sensors might have 'nan' location and 'inf' extent, so filter those.
     """
-    if 'nan' in info[3]:
+    if "nan" in info[3]:
         location = carla.Location()
     else:
         location = carla.Location(
-            float(info[3][1:-1])/100,
-            float(info[4][:-1])/100,
-            float(info[5][:-1])/100,
+            float(info[3][1:-1]) / 100,
+            float(info[4][:-1]) / 100,
+            float(info[5][:-1]) / 100,
         )
 
-    if 'inf' in info[7]:
+    if "inf" in info[7]:
         extent = carla.Vector3D()
     else:
         extent = carla.Vector3D(
-            float(info[7][1:-1])/100,
-            float(info[8][:-1])/100,
-            float(info[9][:-1])/100,
+            float(info[7][1:-1]) / 100,
+            float(info[8][:-1]) / 100,
+            float(info[9][:-1]) / 100,
         )
 
     bbox = carla.BoundingBox(location, extent)
 
     return bbox
+
 
 def parse_state_times(info):
     """Parses a list into a dict containing the state times of the traffic lights"""
@@ -163,17 +168,19 @@ def parse_state_times(info):
     }
     return state_times
 
+
 def parse_vector_list(info):
     """Parses a list of string into a list of Vector2D"""
     vector_list = []
     for i in range(0, len(info), 2):
         vector = carla.Vector2D(
             x=float(info[i][1:-1]),
-            y=float(info[i+1][:-1]),
+            y=float(info[i + 1][:-1]),
         )
         vector_list.append(vector)
 
     return vector_list
+
 
 def parse_gears_control(info):
     """Parses a list into a GearPhysicsControl"""
@@ -183,6 +190,7 @@ def parse_gears_control(info):
         up_ratio=float(info[7]),
     )
     return gears_control
+
 
 def parse_wheels_control(info):
     """Parses a list into a WheelsPhysicsControl"""
@@ -196,7 +204,8 @@ def parse_wheels_control(info):
         position=carla.Vector3D(
             x=float(info[17][1:-1]) / 100,
             y=float(info[17][:-1]) / 100,
-            z=float(info[17][:-1]) / 100)
+            z=float(info[17][:-1]) / 100,
+        ),
     )
     return wheels_control
 
@@ -207,7 +216,6 @@ class Osc2TraceParser(object):
     """
 
     def __init__(self, recorder_info):
-
         self.recorder_info = recorder_info
         self.frame_list = None
         self.frame_row = None
@@ -252,14 +260,13 @@ class Osc2TraceParser(object):
             "map": sim_map,
             "date:": sim_date,
             "total_frames": sim_frames,
-            "duration": sim_duration
+            "duration": sim_duration,
         }
 
         actors_info = {}
         frames_info = []
 
         for frame in recorder_list:
-
             # Divide the frame in lines
             self.frame_list = frame.split("\n")
 
@@ -280,24 +287,25 @@ class Osc2TraceParser(object):
                 "frame": {
                     "elapsed_time": frame_time,
                     "delta_time": delta_time,
-                    "platform_time": None
+                    "platform_time": None,
                 },
                 "actors": {},
-                "events":{
+                "events": {
                     "scene_lights": {},
                     "physics_control": {},
                     "traffic_light_state_time": {},
-                    "collisions": {}
-                }
+                    "collisions": {},
+                },
             }
 
             # Loop through all the other rows.
             self.i = 0
             self.next_row()
 
-            while self.frame_row.startswith(' Create') or self.frame_row.startswith('  '):
-
-                if self.frame_row.startswith(' Create'):
+            while self.frame_row.startswith(" Create") or self.frame_row.startswith(
+                "  "
+            ):
+                if self.frame_row.startswith(" Create"):
                     elements = self.get_row_elements(1, " ")
                     actor_id = int(elements[1][:-1])
 
@@ -310,8 +318,7 @@ class Osc2TraceParser(object):
 
                 self.next_row()
 
-            while self.frame_row.startswith(' Destroy'):
-
+            while self.frame_row.startswith(" Destroy"):
                 elements = self.get_row_elements(1, " ")
 
                 actor_id = int(elements[1])
@@ -319,8 +326,7 @@ class Osc2TraceParser(object):
 
                 self.next_row()
 
-            while self.frame_row.startswith(' Collision'):
-
+            while self.frame_row.startswith(" Collision"):
                 elements = self.get_row_elements(1, " ")
 
                 actor_id = int(elements[4])
@@ -335,8 +341,7 @@ class Osc2TraceParser(object):
 
                 self.next_row()
 
-            while self.frame_row.startswith(' Parenting'):
-
+            while self.frame_row.startswith(" Parenting"):
                 elements = self.get_row_elements(1, " ")
 
                 actor_id = int(elements[1])
@@ -345,11 +350,10 @@ class Osc2TraceParser(object):
 
                 self.next_row()
 
-            if self.frame_row.startswith(' Positions'):
+            if self.frame_row.startswith(" Positions"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
-
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
@@ -358,11 +362,10 @@ class Osc2TraceParser(object):
 
                     self.next_row()
 
-            if self.frame_row.startswith(' State traffic lights'):
+            if self.frame_row.startswith(" State traffic lights"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
-
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
@@ -370,11 +373,10 @@ class Osc2TraceParser(object):
                     frame_state["actors"].update({actor_id: traffic_light})
                     self.next_row()
 
-            if self.frame_row.startswith(' Vehicle animations'):
+            if self.frame_row.startswith(" Vehicle animations"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
-
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
@@ -382,20 +384,20 @@ class Osc2TraceParser(object):
                     frame_state["actors"][actor_id].update({"control": control})
                     self.next_row()
 
-            if self.frame_row.startswith(' Walker animations'):
+            if self.frame_row.startswith(" Walker animations"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
                     frame_state["actors"][actor_id].update({"speed": elements[3]})
                     self.next_row()
 
-            if self.frame_row.startswith(' Vehicle light animations'):
+            if self.frame_row.startswith(" Vehicle light animations"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
@@ -403,21 +405,23 @@ class Osc2TraceParser(object):
                     frame_state["actors"][actor_id].update({"lights": lights})
                     self.next_row()
 
-            if self.frame_row.startswith(' Scene light changes'):
+            if self.frame_row.startswith(" Scene light changes"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
                     scene_light = parse_scene_lights(elements)
-                    frame_state["events"]["scene_lights"].update({actor_id: scene_light})
+                    frame_state["events"]["scene_lights"].update(
+                        {actor_id: scene_light}
+                    )
                     self.next_row()
 
-            if self.frame_row.startswith(' Dynamic actors'):
+            if self.frame_row.startswith(" Dynamic actors"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
@@ -425,7 +429,9 @@ class Osc2TraceParser(object):
                     frame_state["actors"][actor_id].update({"velocity": velocity})
 
                     angular_v = parse_angular_velocity(elements)
-                    frame_state["actors"][actor_id].update({"angular_velocity": angular_v})
+                    frame_state["actors"][actor_id].update(
+                        {"angular_velocity": angular_v}
+                    )
 
                     if delta_time == 0:
                         acceleration = carla.Vector3D(0, 0, 0)
@@ -433,13 +439,15 @@ class Osc2TraceParser(object):
                         prev_velocity = frame_state["actors"][actor_id]["velocity"]
                         acceleration = (velocity - prev_velocity) / delta_time
 
-                    frame_state["actors"][actor_id].update({"acceleration": acceleration})
+                    frame_state["actors"][actor_id].update(
+                        {"acceleration": acceleration}
+                    )
                     self.next_row()
 
-            if self.frame_row.startswith(' Actor bounding boxes'):
+            if self.frame_row.startswith(" Actor bounding boxes"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
@@ -447,10 +455,10 @@ class Osc2TraceParser(object):
                     actors_info[actor_id].update({"bounding_box": bbox})
                     self.next_row()
 
-            if self.frame_row.startswith(' Actor trigger volumes'):
+            if self.frame_row.startswith(" Actor trigger volumes"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
@@ -458,20 +466,18 @@ class Osc2TraceParser(object):
                     actors_info[actor_id].update({"trigger_volume": trigvol})
                     self.next_row()
 
-            if self.frame_row.startswith(' Current platform time'):
-
+            if self.frame_row.startswith(" Current platform time"):
                 elements = self.get_row_elements(1, " ")
 
                 platform_time = float(elements[-1])
                 frame_state["frame"]["platform_time"] = platform_time
                 self.next_row()
 
-            if self.frame_row.startswith(' Physics Control'):
+            if self.frame_row.startswith(" Physics Control"):
                 self.next_row()
 
                 actor_id = None
-                while self.frame_row.startswith('  '):
-
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
                     physics_control = carla.VehiclePhysicsControl()
@@ -479,9 +485,8 @@ class Osc2TraceParser(object):
 
                     forward_gears = []
                     wheels = []
-                    while self.frame_row.startswith('   '):
-
-                        if self.frame_row.startswith('    '):
+                    while self.frame_row.startswith("   "):
+                        if self.frame_row.startswith("    "):
                             elements = self.get_row_elements(4, " ")
                             if elements[0] == "gear":
                                 forward_gears.append(parse_gears_control(elements))
@@ -522,17 +527,21 @@ class Osc2TraceParser(object):
 
                     setattr(physics_control, "forward_gears", forward_gears)
                     setattr(physics_control, "wheels", wheels)
-                    frame_state["events"]["physics_control"].update({actor_id: physics_control})
+                    frame_state["events"]["physics_control"].update(
+                        {actor_id: physics_control}
+                    )
 
-            if self.frame_row.startswith(' Traffic Light time events'):
+            if self.frame_row.startswith(" Traffic Light time events"):
                 self.next_row()
 
-                while self.frame_row.startswith('  '):
+                while self.frame_row.startswith("  "):
                     elements = self.get_row_elements(2, " ")
                     actor_id = int(elements[1])
 
                     state_times = parse_state_times(elements)
-                    frame_state["events"]["traffic_light_state_time"].update({actor_id: state_times})
+                    frame_state["events"]["traffic_light_state_time"].update(
+                        {actor_id: state_times}
+                    )
                     self.next_row()
 
             frames_info.append(frame_state)

@@ -3,16 +3,15 @@ from queue import Empty
 
 
 class BaseType:
-
     def get_type_name(self):
         pass
 
-    '''
+    """
 	It is useful during type computation and code gen to assign an int
 	index to the primitive types and possibly user-defined types like
 	structs and classes.
 	@return Return 0-indexed type index else -1 if no index.
-    '''
+    """
 
     def get_type_index(self):
         pass

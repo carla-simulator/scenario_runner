@@ -3,7 +3,6 @@ from srunner.osc2.ast_manager.ast_node import AST
 
 
 class ASTWalker(object):
-
     def walk(self, listener: ASTListener, t: AST):
         self.enter_node(listener, t)
 

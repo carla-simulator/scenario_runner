@@ -19,7 +19,7 @@ class ImportMsg:
     def msg(self):
         msg = []
         for i in range(len(self.index) - 1):
-            print(self.files[i] + ' : ' + str(self.index[i]))
+            print(self.files[i] + " : " + str(self.index[i]))
 
     # Empty stored information for running multiple files at once
     def clear_msg(self):

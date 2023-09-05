@@ -682,7 +682,7 @@ class OpenScenarioParser(object):
             droll = 0
             if rel_pos.find('Orientation') is not None:
                 orientation = rel_pos.find('Orientation')
-                is_absolute = (orientation.attrib.get('type') == "absolute")
+                is_absolute = orientation.attrib.get('type') == "absolute"
                 dyaw = math.degrees(float(ParameterRef(orientation.attrib.get('h', 0))))
                 dpitch = math.degrees(float(ParameterRef(orientation.attrib.get('p', 0))))
                 droll = math.degrees(float(ParameterRef(orientation.attrib.get('r', 0))))

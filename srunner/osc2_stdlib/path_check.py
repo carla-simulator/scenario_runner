@@ -1,15 +1,19 @@
 import carla
-
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.tools.osc2_helper import OSC2Helper
-from carla import Waypoint, LandmarkType
+from carla import LandmarkType, Waypoint
 
 from srunner.osc2_dm.physical_types import Physical
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.tools.osc2_helper import OSC2Helper
 
 
 class OverJunctionCheck:
-    def __init__(self, direction: Physical, distance_before: Physical = None,
-                 distance_in: Physical = None, distance_after: Physical = None) -> None:
+    def __init__(
+        self,
+        direction: Physical,
+        distance_before: Physical = None,
+        distance_in: Physical = None,
+        distance_after: Physical = None,
+    ) -> None:
         self.direction = direction
         self.distance_before = distance_before
         self.distance_in = distance_in
@@ -29,11 +33,11 @@ class OverJunctionCheck:
         Side effect: If the check is successful, set line1_end to the first wp before the intersection.
         """
         if not wp:
-            print('_check_distance_before wp is none')
+            print("_check_distance_before wp is none")
             return False
 
         if not self.distance_before:
-            print('no need to check distance before')
+            print("no need to check distance before")
             return True
 
         distance_list = []
@@ -66,15 +70,15 @@ class OverJunctionCheck:
         Side effect: Check successful, set line2_start to the second wwp after the intersection.
         """
         if not wp:
-            print('_check_distance_in wp is none')
+            print("_check_distance_in wp is none")
             return False
 
         if not self.distance_in:
-            print('no need to check distance in')
+            print("no need to check distance in")
             return True
 
         if not wp.is_junction:
-            print('start waypoint is not in junction')
+            print("start waypoint is not in junction")
             return False
 
         distance_list = []
@@ -111,7 +115,7 @@ class OverJunctionCheck:
             return False
 
         if not self.distance_after:
-            print('no need to check distance after')
+            print("no need to check distance after")
             return True
 
         distance_list = []
@@ -133,7 +137,7 @@ class OverJunctionCheck:
 
     def _check_direction(self) -> bool:
         if not self.direction:
-            print('over junction check must have direction parameter')
+            print("over junction check must have direction parameter")
             return False
 
         line1_start_loc = self.line1_start.transform.location
@@ -152,8 +156,12 @@ class OverJunctionCheck:
 
     def check(self, wp: Waypoint) -> bool:
         self.line1_start = wp
-        return self._check_distance_before(self.line1_start) and self.check_distance_in() \
-            and self._check_distance_after(self.line2_start) and self._check_direction()
+        return (
+            self._check_distance_before(self.line1_start)
+            and self.check_distance_in()
+            and self._check_distance_after(self.line2_start)
+            and self._check_direction()
+        )
 
 
 class OverLanesDecreaseCheck:
@@ -196,14 +204,18 @@ class PathTrafficSign(CarlaDataProvider):
         temp_list = waypoint.next_until_lane_end(PathTrafficSign.distance_step)
         lane_length = len(temp_list) * PathTrafficSign.distance_step
         if lane_length >= PathTrafficSign._length:
-            sign_type_list = waypoint.get_landmarks_of_type(lane_length, sign_type, stop_at_junction=False)
+            sign_type_list = waypoint.get_landmarks_of_type(
+                lane_length, sign_type, stop_at_junction=False
+            )
             if sign_type_list:
                 PathTrafficSign.wps.append(waypoint.road_id)
         if PathTrafficSign.wps:
             return True
 
     @staticmethod
-    def path_has_no_traffic_signs(waypoint: Waypoint, sign_type: list, length=None) -> bool:
+    def path_has_no_traffic_signs(
+        waypoint: Waypoint, sign_type: list, length=None
+    ) -> bool:
         lane_length_list = []
         if length:
             PathTrafficSign._length = length
@@ -212,7 +224,9 @@ class PathTrafficSign(CarlaDataProvider):
         if lane_length >= PathTrafficSign._length:
             lane_length_list.append(lane_length)
             for sign in sign_type:
-                sign_type_list = waypoint.get_landmarks_of_type(lane_length, sign, stop_at_junction=False)
+                sign_type_list = waypoint.get_landmarks_of_type(
+                    lane_length, sign, stop_at_junction=False
+                )
                 if sign_type_list:
                     return False
         return True
@@ -282,7 +296,9 @@ class PathDiffOrigin(object):
         all_path = []
         path_wps = []
         for pos in wps:
-            pont = _map.get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+            pont = _map.get_waypoint(
+                pos.location, project_to_road=True, lane_type=carla.LaneType.Driving
+            )
             if pont.road_id == wp.road_id:
                 continue
             for j in range(step_num):
@@ -308,21 +324,38 @@ class PathExplicit(object):
 
     def gen_path_by_point(self, wp):
         carla_map = CarlaDataProvider.get_map()
-        start_road_id, start_lane_id, start_s = self.start_point_parm[0], self.start_point_parm[1], \
-            self.start_point_parm[2]
-        start_point = carla_map.get_waypoint_xodr(int(start_road_id), int(start_lane_id), int(start_s))
+        start_road_id, start_lane_id, start_s = (
+            self.start_point_parm[0],
+            self.start_point_parm[1],
+            self.start_point_parm[2],
+        )
+        start_point = carla_map.get_waypoint_xodr(
+            int(start_road_id), int(start_lane_id), int(start_s)
+        )
 
-        end_road_id, end_lane_id, end_s = self.end_point_parm[0], self.end_point_parm[1], self.end_point_parm[2]
-        end_point = carla_map.get_waypoint_xodr(int(end_road_id), int(end_lane_id), int(end_s))
+        end_road_id, end_lane_id, end_s = (
+            self.end_point_parm[0],
+            self.end_point_parm[1],
+            self.end_point_parm[2],
+        )
+        end_point = carla_map.get_waypoint_xodr(
+            int(end_road_id), int(end_lane_id), int(end_s)
+        )
 
         if start_road_id != end_road_id or start_lane_id != end_lane_id:
-            print("Please check parameters, start road id and lane id must remain the same.")
+            print(
+                "Please check parameters, start road id and lane id must remain the same."
+            )
             return False
         if start_s == end_s:
-            print("Please check parameters, the start and end positions must be different.")
+            print(
+                "Please check parameters, the start and end positions must be different."
+            )
             return False
         if end_point is None:
-            print("Please check parameters,the end point exceeds the length of the road.")
+            print(
+                "Please check parameters,the end point exceeds the length of the road."
+            )
             return False
 
         if wp.road_id == int(start_road_id) and wp.lane_id == int(end_lane_id):
@@ -350,13 +383,20 @@ class PathOverDiffLimitMarks(object):
                 marks_value_list.append(i.value)
 
         if len(marks_value_list) > 1:
-            if self.speed1 == marks_value_list[0] and self.speed2 == marks_value_list[1]:
-                print(f"The car will cross the road section with speed limit signs of {self.speed1} and {self.speed2}")
+            if (
+                self.speed1 == marks_value_list[0]
+                and self.speed2 == marks_value_list[1]
+            ):
+                print(
+                    f"The car will cross the road section with speed limit signs of {self.speed1} and {self.speed2}"
+                )
                 return True
 
 
 class PathCurve:
-    def __init__(self, min_radius: Physical, max_radius: Physical, side: str = None) -> None:
+    def __init__(
+        self, min_radius: Physical, max_radius: Physical, side: str = None
+    ) -> None:
         self.min_radius = min_radius
         self.max_radius = max_radius
         self.side = side
@@ -379,15 +419,31 @@ class PathCurve:
         for wp1 in points[0]:
             for wp2 in points[1]:
                 for wp3 in points[2]:
-                    point1 = [wp1.transform.location.x, wp1.transform.location.y, wp1.transform.location.z]
-                    point2 = [wp2.transform.location.x, wp2.transform.location.y, wp2.transform.location.z]
-                    point3 = [wp3.transform.location.x, wp3.transform.location.y, wp3.transform.location.z]
+                    point1 = [
+                        wp1.transform.location.x,
+                        wp1.transform.location.y,
+                        wp1.transform.location.z,
+                    ]
+                    point2 = [
+                        wp2.transform.location.x,
+                        wp2.transform.location.y,
+                        wp2.transform.location.z,
+                    ]
+                    point3 = [
+                        wp3.transform.location.x,
+                        wp3.transform.location.y,
+                        wp3.transform.location.z,
+                    ]
                     r = OSC2Helper.curve_radius(point1, point2, point3)
                     if r is None:
                         continue
                     loc = OSC2Helper.point_line_location(point1, point2, point3)
-                    if self.min_radius.gen_single_value() <= r <= self.max_radius.gen_single_value() \
-                            and loc == self.side:
+                    if (
+                        self.min_radius.gen_single_value()
+                        <= r
+                        <= self.max_radius.gen_single_value()
+                        and loc == self.side
+                    ):
                         return True
 
         return False

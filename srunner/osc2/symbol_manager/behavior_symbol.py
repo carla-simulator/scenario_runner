@@ -3,7 +3,6 @@ from srunner.osc2.symbol_manager.local_scope import LocalScope
 
 
 class BehaviorInvocationSymbol(BaseSymbol):
-
     def __init__(self, behavior_name, scope, actor_name=None):
         name = ""
         if actor_name is not None:
@@ -23,10 +22,9 @@ class BehaviorInvocationSymbol(BaseSymbol):
 
 
 class BehaviorWithScope(LocalScope):
-
     def __init__(self, scope):
         super().__init__(scope)
-        self.name = 'with'
+        self.name = "with"
 
     def __str__(self):
-        return 'with'
+        return "with"
