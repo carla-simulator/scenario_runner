@@ -5,9 +5,9 @@ class Pedestrian:
 
 class Man(Pedestrian):
     def __init__(self) -> None:
-        super().__init__('male')
+        super().__init__("male")
 
 
 class Women(Pedestrian):
     def __init__(self) -> None:
-        super().__init__('female')
+        super().__init__("female")

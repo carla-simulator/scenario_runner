@@ -1,9 +1,19 @@
 from typing import Set
+
 import carla
+
 import srunner.scenariomanager.carla_data_provider as carla_data
-from srunner.osc2_stdlib.path_check import OverLanesDecreaseCheck, PathCurve, PathExplicit, PathOverDiffLimitMarks
-from srunner.osc2_stdlib.path_check import OverJunctionCheck, PathTrafficSign, PathDiffDest, PathDiffOrigin
 from srunner.osc2_dm.physical_types import Physical
+from srunner.osc2_stdlib.path_check import (
+    OverJunctionCheck,
+    OverLanesDecreaseCheck,
+    PathCurve,
+    PathDiffDest,
+    PathDiffOrigin,
+    PathExplicit,
+    PathOverDiffLimitMarks,
+    PathTrafficSign,
+)
 
 
 class Path:
@@ -62,20 +72,29 @@ class Path:
 
     @classmethod
     def path_has_no_signs(cls):
-        cls.sign_types = [carla.LandmarkType.MaximumSpeed,
-                          carla.LandmarkType.StopSign,
-                          carla.LandmarkType.YieldSign,
-                          carla.LandmarkType.Roundabout]
+        cls.sign_types = [
+            carla.LandmarkType.MaximumSpeed,
+            carla.LandmarkType.StopSign,
+            carla.LandmarkType.YieldSign,
+            carla.LandmarkType.Roundabout,
+        ]
 
     @classmethod
-    def path_over_junction(cls, direction: Physical, distance_before: Physical = None, distance_in: Physical = None,
-                           distance_after: Physical = None) -> None:
+    def path_over_junction(
+        cls,
+        direction: Physical,
+        distance_before: Physical = None,
+        distance_in: Physical = None,
+        distance_after: Physical = None,
+    ) -> None:
         # dir degree
         # #dis_before m
         # #dis_in m
         # #dis_after m
 
-        cls.over_junction_check = OverJunctionCheck(direction, distance_before, distance_in, distance_after)
+        cls.over_junction_check = OverJunctionCheck(
+            direction, distance_before, distance_in, distance_after
+        )
 
     @classmethod
     def path_over_lanes_decrease(cls, distance: Physical) -> None:
@@ -83,8 +102,8 @@ class Path:
 
     @classmethod
     def path_explicit(cls, start_point, end_point, tolerance):
-        start_point = start_point.split(',')
-        end_point = end_point.split(',')
+        start_point = start_point.split(",")
+        end_point = end_point.split(",")
         cls.is_explicit = PathExplicit(start_point, end_point, tolerance)
         print(cls.is_explicit)
 
@@ -101,9 +120,10 @@ class Path:
 
     @classmethod
     def check(cls, pos) -> bool:
-
         _map = carla_data.CarlaDataProvider.get_map(carla_data.CarlaDataProvider.world)
-        wp = _map.get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+        wp = _map.get_waypoint(
+            pos.location, project_to_road=True, lane_type=carla.LaneType.Driving
+        )
         # Remove the intersection
 
         road_lanes = carla_data.CarlaDataProvider.get_road_lanes(wp)
@@ -122,12 +142,16 @@ class Path:
                 return False
         # Check if the test road is signposted
         if cls.sign_type:
-            is_sign = PathTrafficSign.path_has_traffic_sign(wp, cls.sign_type, cls._length)
+            is_sign = PathTrafficSign.path_has_traffic_sign(
+                wp, cls.sign_type, cls._length
+            )
             if not is_sign:
                 return False
         # Restricted test roads cannot be signposted
         if cls.sign_types:
-            no_sign = PathTrafficSign.path_has_no_traffic_signs(wp, cls.sign_types, cls._length)
+            no_sign = PathTrafficSign.path_has_no_traffic_signs(
+                wp, cls.sign_types, cls._length
+            )
             if not no_sign:
                 return False
 

@@ -4,7 +4,10 @@ from math import sqrt
 from srunner.osc2_stdlib.observer import Observer
 from srunner.osc2_stdlib.variables import Variable
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerNearCollision, DriveDistance
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
+    DriveDistance,
+    InTriggerNearCollision,
+)
 
 
 class Event:

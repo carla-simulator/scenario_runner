@@ -1,8 +1,9 @@
-import re
-import sys
 import math
 import random
+import re
+import sys
 from typing import List
+
 from srunner.osc2_dm.physical_object import *
 
 
@@ -16,7 +17,7 @@ class Range(object):
     # String initialization，[4..6]
     @classmethod
     def from_str(cls, s: str):
-        values = s[1:-1].split('..')
+        values = s[1:-1].split("..")
 
         start = float(values[0]) if values[0] else 0
         end = float(values[1]) if values[1] else math.inf
@@ -24,7 +25,7 @@ class Range(object):
         return cls(start, end)
 
     def __str__(self) -> str:
-        return '[' + str(self.start) + '..' + str(self.end) + ']'
+        return "[" + str(self.start) + ".." + str(self.end) + "]"
 
     def __neg__(self):
         self.start = -self.start
@@ -59,7 +60,7 @@ class Physical(object):
             range_num_indexs = match_obj.span()
             num_start = range_num_indexs[0]
             num_end = range_num_indexs[1]
-            num = Range.from_str(s[num_start: num_end])
+            num = Range.from_str(s[num_start:num_end])
             unit = s[num_end:]
             return cls(num, unit)
         else:
@@ -68,14 +69,13 @@ class Physical(object):
                 nums_indexs = match_obj.span()
                 num_start = nums_indexs[0]
                 num_end = nums_indexs[1]
-                num = float(s[num_start: num_end])
+                num = float(s[num_start:num_end])
                 unit = s[num_end:]
                 return cls(num, unit)
             else:
-                print('wrong physical')
+                print("wrong physical")
 
     def is_in_range(self, value) -> bool:
-
         if isinstance(self.num, Range):
             return self.num.is_in_range(value)
         else:
@@ -105,20 +105,28 @@ class Physical(object):
 
     # Addition
     def __add__(self, right):
-        num = self.num + ((right.num * right.unit.factor + right.unit.offset) - self.unit.offset) / self.unit.factor
+        num = (
+            self.num
+            + ((right.num * right.unit.factor + right.unit.offset) - self.unit.offset)
+            / self.unit.factor
+        )
         factor = self.unit.factor
         offset = self.unit.offset + right.unit.offset / self.unit.factor
-        name = self.unit.unit_name + '+' + right.unit.unit_name
+        name = self.unit.unit_name + "+" + right.unit.unit_name
         physical = self.unit.physical + right.unit.physical
         unit = UnitObject(name, physical, factor, offset)
         return Physical(num, unit)
 
     # Subtraction
     def __sub__(self, right):
-        num = self.num - ((right.num * right.unit.factor + right.unit.offset) - self.unit.offset) / self.unit.factor
+        num = (
+            self.num
+            - ((right.num * right.unit.factor + right.unit.offset) - self.unit.offset)
+            / self.unit.factor
+        )
         factor = self.unit.factor
         offset = self.unit.offset + right.unit.offset / self.unit.factor
-        name = self.unit.unit_name + '-' + right.unit.unit_name
+        name = self.unit.unit_name + "-" + right.unit.unit_name
         physical = self.unit.physical - right.unit.physical
         unit = UnitObject(name, physical, factor, offset)
         return Physical(num, unit)
@@ -127,8 +135,10 @@ class Physical(object):
     def __truediv__(self, right):
         num = self.num / right.num
         factor = self.unit.factor / right.unit.factor
-        offset = self.unit.offset / right.unit.factor + right.unit.offset / self.unit.factor
-        name = self.unit.unit_name + '/' + right.unit.unit_name
+        offset = (
+            self.unit.offset / right.unit.factor + right.unit.offset / self.unit.factor
+        )
+        name = self.unit.unit_name + "/" + right.unit.unit_name
         physical = self.unit.physical / right.unit.physical
         unit = UnitObject(name, physical, factor, offset)
         return Physical(num, unit)
@@ -137,8 +147,10 @@ class Physical(object):
     def __mul__(self, right):
         num = self.num * right.num
         factor = self.unit.factor * right.unit.factor
-        offset = self.unit.offset * right.unit.factor + right.unit.offset * self.unit.factor
-        name = self.unit.unit_name + '*' + right.unit.unit_name
+        offset = (
+            self.unit.offset * right.unit.factor + right.unit.offset * self.unit.factor
+        )
+        name = self.unit.unit_name + "*" + right.unit.unit_name
         physical = self.unit.physical * right.unit.physical
         unit = UnitObject(name, physical, factor, offset)
         return Physical(num, unit)

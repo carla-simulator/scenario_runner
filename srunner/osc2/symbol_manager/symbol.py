@@ -3,6 +3,7 @@
 # symbols are added to a scope because this often translates to
 # register or parameter numbers.
 
+
 class Symbol:
     def __init__(self, name=None, scope=None):
         self.name = name

@@ -1,32 +1,35 @@
+
+"""
+Parse the OSC2 scenario description file, configure parameters based on type and keep constraints, 
+generate relevant type objects in the standard library, and set parameters
+
+"""
 import sys
-import logging
+from typing import List, Tuple
+
 import carla
-from typing import Tuple, List
+
+import srunner.osc2_stdlib.misc_object as misc
+import srunner.osc2_stdlib.variables as variable
+import srunner.osc2_stdlib.vehicle as vehicles
+from srunner.osc2.ast_manager import ast_node
+from srunner.osc2.ast_manager.ast_vistor import ASTVisitor
+from srunner.osc2_dm.physical_object import *
+from srunner.osc2_dm.physical_types import Physical, Range
+
+# 标准库
+from srunner.osc2_stdlib.path import Path
 
 # pylint: disable=line-too-long
-from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
+from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration
+
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 # OSC2
 from srunner.tools.osc2_helper import OSC2Helper
-from srunner.osc2.ast_manager import ast_node
-from srunner.osc2.ast_manager.ast_vistor import ASTVisitor
 
-# 标准库
-from srunner.osc2_stdlib.path import Path
-import srunner.osc2_stdlib.vehicle as vehicles
-import srunner.osc2_stdlib.variables as variable
-from srunner.osc2_dm.physical_types import Range
-from srunner.osc2_dm.physical_types import Physical
-from srunner.osc2_dm.physical_object import *
-import srunner.osc2_stdlib.misc_object as misc
-
-'''
-解析osc2场景描述文件，根据类型和keep约束的参数配置，生成标准库里相关类型对象，并设置参数
-
-'''
-vehicle_type = ['Car', 'Model3', 'Mkz2017', 'Carlacola', 'Rubicon']
+vehicle_type = ["Car", "Model3", "Mkz2017", "Carlacola", "Rubicon"]
 
 
 def flat_list(list_of_lists):
@@ -40,9 +43,7 @@ def flat_list(list_of_lists):
 
 
 class OSC2ScenarioConfiguration(ScenarioConfiguration):
-
     def __init__(self, filename, client):
-
         self.name = self.filename = filename
         self.ast_tree = OSC2Helper.gen_osc2_ast(self.filename)
 
@@ -80,40 +81,16 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         variable.Variable.set_arg(vary)
 
     class ConfigInit(ASTVisitor):
-
         def __init__(self, configInstance) -> None:
             super().__init__()
             self.father_ins = configInstance
 
-        # def visit_compilation_unit(self, node: ast_node.CompilationUnit):
-        #     print("visit compilation unit!")
-        #     for child in node.get_children():
-        #         if isinstance(child, ast_node.ScenarioDeclaration):
-        #             self.visit_scenario_declaration(child)
-        #         elif isinstance(child, ast_node.PhysicalTypeDeclaration):
-        #             self.visit_physical_type_declaration(child)
-        #         elif isinstance(child, ast_node.UnitDeclaration):
-        #             self.visit_unit_declaration(child)
-        #         elif isinstance (child, ast_node.ActorDeclaration):
-        #             self.visit_actor_declaration(child)
-        #         elif isinstance(child, ast_node.GlobalParameterDeclaration):
-        #             self.visit_global_parameter_declaration(child)
-        #         else:
-        #             pass                        
-
-        # def visit_physical_type_declaration(self, node: ast_node.PhysicalTypeDeclaration):
-        #     return super().visit_physical_type_declaration(node)
-
-        # def visit_unit_declaration(self, node: ast_node.UnitDeclaration):
-        #      return super().visit_unit_declaration(node)
-
-        # def visit_actor_declaration(self, node: ast_node.ActorDeclaration):
-        #     return super().visit_actor_declaration(node)
-
-        def visit_global_parameter_declaration(self, node: ast_node.GlobalParameterDeclaration):
+        def visit_global_parameter_declaration(
+            self, node: ast_node.GlobalParameterDeclaration
+        ):
             para_name = node.field_name[0]
-            para_type = ''
-            para_value = ''
+            para_type = ""
+            para_value = ""
             arguments = self.visit_children(node)
             if isinstance(arguments, list) and len(arguments) == 2:
                 para_type = arguments[0]
@@ -145,7 +122,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         def visit_scenario_declaration(self, node: ast_node.ScenarioDeclaration):
             scenario_name = node.qualified_behavior_name
             self.father_ins.scenario_declaration[scenario_name] = node
-            if scenario_name != 'top':
+            if scenario_name != "top":
                 return
 
             for child in node.get_children():
@@ -167,13 +144,16 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
 
         def visit_parameter_declaration(self, node: ast_node.ParameterDeclaration):
             para_name = node.field_name[0]
-            para_type = ''
-            para_value = ''
+            para_type = ""
+            para_value = ""
             arguments = self.visit_children(node)
             if isinstance(arguments, list) and len(arguments) == 2:
                 para_type = arguments[0]
                 para_value = arguments[1]
-                if self.father_ins.variables.get(str(para_value)) is not None and para_type not in vehicle_type:
+                if (
+                    self.father_ins.variables.get(str(para_value)) is not None
+                    and para_type not in vehicle_type
+                ):
                     para_value = self.father_ins.variables.get(str(para_value))
                 self.father_ins.variables[para_name] = para_value
             elif isinstance(arguments, str):
@@ -182,8 +162,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     vehicle_class = getattr(vehicles, para_type)
                     v_ins = vehicle_class()
 
-                    # TODO: 车辆配置参数解析和设置，需要解析keep语句
-                    # 车辆rolename=变量名
+                    # TODO: Analyzing and setting vehicle configuration parameters requires parsing the keep statement
                     v_ins.set_name(para_name)
                     if para_name == OSC2Helper.ego_name:
                         self.father_ins.add_ego_vehicles(v_ins)
@@ -191,27 +170,20 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                         self.father_ins.add_other_actors(v_ins)
                 self.father_ins.variables[para_name] = para_type
             self.father_ins.store_variable(self.father_ins.variables)
-            """
-            field_name = node.field_name #field_name is a list
-            #field_type = node.field_type
-            arguments = self.visit_children(node)
-            #return ("parameter", (field_name, field_type))
-            return ("parameter", (field_name, arguments))
-            """
 
         def visit_variable_declaration(self, node: ast_node.VariableDeclaration):
             variable_name = node.field_name[0]
-            variable_type = ''
-            variable_value = ''
-            arguments = (self.visit_children(node))
+            # variable_type = ""
+            variable_value = ""
+            arguments = self.visit_children(node)
             if isinstance(arguments, list) and len(arguments) == 2:
-                variable_type = arguments[0]
+                # variable_type = arguments[0]
                 variable_value = arguments[1]
                 if self.father_ins.variables.get(str(variable_value)) is not None:
                     variable_value = self.father_ins.variables.get(str(variable_value))
                 self.father_ins.variables[variable_name] = variable_value
             elif isinstance(arguments, str):
-                variable_type = arguments
+                # variable_type = arguments
                 self.father_ins.variables[variable_name] = variable_value
             self.father_ins.store_variable(self.father_ins.variables)
 
@@ -228,7 +200,9 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     for arg in arguments:
                         if isinstance(arg, Tuple):
                             if self.father_ins.variables.get(arg[0]) is not None:
-                                keyword_args[arg[0]] = self.father_ins.variables.get(arg[0])
+                                keyword_args[arg[0]] = self.father_ins.variables.get(
+                                    arg[0]
+                                )
                             else:
                                 keyword_args[arg[0]] = arg[1]
                         else:
@@ -246,7 +220,9 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                 if hasattr(vehicles.Vehicle, function_name):
                     position_args = []
                     keyword_args = {}
-                    position_function = getattr(self.father_ins.ego_vehicles[0], function_name)
+                    position_function = getattr(
+                        self.father_ins.ego_vehicles[0], function_name
+                    )
 
                     pos = misc.WorldPosition(0, 0, 0, 0, 0, 0)
                     position_cls = getattr(pos, "__init__")
@@ -265,18 +241,12 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     position_cls(*position_args, **keyword_args)
                     position_function(pos)
                     self.father_ins.ego_vehicles[0].random_location = False
-            """
-            modifier_name = node.modifier_name
-            arguments = self.visit_children(node)
-            
-            return ("modifier", (modifier_name, arguments))
-            """
 
         def visit_event_declaration(self, node: ast_node.EventDeclaration):
             event_name = node.field_name
             arguments = self.visit_children(node)
             if hasattr(self.father_ins.event, event_name):
-                event_function = getattr(self.father_ins.event, event_name)
+                # event_function = getattr(self.father_ins.event, event_name)
                 position_args = []
                 keyword_args = {}
                 if isinstance(arguments, List):
@@ -284,7 +254,9 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     for arg in arguments:
                         if isinstance(arg, Tuple):
                             if self.father_ins.variables.get(arg[0]) is not None:
-                                keyword_args[arg[0]] = self.father_ins.variables.get(arg[0])
+                                keyword_args[arg[0]] = self.father_ins.variables.get(
+                                    arg[0]
+                                )
                             else:
                                 keyword_args[arg[0]] = arg[1]
                         else:
@@ -297,18 +269,12 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                         position_args.append(self.father_ins.variables.get(arguments))
                     else:
                         position_args.append(arguments)
-            """
-            event_name = node.field_name
-            arguments = self.visit_children(node)
-
-            return ("event", (event_name, arguments))
-            """
 
         def visit_method_declaration(self, node: ast_node.MethodDeclaration):
             pass
 
         def visit_method_body(self, node: ast_node.MethodBody):
-            type = node.type
+            # type = node.type
             for child in node.get_children():
                 if isinstance(child, ast_node.BinaryExpression):
                     self.visit_binary_expression(child)
@@ -318,10 +284,10 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
             flat_arguments = flat_list(arguments)
             temp_stack = []
             for ex in flat_arguments:
-                if ex == '+' or ex == '-' or ex == '*' or ex == '/' or ex == '%':
+                if ex in ('+', '-', '*', '/', '%'):
                     right = temp_stack.pop()
                     left = temp_stack.pop()
-                    expression = left + ' ' + ex + ' ' + right
+                    expression = left + " " + ex + " " + right
                     temp_stack.append(expression)
                 else:
                     temp_stack.append(ex)
@@ -335,7 +301,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         def visit_range_expression(self, node: ast_node.RangeExpression):
             start, end = self.visit_children(node)
             if type(start) != type(end):
-                print('[Error] different types between start and end of the range')
+                print("[Error] different types between start and end of the range")
                 sys.exit(1)
 
             start_num = None
@@ -358,22 +324,24 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                 if start_unit == end_unit:
                     unit_name = start_unit
                 else:
-                    print('[Error] wrong unit in the range')
+                    print("[Error] wrong unit in the range")
                     sys.exit(1)
 
             if start_num >= end_num:
-                print('[Error] wrong start and end in the range')
+                print("[Error] wrong start and end in the range")
                 sys.exit(1)
 
-            range = Range(start_num, end_num)
+            var_range = Range(start_num, end_num)
 
             if unit_name:
-                return Physical(range, unit_name)
+                return Physical(var_range, unit_name)
             else:
-                return range
+                return var_range
 
         def visit_physical_literal(self, node: ast_node.PhysicalLiteral):
-            return Physical(self.visit_children(node), self.father_ins.unit_dict[node.unit_name])
+            return Physical(
+                self.visit_children(node), self.father_ins.unit_dict[node.unit_name]
+            )
 
         def visit_integer_literal(self, node: ast_node.IntegerLiteral):
             return int(node.value)
@@ -396,7 +364,9 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         def visit_type(self, node: ast_node.Type):
             return node.type_name
 
-        def visit_physical_type_declaration(self, node: ast_node.PhysicalTypeDeclaration):
+        def visit_physical_type_declaration(
+            self, node: ast_node.PhysicalTypeDeclaration
+        ):
             si_base_exponent = {}
             arguments = self.visit_children(node)
             arguments = flat_list(arguments)
@@ -405,7 +375,9 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
             else:
                 for elem in arguments:
                     si_base_exponent[elem[0]] = elem[1]
-            self.father_ins.physical_dict[node.type_name] = PhysicalObject(node.type_name, si_base_exponent)
+            self.father_ins.physical_dict[node.type_name] = PhysicalObject(
+                node.type_name, si_base_exponent
+            )
 
         def visit_unit_declaration(self, node: ast_node.UnitDeclaration):
             arguments = self.visit_children(node)
@@ -413,13 +385,16 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
             factor = 1.0
             offset = 0
             for elem in arguments:
-                if elem[0] == 'factor':
+                if elem[0] == "factor":
                     factor = elem[1]
-                elif elem[0] == 'offset':
+                elif elem[0] == "offset":
                     offset = elem[1]
-            self.father_ins.unit_dict[node.unit_name] = UnitObject(node.unit_name,
-                                                                   self.father_ins.physical_dict[node.physical_name],
-                                                                   factor, offset)
+            self.father_ins.unit_dict[node.unit_name] = UnitObject(
+                node.unit_name,
+                self.father_ins.physical_dict[node.physical_name],
+                factor,
+                offset,
+            )
 
         def visit_si_base_exponent(self, node: ast_node.SIBaseExponent):
             return node.unit_name, self.visit_children(node)
@@ -434,8 +409,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         self._set_carla_town()
 
     def _set_carla_town(self):
-        """
-        """
+        """ """
         self.town = self.path.get_map()
 
         # workaround for relative positions during init
@@ -444,7 +418,9 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         if world:
             world.get_settings()
             wmap = world.get_map()
-        if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):
+        if world is None or (
+            wmap is not None and wmap.name.split("/")[-1] != self.town
+        ):
             self.client.load_world(self.town)
             world = self.client.get_world()
 

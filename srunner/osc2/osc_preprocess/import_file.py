@@ -9,7 +9,7 @@ import queue
 class ImportFile:
     def __init__(self, base_path):
         self.__base_path = base_path
-        self.__file = open(base_path, encoding='utf-8')
+        self.__file = open(base_path, encoding="utf-8")
 
     # Get current path
     def get_path(self):
@@ -30,14 +30,14 @@ class ImportFile:
 
         """
         current_path = self.get_path()
-        import_file_path = import_file_path.rsplit('../')
+        import_file_path = import_file_path.rsplit("../")
         up_levels = len(import_file_path)
-        true_path = current_path.rsplit('/', up_levels)[0] + '/' + import_file_path[-1]
+        true_path = current_path.rsplit("/", up_levels)[0] + "/" + import_file_path[-1]
         return true_path
 
     # Get import members and return a queue of members
     def get_import_members(self):
-        file = open(self.get_path(), encoding='utf-8')
+        file = open(self.get_path(), encoding="utf-8")
         is_continue = True
         import_files = queue.Queue()
         while is_continue:
@@ -66,7 +66,7 @@ class ImportFile:
     def get_content(self):
         lines = -1  # count the number of rows
         content = ""
-        file = open(self.get_path(), encoding='utf-8')
+        file = open(self.get_path(), encoding="utf-8")
         current_line = "start"
         pre_line = ""
         while current_line:
@@ -80,10 +80,17 @@ class ImportFile:
                 continue
             else:
                 content += current_line
-        if pre_line.endswith('\n'):
+        if pre_line.endswith("\n"):
             return content, lines
         else:
             index = len(pre_line)
             print(
-                "[Error] file '" + self.get_path() + "' line " + lines.__str__() + ':' + index.__str__() + " mismatched input '<EOF>'")
+                "[Error] file '"
+                + self.get_path()
+                + "' line "
+                + lines.__str__()
+                + ":"
+                + index.__str__()
+                + " mismatched input '<EOF>'"
+            )
             return content, lines

@@ -93,7 +93,6 @@ class Expression(AST):
 
 
 class PhysicalTypeDeclaration(Declaration):
-
     def __init__(self, type_name):
         super().__init__()
         self.type_name = type_name
@@ -115,7 +114,6 @@ class PhysicalTypeDeclaration(Declaration):
 
 
 class UnitDeclaration(Declaration):
-
     def __init__(self, unit_name, physical_name):
         super().__init__()
         self.unit_name = unit_name
@@ -138,7 +136,6 @@ class UnitDeclaration(Declaration):
 
 
 class SIBaseExponent(AST):
-
     def __init__(self, unit_name):
         super().__init__()
         self.unit_name = unit_name
@@ -160,7 +157,6 @@ class SIBaseExponent(AST):
 
 
 class EnumDeclaration(Declaration):
-
     def __init__(self, enum_name):
         super().__init__()
         self.enum_name = enum_name
@@ -182,7 +178,6 @@ class EnumDeclaration(Declaration):
 
 
 class EnumMemberDecl(Declaration):
-
     def __init__(self, enum_member_name, num_member_value):
         super().__init__()
         self.enum_member_name = enum_member_name
@@ -205,7 +200,6 @@ class EnumMemberDecl(Declaration):
 
 
 class EnumValueReference(AST):
-
     def __init__(self, enum_name, enum_member_name):
         super().__init__()
         self.enum_name = enum_name
@@ -228,7 +222,6 @@ class EnumValueReference(AST):
 
 
 class InheritsCondition(AST):
-
     def __init__(self, field_name, bool_literal):
         super().__init__()
         self.field_name = field_name
@@ -250,7 +243,6 @@ class InheritsCondition(AST):
 
 
 class StructDeclaration(Declaration):
-
     def __init__(self, struct_name):
         super().__init__()
         self.struct_name = struct_name
@@ -272,7 +264,6 @@ class StructDeclaration(Declaration):
 
 
 class StructInherts(AST):
-
     def __init__(self, struct_name):
         super().__init__()
         self.struct_name = struct_name
@@ -294,7 +285,6 @@ class StructInherts(AST):
 
 
 class ActorDeclaration(Declaration):
-
     def __init__(self, actor_name):
         super().__init__()
         self.actor_name = actor_name
@@ -316,7 +306,6 @@ class ActorDeclaration(Declaration):
 
 
 class ActorInherts(AST):
-
     def __init__(self, actor_name):
         super().__init__()
         self.actor_name = actor_name
@@ -338,7 +327,6 @@ class ActorInherts(AST):
 
 
 class ScenarioDeclaration(Declaration):
-
     def __init__(self, qualified_behavior_name):
         super().__init__()
         self.qualified_behavior_name = qualified_behavior_name
@@ -360,7 +348,6 @@ class ScenarioDeclaration(Declaration):
 
 
 class ScenarioInherts(AST):
-
     def __init__(self, qualified_behavior_name):
         super().__init__()
         self.qualified_behavior_name = qualified_behavior_name
@@ -382,7 +369,6 @@ class ScenarioInherts(AST):
 
 
 class ActionDeclaration(Declaration):
-
     def __init__(self, qualified_behavior_name):
         super().__init__()
         self.qualified_behavior_name = qualified_behavior_name
@@ -404,7 +390,6 @@ class ActionDeclaration(Declaration):
 
 
 class ActionInherts(AST):
-
     def __init__(self, qualified_behavior_name):
         super().__init__()
         self.qualified_behavior_name = qualified_behavior_name
@@ -426,7 +411,6 @@ class ActionInherts(AST):
 
 
 class ModifierDeclaration(Declaration):
-
     def __init__(self, actor_name, modifier_name):
         super().__init__()
         self.actor_name = actor_name
@@ -452,7 +436,6 @@ class ModifierDeclaration(Declaration):
 
 
 class EnumTypeExtension(Declaration):
-
     def __init__(self, enum_name):
         super().__init__()
         self.enum_name = enum_name
@@ -474,7 +457,6 @@ class EnumTypeExtension(Declaration):
 
 
 class StructuredTypeExtension(Declaration):
-
     def __init__(self, type_name, qualified_behavior_name):
         super().__init__()
         self.type_name = type_name
@@ -500,9 +482,9 @@ class StructuredTypeExtension(Declaration):
 
 
 class GlobalParameterDeclaration(Declaration):
-    '''
+    """
     children stores name, type, and default values, where default values are not required
-    '''
+    """
 
     def __init__(self, field_name, field_type):
         super().__init__()
@@ -526,7 +508,6 @@ class GlobalParameterDeclaration(Declaration):
 
 
 class ParameterDeclaration(Declaration):
-
     def __init__(self, field_name, field_type):
         super().__init__()
         self.field_name = field_name
@@ -549,7 +530,6 @@ class ParameterDeclaration(Declaration):
 
 
 class ParameterReference(AST):
-
     def __init__(self, field_name, field_access):
         super().__init__()
         self.field_name = field_name
@@ -572,7 +552,6 @@ class ParameterReference(AST):
 
 
 class VariableDeclaration(Declaration):
-
     def __init__(self, field_name, field_type):
         super().__init__()
         self.field_name = field_name
@@ -595,7 +574,6 @@ class VariableDeclaration(Declaration):
 
 
 class EventDeclaration(Declaration):
-
     def __init__(self, event_name):
         super().__init__()
         self.field_name = event_name
@@ -617,7 +595,6 @@ class EventDeclaration(Declaration):
 
 
 class EventReference(AST):
-
     def __init__(self, event_path):
         super().__init__()
         self.event_path = event_path
@@ -639,7 +616,6 @@ class EventReference(AST):
 
 
 class EventFieldDecl(AST):
-
     def __init__(self, event_field_name):
         super().__init__()
         self.event_field_name = event_field_name
@@ -661,7 +637,6 @@ class EventFieldDecl(AST):
 
 
 class EventCondition(AST):
-
     def __init__(self):
         super().__init__()
 
@@ -681,7 +656,6 @@ class EventCondition(AST):
 
 
 class MethodDeclaration(Declaration):
-
     def __init__(self, method_name, return_type):
         super().__init__()
         self.method_name = method_name
@@ -704,10 +678,10 @@ class MethodDeclaration(Declaration):
 
 
 class MethodBody(AST):
-    '''
+    """
     There are three types of method, expression, undefined, external
     In the children of this node, the type and the concrete method body are stored, in turn
-    '''
+    """
 
     def __init__(self, qualifier, type, external_name):
         super().__init__()
@@ -732,10 +706,10 @@ class MethodBody(AST):
 
 
 class coverDeclaration(Declaration):
-    '''
-    When override a 'cover', target name is none, 
+    """
+    When override a 'cover', target name is none,
     but must have an argument with name 'override'.
-    '''
+    """
 
     def __init__(self, target_name):
         super().__init__()
@@ -758,10 +732,10 @@ class coverDeclaration(Declaration):
 
 
 class recordDeclaration(Declaration):
-    '''
-    When override a 'record', target name is none, 
+    """
+    When override a 'record', target name is none,
     but must have an argument with name 'override'.
-    '''
+    """
 
     def __init__(self, target_name):
         super().__init__()
@@ -784,7 +758,6 @@ class recordDeclaration(Declaration):
 
 
 class Argument(AST):
-
     def __init__(self, argument_name, argument_type, default_value):
         super().__init__()
         self.argument_name = argument_name
@@ -811,7 +784,6 @@ class Argument(AST):
 
 
 class NamedArgument(AST):
-
     def __init__(self, argument_name):
         super().__init__()
         self.argument_name = argument_name
@@ -833,7 +805,6 @@ class NamedArgument(AST):
 
 
 class PositionalArgument(AST):
-
     def __init__(self):
         super().__init__()
 
@@ -853,9 +824,9 @@ class PositionalArgument(AST):
 
 
 class VariableDeclaration(Declaration):
-    '''
+    """
     'var' fieldName (',' fieldName)* ':' typeDeclarator ('=' (sampleExpression | valueExp) )? NEWLINE;
-    '''
+    """
 
     def __init__(self, field_name, field_type):
         super().__init__()
@@ -879,7 +850,6 @@ class VariableDeclaration(Declaration):
 
 
 class KeepConstraintDeclaration(Declaration):
-
     def __init__(self, constraint_qualifier):
         super().__init__()
         self.constraint_qualifier = constraint_qualifier
@@ -901,7 +871,6 @@ class KeepConstraintDeclaration(Declaration):
 
 
 class RemoveDefaultDeclaration(Declaration):
-
     def __init__(self):
         super().__init__()
 
@@ -921,7 +890,6 @@ class RemoveDefaultDeclaration(Declaration):
 
 
 class OnDirective(AST):
-
     def __init__(self):
         super().__init__()
 
@@ -941,7 +909,6 @@ class OnDirective(AST):
 
 
 class DoDirective(AST):
-
     def __init__(self):
         super().__init__()
 
@@ -961,7 +928,6 @@ class DoDirective(AST):
 
 
 class DoMember(AST):
-
     def __init__(self, label_name, composition_operator):
         super().__init__()
         self.label_name = label_name
@@ -984,7 +950,6 @@ class DoMember(AST):
 
 
 class WaitDirective(AST):
-
     def __init__(self):
         super().__init__()
 
@@ -1004,7 +969,6 @@ class WaitDirective(AST):
 
 
 class EmitDirective(AST):
-
     def __init__(self, event_name):
         super().__init__()
         self.event_name = event_name
@@ -1026,7 +990,6 @@ class EmitDirective(AST):
 
 
 class CallDirective(AST):
-
     def __init__(self, method_name):
         super().__init__()
         self.method_name = method_name
@@ -1047,7 +1010,6 @@ class CallDirective(AST):
 
 
 class UntilDirective(AST):
-
     def __init__(self):
         super().__init__()
 
@@ -1067,7 +1029,6 @@ class UntilDirective(AST):
 
 
 class BehaviorInvocation(AST):
-
     def __init__(self, actor, behavior_name):
         super().__init__()
         self.actor = actor
@@ -1090,7 +1051,6 @@ class BehaviorInvocation(AST):
 
 
 class ModifierInvocation(AST):
-
     def __init__(self, actor, modifier_name):
         super().__init__()
         self.actor = actor
@@ -1113,7 +1073,6 @@ class ModifierInvocation(AST):
 
 
 class RiseExpression(Expression):
-
     def __init__(self):
         super().__init__()
 
@@ -1133,7 +1092,6 @@ class RiseExpression(Expression):
 
 
 class FallExpression(Expression):
-
     def __init__(self):
         super().__init__()
 
@@ -1153,7 +1111,6 @@ class FallExpression(Expression):
 
 
 class ElapsedExpression(Expression):
-
     def __init__(self):
         super().__init__()
 
@@ -1198,10 +1155,10 @@ class EveryExpression(Expression):
 
 
 class SampleExpression(Expression):
-    '''
+    """
     In the sample expression, there are at most three children among its children，
     'sample' OPEN_PAREN expression ',' eventSpecification (',' defaultValue)? CLOSE_PAREN;
-    '''
+    """
 
     def __init__(self):
         super().__init__()
@@ -1222,8 +1179,7 @@ class SampleExpression(Expression):
 
 
 class CastExpression(Expression):
-    '''
-    '''
+    """ """
 
     def __init__(self, object, target_type):
         super().__init__()
@@ -1246,8 +1202,7 @@ class CastExpression(Expression):
 
 
 class TypeTestExpression(Expression):
-    '''
-    '''
+    """ """
 
     def __init__(self, object, target_type):
         super().__init__()
@@ -1270,8 +1225,7 @@ class TypeTestExpression(Expression):
 
 
 class ElementAccessExpression(Expression):
-    '''
-    '''
+    """ """
 
     def __init__(self, list_name, index):
         super().__init__()
@@ -1294,10 +1248,10 @@ class ElementAccessExpression(Expression):
 
 
 class FunctionApplicationExpression(Expression):
-    '''
+    """
     In a functionApplication expression, store the method name and its arguments in the children.
     Method names are represented by identifier nodes
-    '''
+    """
 
     def __init__(self, func_name):
         super().__init__()
@@ -1319,7 +1273,6 @@ class FunctionApplicationExpression(Expression):
 
 
 class FieldAccessExpression(Expression):
-
     def __init__(self, field_name):
         super().__init__()
         self.field_name = field_name
@@ -1341,9 +1294,9 @@ class FieldAccessExpression(Expression):
 
 
 class BinaryExpression(Expression):
-    '''
+    """
     In the children of this node, the operator, left expression, and right expression are stored, in order
-    '''
+    """
 
     def __init__(self, operator):
         super().__init__()
@@ -1366,9 +1319,9 @@ class BinaryExpression(Expression):
 
 
 class UnaryExpression(Expression):
-    '''
+    """
     In the children of this node, operators are stored, followed by expressions
-    '''
+    """
 
     def __init__(self, operator):
         super().__init__()
@@ -1391,10 +1344,10 @@ class UnaryExpression(Expression):
 
 
 class TernaryExpression(Expression):
-    '''
+    """
     In the children of this node, the conditional expression is stored,
     followed by the left expression, and then the right expression
-    '''
+    """
 
     def __init__(self):
         super().__init__()
@@ -1441,7 +1394,6 @@ class LogicalExpression(Expression):
 
 
 class RelationExpression(Expression):
-
     def __init__(self, operator):
         super().__init__()
         self.operator = operator
@@ -1509,7 +1461,6 @@ class RangeExpression(Expression):
 
 
 class PhysicalLiteral(AST):
-
     def __init__(self, unit_name, value):
         super().__init__()
         self.value = value
@@ -1532,7 +1483,6 @@ class PhysicalLiteral(AST):
 
 
 class IntegerLiteral(AST):
-
     def __init__(self, type, value):
         super().__init__()
         self.type = type  # uint, hex, int
@@ -1555,7 +1505,6 @@ class IntegerLiteral(AST):
 
 
 class FloatLiteral(AST):
-
     def __init__(self, value):
         super().__init__()
         self.value = value
@@ -1577,7 +1526,6 @@ class FloatLiteral(AST):
 
 
 class BoolLiteral(AST):
-
     def __init__(self, value):
         super().__init__()
         self.value = value
@@ -1599,7 +1547,6 @@ class BoolLiteral(AST):
 
 
 class StringLiteral(AST):
-
     def __init__(self, value):
         super().__init__()
         self.value = value
@@ -1621,7 +1568,6 @@ class StringLiteral(AST):
 
 
 class Type(AST):
-
     def __init__(self, type_name):
         super().__init__()
         self.type_name = type_name
@@ -1643,7 +1589,6 @@ class Type(AST):
 
 
 class Identifier(AST):
-
     def __init__(self, name):
         super().__init__()
         self.name = name
@@ -1665,7 +1610,6 @@ class Identifier(AST):
 
 
 class IdentifierReference(AST):
-
     def __init__(self, name):
         super().__init__()
         self.name = name

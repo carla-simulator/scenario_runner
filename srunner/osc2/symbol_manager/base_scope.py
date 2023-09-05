@@ -2,12 +2,11 @@ from srunner.osc2.symbol_manager.scope import Scope
 from srunner.osc2.symbol_manager.symbol import Symbol
 from srunner.osc2.utils.log_manager import *
 
-
 # All symbols defined in this scope; This can include classes, functions, variables,
 # or any other symbolic impl. It does not include things that are not based on symbols
 
-class BaseScope(Scope):
 
+class BaseScope(Scope):
     def __init__(self, scope: Scope):
         self.enclosing_scope = scope
         self.symbols = {}
@@ -44,5 +43,5 @@ class BaseScope(Scope):
         return list(self.symbols.values())[i]
 
     def __str__(self):
-        buf = self.get_scope_name() + ' : ' + list(self.symbols.keys()).__str__()
+        buf = self.get_scope_name() + " : " + list(self.symbols.keys()).__str__()
         return buf

@@ -1,12 +1,12 @@
 import copy
+
+from srunner.osc2.symbol_manager.local_scope import LocalScope
 from srunner.osc2.symbol_manager.symbol import Symbol
 from srunner.osc2.utils.log_manager import *
 from srunner.osc2.utils.tools import *
-from srunner.osc2.symbol_manager.local_scope import LocalScope
 
 
 class BaseSymbol(Symbol):
-
     def __init__(self, name, scope):
         super().__init__(name, scope)
         self.enclosing_scope = scope
@@ -43,7 +43,7 @@ class BaseSymbol(Symbol):
                         self.symbols[sub_sym.name] = sub_sym
             else:
                 if self.is_key_found(sym):
-                    sep = '#'
+                    sep = "#"
                     name = sym.name.split(sep, 1)[0]
                     msg = name + " is already defined!"
                     LOG_ERROR(msg, ctx)

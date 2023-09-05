@@ -3,7 +3,6 @@ from srunner.osc2.ast_manager.ast_node import AST
 
 
 class ASTListener:
-
     def enter_compilation_unit(self, node: ast_node.CompilationUnit):
         pass
 
@@ -118,10 +117,14 @@ class ASTListener:
     def exit_structured_type_extension(self, node: ast_node.StructuredTypeExtension):
         pass
 
-    def enter_global_parameter_declaration(self, node: ast_node.GlobalParameterDeclaration):
+    def enter_global_parameter_declaration(
+        self, node: ast_node.GlobalParameterDeclaration
+    ):
         pass
 
-    def exit_global_parameter_declaration(self, node: ast_node.GlobalParameterDeclaration):
+    def exit_global_parameter_declaration(
+        self, node: ast_node.GlobalParameterDeclaration
+    ):
         pass
 
     def enter_parameter_declaration(self, node: ast_node.GlobalParameterDeclaration):
@@ -214,10 +217,14 @@ class ASTListener:
     def exit_variable_declaration(self, node: ast_node.VariableDeclaration):
         pass
 
-    def enter_keep_constraint_declaration(self, node: ast_node.KeepConstraintDeclaration):
+    def enter_keep_constraint_declaration(
+        self, node: ast_node.KeepConstraintDeclaration
+    ):
         pass
 
-    def exit_keep_constraint_declaration(self, node: ast_node.KeepConstraintDeclaration):
+    def exit_keep_constraint_declaration(
+        self, node: ast_node.KeepConstraintDeclaration
+    ):
         pass
 
     def enter_remove_default_declaration(self, node: ast_node.RemoveDefaultDeclaration):
@@ -328,10 +335,14 @@ class ASTListener:
     def exit_element_access_expression(self, node: ast_node.ElementAccessExpression):
         pass
 
-    def enter_function_application_expression(self, node: ast_node.FunctionApplicationExpression):
+    def enter_function_application_expression(
+        self, node: ast_node.FunctionApplicationExpression
+    ):
         pass
 
-    def exit_function_application_expression(self, node: ast_node.FunctionApplicationExpression):
+    def exit_function_application_expression(
+        self, node: ast_node.FunctionApplicationExpression
+    ):
         pass
 
     def enter_binary_expression(self, node: ast_node.BinaryExpression):

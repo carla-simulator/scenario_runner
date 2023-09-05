@@ -1,6 +1,5 @@
 from srunner.osc2.symbol_manager.base_symbol import BaseSymbol
 
-
 # This interface tags user-defined symbols that have static type information,
 # like variables and functions.
 
@@ -18,10 +17,10 @@ from srunner.osc2.symbol_manager.base_symbol import BaseSymbol
 # primitiveType : 'int' | 'uint' | 'float' | 'bool' | 'string';
 # typeName : Identifier;
 
+
 # Here the ListMemberSymbol corresponds to the argumentSpecification:
 # argumentName ':' typeDeclarator ('=' defaultValue)?;
 class TypedSymbol(BaseSymbol):
-
     def __init__(self, name, scope, type, value=None):
         super().__init__(name, scope)
         self.type = type
@@ -35,12 +34,11 @@ class TypedSymbol(BaseSymbol):
 
 
 class BoolSymbol(TypedSymbol):
-
     def __init__(self, scope, value=None):
-        super().__init__('bool', scope, 'bool', value)
+        super().__init__("bool", scope, "bool", value)
 
     def __str__(self):
-        buf = 'bool'
+        buf = "bool"
         if self.value is not None:
             buf += " : "
             buf += str(self.value)
@@ -48,7 +46,6 @@ class BoolSymbol(TypedSymbol):
 
 
 class IntSymbol(TypedSymbol):
-
     def __init__(self, scope, type, value=None):
         super().__init__(type, scope, type, value)
 
@@ -61,9 +58,8 @@ class IntSymbol(TypedSymbol):
 
 
 class PhysicalSymbol(TypedSymbol):
-
     def __init__(self, scope, type, value=None):
-        super().__init__('physical', scope, type, value)
+        super().__init__("physical", scope, type, value)
 
     def __str__(self):
         buf = self.__class__.__name__
@@ -76,12 +72,11 @@ class PhysicalSymbol(TypedSymbol):
 
 
 class IdentifierSymbol(TypedSymbol):
-
     def __init__(self, name, scope, value=None):
-        super().__init__(name, scope, 'identifier', value)
+        super().__init__(name, scope, "identifier", value)
 
     def __str__(self):
-        buf = 'identifier'
+        buf = "identifier"
         buf += " : "
         buf += self.name
         if self.value is not None:
@@ -91,12 +86,11 @@ class IdentifierSymbol(TypedSymbol):
 
 
 class StringSymbol(TypedSymbol):
-
     def __init__(self, scope, value=None):
-        super().__init__('string', scope, 'string', value)
+        super().__init__("string", scope, "string", value)
 
     def __str__(self):
-        buf = 'string'
+        buf = "string"
         if self.value is not None:
             buf += " : "
             buf += str(self.value)
@@ -104,12 +98,11 @@ class StringSymbol(TypedSymbol):
 
 
 class FloatSymbol(TypedSymbol):
-
     def __init__(self, scope, value=None):
-        super().__init__('float', scope, 'float', value)
+        super().__init__("float", scope, "float", value)
 
     def __str__(self):
-        buf = 'float'
+        buf = "float"
         if self.value is not None:
             buf += ":"
             buf += str(self.value)

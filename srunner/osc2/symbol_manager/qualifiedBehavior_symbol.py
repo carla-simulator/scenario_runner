@@ -3,7 +3,6 @@ from srunner.osc2.utils.log_manager import *
 
 
 class QualifiedBehaviorSymbol(BaseSymbol):
-
     # Applies only to calls to a specified scenario or as a member of that scenario
     # Modifiers can be associated with specific scene types.
     # These modifiers can be applied to calls that associate scenarios in the with block of the call.
@@ -36,7 +35,11 @@ class QualifiedBehaviorSymbol(BaseSymbol):
 
     def is_qualified_behavior_name_valid(self, ctx):
         if self.actor_name == self.behavior_name and self.actor_name:
-            error_msg = "behaviorName:\"" + self.behavior_name + "\" can not be same with actorName!"
+            error_msg = (
+                'behaviorName:"'
+                + self.behavior_name
+                + '" can not be same with actorName!'
+            )
             LOG_ERROR(error_msg, ctx)
         elif self.is_actor_name_defined() is not True:
             error_msg = "actorName: " + self.actor_name + " is not defined!"

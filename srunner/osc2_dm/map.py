@@ -3,7 +3,7 @@ from typing import Any
 
 
 class map:
-    map_file = ''
+    map_file = ""
     routes = []
     junctions = []
     driving_rule = []
@@ -58,8 +58,19 @@ class map:
     def routes_are_in_sequence(self, preceding, succeeding, road):
         pass
 
-    def roads_follow_in_junction(self, junction, in_road, out_road, direction, clockwise_count, number_of_roads,
-                                 in_lane, out_lane, junction_route, resulting_route):
+    def roads_follow_in_junction(
+        self,
+        junction,
+        in_road,
+        out_road,
+        direction,
+        clockwise_count,
+        number_of_roads,
+        in_lane,
+        out_lane,
+        junction_route,
+        resulting_route,
+    ):
         pass
 
     def routes_overlap(route1, route2, overlap_kind):
@@ -89,7 +100,7 @@ class map:
 
 
 class driving_rule(IntEnum):
-    left_hand_traffic = 1,
+    left_hand_traffic = (1,)
     right_hand_traffic = 2
 
 

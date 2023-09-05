@@ -87,6 +87,7 @@ class SuccessIsRunning(Decorator):
     """
     It never ends...
     """
+
     def __init__(self, child, name, count):
         super().__init__(child, name=name)
         self.period = int(float(count))

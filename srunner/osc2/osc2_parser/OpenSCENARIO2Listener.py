@@ -9,7 +9,6 @@ else:
 
 # This class defines a complete listener for a parse tree produced by OpenSCENARIO2Parser.
 class OpenSCENARIO2Listener(ParseTreeListener):
-
     # Enter a parse tree produced by OpenSCENARIO2Parser#osc_file.
     def enterOsc_file(self, ctx: OpenSCENARIO2Parser.Osc_fileContext):
         pass
@@ -43,11 +42,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#structuredIdentifier.
-    def enterStructuredIdentifier(self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext):
+    def enterStructuredIdentifier(
+        self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#structuredIdentifier.
-    def exitStructuredIdentifier(self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext):
+    def exitStructuredIdentifier(
+        self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#oscDeclaration.
@@ -59,11 +62,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#physicalTypeDeclaration.
-    def enterPhysicalTypeDeclaration(self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext):
+    def enterPhysicalTypeDeclaration(
+        self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#physicalTypeDeclaration.
-    def exitPhysicalTypeDeclaration(self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext):
+    def exitPhysicalTypeDeclaration(
+        self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#physicalTypeName.
@@ -83,11 +90,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#sIBaseUnitSpecifier.
-    def enterSIBaseUnitSpecifier(self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext):
+    def enterSIBaseUnitSpecifier(
+        self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#sIBaseUnitSpecifier.
-    def exitSIBaseUnitSpecifier(self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext):
+    def exitSIBaseUnitSpecifier(
+        self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#unitDeclaration.
@@ -115,11 +126,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#sIBaseExponentList.
-    def enterSIBaseExponentList(self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext):
+    def enterSIBaseExponentList(
+        self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#sIBaseExponentList.
-    def exitSIBaseExponentList(self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext):
+    def exitSIBaseExponentList(
+        self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#sIBaseExponent.
@@ -187,11 +202,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#enumValueReference.
-    def enterEnumValueReference(self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext):
+    def enterEnumValueReference(
+        self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#enumValueReference.
-    def exitEnumValueReference(self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext):
+    def exitEnumValueReference(
+        self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#inheritsCondition.
@@ -275,11 +294,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#scenarioDeclaration.
-    def enterScenarioDeclaration(self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext):
+    def enterScenarioDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#scenarioDeclaration.
-    def exitScenarioDeclaration(self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext):
+    def exitScenarioDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#scenarioInherts.
@@ -291,19 +314,27 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#scenarioMemberDecl.
-    def enterScenarioMemberDecl(self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext):
+    def enterScenarioMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#scenarioMemberDecl.
-    def exitScenarioMemberDecl(self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext):
+    def exitScenarioMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#qualifiedBehaviorName.
-    def enterQualifiedBehaviorName(self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext):
+    def enterQualifiedBehaviorName(
+        self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#qualifiedBehaviorName.
-    def exitQualifiedBehaviorName(self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext):
+    def exitQualifiedBehaviorName(
+        self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorName.
@@ -331,11 +362,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#modifierDeclaration.
-    def enterModifierDeclaration(self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext):
+    def enterModifierDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#modifierDeclaration.
-    def exitModifierDeclaration(self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext):
+    def exitModifierDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#modifierName.
@@ -363,35 +398,51 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#structuredTypeExtension.
-    def enterStructuredTypeExtension(self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext):
+    def enterStructuredTypeExtension(
+        self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#structuredTypeExtension.
-    def exitStructuredTypeExtension(self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext):
+    def exitStructuredTypeExtension(
+        self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#extendableTypeName.
-    def enterExtendableTypeName(self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext):
+    def enterExtendableTypeName(
+        self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#extendableTypeName.
-    def exitExtendableTypeName(self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext):
+    def exitExtendableTypeName(
+        self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#extensionMemberDecl.
-    def enterExtensionMemberDecl(self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext):
+    def enterExtensionMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#extensionMemberDecl.
-    def exitExtensionMemberDecl(self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext):
+    def exitExtensionMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#globalParameterDeclaration.
-    def enterGlobalParameterDeclaration(self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext):
+    def enterGlobalParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#globalParameterDeclaration.
-    def exitGlobalParameterDeclaration(self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext):
+    def exitGlobalParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#typeDeclarator.
@@ -403,27 +454,39 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#nonAggregateTypeDeclarator.
-    def enterNonAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext):
+    def enterNonAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#nonAggregateTypeDeclarator.
-    def exitNonAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext):
+    def exitNonAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#aggregateTypeDeclarator.
-    def enterAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext):
+    def enterAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#aggregateTypeDeclarator.
-    def exitAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext):
+    def exitAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#listTypeDeclarator.
-    def enterListTypeDeclarator(self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext):
+    def enterListTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#listTypeDeclarator.
-    def exitListTypeDeclarator(self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext):
+    def exitListTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#primitiveType.
@@ -451,11 +514,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#eventSpecification.
-    def enterEventSpecification(self, ctx: OpenSCENARIO2Parser.EventSpecificationContext):
+    def enterEventSpecification(
+        self, ctx: OpenSCENARIO2Parser.EventSpecificationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#eventSpecification.
-    def exitEventSpecification(self, ctx: OpenSCENARIO2Parser.EventSpecificationContext):
+    def exitEventSpecification(
+        self, ctx: OpenSCENARIO2Parser.EventSpecificationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#eventReference.
@@ -547,11 +614,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#durationExpression.
-    def enterDurationExpression(self, ctx: OpenSCENARIO2Parser.DurationExpressionContext):
+    def enterDurationExpression(
+        self, ctx: OpenSCENARIO2Parser.DurationExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#durationExpression.
-    def exitDurationExpression(self, ctx: OpenSCENARIO2Parser.DurationExpressionContext):
+    def exitDurationExpression(
+        self, ctx: OpenSCENARIO2Parser.DurationExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#fieldDeclaration.
@@ -563,19 +634,27 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterDeclaration.
-    def enterParameterDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext):
+    def enterParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterDeclaration.
-    def exitParameterDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext):
+    def exitParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#variableDeclaration.
-    def enterVariableDeclaration(self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext):
+    def enterVariableDeclaration(
+        self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#variableDeclaration.
-    def exitVariableDeclaration(self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext):
+    def exitVariableDeclaration(
+        self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#sampleExpression.
@@ -595,91 +674,135 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterWithDeclaration.
-    def enterParameterWithDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext):
+    def enterParameterWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterWithDeclaration.
-    def exitParameterWithDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext):
+    def exitParameterWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterWithMember.
-    def enterParameterWithMember(self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext):
+    def enterParameterWithMember(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterWithMember.
-    def exitParameterWithMember(self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext):
+    def exitParameterWithMember(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#constraintDeclaration.
-    def enterConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext):
+    def enterConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#constraintDeclaration.
-    def exitConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext):
+    def exitConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#keepConstraintDeclaration.
-    def enterKeepConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext):
+    def enterKeepConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#keepConstraintDeclaration.
-    def exitKeepConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext):
+    def exitKeepConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#constraintQualifier.
-    def enterConstraintQualifier(self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext):
+    def enterConstraintQualifier(
+        self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#constraintQualifier.
-    def exitConstraintQualifier(self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext):
+    def exitConstraintQualifier(
+        self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#constraintExpression.
-    def enterConstraintExpression(self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext):
+    def enterConstraintExpression(
+        self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#constraintExpression.
-    def exitConstraintExpression(self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext):
+    def exitConstraintExpression(
+        self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#removeDefaultDeclaration.
-    def enterRemoveDefaultDeclaration(self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext):
+    def enterRemoveDefaultDeclaration(
+        self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#removeDefaultDeclaration.
-    def exitRemoveDefaultDeclaration(self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext):
+    def exitRemoveDefaultDeclaration(
+        self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterReference.
-    def enterParameterReference(self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext):
+    def enterParameterReference(
+        self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterReference.
-    def exitParameterReference(self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext):
+    def exitParameterReference(
+        self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#modifierInvocation.
-    def enterModifierInvocation(self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext):
+    def enterModifierInvocation(
+        self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#modifierInvocation.
-    def exitModifierInvocation(self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext):
+    def exitModifierInvocation(
+        self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorExpression.
-    def enterBehaviorExpression(self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext):
+    def enterBehaviorExpression(
+        self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorExpression.
-    def exitBehaviorExpression(self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext):
+    def exitBehaviorExpression(
+        self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorSpecification.
-    def enterBehaviorSpecification(self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext):
+    def enterBehaviorSpecification(
+        self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorSpecification.
-    def exitBehaviorSpecification(self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext):
+    def exitBehaviorSpecification(
+        self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#onDirective.
@@ -723,35 +846,51 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#compositionOperator.
-    def enterCompositionOperator(self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext):
+    def enterCompositionOperator(
+        self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#compositionOperator.
-    def exitCompositionOperator(self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext):
+    def exitCompositionOperator(
+        self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorInvocation.
-    def enterBehaviorInvocation(self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext):
+    def enterBehaviorInvocation(
+        self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorInvocation.
-    def exitBehaviorInvocation(self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext):
+    def exitBehaviorInvocation(
+        self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorWithDeclaration.
-    def enterBehaviorWithDeclaration(self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext):
+    def enterBehaviorWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorWithDeclaration.
-    def exitBehaviorWithDeclaration(self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext):
+    def exitBehaviorWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorWithMember.
-    def enterBehaviorWithMember(self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext):
+    def enterBehaviorWithMember(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorWithMember.
-    def exitBehaviorWithMember(self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext):
+    def exitBehaviorWithMember(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#labelName.
@@ -827,11 +966,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#methodImplementation.
-    def enterMethodImplementation(self, ctx: OpenSCENARIO2Parser.MethodImplementationContext):
+    def enterMethodImplementation(
+        self, ctx: OpenSCENARIO2Parser.MethodImplementationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#methodImplementation.
-    def exitMethodImplementation(self, ctx: OpenSCENARIO2Parser.MethodImplementationContext):
+    def exitMethodImplementation(
+        self, ctx: OpenSCENARIO2Parser.MethodImplementationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#methodQualifier.
@@ -851,11 +994,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageDeclaration.
-    def enterCoverageDeclaration(self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext):
+    def enterCoverageDeclaration(
+        self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#coverageDeclaration.
-    def exitCoverageDeclaration(self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext):
+    def exitCoverageDeclaration(
+        self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverDeclaration.
@@ -875,11 +1022,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageExpression.
-    def enterCoverageExpression(self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext):
+    def enterCoverageExpression(
+        self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#coverageExpression.
-    def exitCoverageExpression(self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext):
+    def exitCoverageExpression(
+        self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageUnit.
@@ -915,11 +1066,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageNameArgument.
-    def enterCoverageNameArgument(self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext):
+    def enterCoverageNameArgument(
+        self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#coverageNameArgument.
-    def exitCoverageNameArgument(self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext):
+    def exitCoverageNameArgument(
+        self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#targetName.
@@ -1075,35 +1230,51 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#functionApplicationExpression.
-    def enterFunctionApplicationExpression(self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext):
+    def enterFunctionApplicationExpression(
+        self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#functionApplicationExpression.
-    def exitFunctionApplicationExpression(self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext):
+    def exitFunctionApplicationExpression(
+        self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#fieldAccessExpression.
-    def enterFieldAccessExpression(self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext):
+    def enterFieldAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#fieldAccessExpression.
-    def exitFieldAccessExpression(self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext):
+    def exitFieldAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#elementAccessExpression.
-    def enterElementAccessExpression(self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext):
+    def enterElementAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#elementAccessExpression.
-    def exitElementAccessExpression(self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext):
+    def exitElementAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#typeTestExpression.
-    def enterTypeTestExpression(self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext):
+    def enterTypeTestExpression(
+        self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#typeTestExpression.
-    def exitTypeTestExpression(self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext):
+    def exitTypeTestExpression(
+        self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#fieldAccess.
@@ -1147,27 +1318,39 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#identifierReference.
-    def enterIdentifierReference(self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext):
+    def enterIdentifierReference(
+        self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#identifierReference.
-    def exitIdentifierReference(self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext):
+    def exitIdentifierReference(
+        self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#argumentListSpecification.
-    def enterArgumentListSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext):
+    def enterArgumentListSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#argumentListSpecification.
-    def exitArgumentListSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext):
+    def exitArgumentListSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#argumentSpecification.
-    def enterArgumentSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext):
+    def enterArgumentSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#argumentSpecification.
-    def exitArgumentSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext):
+    def exitArgumentSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#argumentName.
@@ -1187,11 +1370,15 @@ class OpenSCENARIO2Listener(ParseTreeListener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#positionalArgument.
-    def enterPositionalArgument(self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext):
+    def enterPositionalArgument(
+        self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#positionalArgument.
-    def exitPositionalArgument(self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext):
+    def exitPositionalArgument(
+        self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#namedArgument.

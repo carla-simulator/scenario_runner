@@ -3,7 +3,6 @@ from srunner.osc2.utils.log_manager import *
 
 
 class LocalScope(BaseScope):
-
     def __init__(self, scope):
         super().__init__(scope)
 
@@ -25,4 +24,4 @@ class LocalScope(BaseScope):
                 self.symbols[sym.name] = sym
 
     def get_scope_name(self):
-        return 'local'
+        return "local"

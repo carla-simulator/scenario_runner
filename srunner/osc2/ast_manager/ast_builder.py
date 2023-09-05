@@ -1,37 +1,39 @@
+import copy
 from pydoc import resolve
+
+import srunner.osc2.ast_manager.ast_node as ast_node
+from srunner.osc2.osc2_parser.OpenSCENARIO2Listener import OpenSCENARIO2Listener
+from srunner.osc2.osc2_parser.OpenSCENARIO2Parser import OpenSCENARIO2Parser
+from srunner.osc2.symbol_manager.action_symbol import ActionSymbol
+from srunner.osc2.symbol_manager.actor_symbol import ActorSymbol
+from srunner.osc2.symbol_manager.argument_symbol import *
+from srunner.osc2.symbol_manager.constraint_decl_scope import *
+from srunner.osc2.symbol_manager.do_directive_scope import *
+from srunner.osc2.symbol_manager.doMember_symbol import DoMemberSymbol
+from srunner.osc2.symbol_manager.enum_symbol import *
+from srunner.osc2.symbol_manager.event_symbol import *
 from srunner.osc2.symbol_manager.global_scope import GlobalScope
+from srunner.osc2.symbol_manager.inherits_condition_symbol import *
+from srunner.osc2.symbol_manager.method_symbol import MethodSymbol
+from srunner.osc2.symbol_manager.modifier_symbol import *
+from srunner.osc2.symbol_manager.parameter_symbol import ParameterSymbol
+from srunner.osc2.symbol_manager.physical_type_symbol import PhysicalTypeSymbol
+from srunner.osc2.symbol_manager.qualifiedBehavior_symbol import QualifiedBehaviorSymbol
+from srunner.osc2.symbol_manager.scenario_symbol import ScenarioSymbol
+from srunner.osc2.symbol_manager.si_exponent_symbol import (
+    SiBaseExponentListScope,
+    SiExpSymbol,
+)
+from srunner.osc2.symbol_manager.struct_symbol import StructSymbol
+from srunner.osc2.symbol_manager.typed_symbol import *
+from srunner.osc2.symbol_manager.unit_symbol import UnitSymbol
+from srunner.osc2.symbol_manager.variable_symbol import VariableSymbol
+from srunner.osc2.symbol_manager.wait_symbol import *
 from srunner.osc2.utils.log_manager import *
 from srunner.osc2.utils.tools import *
 
-import copy
-import srunner.osc2.ast_manager.ast_node as ast_node
-from srunner.osc2.osc2_parser.OpenSCENARIO2Parser import OpenSCENARIO2Parser
-from srunner.osc2.osc2_parser.OpenSCENARIO2Listener import OpenSCENARIO2Listener
-from srunner.osc2.symbol_manager.enum_symbol import *
-from srunner.osc2.symbol_manager.actor_symbol import ActorSymbol
-from srunner.osc2.symbol_manager.qualifiedBehavior_symbol import QualifiedBehaviorSymbol
-from srunner.osc2.symbol_manager.scenario_symbol import ScenarioSymbol
-from srunner.osc2.symbol_manager.doMember_symbol import DoMemberSymbol
-from srunner.osc2.symbol_manager.do_directive_scope import *
-from srunner.osc2.symbol_manager.si_exponent_symbol import SiBaseExponentListScope, SiExpSymbol
-from srunner.osc2.symbol_manager.physical_type_symbol import PhysicalTypeSymbol
-from srunner.osc2.symbol_manager.unit_symbol import UnitSymbol
-from srunner.osc2.symbol_manager.struct_symbol import StructSymbol
-from srunner.osc2.symbol_manager.parameter_symbol import ParameterSymbol
-from srunner.osc2.symbol_manager.modifier_symbol import *
-from srunner.osc2.symbol_manager.inherits_condition_symbol import *
-from srunner.osc2.symbol_manager.typed_symbol import *
-from srunner.osc2.symbol_manager.action_symbol import ActionSymbol
-from srunner.osc2.symbol_manager.constraint_decl_scope import *
-from srunner.osc2.symbol_manager.variable_symbol import VariableSymbol
-from srunner.osc2.symbol_manager.event_symbol import *
-from srunner.osc2.symbol_manager.argument_symbol import *
-from srunner.osc2.symbol_manager.wait_symbol import *
-from srunner.osc2.symbol_manager.method_symbol import MethodSymbol
-
 
 class ASTBuilder(OpenSCENARIO2Listener):
-
     def __init__(self):
         self.__global_scope = None  # Global scope
         self.__current_scope = None  # Current scope
@@ -86,11 +88,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#structuredIdentifier.
-    def enterStructuredIdentifier(self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext):
+    def enterStructuredIdentifier(
+        self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#structuredIdentifier.
-    def exitStructuredIdentifier(self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext):
+    def exitStructuredIdentifier(
+        self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#oscDeclaration.
@@ -102,7 +108,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#physicalTypeDeclaration.
-    def enterPhysicalTypeDeclaration(self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext):
+    def enterPhysicalTypeDeclaration(
+        self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         type_name = ctx.physicalTypeName().getText()
 
@@ -118,7 +126,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#physicalTypeDeclaration.
-    def exitPhysicalTypeDeclaration(self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext):
+    def exitPhysicalTypeDeclaration(
+        self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
@@ -139,13 +149,17 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#sIBaseUnitSpecifier.
-    def enterSIBaseUnitSpecifier(self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext):
+    def enterSIBaseUnitSpecifier(
+        self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext
+    ):
         si_scope = SiBaseExponentListScope(self.__current_scope)
         self.__current_scope.define(si_scope, ctx.start)
         self.__current_scope = si_scope
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#sIBaseUnitSpecifier.
-    def exitSIBaseUnitSpecifier(self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext):
+    def exitSIBaseUnitSpecifier(
+        self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext
+    ):
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#unitDeclaration.
@@ -196,11 +210,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#sIBaseExponentList.
-    def enterSIBaseExponentList(self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext):
+    def enterSIBaseExponentList(
+        self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#sIBaseExponentList.
-    def exitSIBaseExponentList(self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext):
+    def exitSIBaseExponentList(
+        self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#sIBaseExponent.
@@ -372,7 +390,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#enumValueReference.
-    def enterEnumValueReference(self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext):
+    def enterEnumValueReference(
+        self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext
+    ):
         self.__node_stack.append(self.__cur_node)
         enum_name = None
         if ctx.enumName():
@@ -384,8 +404,12 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
         if scope and isinstance(scope, EnumSymbol):
             if scope.symbols.get(enum_member_name):
-                enum_value_reference = EnumValueRefSymbol(enum_name, enum_member_name,
-                                                          scope.symbols[enum_member_name].elems_index, scope)
+                enum_value_reference = EnumValueRefSymbol(
+                    enum_name,
+                    enum_member_name,
+                    scope.symbols[enum_member_name].elems_index,
+                    scope,
+                )
                 self.__current_scope.define(enum_value_reference, ctx.start)
             else:
                 msg = "Enum member " + enum_member_name + " not found!"
@@ -402,7 +426,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#enumValueReference.
-    def exitEnumValueReference(self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext):
+    def exitEnumValueReference(
+        self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#inheritsCondition.
@@ -575,11 +601,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#scenarioDeclaration.
-    def enterScenarioDeclaration(self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext):
+    def enterScenarioDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         qualified_behavior_name = ctx.qualifiedBehaviorName().getText()
 
-        scenario_name = QualifiedBehaviorSymbol(qualified_behavior_name, self.__current_scope)
+        scenario_name = QualifiedBehaviorSymbol(
+            qualified_behavior_name, self.__current_scope
+        )
         scenario_name.is_qualified_behavior_name_valid(ctx.start)
         scenario = ScenarioSymbol(scenario_name)
         self.__current_scope.define(scenario, ctx.start)
@@ -595,7 +625,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#scenarioDeclaration.
-    def exitScenarioDeclaration(self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext):
+    def exitScenarioDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
@@ -608,7 +640,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         scope = self.__current_scope.resolve(qualified_behavior_name)
 
         if scope and isinstance(scope, ScenarioSymbol):
-            scenario_name = QualifiedBehaviorSymbol(qualified_behavior_name, self.__current_scope)
+            scenario_name = QualifiedBehaviorSymbol(
+                qualified_behavior_name, self.__current_scope
+            )
             scenario_name.is_qualified_behavior_name_valid(ctx.start)
             scenario_inherts = ScenarioInhertsSymbol(scenario_name)
 
@@ -631,19 +665,27 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#scenarioMemberDecl.
-    def enterScenarioMemberDecl(self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext):
+    def enterScenarioMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext
+    ):
         self.__node_stack.append(self.__cur_node)
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#scenarioMemberDecl.
-    def exitScenarioMemberDecl(self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext):
+    def exitScenarioMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#qualifiedBehaviorName.
-    def enterQualifiedBehaviorName(self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext):
+    def enterQualifiedBehaviorName(
+        self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#qualifiedBehaviorName.
-    def exitQualifiedBehaviorName(self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext):
+    def exitQualifiedBehaviorName(
+        self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorName.
@@ -659,7 +701,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__node_stack.append(self.__cur_node)
         qualified_behavior_name = ctx.qualifiedBehaviorName().getText()
 
-        action_name = QualifiedBehaviorSymbol(qualified_behavior_name, self.__current_scope)
+        action_name = QualifiedBehaviorSymbol(
+            qualified_behavior_name, self.__current_scope
+        )
         action_name.is_qualified_behavior_name_valid(ctx.start)
         action = ActionSymbol(action_name)
         self.__current_scope.define(action, ctx.start)
@@ -691,7 +735,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
             msg = "inherits " + qualified_behavior_name + " is not defined!"
             LOG_ERROR(msg, ctx.start)
 
-        action_name = QualifiedBehaviorSymbol(qualified_behavior_name, self.__current_scope)
+        action_name = QualifiedBehaviorSymbol(
+            qualified_behavior_name, self.__current_scope
+        )
         action_name.is_qualified_behavior_name_valid(ctx.start)
         action_inherits = ActionInhertsSymbol(action_name, scope)
         self.__current_scope.define(action_inherits, ctx.start)
@@ -708,7 +754,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#modifierDeclaration.
-    def enterModifierDeclaration(self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext):
+    def enterModifierDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         actor_name = None
         if ctx.actorName():
@@ -733,7 +781,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#modifierDeclaration.
-    def exitModifierDeclaration(self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext):
+    def exitModifierDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
@@ -761,8 +811,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__node_stack.append(self.__cur_node)
         enum_name = ctx.enumName().getText()
 
-        if enum_name in self.__current_scope.symbols and isinstance(self.__current_scope.symbols[enum_name],
-                                                                    EnumSymbol):
+        if enum_name in self.__current_scope.symbols and isinstance(
+            self.__current_scope.symbols[enum_name], EnumSymbol
+        ):
             self.__current_scope = self.__current_scope.symbols[enum_name]
         else:
             msg = enum_name + " is not defined!"
@@ -781,7 +832,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#structuredTypeExtension.
-    def enterStructuredTypeExtension(self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext):
+    def enterStructuredTypeExtension(
+        self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext
+    ):
         self.__node_stack.append(self.__cur_node)
 
         type_name = None
@@ -791,14 +844,17 @@ class ASTBuilder(OpenSCENARIO2Listener):
             # it is necessary to determine whether the extended symbol table matches the original type
             if type_name in self.__current_scope.symbols:
                 for extend_member in ctx.extensionMemberDecl():
-                    if extend_member.structMemberDecl() and isinstance(self.__current_scope.symbols[type_name],
-                                                                       StructSymbol):
+                    if extend_member.structMemberDecl() and isinstance(
+                        self.__current_scope.symbols[type_name], StructSymbol
+                    ):
                         self.__current_scope = self.__current_scope.symbols[type_name]
-                    elif extend_member.actorMemberDecl and isinstance(self.__current_scope.symbols[type_name],
-                                                                      ActorSymbol):
+                    elif extend_member.actorMemberDecl and isinstance(
+                        self.__current_scope.symbols[type_name], ActorSymbol
+                    ):
                         self.__current_scope = self.__current_scope.symbols[type_name]
-                    elif extend_member.scenarioMemberDecl and isinstance(self.__current_scope.symbols[type_name],
-                                                                         ScenarioSymbol):
+                    elif extend_member.scenarioMemberDecl and isinstance(
+                        self.__current_scope.symbols[type_name], ScenarioSymbol
+                    ):
                         self.__current_scope = self.__current_scope.symbols[type_name]
                     elif extend_member.behaviorSpecification:
                         # TODO
@@ -814,12 +870,18 @@ class ASTBuilder(OpenSCENARIO2Listener):
         # The two ifs here are syntactically mutually exclusive
         qualified_behavior_name = None
         if ctx.extendableTypeName().qualifiedBehaviorName():
-            qualified_behavior_name = ctx.extendableTypeName().qualifiedBehaviorName().getText()
+            qualified_behavior_name = (
+                ctx.extendableTypeName().qualifiedBehaviorName().getText()
+            )
             if qualified_behavior_name in self.__current_scope.symbols:
                 for extend_member in ctx.extensionMemberDecl():
                     if extend_member.scenarioMemberDecl and isinstance(
-                            self.__current_scope.symbols[qualified_behavior_name], ScenarioSymbol):
-                        self.__current_scope = self.__current_scope.symbols[qualified_behavior_name]
+                        self.__current_scope.symbols[qualified_behavior_name],
+                        ScenarioSymbol,
+                    ):
+                        self.__current_scope = self.__current_scope.symbols[
+                            qualified_behavior_name
+                        ]
                     elif extend_member.behaviorSpecification:
                         # TODO
                         msg = "not implemented"
@@ -839,28 +901,40 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#structuredTypeExtension.
-    def exitStructuredTypeExtension(self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext):
+    def exitStructuredTypeExtension(
+        self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#extendableTypeName.
-    def enterExtendableTypeName(self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext):
+    def enterExtendableTypeName(
+        self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#extendableTypeName.
-    def exitExtendableTypeName(self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext):
+    def exitExtendableTypeName(
+        self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#extensionMemberDecl.
-    def enterExtensionMemberDecl(self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext):
+    def enterExtensionMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#extensionMemberDecl.
-    def exitExtensionMemberDecl(self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext):
+    def exitExtensionMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#globalParameterDeclaration.
-    def enterGlobalParameterDeclaration(self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext):
+    def enterGlobalParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext
+    ):
         defaultValue = None
         if ctx.defaultValue():
             defaultValue = ctx.defaultValue().getText()
@@ -876,7 +950,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
             field_name.append(name)
             multi_field_name = multi_field_name_append(multi_field_name, name)
 
-        parameter = ParameterSymbol(multi_field_name, self.__current_scope, field_type, defaultValue)
+        parameter = ParameterSymbol(
+            multi_field_name, self.__current_scope, field_type, defaultValue
+        )
         self.__current_scope.define(parameter, ctx.start)
         self.__current_scope = parameter
 
@@ -888,7 +964,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#globalParameterDeclaration.
-    def exitGlobalParameterDeclaration(self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext):
+    def exitGlobalParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
@@ -913,27 +991,39 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#nonAggregateTypeDeclarator.
-    def enterNonAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext):
+    def enterNonAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#nonAggregateTypeDeclarator.
-    def exitNonAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext):
+    def exitNonAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#aggregateTypeDeclarator.
-    def enterAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext):
+    def enterAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#aggregateTypeDeclarator.
-    def exitAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext):
+    def exitAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#listTypeDeclarator.
-    def enterListTypeDeclarator(self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext):
+    def enterListTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#listTypeDeclarator.
-    def exitListTypeDeclarator(self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext):
+    def exitListTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#primitiveType.
@@ -985,11 +1075,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#eventSpecification.
-    def enterEventSpecification(self, ctx: OpenSCENARIO2Parser.EventSpecificationContext):
+    def enterEventSpecification(
+        self, ctx: OpenSCENARIO2Parser.EventSpecificationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#eventSpecification.
-    def exitEventSpecification(self, ctx: OpenSCENARIO2Parser.EventSpecificationContext):
+    def exitEventSpecification(
+        self, ctx: OpenSCENARIO2Parser.EventSpecificationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#eventReference.
@@ -1125,11 +1219,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#durationExpression.
-    def enterDurationExpression(self, ctx: OpenSCENARIO2Parser.DurationExpressionContext):
+    def enterDurationExpression(
+        self, ctx: OpenSCENARIO2Parser.DurationExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#durationExpression.
-    def exitDurationExpression(self, ctx: OpenSCENARIO2Parser.DurationExpressionContext):
+    def exitDurationExpression(
+        self, ctx: OpenSCENARIO2Parser.DurationExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#fieldDeclaration.
@@ -1141,8 +1239,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterDeclaration.
-    def enterParameterDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext):
-
+    def enterParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext
+    ):
         defaultValue = None
         if ctx.defaultValue():
             defaultValue = ctx.defaultValue().getText()
@@ -1159,7 +1258,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
             field_name.append(name)
             multi_field_name = multi_field_name_append(multi_field_name, name)
 
-        parameter = ParameterSymbol(multi_field_name, self.__current_scope, field_type, defaultValue)
+        parameter = ParameterSymbol(
+            multi_field_name, self.__current_scope, field_type, defaultValue
+        )
         self.__current_scope.define(parameter, ctx.start)
         self.__current_scope = parameter
 
@@ -1171,12 +1272,16 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterDeclaration.
-    def exitParameterDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext):
+    def exitParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#variableDeclaration.
-    def enterVariableDeclaration(self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext):
+    def enterVariableDeclaration(
+        self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         field_name = []
         defaultValue = None
@@ -1196,7 +1301,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
         field_type = ctx.typeDeclarator().getText()
 
-        variable = VariableSymbol(multi_field_name, self.__current_scope, field_type, defaultValue)
+        variable = VariableSymbol(
+            multi_field_name, self.__current_scope, field_type, defaultValue
+        )
         self.__current_scope.define(variable, ctx.start)
         self.__current_scope = variable
 
@@ -1208,7 +1315,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#variableDeclaration.
-    def exitVariableDeclaration(self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext):
+    def exitVariableDeclaration(
+        self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
@@ -1235,31 +1344,45 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterWithDeclaration.
-    def enterParameterWithDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext):
+    def enterParameterWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterWithDeclaration.
-    def exitParameterWithDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext):
+    def exitParameterWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterWithMember.
-    def enterParameterWithMember(self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext):
+    def enterParameterWithMember(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterWithMember.
-    def exitParameterWithMember(self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext):
+    def exitParameterWithMember(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#constraintDeclaration.
-    def enterConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext):
+    def enterConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#constraintDeclaration.
-    def exitConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext):
+    def exitConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#keepConstraintDeclaration.
-    def enterKeepConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext):
+    def enterKeepConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         constraint_qualifier = None
         if ctx.constraintQualifier():
@@ -1277,28 +1400,40 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#keepConstraintDeclaration.
-    def exitKeepConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext):
+    def exitKeepConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#constraintQualifier.
-    def enterConstraintQualifier(self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext):
+    def enterConstraintQualifier(
+        self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#constraintQualifier.
-    def exitConstraintQualifier(self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext):
+    def exitConstraintQualifier(
+        self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#constraintExpression.
-    def enterConstraintExpression(self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext):
+    def enterConstraintExpression(
+        self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#constraintExpression.
-    def exitConstraintExpression(self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext):
+    def exitConstraintExpression(
+        self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#removeDefaultDeclaration.
-    def enterRemoveDefaultDeclaration(self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext):
+    def enterRemoveDefaultDeclaration(
+        self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         node = ast_node.RemoveDefaultDeclaration()
         node.set_loc(ctx.start.line, ctx.start.column)
@@ -1308,11 +1443,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#removeDefaultDeclaration.
-    def exitRemoveDefaultDeclaration(self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext):
+    def exitRemoveDefaultDeclaration(
+        self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#parameterReference.
-    def enterParameterReference(self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext):
+    def enterParameterReference(
+        self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext
+    ):
         self.__node_stack.append(self.__cur_node)
         field_name = None
         if ctx.fieldName():
@@ -1330,11 +1469,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#parameterReference.
-    def exitParameterReference(self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext):
+    def exitParameterReference(
+        self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#modifierInvocation.
-    def enterModifierInvocation(self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext):
+    def enterModifierInvocation(
+        self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         modifier_name = ctx.modifierName().getText()
 
@@ -1365,23 +1508,33 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#modifierInvocation.
-    def exitModifierInvocation(self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext):
+    def exitModifierInvocation(
+        self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorExpression.
-    def enterBehaviorExpression(self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext):
+    def enterBehaviorExpression(
+        self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorExpression.
-    def exitBehaviorExpression(self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext):
+    def exitBehaviorExpression(
+        self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorSpecification.
-    def enterBehaviorSpecification(self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext):
+    def enterBehaviorSpecification(
+        self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorSpecification.
-    def exitBehaviorSpecification(self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext):
+    def exitBehaviorSpecification(
+        self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#onDirective.
@@ -1439,7 +1592,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
             composition_operator = ctx.composition().compositionOperator().getText()
 
         if composition_operator is not None:
-            domember = DoMemberSymbol(label_name, self.__current_scope, composition_operator)
+            domember = DoMemberSymbol(
+                label_name, self.__current_scope, composition_operator
+            )
             self.__current_scope.define(domember, ctx.start)
             self.__current_scope = domember
 
@@ -1465,15 +1620,21 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#compositionOperator.
-    def enterCompositionOperator(self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext):
+    def enterCompositionOperator(
+        self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#compositionOperator.
-    def exitCompositionOperator(self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext):
+    def exitCompositionOperator(
+        self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorInvocation.
-    def enterBehaviorInvocation(self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext):
+    def enterBehaviorInvocation(
+        self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         actor = None
         name = ""
@@ -1501,24 +1662,34 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorInvocation.
-    def exitBehaviorInvocation(self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext):
+    def exitBehaviorInvocation(
+        self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorWithDeclaration.
-    def enterBehaviorWithDeclaration(self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext):
+    def enterBehaviorWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorWithDeclaration.
-    def exitBehaviorWithDeclaration(self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext):
+    def exitBehaviorWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext
+    ):
         # self.__current_scope = self.__current_scope.get_enclosing_scope()
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#behaviorWithMember.
-    def enterBehaviorWithMember(self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext):
+    def enterBehaviorWithMember(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext
+    ):
         self.__node_stack.append(self.__cur_node)
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#behaviorWithMember.
-    def exitBehaviorWithMember(self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext):
+    def exitBehaviorWithMember(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#labelName.
@@ -1645,7 +1816,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#methodImplementation.
-    def enterMethodImplementation(self, ctx: OpenSCENARIO2Parser.MethodImplementationContext):
+    def enterMethodImplementation(
+        self, ctx: OpenSCENARIO2Parser.MethodImplementationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         qualifier = None
         if ctx.methodQualifier():
@@ -1670,7 +1843,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#methodImplementation.
-    def exitMethodImplementation(self, ctx: OpenSCENARIO2Parser.MethodImplementationContext):
+    def exitMethodImplementation(
+        self, ctx: OpenSCENARIO2Parser.MethodImplementationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#methodQualifier.
@@ -1690,11 +1865,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageDeclaration.
-    def enterCoverageDeclaration(self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext):
+    def enterCoverageDeclaration(
+        self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#coverageDeclaration.
-    def exitCoverageDeclaration(self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext):
+    def exitCoverageDeclaration(
+        self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverDeclaration.
@@ -1734,7 +1913,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageExpression.
-    def enterCoverageExpression(self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext):
+    def enterCoverageExpression(
+        self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext
+    ):
         self.__node_stack.append(self.__cur_node)
         argument_name = "expression"
         node = ast_node.NamedArgument(argument_name)
@@ -1745,7 +1926,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#coverageExpression.
-    def exitCoverageExpression(self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext):
+    def exitCoverageExpression(
+        self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageUnit.
@@ -1814,11 +1997,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#coverageNameArgument.
-    def enterCoverageNameArgument(self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext):
+    def enterCoverageNameArgument(
+        self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#coverageNameArgument.
-    def exitCoverageNameArgument(self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext):
+    def exitCoverageNameArgument(
+        self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#targetName.
@@ -2035,7 +2222,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#functionApplicationExpression.
-    def enterFunctionApplicationExpression(self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext):
+    def enterFunctionApplicationExpression(
+        self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext
+    ):
         self.__node_stack.append(self.__cur_node)
         func_name = ctx.postfixExp().getText()
         scope = self.__current_scope
@@ -2050,15 +2239,19 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#functionApplicationExpression.
-    def exitFunctionApplicationExpression(self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext):
+    def exitFunctionApplicationExpression(
+        self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#fieldAccessExpression.
-    def enterFieldAccessExpression(self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext):
+    def enterFieldAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext
+    ):
         self.__node_stack.append(self.__cur_node)
         field_name = ctx.postfixExp().getText() + "." + ctx.fieldName().getText()
 
-        if ctx.postfixExp().getText() == 'it':
+        if ctx.postfixExp().getText() == "it":
             field_name = self.__current_scope.get_enclosing_scope().type
             scope = None
             if self.__current_scope.resolve(field_name):
@@ -2066,7 +2259,11 @@ class ASTBuilder(OpenSCENARIO2Listener):
                 if ctx.fieldName().getText() in scope.symbols:
                     pass
                 else:
-                    msg = ctx.fieldName().getText() + " is not defined in scope: " + self.__current_scope.get_enclosing_scope().type
+                    msg = (
+                        ctx.fieldName().getText()
+                        + " is not defined in scope: "
+                        + self.__current_scope.get_enclosing_scope().type
+                    )
                     LOG_ERROR(msg, ctx.start)
             else:
                 msg = "it -> " + field_name + " is not defined!"
@@ -2080,11 +2277,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#fieldAccessExpression.
-    def exitFieldAccessExpression(self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext):
+    def exitFieldAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#elementAccessExpression.
-    def enterElementAccessExpression(self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext):
+    def enterElementAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext
+    ):
         self.__node_stack.append(self.__cur_node)
         list_name = ctx.postfixExp().getText()
         index = ctx.expression().getText()
@@ -2096,11 +2297,15 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#elementAccessExpression.
-    def exitElementAccessExpression(self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext):
+    def exitElementAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#typeTestExpression.
-    def enterTypeTestExpression(self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext):
+    def enterTypeTestExpression(
+        self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext
+    ):
         self.__node_stack.append(self.__cur_node)
         object = ctx.postfixExp().getText()
         target_type = ctx.typeDeclarator().getText()
@@ -2112,7 +2317,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#typeTestExpression.
-    def exitTypeTestExpression(self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext):
+    def exitTypeTestExpression(
+        self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#fieldAccess.
@@ -2194,7 +2401,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#identifierReference.
-    def enterIdentifierReference(self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext):
+    def enterIdentifierReference(
+        self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext
+    ):
         self.__node_stack.append(self.__cur_node)
 
         field_name = []
@@ -2235,19 +2444,27 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#identifierReference.
-    def exitIdentifierReference(self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext):
+    def exitIdentifierReference(
+        self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#argumentListSpecification.
-    def enterArgumentListSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext):
+    def enterArgumentListSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext
+    ):
         pass
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#argumentListSpecification.
-    def exitArgumentListSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext):
+    def exitArgumentListSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext
+    ):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#argumentSpecification.
-    def enterArgumentSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext):
+    def enterArgumentSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext
+    ):
         self.__node_stack.append(self.__cur_node)
         argument_name = ctx.argumentName().getText()
         argument_type = ctx.typeDeclarator().getText()
@@ -2258,13 +2475,21 @@ class ASTBuilder(OpenSCENARIO2Listener):
         scope = self.__current_scope.resolve(argument_type)
         if scope:
             pass
-        elif argument_type == 'int' or argument_type == 'uint' or argument_type == 'float' or argument_type == 'bool' or argument_type == 'string':
+        elif (
+            argument_type == "int"
+            or argument_type == "uint"
+            or argument_type == "float"
+            or argument_type == "bool"
+            or argument_type == "string"
+        ):
             pass
         else:
             msg = "Argument Type " + argument_type + " is not defined!"
             LOG_ERROR(msg, ctx.start)
 
-        argument = ArgumentSpecificationSymbol(argument_name, self.__current_scope, argument_type, default_value)
+        argument = ArgumentSpecificationSymbol(
+            argument_name, self.__current_scope, argument_type, default_value
+        )
         self.__current_scope.define(argument, ctx.start)
         self.__current_scope = argument
 
@@ -2276,7 +2501,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#argumentSpecification.
-    def exitArgumentSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext):
+    def exitArgumentSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext
+    ):
         self.__cur_node = self.__node_stack.pop()
         self.__current_scope = self.__current_scope.get_enclosing_scope()
 
@@ -2297,7 +2524,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#positionalArgument.
-    def enterPositionalArgument(self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext):
+    def enterPositionalArgument(
+        self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext
+    ):
         self.__node_stack.append(self.__cur_node)
 
         node = ast_node.PositionalArgument()
@@ -2308,7 +2537,9 @@ class ASTBuilder(OpenSCENARIO2Listener):
         self.__cur_node = node
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#positionalArgument.
-    def exitPositionalArgument(self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext):
+    def exitPositionalArgument(
+        self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext
+    ):
         self.__cur_node = self.__node_stack.pop()
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#namedArgument.

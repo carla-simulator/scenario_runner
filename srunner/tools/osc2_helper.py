@@ -1,36 +1,29 @@
 from __future__ import print_function
 
-from distutils.util import strtobool
-import copy
-import datetime
 import math
 import operator
-
-import py_trees
-import carla
-
 from typing import List, Tuple
 
-from srunner.osc2.osc_preprocess.pre_process import Preprocess
-from srunner.tools.py_trees_port import oneshot_behavior
-
-from antlr4.CommonTokenStream import CommonTokenStream
-from antlr4.tree.Tree import ParseTreeWalker
-from antlr4.FileStream import FileStream
-
+import carla
 import numpy as np
+from antlr4.CommonTokenStream import CommonTokenStream
+from antlr4.FileStream import FileStream
+from antlr4.tree.Tree import ParseTreeWalker
 from numpy.linalg import det
 
-from srunner.osc2.osc2_parser.OpenSCENARIO2Lexer import OpenSCENARIO2Lexer as OSC2Lexer
-from srunner.osc2.osc2_parser.OpenSCENARIO2Parser import OpenSCENARIO2Parser as OSC2Parser
 from srunner.osc2.ast_manager.ast_builder import ASTBuilder
 from srunner.osc2.error_manager.error_listener import OscErrorListener
+from srunner.osc2.osc2_parser.OpenSCENARIO2Lexer import OpenSCENARIO2Lexer as OSC2Lexer
+from srunner.osc2.osc2_parser.OpenSCENARIO2Parser import (
+    OpenSCENARIO2Parser as OSC2Parser,
+)
+from srunner.osc2.osc_preprocess.pre_process import Preprocess
 
 
 class OSC2Helper(object):
     osc2_file = None
     ast_tree = None
-    ego_name = 'ego_vehicle'
+    ego_name = "ego_vehicle"
     wait_for_ego = False
 
     @classmethod
@@ -39,18 +32,18 @@ class OSC2Helper(object):
             return cls.ast_tree
         else:
             # preprocessing
-            new_file, import_msg = Preprocess(osc2_file_name).import_process()
-            input_stream = FileStream(new_file, encoding='utf-8')
+            new_file, _ = Preprocess(osc2_file_name).import_process()
+            input_stream = FileStream(new_file, encoding="utf-8")
 
-            OscErrorListeners = OscErrorListener(input_stream)
+            osc_error_listeners = OscErrorListener(input_stream)
             lexer = OSC2Lexer(input_stream)
             lexer.removeErrorListeners()
-            lexer.addErrorListener(OscErrorListeners)
+            lexer.addErrorListener(osc_error_listeners)
 
             tokens = CommonTokenStream(lexer)
             parser = OSC2Parser(tokens)
             parser.removeErrorListeners()
-            parser.addErrorListener(OscErrorListeners)
+            parser.addErrorListener(osc_error_listeners)
             parse_tree = parser.osc_file()
 
             osc2_ast_builder = ASTBuilder()
@@ -122,7 +115,7 @@ class OSC2Helper(object):
         temp02 = p3 - p2
         temp03 = np.cross(temp01, temp02)
         temp = (temp03 @ temp03) / (temp01 @ temp01) / (temp02 @ temp02)
-        if temp < 10 ** -6:
+        if temp < 10**-6:
             return None
 
         temp1 = np.vstack((p1, p2, p3))
@@ -147,16 +140,16 @@ class OSC2Helper(object):
 
         pc = -np.array([B, C, D]) / 2 / A
         r = np.sqrt(B * B + C * C + D * D - 4 * A * E) / 2 / abs(A)
-        ret_list = list(map(lambda n: round(n, 2), pc.tolist()))
+        _ = list(map(lambda n: round(n, 2), pc.tolist()))
 
         return round(r, 2)
 
     @staticmethod
     def point_line_location(A: Tuple, B: Tuple, C: Tuple) -> str:
-        '''
+        """
         The position of point C relative to directed line segment AB.
         return: string, left, on, right
-        '''
+        """
         xa = A[0]
         ya = A[1]
         xb = B[0]
@@ -165,11 +158,11 @@ class OSC2Helper(object):
         yc = C[1]
         f = (xb - xa) * (yc - ya) - (xc - xa) * (yb - ya)
         if f > 0:
-            return 'left'
+            return "left"
         elif f == 0:
-            return 'on'
+            return "on"
         else:
-            return 'right'
+            return "right"
 
     @staticmethod
     def find_physical_type(src_si_base_exponent: dict, si_base_exponent: dict):
@@ -180,18 +173,21 @@ class OSC2Helper(object):
 
     @staticmethod
     def euler_orientation(rotation: carla.Rotation):
-
         pitch = rotation.pitch
         yaw = rotation.yaw
         roll = rotation.roll
-        x = math.sin(pitch / 2) * math.sin(yaw / 2) * math.cos(roll / 2) + math.cos(pitch / 2) * math.cos(
-            yaw / 2) * math.sin(roll / 2)
-        y = math.sin(pitch / 2) * math.cos(yaw / 2) * math.cos(roll / 2) + math.cos(pitch / 2) * math.sin(
-            yaw / 2) * math.sin(roll / 2)
-        z = math.cos(pitch / 2) * math.sin(yaw / 2) * math.cos(roll / 2) - math.sin(pitch / 2) * math.cos(
-            yaw / 2) * math.sin(roll / 2)
-        w = math.cos(pitch / 2) * math.cos(yaw / 2) * math.cos(roll / 2) - math.sin(pitch / 2) * math.sin(
-            yaw / 2) * math.sin(roll / 2)
+        x = math.sin(pitch / 2) * math.sin(yaw / 2) * math.cos(roll / 2) + math.cos(
+            pitch / 2
+        ) * math.cos(yaw / 2) * math.sin(roll / 2)
+        y = math.sin(pitch / 2) * math.cos(yaw / 2) * math.cos(roll / 2) + math.cos(
+            pitch / 2
+        ) * math.sin(yaw / 2) * math.sin(roll / 2)
+        z = math.cos(pitch / 2) * math.sin(yaw / 2) * math.cos(roll / 2) - math.sin(
+            pitch / 2
+        ) * math.cos(yaw / 2) * math.sin(roll / 2)
+        w = math.cos(pitch / 2) * math.cos(yaw / 2) * math.cos(roll / 2) - math.sin(
+            pitch / 2
+        ) * math.sin(yaw / 2) * math.sin(roll / 2)
         return x, y, z, w
 
     @staticmethod
@@ -200,6 +196,8 @@ class OSC2Helper(object):
             return list_of_lists
 
         if isinstance(list_of_lists[0], list):
-            return OSC2Helper.flat_list(list_of_lists[0]) + OSC2Helper.flat_list(list_of_lists[1:])
+            return OSC2Helper.flat_list(list_of_lists[0]) + OSC2Helper.flat_list(
+                list_of_lists[1:]
+            )
 
         return list_of_lists[:1] + OSC2Helper.flat_list(list_of_lists[1:])

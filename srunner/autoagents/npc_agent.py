@@ -57,7 +57,7 @@ class NpcAgent(AutonomousAgent):
         return sensors
 
     def run_step(self, input_data, timestamp):
-        #Execute one step of navigation.
+        # Execute one step of navigation.
         if not self._agent:
 
             # Search for the ego actor

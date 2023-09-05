@@ -1,7 +1,6 @@
 from srunner.osc2.symbol_manager.base_symbol import BaseSymbol
 from srunner.osc2.symbol_manager.enum_symbol import EnumValueRefSymbol
 
-
 # There are two types of inheritance
 # 1. Unconditional inheritance
 # 2. Conditional inheritance
@@ -12,8 +11,8 @@ from srunner.osc2.symbol_manager.enum_symbol import EnumValueRefSymbol
 # and scenarios and actions that do not belong to actors can only be inherited from scenarios
 # or actions that do not belong to roles.(action and actor)
 
-class InheritsConditionSymbol(BaseSymbol):
 
+class InheritsConditionSymbol(BaseSymbol):
     def __init__(self, name, scope):
         super().__init__(name, scope)
 
@@ -26,7 +25,6 @@ class InheritsConditionSymbol(BaseSymbol):
 
 
 class InheritSymbol(BaseSymbol):
-
     def __init__(self, name, scope, super_class_scope):
         super().__init__(name, scope)
         self.super_class_scope = super_class_scope
@@ -54,29 +52,33 @@ class InheritSymbol(BaseSymbol):
         return list(self.super_class_scope.symbols.values())[i]
 
     def __str__(self):
-        buf = 'inherits: ' + self.name
+        buf = "inherits: " + self.name
         return buf
 
 
 class StructInhertsSymbol(InheritSymbol):
-
     def __init__(self, name, scope, super_class_scope):
         super().__init__(name, scope, super_class_scope)
 
 
 class ActorInhertsSymbol(InheritSymbol):
-
     def __init__(self, name, scope, super_class_scope):
         super().__init__(name, scope, super_class_scope)
 
 
 class ActionInhertsSymbol(InheritSymbol):
-
     def __init__(self, QualifiedBehaviorSymbol, super_class_scope):
-        super().__init__(QualifiedBehaviorSymbol.name, QualifiedBehaviorSymbol.scope, super_class_scope)
+        super().__init__(
+            QualifiedBehaviorSymbol.name,
+            QualifiedBehaviorSymbol.scope,
+            super_class_scope,
+        )
 
 
 class ScenarioInhertsSymbol(InheritSymbol):
-
     def __init__(self, QualifiedBehaviorSymbol, super_class_scope):
-        super().__init__(QualifiedBehaviorSymbol.name, QualifiedBehaviorSymbol.scope, super_class_scope)
+        super().__init__(
+            QualifiedBehaviorSymbol.name,
+            QualifiedBehaviorSymbol.scope,
+            super_class_scope,
+        )

@@ -3,7 +3,6 @@ from srunner.osc2.symbol_manager.local_scope import LocalScope
 
 
 class SiExpSymbol(BaseSymbol):
-
     def __init__(self, name, value, scope):
         super().__init__(name, scope)
         self.value = value
@@ -16,7 +15,6 @@ class SiExpSymbol(BaseSymbol):
 
 
 class SiBaseExponentListScope(LocalScope):
-
     def __init__(self, scope):
         super().__init__(scope)
 

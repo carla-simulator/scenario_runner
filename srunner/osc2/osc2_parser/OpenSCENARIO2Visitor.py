@@ -9,8 +9,8 @@ else:
 
 # This class defines a complete generic visitor for a parse tree produced by OpenSCENARIO2Parser.
 
-class OpenSCENARIO2Visitor(ParseTreeVisitor):
 
+class OpenSCENARIO2Visitor(ParseTreeVisitor):
     # Visit a parse tree produced by OpenSCENARIO2Parser#osc_file.
     def visitOsc_file(self, ctx: OpenSCENARIO2Parser.Osc_fileContext):
         return self.visitChildren(ctx)
@@ -28,7 +28,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#structuredIdentifier.
-    def visitStructuredIdentifier(self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext):
+    def visitStructuredIdentifier(
+        self, ctx: OpenSCENARIO2Parser.StructuredIdentifierContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#oscDeclaration.
@@ -36,7 +38,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#physicalTypeDeclaration.
-    def visitPhysicalTypeDeclaration(self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext):
+    def visitPhysicalTypeDeclaration(
+        self, ctx: OpenSCENARIO2Parser.PhysicalTypeDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#physicalTypeName.
@@ -48,7 +52,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#sIBaseUnitSpecifier.
-    def visitSIBaseUnitSpecifier(self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext):
+    def visitSIBaseUnitSpecifier(
+        self, ctx: OpenSCENARIO2Parser.SIBaseUnitSpecifierContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#unitDeclaration.
@@ -64,7 +70,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#sIBaseExponentList.
-    def visitSIBaseExponentList(self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext):
+    def visitSIBaseExponentList(
+        self, ctx: OpenSCENARIO2Parser.SIBaseExponentListContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#sIBaseExponent.
@@ -100,7 +108,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#enumValueReference.
-    def visitEnumValueReference(self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext):
+    def visitEnumValueReference(
+        self, ctx: OpenSCENARIO2Parser.EnumValueReferenceContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#inheritsCondition.
@@ -144,7 +154,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#scenarioDeclaration.
-    def visitScenarioDeclaration(self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext):
+    def visitScenarioDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ScenarioDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#scenarioInherts.
@@ -152,11 +164,15 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#scenarioMemberDecl.
-    def visitScenarioMemberDecl(self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext):
+    def visitScenarioMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ScenarioMemberDeclContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#qualifiedBehaviorName.
-    def visitQualifiedBehaviorName(self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext):
+    def visitQualifiedBehaviorName(
+        self, ctx: OpenSCENARIO2Parser.QualifiedBehaviorNameContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#behaviorName.
@@ -172,7 +188,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#modifierDeclaration.
-    def visitModifierDeclaration(self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext):
+    def visitModifierDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ModifierDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#modifierName.
@@ -188,19 +206,27 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#structuredTypeExtension.
-    def visitStructuredTypeExtension(self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext):
+    def visitStructuredTypeExtension(
+        self, ctx: OpenSCENARIO2Parser.StructuredTypeExtensionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#extendableTypeName.
-    def visitExtendableTypeName(self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext):
+    def visitExtendableTypeName(
+        self, ctx: OpenSCENARIO2Parser.ExtendableTypeNameContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#extensionMemberDecl.
-    def visitExtensionMemberDecl(self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext):
+    def visitExtensionMemberDecl(
+        self, ctx: OpenSCENARIO2Parser.ExtensionMemberDeclContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#globalParameterDeclaration.
-    def visitGlobalParameterDeclaration(self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext):
+    def visitGlobalParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.GlobalParameterDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#typeDeclarator.
@@ -208,15 +234,21 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#nonAggregateTypeDeclarator.
-    def visitNonAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext):
+    def visitNonAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.NonAggregateTypeDeclaratorContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#aggregateTypeDeclarator.
-    def visitAggregateTypeDeclarator(self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext):
+    def visitAggregateTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.AggregateTypeDeclaratorContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#listTypeDeclarator.
-    def visitListTypeDeclarator(self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext):
+    def visitListTypeDeclarator(
+        self, ctx: OpenSCENARIO2Parser.ListTypeDeclaratorContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#primitiveType.
@@ -232,7 +264,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#eventSpecification.
-    def visitEventSpecification(self, ctx: OpenSCENARIO2Parser.EventSpecificationContext):
+    def visitEventSpecification(
+        self, ctx: OpenSCENARIO2Parser.EventSpecificationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#eventReference.
@@ -280,7 +314,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#durationExpression.
-    def visitDurationExpression(self, ctx: OpenSCENARIO2Parser.DurationExpressionContext):
+    def visitDurationExpression(
+        self, ctx: OpenSCENARIO2Parser.DurationExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#fieldDeclaration.
@@ -288,11 +324,15 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#parameterDeclaration.
-    def visitParameterDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext):
+    def visitParameterDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#variableDeclaration.
-    def visitVariableDeclaration(self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext):
+    def visitVariableDeclaration(
+        self, ctx: OpenSCENARIO2Parser.VariableDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#sampleExpression.
@@ -304,47 +344,69 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#parameterWithDeclaration.
-    def visitParameterWithDeclaration(self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext):
+    def visitParameterWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#parameterWithMember.
-    def visitParameterWithMember(self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext):
+    def visitParameterWithMember(
+        self, ctx: OpenSCENARIO2Parser.ParameterWithMemberContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#constraintDeclaration.
-    def visitConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext):
+    def visitConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.ConstraintDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#keepConstraintDeclaration.
-    def visitKeepConstraintDeclaration(self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext):
+    def visitKeepConstraintDeclaration(
+        self, ctx: OpenSCENARIO2Parser.KeepConstraintDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#constraintQualifier.
-    def visitConstraintQualifier(self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext):
+    def visitConstraintQualifier(
+        self, ctx: OpenSCENARIO2Parser.ConstraintQualifierContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#constraintExpression.
-    def visitConstraintExpression(self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext):
+    def visitConstraintExpression(
+        self, ctx: OpenSCENARIO2Parser.ConstraintExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#removeDefaultDeclaration.
-    def visitRemoveDefaultDeclaration(self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext):
+    def visitRemoveDefaultDeclaration(
+        self, ctx: OpenSCENARIO2Parser.RemoveDefaultDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#parameterReference.
-    def visitParameterReference(self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext):
+    def visitParameterReference(
+        self, ctx: OpenSCENARIO2Parser.ParameterReferenceContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#modifierInvocation.
-    def visitModifierInvocation(self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext):
+    def visitModifierInvocation(
+        self, ctx: OpenSCENARIO2Parser.ModifierInvocationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#behaviorExpression.
-    def visitBehaviorExpression(self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext):
+    def visitBehaviorExpression(
+        self, ctx: OpenSCENARIO2Parser.BehaviorExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#behaviorSpecification.
-    def visitBehaviorSpecification(self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext):
+    def visitBehaviorSpecification(
+        self, ctx: OpenSCENARIO2Parser.BehaviorSpecificationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#onDirective.
@@ -368,19 +430,27 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#compositionOperator.
-    def visitCompositionOperator(self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext):
+    def visitCompositionOperator(
+        self, ctx: OpenSCENARIO2Parser.CompositionOperatorContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#behaviorInvocation.
-    def visitBehaviorInvocation(self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext):
+    def visitBehaviorInvocation(
+        self, ctx: OpenSCENARIO2Parser.BehaviorInvocationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#behaviorWithDeclaration.
-    def visitBehaviorWithDeclaration(self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext):
+    def visitBehaviorWithDeclaration(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#behaviorWithMember.
-    def visitBehaviorWithMember(self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext):
+    def visitBehaviorWithMember(
+        self, ctx: OpenSCENARIO2Parser.BehaviorWithMemberContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#labelName.
@@ -420,7 +490,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#methodImplementation.
-    def visitMethodImplementation(self, ctx: OpenSCENARIO2Parser.MethodImplementationContext):
+    def visitMethodImplementation(
+        self, ctx: OpenSCENARIO2Parser.MethodImplementationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#methodQualifier.
@@ -432,7 +504,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#coverageDeclaration.
-    def visitCoverageDeclaration(self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext):
+    def visitCoverageDeclaration(
+        self, ctx: OpenSCENARIO2Parser.CoverageDeclarationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#coverDeclaration.
@@ -444,7 +518,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#coverageExpression.
-    def visitCoverageExpression(self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext):
+    def visitCoverageExpression(
+        self, ctx: OpenSCENARIO2Parser.CoverageExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#coverageUnit.
@@ -464,7 +540,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#coverageNameArgument.
-    def visitCoverageNameArgument(self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext):
+    def visitCoverageNameArgument(
+        self, ctx: OpenSCENARIO2Parser.CoverageNameArgumentContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#targetName.
@@ -544,19 +622,27 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#functionApplicationExpression.
-    def visitFunctionApplicationExpression(self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext):
+    def visitFunctionApplicationExpression(
+        self, ctx: OpenSCENARIO2Parser.FunctionApplicationExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#fieldAccessExpression.
-    def visitFieldAccessExpression(self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext):
+    def visitFieldAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.FieldAccessExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#elementAccessExpression.
-    def visitElementAccessExpression(self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext):
+    def visitElementAccessExpression(
+        self, ctx: OpenSCENARIO2Parser.ElementAccessExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#typeTestExpression.
-    def visitTypeTestExpression(self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext):
+    def visitTypeTestExpression(
+        self, ctx: OpenSCENARIO2Parser.TypeTestExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#fieldAccess.
@@ -580,15 +666,21 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#identifierReference.
-    def visitIdentifierReference(self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext):
+    def visitIdentifierReference(
+        self, ctx: OpenSCENARIO2Parser.IdentifierReferenceContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#argumentListSpecification.
-    def visitArgumentListSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext):
+    def visitArgumentListSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentListSpecificationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#argumentSpecification.
-    def visitArgumentSpecification(self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext):
+    def visitArgumentSpecification(
+        self, ctx: OpenSCENARIO2Parser.ArgumentSpecificationContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#argumentName.
@@ -600,7 +692,9 @@ class OpenSCENARIO2Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#positionalArgument.
-    def visitPositionalArgument(self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext):
+    def visitPositionalArgument(
+        self, ctx: OpenSCENARIO2Parser.PositionalArgumentContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by OpenSCENARIO2Parser#namedArgument.

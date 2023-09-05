@@ -15,7 +15,9 @@ specific information
 """
 
 import fnmatch
+
 from srunner.metrics.tools.osc2_trace_parser import Osc2TraceParser
+
 
 class Osc2Log(object):  # pylint: disable=too-many-public-methods
     """
@@ -29,13 +31,13 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
         # Parse the information
         parser = Osc2TraceParser(recorder)
         self._simulation, self._actors, self._frames = parser.parse_recorder_info()
-        
+
     def get_simulation(self):
         return self._simulation
-    
+
     def get_actors(self):
         return self._actors
-    
+
     def get_frames(self):
         return self._frames
 
@@ -57,7 +59,7 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
                 actor_collisions.update({i: collisions[actor_id]})
 
         return actor_collisions
-    
+
     def get_collisions(self, frame):
         return self._frames[frame]["events"]["collisions"]
 
@@ -180,7 +182,6 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
         """
 
         if actor_id in self._actors:
-
             actor_info = self._actors[actor_id]
             first_frame = actor_info["created"]
             if "destroyed" in actor_info:
@@ -207,7 +208,6 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
 
         # Check if the actor exists
         if actor_id in frame_state:
-
             # Check if the state exists
             if state not in frame_state[actor_id]:
                 return None
@@ -275,7 +275,9 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
         """
         Returns a list with all the transforms of the actor at the frame interval.
         """
-        return self._get_all_actor_states(actor_id, "transform", first_frame, last_frame)
+        return self._get_all_actor_states(
+            actor_id, "transform", first_frame, last_frame
+        )
 
     def get_actor_transforms_at_frame(self, frame, actor_list=None):
         """
@@ -311,11 +313,15 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
         """
         return self._get_actor_state(actor_id, "angular_velocity", frame)
 
-    def get_all_actor_angular_velocities(self, actor_id, first_frame=None, last_frame=None):
+    def get_all_actor_angular_velocities(
+        self, actor_id, first_frame=None, last_frame=None
+    ):
         """
         Returns a list with all the angular velocities of the actor at the frame interval.
         """
-        return self._get_all_actor_states(actor_id, "angular_velocity", first_frame, last_frame)
+        return self._get_all_actor_states(
+            actor_id, "angular_velocity", first_frame, last_frame
+        )
 
     def get_actor_angular_velocities_at_frame(self, frame, actor_list=None):
         """
@@ -335,7 +341,9 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
         """
         Returns a list with all the accelerations of the actor at the frame interval.
         """
-        return self._get_all_actor_states(actor_id, "acceleration", first_frame, last_frame)
+        return self._get_all_actor_states(
+            actor_id, "acceleration", first_frame, last_frame
+        )
 
     def get_actor_accelerations_at_frame(self, frame, actor_list=None):
         """

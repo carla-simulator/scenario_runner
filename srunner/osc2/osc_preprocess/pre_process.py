@@ -1,17 +1,18 @@
 # Preprocess the osc file to expand the import
 import os
-from srunner.osc2.utils.log_manager import *
+
 from srunner.osc2.osc_preprocess.import_file import ImportFile
 
 # File preprocessor class
 from srunner.osc2.osc_preprocess.import_msg import create_ImportMsg as import_msg
+from srunner.osc2.utils.log_manager import *
 
 
 class Preprocess:
     def __init__(self, current_path):
         self.import_msg = import_msg
         # The path to the current file, converted to an absolute path
-        self.current_path = os.getcwd() + '/' + current_path
+        self.current_path = os.getcwd() + "/" + current_path
         # invocation stack
         self.stack = []
         # invocation record
@@ -29,7 +30,7 @@ class Preprocess:
 
     # Return import preprocessing results and import information
     def import_process(self):
-        self.file = open(self.result, "w+", encoding='utf-8')
+        self.file = open(self.result, "w+", encoding="utf-8")
         current = ImportFile(self.current_path)
         self.__import_process(current)
         self.file.close()
