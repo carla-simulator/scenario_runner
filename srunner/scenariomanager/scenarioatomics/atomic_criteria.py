@@ -2060,7 +2060,7 @@ class MinimumSpeedRouteTest(Criterion):
         if self._speed_points > 0 and self._mean_speed:
             self._mean_speed /= self._speed_points
             self._actor_speed /= self._speed_points
-            checkpoint_value = round(self._actor_speed / (self.RATIO * self._mean_speed * 100), 2)
+            checkpoint_value = round(self._actor_speed / (self.RATIO * self._mean_speed) * 100, 2)
         else:
             checkpoint_value = 100
 
