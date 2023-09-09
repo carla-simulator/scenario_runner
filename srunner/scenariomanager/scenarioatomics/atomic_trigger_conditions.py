@@ -77,6 +77,85 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
 
 
+class IfTriggerer(AtomicCondition):
+
+    def __init__(self, actor_ego, actor_npc, comparison_operator=operator.gt, name="IfTriggerer"):
+        super(IfTriggerer, self).__init__(name)
+        self.actor_ego = actor_ego
+        self.actor_npc = actor_npc
+        self._comparison_operator = comparison_operator
+
+    def initialise(self):
+        super(IfTriggerer, self).initialise()
+
+    def update(self):
+        ego_speed_now = CarlaDataProvider.get_velocity(self.actor_ego)
+        npc_speed_now = CarlaDataProvider.get_velocity(self.actor_npc)
+        new_status = py_trees.common.Status.RUNNING
+        if self._comparison_operator(ego_speed_now, npc_speed_now):
+            new_status = py_trees.common.Status.SUCCESS
+        else:
+            new_status = py_trees.common.Status.INVALID
+
+        return new_status
+
+
+class TimeOfWaitComparison(AtomicCondition):
+    def __init__(self, duration_time, name="TimeOfWaitComparison"):
+        super(TimeOfWaitComparison, self).__init__(name)
+        self._duration_time = duration_time
+        self._start_time = None
+
+    def initialise(self):
+        self._start_time = GameTime.get_time()
+        super(TimeOfWaitComparison, self).initialise()
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+        _current_time = GameTime.get_time()
+        if _current_time - self._start_time > self._duration_time:
+            new_status = py_trees.common.Status.SUCCESS
+        return new_status
+
+
+class InTriggerNearCollision(AtomicCondition):
+    def __init__(self, reference_actor, actor, distance, comparison_operator=operator.lt,
+                 name="InTriggerNearCollision"):
+        """
+        Setup trigger distance
+        """
+        super(InTriggerNearCollision, self).__init__(name)
+        self.logger.debug("%s.__init__()" % self.__class__.__name__)
+        self._reference_actor = reference_actor
+        self._actor = actor
+        self._distance = distance
+        self._comparison_operator = comparison_operator
+        self._control = self._reference_actor.get_control()
+
+    def update(self):
+        """
+        Check if the ego vehicle is within trigger distance to other actor
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        location = CarlaDataProvider.get_location(self._actor)
+        reference_location = CarlaDataProvider.get_location(self._reference_actor)
+
+        if location is None or reference_location is None:
+            return new_status
+
+        if self._comparison_operator(calculate_distance(location, reference_location), self._distance):
+            new_status = py_trees.common.Status.SUCCESS
+            print("Too close, collision!")
+            self._control.throttle = 0
+            self._control.brake = 1
+            print('decelerate!!!')
+            self._reference_actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class InTriggerDistanceToOSCPosition(AtomicCondition):
 
     """

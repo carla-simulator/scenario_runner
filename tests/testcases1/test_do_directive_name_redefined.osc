@@ -1,0 +1,84 @@
+################################
+# doDirectiveName冲突
+################################
+
+# tag::library-physical-time[]
+type time is SI(s: 1)
+unit millisecond of time is SI(s: 1, factor: 0.001)
+unit ms          of time is SI(s: 1, factor: 0.001)
+unit second      of time is SI(s: 1, factor: 1)
+unit sec         of time is SI(s: 1, factor: 1)
+unit s           of time is SI(s: 1, factor: 1)
+unit minute      of time is SI(s: 1, factor: 60)
+unit min         of time is SI(s: 1, factor: 60)
+unit hour        of time is SI(s: 1, factor: 3600)
+unit h           of time is SI(s: 1, factor: 3600)
+# end::library-physical-time[]
+
+# tag::library-physical-length[]
+type length is SI(m: 1)
+unit nanometer  of length is SI(m: 1, factor: 0.000000001)
+unit nm         of length is SI(m: 1, factor: 0.000000001)
+unit micrometer of length is SI(m: 1, factor: 0.000001)
+unit millimeter of length is SI(m: 1, factor: 0.001)
+unit mm         of length is SI(m: 1, factor: 0.001)
+unit centimeter of length is SI(m: 1, factor: 0.01)
+unit cm         of length is SI(m: 1, factor: 0.01)
+unit meter      of length is SI(m: 1, factor: 1)
+unit m          of length is SI(m: 1, factor: 1)
+unit kilometer  of length is SI(m: 1, factor: 1000)
+unit km         of length is SI(m: 1, factor: 1000)
+unit inch       of length is SI(m: 1, factor: 0.0254)
+unit feet       of length is SI(m: 1, factor: 0.3048)
+unit mile       of length is SI(m: 1, factor: 1609.344)
+unit mi         of length is SI(m: 1, factor: 1609.344)
+# end::library-physical-length[]
+
+# tag::library-physical-speed[]
+type speed is SI(m: 1, s: -1)
+unit meter_per_second    of speed is SI(m: 1, s: -1, factor: 1)
+unit mps                 of speed is SI(m: 1, s: -1, factor: 1)
+unit kilometer_per_hour  of speed is SI(m: 1, s: -1, factor: 0.277777778)
+unit kmph                of speed is SI(m: 1, s: -1, factor: 0.277777778)
+unit kph                 of speed is SI(m: 1, s: -1, factor: 0.277777778)
+unit mile_per_hour       of speed is SI(m: 1, s: -1, factor: 0.447038889)
+unit mph                 of speed is SI(m: 1, s: -1, factor: 0.447038889)
+unit miph                of speed is SI(m: 1, s: -1, factor: 0.447038889)
+unit mmph                of speed is SI(m: 1, s: -1, factor: 0.000000278)
+unit millimeter_per_hour of speed is SI(m: 1, s: -1, factor: 0.000000278)
+# end::library-physical-speed[]
+
+actor dut
+actor Path
+actor Model3
+actor Rubicon
+
+scenario dut.cut_in_and_slow:
+    path: Path                             # A path in the map
+    start: Path
+    noend: Path
+    path.set_map("Town04")                 # specify map to use in this test
+    path.path_min_driving_lanes(2)         # Path should have at least two lanes
+
+    ego_vehicle: Model3                 # ego car
+    npc: Rubicon                        # The other car
+
+    do serial:
+        get_ahead: parallel(duration: 30s):
+            ego_vehicle.drive(path) with: 
+                speed(30kph)
+                lane(1, at: start) # left to right: [1..n]
+            npc.drive(path) with:
+                lane(right_of: ego_vehicle, at: start)
+                position(15m, behind: ego_vehicle, at: start)
+                position(20m, ahead_of: ego_vehicle, at: noend)
+
+        get_ahead: parallel(duration: 5s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                lane(same_as: ego_vehicle, at: noend)
+
+        slow: parallel(duration: 20s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                speed(10kph)

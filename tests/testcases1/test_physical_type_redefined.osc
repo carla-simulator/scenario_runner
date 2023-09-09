@@ -1,0 +1,4 @@
+# tag::library-physical-length[]
+type length is SI(m: 1)
+type length is SI(m: 1)
+# end::library-physical-length[]

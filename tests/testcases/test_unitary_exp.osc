@@ -1,0 +1,11 @@
+# test unary expression
+
+scenario test_expression:
+    # not
+    a: bool = not false
+    # - factor
+    b: int = - 3
+    b2: int = -3
+    c: int = -(5 - 3)
+
+

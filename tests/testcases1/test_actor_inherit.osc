@@ -1,0 +1,8 @@
+# 该情况实际为重载，不再报错
+
+enum car_types: [type1, type2]
+actor vehicle:
+    car_type: int = car_types!type1
+
+actor car inherits vehicle:
+    car_type: int = car_types!type1

@@ -1,0 +1,13 @@
+enum traffic_light_colors: [red, amber, green]
+
+struct pose_3d
+
+struct traffic_light:
+    id: int
+    name: string
+    pose: pose_3d
+    active_colors: list of traffic_light_colors
+    country: string
+
+extend traffic_light:
+    country: string

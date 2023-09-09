@@ -1,0 +1,8 @@
+enum color:[silver,red]
+
+actor car
+    # color1: color
+
+scenario truck_test:
+    car_in_traffic: car with:
+        keep(it.color1 == color!silver)

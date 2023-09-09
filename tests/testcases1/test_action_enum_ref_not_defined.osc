@@ -1,0 +1,4 @@
+action vehicle1
+enum car_type:[car]
+action gogogo inherits vehicle1(vehicle_category == car_type!car):
+    color: color

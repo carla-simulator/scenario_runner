@@ -75,7 +75,7 @@ class BasicScenario(object):
 
         if behavior is not None:
             behavior_seq.add_child(behavior)
-            behavior_seq.name = behavior.name
+            behavior_seq.name = 'VehicleBehavior'
 
         end_behavior = self._setup_scenario_end(config)
         if end_behavior:

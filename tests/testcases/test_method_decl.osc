@@ -1,0 +1,16 @@
+# Method is a member function of structured type, describing and implementing the behavior of objects
+# Define a structured member actor and define methods for it.
+actor my_actor:
+
+    # Unimplemented method
+    def my_distance(x1: float, y1: float, x2: float, y2: float) -> float is undefined
+
+    # Method with no return value
+    def my_distance(x1: float, y1: float, x2: float, y2: float)  is undefined
+
+    # Implementation of expression of methods
+    def my_add(x: float, y: float) -> float is expression x+y
+
+    # External implementation of methods
+    def my_sin(x: float) -> float is external com.example.cpp(identifier: "sin")
+    def my_distance(x1: float, y1: float, x2: float, y2: float) -> float is only external com.example.python(module: "mymod", name: "my_dist")

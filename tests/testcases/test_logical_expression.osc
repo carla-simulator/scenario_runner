@@ -1,0 +1,8 @@
+struct route:                                   
+    length: length                              
+    def xx_point3(x: float, y: float) -> route_point is expression x => y
+    def xx_point4(x: float, y: float) -> route_point is expression x or y
+    def xx_point5(x: float, y: float) -> route_point is expression x and y
+    def xx_point6(x: float, y: float, z: float) -> route_point is expression x => y => z
+    def xx_point7(x: float, y: float, z: float) -> route_point is expression x or y or z
+    def xx_point8(x: float, y: float, z: float, w: float) -> route_point is expression x and y and z or w

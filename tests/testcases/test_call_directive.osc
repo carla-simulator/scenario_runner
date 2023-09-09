@@ -1,0 +1,6 @@
+action movable_object.assign_position:
+    my_vehicle: vehicle
+
+    do serial:
+        # callDirective
+        call my_vehicle.drive()

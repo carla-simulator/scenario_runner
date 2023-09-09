@@ -1,0 +1,45 @@
+import basic.osc
+
+global my_map: string = "Town04"
+global path: Path
+global min_lane: int = 2
+
+scenario dut.test_one_of:
+    ego_vehicle: Model3                # ego car
+    npc: Rubicon               # The other car
+
+    event start
+    event end
+    do one_of:
+        serial(duration: 20s):
+            ego_vehicle.drive(path) with:
+                speed(10kph)
+        serial(duration: 20s):
+            ego_vehicle.drive(path) with:
+                speed(20kph)
+        serial(duration: 20s):
+            ego_vehicle.drive(path) with:
+                speed(50kph)
+        parallel(duration: 30s):
+            ego_vehicle.drive(path) with:
+                speed(30kph)
+                lane(1, at: start) # left to right: [1..n]
+            npc.drive(path) with:
+                lane(right_of: ego_vehicle, at: start)
+                position(15m, behind: ego_vehicle, at: start)
+                position(20m, ahead_of: ego_vehicle, at: end)
+
+
+scenario top:
+    path.set_map(my_map)                 
+    path.path_min_driving_lanes(min_lane)
+
+    ego_vehicle: Model3                 # ego car
+    npc: Rubicon
+
+    do serial:
+    	dut.test_one_of()
+    	dut.test_one_of()
+    	dut.test_one_of()
+    	dut.test_one_of()
+

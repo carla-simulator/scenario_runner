@@ -36,6 +36,7 @@ from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.tools.misc import is_within_distance
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.carla_data_provider import calculate_velocity
 from srunner.scenariomanager.actorcontrols.actor_control import ActorControl
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import detect_lane_obstacle
@@ -885,6 +886,66 @@ class ChangeActorWaypoints(AtomicBehavior):
         actor.update_target_speed(target_speed)
 
 
+class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
+
+    """
+    Atomic to change the waypoints for an actor controller in order to reach
+    a given position.
+
+    The behavior is in RUNNING state until the last waypoint is reached, or if a
+    second waypoint related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorWaypointsToReachPosition
+    - ChangeActorLateralMotion
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        position (carla.Transform): CARLA transform to be reached by the actor.
+        name (string): Name of the behavior.
+            Defaults to 'ChangeActorWaypointsToReachPosition'.
+
+    Attributes:
+        _waypoints (List of carla.Transform): List of waypoints (CARLA transforms).
+        _end_transform (carla.Transform): Final position (CARLA transform).
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+        _grp (GlobalPlanner): global planner instance of the town
+    """
+
+    def __init__(self, actor, position, name="ChangeActorWaypointsToReachPosition"):
+        """
+        Setup parameters
+        """
+        super(ChangeActorWaypointsToReachPosition, self).__init__(actor, [])
+
+        self._end_transform = position
+
+        self._grp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 2.0)
+        self._grp.setup()
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Generate a waypoint list (route) which representes the route. Set
+        this waypoint list for the actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+
+        # get start position
+        position_actor = CarlaDataProvider.get_location(self._actor)
+
+        # calculate plan with global_route_planner function
+        plan = self._grp.trace_route(position_actor, self._end_transform.location)
+
+        for elem in plan:
+            self._waypoints.append(elem[0].transform)
+
+        super(ChangeActorWaypointsToReachPosition, self).initialise()
+
+
 class ChangeActorLateralMotion(AtomicBehavior):
 
     """
@@ -1508,6 +1569,194 @@ class AccelerateToVelocity(AtomicBehavior):
         return new_status
 
 
+class UniformAcceleration(AtomicBehavior):
+
+    """
+    This class contains an atomic acceleration behavior. The controlled
+    traffic participant will accelerate with _throttle_value_ until reaching
+    a given acceleration
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - acceleration: Change in speed per unit time
+    - target_velocity: The target velocity the actor should reach in m/s
+    - start velocity: The start velocity the actor when start accelerate
+    - start_time: The start time the actor when start accelerate
+
+    The behavior will terminate, if the actor's velocity is at least target_velocity
+    """
+    OFFSET_THRESHOLD = 0.1
+
+    def __init__(self, actor, start_velocity, target_velocity, acceleration, start_time, name="Acceleration"):
+        """
+        Setup parameters including acceleration value (via throttle_value),
+        start_velocity, target velocity and duration
+        """
+        super(UniformAcceleration, self).__init__(name, actor)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control, self._type = get_actor_control(actor)
+        self._start_velocity = start_velocity
+        self._acceleration = acceleration
+        self._start_time = start_time
+        self._target_velocity = target_velocity
+        print(f"actor_type:{self._type}, start_speed:{self._start_velocity}, "
+              f"acceleration:{self._acceleration},target_speed:{self._target_velocity},start_time:{self._start_time}")
+
+    def initialise(self):
+        # In case of walkers, we have to extract the current heading
+        if self._type == 'walker':
+            self._control.speed = self._start_velocity
+            self._control.direction = CarlaDataProvider.get_transform(self._actor).get_forward_vector()
+
+        super(UniformAcceleration, self).initialise()
+
+    def update(self):
+        """
+        Set throttle to control acceleration to a fixed value , as long as velocity is < target_velocity
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        time_now = GameTime.get_time()
+        time_variation = time_now - self._start_time
+        speed_variation = CarlaDataProvider.get_velocity(self._actor) - self._start_velocity
+        if self._type == 'vehicle':
+            curr_speed = CarlaDataProvider.get_velocity(self._actor)
+            if abs(self._target_velocity - curr_speed) < self.OFFSET_THRESHOLD:
+                self._control.throttle = 0
+                self._control.brake = 0
+                new_status = py_trees.common.Status.SUCCESS
+                print(f"time_variation:{time_variation},speed_variation:{speed_variation},"
+                      f" current_speed:{CarlaDataProvider.get_velocity(self._actor)}")
+            if speed_variation / time_variation < self._acceleration:
+                self._control.throttle = 1
+                self._control.brake = 0
+            else:
+                self._control.throttle = 0
+                self._control.brake = 1
+
+        self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class ChangeTargetSpeed(AtomicBehavior):
+
+    """
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - target_velocity: The target velocity the actor should reach in m/s
+
+    The behavior will terminate, if the actor's velocity is at least target_velocity
+    """
+    OFFSET_THRESHOLD = 0.7
+
+    def __init__(self, actor, target_velocity, name="ChangeTargetSpeed"):
+        """
+        Setup parameters including acceleration value (via throttle_value)
+        and target velocity
+        """
+        super(ChangeTargetSpeed, self).__init__(name, actor)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control, self._type = get_actor_control(actor)
+        self._target_velocity = target_velocity
+
+    def initialise(self):
+        # In case of walkers, we have to extract the current heading
+        if self._type == 'walker':
+            self._control.speed = self._target_velocity
+            self._control.direction = CarlaDataProvider.get_transform(self._actor).get_forward_vector()
+
+        super(ChangeTargetSpeed, self).initialise()
+
+    def update(self):
+        """
+        Set throttle to throttle_value, as long as velocity is < target_velocity
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._type == 'vehicle':
+            # curr_speed = CarlaDataProvider.get_velocity(self._actor)
+            curr_speed = calculate_velocity(self._actor)*3.6
+            if abs(self._target_velocity - curr_speed) < self.OFFSET_THRESHOLD:
+                self._control.throttle = 0
+                self._control.brake = 0
+                new_status = py_trees.common.Status.SUCCESS
+                print(f'finish change speed!! current speed={curr_speed} km/h')
+            else:
+                if curr_speed < self._target_velocity:
+                    # 加速
+                    self._control.throttle = 1
+                    self._control.brake = 0
+                    print(f'current speed={curr_speed} km/h, target speed={self._target_velocity} km/h, accelerate!!! ')
+                else:
+                    # 减速
+                    self._control.throttle = 0
+                    self._control.brake = 1
+                    print('decelerate!!!')
+
+        self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
+class DecelerateToVelocity(AtomicBehavior):
+
+    """
+    This class contains an atomic acceleration behavior. The controlled
+    traffic participant will accelerate with _throttle_value_ until reaching
+    a given _target_velocity_
+
+    Important parameters:
+    - actor: CARLA actor to execute the behavior
+    - throttle_value: The amount of throttle used to accelerate in [0,1]
+    - target_velocity: The target velocity the actor should reach in m/s
+
+    The behavior will terminate, if the actor's velocity is at least target_velocity
+    """
+
+    def __init__(self, actor, brake_value, target_velocity, name="Deceleration"):
+        """
+        Setup parameters including acceleration value (via throttle_value)
+        and target velocity
+        """
+        super(DecelerateToVelocity, self).__init__(name, actor)
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+        self._control, self._type = get_actor_control(actor)
+        self._brake_value = brake_value
+        self._target_velocity = target_velocity
+
+    def initialise(self):
+        # In case of walkers, we have to extract the current heading
+        if self._type == 'walker':
+            self._control.speed = self._target_velocity
+            self._control.direction = CarlaDataProvider.get_transform(self._actor).get_forward_vector()
+
+        super(DecelerateToVelocity, self).initialise()
+
+    def update(self):
+        """
+        Set throttle to throttle_value, as long as velocity is < target_velocity
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._type == 'vehicle':
+            speed = CarlaDataProvider.get_velocity(self._actor)
+            if speed > self._target_velocity:
+                self._control.brake = self._brake_value
+            else:
+                print(speed)
+                print(self._target_velocity)
+                new_status = py_trees.common.Status.SUCCESS
+                self._control.brake = 0
+
+        self._actor.apply_control(self._control)
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class AccelerateToCatchUp(AtomicBehavior):
 
     """
@@ -2119,6 +2368,7 @@ class WaypointFollower(AtomicBehavior):
         If this is the case, a termination signal is sent to the running behavior.
         """
         super(WaypointFollower, self).initialise()
+        self._start_time = GameTime.get_time()
         self._unique_id = int(round(time.time() * 1e9))
         try:
             # check whether WF for this actor is already running and add new WF to running_WF list

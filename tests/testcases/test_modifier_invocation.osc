@@ -1,0 +1,8 @@
+scenario main:
+    dut: car
+    c: car
+
+    do ego.drive() with:
+        ego.car.speed(speed: 10kph)
+    do other.drive() with:
+        speed(speed: [10kph..25kph])

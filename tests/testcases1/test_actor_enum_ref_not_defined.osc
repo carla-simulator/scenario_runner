@@ -1,0 +1,4 @@
+actor vehicle2
+enum car_type:[car]
+actor car1 inherits vehicle2(vehicle_category == car_type!car):
+    color: color    

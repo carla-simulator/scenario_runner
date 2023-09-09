@@ -1,0 +1,10 @@
+actor car1
+actor car2
+
+actor my_vehicle:
+    vehicle_type: string = car1
+    vehicle_type2: string = car2
+
+extend my_vehicle:
+    vehicle_type: string = car1
+

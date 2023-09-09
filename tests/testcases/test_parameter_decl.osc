@@ -1,0 +1,24 @@
+# global parameter
+# without default value, list type
+global car1, car2, car3 : car = test
+# with default value, normal type
+global car4 : car
+
+
+# local parameter within action
+action my_action:
+    # without default value, list type
+    car1, car2, car3 : car = test
+    # with default value, normal type
+    my_car1 : car with:
+        keep(speed > 10kph)
+
+    # with constrain
+    my_car2 : car with:
+        keep(speed > 10kph)
+
+
+
+
+
+

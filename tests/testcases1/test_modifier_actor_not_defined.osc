@@ -1,0 +1,4 @@
+actor vehicle
+modifier vehicle.change_lane:
+   vehicle: vehicle
+   lane: int

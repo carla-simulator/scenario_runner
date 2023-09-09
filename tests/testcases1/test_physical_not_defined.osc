@@ -1,0 +1,3 @@
+# 未声明物理量angle，就定义angle的单位
+
+unit degree of angle is SI(rad: 1, factor: 57.295779513)

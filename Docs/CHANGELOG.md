@@ -23,6 +23,7 @@
     - Added story support for `TrafficSignalControllerAction`
     - Added both init and story support for `LateralDistanceAction`
     - Added support for `TrafficSignalControllerCondition`
+* Supported OpenSCENARIO 2.0 standard.
 
 ### :bug: Bug Fixes
 * Fixed bug at OtherLeadingVehicle scenario causing the vehicles to move faster than intended
