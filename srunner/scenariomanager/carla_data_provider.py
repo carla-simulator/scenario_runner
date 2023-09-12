@@ -713,6 +713,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             # Get the spawn point
             transform = actor.transform
+            if not transform:
+                continue
             if actor.random_location:
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
                     print("No more spawn points to use")

@@ -1266,6 +1266,73 @@ class WaitForTrafficLightState(AtomicCondition):
         return new_status
 
 
+class WaitForTrafficLightControllerState(AtomicCondition):
+
+    """
+    This class contains an atomic behavior to wait for a given traffic light
+    to have the desired state.
+
+    Args:
+        actor (carla.TrafficLight): CARLA traffic light to execute the condition
+        state (carla.TrafficLightState): State to be checked in this condition
+
+    The condition terminates with SUCCESS, when the traffic light switches to the desired state
+    """
+
+    def __init__(self, traffic_signal_id, state, duration, delay=None, ref_id=None,
+                 name="WaitForTrafficLightControllerState"):
+        """
+        Init
+        """
+        super(WaitForTrafficLightControllerState, self).__init__(name)
+        self.actor_id = traffic_signal_id
+        self._actor = None
+        self._start_time = None
+        self.duration_time = None
+        self.timeout = float(duration)
+        self.delay = float(delay) if delay else None
+        self.ref_tl_id = ref_id
+        self._state = state
+        self.logger.debug("%s.__init__()" % self.__class__.__name__)
+
+    def initialise(self):
+
+        self._actor = CarlaDataProvider.get_world().get_traffic_light_from_opendrive_id(self.actor_id)
+        if self._actor is None:
+            return py_trees.common.Status.FAILURE
+
+        if self.ref_tl_id is not None and self.delay is not None:
+            group_tl = self._actor.get_group_traffic_lights()
+            traffic_lights_id_list = [target_tl.id for target_tl in group_tl]
+            if self._actor.id not in traffic_lights_id_list:
+                return py_trees.common.Status.FAILURE
+            elapsed_time = self._actor.get_elapsed_time()
+            self.duration_time = self.delay + self.timeout + elapsed_time
+        elif self.ref_tl_id is None and self.delay is None:
+            self.duration_time = self.timeout
+        else:
+            return py_trees.common.Status.FAILURE
+
+    def update(self):
+        """
+        Set status to SUCCESS, when traffic light state matches the expected one
+        """
+        if self._actor is None:
+            return py_trees.common.Status.FAILURE
+
+        new_status = py_trees.common.Status.RUNNING
+        if self._actor.state == self._state:
+            if self._start_time is None:
+                self._start_time = GameTime.get_time()
+
+        if self._actor.state == self._state and GameTime.get_time() - self._start_time >= self.duration_time:
+            new_status = py_trees.common.Status.SUCCESS
+
+        self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+
+        return new_status
+
+
 class WaitEndIntersection(AtomicCondition):
 
     """

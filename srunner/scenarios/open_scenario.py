@@ -11,11 +11,14 @@ Basic scenario class using the OpenSCENARIO definition
 
 from __future__ import print_function
 
+from distutils.util import strtobool
 import itertools
 import os
 import py_trees
 
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction, ChangeParameter
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction, ChangeParameter, \
+    ChangeActorLaneOffset, ChangeActorWaypoints, ChangeLateralDistance
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorControl, ChangeActorTargetSpeed
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -240,6 +243,8 @@ class OpenScenario(BasicScenario):
         init_behavior = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="InitBehaviour")
 
+        actor_list = self.other_actors + self.ego_vehicles + [None]
+
         for actor in self.config.other_actors + self.config.ego_vehicles:
             for carla_actor in self.other_actors + self.ego_vehicles:
                 if (carla_actor is not None and 'role_name' in carla_actor.attributes and
@@ -247,21 +252,99 @@ class OpenScenario(BasicScenario):
                     actor_init_behavior = py_trees.composites.Sequence(name="InitActor{}".format(actor.rolename))
 
                     controller_atomic = None
-
+                    atomic = None
                     for private in self.config.init.iter("Private"):
                         if private.attrib.get('entityRef', None) == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
-                                for controller_action in private_action.iter('ControllerAction'):
-                                    module, args = OpenScenarioParser.get_controller(
-                                        controller_action, self.config.catalogs)
-                                    controller_atomic = ChangeActorControl(
-                                        carla_actor, control_py_module=module, args=args,
-                                        scenario_file_path=os.path.dirname(self.config.filename))
+                                if private_action.find('ControllerAction') is not None:
+                                    for controller_action in private_action.iter('ControllerAction'):
+                                        module, args = OpenScenarioParser.get_controller(
+                                            controller_action, self.config.catalogs)
+                                        controller_atomic = ChangeActorControl(
+                                            carla_actor, control_py_module=module, args=args,
+                                            scenario_file_path=os.path.dirname(self.config.filename))
+
+                                elif private_action.find('LateralAction') is not None:
+                                    private_action = private_action.find('LateralAction')
+                                    if private_action.find('LaneOffsetAction') is not None:
+                                        lat_maneuver = private_action.find('LaneOffsetAction')
+                                        continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "true")))
+                                        # Parsing of the different Dynamic shapes is missing
+                                        lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
+                                        if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
+                                            absolute_offset = ParameterRef(
+                                                lane_target_offset.find('AbsoluteTargetLaneOffset').attrib.get('value',
+                                                                                                               0))
+                                            atomic = ChangeActorLaneOffset(
+                                                carla_actor, absolute_offset, continuous=continuous,
+                                                name='LaneOffsetAction')
+
+                                        elif lane_target_offset.find('RelativeTargetLaneOffset') is not None:
+                                            relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
+                                            relative_offset = ParameterRef(
+                                                relative_target_offset.attrib.get('value', 0))
+                                            relative_actor_name = relative_target_offset.attrib.get('entityRef', None)
+                                            relative_actor = None
+                                            for _actor in actor_list:
+                                                if _actor is not None and 'role_name' in _actor.attributes:
+                                                    if relative_actor_name == _actor.attributes['role_name']:
+                                                        relative_actor = _actor
+                                                        break
+                                            if relative_actor is None:
+                                                raise AttributeError(
+                                                    "Cannot find actor '{}' for condition".format(relative_actor_name))
+                                            atomic = ChangeActorLaneOffset(carla_actor, relative_offset, relative_actor,
+                                                                           continuous=continuous,
+                                                                           name='LaneOffsetAction')
+                                    if private_action.find("LateralDistanceAction") is not None:
+                                        lat_maneuver = private_action.find('LateralDistanceAction')
+                                        maneuver_name = "LateralDistanceActionInit"
+                                        continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "false")))
+                                        freespace = bool(strtobool(lat_maneuver.attrib.get('freespace', "false")))
+                                        distance = ParameterRef(lat_maneuver.attrib.get('distance', float("inf")))
+                                        constraints = lat_maneuver.find('DynamicConstraints')
+                                        max_speed = constraints.attrib.get('maxSpeed',
+                                                                           None) if constraints is not None else None
+                                        relative_actor = None
+                                        relative_actor_name = lat_maneuver.attrib.get('entityRef', None)
+                                        for _actor in actor_list:
+                                            if _actor is not None and 'role_name' in _actor.attributes:
+                                                if relative_actor_name == _actor.attributes['role_name']:
+                                                    relative_actor = _actor
+                                                    break
+                                        if relative_actor is None:
+                                            raise AttributeError(
+                                                "Cannot find actor '{}' for condition".format(relative_actor_name))
+                                        atomic = ChangeLateralDistance(carla_actor, distance, relative_actor,
+                                                                       continuous=continuous, freespace=freespace,
+                                                                       name=maneuver_name)
+
+                                elif private_action.find('RoutingAction') is not None:
+                                    private_action = private_action.find('RoutingAction')
+                                    if private_action.find('AssignRouteAction') is not None:
+                                        route_action = private_action.find('AssignRouteAction')
+                                        waypoints = OpenScenarioParser.get_route(route_action, self.config.catalogs)
+                                        atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
+                                                                      name="AssignRouteAction")
+                                    elif private_action.find('FollowTrajectoryAction') is not None:
+                                        trajectory_action = private_action.find('FollowTrajectoryAction')
+                                        waypoints, times = OpenScenarioParser.get_trajectory(trajectory_action,
+                                                                                             self.config.catalogs)
+                                        atomic = ChangeActorWaypoints(carla_actor, waypoints=list(
+                                            zip(waypoints, ['shortest'] * len(waypoints))),
+                                                                      times=times, name="FollowTrajectoryAction")
+                                    elif private_action.find('AcquirePositionAction') is not None:
+                                        route_action = private_action.find('AcquirePositionAction')
+                                        osc_position = route_action.find('Position')
+                                        waypoints = [(osc_position, 'fastest')]
+                                        atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
+                                                                      name="AcquirePositionAction")
 
                     if controller_atomic is None:
                         controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
-
                     actor_init_behavior.add_child(controller_atomic)
+                    if atomic is not None:
+                        actor_init_behavior.add_child(atomic)
 
                     if actor.speed > 0:
                         actor_init_behavior.add_child(ChangeActorTargetSpeed(carla_actor, actor.speed, init_speed=True))
@@ -342,7 +425,7 @@ class OpenScenario(BasicScenario):
                                         for actor_id in actor_ids:
                                             maneuver_behavior = OpenScenarioParser.convert_maneuver_to_atomic(
                                                 child, joint_actor_list[actor_id],
-                                                joint_actor_list, self.config.catalogs)
+                                                joint_actor_list, self.config.catalogs, self.config)
                                             maneuver_behavior = StoryElementStatusToBlackboard(
                                                 maneuver_behavior, "ACTION", child.attrib.get('name'))
                                             parallel_actions.add_child(
@@ -498,3 +581,30 @@ class OpenScenario(BasicScenario):
         Remove all actors upon deletion
         """
         self.remove_all_actors()
+
+    def _initialize_actors(self, config):
+        """
+        Override the superclass method to initialize other actors
+        """
+        if config.other_actors:
+            for global_action in self.config.init.find("Actions").iter("GlobalAction"):
+                if global_action.find("EntityAction") is not None:
+                    entity_action = global_action.find("EntityAction")
+                    entity_ref = entity_action.attrib.get("entityRef")
+                    if entity_action.find('AddEntityAction') is not None:
+                        position = entity_action.find('AddEntityAction').find("Position")
+                        actor_transform = OpenScenarioParser.convert_position_to_transform(
+                            position, actor_list=config.other_actors + config.ego_vehicles)
+                        for actor in config.other_actors:
+                            if actor.rolename == entity_ref:
+                                actor.transform = actor_transform
+                    elif entity_action.find('DeleteEntityAction') is not None:
+                        for actor in config.other_actors:
+                            if actor.rolename == entity_ref:
+                                config.other_actors.remove(actor)
+
+            new_actors = CarlaDataProvider.request_new_actors(config.other_actors)
+            if not new_actors:
+                raise Exception("Error: Unable to add actors")
+            for new_actor in new_actors:
+                self.other_actors.append(new_actor)

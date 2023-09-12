@@ -1276,6 +1276,187 @@ class ChangeActorLaneOffset(AtomicBehavior):
         super(ChangeActorLaneOffset, self).terminate(new_status)
 
 
+class ChangeLateralDistance(AtomicBehavior):
+    """
+    OpenSCENARIO atomic.
+    Atomic to change the offset of the controller.
+
+    The behavior is in RUNNING state until the offset os reached (if 'continuous' is set to False)
+    or forever (if 'continuous' is True). This behavior will automatically stop if a second waypoint
+    related atomic for the same actor is triggered. These are:
+    - ChangeActorWaypoints
+    - ChangeActorLateralMotion
+    - ChangeActorLaneOffset
+
+    Args:
+        actor (carla.Actor): Controlled actor.
+        offset (float): Float determined the distance to the center of the lane. Positive distance imply a
+            displacement to the right, while negative displacements are to the left.
+        relative_actor (carla.Actor): The actor from which the offset is taken from. Defaults to None
+        continuous (bool): If True, the behaviour never ends. If False, the behaviour ends when the lane
+            offset is reached. Defaults to True.
+
+    Attributes:
+        _offset (float): lane offset.
+        _relative_actor (carla.Actor): relative actor.
+        _continuous (bool): stored the value of the 'continuous' argument.
+        _start_time (float): Start time of the atomic [s].
+            Defaults to None.
+        _overwritten (bool): flag to check whether or not this behavior was overwritten by another. Helps
+            to avoid the missinteraction between two ChangeActorLaneOffsets.
+        _current_target_offset (float): stores the value of the offset when dealing with relative distances
+        _map (carla.Map): instance of the CARLA map.
+    """
+
+    OFFSET_THRESHOLD = 0.3
+
+    def __init__(self, actor, offset, relative_actor=None, freespace=False,
+                 continuous=True, name="ChangeActorWaypoints", event_name=None):
+        """
+        Setup parameters
+        """
+        super(ChangeLateralDistance, self).__init__(name, actor)
+
+        self._offset = offset
+        self._relative_actor = relative_actor
+        self._continuous = continuous
+        self._freespace = freespace
+        self._start_time = None
+        self._current_target_offset = 0
+        self._overwritten = False
+        self._map = CarlaDataProvider.get_map()
+        if freespace:
+            if self._offset > 0:
+                self._offset += self._relative_actor.bounding_box.extent.y + self._actor.bounding_box.extent.y
+            else:
+                self._offset -= self._relative_actor.bounding_box.extent.y + self._actor.bounding_box.extent.y
+        self._actor_name = actor.attributes.get("role_name")
+        self._event_name = event_name
+        if relative_actor:
+            self._ref_actor_name = relative_actor.attributes.get("role_name")
+
+    def initialise(self):
+        """
+        Set _start_time and get (actor, controller) pair from Blackboard.
+
+        Set offset for actor controller.
+
+        May throw if actor is not available as key for the ActorsWithController
+        dictionary from Blackboard.
+        """
+        actor_dict = {}
+
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or self._actor.id not in actor_dict:
+            raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
+
+        self._start_time = GameTime.get_time()
+
+        actor_dict[self._actor.id].update_offset(self._offset, start_time=self._start_time)
+
+        super(ChangeLateralDistance, self).initialise()
+
+    def update(self):
+        """
+        Check the actor's state along the waypoint route.
+
+        returns:
+            py_trees.common.Status.SUCCESS, if the lane offset was reached (and 'continuous' was False), or
+                                            if another waypoint atomic for the same actor was triggered
+            py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
+            py_trees.common.Status.RUNNING, else.
+        """
+        try:
+            check_actors = operator.attrgetter("ActorsWithController")
+            actor_dict = check_actors(py_trees.blackboard.Blackboard())
+        except AttributeError:
+            pass
+
+        if not actor_dict or self._actor.id not in actor_dict:
+            return py_trees.common.Status.FAILURE
+
+        if actor_dict[self._actor.id].get_last_lane_offset_command() != self._start_time:
+            # Differentiate between lane offset and other lateral commands
+            self._overwritten = True
+            # last_lane_offset_command_time = actor_dict[self._actor.id].get_last_lane_offset_command()
+            return py_trees.common.Status.SUCCESS
+
+        if actor_dict[self._actor.id].get_last_waypoint_command() != self._start_time:
+            # last_waypoint_command_time = actor_dict[self._actor.id].get_last_waypoint_command()
+            return py_trees.common.Status.SUCCESS
+
+        if self._relative_actor:
+            # Calculate new offset
+            relative_actor_loc = CarlaDataProvider.get_location(self._relative_actor)
+            relative_center_wp = self._map.get_waypoint(relative_actor_loc)
+
+            # Value
+            relative_center_loc = relative_center_wp.transform.location
+            relative_actor_offset = relative_actor_loc.distance(relative_center_loc)
+
+            # Sign
+            f_vec = relative_center_wp.transform.get_forward_vector()
+            d_vec = relative_actor_loc - relative_center_loc
+            cross = f_vec.x * d_vec.y - f_vec.y * d_vec.x
+
+            if cross < 0:
+                relative_actor_offset *= -1.0
+
+            self._current_target_offset = relative_actor_offset + self._offset
+            # Set the new offset
+            actor_dict[self._actor.id].update_offset(self._current_target_offset)
+        if not self._continuous:
+            # Calculate new offset
+            actor_loc = CarlaDataProvider.get_location(self._actor)
+            center_wp = self._map.get_waypoint(actor_loc)
+
+            # Value
+            center_loc = center_wp.transform.location
+            actor_offset = actor_loc.distance(center_loc)
+
+            # Sign
+            f_vec = center_wp.transform.get_forward_vector()
+            d_vec = actor_loc - center_loc
+            cross = f_vec.x * d_vec.y - f_vec.y * d_vec.x
+
+            if cross < 0:
+                actor_offset *= -1.0
+            # Check if the offset has been reached
+            if abs(actor_offset - self._current_target_offset) < self.OFFSET_THRESHOLD:
+                # reach_offset = abs(actor_offset - self._current_target_offset)
+                return py_trees.common.Status.SUCCESS
+
+        # TODO: As their is no way to check the distance to a specific lane, both checks will fail if the
+        # actors are outside its 'route lane' or at an intersection
+
+        new_status = py_trees.common.Status.RUNNING
+        return new_status
+
+    def terminate(self, new_status):
+        """
+        On termination of this behavior, the offset is set back to zero
+        """
+
+        if not self._overwritten:
+            try:
+                check_actors = operator.attrgetter("ActorsWithController")
+                actor_dict = check_actors(py_trees.blackboard.Blackboard())
+            except AttributeError:
+                pass
+
+            if actor_dict and self._actor.id in actor_dict:
+                actor_dict[self._actor.id].update_offset(0)
+
+            self._overwritten = True
+
+        super(ChangeLateralDistance, self).terminate(new_status)
+
+
 class ActorTransformSetterToOSCPosition(AtomicBehavior):
 
     """
@@ -2615,6 +2796,81 @@ class TrafficLightStateSetter(AtomicBehavior):
         return new_status
 
 
+class TrafficLightControllerSetter(AtomicBehavior):
+    """
+    This class contains an atomic behavior to set the phase of a given traffic light controller
+
+    Args:
+        actor (carla.TrafficLight): ID of the traffic light controller that shall be changed
+        state (carla.TrafficLightState): New target state
+
+    """
+
+    def __init__(self, traffic_signal_id, state, duration, delay=None, ref_id=None,
+                 name="TrafficLightControllerSetter"):
+        """
+        Init
+        """
+        super(TrafficLightControllerSetter, self).__init__(name)
+        self.actor_id = traffic_signal_id
+        self._actor = None
+        self._start_time = None
+        self.duration_time = None
+        self.timeout = float(duration)
+        self.delay = float(delay) if delay else None
+        self.ref_tl_id = ref_id
+        self._state = state
+        self._previous_traffic_light_info = {}
+        self.logger.debug("%s.__init__()" % self.__class__.__name__)
+
+    def initialise(self):
+        self._start_time = GameTime.get_time()
+        self._actor = CarlaDataProvider.get_world().get_traffic_light_from_opendrive_id(self.actor_id)
+        if self._actor is None:
+            return py_trees.common.Status.FAILURE
+
+        if self.ref_tl_id is not None and self.delay is not None:
+            elapsed_time = self._actor.get_elapsed_time()
+            self.duration_time = self.delay + self.timeout + elapsed_time
+        elif self.ref_tl_id is None and self.delay is None:
+            self.duration_time = self.timeout
+        else:
+            return py_trees.common.Status.FAILURE
+        self._previous_traffic_light_info[self._actor] = {
+            'state': self._actor.get_state(),
+            'green_time': self._actor.get_green_time(),
+            'red_time': self._actor.get_red_time(),
+            'yellow_time': self._actor.get_yellow_time()
+        }
+        self._actor.set_state(self._state)
+        self._actor.set_green_time(self.duration_time)
+
+    def update(self):
+        """Waits until the adequate time has passed"""
+
+        new_status = py_trees.common.Status.RUNNING
+
+        if self._actor.is_alive:
+            if GameTime.get_time() - self._start_time > self.duration_time:
+                new_status = py_trees.common.Status.SUCCESS
+                return new_status
+            else:
+                return new_status
+        else:
+            # For some reason the actor is gone...
+            return py_trees.common.Status.FAILURE
+
+    def terminate(self, new_status):
+        """Reset all traffic lights back to their previous states"""
+        if self._previous_traffic_light_info:
+            self._actor.set_state(self._previous_traffic_light_info[self._actor]['state'])
+            self._actor.set_green_time(self._previous_traffic_light_info[self._actor]['green_time'])
+            self._actor.set_red_time(self._previous_traffic_light_info[self._actor]['red_time'])
+            self._actor.set_yellow_time(self._previous_traffic_light_info[self._actor]['yellow_time'])
+
+        super(TrafficLightControllerSetter, self).terminate(new_status)
+
+
 class ActorSource(AtomicBehavior):
 
     """
@@ -3376,4 +3632,37 @@ class KeepLongitudinalGap(AtomicBehavior):
             actor_dict[self._actor.id].update_target_speed(self.max_speed)
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
+        return new_status
+
+
+class AddActor(AtomicBehavior):
+    """
+    Implementation for a behavior that will create a actor
+    at a given transform if no other actor exists in a given radius
+    from the transform.
+
+    Important parameters:
+    - actor_type: Type of CARLA actors to be spawned
+    - transform: Spawn location
+    A parallel termination behavior has to be used.
+    """
+
+    def __init__(self, actor_type, transform, color=None, name="SpawnActor"):
+        """
+        Setup class members
+        """
+        super(AddActor, self).__init__(name)
+        self._actor_type = actor_type
+        self._spawn_point = transform
+        self._color = color
+
+    def update(self):
+        new_status = py_trees.common.Status.RUNNING
+        try:
+            new_actor = CarlaDataProvider.request_new_actor(
+                self._actor_type, self._spawn_point, color=self._color)
+            if new_actor:
+                new_status = py_trees.common.Status.SUCCESS
+        except:  # pylint: disable=bare-except
+            print("ActorSource unable to spawn actor")
         return new_status
