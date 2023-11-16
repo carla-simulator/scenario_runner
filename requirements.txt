@@ -1,5 +1,5 @@
 py-trees==0.8.3
-numpy==1.18.4; python_version >= '3.0'
+numpy==1.22.0; python_version >= '3.0'
 networkx==2.2
 Shapely==1.7.1
 psutil
