@@ -1,5 +1,5 @@
 ## Table of Contents
-* [Latest Changes](#latest-changes)
+* [CARLA ScenarioRunner 0.9.15](#carla-scenariorunner-0915)
 * [CARLA ScenarioRunner 0.9.13](#carla-scenariorunner-0913)
 * [CARLA ScenarioRunner 0.9.12](#carla-scenariorunner-0912)
 * [CARLA ScenarioRunner 0.9.11](#carla-scenariorunner-0911)
@@ -12,7 +12,7 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
-## Latest changes
+## CARLA ScenarioRunner 0.9.15
 ### :rocket: New Features
 * Add waypoint reached threshold so that the precision of the actor reaching to waypoints can be adjusted based on object types.
 * OpenSCENARIO support:
