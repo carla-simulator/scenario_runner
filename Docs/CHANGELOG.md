@@ -14,9 +14,6 @@
 
 ## Latest changes
 ### :rocket: New Features
-* Minor improvements to some example scenarios. These include FollowLeadingVehicle, VehicleTurning, DynamicObjectCrossing and SignalizedJunctionRightTurn and RunningRedLight. Their behaviors are now more smooth, robust and some outdated mechanics have been removed
-* SignalizedJunctionLeftTurn has been remade. It now has an actor flow on which the ego has to merge into, instead of a single vehicle.
-* The BackgroundActivity has been readded to the routes, which the objective of creating the sensation of traffic around the ego
 * Add waypoint reached threshold so that the precision of the actor reaching to waypoints can be adjusted based on object types.
 * OpenSCENARIO support:
     - Added both init and story support for `EntityAction`
@@ -24,6 +21,91 @@
     - Added both init and story support for `LateralDistanceAction`
     - Added support for `TrafficSignalControllerCondition`
 * Supported OpenSCENARIO 2.0 standard.
+* New scenarios:
+    - InvadingTurn: vehicles at the opposite direction lane partially invade the ego's one, forcing it to leave space for them,moving slightly off-center.
+    - EnterActorFlow: the ego has to enter a highway lane filled with incoming traffic
+    - MergerIntoslowtraffic. variation of `EnterActorFlow` but with slow traffic.
+    - InterurbanActorFlow and InterurbanAdvancedActorFlow: actor flow scenarios for the new interurban intersections with dedicated lanes present at Town12 and Town13.
+    - Accident: the ego is met with an accident, forcing it to lane change to avoid it.
+    - AccidentTwoWays:  same as `Accident` but having to invade an opposite direction lane.
+    - ParkedObstacle: similar to `Accident` but with a parked obstacle instead.
+    - ParkedObstacleTwoWays:  same as `ParkedObstacle` but having to invade an opposite direction lane.
+    - HazardAtSideLane: similar to `Accident` but with a moving group of bicycles in the rightmost park of the lane
+    - HazardAtSideLaneTwoWays:  same as `HazardAtSideLane` but having to invade an opposite direction lane.
+    - ConstructionObstacleTwoWays: same as `ConstructionObstacle` but having to invade an opposite direction lane.
+    - VehicleOpensDoorTwoWays: similar to `Accident` but this time the blockage is cause by a vehicle opening its door.
+    - StaticCutIn: the ego is meant with an adversary that exits a stopped lane, cutting in front of the ego.
+    - ParkingCutIn: similar to `StaticCutIn` but the adversary starts at a parking lane.
+    - HighwayCutIn: the ego is met with a vehicle that tries to enter the highway by cutting in front of it.
+    - ParkingExit: Only usable at the beginning of the routes, makes the ego start at a parking lane.
+    - HardBreakRoute: uses the BackgroundActivity to make all vehicles in front of the ego hard break.
+    - YieldToEmergencyVehicle: the ego finds an emergency vehicle behind, having to lane chane to give way.
+    - VehicleTurningRoutePedestrian: variation of `VehicleTurningRoute` but with a pedestrian crossing instead of a bycicle.
+    - BlockedIntersection: with low visibility, the ego performs a turn only to find out that the end is blocked by another vehicle.
+    - CrossingBicycleFlow: the ego has to do a turn at an intersection but it has to cross a bycicle lane full of traffic.
+    - PedestrianCrossing: a group of pedestrians crossing a crosswalk. Easier version of `DynamicObjectCrossing` with no occluder.
+    - ParkingCrossingPedestrian: variation of `DynamicObjectCrossing`, but using a parked vehicle as the occluder.
+    - OppositeVehicleTakingPriority: variation of `OppositeVehicleRunningRedLight` but without traffic lights.
+    - NonSignalizedJunctionLeftTurn: variation of `SignalizedJunctionLeftTurn` but without traffic lights.
+    - NonSignalizedJunctionRightTurn: variation of `SignalizedJunctionRightTurn` but without traffic lights.
+    - PriorityAtJunction: utility scenario during routes to add a green traffic light at the next intersection.
+    - NoSignalJunctionCrossingRoute: Does nothing but wait for the ego to exit an intersection.
+* Improvements to old scenarios:
+    - ControlLoss: Added actual noise to the ego's control (currently only during routes).
+    - All VehicleTurning variations: more robustness and better synchronization.
+    - OppositeVehicleRunningRedLight: Improvement synchronization and the opposite vehicle's behavior.
+    - SignalizedJunctionLeftTurn: it is now an actor flow that ego has to cross.
+    - SignalizedJunctionRightTurn. it is now an actor flow that the ego has to merge into.
+    - Renamed `ConstructionSetupCrossing` to `ConstructionObstacle`, and prepared it for routes.
+* Improvements to the CarlaDataProvider:
+    - Added a lock when checking the dictionaries to avoid issues in multithreading
+    - Added the `transform` argument to all register function to avoid returning None during the first frame
+    - Added the `get_global_route_planner` and `get_all_actors` to avoid repeating these costly calls more than necessary
+    - Added `set_runtime_init_mode` and `is_runtime_init_mode`, used by the Leaderboard to initialize scenarios during the simulation
+    - At the `create_blueprint` function, replaced the `safe` argument with the `attribute_filter`, for a more generic parsing of any of the blueprint attributes.
+    - Removed the `CarlaDataProvider.get_ego_vehicle_route()` and `CarlaDataProvider.set_ego_vehicle_route()` functions as this is now information available to all scenarios.
+* Improvements to the routes:
+    - Scenarios are no longer position based, but instead part of a route's xml.
+    - Routes now also include the criteria of its scenarios.
+    - `waypoint` have been renamed to `position` and are part of the `waypoints` category.
+    - More than one `weather` are allowed, creating a dynamic one based on the ego vehicle's completed percentage of the route.
+    - Changed the timeout to also be dependent on the distance driven by the ego vehicle.
+    - Added the `RouteLightsBehavior` to control of all scene and vehicle lights during runtime
+    - Added a new criteria for routes, `CheckMinSpeed`, that checks the ego's speed and compares it with the rest of the traffic
+    - Separated the route argument into two, `route` for the file path, and `route-id`, for the name of route. the functionality remains unchanged.
+    - Simplified the overall parsing.
+* The BackgroundActivity part of the routes has been completely remade, with the objective of creating the sensation of traffic around the ego will increasing the performance
+* Added a Backgroundmanager to interact with the new BackgroundActivity, to allow it to adapt to incoming scenarios
+* Added new atomic behaviors:
+    - SyncArrivalWithAgent
+    - CutIn
+    - AddNoiseToRouteEgo
+    - ConstantVelocityAgentBehavior
+    - AdaptiveConstantVelocityAgentBehavior
+    - WaitForever
+    - BatchActorTransformSetter
+    - OppositeActorFlow
+    - InvadingActorFlow
+    - BicycleFlow
+    - OpenVehicleDoor
+    - SwitchWrongDirectionTest
+    - SwitchMinSpeedCriteria
+    - WalkerFlow
+    - AIWalkerBehavior
+    - ScenarioTimeout
+    - MovePedestrianWithEgo
+* Improved the Criterion class for a more comprehensive base criteria and easier use in the `results_writer` class.
+* Added new atomic criteria:
+    - MinimumSpeedRouteTest
+    - YieldToEmergencyVehicleTest
+    - ScenarioTimeoutTest
+* Added new atomic trigger conditions
+    - WaitUntilInFrontPosition
+* Merged the `Scenario` class into the `BasicScenario` one.
+* Scenarios can now have parameters as part of the their xml definition, which is saved as a dictionary at `config.other_parameters`
+* Simplified and improved how routes are parsed.
+* Added the `wait-for-repetitions` argument at the manual control for a smoother transition between scenarios / repetitions
+* Updated numpy's version to avoid issues with newer version of Python 3
 
 ### :bug: Bug Fixes
 * Fixed bug at OtherLeadingVehicle scenario causing the vehicles to move faster than intended
@@ -459,3 +541,4 @@
     - WaitForTrafficLightState: wait for the traffic light to have a given state
     - SyncArrival: sync the arrival of two vehicles to a given target
     - AddNoiseToVehicle: Add noise to steer as well as throttle of the vehicle
+    - CutInWithStaticVehicle:Based on the code of ParkingCutIn,realized the cutin function of a static vehicle on the highway

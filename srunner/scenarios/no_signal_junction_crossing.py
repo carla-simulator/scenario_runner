@@ -21,7 +21,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTrans
                                                                       KeepVelocity,
                                                                       StopVehicle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerRegion
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerRegion, DriveDistance, WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
 
 
@@ -160,5 +160,53 @@ class NoSignalJunctionCrossing(BasicScenario):
     def __del__(self):
         """
         Remove all actors upon deletion
+        """
+        self.remove_all_actors()
+
+
+class NoSignalJunctionCrossingRoute(BasicScenario):
+
+    """
+    At routes, these scenarios are simplified, as they can be triggered making
+    use of the background activity. For unsignalized intersections, just wait
+    until the ego_vehicle has left the intersection.
+    """
+
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+                 timeout=180):
+        """
+        Setup all relevant parameters and create scenario
+        and instantiate scenario manager
+        """
+        # Timeout of scenario in seconds
+        self.timeout = timeout
+        self._end_distance = 50
+
+        super(NoSignalJunctionCrossingRoute, self).__init__("NoSignalJunctionCrossingRoute",
+                                                            ego_vehicles,
+                                                            config,
+                                                            world,
+                                                            debug_mode,
+                                                            criteria_enable=criteria_enable)
+
+    def _create_behavior(self):
+        """
+        Just wait for the ego to exit the junction, for route the BackgroundActivity already does all the job
+        """
+        sequence = py_trees.composites.Sequence("UnSignalizedJunctionCrossingRoute")
+        sequence.add_child(WaitEndIntersection(self.ego_vehicles[0]))
+        sequence.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
+        return sequence
+
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        return []
+
+    def __del__(self):
+        """
+        Remove all actors and traffic lights upon deletion
         """
         self.remove_all_actors()

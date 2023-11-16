@@ -46,5 +46,7 @@ class RouteScenarioConfiguration(ScenarioConfiguration):
     Basic configuration of a RouteScenario
     """
 
-    trajectory = None
-    scenario_file = None
+    def __init__(self):
+        super(RouteScenarioConfiguration, self).__init__()
+        self.keypoints = None
+        self.scenario_configs = []
