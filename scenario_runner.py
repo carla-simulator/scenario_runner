@@ -93,8 +93,8 @@ class ScenarioRunner(object):
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
-            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.15'):
+            raise ImportError("CARLA version 0.9.15 or newer required. CARLA version found: {}".format(dist))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -236,7 +236,10 @@ class ScenarioRunner(object):
 
             for i, _ in enumerate(self.ego_vehicles):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
-                CarlaDataProvider.register_actor(self.ego_vehicles[i])
+                self.ego_vehicles[i].set_target_velocity(carla.Vector3D())
+                self.ego_vehicles[i].set_target_angular_velocity(carla.Vector3D())
+                self.ego_vehicles[i].apply_control(carla.VehicleControl())
+                CarlaDataProvider.register_actor(self.ego_vehicles[i], ego_vehicles[i].transform)
 
         # sync state
         if CarlaDataProvider.is_sync_mode():
@@ -401,11 +404,11 @@ class ScenarioRunner(object):
                                         timeout=100000)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
-                scenario = scenario_class(self.world,
-                                          self.ego_vehicles,
-                                          config,
-                                          self._args.randomize,
-                                          self._args.debug)
+                scenario = scenario_class(world=self.world,
+                                          ego_vehicles=self.ego_vehicles,
+                                          config=config,
+                                          randomize=self._args.randomize,
+                                          debug_mode=self._args.debug)
         except Exception as exception:                  # pylint: disable=broad-except
             print("The scenario cannot be loaded")
             traceback.print_exc()
@@ -471,15 +474,8 @@ class ScenarioRunner(object):
         """
         result = False
 
-        if self._args.route:
-            routes = self._args.route[0]
-            scenario_file = self._args.route[1]
-            single_route = None
-            if len(self._args.route) > 2:
-                single_route = self._args.route[2]
-
         # retrieve routes
-        route_configurations = RouteParser.parse_routes_file(routes, scenario_file, single_route)
+        route_configurations = RouteParser.parse_routes_file(self._args.route, self._args.route_id)
 
         for config in route_configurations:
             for _ in range(self._args.repetitions):
@@ -576,11 +572,10 @@ def main():
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
     parser.add_argument('--openscenario2', help='Provide an openscenario2 definition')
+    parser.add_argument('--route', help='Run a route as a scenario', type=str)
+    parser.add_argument('--route-id', help='Run a specific route inside that \'route\' file', default='', type=str)
     parser.add_argument(
-        '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
-
-    parser.add_argument(
-        '--agent', help="Agent used to execute the scenario. Currently only compatible with route-based scenarios.")
+        '--agent', help="Agent used to execute the route. Not compatible with non-route-based scenarios.")
     parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
 
     parser.add_argument('--output', action="store_true", help='Provide results on stdout')

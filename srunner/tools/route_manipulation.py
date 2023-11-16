@@ -134,7 +134,7 @@ def interpolate_trajectory(waypoints_trajectory, hop_resolution=1.0):
     """
     Given some raw keypoints interpolate a full dense trajectory to be used by the user.
     returns the full interpolated route both in GPS coordinates and also in its original form.
-
+    
     Args:
         - waypoints_trajectory: the current coarse trajectory
         - hop_resolution: distance between the trajectory's waypoints
@@ -142,15 +142,19 @@ def interpolate_trajectory(waypoints_trajectory, hop_resolution=1.0):
 
     grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), hop_resolution)
     # Obtain route plan
+    lat_ref, lon_ref = _get_latlon_ref(CarlaDataProvider.get_world())
+
     route = []
+    gps_route = []
+
     for i in range(len(waypoints_trajectory) - 1):
 
         waypoint = waypoints_trajectory[i]
         waypoint_next = waypoints_trajectory[i + 1]
         interpolated_trace = grp.trace_route(waypoint, waypoint_next)
-        for wp_tuple in interpolated_trace:
-            route.append((wp_tuple[0].transform, wp_tuple[1]))
+        for wp, connection in interpolated_trace:
+            route.append((wp.transform, connection))
+            gps_coord = _location_to_gps(lat_ref, lon_ref, wp.transform.location)
+            gps_route.append((gps_coord, connection))
 
-    lat_ref, lon_ref = _get_latlon_ref(CarlaDataProvider.get_world())
-
-    return location_route_to_gps(route, lat_ref, lon_ref), route
+    return gps_route, route
