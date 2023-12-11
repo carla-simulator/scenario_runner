@@ -1,27 +1,5 @@
 ARG UBUNTU_VERSION="22.04"
 
-############ PythonAPI artifacts ############
-FROM "ubuntu:${UBUNTU_VERSION}" as artifacts
-
-USER root
-SHELL ["/bin/bash", "-c"]
-ARG ARTIFACTS_URL
-ARG CI_JOB_TOKEN
-ARG CI_REPOSITORY_URL
-
-# Install curl + unzip
-RUN apt-get update && \
-    apt-get install -y \
-      curl \
-      unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Download and extract artifacts
-RUN curl --location --output artifacts.zip "${ARTIFACTS_URL}&job_token=${CI_JOB_TOKEN}" && \
-    unzip artifacts.zip
-
-ARG UBUNTU_VERSION
-
 ############ dependencies ############
 FROM "ubuntu:${UBUNTU_VERSION}" as dependencies
 
@@ -30,8 +8,6 @@ SHELL ["/bin/bash", "-c"]
 
 ARG CARLA_API_PATH=/opt/carla/PythonAPI
 ARG SCENARIO_RUNNER_API_PATH=/opt/carla/scenario_runner
-ARG ARTIFACTS_URL
-ARG CI_REPOSITORY_URL
 
 # Install essentials
 RUN apt-get update && \
@@ -54,7 +30,7 @@ RUN pip3 install -r $SCENARIO_RUNNER_API_PATH/requirements.txt
 RUN pip3 install Flask
 
 # Copy over PythonAPI
-COPY --from=artifacts artifacts_ci/PythonAPI ${CARLA_API_PATH}
+#COPY --from=artifacts artifacts_ci/PythonAPI ${CARLA_API_PATH}
 
 # Recursively install PythonAPI requirements, keep version of first occurrence
 RUN cat $(find ${CARLA_API_PATH} -type f -name "requirements.txt") > /tmp/requirements_raw.txt \
