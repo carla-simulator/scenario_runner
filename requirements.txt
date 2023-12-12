@@ -1,6 +1,6 @@
-# Install dependencies: 
-# all versions compatible with Ubuntu 22.04, Python 3.10.6, ROS Humble at 2023-07-24
+# Update all versions to be compatible with Ubuntu 22.04, Python 3.10.6, ROS Humble (at 2023-07-24)
 py-trees==0.8.3                 # newest version (2.2.3) is not compatible
+numpy==1.21.5       
 networkx==3.1               
 shapely==2.0.1                 
 psutil==5.9.0                 
@@ -8,10 +8,8 @@ xmlschema==2.3.1
 ephem==4.1.4
 tabulate==0.9.0
 opencv-python==4.8.0.74        
-matplotlib==3.7.2
-numpy==1.21.5                  
+matplotlib==3.7.2           
 six==1.16.0
 simple-watchdog-timer==0.1.1
-protobuf==4.23.4               
-grpcio==1.56.2 
-grpcio-tools==1.56.2 
+antlr4-python3-runtime==4.13.1
+graphviz=0.20.1
