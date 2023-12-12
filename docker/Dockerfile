@@ -1,6 +1,23 @@
 ARG UBUNTU_VERSION="22.04"
+ARG CARLA_REMOTE_PATH="https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.13.tar.gz"
+
+############ PythonAPI ############
+FROM "ubuntu:${UBUNTU_VERSION}" as artifacts
+
+USER root
+SHELL ["/bin/bash", "-c"]
+
+# Install wget
+RUN apt-get update && \
+    apt-get install -y \
+      wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and extract API
+RUN wget -qO- "$CARLA_REMOTE_PATH" | tar -xzv PythonAPI/carla
 
 ############ dependencies ############
+ARG UBUNTU_VERSION
 FROM "ubuntu:${UBUNTU_VERSION}" as dependencies
 
 USER root
@@ -30,7 +47,7 @@ COPY . $SCENARIO_RUNNER_PATH
 RUN pip3 install -r $SCENARIO_RUNNER_PATH/requirements.txt
 
 # Copy over PythonAPI
-#COPY --from=artifacts artifacts_ci/PythonAPI ${CARLA_API_PATH}
+COPY --from=artifacts PythonAPI ${CARLA_API_PATH}
 
 # Recursively install PythonAPI requirements, keep version of first occurrence
 RUN cat $(find ${CARLA_API_PATH} -type f -name "requirements.txt") > /tmp/requirements_raw.txt \
