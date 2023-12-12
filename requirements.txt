@@ -12,4 +12,4 @@ matplotlib==3.7.2
 six==1.16.0
 simple-watchdog-timer==0.1.1
 antlr4-python3-runtime==4.13.1
-graphviz=0.20.1
+graphviz==0.20.1
