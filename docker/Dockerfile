@@ -7,27 +7,27 @@ USER root
 SHELL ["/bin/bash", "-c"]
 
 ARG CARLA_API_PATH=/opt/carla/PythonAPI
-ARG SCENARIO_RUNNER_API_PATH=/opt/carla/scenario_runner
+ARG SCENARIO_RUNNER_PATH=/opt/carla/scenario_runner
 
 # Install essentials
 RUN apt-get update && \
     apt-get install -y \
-      fontconfig \
-      x11-apps \
-      python3-pip \
-      libomp5 \
-      libjpeg-turbo8 libtiff-dev \
-      libgeos-dev \
+      libpng16-16 \
+      libtiff5 \
+      libjpeg8 \
+      build-essential \
+      wget \
       git \
+      libxerces-c-dev \
+      python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 # Install scenario_runner
-COPY . $SCENARIO_RUNNER_API_PATH
-RUN pip3 install -r $SCENARIO_RUNNER_API_PATH/requirements.txt
-RUN pip3 install Flask
+COPY . $SCENARIO_RUNNER_PATH
+RUN pip3 install -r $SCENARIO_RUNNER_PATH/requirements.txt
 
 # Copy over PythonAPI
 #COPY --from=artifacts artifacts_ci/PythonAPI ${CARLA_API_PATH}
@@ -53,7 +53,7 @@ ENV SDL_VIDEODRIVER=x11
 USER root
 SHELL ["/bin/bash", "-c"]
 
-ARG WORKSPACE=/opt/carla/scenario_runner
+ARG WORKSPACE=${SCENARIO_RUNNER_PATH}
 ENV WORKSPACE=${WORKSPACE}
 WORKDIR ${WORKSPACE}
 
