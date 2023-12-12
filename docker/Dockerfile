@@ -14,7 +14,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and extract API
-RUN wget -qO- "$CARLA_REMOTE_PATH" | tar -xzv PythonAPI/carla
+RUN wget -qO- "${CARLA_REMOTE_PATH}" | tar -xzv PythonAPI/carla
 
 ############ dependencies ############
 ARG UBUNTU_VERSION
