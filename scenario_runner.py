@@ -44,7 +44,7 @@ from srunner.scenarios.osc2_scenario import OSC2Scenario
 from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 
 # Version of scenario_runner
-VERSION = '0.9.13'
+VERSION = '0.9.15'
 
 
 class ScenarioRunner(object):
