@@ -6,6 +6,7 @@ FROM "ubuntu:${UBUNTU_VERSION}" as artifacts
 
 USER root
 SHELL ["/bin/bash", "-c"]
+ARG CARLA_REMOTE_PATH
 
 # Install wget
 RUN apt-get update && \
