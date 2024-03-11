@@ -1685,12 +1685,10 @@ class ChangeTargetSpeed(AtomicBehavior):
                 print(f'finish change speed!! current speed={curr_speed} km/h')
             else:
                 if curr_speed < self._target_velocity:
-                    # 加速
                     self._control.throttle = 1
                     self._control.brake = 0
                     print(f'current speed={curr_speed} km/h, target speed={self._target_velocity} km/h, accelerate!!! ')
                 else:
-                    # 减速
                     self._control.throttle = 0
                     self._control.brake = 1
                     print('decelerate!!!')
