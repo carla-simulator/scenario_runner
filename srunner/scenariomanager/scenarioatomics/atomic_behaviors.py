@@ -1911,10 +1911,10 @@ class AddNoiseToRouteEgo(AtomicBehavior):
             return new_status
 
         throttle_noise = random.normal(self._throttle_mean, self._throttle_std)
-        control.throttle = max(-1, min(1, control.throttle + throttle_noise))
+        control.throttle = max(0, min(1, control.throttle + throttle_noise))
 
         steer_noise = random.normal(self._steer_mean, self._steer_std)
-        control.steer = max(0, min(1, control.steer + steer_noise))
+        control.steer = max(-1, min(1, control.steer + steer_noise))
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         self._actor.apply_control(control)
