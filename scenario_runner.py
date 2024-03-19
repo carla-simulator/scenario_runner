@@ -20,7 +20,7 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-from distutils.version import LooseVersion
+from packaging.version import Version
 import importlib
 import inspect
 import os
@@ -28,7 +28,7 @@ import signal
 import sys
 import time
 import json
-import pkg_resources
+from importlib.metadata import metadata
 
 import carla
 
@@ -89,10 +89,9 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-
-        dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
-            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
+        md = metadata("carla")
+        if Version(md["Version"]) < Version('0.9.12'):
+            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(md["Version"]))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
