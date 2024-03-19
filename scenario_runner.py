@@ -28,7 +28,21 @@ import signal
 import sys
 import time
 import json
-from importlib.metadata import metadata
+try:
+    # requires Python 3.8+
+    from importlib.metadata import metadata
+    def assert_min_carla_version(v='0.9.12'):
+        md = metadata("carla")
+        if Version(md["Version"]) < Version(v):
+            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(v, md["Version"]))
+except ModuleNotFoundError:
+    # backport checking for older Python versions
+    import pkg_resources
+    def assert_min_carla_version(v='0.9.12'):
+        dist = pkg_resources.get_distribution("carla")
+        if Version(dist.version) < Version(v):
+            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(v, dist))
+    
 
 import carla
 
@@ -89,9 +103,7 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-        md = metadata("carla")
-        if Version(md["Version"]) < Version('0.9.12'):
-            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(md["Version"]))
+        assert_min_carla_version('0.9.12')
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
