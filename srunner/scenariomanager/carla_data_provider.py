@@ -48,26 +48,26 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     In addition it provides access to the map and the transform of all traffic lights
     """
 
-    _actor_velocity_map = {}
-    _actor_location_map = {}
-    _actor_transform_map = {}
-    _traffic_light_map = {}
-    _carla_actor_pool = {}
-    _global_osc_parameters = {}
-    _client = None
-    _world = None
-    _map = None
-    _sync_flag = False
-    _spawn_points = None
+    _actor_velocity_map = {}    # type: dict[carla.Actor, float]
+    _actor_location_map = {}    # type: dict[carla.Actor, carla.Location | None]
+    _actor_transform_map = {}   # type: dict[carla.Actor, carla.Transform | None]
+    _traffic_light_map = {}     # type: dict[carla.TrafficLight, carla.Transform]
+    _carla_actor_pool = {}      # type: dict[int, carla.Actor]
+    _global_osc_parameters = {} # type: dict[str, Unknown] # TODO: is Any correct.
+    _client = None              # type: carla.Client | None
+    _world = None               # type: carla.World | None
+    _map = None                 # type: carla.Map | None
+    _sync_flag = False          # type: bool
+    _spawn_points = None        # type: list[carla.Transform] | None
     _spawn_index = 0
-    _blueprint_library = None
-    _all_actors = None
+    _blueprint_library = None   # type: carla.BlueprintLibrary | None
+    _all_actors = None          # type: carla.ActorList | None
     _ego_vehicle_route = None
     _traffic_manager_port = 8000
     _random_seed = 2000
     _rng = random.RandomState(_random_seed)
     _local_planner = None
-    _grp = None
+    _grp = None                 # type: GlobalRoutePlanner | None
     _runtime_init_flag = False
     _lock = threading.Lock()
 
@@ -236,6 +236,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_map(world=None):
+        # type: (carla.World | None) -> carla.Map
         """
         Get the current map
         """
@@ -286,6 +287,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def set_runtime_init_mode(flag):
+        # type: (bool) -> None
         """
         Set the runtime init mode
         """
@@ -393,7 +395,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Update traffic light states
         """
-        reset_params = []
+        reset_params = [] # type: list[dict]
 
         for state in states:
             relevant_lights = []
@@ -564,6 +566,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_blueprint(model, rolename='scenario', color=None, actor_category="car", attribute_filter=None):
+        # type: (str, str, carla.Color, str, dict | None) -> carla.ActorBlueprint
         """
         Function to setup the blueprint of an actor given its model and other relevant parameters
         """
@@ -1008,6 +1011,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def set_traffic_manager_port(tm_port):
+        # type: (int) -> None
         """
         Set the port to use for the traffic manager.
         """
