@@ -1,5 +1,5 @@
 ################################
-# 重复定义scenario
+# scenario redefinition
 ################################
 
 # tag::library-physical-time[]
