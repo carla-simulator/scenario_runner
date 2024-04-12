@@ -697,9 +697,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             track_physics (bool, optional): 
                 If True, `get_location`, `get_transform` and `get_velocity` 
                 can be used for this actor.
-                If None, the actor will be tracked if it is neither a
-                Sensor nor a TrafficSign.
-                Defaults to True.
+                If None, the actor will be tracked if it is a Vehicle or Walker.
+                Defaults to None.
             attach_to (Optional[carla.Actor], optional): 
                 The parent object that the spawned actor will follow around. 
                 Defaults to None.
@@ -727,7 +726,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._carla_actor_pool[actor.id] = actor
         if track_physics is None:
             # Decide
-            track_physics = not isinstance(actor, (carla.Sensor, carla.TrafficSign))
+            track_physics = isinstance(actor, (carla.Vehicle, carla.Walker))
         if track_physics:
             # Register for physics
             CarlaDataProvider.register_actor(actor, spawn_point)
