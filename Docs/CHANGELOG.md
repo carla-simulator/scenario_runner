@@ -12,6 +12,10 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
+## Upcoming
+* Improvements to the CarlaDataProvider:
+ - Added `spawn_actor` for a blueprint based actor creation similar to `World.spawn_actor`
+
 ## CARLA ScenarioRunner 0.9.15
 ### :rocket: New Features
 * Add waypoint reached threshold so that the precision of the actor reaching to waypoints can be adjusted based on object types.
