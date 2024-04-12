@@ -683,7 +683,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     def spawn_actor(bp, spawn_point, must_spawn=False, track_physics=None, attach_to=None, attachment_type=carla.AttachmentType.Rigid):
         # type: (carla.ActorBlueprint, carla.Waypoint | carla.Transform, bool, bool | None, carla.Actor | None, carla.AttachmentType) -> carla.Actor | None
         """
-        The method will create, return and spawn an actor into the world. 
+        The method will spawn and return an actor.
         The actor will need an available blueprint to be created.
         It can also be attached to a parent with a certain attachment type. 
 
@@ -694,12 +694,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 If True, the actor will be spawned or an exception will be raised.
                 If False, the function returns None if the actor could not be spawned.
                 Defaults to False.
-            track_physics (bool, optional): 
+            track_physics (bool | None, optional): 
                 If True, `get_location`, `get_transform` and `get_velocity` 
                 can be used for this actor.
                 If None, the actor will be tracked if it is a Vehicle or Walker.
                 Defaults to None.
-            attach_to (Optional[carla.Actor], optional): 
+            attach_to (carla.Actor | None, optional): 
                 The parent object that the spawned actor will follow around. 
                 Defaults to None.
             attachment_type (carla.AttachmentType, optional): 
