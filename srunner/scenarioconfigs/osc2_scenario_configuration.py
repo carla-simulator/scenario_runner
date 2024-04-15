@@ -17,11 +17,16 @@ from srunner.osc2.ast_manager.ast_vistor import ASTVisitor
 from srunner.osc2_dm.physical_object import *
 from srunner.osc2_dm.physical_types import Physical, Range
 
-# 标准库
 from srunner.osc2_stdlib.path import Path
 
+<<<<<<< HEAD
 # pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration
+=======
+'''
+Parses the osc2 scenario description file, generates type objects in the standard 
+library based on the type and keep constraint parameters, and sets parameters
+>>>>>>> fd07c11... fix: removed empty files and translated Chinese to English
 
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -57,7 +62,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         self.unit_dict = {}
         self.physical_dict = {}
         self.weather = carla.WeatherParameters()
-        # 默认为白天
         self.weather.sun_azimuth_angle = 45
         self.weather.sun_altitude_angle = 70
 
@@ -102,8 +106,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     vehicle_class = getattr(vehicles, para_type)
                     v_ins = vehicle_class()
 
-                    # TODO: 车辆配置参数解析和设置，需要解析keep语句
-                    # 车辆rolename=变量名
                     v_ins.set_name(para_name)
                     if para_name == "ego_vehicle":
                         self.father_ins.add_ego_vehicles(v_ins)
@@ -139,7 +141,6 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     self.visit_do_directive(child)
 
         def visit_do_directive(self, node: ast_node.DoDirective):
-            # 场景设置信息不会出现在场景的行为描述部分
             pass
 
         def visit_parameter_declaration(self, node: ast_node.ParameterDeclaration):
@@ -162,7 +163,10 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     vehicle_class = getattr(vehicles, para_type)
                     v_ins = vehicle_class()
 
+<<<<<<< HEAD
                     # TODO: Analyzing and setting vehicle configuration parameters requires parsing the keep statement
+=======
+>>>>>>> fd07c11... fix: removed empty files and translated Chinese to English
                     v_ins.set_name(para_name)
                     if para_name == OSC2Helper.ego_name:
                         self.father_ins.add_ego_vehicles(v_ins)

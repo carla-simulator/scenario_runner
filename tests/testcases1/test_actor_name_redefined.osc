@@ -1,5 +1,5 @@
 ################################
-# actorName冲突
+# actorName conflict
 ################################
 
 actor movable_object

@@ -1,4 +1,4 @@
-# 该情况实际为重载，不再报错
+# This case is actually overloaded and no more errors are reported
 
 enum car_types: [type1, type2]
 actor vehicle:

@@ -24,10 +24,10 @@ from srunner.osc2.ast_manager.ast_vistor import ASTVisitor
 from srunner.osc2.osc_preprocess.pre_process import ImportFile, Preprocess
 import graphviz
 
-# node：入参，树的节点
-# nodes：入参，按遍历的顺序给节点编号，用编号给节点连线
-# pindex：父节点的编号
-# g：graphviz的图对象
+# node：node of the tree
+# nodes：number the nodes in traversal order and line them with numbers
+# pindex：id of the parent node
+# g：graphviz
 def render_ast(node, nodes, pindex, g):
     if not isinstance(node, Tuple):
         name = str(node)
@@ -38,7 +38,7 @@ def render_ast(node, nodes, pindex, g):
         g.node(str(index), name)
         if index != pindex:
             # g.edge(str(index), str(pindex))
-            g.edge(str(pindex), str(index)) # 边是从父到子，要不会出现倒立的树
+            g.edge(str(pindex), str(index))
         if isinstance(node, ast_node.AST):
             for i in range(0, node.get_child_count()):
                 render_ast(node.get_child(i), nodes, index, g)
@@ -162,11 +162,9 @@ def main(input_stream):
  
 
 if __name__ == '__main__':
-    print("执行预处理")
     error_file_list = []
-    # 如果测试的为文件夹
     if not os.path.exists(sys.argv[1]):
-        print("文件路径错误！")
+        print("File path error")
     if os.path.isdir(sys.argv[1]):
         filepath = sys.argv[1]
         files = os.listdir(filepath)
@@ -184,10 +182,7 @@ if __name__ == '__main__':
         for error_file in error_file_list:
              LOG_INFO(error_file)
 
-    # 如果测试的为单个文件
     elif os.path.isfile(sys.argv[1]):
-        print("执行预处理")
-        # 预处理，展开import,返回file类型对象和存储预处理信息的对象
         new_file, import_msg = Preprocess(sys.argv[1]).import_process()
         input_stream = FileStream(new_file, encoding='utf-8')
         if main(input_stream)>0:
