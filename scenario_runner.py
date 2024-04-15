@@ -20,7 +20,10 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-from packaging.version import Version
+try:
+    from packaging.version import Version
+except ImportError:
+    from distutils.version import LooseVersion as Version # Python 2 fallback
 import importlib
 import inspect
 import os
@@ -28,21 +31,17 @@ import signal
 import sys
 import time
 import json
+
 try:
     # requires Python 3.8+
     from importlib.metadata import metadata
-    def assert_min_carla_version(v='0.9.12'):
-        md = metadata("carla")
-        if Version(md["Version"]) < Version(v):
-            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(v, md["Version"]))
+    def get_carla_version():
+        return Version(metadata("carla")["Version"])
 except ModuleNotFoundError:
-    # backport checking for older Python versions
+    # backport checking for older Python versions; module is deprecated
     import pkg_resources
-    def assert_min_carla_version(v='0.9.12'):
-        dist = pkg_resources.get_distribution("carla")
-        if Version(dist.version) < Version(v):
-            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(v, dist))
-    
+    def get_carla_version():
+        return Version(pkg_resources.get_distribution("carla").version)
 
 import carla
 
@@ -56,6 +55,9 @@ from srunner.tools.route_parser import RouteParser
 
 # Version of scenario_runner
 VERSION = '0.9.13'
+
+# Minimum version of CARLA that is required
+MIN_CARLA_VERSION = '0.9.12'
 
 
 class ScenarioRunner(object):
@@ -103,7 +105,9 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-        assert_min_carla_version('0.9.12')
+        carla_version = get_carla_version()
+        if carla_version < Version(MIN_CARLA_VERSION):
+            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(MIN_CARLA_VERSION, carla_version))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
