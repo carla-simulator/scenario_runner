@@ -1,5 +1,5 @@
 #####################################
-# Repeat definition under the scope color: white
+# color作用域下重复定义 white
 #####################################
 
 enum color: [

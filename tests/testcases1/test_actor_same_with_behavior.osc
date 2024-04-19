@@ -1,5 +1,5 @@
 ################################
-# actorName collide with behaviorName
+# actorName与behaviorName冲突
 ################################
 
 actor Path

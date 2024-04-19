@@ -1,5 +1,5 @@
 ################################
-# redefinition: enum color
+# 重复定义enum color
 ################################
 
 enum color: [

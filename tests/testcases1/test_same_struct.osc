@@ -1,5 +1,5 @@
 ################################
-# struct naming conflict
+# struct命名冲突
 ################################
 
 type angle is SI(rad: 1)

@@ -1,4 +1,4 @@
-# physical quantities are repeatedly defined
+# 物理量重复定义
 
 type angle is SI(rad: 1)
 unit degree of angle is SI(rad: 1, factor: 57.295779513)

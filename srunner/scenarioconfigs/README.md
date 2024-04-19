@@ -1,27 +1,29 @@
-This document introduces the functions and usage methods of the three modules config, scenario and data bridge
+本文档对config, scenario, data_bridge三个模块的功能及使用方法进行介绍
 
-**1. config**
+**一、config模块** 
 
-- Code：srunner/scenarioconfigs/osc2_scenario_configuration.py
+概述：
 
-- Function: Parses the osc2 scenario description file, generates type objects in the standard library based on the type and constraint parameters, and sets parameters, for example, ego and npc related to vehicles and path related to paths
+- 对应代码：srunner/scenarioconfigs/osc2_scenario_configuration.py
 
-Usage：
+- 功能：解析osc2场景描述文件，根据类型和约束的参数配置，生成标准库里相关类型对象，并设置参数。例如，描述车辆相关的类型对象ego和npc，描述路径相关的类型对象path
 
-(1) Import the corresponding files in the scenario runner.py and osc2 Scenario.py files
+使用方法：
+
+(1) 在scenario_runner.py和osc2_scenario.py文件中导入对应文件
 
 ```
 from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 ```
 
-(2) In the scenario runner. Py files run osc2 (self) function to initialize the OSC2ScenarioConfiguration
+(2) 在scenario_runner.py文件的_run_osc2(self)函数中对OSC2ScenarioConfiguration进行初始化
 ```
-# self._args.osc2: The input scene file name string
-# self.client: The client that connects to the carla simulator
+# self._args.osc2表示输入的场景文件名称字符串
+# self.client表示与carla模拟器建立连接的客户端
 config = OSC2ScenarioConfiguration(self._args.osc2, self.client)
 ```
 
-(3)OSC2Scenario is initialized in the load and run scenario(self, config) function of the scenario runner.py file with config as input
+(3)在scenario_runner.py文件的_load_and_run_scenario(self, config)函数中，config作为输入，对OSC2Scenario进行初始化
 
 ```
 scenario = OSC2Scenario(world=self.world,
@@ -30,22 +32,24 @@ scenario = OSC2Scenario(world=self.world,
                         osc2_file=self._args.osc2,
                         timeout=100000)
 ```
- **2. scenario**
+ **二、scenario模块** 
 
-- Code：/srunner/scenarios/osc2_scenario.py
+概述：
 
-- Function：The behavior tree corresponding to the osc2 scene description file is created based on the standard library objects obtained by parsing the osc2 scene description file, the abstract syntax tree, and the symbol table (the latter two are from the syntax parsing phase)
+- 对应代码：/srunner/scenarios/osc2_scenario.py
 
-Usage:
+- 功能：根据解析osc2场景描述文件所获得的标准库对象，抽象语法树和符号表（后两者来自语法解析阶段），建立osc2场景描述文件所对应的行为树
 
-(1) Import the corresponding file in the scenario runner.py file
+使用方法：
+
+(1) 在scenario_runner.py文件中导入对应文件
 
 ```
 from srunner.scenarios.osc2_scenario import OSC2Scenario
 ```
 
 
-(2) OSC2Scenario is initialized in the load and run scenario(self, config) functions of scenario runner.py file
+(2) 在scenario_runner.py文件的_load_and_run_scenario(self, config)函数中，对OSC2Scenario进行初始化
 
 ```
 scenario = OSC2Scenario(world=self.world,
@@ -56,11 +60,11 @@ scenario = OSC2Scenario(world=self.world,
 ```
 
 
-(3) The behavior tree established by osc2_scenario.py is used as input, and in the _Load_AND_RUN_SCENARIO (interfig) function of the SCENARIO_Runner.py file, loads the execution scene, and records the driving trajectory of the main car EGO
+(3) 以osc2_scenario.py所建立的行为树作为输入，在scenario_runner.py文件的_load_and_run_scenario(self, config)函数中，加载执行场景，并记录主车ego的行车轨迹
 
 ```
 # Load scenario and run it
-# self.manager is an instantiated object of the SCENARIOMANAGER class. In real -time regulation of the operation of the scene in the Crala simulator
+# self.manager是ScenarioManager类的实例化对象，对crala模拟器中场景的运行进行实时调控
 self.manager.load_scenario(scenario, self.agent_instance)
 self.manager.data_bridge = DataBridge(self.world)
 self.manager.run_scenario()
@@ -68,16 +72,18 @@ self.manager.data_bridge.end_trace()
 ```
 `from srunner.scenariomanager.scenario_manager import ScenarioManager`
 
-**3. data_bridge**
+**三、data_bridge模块**
 
-- Function：The purpose is to extract the data of each frame when the scene is executed, write it into the trace.json file, and use the trace data file of the main vehicle in the scene as the input of the traffic regulation assertion for judgment
+概述：
 
-Usage:
+- 功能：旨在提取场景执行时，每一帧的数据，将其写入trace.json文件中。将主车在场景中的轨迹数据文件trace.json作为交规断言的输入，进行判断。
 
-(1) Import the DataBridge module in the scenario runner.py file
+使用方法：
+
+(1) 在scenario_runner.py文件中导入DataBridge模块
 `from data_bridge import DataBridge`
 
-(2) Initialization is done in the load and run scenario(self, config) functions of the ScenarioRunner class in the scenario runner.py file
+(2) 在scenario_runner.py文件中ScenarioRunner类的_load_and_run_scenario(self, config)函数中进行初始化
 
 ```
 # Load scenario and run it
@@ -86,9 +92,10 @@ self.manager.data_bridge = DataBridge(self.world)
 self.manager.run_scenario()
 ```
 
-(3) srunner/scenariomanager/scenario_manager.py -> run_scenario(self)
+(3) 在srunner/scenariomanager/scenario_manager.py文件的run_scenario(self)函数中，
 
 ```
+# update_ego_vehicle_start()函数根据主车ego提供的数据进行初始化
 self.data_bridge.update_ego_vehicle_start(self.ego_vehicles[0])
 
 while self._running:
@@ -100,11 +107,14 @@ if snapshot:
 timestamp = snapshot.timestamp
 if timestamp:
 self._tick_scenario(timestamp)
+
+# self.data_bridge.update_trace()函数对carla world每个trick所提供的信息进行处理，从而获得交规断言所需要的轨迹数据。
 self.data_bridge.update_trace()
 ```
 
-(4) scenario_runner.py -> ScenarioRunner -> _load_and_run_scenario(self, config)
+(4) 在scenario_runner.py文件中ScenarioRunner类的_load_and_run_scenario(self, config)函数中：
 ```
+# end_trace()函数在场景执行结束时，对轨迹数据进行更新并写入到trace.json文件中。
 self.manager.data_bridge.end_trace()
 ```
 
