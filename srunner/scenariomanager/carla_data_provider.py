@@ -596,6 +596,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             'train': '',
             'tram': '',
             'pedestrian': 'walker.pedestrian.0001',
+	    'misc': 'static.prop.streetbarrier'
         }
 
         # Set the model
