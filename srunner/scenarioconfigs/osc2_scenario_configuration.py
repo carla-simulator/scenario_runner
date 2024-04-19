@@ -19,14 +19,12 @@ from srunner.osc2_dm.physical_types import Physical, Range
 
 from srunner.osc2_stdlib.path import Path
 
-<<<<<<< HEAD
 # pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration
-=======
 '''
 Parses the osc2 scenario description file, generates type objects in the standard 
 library based on the type and keep constraint parameters, and sets parameters
->>>>>>> fd07c11... fix: removed empty files and translated Chinese to English
+'''
 
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -163,10 +161,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     vehicle_class = getattr(vehicles, para_type)
                     v_ins = vehicle_class()
 
-<<<<<<< HEAD
                     # TODO: Analyzing and setting vehicle configuration parameters requires parsing the keep statement
-=======
->>>>>>> fd07c11... fix: removed empty files and translated Chinese to English
                     v_ins.set_name(para_name)
                     if para_name == OSC2Helper.ego_name:
                         self.father_ins.add_ego_vehicles(v_ins)
