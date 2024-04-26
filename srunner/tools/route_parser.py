@@ -14,10 +14,27 @@ import xml.etree.ElementTree as ET
 import carla
 from agents.navigation.local_planner import RoadOption
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
+from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 
-# TODO  check this threshold, it could be a bit larger but not so large that we cluster scenarios.
-TRIGGER_THRESHOLD = 2.0  # Threshold to say if a trigger position is new or repeated, works for matching positions
-TRIGGER_ANGLE_THRESHOLD = 10  # Threshold to say if two angles can be considering matching when matching transforms.
+# Threshold to say if a scenarios trigger position is part of the route
+DIST_THRESHOLD = 2.0
+ANGLE_THRESHOLD = 10
+
+
+def convert_elem_to_transform(elem):
+    """Convert an ElementTree.Element to a CARLA transform"""
+    return carla.Transform(
+        carla.Location(
+            float(elem.attrib.get('x')),
+            float(elem.attrib.get('y')),
+            float(elem.attrib.get('z'))
+        ),
+        carla.Rotation(
+            roll=0.0,
+            pitch=0.0,
+            yaw=float(elem.attrib.get('yaw'))
+        )
+    )
 
 
 class RouteParser(object):
@@ -27,295 +44,100 @@ class RouteParser(object):
     """
 
     @staticmethod
-    def parse_annotations_file(annotation_filename):
+    def parse_routes_file(route_filename, single_route_id=''):
         """
-        Return the annotations of which positions where the scenarios are going to happen.
-        :param annotation_filename: the filename for the anotations file
-        :return:
-        """
-
-        with open(annotation_filename, 'r', encoding='utf-8') as f:
-            annotation_dict = json.loads(f.read())
-
-        final_dict = {}
-
-        for town_dict in annotation_dict['available_scenarios']:
-            final_dict.update(town_dict)
-
-        return final_dict  # the file has a current maps name that is an one element vec
-
-    @staticmethod
-    def parse_routes_file(route_filename, scenario_file, single_route=None):
-        """
-        Returns a list of route elements.
+        Returns a list of route configuration elements.
         :param route_filename: the path to a set of routes.
         :param single_route: If set, only this route shall be returned
         :return: List of dicts containing the waypoints, id and town of the routes
         """
 
-        list_route_descriptions = []
+        route_configs = []
         tree = ET.parse(route_filename)
         for route in tree.iter("route"):
 
             route_id = route.attrib['id']
-            if single_route and route_id != single_route:
+            if single_route_id and route_id != single_route_id:
                 continue
 
-            new_config = RouteScenarioConfiguration()
-            new_config.town = route.attrib['town']
-            new_config.name = "RouteScenario_{}".format(route_id)
-            new_config.weather = RouteParser.parse_weather(route)
-            new_config.scenario_file = scenario_file
+            route_config = RouteScenarioConfiguration()
+            route_config.town = route.attrib['town']
+            route_config.name = "RouteScenario_{}".format(route_id)
+            route_config.weather = RouteParser.parse_weather(route)
 
-            waypoint_list = []  # the list of waypoints that can be found on this route
-            for waypoint in route.iter('waypoint'):
-                waypoint_list.append(carla.Location(x=float(waypoint.attrib['x']),
-                                                    y=float(waypoint.attrib['y']),
-                                                    z=float(waypoint.attrib['z'])))
+            # The list of carla.Location that serve as keypoints on this route
+            positions = []
+            for position in route.find('waypoints').iter('position'):
+                positions.append(carla.Location(x=float(position.attrib['x']),
+                                                y=float(position.attrib['y']),
+                                                z=float(position.attrib['z'])))
+            route_config.keypoints = positions
 
-            new_config.trajectory = waypoint_list
+            # The list of ScenarioConfigurations that store the scenario's data
+            scenario_configs = []
+            for scenario in route.find('scenarios').iter('scenario'):
+                scenario_config = ScenarioConfiguration()
+                scenario_config.name = scenario.attrib.get('name')
+                scenario_config.type = scenario.attrib.get('type')
 
-            list_route_descriptions.append(new_config)
+                for elem in scenario.getchildren():
+                    if elem.tag == 'trigger_point':
+                        scenario_config.trigger_points.append(convert_elem_to_transform(elem))
+                    elif elem.tag == 'other_actor':
+                        scenario_config.other_actors.append(ActorConfigurationData.parse_from_node(elem, 'scenario'))
+                    else:
+                        scenario_config.other_parameters[elem.tag] = elem.attrib
 
-        return list_route_descriptions
+                scenario_configs.append(scenario_config)
+            route_config.scenario_configs = scenario_configs
+
+            route_configs.append(route_config)
+
+        return route_configs
 
     @staticmethod
     def parse_weather(route):
         """
-        Returns a carla.WeatherParameters with the corresponding weather for that route. If the route
-        has no weather attribute, the default one is triggered.
+        Parses all the weather information as a list of [position, carla.WeatherParameters],
+        where the position represents a % of the route.
         """
+        weathers = []
 
-        route_weather = route.find("weather")
-        if route_weather is None:
+        weathers_elem = route.find("weathers")
+        if weathers_elem is None:
+            return [[0, carla.WeatherParameters(sun_altitude_angle=70, cloudiness=50)]]
 
-            weather = carla.WeatherParameters(sun_altitude_angle=70)
+        for weather_elem in weathers_elem.iter('weather'):
+            route_percentage = float(weather_elem.attrib['route_percentage'])
 
-        else:
-            weather = carla.WeatherParameters()
-            for weather_attrib in route.iter("weather"):
+            weather = carla.WeatherParameters(sun_altitude_angle=70, cloudiness=50)  # Base weather
+            for weather_attrib in weather_elem.attrib:
+                if hasattr(weather, weather_attrib):
+                    setattr(weather, weather_attrib, float(weather_elem.attrib[weather_attrib]))
+                elif weather_attrib != 'route_percentage':
+                    print(f"WARNING: Ignoring '{weather_attrib}', as it isn't a weather parameter")
 
-                if 'cloudiness' in weather_attrib.attrib:
-                    weather.cloudiness = float(weather_attrib.attrib['cloudiness'])
-                if 'precipitation' in weather_attrib.attrib:
-                    weather.precipitation = float(weather_attrib.attrib['precipitation'])
-                if 'precipitation_deposits' in weather_attrib.attrib:
-                    weather.precipitation_deposits = float(weather_attrib.attrib['precipitation_deposits'])
-                if 'wind_intensity' in weather_attrib.attrib:
-                    weather.wind_intensity = float(weather_attrib.attrib['wind_intensity'])
-                if 'sun_azimuth_angle' in weather_attrib.attrib:
-                    weather.sun_azimuth_angle = float(weather_attrib.attrib['sun_azimuth_angle'])
-                if 'sun_altitude_angle' in weather_attrib.attrib:
-                    weather.sun_altitude_angle = float(weather_attrib.attrib['sun_altitude_angle'])
-                if 'wetness' in weather_attrib.attrib:
-                    weather.wetness = float(weather_attrib.attrib['wetness'])
-                if 'fog_distance' in weather_attrib.attrib:
-                    weather.fog_distance = float(weather_attrib.attrib['fog_distance'])
-                if 'fog_density' in weather_attrib.attrib:
-                    weather.fog_density = float(weather_attrib.attrib['fog_density'])
+            weathers.append([route_percentage, weather])
 
-        return weather
+        weathers.sort(key=lambda x: x[0])
+        return weathers
 
     @staticmethod
-    def check_trigger_position(new_trigger, existing_triggers):
+    def is_scenario_at_route(trigger_transform, route):
         """
-        Check if this trigger position already exists or if it is a new one.
-        :param new_trigger:
-        :param existing_triggers:
-        :return:
+        Check if the scenario is affecting the route.
+        This is true if the trigger position is very close to any route point
         """
+        def is_trigger_close(trigger_transform, route_transform):
+            """Check if the two transforms are similar"""
+            dist = trigger_transform.location.distance(route_transform.location)
+            angle_dist = (trigger_transform.rotation.yaw - route_transform.rotation.yaw) % 360
 
-        for trigger_id in existing_triggers.keys():
-            trigger = existing_triggers[trigger_id]
-            dx = trigger['x'] - new_trigger['x']
-            dy = trigger['y'] - new_trigger['y']
-            distance = math.sqrt(dx * dx + dy * dy)
+            return dist < DIST_THRESHOLD \
+                and (angle_dist < ANGLE_THRESHOLD or angle_dist > (360 - ANGLE_THRESHOLD))
 
-            dyaw = (trigger['yaw'] - new_trigger['yaw']) % 360
-            if distance < TRIGGER_THRESHOLD \
-                    and (dyaw < TRIGGER_ANGLE_THRESHOLD or dyaw > (360 - TRIGGER_ANGLE_THRESHOLD)):
-                return trigger_id
+        for route_transform, _ in route:
+            if is_trigger_close(trigger_transform, route_transform):
+                return True
 
-        return None
-
-    @staticmethod
-    def convert_waypoint_float(waypoint):
-        """
-        Convert waypoint values to float
-        """
-        waypoint['x'] = float(waypoint['x'])
-        waypoint['y'] = float(waypoint['y'])
-        waypoint['z'] = float(waypoint['z'])
-        waypoint['yaw'] = float(waypoint['yaw'])
-
-    @staticmethod
-    def match_world_location_to_route(world_location, route_description):
-        """
-        We match this location to a given route.
-            world_location:
-            route_description:
-        """
-        def match_waypoints(waypoint1, wtransform):
-            """
-            Check if waypoint1 and wtransform are similar
-            """
-            dx = float(waypoint1['x']) - wtransform.location.x
-            dy = float(waypoint1['y']) - wtransform.location.y
-            dz = float(waypoint1['z']) - wtransform.location.z
-            dpos = math.sqrt(dx * dx + dy * dy + dz * dz)
-
-            dyaw = (float(waypoint1['yaw']) - wtransform.rotation.yaw) % 360
-
-            return dpos < TRIGGER_THRESHOLD \
-                and (dyaw < TRIGGER_ANGLE_THRESHOLD or dyaw > (360 - TRIGGER_ANGLE_THRESHOLD))
-
-        match_position = 0
-        # TODO this function can be optimized to run on Log(N) time
-        for route_waypoint in route_description:
-            if match_waypoints(world_location, route_waypoint[0]):
-                return match_position
-            match_position += 1
-
-        return None
-
-    @staticmethod
-    def get_scenario_type(scenario, match_position, trajectory):
-        """
-        Some scenarios have different types depending on the route.
-        :param scenario: the scenario name
-        :param match_position: the matching position for the scenarion
-        :param trajectory: the route trajectory the ego is following
-        :return: tag representing this subtype
-
-        Also used to check which are not viable (Such as an scenario
-        that triggers when turning but the route doesnt')
-        WARNING: These tags are used at:
-            - VehicleTurningRoute
-            - SignalJunctionCrossingRoute
-        and changes to these tags will affect them
-        """
-
-        def check_this_waypoint(tuple_wp_turn):
-            """
-            Decides whether or not the waypoint will define the scenario behavior
-            """
-            if RoadOption.LANEFOLLOW == tuple_wp_turn[1]:
-                return False
-            elif RoadOption.CHANGELANELEFT == tuple_wp_turn[1]:
-                return False
-            elif RoadOption.CHANGELANERIGHT == tuple_wp_turn[1]:
-                return False
-            return True
-
-        # Unused tag for the rest of scenarios,
-        # can't be None as they are still valid scenarios
-        subtype = 'valid'
-
-        if scenario == 'Scenario4':
-            for tuple_wp_turn in trajectory[match_position:]:
-                if check_this_waypoint(tuple_wp_turn):
-                    if RoadOption.LEFT == tuple_wp_turn[1]:
-                        subtype = 'S4left'
-                    elif RoadOption.RIGHT == tuple_wp_turn[1]:
-                        subtype = 'S4right'
-                    else:
-                        subtype = None
-                    break  # Avoid checking all of them
-                subtype = None
-
-        if scenario == 'Scenario7':
-            for tuple_wp_turn in trajectory[match_position:]:
-                if check_this_waypoint(tuple_wp_turn):
-                    if RoadOption.STRAIGHT == tuple_wp_turn[1]:
-                        subtype = 'S7opposite'
-                    else:
-                        subtype = None
-                    break  # Avoid checking all of them
-                subtype = None
-
-        if scenario == 'Scenario8':
-            for tuple_wp_turn in trajectory[match_position:]:
-                if check_this_waypoint(tuple_wp_turn):
-                    if RoadOption.LEFT == tuple_wp_turn[1]:
-                        subtype = 'S8left'
-                    else:
-                        subtype = None
-                    break  # Avoid checking all of them
-                subtype = None
-
-        if scenario == 'Scenario9':
-            for tuple_wp_turn in trajectory[match_position:]:
-                if check_this_waypoint(tuple_wp_turn):
-                    if RoadOption.RIGHT == tuple_wp_turn[1]:
-                        subtype = 'S9right'
-                    else:
-                        subtype = None
-                    break  # Avoid checking all of them
-                subtype = None
-
-        return subtype
-
-    @staticmethod
-    def scan_route_for_scenarios(route_name, trajectory, world_annotations):
-        """
-        Just returns a plain list of possible scenarios that can happen in this route by matching
-        the locations from the scenario into the route description
-
-        :return:  A list of scenario definitions with their correspondent parameters
-        """
-
-        # the triggers dictionaries:
-        existent_triggers = {}
-        # We have a table of IDs and trigger positions associated
-        possible_scenarios = {}
-
-        # Keep track of the trigger ids being added
-        latest_trigger_id = 0
-
-        for town_name in world_annotations.keys():
-            if town_name != route_name:
-                continue
-
-            scenarios = world_annotations[town_name]
-            for scenario in scenarios:  # For each existent scenario
-                if "scenario_type" not in scenario:
-                    break
-                scenario_name = scenario["scenario_type"]
-                for event in scenario["available_event_configurations"]:
-                    waypoint = event['transform']  # trigger point of this scenario
-                    RouteParser.convert_waypoint_float(waypoint)
-                    # We match trigger point to the  route, now we need to check if the route affects
-                    match_position = RouteParser.match_world_location_to_route(
-                        waypoint, trajectory)
-                    if match_position is not None:
-                        # We match a location for this scenario, create a scenario object so this scenario
-                        # can be instantiated later
-
-                        if 'other_actors' in event:
-                            other_vehicles = event['other_actors']
-                        else:
-                            other_vehicles = None
-                        scenario_subtype = RouteParser.get_scenario_type(scenario_name, match_position,
-                                                                         trajectory)
-                        if scenario_subtype is None:
-                            continue
-                        scenario_description = {
-                            'name': scenario_name,
-                            'other_actors': other_vehicles,
-                            'trigger_position': waypoint,
-                            'scenario_type': scenario_subtype,  # some scenarios have route dependent configs
-                        }
-
-                        trigger_id = RouteParser.check_trigger_position(waypoint, existent_triggers)
-                        if trigger_id is None:
-                            # This trigger does not exist create a new reference on existent triggers
-                            existent_triggers.update({latest_trigger_id: waypoint})
-                            # Update a reference for this trigger on the possible scenarios
-                            possible_scenarios.update({latest_trigger_id: []})
-                            trigger_id = latest_trigger_id
-                            # Increment the latest trigger
-                            latest_trigger_id += 1
-
-                        possible_scenarios[trigger_id].append(scenario_description)
-
-        return possible_scenarios, existent_triggers
+        return False

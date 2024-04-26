@@ -1,0 +1,10 @@
+scenario test:
+    do parallel(duration : [10s..30s]):
+        phase_a: drive() with:
+            speed(speed: 100kph, at: start)
+            speed(speed: 0kph, at: end)
+            lane(0)
+        phase_b: drive() with:
+            speed(speed: [60kph..100kph])
+            lane(0, at: start)
+            lane(1, at: end)

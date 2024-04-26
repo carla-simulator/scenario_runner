@@ -13,6 +13,8 @@ import glob
 import os
 import xml.etree.ElementTree as ET
 
+import carla
+
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration
 
@@ -24,7 +26,7 @@ class ScenarioConfigurationParser(object):
     """
 
     @staticmethod
-    def parse_scenario_configuration(scenario_name, config_file_name):
+    def parse_scenario_configuration(scenario_name, additional_config_file_name):
         """
         Parse all scenario configuration files at srunner/examples and the additional
         config files, providing a list of ScenarioConfigurations @return
@@ -34,17 +36,17 @@ class ScenarioConfigurationParser(object):
         scenario that matches the scenario_name is parsed and returned.
         """
 
-        list_of_config_files = glob.glob("{}/srunner/examples/*.xml".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
-
-        if config_file_name != '':
-            list_of_config_files.append(config_file_name)
-
-        single_scenario_only = True
         if scenario_name.startswith("group:"):
-            single_scenario_only = False
+            scenario_group = True
             scenario_name = scenario_name[6:]
+        else:
+            scenario_group = False
 
         scenario_configurations = []
+
+        list_of_config_files = glob.glob("{}/srunner/examples/*.xml".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
+        if additional_config_file_name != '':
+            list_of_config_files.append(additional_config_file_name)
 
         for file_name in list_of_config_files:
             tree = ET.parse(file_name)
@@ -54,62 +56,54 @@ class ScenarioConfigurationParser(object):
                 scenario_config_name = scenario.attrib.get('name', None)
                 scenario_config_type = scenario.attrib.get('type', None)
 
-                if single_scenario_only:
-                    # Check the scenario is the correct one
-                    if scenario_config_name != scenario_name:
-                        continue
-                else:
-                    # Check the scenario is of the correct type
-                    if scenario_config_type != scenario_name:
-                        continue
+                # Check that the scenario is the correct one
+                if not scenario_group and scenario_config_name != scenario_name:
+                    continue
+                # Check that the scenario is of the correct type
+                elif scenario_group and scenario_config_type != scenario_name:
+                    continue
 
-                new_config = ScenarioConfiguration()
-                new_config.town = scenario.attrib.get('town', None)
-                new_config.name = scenario_config_name
-                new_config.type = scenario_config_type
-                new_config.other_actors = []
-                new_config.ego_vehicles = []
-                new_config.trigger_points = []
+                config = ScenarioConfiguration()
+                config.town = scenario.attrib.get('town')
+                config.name = scenario_config_name
+                config.type = scenario_config_type
 
-                for weather in scenario.iter("weather"):
-                    new_config.weather.cloudiness = float(weather.attrib.get("cloudiness", 0))
-                    new_config.weather.precipitation = float(weather.attrib.get("precipitation", 0))
-                    new_config.weather.precipitation_deposits = float(weather.attrib.get("precipitation_deposits", 0))
-                    new_config.weather.wind_intensity = float(weather.attrib.get("wind_intensity", 0.35))
-                    new_config.weather.sun_azimuth_angle = float(weather.attrib.get("sun_azimuth_angle", 0.0))
-                    new_config.weather.sun_altitude_angle = float(weather.attrib.get("sun_altitude_angle", 15.0))
-                    new_config.weather.fog_density = float(weather.attrib.get("fog_density", 0.0))
-                    new_config.weather.fog_distance = float(weather.attrib.get("fog_distance", 0.0))
-                    new_config.weather.wetness = float(weather.attrib.get("wetness", 0.0))
+                for elem in scenario.getchildren():
+                    # Elements with special parsing
+                    if elem.tag == 'ego_vehicle':
+                        config.ego_vehicles.append(ActorConfigurationData.parse_from_node(elem, 'hero'))
+                        config.trigger_points.append(config.ego_vehicles[-1].transform)
+                    elif elem.tag == 'other_actor':
+                        config.other_actors.append(ActorConfigurationData.parse_from_node(elem, 'scenario'))
+                    elif elem.tag == 'weather':
+                        for weather_attrib in elem.attrib:
+                            if hasattr(config.weather, weather_attrib):
+                                setattr(config.weather, weather_attrib, float(elem.attrib[weather_attrib]))
+                            else:
+                                print(f"WARNING: Ignoring '{weather_attrib}', as it isn't a weather parameter")
 
-                for ego_vehicle in scenario.iter("ego_vehicle"):
+                    elif elem.tag == 'route':
+                        route_conf = RouteConfiguration()
+                        route_conf.parse_xml(elem)
+                        config.route = route_conf
 
-                    new_config.ego_vehicles.append(ActorConfigurationData.parse_from_node(ego_vehicle, 'hero'))
-                    new_config.trigger_points.append(new_config.ego_vehicles[-1].transform)
+                    # Any other possible element, add it as a config attribute
+                    else:
+                        config.other_parameters[elem.tag] = elem.attrib
 
-                for route in scenario.iter("route"):
-                    route_conf = RouteConfiguration()
-                    route_conf.parse_xml(route)
-                    new_config.route = route_conf
-
-                for other_actor in scenario.iter("other_actor"):
-                    new_config.other_actors.append(ActorConfigurationData.parse_from_node(other_actor, 'scenario'))
-
-                scenario_configurations.append(new_config)
-
+                scenario_configurations.append(config)
         return scenario_configurations
 
     @staticmethod
-    def get_list_of_scenarios(config_file_name):
+    def get_list_of_scenarios(additional_config_file_name):
         """
         Parse *all* config files and provide a list with all scenarios @return
         """
 
         list_of_config_files = glob.glob("{}/srunner/examples/*.xml".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
         list_of_config_files += glob.glob("{}/srunner/examples/*.xosc".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
-
-        if config_file_name != '':
-            list_of_config_files.append(config_file_name)
+        if additional_config_file_name != '':
+            list_of_config_files.append(additional_config_file_name)
 
         scenarios = []
         for file_name in list_of_config_files:

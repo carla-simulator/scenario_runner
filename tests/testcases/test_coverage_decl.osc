@@ -1,0 +1,11 @@
+scenario env.snowstorm:
+    storm_data: storm_data with:
+        cover(wind_velocity, expression: it.wind_velocity)
+        cover(wind_velocity, expression: it.wind_velocity, unit: kmph, every: [1, 3, 5])
+        cover(speed_unit, unit: kmph)
+        cover(time, range: [1s..10s])
+        cover(arg1, arg: my_arg)
+
+        record(wind_velocity, expression: it.wind_velocity, unit: kmph, every: [1, 3, 5])
+
+

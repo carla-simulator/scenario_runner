@@ -1,0 +1,6 @@
+scenario env.snowstorm:
+    storm_data: storm_data with:
+        keep(it.storm == snow_storm)
+        keep(default it.wind_velocity >= 30kmph)
+        remove_default(it.storm)
+        cover(wind_velocity, expression: it.wind_velocity, unit: kmph)

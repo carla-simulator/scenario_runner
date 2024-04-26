@@ -61,6 +61,28 @@ class ActorConfigurationData(object):
 
         return ActorConfigurationData(model, transform, rolename, speed, autopilot, random_location, color)
 
+    @staticmethod
+    def parse_from_dict(actor_dict, rolename):
+        """
+        static method to initialize an ActorConfigurationData from a given ET tree
+        """
+
+        model = actor_dict['model'] if 'model' in actor_dict else 'vehicle.*'
+
+        pos_x = float(actor_dict['x']) if 'x' in actor_dict else 0
+        pos_y = float(actor_dict['y']) if 'y' in actor_dict else 0
+        pos_z = float(actor_dict['z']) if 'z' in actor_dict else 0
+        yaw = float(actor_dict['yaw']) if 'yaw' in actor_dict else 0
+        transform = carla.Transform(carla.Location(x=pos_x, y=pos_y, z=pos_z), carla.Rotation(yaw=yaw))
+
+        rolename = actor_dict['rolename'] if 'rolename' in actor_dict else rolename
+        speed = actor_dict['speed'] if 'speed' in actor_dict else 0
+        autopilot = actor_dict['autopilot'] if 'autopilot' in actor_dict else False
+        random_location = actor_dict['random_location'] if 'random_location' in actor_dict else False
+        color = actor_dict['color'] if 'color' in actor_dict else None
+
+        return ActorConfigurationData(model, transform, rolename, speed, autopilot, random_location, color)
+
 
 class ScenarioConfiguration(object):
 
@@ -72,15 +94,17 @@ class ScenarioConfiguration(object):
     - type is the class of scenario (e.g. ControlLoss)
     """
 
-    trigger_points = []
-    ego_vehicles = []
-    other_actors = []
-    town = None
-    name = None
-    type = None
-    route = None
-    agent = None
-    weather = carla.WeatherParameters()
-    friction = None
-    subtype = None
-    route_var_name = None
+    def __init__(self):
+        self.trigger_points = []
+        self.ego_vehicles = []
+        self.other_actors = []
+        self.other_parameters = {}
+        self.town = None
+        self.name = None
+        self.type = None
+        self.route = None
+        self.agent = None
+        self.weather = carla.WeatherParameters(sun_altitude_angle=70, cloudiness=50)
+        self.friction = None
+        self.subtype = None
+        self.route_var_name = None

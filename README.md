@@ -9,7 +9,7 @@ for CARLA. It also allows the execution of a simulation of the CARLA Challenge.
 You can use this system to prepare your agent for the CARLA Challenge.
 
 Scenarios can be defined through a Python interface, and with the newest version
-the scenario_runner also the upcoming [OpenSCENARIO](http://www.openscenario.org/) standard is supported.
+the scenario_runner also the upcoming [OpenSCENARIO](http://www.openscenario.org/) standard and [OpenSCENARIO 2.0](https://www.asam.net/standards/detail/openscenario/v200/) standard is supported.
 
 [![Scenario_Runner for CARLA](Docs/img/scenario_runner_video.png)](https://youtu.be/ChmF8IFagpo?t=68)
 
@@ -21,6 +21,7 @@ branch contains the latest fixes and features, and may be required to use the la
 
 It is important to also consider the release version that has to match the CARLA version.
 
+* [Version 0.9.15](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.15) and the 0.9.15 Branch: Compatible with [CARLA 0.9.15](https://github.com/carla-simulator/carla/releases/tag/0.9.15)
 * [Version 0.9.13](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.13) and the 0.9.13 Branch: Compatible with [CARLA 0.9.13](https://github.com/carla-simulator/carla/releases/tag/0.9.13)
 * [Version 0.9.12](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.12) and the 0.9.12 Branch: Compatible with [CARLA 0.9.12](https://github.com/carla-simulator/carla/releases/tag/0.9.12)
 * [Version 0.9.11](https://github.com/carla-simulator/scenario_runner/releases/tag/v0.9.11) and the 0.9.11 Branch: Compatible with [CARLA 0.9.11](https://github.com/carla-simulator/carla/releases/tag/0.9.11)

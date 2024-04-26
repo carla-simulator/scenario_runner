@@ -1,0 +1,116 @@
+# tag::library-physical-time[]
+type time is SI(s: 1)
+unit s           of time is SI(s: 1, factor: 1)
+unit hour        of time is SI(s: 1, factor: 3600)
+unit h           of time is SI(s: 1, factor: 3600)
+unit minute      of time is SI(s: 1, factor: 60)
+unit min         of time is SI(s: 1, factor: 60)
+# end::library-physical-time[]
+
+# tag::library-physical-length[]
+type length is SI(m: 1)
+unit m          of length is SI(m: 1, factor: 1)
+unit km         of length is SI(m: 1, factor: 1000)
+# end::library-physical-length[]
+
+# tag::library-physical-velocity[]
+type velocity is SI(m: 1, s: -1)
+unit meter_per_second    of velocity is SI(m: 1, s: -1, factor: 1)
+unit mps                 of velocity is SI(m: 1, s: -1, factor: 1)
+unit kilometer_per_hour  of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit kmph                of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit kph                 of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit mile_per_hour       of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+# end::library-physical-velocity[]
+
+actor dut
+actor Path
+modifier Path.set_map
+modifier Path.path_min_driving_lanes
+actor Model3
+actor Rubicon
+
+global my_map: string = "Town04"
+global start: string 
+global end: string 
+global path: Path
+global min_lane: int = 2
+
+struct speeds:
+    def compute(x:int, y:int) -> int is expression x-y
+    def compute1(x:float) -> float is only external python(module: "math", name: "sin", param: x)
+
+scenario dut.cut_in_and_slow:
+    ego_vehicle: Model3
+    a: time = 20s
+    b: velocity = 40kph
+    
+    
+    do serial:
+        get_ahead: parallel(duration: [20s..21s]):
+            ego_vehicle.drive(path) with: 
+                # speed(30kph)
+                speed(b)
+                lane(1, at: start) # left to right: [1..n]
+            npc.drive(path) with:
+                lane(right_of: ego_vehicle, at: start)
+                position(15m, behind: ego_vehicle, at: start)
+                position(20m, ahead_of: ego_vehicle, at: end)
+
+        change_lane: parallel(duration: 5s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                lane(same_as: ego_vehicle, at: end)
+
+        slow: parallel(duration: 20s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                speed(10kph)
+
+scenario dut.test_one_of:
+    ego_vehicle: Model3                # ego car
+    # npc: Rubicon               # The other car
+
+    do one_of:
+        serial(duration: 20s):
+            ego_vehicle.drive(path) with:
+                speed(10kph)
+        serial(duration: 20s):
+            ego_vehicle.drive(path) with:
+                speed(20kph)
+        serial(duration: 20s):
+            ego_vehicle.drive(path) with:
+                speed(50kph)
+        parallel(duration: 30s):
+            ego_vehicle.drive(path) with:
+                speed(30kph)
+                lane(1, at: start) # left to right: [1..n]
+            npc.drive(path) with:
+                lane(right_of: ego_vehicle, at: start)
+                position(15m, behind: ego_vehicle, at: start)
+                position(20m, ahead_of: ego_vehicle, at: end)
+
+
+scenario top:
+    # path: Path
+    path.set_map(my_map)                 
+    # set_map("Town04")
+    # min_lane: int = 2
+    path.path_min_driving_lanes(min_lane)
+
+    ego_vehicle: Model3                 # ego car
+    npc: Rubicon
+    time_a: time = 30s
+    speed_b: velocity = 30kph
+
+    # c:int = speeds.compute(x:2, y:3)
+    speeds.compute(x:2, y:3)
+    c:float = speeds.compute1(x:3.14)
+    do serial:
+        dut.cut_in_and_slow(a: time_a)
+        # dut.cut_in_and_slow(a: time_a, b: speed_b)
+        # dut.cut_in_and_slow()
+        # dut.test_one_of()
+        # dut.test_one_of()
+        # dut.test_one_of()
+        # dut.test_one_of()

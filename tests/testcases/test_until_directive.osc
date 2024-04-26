@@ -1,0 +1,8 @@
+scenario vehicle.accelerate_to_speed_with_other_vehicle:
+    target_speed : speed
+    other_vehicle : vehicle
+    do drive() with:
+        speed(speed: target_speed, at: end)
+        until @vehicle_reached_speed as vrs_event \
+             if vrs_event.vehicle == other_vehicle \
+                and vrs_event.vehicle_speed == target_speed

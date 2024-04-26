@@ -1,0 +1,17 @@
+scenario test_expression:
+
+    # StringLiteral
+    my_string1: string = "Hello, World!"
+
+    # BoolLiteral
+    my_bool1: bool = true
+    my_bool2: bool = false
+
+    # integerLiteral
+    my_integer1: int = 1
+    my_integer2: int = 0
+    my_integer3: int = -1
+
+    # FloatLiteral
+    my_float: float = 3.14159
+    my_exp_float: float = 42.0E4

@@ -1,0 +1,14 @@
+scenario wait_time:
+    my_vehicle: vehicle
+    do serial:
+        phase1: wait elapsed([10s..20s])
+
+
+scenario vehicle.sync_with_other_vehicle:
+    other_vehicle: vehicle
+    do serial:
+        wait @vehicle_reached_speed as vrs_event \
+                if vrs_event.vehicle == other_vehicle \
+                    and vrs_event.vehicle_speed in [30kph..32kph]
+        drive() with:
+            speed(speed: other_vehicle.speed + 20 kph, at: start)

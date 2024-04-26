@@ -67,11 +67,11 @@ contains of submodules, which are not listed, the support status applies to all 
 
 | GlobalAction                          | Init  support                            | Story support                              | Notes                              |
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
-| `EntityAction`                | &#10060;                          | &#10060;                          |                               |
+| `EntityAction`                | &#9989;                          | &#9989;                          |                               |
 | `EnvironmentAction`           | &#9989;                         | &#10060;                          |                               |
 | `ParameterAction`             | &#9989;                          | &#9989;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficAction`                                               | &#10060;                          | &#10060;                          |                               |
-| `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalControllerAction`                               | &#10060;                          | &#10060;                          |                               |
+| `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalControllerAction`                               | &#10060;                          | &#9989;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalStateAction`                                    | &#10060;                          | &#9989;                         | As traffic signals in CARLA towns have no unique ID, they have to be set by providing their position (Example: TrafficSignalStateAction name="pos=x,y" state="green"). The id can also be used for none CARLA town (Example: TrafficSignalStateAction name="id=n" state="green") |
 
 <br>
@@ -98,7 +98,7 @@ contains of submodules, which are not listed, the support status applies to all 
 | `ControllerAction`                                  | &#9989;            | &#9989;            | AssignControllerAction is supported, but a Python module has to be provided for the controller implementation, and in OverrideControllerValueAction all values need to be `False`. |
 | `LateralAction`<br> `LaneChangeAction`             | &#10060;             | &#9989;            | Currently all lane changes have a linear dynamicShape, the dynamicDimension is defined as the distance and are relative to the actor itself (RelativeTargetLane).                  |
 | `LateralAction`<br>`LaneOffsetAction`             | &#10060;             | &#9989;             |  Currently all type of dynamicShapes are ignored and depend on the controller. This action might not work as intended if the offset is high enough to make the vehicle exit its lane  |
-| `LateralAction`<br> `LateralDistanceAction`        | &#10060;             | &#10060;             |                  |
+| `LateralAction`<br> `LateralDistanceAction`        | &#9989;             | &#9989;             |                  |
 | `LongitudinalAction`<br> `LongitudinalDistanceAction`| &#10060;             | &#9989;              |`timeGap` attribute is not supported              |
 | `LongitudinalAction`<br> `SpeedAction`             | &#9989;            | &#9989;            |                  |
 | `SynchronizeAction`                                 | &#10060;             | &#10060;             |                  |
@@ -149,7 +149,7 @@ The following two tables list the support status for each.
 | `StoryboardElementStateCondition`                            | &#9989;                     | startTransition, stopTransition, endTransition and completeState are currently supported.                  |
 | `TimeOfDayCondition`         | &#9989;                     |                           |
 | `TrafficSignalCondition`                                     | &#9989;                     | As traffic signals in CARLA towns have no unique ID, they have to be set by providing their position (Example: TrafficSignalCondition name="pos=x,y" state="green"). The id can also be used for none CARLA town (Example: TrafficSignalCondition name="id=n" state="green") |
-| `TrafficSignalControllerCondition`                           | &#10060;                      |                           |
+| `TrafficSignalControllerCondition`                           | &#9989;                      |                           |
 | `UserDefinedValueCondition`                                  | &#10060;                      |                           |
 
 <br>

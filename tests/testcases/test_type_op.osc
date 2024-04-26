@@ -1,0 +1,10 @@
+#  Type conversion testing, type checking, function calling, element accessing, member accessing
+
+scenario my_scenario:
+    # Type judgment
+    keep(my_car.is(vehicle) == true)
+    # Type conversion
+    keep(my_car.as(emergency_vehicle).sirens_active == true)
+
+
+

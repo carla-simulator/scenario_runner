@@ -1,0 +1,4 @@
+actor vehicle
+struct base
+struct super_action inherits base:
+    car: vehicle

@@ -1,0 +1,5 @@
+struct traffic_light:
+    event car_arrived                             # An event with no parameter
+    event accident_occurred(other_car: vehicle)   # An event with a single parameter
+    event e4 is @e0 if elapsed (3s)               # An event with a elapsed condition
+

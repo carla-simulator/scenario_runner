@@ -1,0 +1,11 @@
+struct route:                                   
+    length: length                              
+    directionality: directionality              
+    min_lanes: uint      
+    max_lanes: uint          
+    anchors: list of string
+    def start_point(x: float, y: float) -> route_point is undefined
+    def end_point(x: float, y: float) -> route_point is expression x+y
+    def xx_point(x: float, y: float, z: float) -> route_point is expression x+y+z
+    def xx_point1(x: float, y: float, z: float) -> route_point is expression x*y-z
+

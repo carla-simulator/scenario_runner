@@ -39,6 +39,9 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
+from srunner.tools.osc2_helper import OSC2Helper
+from srunner.scenarios.osc2_scenario import OSC2Scenario
+from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 
 # Version of scenario_runner
 VERSION = '0.9.13'
@@ -89,10 +92,9 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-
         dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
-            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
+        if LooseVersion(dist.version) < LooseVersion('0.9.15'):
+            raise ImportError("CARLA version 0.9.15 or newer required. CARLA version found: {}".format(dist))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -133,6 +135,9 @@ class ScenarioRunner(object):
         self._shutdown_requested = True
         if self.manager:
             self.manager.stop_scenario()
+            self._cleanup()
+            if not self.manager.get_running_status():
+                raise RuntimeError("Timeout occurred during scenario execution")
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -209,6 +214,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles.append(CarlaDataProvider.request_new_actor(vehicle.model,
                                                                              vehicle.transform,
                                                                              vehicle.rolename,
+                                                                             random_location=vehicle.random_location,
                                                                              color=vehicle.color,
                                                                              actor_category=vehicle.category))
         else:
@@ -230,7 +236,10 @@ class ScenarioRunner(object):
 
             for i, _ in enumerate(self.ego_vehicles):
                 self.ego_vehicles[i].set_transform(ego_vehicles[i].transform)
-                CarlaDataProvider.register_actor(self.ego_vehicles[i])
+                self.ego_vehicles[i].set_target_velocity(carla.Vector3D())
+                self.ego_vehicles[i].set_target_angular_velocity(carla.Vector3D())
+                self.ego_vehicles[i].apply_control(carla.VehicleControl())
+                CarlaDataProvider.register_actor(self.ego_vehicles[i], ego_vehicles[i].transform)
 
         # sync state
         if CarlaDataProvider.is_sync_mode():
@@ -387,13 +396,19 @@ class ScenarioRunner(object):
                 scenario = RouteScenario(world=self.world,
                                          config=config,
                                          debug_mode=self._args.debug)
+            elif self._args.openscenario2:
+                scenario = OSC2Scenario(world=self.world,
+                                        ego_vehicles=self.ego_vehicles,
+                                        config=config,
+                                        osc2_file=self._args.openscenario2,
+                                        timeout=100000)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
-                scenario = scenario_class(self.world,
-                                          self.ego_vehicles,
-                                          config,
-                                          self._args.randomize,
-                                          self._args.debug)
+                scenario = scenario_class(world=self.world,
+                                          ego_vehicles=self.ego_vehicles,
+                                          config=config,
+                                          randomize=self._args.randomize,
+                                          debug_mode=self._args.debug)
         except Exception as exception:                  # pylint: disable=broad-except
             print("The scenario cannot be loaded")
             traceback.print_exc()
@@ -459,15 +474,8 @@ class ScenarioRunner(object):
         """
         result = False
 
-        if self._args.route:
-            routes = self._args.route[0]
-            scenario_file = self._args.route[1]
-            single_route = None
-            if len(self._args.route) > 2:
-                single_route = self._args.route[2]
-
         # retrieve routes
-        route_configurations = RouteParser.parse_routes_file(routes, scenario_file, single_route)
+        route_configurations = RouteParser.parse_routes_file(self._args.route, self._args.route_id)
 
         for config in route_configurations:
             for _ in range(self._args.repetitions):
@@ -498,6 +506,24 @@ class ScenarioRunner(object):
         self._cleanup()
         return result
 
+    def _run_osc2(self):
+        """
+        Run a scenario based on ASAM OpenSCENARIO 2.0.
+        https://www.asam.net/static_downloads/public/asam-openscenario/2.0.0/welcome.html
+        """
+        # Load the scenario configurations provided in the config file
+        if not os.path.isfile(self._args.openscenario2):
+            print("File does not exist")
+            self._cleanup()
+            return False
+
+        config = OSC2ScenarioConfiguration(self._args.openscenario2, self.client)
+
+        result = self._load_and_run_scenario(config)
+        self._cleanup()
+
+        return result
+
     def run(self):
         """
         Run all scenarios according to provided commandline args
@@ -507,6 +533,8 @@ class ScenarioRunner(object):
             result = self._run_openscenario()
         elif self._args.route:
             result = self._run_route()
+        elif self._args.openscenario2:
+            result = self._run_osc2()
         else:
             result = self._run_scenarios()
 
@@ -543,11 +571,11 @@ def main():
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
+    parser.add_argument('--openscenario2', help='Provide an openscenario2 definition')
+    parser.add_argument('--route', help='Run a route as a scenario', type=str)
+    parser.add_argument('--route-id', help='Run a specific route inside that \'route\' file', default='', type=str)
     parser.add_argument(
-        '--route', help='Run a route as a scenario (input: (route_file,scenario_file,[route id]))', nargs='+', type=str)
-
-    parser.add_argument(
-        '--agent', help="Agent used to execute the scenario. Currently only compatible with route-based scenarios.")
+        '--agent', help="Agent used to execute the route. Not compatible with non-route-based scenarios.")
     parser.add_argument('--agentConfig', type=str, help="Path to Agent's configuration file", default="")
 
     parser.add_argument('--output', action="store_true", help='Provide results on stdout')
@@ -571,12 +599,14 @@ def main():
     arguments = parser.parse_args()
     # pylint: enable=line-too-long
 
+    OSC2Helper.wait_for_ego = arguments.waitForEgo
+
     if arguments.list:
         print("Currently the following scenarios are supported:")
         print(*ScenarioConfigurationParser.get_list_of_scenarios(arguments.configFile), sep='\n')
         return 1
 
-    if not arguments.scenario and not arguments.openscenario and not arguments.route:
+    if not arguments.scenario and not arguments.openscenario and not arguments.route and not arguments.openscenario2:
         print("Please specify either a scenario or use the route mode\n\n")
         parser.print_help(sys.stdout)
         return 1
