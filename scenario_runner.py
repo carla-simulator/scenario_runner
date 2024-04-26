@@ -64,7 +64,6 @@ class ScenarioRunner(object):
     # Tunable parameters
     client_timeout = 10.0  # in seconds
     wait_for_world = 20.0  # in seconds
-    frame_rate = 20.0      # in Hz
 
     # CARLA world and scenario handlers
     world = None
@@ -336,7 +335,7 @@ class ScenarioRunner(object):
         if self._args.sync:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = 1.0 / self._args.frameRate
             self.world.apply_settings(settings)
 
         CarlaDataProvider.set_client(self.client)
@@ -566,6 +565,8 @@ def main():
     parser.add_argument('--sync', action='store_true',
                         help='Forces the simulation to run synchronously')
     parser.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
+    parser.add_argument('--frameRate', default='20', type=float,
+                        help='Frame rate (Hz) to use in \'sync\' mode (default: 20)')
 
     parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')

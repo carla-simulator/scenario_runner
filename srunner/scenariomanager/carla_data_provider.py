@@ -598,6 +598,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             'train': '',
             'tram': '',
             'pedestrian': 'walker.pedestrian.0001',
+	    'misc': 'static.prop.streetbarrier'
         }
 
         # Set the model
@@ -861,11 +862,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     SetAutopilot(FutureActor, autopilot, CarlaDataProvider._traffic_manager_port)))
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
-        for actor in actors:
+        for actor, command in zip(actors, batch):
             if actor is None:
                 continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
-            CarlaDataProvider.register_actor(actor, spawn_point)
+            CarlaDataProvider.register_actor(actor, command.transform)
 
         return actors
 

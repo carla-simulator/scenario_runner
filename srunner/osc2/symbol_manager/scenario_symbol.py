@@ -11,7 +11,6 @@ class ScenarioSymbol(QualifiedBehaviorSymbol, Scope):
 
     def is_key_found(self, sym):
         if isinstance(sym, ScenarioInhertsSymbol):
-            # 对于继承不做重复性检查,同时停止递归
             return False
         if sym.name in self.symbols and sym.name:
             return True

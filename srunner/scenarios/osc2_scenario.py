@@ -712,7 +712,7 @@ class OSC2Scenario(BasicScenario):
                 # scenario_declaration_node = self.father_ins.scenario_declaration.get(behavior_invocation_name)
                 scenario_declaration_node_scope = scenario_declaration_node.get_scope()
                 arguments = self.visit_children(node)
-                # Stores the value of the argument before the invoked scenario was overwritten， 如a: time=None
+                # Stores the value of the argument before the invoked scenario was overwritten， a: time=None
                 # keyword_args = {}
                 if isinstance(arguments, List):
                     for arg in arguments:

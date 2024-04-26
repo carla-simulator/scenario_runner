@@ -47,9 +47,7 @@ class TestSymbolClass(object):
         listener = ParseTreeWalker()
         ast_builder = ASTBuilder()
         listener.walk(ast_builder, tree)
-        # 清空import信息
         import_msg.clear_msg()
-        # 返回收集到的日志信息
         return log_msg.get_log_msg()
 
     def testcase(self, str):
