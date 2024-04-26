@@ -37,7 +37,7 @@ class CriteriaFilter(BasicMetric):
                 {
                     "test_status": criterion["test_status"],
                     "actual_value": criterion["actual_value"],
-                    "success_value": criterion["expected_value_success"]
+                    "success_value": criterion["success_value"]
                 }
             }
         )

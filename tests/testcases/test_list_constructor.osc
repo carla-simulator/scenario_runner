@@ -1,0 +1,7 @@
+scenario test_expression:
+
+    do ego.change_speed(target: [10kph, 15kph, 20kph, 25kph])
+    do ego.change_line(target: [1, 2, 3, 4])
+    do ego.set_name(target: ["name1", "name2", ["name3", "name4"]])
+
+

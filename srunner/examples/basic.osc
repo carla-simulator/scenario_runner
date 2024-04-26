@@ -1,0 +1,36 @@
+# tag::library-physical-time[]
+type time is SI(s: 1)
+unit s           of time is SI(s: 1, factor: 1)
+unit hour        of time is SI(s: 1, factor: 3600)
+unit h           of time is SI(s: 1, factor: 3600)
+unit minute      of time is SI(s: 1, factor: 60)
+unit min         of time is SI(s: 1, factor: 60)
+# end::library-physical-time[]
+
+# tag::library-physical-length[]
+type length is SI(m: 1)
+unit m          of length is SI(m: 1, factor: 1)
+unit meter      of length is SI(m: 1, factor: 1)
+unit km         of length is SI(m: 1, factor: 1000)
+# end::library-physical-length[]
+
+# tag::library-physical-velocity[]
+type velocity is SI(m: 1, s: -1)
+unit meter_per_second    of velocity is SI(m: 1, s: -1, factor: 1)
+unit mps                 of velocity is SI(m: 1, s: -1, factor: 1)
+unit kilometer_per_hour  of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit kmph                of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit kph                 of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit mile_per_hour       of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+unit mph                 of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+unit miph                of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+unit mmph                of velocity is SI(m: 1, s: -1, factor: 0.000000278)
+unit millimeter_per_hour of velocity is SI(m: 1, s: -1, factor: 0.000000278)
+# end::library-physical-velocity[]
+
+actor dut
+actor Path
+modifier Path.set_map
+modifier Path.path_min_driving_lanes
+actor Model3
+actor Rubicon

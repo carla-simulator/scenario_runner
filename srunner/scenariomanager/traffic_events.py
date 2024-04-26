@@ -30,6 +30,9 @@ class TrafficEventType(Enum):
     OUTSIDE_LANE_INFRACTION = 11
     OUTSIDE_ROUTE_LANES_INFRACTION = 12
     VEHICLE_BLOCKED = 13
+    MIN_SPEED_INFRACTION = 14
+    YIELD_TO_EMERGENCY_VEHICLE = 15
+    SCENARIO_TIMEOUT = 16
 
 
 class TrafficEvent(object):
@@ -38,47 +41,44 @@ class TrafficEvent(object):
     TrafficEvent definition
     """
 
-    def __init__(self, event_type, message=None, dictionary=None):
+    def __init__(self, event_type, frame, message="", dictionary=None):
         """
         Initialize object
 
         :param event_type: TrafficEventType defining the type of traffic event
+        :param frame: frame in which the event happened 
         :param message: optional message to inform users of the event
         :param dictionary: optional dictionary with arbitrary keys and values
         """
         self._type = event_type
+        self._frame = frame
         self._message = message
         self._dict = dictionary
 
     def get_type(self):
-        """
-        @return type
-        """
+        """return the type"""
         return self._type
 
-    def get_message(self):
-        """
-        @return message
-        """
-        if self._message:
-            return self._message
+    def get_frame(self):
+        """return the frame"""
+        return self._frame
 
-        return ""
+    def set_frame(self, frame):
+        """return the frame"""
+        self._frame = frame
 
     def set_message(self, message):
-        """
-        Set message
-        """
+        """Set message"""
         self._message = message
 
-    def get_dict(self):
-        """
-        @return dictionary
-        """
-        return self._dict
+    def get_message(self):
+        """returns the message"""
+        return self._message
 
     def set_dict(self, dictionary):
-        """
-        Set dictionary
-        """
+        """Set dictionary"""
         self._dict = dictionary
+
+    def get_dict(self):
+        """returns the dictionary"""
+        return self._dict

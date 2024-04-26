@@ -27,8 +27,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTrans
                                                                       ActorDestroy,
                                                                       KeepVelocity,
                                                                       StopVehicle,
-                                                                      WaypointFollower,
-                                                                      Idle)
+                                                                      WaypointFollower)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
                                                                                InTriggerDistanceToNextIntersection,
@@ -37,8 +36,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
-
-from srunner.tools.background_manager import Scenario2Manager
 
 
 class FollowLeadingVehicle(BasicScenario):
@@ -302,67 +299,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         collision_criterion = CollisionTest(self.ego_vehicles[0])
 
         criteria.append(collision_criterion)
-
-        return criteria
-
-    def __del__(self):
-        """
-        Remove all actors upon deletion
-        """
-        self.remove_all_actors()
-
-
-class FollowLeadingVehicleRoute(BasicScenario):
-
-    """
-    This class is the route version of FollowLeadingVehicle where the backgrounda activity is used,
-    instead of spawning a specific vehicle and making it brake.
-
-    This is a single ego vehicle scenario
-    """
-
-    timeout = 120            # Timeout of scenario in seconds
-
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=60):
-        """
-        Setup all relevant parameters and create scenario
-        """
-        self.timeout = timeout
-        self._stop_duration = 15
-        self._end_time_condition = 30
-
-        super(FollowLeadingVehicleRoute, self).__init__("FollowLeadingVehicleRoute",
-                                                        ego_vehicles,
-                                                        config,
-                                                        world,
-                                                        debug_mode,
-                                                        criteria_enable=criteria_enable)
-
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-        pass
-
-    def _create_behavior(self):
-        """
-        Uses the Background Activity API to force a hard break on the vehicles in front of the actor,
-        then waits for a bit to check if the actor has collided.
-        """
-        sequence = py_trees.composites.Sequence("FollowLeadingVehicleRoute")
-        sequence.add_child(Scenario2Manager(self._stop_duration))
-        sequence.add_child(Idle(self._end_time_condition))
-
-        return sequence
-
-    def _create_test_criteria(self):
-        """
-        A list of all test criteria will be created that is later used
-        in parallel behavior tree.
-        """
-        criteria = []
-        criteria.append(CollisionTest(self.ego_vehicles[0]))
 
         return criteria
 

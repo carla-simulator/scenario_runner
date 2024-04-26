@@ -1,0 +1,2 @@
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, rad: 2, factor: 57.295779513)

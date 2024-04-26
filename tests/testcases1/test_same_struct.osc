@@ -1,0 +1,18 @@
+################################
+# struct naming conflict
+################################
+
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)
+unit deg    of angle is SI(rad: 1, factor: 57.295779513)
+unit radian of angle is SI(rad: 1, factor: 1)
+
+struct orientation_3d:
+    roll: angle
+    pitch: angle
+    yaw: angle
+
+struct orientation_3d:
+    roll: angle
+    pitch: angle
+    yaw: angle

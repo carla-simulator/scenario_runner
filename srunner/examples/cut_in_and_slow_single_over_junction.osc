@@ -1,0 +1,50 @@
+import basic.osc
+
+# tag::library-physical-angle[]
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)
+unit deg    of angle is SI(rad: 1, factor: 57.295779513)
+unit radian of angle is SI(rad: 1, factor: 1)
+unit rad    of angle is SI(rad: 1, factor: 1)
+# end::library-physical-angle[]
+
+global my_map: string = "Town03"
+global path: Path
+global min_lane: int = 2
+
+scenario dut.cut_in_and_slow:
+    path_over_junction(direction: [0degree..360degree], distance_before: [1meter..200meter], distance_in: [1meter..400meter], distance_after: [5meter..50meter])
+
+    ego_vehicle: Model3                # ego car
+    npc: Rubicon               # The other car
+
+    event start
+    event end
+    do serial:
+        get_ahead: parallel(duration: 30s):
+            ego_vehicle.drive(path) with: 
+                speed(30kph)
+                lane(1, at: start) # left to right: [1..n]
+            npc.drive(path) with:
+                lane(right_of: ego_vehicle, at: start)
+                position(15m, behind: ego_vehicle, at: start)
+                position(20m, ahead_of: ego_vehicle, at: end)
+
+        change_lane: parallel(duration: 5s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                lane(same_as: ego_vehicle, at: end)
+
+        slow: parallel(duration: 20s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                speed(10kph)
+
+scenario top:
+    path.set_map(my_map)      
+    path.path_min_driving_lanes(min_lane)
+    ego_vehicle: Model3
+    npc: Rubicon
+
+    do serial:
+        dut.cut_in_and_slow()

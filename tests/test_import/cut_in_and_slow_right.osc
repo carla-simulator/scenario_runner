@@ -1,0 +1,28 @@
+import basic.osc
+scenario dut.cut_in_and_slow:
+    path: Path
+    set_map("Town04")
+    path_min_driving_lanes(2)
+
+    ego_vehicle: Model3                 # ego car
+    npc: Rubicon                        # The other car
+
+    do serial:
+        get_ahead: parallel(duration: 30s):
+            ego_vehicle.drive(path) with: 
+                speed(30kph)
+                lane(1, at: start) # left to right: [1..n]
+            npc.drive(path) with:
+                lane(right_of: ego_vehicle, at: start)
+                position(15m, behind: ego_vehicle, at: start)
+                position(20m, ahead_of: ego_vehicle, at: end)
+
+        change_lane: parallel(duration: 5s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                lane(same_as: ego_vehicle, at: end)
+
+        slow: parallel(duration: 20s):
+            ego_vehicle.drive(path)
+            npc.drive(path) with:
+                speed(10kph)

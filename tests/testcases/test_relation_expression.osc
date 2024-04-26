@@ -1,0 +1,6 @@
+struct route:                                   
+    length: length                              
+    def xx_point3(x: float, y: float) -> route_point is expression x > y
+    def xx_point3(x: float, y: float) -> route_point is expression x > y == y
+    def xx_point3(x: float, y: float) -> route_point is expression x+1 > y == y
+    def xx(x: float) -> bool is expression x in [1..10]

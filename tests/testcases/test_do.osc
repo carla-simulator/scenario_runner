@@ -1,0 +1,9 @@
+scenario car.test_drive:
+    event go
+    event brk(dx: length)
+    car1: car
+
+    do parallel:
+        d1: dut.drive()
+        d2: car1.drive()
+

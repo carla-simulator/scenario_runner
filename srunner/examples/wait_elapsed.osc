@@ -1,0 +1,20 @@
+import basic.osc
+
+scenario top:
+    path: Path                      # A path in the map
+    path.set_map("Town04")    # specify map to use in this test
+    path.path_min_driving_lanes(2)         # Path should have at least two lanes
+
+    ego_vehicle: Model3
+
+    event start
+    event end
+    do serial:
+        phase1: parallel(duration: 10s):
+            ego_vehicle.drive(path) with:
+                speed(10kph)
+                lane(1, at: start)
+        phase2: wait elapsed([10s..20s])
+        phase3: parallel(duration: 20s):
+            ego_vehicle.drive(path) with:
+                speed(20kph)

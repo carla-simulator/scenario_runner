@@ -1,0 +1,11 @@
+# test doDirective and several doMember
+
+action movable_object.assign_position:
+    my_vehicle: vehicle
+
+    do label: serial (duration: [10s..30s]):
+        phase1: my_vehicle.drive() with:
+            speed(speed: 0kph, at: start)
+            speed(speed: 10kph, at: end)
+        phase2: my_vehicle.drive() with:
+            speed(speed: 20kph, at: end)
