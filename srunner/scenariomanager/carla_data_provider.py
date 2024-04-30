@@ -682,6 +682,59 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actors
 
     @staticmethod
+    def spawn_actor(bp, spawn_point, must_spawn=False, track_physics=None, attach_to=None, attachment_type=carla.AttachmentType.Rigid):
+        # type: (carla.ActorBlueprint, carla.Waypoint | carla.Transform, bool, bool | None, carla.Actor | None, carla.AttachmentType) -> carla.Actor | None
+        """
+        The method will spawn and return an actor.
+        The actor will need an available blueprint to be created.
+        It can also be attached to a parent with a certain attachment type. 
+
+        Args:
+            bp (carla.ActorBlueprint): The blueprint of the actor to spawn.
+            spawn_point (carla.Transform): The spawn point of the actor.
+            must_spawn (bool, optional): 
+                If True, the actor will be spawned or an exception will be raised.
+                If False, the function returns None if the actor could not be spawned.
+                Defaults to False.
+            track_physics (bool | None, optional): 
+                If True, `get_location`, `get_transform` and `get_velocity` 
+                can be used for this actor.
+                If None, the actor will be tracked if it is a Vehicle or Walker.
+                Defaults to None.
+            attach_to (carla.Actor | None, optional): 
+                The parent object that the spawned actor will follow around. 
+                Defaults to None.
+            attachment_type (carla.AttachmentType, optional): 
+                Determines how fixed and rigorous should be the changes in position 
+                according to its parent object.
+                Defaults to carla.AttachmentType.Rigid.
+
+        Returns:
+            carla.Actor | None: The spawned actor if successful, None otherwise.
+            
+        Raises:
+            RuntimeError: if `must_spawn` is True and the actor could not be spawned.
+        """
+        if isinstance(spawn_point, carla.Waypoint):
+            spawn_point = spawn_point.transform
+        world = CarlaDataProvider.get_world()
+        if must_spawn:
+            actor = world.spawn_actor(bp, spawn_point, attach_to, attachment_type)
+        else:
+            actor = world.try_spawn_actor(bp, spawn_point, attach_to, attachment_type)
+            if actor is None:
+                return None
+        # Register for cleanup
+        CarlaDataProvider._carla_actor_pool[actor.id] = actor
+        if track_physics is None:
+            # Decide
+            track_physics = isinstance(actor, (carla.Vehicle, carla.Walker))
+        if track_physics:
+            # Register for physics
+            CarlaDataProvider.register_actor(actor, spawn_point)
+        return actor
+
+    @staticmethod
     def request_new_actor(model, spawn_point, rolename='scenario', autopilot=False,
                           random_location=False, color=None, actor_category="car",
                           attribute_filter=None, tick=True):
