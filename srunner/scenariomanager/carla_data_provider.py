@@ -303,8 +303,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Get weather presets from CARLA
         """
+        def name(string):
+            return ' '.join(m.group(0) for m in rgx.finditer(string))
+
         rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
-        name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
         presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
         return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
 
@@ -913,11 +915,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     SetAutopilot(FutureActor, autopilot, CarlaDataProvider._traffic_manager_port)))
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
-        for actor in actors:
+        for actor, command in zip(actors, batch):
             if actor is None:
                 continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
-            CarlaDataProvider.register_actor(actor, spawn_point)
+            CarlaDataProvider.register_actor(actor, command.transform)
 
         return actors
 
