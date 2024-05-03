@@ -47,6 +47,8 @@ def flat_list(list_of_lists):
 
 class OSC2ScenarioConfiguration(ScenarioConfiguration):
     def __init__(self, filename, client):
+        super(OSC2ScenarioConfiguration, self).__init__()
+        
         self.name = self.filename = filename
         self.ast_tree = OSC2Helper.gen_osc2_ast(self.filename)
 
