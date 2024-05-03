@@ -20,7 +20,10 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-from distutils.version import LooseVersion
+try:
+    from packaging.version import Version
+except ImportError:
+    from distutils.version import LooseVersion as Version # Python 2 fallback
 import importlib
 import inspect
 import os
@@ -28,7 +31,17 @@ import signal
 import sys
 import time
 import json
-import pkg_resources
+
+try:
+    # requires Python 3.8+
+    from importlib.metadata import metadata
+    def get_carla_version():
+        return Version(metadata("carla")["Version"])
+except ModuleNotFoundError:
+    # backport checking for older Python versions; module is deprecated
+    import pkg_resources
+    def get_carla_version():
+        return Version(pkg_resources.get_distribution("carla").version)
 
 import carla
 
@@ -45,6 +58,9 @@ from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConf
 
 # Version of scenario_runner
 VERSION = '0.9.13'
+
+# Minimum version of CARLA that is required
+MIN_CARLA_VERSION = '0.9.15'
 
 
 class ScenarioRunner(object):
@@ -64,7 +80,6 @@ class ScenarioRunner(object):
     # Tunable parameters
     client_timeout = 10.0  # in seconds
     wait_for_world = 20.0  # in seconds
-    frame_rate = 20.0      # in Hz
 
     # CARLA world and scenario handlers
     world = None
@@ -92,9 +107,9 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-        dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.15'):
-            raise ImportError("CARLA version 0.9.15 or newer required. CARLA version found: {}".format(dist))
+        carla_version = get_carla_version()
+        if carla_version < Version(MIN_CARLA_VERSION):
+            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(MIN_CARLA_VERSION, carla_version))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -336,7 +351,7 @@ class ScenarioRunner(object):
         if self._args.sync:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = 1.0 / self._args.frameRate
             self.world.apply_settings(settings)
 
         CarlaDataProvider.set_client(self.client)
@@ -566,6 +581,8 @@ def main():
     parser.add_argument('--sync', action='store_true',
                         help='Forces the simulation to run synchronously')
     parser.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
+    parser.add_argument('--frameRate', default='20', type=float,
+                        help='Frame rate (Hz) to use in \'sync\' mode (default: 20)')
 
     parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
