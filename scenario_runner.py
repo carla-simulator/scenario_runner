@@ -57,7 +57,7 @@ from srunner.scenarios.osc2_scenario import OSC2Scenario
 from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 
 # Minimum version of CARLA that is required
-MIN_CARLA_VERSION = '0.9.15'
+MIN_CARLA_VERSION = '0.9.14'
 
 
 class ScenarioRunner(object):
