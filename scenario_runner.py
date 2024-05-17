@@ -56,9 +56,6 @@ from srunner.tools.osc2_helper import OSC2Helper
 from srunner.scenarios.osc2_scenario import OSC2Scenario
 from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 
-# Version of scenario_runner
-VERSION = '0.9.13'
-
 # Minimum version of CARLA that is required
 MIN_CARLA_VERSION = '0.9.15'
 
@@ -562,12 +559,12 @@ def main():
     main function
     """
     description = ("CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
-                   "Current version: " + VERSION)
+                   "Current version: " + MIN_CARLA_VERSION)
 
     # pylint: disable=line-too-long
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=RawTextHelpFormatter)
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + MIN_CARLA_VERSION)
     parser.add_argument('--host', default='127.0.0.1',
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', default='2000',
