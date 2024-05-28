@@ -1,0 +1,3 @@
+# Without declared physical quantity angle, define angle units
+
+unit degree of angle is SI(rad: 1, factor: 57.295779513)

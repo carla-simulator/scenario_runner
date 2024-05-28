@@ -130,12 +130,12 @@ class World(object):
         self.imu_sensor = None
         self.radar_sensor = None
         self.camera_manager = None
-        self.restart()
+        self.restart(args)
         self.world.on_tick(hud.on_world_tick)
         self.recording_enabled = False
         self.recording_start = 0
 
-    def restart(self):
+    def restart(self, args):
 
         self.player_max_speed = 1.589
         self.player_max_speed_fast = 3.713
@@ -150,7 +150,7 @@ class World(object):
             time.sleep(1)
             possible_vehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in possible_vehicles:
-                if vehicle.attributes['role_name'] == 'hero':
+                if vehicle.attributes['role_name'] == args.rolename:
                     print("Ego vehicle found")
                     self.player = vehicle
                     break
@@ -898,7 +898,7 @@ def game_loop(args):
         pygame.display.flip()
 
         hud = HUD(args.width, args.height)
-        world = World(sim_world, hud, args)
+        world = World(client.get_world(), hud, args)
         controller = KeyboardControl(world, args.autopilot)
 
         sim_world.wait_for_tick()

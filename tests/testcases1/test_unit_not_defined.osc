@@ -1,0 +1,5 @@
+type speed is SI(m: 1, s: -1)
+
+actor car:
+    my_speed: speed
+    keep(my_speed > 80|foot/s|)

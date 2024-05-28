@@ -1,0 +1,10 @@
+################################
+# actorName conflict
+################################
+
+actor movable_object
+
+actor dut inherits movable_object
+
+actor dut inherits movable_object
+

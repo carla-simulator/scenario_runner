@@ -1,0 +1,22 @@
+import basic.osc
+
+# tag::library-physical-angle[]
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)
+unit deg    of angle is SI(rad: 1, factor: 57.295779513)
+unit radian of angle is SI(rad: 1, factor: 1)
+unit rad    of angle is SI(rad: 1, factor: 1)
+# end::library-physical-angle[]
+
+scenario top:
+    path: Path
+    path.set_map("Town04")    # specify map to use in this test
+
+    ego_vehicle: Model3                # ego car
+    # ego_vehicle.set_position(x:328.3m, y:-172.3m, z:0.1m, pitch:0.9rad, yaw:-179.8rad, roll:1.3rad)
+    ego_vehicle.set_position(x:255.0m, y:-204.7m, z:0.0m, pitch:0.0rad, yaw:88.4rad, roll:0.0rad)
+
+    do serial:
+        get_ahead: parallel(duration: 35s):
+            ego_vehicle.drive(path) with:
+                speed(60kph)

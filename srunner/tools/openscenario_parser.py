@@ -37,7 +37,9 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       SyncArrivalOSC,
                                                                       KeepLongitudinalGap,
                                                                       Idle,
-                                                                      ChangeParameter)
+                                                                      ChangeParameter, ChangeLateralDistance,
+                                                                      ActorDestroy, AddActor,
+                                                                      TrafficLightControllerSetter)
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTest,
@@ -68,7 +70,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                TimeOfDayComparison,
                                                                                TriggerVelocity,
                                                                                WaitForTrafficLightState,
-                                                                               CheckParameter)
+                                                                               CheckParameter,
+                                                                               WaitForTrafficLightControllerState)
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
@@ -102,7 +105,7 @@ class ParameterRef:
         """
         Returns: True when text is a literal/number
         """
-        return self._is_matching(pattern=r"(-)?\d+(\.\d*)?")
+        return self._is_matching(pattern=r"(-)?\d+(\.\d*)?") or self._is_matching(pattern=r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?")
 
     def is_parameter(self) -> bool:
         """
@@ -247,6 +250,8 @@ class OpenScenarioParser(object):
         "OFF": carla.TrafficLightState.Off,
     }
 
+    osc_traffic_signal_phase = {}
+    osc_traffic_signal_controller = {}
     global_osc_parameters = {}
     use_carla_coordinate_system = False
     osc_filepath = None
@@ -682,7 +687,7 @@ class OpenScenarioParser(object):
             droll = 0
             if rel_pos.find('Orientation') is not None:
                 orientation = rel_pos.find('Orientation')
-                is_absolute = (orientation.attrib.get('type') == "absolute")
+                is_absolute = orientation.attrib.get('type') == "absolute"
                 dyaw = math.degrees(float(ParameterRef(orientation.attrib.get('h', 0))))
                 dpitch = math.degrees(float(ParameterRef(orientation.attrib.get('p', 0))))
                 droll = math.degrees(float(ParameterRef(orientation.attrib.get('r', 0))))
@@ -890,7 +895,6 @@ class OpenScenarioParser(object):
                     atomic = atomic_cls(trigger_actor, condition_duration, terminate_on_failure=True,
                                         name=condition_name)
                 elif entity_condition.find('CollisionCondition') is not None:
-
                     collision_condition = entity_condition.find('CollisionCondition')
 
                     if collision_condition.find('EntityRef') is not None:
@@ -1036,13 +1040,31 @@ class OpenScenarioParser(object):
                     distance_operator = OpenScenarioParser.operators[distance_rule]
 
                     distance_freespace = strtobool(distance_condition.attrib.get('freespace', False))
-                    if distance_freespace:
-                        raise NotImplementedError(
-                            "DistanceCondition: freespace attribute is currently not implemented")
+
                     distance_along_route = strtobool(distance_condition.attrib.get('alongRoute', False))
 
                     if distance_condition.find('Position') is not None:
                         position = distance_condition.find('Position')
+                        #  check relative position and find reference entity
+                        if ((position.find('RelativeWorldPosition') is not None) or
+                                (position.find('RelativeObjectPosition') is not None) or
+                                (position.find('RelativeLanePosition') is not None) or
+                                (position.find('RelativeRoadPosition') is not None)):
+                            if position.find('RelativeWorldPosition') is not None:
+                                rel_pos = position.find('RelativeWorldPosition')
+                            if position.find('RelativeObjectPosition') is not None:
+                                rel_pos = position.find('RelativeObjectPosition')
+                            if position.find('RelativeLanePosition') is not None:
+                                rel_pos = position.find('RelativeLanePosition')
+                            if position.find('RelativeRoadPosition') is not None:
+                                rel_pos = position.find('RelativeRoadPosition')
+                            for _actor in actor_list:
+                                if rel_pos.attrib.get('entityRef', None) == _actor.attributes['role_name']:
+                                    triggered_actor = _actor
+                                    break
+                            if triggered_actor is None:
+                                raise AttributeError("Cannot find actor '{}' for condition".format(
+                                    rel_pos.attrib.get('entityRef', None)))
                         atomic = InTriggerDistanceToOSCPosition(
                             trigger_actor, position, distance_value, distance_along_route,
                             distance_operator, name=condition_name)
@@ -1133,7 +1155,23 @@ class OpenScenarioParser(object):
                 atomic = WaitForTrafficLightState(
                     traffic_light, state_condition, name=condition_name)
             elif value_condition.find('TrafficSignalControllerCondition') is not None:
-                raise NotImplementedError("ByValue TrafficSignalController conditions are not yet supported")
+                traffic_light_controller_condition = value_condition.find('TrafficSignalControllerCondition')
+                ref_name = traffic_light_controller_condition.attrib.get("trafficSignalControllerRef")
+                phase_name = traffic_light_controller_condition.attrib.get("phase")
+
+                if ref_name == OpenScenarioParser.osc_traffic_signal_controller["name"]:
+                    delay = OpenScenarioParser.osc_traffic_signal_controller["delay"]
+                    ref_id = OpenScenarioParser.osc_traffic_signal_controller["ref"]
+                if phase_name == OpenScenarioParser.osc_traffic_signal_phase["name"]:
+                    duration = OpenScenarioParser.osc_traffic_signal_phase["duration"]
+                    tl_state = OpenScenarioParser.osc_traffic_signal_phase["state"]
+                    traffic_signal_id = OpenScenarioParser.osc_traffic_signal_phase["traffic_signal_id"]
+
+                if (phase_name == "go" and tl_state == "GREEN") or (phase_name == "stop" and tl_state == "RED") or (
+                        phase_name == "attention" and tl_state == "YELLOW"):
+                    state = OpenScenarioParser.tl_states[tl_state]
+                    atomic = WaitForTrafficLightControllerState(traffic_signal_id, state, duration, delay=delay,
+                                                                ref_id=ref_id, name=condition_name)
             else:
                 raise AttributeError("Unknown ByValue condition")
 
@@ -1150,7 +1188,7 @@ class OpenScenarioParser(object):
         return new_atomic
 
     @staticmethod
-    def convert_maneuver_to_atomic(action, actor, actor_list, catalogs):
+    def convert_maneuver_to_atomic(action, actor, actor_list, catalogs, config):
         """
         Convert an OpenSCENARIO maneuver action into a Behavior atomic
 
@@ -1175,6 +1213,27 @@ class OpenScenarioParser(object):
 
                     atomic = TrafficLightStateSetter(
                         traffic_light, traffic_light_state, name=maneuver_name + "_" + str(traffic_light.id))
+                elif infrastructure_action.find('TrafficSignalControllerAction') is not None:
+                    traffic_light_controller_action = infrastructure_action.find('TrafficSignalControllerAction')
+
+                    ref_name = traffic_light_controller_action.attrib.get("trafficSignalControllerRef")
+                    phase_name = traffic_light_controller_action.attrib.get("phase")
+
+                    if ref_name == OpenScenarioParser.osc_traffic_signal_controller["name"]:
+                        delay = OpenScenarioParser.osc_traffic_signal_controller["delay"]
+                        ref_id = OpenScenarioParser.osc_traffic_signal_controller["ref"]
+                    if phase_name == OpenScenarioParser.osc_traffic_signal_phase["name"]:
+                        duration = OpenScenarioParser.osc_traffic_signal_phase["duration"]
+                        tl_state = OpenScenarioParser.osc_traffic_signal_phase["state"]
+                        traffic_signal_id = OpenScenarioParser.osc_traffic_signal_phase["traffic_signal_id"]
+
+                    if (phase_name == "go" and tl_state == "GREEN") or (phase_name == "stop" and tl_state == "RED") or (
+                            phase_name == "attention" and tl_state == "YELLOW"):
+                        state = OpenScenarioParser.tl_states[tl_state]
+                        atomic = TrafficLightControllerSetter(traffic_signal_id, state, duration,
+                                                              delay=delay, ref_id=ref_id, name=maneuver_name)
+                    else:
+                        raise ValueError("ERROR：Phase and state mismatch.Please check.")
                 else:
                     raise NotImplementedError("TrafficLights can only be influenced via TrafficSignalStateAction")
             elif global_action.find('EnvironmentAction') is not None:
@@ -1204,6 +1263,30 @@ class OpenScenarioParser(object):
                 else:
                     rule, value = None, parameter_action.find('SetAction').attrib.get('value')
                 atomic = ChangeParameter(parameter_ref, value=ParameterRef(value), rule=rule, name=maneuver_name)
+            elif global_action.find('EntityAction') is not None:
+                entity_action = global_action.find('EntityAction')
+                entity_ref = entity_action.attrib.get('entityRef')
+                if entity_action.find('DeleteEntityAction') is not None:
+                    entity_ref_actor = None
+                    for _actor in actor_list:
+                        if _actor is not None and 'role_name' in _actor.attributes:
+                            if entity_ref == _actor.attributes['role_name']:
+                                entity_ref_actor = _actor
+                                break
+                    if entity_ref_actor is None:
+                        raise AttributeError("Cannot find actor '{}' for condition".format(entity_ref_actor))
+                    atomic = ActorDestroy(entity_ref_actor)
+                elif entity_action.find('AddEntityAction') is not None:
+                    position = entity_action.find('AddEntityAction').find("Position")
+                    actor_transform = OpenScenarioParser.convert_position_to_transform(position)
+                    entity_ref_actor = None
+                    for _actor in config.other_actors:
+                        if _actor.rolename == entity_ref:
+                            entity_ref_actor = _actor
+                            break
+                    if entity_ref_actor is None:
+                        raise AttributeError("Cannot find actor '{}' for condition".format(entity_ref_actor))
+                    atomic = AddActor(entity_ref_actor.model, actor_transform, color=entity_ref_actor.color)
             else:
                 raise NotImplementedError("Global actions are not yet supported")
         elif action.find('UserDefinedAction') is not None:
@@ -1341,6 +1424,25 @@ class OpenScenarioParser(object):
 
                     else:
                         raise AttributeError("Unknown target offset")
+                elif private_action.find('LateralDistanceAction') is not None:
+                    lat_maneuver = private_action.find('LateralDistanceAction')
+                    continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "false")))
+                    freespace = bool(strtobool(lat_maneuver.attrib.get('freespace', "false")))
+                    distance = ParameterRef(lat_maneuver.attrib.get('distance', float("inf")))
+                    constraints = lat_maneuver.find('DynamicConstraints')
+                    max_speed = constraints.attrib.get('maxSpeed', None) if constraints is not None else None
+                    relative_actor = None
+                    relative_actor_name = lat_maneuver.attrib.get('entityRef', None)
+                    for _actor in actor_list:
+                        if _actor is not None and 'role_name' in _actor.attributes:
+                            if relative_actor_name == _actor.attributes['role_name']:
+                                relative_actor = _actor
+                                break
+                    if relative_actor is None:
+                        raise AttributeError("Cannot find actor '{}' for condition".format(relative_actor_name))
+                    atomic = ChangeLateralDistance(actor, distance, relative_actor,
+                                                   continuous=continuous, freespace=freespace,
+                                                   name=maneuver_name)
                 else:
                     raise AttributeError("Unknown lateral action")
             elif private_action.find('VisibilityAction') is not None:
@@ -1421,3 +1523,34 @@ class OpenScenarioParser(object):
                 return Idle(duration=0, name=maneuver_name)
 
         return atomic
+
+    @staticmethod
+    def set_traffic_signal_controller(controller):
+        """set traffic signal controller"""
+        tl_states_dict = {1: "RED", 2: "YELLOW", 3: "GREEN"}
+
+        sl_state = None
+        ts_controler = controller.find("TrafficSignalController")
+        controller_name = ts_controler.attrib.get("name")
+        controller_delay = ts_controler.attrib.get("delay")
+        controller_reference = ts_controler.attrib.get("reference")
+        phase = ts_controler.find("Phase")
+        phase_name = phase.attrib.get("name")
+        phase_duration = phase.attrib.get("duration")
+        ts_states = phase.find("TrafficSignalState")
+        states = ts_states.attrib.get("state")
+        # state: off;off;on
+        states = list(states.split(";"))
+        for i, state in enumerate(states):
+            if state == "on":
+                sl_state = tl_states_dict[int(i + 1)]
+        traffic_signal_id = ts_states.attrib.get("trafficSignalId")
+
+        OpenScenarioParser.osc_traffic_signal_controller["name"] = controller_name
+        OpenScenarioParser.osc_traffic_signal_controller["delay"] = controller_delay
+        OpenScenarioParser.osc_traffic_signal_controller["ref"] = controller_reference
+
+        OpenScenarioParser.osc_traffic_signal_phase["name"] = phase_name
+        OpenScenarioParser.osc_traffic_signal_phase["duration"] = phase_duration
+        OpenScenarioParser.osc_traffic_signal_phase["state"] = sl_state
+        OpenScenarioParser.osc_traffic_signal_phase["traffic_signal_id"] = traffic_signal_id

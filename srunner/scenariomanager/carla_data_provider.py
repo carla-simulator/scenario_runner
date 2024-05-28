@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import math
 import re
+import threading
 from numpy import random
 from six import iteritems
 
@@ -47,26 +48,38 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     In addition it provides access to the map and the transform of all traffic lights
     """
 
-    _actor_velocity_map = {}
-    _actor_location_map = {}
-    _actor_transform_map = {}
-    _traffic_light_map = {}
-    _carla_actor_pool = {}
-    _global_osc_parameters = {}
-    _client = None
-    _world = None
-    _map = None
-    _sync_flag = False
-    _spawn_points = None
+    _actor_velocity_map = {}    # type: dict[carla.Actor, float]
+    _actor_location_map = {}    # type: dict[carla.Actor, carla.Location]
+    _actor_transform_map = {}   # type: dict[carla.Actor, carla.Transform]
+    _traffic_light_map = {}     # type: dict[carla.TrafficLight, carla.Transform]
+    _carla_actor_pool = {}      # type: dict[int, carla.Actor]
+    _global_osc_parameters = {} # type: dict[str, Any] # type: ignore : suppresses the missing Any import
+    _client = None              # type: carla.Client
+    _world = None               # type: carla.World
+    _map = None                 # type: carla.Map
+    _sync_flag = False          # type: bool
+    _spawn_points = None        # type: list[carla.Transform]
     _spawn_index = 0
-    _blueprint_library = None
-    _all_actors = None
+    _blueprint_library = None   # type: carla.BlueprintLibrary
+    _all_actors = None          # type: carla.ActorList
     _ego_vehicle_route = None
     _traffic_manager_port = 8000
     _random_seed = 2000
     _rng = random.RandomState(_random_seed)
+    _local_planner = None
+    _grp = None                 # type: GlobalRoutePlanner
+    _runtime_init_flag = False
+    _lock = threading.Lock()
     _grp = None
     _latest_scenario = ""
+
+    @staticmethod
+    def set_local_planner(plan):
+        CarlaDataProvider._local_planner = plan
+
+    @staticmethod
+    def get_local_planner():
+        return CarlaDataProvider._local_planner
 
     @staticmethod
     def register_actor(actor, transform=None):
@@ -74,25 +87,25 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Add new actor to dictionaries
         If actor already exists, throw an exception
         """
-        if actor in CarlaDataProvider._actor_velocity_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        else:
-            CarlaDataProvider._actor_velocity_map[actor] = 0.0
+        with CarlaDataProvider._lock:
+            if actor in CarlaDataProvider._actor_velocity_map:
+                raise KeyError(
+                    "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+            else:
+                CarlaDataProvider._actor_velocity_map[actor] = 0.0
+            if actor in CarlaDataProvider._actor_location_map:
+                raise KeyError(
+                    "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+            elif transform:
+                CarlaDataProvider._actor_location_map[actor] = transform.location
+            else:
+                CarlaDataProvider._actor_location_map[actor] = None
 
-        if actor in CarlaDataProvider._actor_location_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        elif transform:
-            CarlaDataProvider._actor_location_map[actor] = transform.location
-        else:
-            CarlaDataProvider._actor_location_map[actor] = None
-
-        if actor in CarlaDataProvider._actor_transform_map:
-            raise KeyError(
-                "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
-        else:
-            CarlaDataProvider._actor_transform_map[actor] = transform
+            if actor in CarlaDataProvider._actor_transform_map:
+                raise KeyError(
+                    "Vehicle '{}' already registered. Cannot register twice!".format(actor.id))
+            else:
+                CarlaDataProvider._actor_transform_map[actor] = transform
 
     @staticmethod
     def update_osc_global_params(parameters):
@@ -124,23 +137,24 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Callback from CARLA
         """
-        for actor in CarlaDataProvider._actor_velocity_map:
-            if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
+        with CarlaDataProvider._lock:
+            for actor in CarlaDataProvider._actor_velocity_map:
+                if actor is not None and actor.is_alive:
+                    CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
 
-        for actor in CarlaDataProvider._actor_location_map:
-            if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_location_map[actor] = actor.get_location()
+            for actor in CarlaDataProvider._actor_location_map:
+                if actor is not None and actor.is_alive:
+                    CarlaDataProvider._actor_location_map[actor] = actor.get_location()
 
-        for actor in CarlaDataProvider._actor_transform_map:
-            if actor is not None and actor.is_alive:
-                CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
+            for actor in CarlaDataProvider._actor_transform_map:
+                if actor is not None and actor.is_alive:
+                    CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
 
-        world = CarlaDataProvider._world
-        if world is None:
-            print("WARNING: CarlaDataProvider couldn't find the world")
+            world = CarlaDataProvider._world
+            if world is None:
+                print("WARNING: CarlaDataProvider couldn't find the world")
 
-        CarlaDataProvider._all_actors = None
+            CarlaDataProvider._all_actors = None
 
     @staticmethod
     def get_velocity(actor):
@@ -172,11 +186,16 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_transform(actor):
+        # type: (carla.Actor) -> carla.Transform | None
         """
         returns the transform for the given actor
         """
         for key in CarlaDataProvider._actor_transform_map:
             if key.id == actor.id:
+                # The velocity location information is the entire behavior tree updated every tick
+                # The ego vehicle is created before the behavior tree tick, so exception handling needs to be added
+                if CarlaDataProvider._actor_transform_map[key] is None:
+                    return actor.get_transform()
                 return CarlaDataProvider._actor_transform_map[key]
 
         # We are intentionally not throwing here
@@ -186,6 +205,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def set_client(client):
+        # type: (carla.Client) -> None
         """
         Set the CARLA client
         """
@@ -200,6 +220,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def set_world(world):
+        # type: (carla.World) -> None
         """
         Set the world and world settings
         """
@@ -220,6 +241,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_map(world=None):
+        # type: (carla.World | None) -> carla.Map
         """
         Get the current map
         """
@@ -249,20 +271,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return CarlaDataProvider._grp
 
     @staticmethod
-    def set_ego_route(route):
-        """
-        set the ego route
-        """
-        CarlaDataProvider._route = route
-
-    @staticmethod
-    def get_ego_route():
-        """
-        @return the ego route
-        """
-        return CarlaDataProvider._route
-
-    @staticmethod
     def get_all_actors():
         """
         @return all the world actors. This is an expensive call, hence why it is part of the CDP,
@@ -283,12 +291,29 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return CarlaDataProvider._sync_flag
 
     @staticmethod
+    def set_runtime_init_mode(flag):
+        # type: (bool) -> None
+        """
+        Set the runtime init mode
+        """
+        CarlaDataProvider._runtime_init_flag = flag
+
+    @staticmethod
+    def is_runtime_init_mode():
+        """
+        @return true if runtime init mode is used
+        """
+        return CarlaDataProvider._runtime_init_flag
+
+    @staticmethod
     def find_weather_presets():
         """
         Get weather presets from CARLA
         """
+        def name(string):
+            return ' '.join(m.group(0) for m in rgx.finditer(string))
+
         rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
-        name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
         presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
         return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
 
@@ -312,6 +337,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def annotate_trafficlight_in_group(traffic_light):
+        # type: (carla.TrafficLight) -> dict[str, list[carla.TrafficLight]]
         """
         Get dictionary with traffic light group info for a given traffic light
         """
@@ -372,10 +398,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def update_light_states(ego_light, annotations, states, freeze=False, timeout=1000000000):
+        # type: (carla.TrafficLight, dict[str, list[carla.TrafficLight]], dict[str, carla.TrafficLightState], bool, float) -> list[dict[str, carla.TrafficLight | carla.TrafficLightState | float]] # pylint: disable=line-too-long
         """
         Update traffic light states
         """
-        reset_params = []
+        reset_params = [] # type: list[dict]
 
         for state in states:
             relevant_lights = []
@@ -461,7 +488,93 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
 
     @staticmethod
+    def check_road_length(wp, length: float):
+        waypoint_separation = 5
+
+        cur_len = 0
+        road_id, lane_id = wp.road_id, wp.lane_id
+        while True:
+            wps = wp.next(waypoint_separation)
+            # The same roadid and laneid，judged to be in the same section to be tested
+            next_wp = None
+            for p in wps:
+                if p.road_id == road_id and p.lane_id == lane_id:
+                    next_wp = p
+                    break
+            if next_wp is None:
+                break
+            cur_len += waypoint_separation
+            if cur_len >= length:
+                return True
+            wp = next_wp
+        return False
+
+    @staticmethod
+    def get_road_lanes(wp):
+        # type: (carla.Waypoint) -> list[carla.Waypoint]
+        if wp.is_junction:
+            return []
+        # find the most left lane's waypoint
+
+        lane_id_set = set()
+        pre_left = wp
+        while wp and wp.lane_type == carla.LaneType.Driving:
+
+            if wp.lane_id in lane_id_set:
+                break
+            lane_id_set.add(wp.lane_id)
+
+            # carla bug: get_left_lane returns error，and never returns none. It's a infinite loop.
+            pre_left = wp
+            wp = wp.get_left_lane()
+
+        # # Store data from the left lane to the right lane
+        # # list<key, value>, key=laneid, value=waypoint
+        lane_list = []
+        lane_id_set.clear()
+        wp = pre_left
+        while wp and wp.lane_type == carla.LaneType.Driving:
+
+            if wp.lane_id in lane_id_set:
+                break
+            lane_id_set.add(wp.lane_id)
+
+            lane_list.append(wp)
+
+            # carla bug: returns error, never return none, endless loop
+            wp = wp.get_right_lane()
+
+        return lane_list
+
+    @staticmethod
+    def get_road_lane_cnt(wp):
+        lanes = CarlaDataProvider.get_road_lanes(wp)
+        return len(lanes)
+
+    @staticmethod
+    def get_waypoint_by_laneid(lane_num: int):
+        if CarlaDataProvider._spawn_points is None:
+            CarlaDataProvider.generate_spawn_points()
+
+        if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
+            print("No more spawn points to use")
+            return None
+        else:
+            pos = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]  # pylint: disable=unsubscriptable-object
+            CarlaDataProvider._spawn_index += 1
+            wp = CarlaDataProvider.get_map().get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+
+            road_lanes = CarlaDataProvider.get_road_lanes(wp)
+
+            lane = int(float(lane_num))
+            if lane > len(road_lanes):
+                return None
+            else:
+                return road_lanes[lane - 1]
+
+    @staticmethod
     def create_blueprint(model, rolename='scenario', color=None, actor_category="car", attribute_filter=None):
+        # type: (str, str, carla.Color | None, str, dict | None) -> carla.ActorBlueprint
         """
         Function to setup the blueprint of an actor given its model and other relevant parameters
         """
@@ -496,6 +609,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             'train': '',
             'tram': '',
             'pedestrian': 'walker.pedestrian.0001',
+	    'misc': 'static.prop.streetbarrier'
         }
 
         # Set the model
@@ -563,6 +677,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Wait (or not) for the actors to be spawned properly before we do anything
         if not tick:
             pass
+        elif CarlaDataProvider.is_runtime_init_mode():
+            CarlaDataProvider._world.wait_for_tick()
         elif sync_mode:
             CarlaDataProvider._world.tick()
         else:
@@ -575,6 +691,59 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                 break
         actors = list(CarlaDataProvider._world.get_actors(actor_ids))
         return actors
+
+    @staticmethod
+    def spawn_actor(bp, spawn_point, must_spawn=False, track_physics=None, attach_to=None, attachment_type=carla.AttachmentType.Rigid):
+        # type: (carla.ActorBlueprint, carla.Waypoint | carla.Transform, bool, bool | None, carla.Actor | None, carla.AttachmentType) -> carla.Actor | None # pylint: disable=line-too-long
+        """
+        The method will spawn and return an actor.
+        The actor will need an available blueprint to be created.
+        It can also be attached to a parent with a certain attachment type. 
+
+        Args:
+            bp (carla.ActorBlueprint): The blueprint of the actor to spawn.
+            spawn_point (carla.Transform): The spawn point of the actor.
+            must_spawn (bool, optional): 
+                If True, the actor will be spawned or an exception will be raised.
+                If False, the function returns None if the actor could not be spawned.
+                Defaults to False.
+            track_physics (bool | None, optional): 
+                If True, `get_location`, `get_transform` and `get_velocity` 
+                can be used for this actor.
+                If None, the actor will be tracked if it is a Vehicle or Walker.
+                Defaults to None.
+            attach_to (carla.Actor | None, optional): 
+                The parent object that the spawned actor will follow around. 
+                Defaults to None.
+            attachment_type (carla.AttachmentType, optional): 
+                Determines how fixed and rigorous should be the changes in position 
+                according to its parent object.
+                Defaults to carla.AttachmentType.Rigid.
+
+        Returns:
+            carla.Actor | None: The spawned actor if successful, None otherwise.
+            
+        Raises:
+            RuntimeError: if `must_spawn` is True and the actor could not be spawned.
+        """
+        if isinstance(spawn_point, carla.Waypoint):
+            spawn_point = spawn_point.transform
+        world = CarlaDataProvider.get_world()
+        if must_spawn:
+            actor = world.spawn_actor(bp, spawn_point, attach_to, attachment_type)
+        else:
+            actor = world.try_spawn_actor(bp, spawn_point, attach_to, attachment_type)
+            if actor is None:
+                return None
+        # Register for cleanup
+        CarlaDataProvider._carla_actor_pool[actor.id] = actor
+        if track_physics is None:
+            # Decide
+            track_physics = isinstance(actor, (carla.Vehicle, carla.Walker))
+        if track_physics:
+            # Register for physics
+            CarlaDataProvider.register_actor(actor, spawn_point)
+        return actor
 
     @staticmethod
     def request_new_actor(model, spawn_point, rolename='scenario', autopilot=False,
@@ -616,10 +785,15 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         # Wait for the actor to be spawned properly before we do anything
         if not tick:
             pass
+        elif CarlaDataProvider.is_runtime_init_mode():
+            CarlaDataProvider._world.wait_for_tick()
         elif CarlaDataProvider.is_sync_mode():
             CarlaDataProvider._world.tick()
         else:
             CarlaDataProvider._world.wait_for_tick()
+
+        if actor is None:
+            return None
 
         CarlaDataProvider._carla_actor_pool[actor.id] = actor
         CarlaDataProvider.register_actor(actor, spawn_point)
@@ -643,6 +817,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         SetVehicleLightState = carla.command.SetVehicleLightState  # pylint: disable=invalid-name
 
         batch = []
+        actors = []
 
         CarlaDataProvider.generate_spawn_points()
 
@@ -654,6 +829,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             # Get the spawn point
             transform = actor.transform
+            if not transform:
+                continue
             if actor.random_location:
                 if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
                     print("No more spawn points to use")
@@ -692,6 +869,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             batch.append(command)
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
+
+        if not actors:
+            return None
+
         for actor in actors:
             if actor is None:
                 continue
@@ -745,11 +926,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     SetAutopilot(FutureActor, autopilot, CarlaDataProvider._traffic_manager_port)))
 
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
-        for actor in actors:
+        for actor, command in zip(actors, batch):
             if actor is None:
                 continue
             CarlaDataProvider._carla_actor_pool[actor.id] = actor
-            CarlaDataProvider.register_actor(actor, spawn_point)
+            CarlaDataProvider.register_actor(actor, command.transform)
 
         return actors
 
@@ -795,13 +976,22 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return None
 
     @staticmethod
+    def get_actor_by_name(role_name: str):
+
+        for actor_id in CarlaDataProvider._carla_actor_pool:
+            if CarlaDataProvider._carla_actor_pool[actor_id].attributes['role_name'] == role_name:
+                return CarlaDataProvider._carla_actor_pool[actor_id]
+        print(f"Non-existing actor name {role_name}")
+        return None
+
+    @staticmethod
     def remove_actor_by_id(actor_id):
         """
         Remove an actor from the pool using its ID
         """
         if actor_id in CarlaDataProvider._carla_actor_pool:
             CarlaDataProvider._carla_actor_pool[actor_id].destroy()
-            CarlaDataProvider._carla_actor_pool[actor_id] = None
+            CarlaDataProvider._carla_actor_pool[actor_id] = None # type: ignore
             CarlaDataProvider._carla_actor_pool.pop(actor_id)
         else:
             print("Trying to remove a non-existing actor id {}".format(actor_id))
@@ -829,6 +1019,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def set_traffic_manager_port(tm_port):
+        # type: (int) -> None
         """
         Set the port to use for the traffic manager.
         """
@@ -885,4 +1076,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
         CarlaDataProvider._rng = random.RandomState(CarlaDataProvider._random_seed)
         CarlaDataProvider._grp = None
+        CarlaDataProvider._runtime_init_flag = False
         CarlaDataProvider._latest_scenario = ""
+
+    @property
+    def world(self):
+        return self._world
+

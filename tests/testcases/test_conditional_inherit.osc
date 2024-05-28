@@ -1,0 +1,8 @@
+actor vehicle:
+    is_electric: bool
+
+actor electric_vehicle inherits vehicle(is_electric == true):
+    weight: mass
+
+actor electric_vehicle inherits vehicle(is_electric == true):
+    weight: mass

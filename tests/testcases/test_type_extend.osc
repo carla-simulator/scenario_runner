@@ -1,0 +1,9 @@
+# enumTypeExtension
+enum color : [red]
+
+extend color : [white, black]
+
+# structuredTypeExtension
+extend cut:
+    my_car1: vehicle
+    my_car2: vehicle

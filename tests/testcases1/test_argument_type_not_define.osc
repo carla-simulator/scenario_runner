@@ -1,0 +1,11 @@
+actor Rubicon
+type length is SI(m: 1)
+unit kph of length is SI(m:1, factor:1000)
+
+scenario cut_in_and_slow:
+    npc: Rubicon               # The other car
+    other_car: npc
+    # distance: length=10kph
+
+    #event drive_distance(other_car, distance)
+    event drive_distance(other_car: other_car, distance: distance)

@@ -1,0 +1,6 @@
+scenario foo:
+    car: vehicle
+    do parallel(duration: [10s..20s]):
+        car.drive() with:
+            speed([80kph..120kph])
+        bar(aspeed: [20kph..40kph])

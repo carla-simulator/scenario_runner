@@ -20,7 +20,10 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-from distutils.version import LooseVersion
+try:
+    from packaging.version import Version
+except ImportError:
+    from distutils.version import LooseVersion as Version # Python 2 fallback
 import importlib
 import inspect
 import os
@@ -28,7 +31,17 @@ import signal
 import sys
 import time
 import json
-import pkg_resources
+
+try:
+    # requires Python 3.8+
+    from importlib.metadata import metadata
+    def get_carla_version():
+        return Version(metadata("carla")["Version"])
+except ModuleNotFoundError:
+    # backport checking for older Python versions; module is deprecated
+    import pkg_resources
+    def get_carla_version():
+        return Version(pkg_resources.get_distribution("carla").version)
 
 import carla
 
@@ -39,9 +52,12 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
+from srunner.tools.osc2_helper import OSC2Helper
+from srunner.scenarios.osc2_scenario import OSC2Scenario
+from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
 
-# Version of scenario_runner
-VERSION = '0.9.13'
+# Minimum version of CARLA that is required
+MIN_CARLA_VERSION = '0.9.14'
 
 
 class ScenarioRunner(object):
@@ -61,7 +77,6 @@ class ScenarioRunner(object):
     # Tunable parameters
     client_timeout = 10.0  # in seconds
     wait_for_world = 20.0  # in seconds
-    frame_rate = 20.0      # in Hz
 
     # CARLA world and scenario handlers
     world = None
@@ -89,10 +104,9 @@ class ScenarioRunner(object):
         # requests in the localhost at port 2000.
         self.client = carla.Client(args.host, int(args.port))
         self.client.set_timeout(self.client_timeout)
-
-        dist = pkg_resources.get_distribution("carla")
-        if LooseVersion(dist.version) < LooseVersion('0.9.12'):
-            raise ImportError("CARLA version 0.9.12 or newer required. CARLA version found: {}".format(dist))
+        carla_version = get_carla_version()
+        if carla_version < Version(MIN_CARLA_VERSION):
+            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(MIN_CARLA_VERSION, carla_version))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -133,6 +147,9 @@ class ScenarioRunner(object):
         self._shutdown_requested = True
         if self.manager:
             self.manager.stop_scenario()
+            self._cleanup()
+            if not self.manager.get_running_status():
+                raise RuntimeError("Timeout occurred during scenario execution")
 
     def _get_scenario_class_or_fail(self, scenario):
         """
@@ -209,6 +226,7 @@ class ScenarioRunner(object):
                 self.ego_vehicles.append(CarlaDataProvider.request_new_actor(vehicle.model,
                                                                              vehicle.transform,
                                                                              vehicle.rolename,
+                                                                             random_location=vehicle.random_location,
                                                                              color=vehicle.color,
                                                                              actor_category=vehicle.category))
         else:
@@ -330,7 +348,7 @@ class ScenarioRunner(object):
         if self._args.sync:
             settings = self.world.get_settings()
             settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 1.0 / self.frame_rate
+            settings.fixed_delta_seconds = 1.0 / self._args.frameRate
             self.world.apply_settings(settings)
 
         CarlaDataProvider.set_client(self.client)
@@ -390,6 +408,12 @@ class ScenarioRunner(object):
                 scenario = RouteScenario(world=self.world,
                                          config=config,
                                          debug_mode=self._args.debug)
+            elif self._args.openscenario2:
+                scenario = OSC2Scenario(world=self.world,
+                                        ego_vehicles=self.ego_vehicles,
+                                        config=config,
+                                        osc2_file=self._args.openscenario2,
+                                        timeout=100000)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
                 scenario = scenario_class(world=self.world,
@@ -494,6 +518,24 @@ class ScenarioRunner(object):
         self._cleanup()
         return result
 
+    def _run_osc2(self):
+        """
+        Run a scenario based on ASAM OpenSCENARIO 2.0.
+        https://www.asam.net/static_downloads/public/asam-openscenario/2.0.0/welcome.html
+        """
+        # Load the scenario configurations provided in the config file
+        if not os.path.isfile(self._args.openscenario2):
+            print("File does not exist")
+            self._cleanup()
+            return False
+
+        config = OSC2ScenarioConfiguration(self._args.openscenario2, self.client)
+
+        result = self._load_and_run_scenario(config)
+        self._cleanup()
+
+        return result
+
     def run(self):
         """
         Run all scenarios according to provided commandline args
@@ -503,6 +545,8 @@ class ScenarioRunner(object):
             result = self._run_openscenario()
         elif self._args.route:
             result = self._run_route()
+        elif self._args.openscenario2:
+            result = self._run_osc2()
         else:
             result = self._run_scenarios()
 
@@ -515,12 +559,12 @@ def main():
     main function
     """
     description = ("CARLA Scenario Runner: Setup, Run and Evaluate scenarios using CARLA\n"
-                   "Current version: " + VERSION)
+                   "Current version: " + MIN_CARLA_VERSION)
 
     # pylint: disable=line-too-long
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=RawTextHelpFormatter)
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + MIN_CARLA_VERSION)
     parser.add_argument('--host', default='127.0.0.1',
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', default='2000',
@@ -534,11 +578,14 @@ def main():
     parser.add_argument('--sync', action='store_true',
                         help='Forces the simulation to run synchronously')
     parser.add_argument('--list', action="store_true", help='List all supported scenarios and exit')
+    parser.add_argument('--frameRate', default='20', type=float,
+                        help='Frame rate (Hz) to use in \'sync\' mode (default: 20)')
 
     parser.add_argument(
         '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
     parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
+    parser.add_argument('--openscenario2', help='Provide an openscenario2 definition')
     parser.add_argument('--route', help='Run a route as a scenario', type=str)
     parser.add_argument('--route-id', help='Run a specific route inside that \'route\' file', default='', type=str)
     parser.add_argument(
@@ -566,12 +613,14 @@ def main():
     arguments = parser.parse_args()
     # pylint: enable=line-too-long
 
+    OSC2Helper.wait_for_ego = arguments.waitForEgo
+
     if arguments.list:
         print("Currently the following scenarios are supported:")
         print(*ScenarioConfigurationParser.get_list_of_scenarios(arguments.configFile), sep='\n')
         return 1
 
-    if not arguments.scenario and not arguments.openscenario and not arguments.route:
+    if not arguments.scenario and not arguments.openscenario and not arguments.route and not arguments.openscenario2:
         print("Please specify either a scenario or use the route mode\n\n")
         parser.print_help(sys.stdout)
         return 1

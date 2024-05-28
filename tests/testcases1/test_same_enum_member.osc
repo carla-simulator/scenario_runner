@@ -1,0 +1,31 @@
+#####################################
+# Repeat definition under the scope color: white
+#####################################
+
+enum color: [
+    white = 1,                    # RGB(255,255,255)
+    white = 2,                    # RGB(255,255,255)
+    silver = 3,                # RGB(192,192,192)
+    gray,                     # RGB(128,128,128)
+    black,                    # RGB(0,0,0)
+    red,                      # RGB(255,0,0)
+    maroon,                   # RGB(128,0,0)
+    yellow,                   # RGB(255,255,0)
+    olive,                    # RGB(128,128,0)
+    lime,                     # RGB(0,255,0)
+    green,                    # RGB(0,128,0)
+    aqua,                     # RGB(0,255,255)
+    teal,                     # RGB(0,128,128)
+    blue,                     # RGB(0,0,255)
+    navy,                     # RGB(0,0,128)
+    fuchsia,                  # RGB(255,255,0)
+    purple]                   # RGB(255,0,255)
+
+enum color1: [
+    white,
+    purple]
+
+enum color2: [
+    white,
+    purple]
+

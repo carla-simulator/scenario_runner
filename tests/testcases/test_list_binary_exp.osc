@@ -1,0 +1,15 @@
+# test list Binary relation operation
+
+scenario test_expression:
+    # ==
+    a :bool = [40, 41] == [40, 41]
+    # !=
+    b :bool = [40, 41] != [40, 42]
+    # in
+    c :bool = 42 in [40, 41, 42]
+    d :bool = [42, 43] in [40, 41, 42]
+
+
+
+
+

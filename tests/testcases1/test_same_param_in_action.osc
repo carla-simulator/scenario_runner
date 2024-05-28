@@ -1,0 +1,4 @@
+actor Model3
+
+action test:
+    ego_vehicle,ego_vehicle: Model3                 # ego car

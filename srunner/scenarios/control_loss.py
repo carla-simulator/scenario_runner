@@ -125,7 +125,8 @@ class ControlLoss(BasicScenario):
 
         noise_1 = self._get_noise_parameters()
         noise_behavior_1 = py_trees.composites.Parallel("Add Noise 1", py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        noise_behavior_1.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_1))
+        if self.route_mode:
+            noise_behavior_1.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_1))
         noise_behavior_1.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self.first_transform.location, self._trigger_dist, operator.gt))
         sequence.add_child(noise_behavior_1)
@@ -136,7 +137,8 @@ class ControlLoss(BasicScenario):
 
         noise_2 = self._get_noise_parameters()
         noise_behavior_2 = py_trees.composites.Parallel("Add Noise 2", py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        noise_behavior_2.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_2))
+        if self.route_mode:
+            noise_behavior_2.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_2))
         noise_behavior_2.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self.second_transform.location, self._trigger_dist, operator.gt))
         sequence.add_child(noise_behavior_2)
@@ -147,7 +149,8 @@ class ControlLoss(BasicScenario):
 
         noise_3 = self._get_noise_parameters()
         noise_behavior_3 = py_trees.composites.Parallel("Add Noise 3", py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        noise_behavior_3.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_3))
+        if self.route_mode:
+            noise_behavior_3.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_3))
         noise_behavior_3.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self.third_transform.location, self._trigger_dist, operator.gt))
         sequence.add_child(noise_behavior_3)

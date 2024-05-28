@@ -57,13 +57,15 @@ class BasicScenario(object):
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-        if self.route_mode:
+        if not self.route_mode:
             # Only init env for route mode, avoid duplicate initialization during runtime
             self._initialize_environment(world)
-            
+
         self._initialize_actors(config)
 
-        if CarlaDataProvider.is_sync_mode():
+        if CarlaDataProvider.is_runtime_init_mode():
+            world.wait_for_tick()
+        elif CarlaDataProvider.is_sync_mode():
             world.tick()
         else:
             world.wait_for_tick()
@@ -79,8 +81,9 @@ class BasicScenario(object):
             self.behavior_tree.add_child(trigger_behavior)
 
         scenario_behavior = self._create_behavior()
-        self.behavior_tree.add_child(scenario_behavior)
-        self.behavior_tree.name = scenario_behavior.name
+        if scenario_behavior is not None:
+            self.behavior_tree.add_child(scenario_behavior)
+            self.behavior_tree.name = scenario_behavior.name
 
         end_behavior = self._setup_scenario_end(config)
         if end_behavior:

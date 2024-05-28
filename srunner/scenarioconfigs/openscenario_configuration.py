@@ -11,6 +11,7 @@ This module provides the key configuration parameters for a scenario based on Op
 
 import logging
 import os
+import time
 import xml.etree.ElementTree as ET
 
 import xmlschema
@@ -93,6 +94,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self._set_carla_town()
         self._set_actor_information()
 
+        self._set_traffic_signal_controller()
         self._validate_result()
 
     def _check_version(self):
@@ -179,13 +181,13 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             if ".xodr" in self.town:
                 with open(self.town, 'r', encoding='utf-8') as od_file:
                     data = od_file.read()
-                index = data.find('<OpenDRIVE>')
+                index = data.find('<OpenDRIVE')
                 data = data[index:]
 
                 old_map = ""
                 if wmap is not None:
                     old_map = wmap.to_opendrive()
-                    index = old_map.find('<OpenDRIVE>')
+                    index = old_map.find('<OpenDRIVE')
                     old_map = old_map[index:]
 
                 if data != old_map:
@@ -204,6 +206,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             else:
                 self.logger.warning(" Wrong map in use. Forcing reload of CARLA world")
                 self.client.load_world(self.town)
+                while self.client.get_world().get_map().name.split('/')[-1] != self.town:
+                    continue
                 world = self.client.get_world()
 
             CarlaDataProvider.set_world(world)
@@ -371,7 +375,6 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             self.logger.warning(
                 " Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)", actor_name)
             # pylint: enable=line-too-long
-
         return actor_transform
 
     def _get_actor_speed(self, actor_name):
@@ -414,3 +417,11 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         if not self.ego_vehicles:
             self.logger.warning(" No ego vehicles defined in scenario")
+
+    def _set_traffic_signal_controller(self):
+        if self.xml_tree.find("RoadNetwork") is not None:
+            rnw = self.xml_tree.find("RoadNetwork")
+            controller = rnw.find("TrafficSignals")
+            if controller is not None:
+                OpenScenarioParser.set_traffic_signal_controller(controller)
+                

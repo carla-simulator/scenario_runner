@@ -1,0 +1,5 @@
+# physical quantities are repeatedly defined
+
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)

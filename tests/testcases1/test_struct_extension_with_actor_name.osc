@@ -1,0 +1,5 @@
+actor test
+
+extend test.traffic_light2:
+    country: string
+

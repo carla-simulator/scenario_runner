@@ -1,0 +1,28 @@
+# tag::library-physical-length[]
+type length is SI(m: 1)
+unit nanometer  of length is SI(m: 1, factor: 0.000000001)
+unit nm         of length is SI(m: 1, factor: 0.000000001)
+unit micrometer of length is SI(m: 1, factor: 0.000001)
+unit millimeter of length is SI(m: 1, factor: 0.001)
+unit mm         of length is SI(m: 1, factor: 0.001)
+unit centimeter of length is SI(m: 1, factor: 0.01)
+unit cm         of length is SI(m: 1, factor: 0.01)
+unit meter      of length is SI(m: 1, factor: 1)
+unit m          of length is SI(m: 1, factor: 1)
+unit kilometer  of length is SI(m: 1, factor: 1000)
+unit km         of length is SI(m: 1, factor: 1000)
+unit inch       of length is SI(m: 1, factor: 0.0254)
+unit feet       of length is SI(m: 1, factor: 0.3048)
+unit mile       of length is SI(m: 1, factor: 1609.344)
+unit mi         of length is SI(m: 1, factor: 1609.344, offset: 273.15)
+# end::library-physical-length[]
+
+
+# tag::library-physical-angle[]
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)
+unit deg    of angle is SI(rad: 1, factor: 57.295779513)
+unit radian of angle is SI(rad: 1, factor: 1)
+unit rad    of angle is SI(rad: 1, m: 1, factor: 1)
+# end::library-physical-angle[]
+

@@ -7,11 +7,4 @@
         <flow_speed value="30"/>
         <source_dist_interval from="35" to="50"/>
     </scenario>
-    <scenario name="CrossActorFlow_1" type="CrossActorFlow" town="Highway">
-        <ego_vehicle x="-1354.6" y="-1036.3" z="0.0" yaw="-20" model="vehicle.lincoln.mkz_2017" />
-        <start_actor_flow x="-1243.8" y="-1063.8" z="0.0"/>
-        <end_actor_flow x="-1354.4" y="-1039.7" z="0.0"/>
-        <flow_speed value="20"/>
-        <source_dist_interval from="35" to="50"/>
-    </scenario>
 </scenarios>

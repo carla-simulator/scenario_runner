@@ -1,0 +1,12 @@
+################################
+# actorName collide with behaviorName
+################################
+
+actor Path
+
+scenario cut_in_and_slow.cut_in_and_slow:
+    path: Path                             # A path in the map
+    path.set_map("Town04")                 # specify map to use in this test
+    path.path_min_driving_lanes(2)         # Path should have at least two lanes
+
+action osc_action.osc_action

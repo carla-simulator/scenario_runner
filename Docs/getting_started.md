@@ -90,6 +90,19 @@ python scenario_runner.py --openscenario <path/to/xosc-file>
 Please note that the OpenSCENARIO support and the OpenSCENARIO format itself are still work in progress.
 More information you can find in [OpenSCENARIO support](openscenario_support.md)
 
+## Running scenarios using the OpenSCENARIO 2.0 format
+To run a scenario, which is based on the OpenSCENARIO 2.0 format, please run the ScenarioRunner as follows:
+```
+python scenario_runner.py --openscenario2 <path/to/osc-file>
+```
+
+To control the ego vehicle within the scenario or observe it, open another terminal and run:
+```
+python manual_control.py -a --rolename=ego_vehicle
+```
+
+For more information about how to run a OpenSCENARIO 2.0 scenario, please refer to [README_OpenSCENARIO_2.0](README_OpenSCENARIO_2.0.md)
+
 ### Running scenarios using the OpenSCENARIO format with Global ParameterDeclaration overwrite
 ```
 python scenario_runner.py --openscenario <path/to/xosc-file> --openscenarioparams 'param1: value1, param2: value2'

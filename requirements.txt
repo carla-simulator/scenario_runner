@@ -10,3 +10,5 @@ opencv-python==4.2.0.32
 matplotlib
 six
 simple-watchdog-timer
+antlr4-python3-runtime==4.10
+graphviz
