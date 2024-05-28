@@ -66,6 +66,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _random_seed = 2000
     _rng = random.RandomState(_random_seed)
     _grp = None
+    _latest_scenario = ""
 
     @staticmethod
     def register_actor(actor, transform=None):
@@ -834,6 +835,20 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._traffic_manager_port = tm_port
 
     @staticmethod
+    def set_latest_scenario(scenario_name):
+        """
+        Set the latest scenario
+        """
+        CarlaDataProvider._latest_scenario = scenario_name
+
+    @staticmethod
+    def get_latest_scenario():
+        """
+        Get the latest scenario
+        """
+        return CarlaDataProvider._latest_scenario
+
+    @staticmethod
     def cleanup():
         """
         Cleanup and remove all entries from all dictionaries
@@ -870,3 +885,4 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
         CarlaDataProvider._rng = random.RandomState(CarlaDataProvider._random_seed)
         CarlaDataProvider._grp = None
+        CarlaDataProvider._latest_scenario = ""
