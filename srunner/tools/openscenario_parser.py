@@ -565,6 +565,7 @@ class OpenScenarioParser(object):
             raise AttributeError("Unknown private FollowRoute action")
 
         waypoints = []
+
         if route is not None:
             for waypoint in route.iter('Waypoint'):
                 position = waypoint.find('Position')
@@ -574,6 +575,50 @@ class OpenScenarioParser(object):
             raise AttributeError("No waypoints has been set")
 
         return waypoints
+
+    @staticmethod
+    def get_trajectory(xml_tree, catalogs):
+        """
+        Extract the trajectory from the OSC XML or a catalog
+
+        Args:
+            xml_tree: Containing the trajectory information,
+                or the reference to the catalog it is defined in.
+            catalogs: XML Catalogs that could contain the trajectory
+
+        returns:
+           waypoints: List of trajectory waypoints and times.
+                      Only polylines are supported
+        """
+        trajectory = None
+        waypoints = []
+        times = []
+
+        if xml_tree.find('Trajectory') is not None:
+            trajectory = xml_tree.find('Trajectory')
+        elif xml_tree.find('CatalogReference') is not None:
+            catalog_reference = xml_tree.find("CatalogReference")
+            trajectory = OpenScenarioParser.get_catalog_entry(catalogs, catalog_reference)
+        else:
+            raise AttributeError("Unknown private FollowTrajectory action")
+
+        if trajectory is not None:
+            shape = trajectory.find('Shape')
+            if shape.find('Polyline') is not None:
+                line = shape.find('Polyline')
+                for vertex in line.iter('Vertex'):
+                    times.append(float(vertex.get('time')))
+                    waypoints.append(vertex.find('Position'))
+            elif shape.find('Clothoid') is not None:
+                raise AttributeError("Clothoid shapes are currently unsupported")
+            elif shape.find('Nurbs') is not None:
+                raise AttributeError("Nurbs shapes are currently unsupported")
+            else:
+                raise AttributeError("Requested shape {} isn't a valid shape".format(shape))
+        else:
+            raise AttributeError("No waypoints has been set")
+
+        return waypoints, times
 
     @staticmethod
     def convert_position_to_transform(position, actor_list=None):
@@ -1355,7 +1400,10 @@ class OpenScenarioParser(object):
                     waypoints = OpenScenarioParser.get_route(route_action, catalogs)
                     atomic = ChangeActorWaypoints(actor, waypoints=waypoints, name=maneuver_name)
                 elif private_action.find('FollowTrajectoryAction') is not None:
-                    raise NotImplementedError("Private FollowTrajectory actions are not yet supported")
+                    trajectory_action = private_action.find('FollowTrajectoryAction')
+                    waypoints, times = OpenScenarioParser.get_trajectory(trajectory_action, catalogs)
+                    atomic = ChangeActorWaypoints(actor, waypoints=list(zip(waypoints, ['shortest'] * len(waypoints))),
+                                                  times=times, name=maneuver_name)
                 elif private_action.find('AcquirePositionAction') is not None:
                     route_action = private_action.find('AcquirePositionAction')
                     osc_position = route_action.find('Position')
