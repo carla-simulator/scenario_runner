@@ -10,6 +10,7 @@
 This module provide BasicMetric, the basic class of all the metrics.
 """
 
+
 class BasicMetric(object):
     """
     Base class of all the metrics.

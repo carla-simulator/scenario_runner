@@ -815,7 +815,7 @@ class OpenScenarioParser(object):
 
             if not OpenScenarioParser.use_carla_coordinate_system:
                 # multiply -1 because unlike offset t road is -ve for right side
-                t = -1*t
+                t = -1 * t
             transform = get_offset_transform(transform, t)
             return transform
 

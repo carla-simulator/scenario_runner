@@ -333,7 +333,7 @@ class OpenScenario(BasicScenario):
                                                                                              self.config.catalogs)
                                         atomic = ChangeActorWaypoints(carla_actor, waypoints=list(
                                             zip(waypoints, ['shortest'] * len(waypoints))),
-                                                                      times=times, name="FollowTrajectoryAction")
+                                            times=times, name="FollowTrajectoryAction")
                                     elif private_action.find('AcquirePositionAction') is not None:
                                         route_action = private_action.find('AcquirePositionAction')
                                         osc_position = route_action.find('Position')
@@ -430,7 +430,7 @@ class OpenScenario(BasicScenario):
                                             maneuver_behavior = StoryElementStatusToBlackboard(
                                                 maneuver_behavior, "ACTION", child.attrib.get('name'))
                                             parallel_actions.add_child(
-                                                oneshot_with_check(variable_name=  # See note in get_xml_path
+                                                oneshot_with_check(variable_name=# See note in get_xml_path
                                                                    get_xml_path(story, sequence) + '>' + \
                                                                    get_xml_path(maneuver, child) + '>' + \
                                                                    str(actor_id),

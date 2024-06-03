@@ -424,4 +424,3 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             controller = rnw.find("TrafficSignals")
             if controller is not None:
                 OpenScenarioParser.set_traffic_signal_controller(controller)
-                

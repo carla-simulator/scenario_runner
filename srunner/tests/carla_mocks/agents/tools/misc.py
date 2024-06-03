@@ -12,6 +12,7 @@ import math
 import numpy as np
 import carla
 
+
 def draw_waypoints(world, waypoints, z=0.5):
     """
     Draw a list of waypoints at a certain height given in z.
@@ -38,6 +39,7 @@ def get_speed(vehicle):
     vel = vehicle.get_velocity()
 
     return 3.6 * math.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)
+
 
 def get_trafficlight_trigger_location(traffic_light):
     """

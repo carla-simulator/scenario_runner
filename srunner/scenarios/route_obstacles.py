@@ -39,6 +39,7 @@ def get_value_parameter(config, name, p_type, default):
     else:
         return default
 
+
 def get_interval_parameter(config, name, p_type, default):
     if name in config.other_parameters:
         return [
@@ -65,7 +66,7 @@ class Accident(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        
+
         self._first_distance = 10
         self._second_distance = 6
 
@@ -238,6 +239,7 @@ class AccidentTwoWays(Accident):
     """
     Variation of the Accident scenario but the ego now has to invade the opposite lane
     """
+
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
 
         self._opposite_interval = get_interval_parameter(config, 'frequency', float, [20, 100])
@@ -280,6 +282,7 @@ class AccidentTwoWays(Accident):
             root.add_child(ActorDestroy(actor))
 
         return root
+
 
 class ParkedObstacle(BasicScenario):
     """
@@ -443,6 +446,7 @@ class ParkedObstacleTwoWays(ParkedObstacle):
     """
     Variation of the ParkedObstacle scenario but the ego now has to invade the opposite lane
     """
+
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
 
         self._opposite_interval = get_interval_parameter(config, 'frequency', float, [20, 100])
@@ -613,7 +617,8 @@ class HazardAtSideLane(BasicScenario):
         opt_dict = {'offset': offset}
         for actor, target_loc in zip(self.other_actors, self._target_locs):
             bicycle = py_trees.composites.Sequence(name="Bicycle behavior")
-            bicycle.add_child(BasicAgentBehavior(actor, target_loc, target_speed=self._bicycle_speed, opt_dict=opt_dict))
+            bicycle.add_child(BasicAgentBehavior(actor, target_loc,
+                              target_speed=self._bicycle_speed, opt_dict=opt_dict))
             bicycle.add_child(HandBrakeVehicle(actor, 1))  # In case of collisions
             bicycle.add_child(WaitForever())  # Don't make the bicycle stop the parallel behavior
             main_behavior.add_child(bicycle)
@@ -659,6 +664,7 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
     """
     Variation of the HazardAtSideLane scenario but the ego now has to invade the opposite lane
     """
+
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
 
         self._opposite_frequency = get_value_parameter(config, 'frequency', float, 100)
@@ -691,7 +697,8 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
         opt_dict = {'offset': offset}
         for actor, target_loc in zip(self.other_actors, self._target_locs):
             bicycle = py_trees.composites.Sequence(name="Bicycle behavior")
-            bicycle.add_child(BasicAgentBehavior(actor, target_loc, target_speed=self._bicycle_speed, opt_dict=opt_dict))
+            bicycle.add_child(BasicAgentBehavior(actor, target_loc,
+                              target_speed=self._bicycle_speed, opt_dict=opt_dict))
             bicycle.add_child(HandBrakeVehicle(actor, 1))  # In case of collisions
             bicycle.add_child(WaitForever())  # Don't make the bicycle stop the parallel behavior
             main_behavior.add_child(bicycle)

@@ -1,3 +1,5 @@
+from tests.run_testcase.log_msg import create_LogMsg as log_msg
+from tests.run_testcase.test_base import TestSymbolClass
 import unittest
 import os
 import sys
@@ -10,8 +12,6 @@ except IndexError:
 # Add the current working directory to the module search path
 sys.path.append(os.getcwd())
 
-from tests.run_testcase.test_base import TestSymbolClass
-from tests.run_testcase.log_msg import create_LogMsg as log_msg
 
 log_msg.is_open = True
 # modify current working directory

@@ -35,7 +35,6 @@ from srunner.tools.scenario_helper import (get_geometric_linear_intersection,
 from srunner.tools.background_manager import HandleJunctionScenario
 
 
-
 class OppositeVehicleJunction(BasicScenario):
     """
     Scenario in which another vehicle enters the junction a tthe same time as the ego,
@@ -52,13 +51,12 @@ class OppositeVehicleJunction(BasicScenario):
         self._map = CarlaDataProvider.get_map()
         self._source_dist = 30
         self._sink_dist = 10
-        self._adversary_speed = 60 / 3.6 # m/s
+        self._adversary_speed = 60 / 3.6  # m/s
 
         if 'direction' in config.other_parameters:
             self._direction = config.other_parameters['direction']['value']
         else:
             self._direction = "right"
-
 
         self.timeout = timeout
 

@@ -1677,7 +1677,7 @@ class ChangeTargetSpeed(AtomicBehavior):
 
         if self._type == 'vehicle':
             # curr_speed = CarlaDataProvider.get_velocity(self._actor)
-            curr_speed = calculate_velocity(self._actor)*3.6
+            curr_speed = calculate_velocity(self._actor) * 3.6
             if abs(self._target_velocity - curr_speed) < self.OFFSET_THRESHOLD:
                 self._control.throttle = 0
                 self._control.brake = 0
@@ -2438,7 +2438,7 @@ class BasicAgentBehavior(AtomicBehavior):
     def initialise(self):
         """Initialises the agent"""
         self._agent = BasicAgent(self._actor, self._target_speed, opt_dict=self._opt_dict,
-            map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
+                                 map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
         if self._plan:
             self._agent.set_global_plan(self._plan)
         elif self._target_location:
@@ -2531,6 +2531,7 @@ class ConstantVelocityAgentBehavior(AtomicBehavior):
             self._agent.destroy_sensor()
         super(ConstantVelocityAgentBehavior, self).terminate(new_status)
 
+
 class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
 
     """
@@ -2605,6 +2606,7 @@ class AdaptiveConstantVelocityAgentBehavior(AtomicBehavior):
             self._agent.destroy_sensor()
         super().terminate(new_status)
 
+
 class Idle(AtomicBehavior):
 
     """
@@ -2643,6 +2645,7 @@ class Idle(AtomicBehavior):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
 
 class WaitForever(AtomicBehavior):
 
@@ -3516,8 +3519,8 @@ class ActorFlow(AtomicBehavior):
             # Patched by removing its movement
             actor.disable_constant_velocity()
             actor.set_autopilot(False, CarlaDataProvider.get_traffic_manager_port())
-            actor.set_target_velocity(carla.Vector3D(0,0,0))
-            actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
+            actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
             try:
                 actor.destroy()
             except RuntimeError:
@@ -3597,7 +3600,7 @@ class OppositeActorFlow(AtomicBehavior):
 
     def initialise(self):
         """Get the actor flow source and sink, depending on the reference actor speed"""
-        self._speed = self._reference_actor.get_speed_limit() # Km / h
+        self._speed = self._reference_actor.get_speed_limit()  # Km / h
         self._flow_distance = self._time_distance * self._speed + self._base_distance
 
         self._sink_wp = self._move_waypoint_forward(self._reference_wp, self._flow_distance)
@@ -3665,8 +3668,8 @@ class OppositeActorFlow(AtomicBehavior):
             # Patched by removing its movement
             actor.disable_constant_velocity()
             actor.set_autopilot(False, CarlaDataProvider.get_traffic_manager_port())
-            actor.set_target_velocity(carla.Vector3D(0,0,0))
-            actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
+            actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
             try:
                 actor.destroy()
             except RuntimeError:
@@ -3698,7 +3701,7 @@ class InvadingActorFlow(AtomicBehavior):
 
         self._reference_actor = reference_actor
 
-        self._source_wp  = source_wp
+        self._source_wp = source_wp
         self._source_transform = self._source_wp.transform
         self._source_location = self._source_transform.location
 
@@ -3780,8 +3783,8 @@ class InvadingActorFlow(AtomicBehavior):
             # Patched by removing its movement
             actor.disable_constant_velocity()
             actor.set_autopilot(False, CarlaDataProvider.get_traffic_manager_port())
-            actor.set_target_velocity(carla.Vector3D(0,0,0))
-            actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
+            actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
             try:
                 actor.destroy()
             except RuntimeError:
@@ -3869,7 +3872,7 @@ class BicycleFlow(AtomicBehavior):
             return
 
         controller = BasicAgent(actor, 3.6 * self._speed, opt_dict=self._opt_dict,
-            map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
+                                map_inst=CarlaDataProvider.get_map(), grp_inst=CarlaDataProvider.get_global_route_planner())
         controller.set_global_plan(plan)
 
         initial_vec = plan[0][0].transform.get_forward_vector()
@@ -3923,8 +3926,8 @@ class BicycleFlow(AtomicBehavior):
             # Patched by removing its movement
             actor.disable_constant_velocity()
             actor.set_autopilot(False, CarlaDataProvider.get_traffic_manager_port())
-            actor.set_target_velocity(carla.Vector3D(0,0,0))
-            actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
+            actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
             try:
                 actor.destroy()
             except RuntimeError:
@@ -4542,11 +4545,11 @@ class KeepLongitudinalGap(AtomicBehavior):
         if is_within_distance(ref_actor_transform, actor_transform, float('inf'), [0, 90]) and \
                 operator.le(gap, self._gap):
             try:
-                factor = abs(actor_velocity - reference_velocity)/actor_velocity
+                factor = abs(actor_velocity - reference_velocity) / actor_velocity
                 if actor_velocity > reference_velocity:
-                    actor_velocity = actor_velocity - (factor*actor_velocity)
+                    actor_velocity = actor_velocity - (factor * actor_velocity)
                 elif actor_velocity < reference_velocity and operator.gt(gap, self._gap):
-                    actor_velocity = actor_velocity + (factor*actor_velocity)
+                    actor_velocity = actor_velocity + (factor * actor_velocity)
             except ZeroDivisionError:
                 pass
             actor_dict[self._actor.id].update_target_speed(actor_velocity)
@@ -4651,6 +4654,7 @@ class WalkerFlow(AtomicBehavior):
     - sink_distance: Actors closer to the sink than this distance will be deleted. 
                      Probably due to the navigation module rerouting the walkers, a sink distance of 2 is reasonable.
     """
+
     def __init__(self, source_location, sink_locations, sink_locations_prob, spawn_dist_interval, random_seed=None, sink_dist=2,
                  name="WalkerFlow"):
         """
@@ -4676,7 +4680,7 @@ class WalkerFlow(AtomicBehavior):
         self._max_spawn_dist = spawn_dist_interval[1]
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
 
-        self._batch_size_list = [1,2,3]
+        self._batch_size_list = [1, 2, 3]
 
         self._walkers = []
 
@@ -4710,7 +4714,7 @@ class WalkerFlow(AtomicBehavior):
                     continue
                 # Use ai.walker to controll walkers
                 controller = self._world.try_spawn_actor(self._controller_bp, carla.Transform(), walker)
-                sink_location = self._rng.choice(a = self._sink_locations, p = self._sink_locations_prob)
+                sink_location = self._rng.choice(a=self._sink_locations, p=self._sink_locations_prob)
                 controller.start()
                 controller.go_to_location(sink_location)
                 # Add to walkers list
@@ -4734,6 +4738,7 @@ class WalkerFlow(AtomicBehavior):
                 self._destroy_walker(walker, controller)
             except RuntimeError:
                 pass  # Actor was already destroyed
+
 
 class AIWalkerBehavior(AtomicBehavior):
     """
@@ -4867,7 +4872,8 @@ class ScenarioTimeout(AtomicBehavior):
         Modifies the blackboard to tell the `ScenarioTimeoutTest` if the timeout was triggered
         """
         if not self._terminated:  # py_trees calls the terminate several times for some reason.
-            py_trees.blackboard.Blackboard().set(f"ScenarioTimeout_{self._scenario_name}", self._scenario_timeout, overwrite=True)
+            py_trees.blackboard.Blackboard().set(
+                f"ScenarioTimeout_{self._scenario_name}", self._scenario_timeout, overwrite=True)
             py_trees.blackboard.Blackboard().set("AC_SwitchActorBlockedTest", True, overwrite=True)
             self._terminated = True
         super().terminate(new_status)

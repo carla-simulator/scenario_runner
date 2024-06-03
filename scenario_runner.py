@@ -23,7 +23,7 @@ from datetime import datetime
 try:
     from packaging.version import Version
 except ImportError:
-    from distutils.version import LooseVersion as Version # Python 2 fallback
+    from distutils.version import LooseVersion as Version  # Python 2 fallback
 import importlib
 import inspect
 import os
@@ -35,11 +35,13 @@ import json
 try:
     # requires Python 3.8+
     from importlib.metadata import metadata
+
     def get_carla_version():
         return Version(metadata("carla")["Version"])
 except ModuleNotFoundError:
     # backport checking for older Python versions; module is deprecated
     import pkg_resources
+
     def get_carla_version():
         return Version(pkg_resources.get_distribution("carla").version)
 
@@ -106,7 +108,8 @@ class ScenarioRunner(object):
         self.client.set_timeout(self.client_timeout)
         carla_version = get_carla_version()
         if carla_version < Version(MIN_CARLA_VERSION):
-            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(MIN_CARLA_VERSION, carla_version))
+            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(
+                MIN_CARLA_VERSION, carla_version))
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)

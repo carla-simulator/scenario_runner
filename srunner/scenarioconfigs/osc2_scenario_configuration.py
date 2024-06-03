@@ -4,6 +4,8 @@ Parse the OSC2 scenario description file, configure parameters based on type and
 generate relevant type objects in the standard library, and set parameters
 
 """
+from srunner.tools.osc2_helper import OSC2Helper
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 import sys
 from typing import List, Tuple
 
@@ -27,10 +29,8 @@ library based on the type and keep constraint parameters, and sets parameters
 '''
 
 # pylint: enable=line-too-long
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 # OSC2
-from srunner.tools.osc2_helper import OSC2Helper
 
 vehicle_type = ["Car", "Model3", "Mkz2017", "Carlacola", "Rubicon"]
 
@@ -48,7 +48,7 @@ def flat_list(list_of_lists):
 class OSC2ScenarioConfiguration(ScenarioConfiguration):
     def __init__(self, filename, client):
         super(OSC2ScenarioConfiguration, self).__init__()
-        
+
         self.name = self.filename = filename
         self.ast_tree = OSC2Helper.gen_osc2_ast(self.filename)
 

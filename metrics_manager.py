@@ -130,10 +130,11 @@ def main():
     """
 
     # pylint: disable=line-too-long
-    description = ("Scenario Runner's metrics module. Evaluate the execution of a specific scenario by developing your own metric.\n")
+    description = (
+        "Scenario Runner's metrics module. Evaluate the execution of a specific scenario by developing your own metric.\n")
 
     parser = argparse.ArgumentParser(description=description,
-                                    formatter_class=RawTextHelpFormatter)
+                                     formatter_class=RawTextHelpFormatter)
     parser.add_argument('--host', default='127.0.0.1',
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', '-p', default=2000,
@@ -149,6 +150,7 @@ def main():
     args = parser.parse_args()
 
     MetricsManager(args)
+
 
 if __name__ == "__main__":
     sys.exit(main())

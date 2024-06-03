@@ -307,6 +307,7 @@ class Client:
 
         return reponse_list
 
+
 class AttachmentType:
     Rigid = 0
     SpringArm = 1

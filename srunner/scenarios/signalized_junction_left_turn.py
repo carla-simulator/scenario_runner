@@ -27,11 +27,13 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
 
 from srunner.tools.background_manager import HandleJunctionScenario, ChangeOppositeBehavior
 
+
 def get_value_parameter(config, name, p_type, default):
     if name in config.other_parameters:
         return p_type(config.other_parameters[name]['value'])
     else:
         return default
+
 
 def get_interval_parameter(config, name, p_type, default):
     if name in config.other_parameters:
