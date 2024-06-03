@@ -172,6 +172,24 @@ class WeatherParameters:
     mie_scattering_scale = 0.000000
     rayleigh_scattering_scale = 0.033100
 
+    def __init__(self, cloudiness=0.000000, precipitation=0.000000, precipitation_deposits=0.000000,
+                 wind_intensity=0.000000, sun_azimuth_angle=0.000000, sun_altitude_angle=0.000000,
+                 fog_density=0.000000, fog_distance=0.000000, fog_falloff=0.000000, wetness=0.000000,
+                 scattering_intensity=0.000000, mie_scattering_scale=0.000000, rayleigh_scattering_scale=0.033100):
+        self.cloudiness = cloudiness
+        self.precipitation = precipitation
+        self.precipitation_deposits = precipitation_deposits
+        self.wind_intensity = wind_intensity
+        self.sun_azimuth_angle = sun_azimuth_angle
+        self.sun_altitude_angle = sun_altitude_angle
+        self.fog_density = fog_density
+        self.fog_distance = fog_distance
+        self.fog_falloff = fog_falloff
+        self.wetness = wetness
+        self.scattering_intensity = scattering_intensity
+        self.mie_scattering_scale = mie_scattering_scale
+        self.rayleigh_scattering_scale = rayleigh_scattering_scale
+
 
 class WorldSettings:
     synchronous_mode = False

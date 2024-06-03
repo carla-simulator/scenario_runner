@@ -13,6 +13,7 @@ import carla
 
 from agents.navigation.basic_agent import BasicAgent
 
+
 class ConstantVelocityAgent(BasicAgent):
     """
     ConstantVelocityAgent implements an agent that navigates the scene at a fixed velocity.
