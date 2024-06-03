@@ -70,7 +70,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _grp = None                 # type: GlobalRoutePlanner
     _runtime_init_flag = False
     _lock = threading.Lock()
-    _grp = None
     _latest_scenario = ""
 
     @staticmethod
