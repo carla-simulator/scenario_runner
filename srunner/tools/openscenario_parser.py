@@ -1278,7 +1278,8 @@ class OpenScenarioParser(object):
                     atomic = ActorDestroy(entity_ref_actor)
                 elif entity_action.find('AddEntityAction') is not None:
                     position = entity_action.find('AddEntityAction').find("Position")
-                    actor_transform = OpenScenarioParser.convert_position_to_transform(position, config.other_actors + config.ego_vehicles)
+                    actor_transform = OpenScenarioParser.convert_position_to_transform(
+                        position, config.other_actors + config.ego_vehicles)
                     entity_ref_actor = None
                     for _actor in config.other_actors:
                         if _actor.rolename == entity_ref:
