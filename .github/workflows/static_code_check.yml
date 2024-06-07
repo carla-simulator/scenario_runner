@@ -34,7 +34,7 @@ jobs:
       uses: peter-evans/autopep8@v2.0.0
       with:
         # Arguments to pass to autopep8
-        args: --max-line-length=120 --ignore=E731
+        args: --max-line-length=120 --ignore=E731 --recursive --in-place
 
   qualityJob:
     name: Check Code Quality
