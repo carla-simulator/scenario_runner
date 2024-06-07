@@ -19,16 +19,22 @@ jobs:
         sudo apt-get update
         sudo apt-get install pep8 python3-autopep8 python3-pep8 python-is-python3
 
+    # - name: Check Code Format
+    #   run: |
+    #     autopep8 srunner/scenariomanager/*.py --in-place --max-line-length=120 --ignore=E731
+    #     autopep8 srunner/scenariomanager/scenarioatomics/*.py --in-place --max-line-length=120
+    #     autopep8 srunner/scenarios/*.py --in-place --max-line-length=120
+    #     autopep8 srunner/tools/*.py --in-place --max-line-length=120
+    #     autopep8 srunner/scenarioconfigs/*.py --in-place --max-line-length=120
+    #     autopep8 scenario_runner.py --in-place --max-line-length=120
+    #     autopep8 srunner/autoagents/*.py --in-place --max-line-length=120
+    #     git diff --quiet HEAD --; if [ ! $? -eq 0 ]; then echo "Code is not autopep8 compliant. Please run code_check_and_formatting.sh"; git diff HEAD --; fi
+
     - name: Check Code Format
-      run: |
-        autopep8 srunner/scenariomanager/*.py --in-place --max-line-length=120 --ignore=E731
-        autopep8 srunner/scenariomanager/scenarioatomics/*.py --in-place --max-line-length=120
-        autopep8 srunner/scenarios/*.py --in-place --max-line-length=120
-        autopep8 srunner/tools/*.py --in-place --max-line-length=120
-        autopep8 srunner/scenarioconfigs/*.py --in-place --max-line-length=120
-        autopep8 scenario_runner.py --in-place --max-line-length=120
-        autopep8 srunner/autoagents/*.py --in-place --max-line-length=120
-        git diff --quiet HEAD --; if [ ! $? -eq 0 ]; then echo "Code is not autopep8 compliant. Please run code_check_and_formatting.sh"; git diff HEAD --; fi
+      uses: peter-evans/autopep8@v2.0.0
+      with:
+        # Arguments to pass to autopep8
+        args: --max-line-length=120 --ignore=E731
 
   qualityJob:
     name: Check Code Quality
