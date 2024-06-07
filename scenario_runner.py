@@ -37,12 +37,16 @@ try:
     from importlib.metadata import metadata
 
     def get_carla_version():
+        """get the version of the CARLA package
+        """
         return Version(metadata("carla")["Version"])
 except ModuleNotFoundError:
     # backport checking for older Python versions; module is deprecated
     import pkg_resources
 
     def get_carla_version():
+        """same but for older Python versions
+        """
         return Version(pkg_resources.get_distribution("carla").version)
 
 import carla
