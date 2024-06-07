@@ -133,6 +133,9 @@ class Waypoint():
 class Map:
     name = ""
 
+    def __init__(self, name='Town01'):
+        self.name = name
+
     def get_spawn_points(self):
         return []
 
@@ -263,12 +266,16 @@ class Vehicle(Actor):
 
 class World:
     actors = []
+    map = Map()
 
     def get_settings(self):
         return WorldSettings()
 
     def get_map(self):
-        return Map()
+        return self.map
+    
+    def set_map(self, map):
+        self.map = map
 
     def get_blueprint_library(self):
         return CarlaBluePrintLibrary()
@@ -300,6 +307,7 @@ class Client:
     world = World()
 
     def load_world(self, name):
+        self.world.set_map(Map(name))
         return None
 
     def get_world(self):

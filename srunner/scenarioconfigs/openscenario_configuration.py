@@ -307,7 +307,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
         speed = self._get_actor_speed(rolename)
         new_actor = ActorConfigurationData(
-            model, None, rolename, speed, color=color, category=category, args=args)
+            model, carla.Transform(), rolename, speed, color=color, category=category, args=args)
 
         if ego_vehicle:
             self.ego_vehicles.append(new_actor)
@@ -321,7 +321,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         model = pedestrian.attrib.get('model', "walker.*")
 
         speed = self._get_actor_speed(rolename)
-        new_actor = ActorConfigurationData(model, None, rolename, speed, category="pedestrian", args=args)
+        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, speed, category="pedestrian", args=args)
 
         self.other_actors.append(new_actor)
 
@@ -336,7 +336,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             model = "static.prop.chainbarrier"
         else:
             model = misc.attrib.get('name')
-        new_actor = ActorConfigurationData(model, None, rolename, category="misc", args=args)
+        new_actor = ActorConfigurationData(model, carla.Transform(), rolename, category="misc", args=args)
 
         self.other_actors.append(new_actor)
 

@@ -274,7 +274,7 @@ class OpenScenarioParser(object):
         elif name.startswith("pos="):
             tl_pos = name[4:]
             pos = tl_pos.split(",")
-            for carla_tl in CCarlaDataProvider.get_all_actors().filter('traffic.traffic_light'):
+            for carla_tl in CarlaDataProvider.get_all_actors().filter('traffic.traffic_light'):
                 carla_tl_location = carla_tl.get_transform().location
                 distance = carla_tl_location.distance(carla.Location(float(pos[0]),
                                                                      float(pos[1]),
@@ -1278,7 +1278,7 @@ class OpenScenarioParser(object):
                     atomic = ActorDestroy(entity_ref_actor)
                 elif entity_action.find('AddEntityAction') is not None:
                     position = entity_action.find('AddEntityAction').find("Position")
-                    actor_transform = OpenScenarioParser.convert_position_to_transform(position)
+                    actor_transform = OpenScenarioParser.convert_position_to_transform(position, config.other_actors + config.ego_vehicles)
                     entity_ref_actor = None
                     for _actor in config.other_actors:
                         if _actor.rolename == entity_ref:
