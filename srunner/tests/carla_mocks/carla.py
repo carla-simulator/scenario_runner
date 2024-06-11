@@ -273,7 +273,7 @@ class World:
 
     def get_map(self):
         return self.map
-    
+
     def set_map(self, map):
         self.map = map
 

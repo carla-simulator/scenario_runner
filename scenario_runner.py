@@ -35,6 +35,7 @@ import json
 try:
     # requires Python 3.8+
     from importlib.metadata import metadata
+
     def get_carla_version():
         """get the version of the CARLA package
         """
