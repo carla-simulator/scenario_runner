@@ -70,6 +70,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _grp = None                 # type: GlobalRoutePlanner
     _runtime_init_flag = False
     _lock = threading.Lock()
+    _latest_scenario = ""
 
     @staticmethod
     def set_local_planner(plan):
@@ -267,6 +268,20 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         @return the global route planner
         """
         return CarlaDataProvider._grp
+
+    @staticmethod
+    def set_ego_route(route):
+        """
+        set the ego route
+        """
+        CarlaDataProvider._ego_vehicle_route = route
+
+    @staticmethod
+    def get_ego_route():
+        """
+        @return the ego route
+        """
+        return CarlaDataProvider._ego_vehicle_route
 
     @staticmethod
     def get_all_actors():
@@ -1024,6 +1039,20 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._traffic_manager_port = tm_port
 
     @staticmethod
+    def set_latest_scenario(scenario_name):
+        """
+        Set the latest scenario
+        """
+        CarlaDataProvider._latest_scenario = scenario_name
+
+    @staticmethod
+    def get_latest_scenario():
+        """
+        Get the latest scenario
+        """
+        return CarlaDataProvider._latest_scenario
+
+    @staticmethod
     def cleanup():
         """
         Cleanup and remove all entries from all dictionaries
@@ -1061,7 +1090,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._rng = random.RandomState(CarlaDataProvider._random_seed)
         CarlaDataProvider._grp = None
         CarlaDataProvider._runtime_init_flag = False
+        CarlaDataProvider._latest_scenario = ""
 
     @property
     def world(self):
         return self._world
+
