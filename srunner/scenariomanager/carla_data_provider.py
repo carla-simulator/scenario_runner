@@ -1003,11 +1003,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Remove an actor from the pool using its ID
         """
         if actor_id in CarlaDataProvider._carla_actor_pool:
-            CarlaDataProvider._carla_actor_pool[actor_id].destroy()
-            CarlaDataProvider._carla_actor_pool[actor_id] = None # type: ignore
+            was_destroyed = CarlaDataProvider._carla_actor_pool[actor_id].destroy()
+            CarlaDataProvider._carla_actor_pool[actor_id] = None
             CarlaDataProvider._carla_actor_pool.pop(actor_id)
-        else:
-            print("Trying to remove a non-existing actor id {}".format(actor_id))
+            return was_destroyed
+        print("Trying to remove a non-existing actor id {}".format(actor_id))
+        return None    
 
     @staticmethod
     def remove_actors_in_surrounding(location, distance):
