@@ -77,11 +77,11 @@ class PedestrianCrossing(BasicScenario):
             walker_data['speed'] = self._rng.uniform(1.3, 2.0)
 
         super().__init__("PedestrianCrossing",
-                          ego_vehicles,
-                          config,
-                          world,
-                          debug_mode,
-                          criteria_enable=criteria_enable)
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _get_walker_transform(self, wp, displacement):
         disp_x = displacement['x']

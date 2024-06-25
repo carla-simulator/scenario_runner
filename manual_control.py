@@ -213,6 +213,7 @@ class World(object):
 
 class KeyboardControl(object):
     """Class that handles keyboard input."""
+
     def __init__(self, world, start_in_autopilot):
         self._autopilot_enabled = start_in_autopilot
         self._control = carla.VehicleControl()
@@ -277,7 +278,7 @@ class KeyboardControl(object):
                     self._control.manual_gear_shift = not self._control.manual_gear_shift
                     self._control.gear = world.player.get_control().gear
                     world.hud.notification('%s Transmission' %
-                                            ('Manual' if self._control.manual_gear_shift else 'Automatic'))
+                                           ('Manual' if self._control.manual_gear_shift else 'Automatic'))
                 elif self._control.manual_gear_shift and event.key == K_COMMA:
                     self._control.gear = max(-1, self._control.gear - 1)
                 elif self._control.manual_gear_shift and event.key == K_PERIOD:
@@ -321,13 +322,13 @@ class KeyboardControl(object):
             # Set automatic control-related vehicle lights
             if self._control.brake:
                 current_lights |= carla.VehicleLightState.Brake
-            else: # Remove the Brake flag
+            else:  # Remove the Brake flag
                 current_lights &= ~carla.VehicleLightState.Brake
             if self._control.reverse:
                 current_lights |= carla.VehicleLightState.Reverse
-            else: # Remove the Reverse flag
+            else:  # Remove the Reverse flag
                 current_lights &= ~carla.VehicleLightState.Reverse
-            if current_lights != self._lights: # Change the light state only if necessary
+            if current_lights != self._lights:  # Change the light state only if necessary
                 self._lights = current_lights
                 world.player.set_light_state(carla.VehicleLightState(self._lights))
             world.player.apply_control(self._control)
@@ -536,6 +537,7 @@ class FadingText(object):
 
 class HelpText(object):
     """Helper class to handle text output using pygame"""
+
     def __init__(self, font, width, height):
         lines = __doc__.split('\n')
         self.font = font
@@ -709,7 +711,7 @@ class RadarSensor(object):
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         bound_z = 0.5 + self._parent.bounding_box.extent.z
 
-        self.velocity_range = 7.5 # m/s
+        self.velocity_range = 7.5  # m/s
         world = self._parent.get_world()
         self.debug = world.debug
         bp = world.get_blueprint_library().find('sensor.other.radar')
@@ -718,7 +720,7 @@ class RadarSensor(object):
         self.sensor = world.spawn_actor(
             bp,
             carla.Transform(
-                carla.Location(x=bound_x + 0.05, z=bound_z+0.05),
+                carla.Location(x=bound_x + 0.05, z=bound_z + 0.05),
                 carla.Rotation(pitch=5)),
             attach_to=self._parent)
         # We need a weak reference to self to avoid circular reference.
@@ -752,7 +754,7 @@ class RadarSensor(object):
             def clamp(min_v, max_v, value):
                 return max(min_v, min(value, max_v))
 
-            norm_velocity = detect.velocity / self.velocity_range # range [-1, 1]
+            norm_velocity = detect.velocity / self.velocity_range  # range [-1, 1]
             r = int(clamp(0.0, 1.0, 1.0 - norm_velocity) * 255.0)
             g = int(clamp(0.0, 1.0, 1.0 - abs(norm_velocity)) * 255.0)
             b = int(abs(clamp(- 1.0, 0.0, - 1.0 - norm_velocity)) * 255.0)
@@ -781,11 +783,13 @@ class CameraManager(object):
         Attachment = carla.AttachmentType
 
         self._camera_transforms = [
-            (carla.Transform(carla.Location(x=-2.0*bound_x, y=+0.0*bound_y, z=2.0*bound_z), carla.Rotation(pitch=8.0)), Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=+0.8*bound_x, y=+0.0*bound_y, z=1.3*bound_z)), Attachment.Rigid),
-            (carla.Transform(carla.Location(x=+1.9*bound_x, y=+1.0*bound_y, z=1.2*bound_z)), Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=-2.8*bound_x, y=+0.0*bound_y, z=4.6*bound_z), carla.Rotation(pitch=6.0)), Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=-1.0, y=-1.0*bound_y, z=0.4*bound_z)), Attachment.Rigid)]
+            (carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y,
+             z=2.0 * bound_z), carla.Rotation(pitch=8.0)), Attachment.SpringArm),
+            (carla.Transform(carla.Location(x=+0.8 * bound_x, y=+0.0 * bound_y, z=1.3 * bound_z)), Attachment.Rigid),
+            (carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)), Attachment.SpringArm),
+            (carla.Transform(carla.Location(x=-2.8 * bound_x, y=+0.0 * bound_y,
+             z=4.6 * bound_z), carla.Rotation(pitch=6.0)), Attachment.SpringArm),
+            (carla.Transform(carla.Location(x=-1.0, y=-1.0 * bound_y, z=0.4 * bound_z)), Attachment.Rigid)]
 
         self.transform_index = 1
         self.sensors = [['sensor.camera.rgb', cc.Raw, 'Camera RGB']]
@@ -894,7 +898,7 @@ def game_loop(args):
         display = pygame.display.set_mode(
             (args.width, args.height),
             pygame.HWSURFACE | pygame.DOUBLEBUF)
-        display.fill((0,0,0))
+        display.fill((0, 0, 0))
         pygame.display.flip()
 
         hud = HUD(args.width, args.height)

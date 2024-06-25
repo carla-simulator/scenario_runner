@@ -71,7 +71,8 @@ class RouteScenario(BasicScenario):
         self.timeout = self._estimate_route_timeout()
 
         if debug_mode:
-            self._draw_waypoints(world, self.route, vertical_shift=0.1, size=0.1, persistency=self.timeout, downsample=5)
+            self._draw_waypoints(world, self.route, vertical_shift=0.1, size=0.1,
+                                 persistency=self.timeout, downsample=5)
 
         self._build_scenarios(
             world, ego_vehicle, sampled_scenario_definitions, timeout=self.timeout, debug=debug_mode > 0
@@ -167,9 +168,9 @@ class RouteScenario(BasicScenario):
 
             world.debug.draw_point(wp, size=0.1, color=color, life_time=persistency)
 
-        world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=2*size,
+        world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=2 * size,
                                color=carla.Color(0, 0, 128), life_time=persistency)
-        world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=2*size,
+        world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=2 * size,
                                color=carla.Color(128, 128, 128), life_time=persistency)
 
     def _scenario_sampling(self, potential_scenarios, random_seed=0):
@@ -245,8 +246,8 @@ class RouteScenario(BasicScenario):
 
             self.list_scenarios.append(scenario_instance)
 
-
     # pylint: enable=no-self-use
+
     def _initialize_actors(self, config):
         """
         Set other_actors to the superset of all scenario actors
@@ -305,7 +306,8 @@ class RouteScenario(BasicScenario):
         criteria.add_child(CollisionTest(self.ego_vehicles[0], name="CollisionTest"))
         criteria.add_child(RunningRedLightTest(self.ego_vehicles[0]))
         criteria.add_child(RunningStopTest(self.ego_vehicles[0]))
-        criteria.add_child(MinimumSpeedRouteTest(self.ego_vehicles[0], route=self.route, checkpoints=4, name="MinSpeedTest"))
+        criteria.add_child(MinimumSpeedRouteTest(
+            self.ego_vehicles[0], route=self.route, checkpoints=4, name="MinSpeedTest"))
 
         # These stop the route early to save computational time
         criteria.add_child(InRouteTest(
@@ -367,7 +369,7 @@ class RouteScenario(BasicScenario):
         criteria_tree.add_child(WaitForBlackboardVariable(var_name, True, False, name=check_name))
 
         scenario_criteria = py_trees.composites.Parallel(name=scenario_name,
-                                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+                                                         policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         for criterion in criteria:
             scenario_criteria.add_child(criterion)
         scenario_criteria.add_child(WaitForBlackboardVariable(var_name, False, None, name=check_name))
@@ -375,7 +377,6 @@ class RouteScenario(BasicScenario):
         criteria_tree.add_child(scenario_criteria)
         criteria_tree.add_child(Idle())  # Avoid the indivual criteria stopping the simulation
         return criteria_tree
-
 
     def __del__(self):
         """

@@ -27,6 +27,7 @@ from srunner.tools.background_manager import HandleJunctionScenario
 
 from srunner.tools.scenario_helper import generate_target_waypoint
 
+
 def convert_dict_to_location(actor_dict):
     """
     Convert a JSON string to a Carla.Location
@@ -37,6 +38,7 @@ def convert_dict_to_location(actor_dict):
         z=float(actor_dict['z'])
     )
     return location
+
 
 class HighwayCutIn(BasicScenario):
     """
@@ -87,7 +89,6 @@ class HighwayCutIn(BasicScenario):
         # Move below ground
         self._cut_in_vehicle.set_location(self._other_transform.location - carla.Location(z=100))
         self._cut_in_vehicle.set_simulate_physics(False)
-
 
     def _create_behavior(self):
         """

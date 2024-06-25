@@ -134,6 +134,7 @@ class StopBackVehicles(AtomicBehavior):
     Updates the blackboard to tell the background activity to stop the vehicles behind the ego as to
     not interfere with the scenarios. This only works at roads, not junctions.
     """
+
     def __init__(self, name="StopBackVehicles"):
         super().__init__(name)
 
@@ -147,6 +148,7 @@ class StartBackVehicles(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to restart the vehicles behind the ego.
     """
+
     def __init__(self, name="StartBackVehicles"):
         super().__init__(name)
 
@@ -161,6 +163,7 @@ class LeaveSpaceInFront(AtomicBehavior):
     Updates the blackboard to tell the background activity that the ego needs more space in front.
     This only works at roads, not junctions.
     """
+
     def __init__(self, space, name="LeaveSpaceInFront"):
         self._space = space
         super().__init__(name)
@@ -175,6 +178,7 @@ class SwitchRouteSources(AtomicBehavior):
     """
     Updates the blackboard to tell the background activity to (de)activate all route sources
     """
+
     def __init__(self, enabled=True, name="SwitchRouteSources"):
         self._enabled = enabled
         super().__init__(name)
@@ -194,6 +198,7 @@ class RemoveRoadLane(AtomicBehavior):
         lane_wp (carla.Waypoint): A carla.Waypoint
         active (bool)
     """
+
     def __init__(self, lane_wp, name="RemoveRoadLane"):
         self._lane_wp = lane_wp
         super().__init__(name)
@@ -212,6 +217,7 @@ class ReAddRoadLane(AtomicBehavior):
         offset: 0 to readd the ego lane, 1 for the right side lane, -1 for the left...
         active (bool)
     """
+
     def __init__(self, offset, name="BA_ReAddRoadLane"):
         self._offset = offset
         super().__init__(name)
@@ -227,6 +233,7 @@ class LeaveSpaceInFront(AtomicBehavior):
     Updates the blackboard to tell the background activity that the ego needs more space in front.
     This only works at roads, not junctions.
     """
+
     def __init__(self, space, name="LeaveSpaceInFront"):
         self._space = space
         super().__init__(name)
@@ -242,6 +249,7 @@ class LeaveCrossingSpace(AtomicBehavior):
     Updates the blackboard to tell the background activity that the ego needs more space in front.
     This only works at roads, not junctions.
     """
+
     def __init__(self, collision_wp, name="LeaveCrossingSpace"):
         self._collision_wp = collision_wp
         super().__init__(name)
@@ -250,6 +258,7 @@ class LeaveCrossingSpace(AtomicBehavior):
         """Updates the blackboard and succeds"""
         py_trees.blackboard.Blackboard().set("BA_LeaveCrossingSpace", self._collision_wp, overwrite=True)
         return py_trees.common.Status.SUCCESS
+
 
 class HandleJunctionScenario(AtomicBehavior):
     """
@@ -265,6 +274,7 @@ class HandleJunctionScenario(AtomicBehavior):
             It also deactivates the road sources.
         active (bool)
     """
+
     def __init__(self, clear_junction=True, clear_ego_entry=True, remove_entries=[],
                  remove_exits=[], stop_entries=True, extend_road_exit=0,
                  name="HandleJunctionScenario"):
