@@ -137,18 +137,24 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Callback from CARLA
         """
         with CarlaDataProvider._lock:
-            for actor in CarlaDataProvider._actor_velocity_map:
+            for actor in CarlaDataProvider._actor_velocity_map.copy():
                 if actor is not None and actor.is_alive:
                     CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
+                else:
+                    del CarlaDataProvider._actor_velocity_map[actor]
 
-            for actor in CarlaDataProvider._actor_location_map:
+            for actor in CarlaDataProvider._actor_location_map.copy():
                 if actor is not None and actor.is_alive:
                     CarlaDataProvider._actor_location_map[actor] = actor.get_location()
+                else:
+                    del CarlaDataProvider._actor_location_map[actor]
 
-            for actor in CarlaDataProvider._actor_transform_map:
+            for actor in CarlaDataProvider._actor_transform_map.copy():
                 if actor is not None and actor.is_alive:
                     CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
-
+                else:
+                    del CarlaDataProvider._actor_transform_map[actor]
+            
             world = CarlaDataProvider._world
             if world is None:
                 print("WARNING: CarlaDataProvider couldn't find the world")
