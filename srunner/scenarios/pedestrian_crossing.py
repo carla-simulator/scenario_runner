@@ -130,8 +130,7 @@ class PedestrianCrossing(BasicScenario):
             spawn_transform = self._get_walker_transform(start_wp, walker_data)
             walker = CarlaDataProvider.request_new_actor('walker.*', spawn_transform)
             if walker is None:
-                for walker in self.other_actors:
-                    walker.destroy()
+                self._destroy_other_actors()
                 raise ValueError("Failed to spawn an adversary")
 
             walker.set_location(spawn_transform.location + carla.Location(z=-200))
@@ -220,7 +219,7 @@ class PedestrianCrossing(BasicScenario):
     def _replace_walker(self, walker):
         """As the adversary is probably, replace it with another one"""
         type_id = walker.type_id
-        walker.destroy()
+        CarlaDataProvider.remove_actor_by_id(walker.id)
         spawn_transform = self.ego_vehicles[0].get_transform()
         spawn_transform.location.z -= 50
         walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
