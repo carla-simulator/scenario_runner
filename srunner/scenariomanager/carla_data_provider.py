@@ -759,12 +759,16 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actor
 
     @staticmethod
-    def request_new_actor(model, spawn_point, rolename='scenario', autopilot=False,
+    def request_new_actor(model, spawn_point=None, rolename='scenario', autopilot=False,
                           random_location=False, color=None, actor_category="car",
                           attribute_filter=None, tick=True):
         """
         This method tries to create a new actor, returning it if successful (None otherwise).
         """
+        if not spawn_point and not random_location:
+            raise ValueError("Either spawn_point or random_location must be set")
+        elif spawn_point and random_location:
+            print("INFO: request_new_actor : Both spawn_point and random_location are set. Omitting spawn_point.")
         blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, attribute_filter)
 
         if random_location:
