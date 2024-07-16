@@ -20,7 +20,7 @@ from srunner.autoagents.agent_wrapper import AgentWrapper
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime
-from srunner.scenariomanager.watchdog import Watchdog
+# from srunner.scenariomanager.watchdog import Watchdog
 
 
 class ScenarioManager(object):
@@ -54,7 +54,7 @@ class ScenarioManager(object):
         self._debug_mode = debug_mode
         self._agent = None
         self._sync_mode = sync_mode
-        self._watchdog = None
+        # self._watchdog = None
         self._timeout = timeout
 
         self._running = False
@@ -81,9 +81,9 @@ class ScenarioManager(object):
         This function triggers a proper termination of a scenario
         """
 
-        if self._watchdog is not None:
-            self._watchdog.stop()
-            self._watchdog = None
+        # if self._watchdog is not None:
+        #     self._watchdog.stop()
+        #     self._watchdog = None
 
         if self.scenario is not None:
             self.scenario.terminate()
@@ -121,8 +121,8 @@ class ScenarioManager(object):
         self.start_system_time = time.time()
         start_game_time = GameTime.get_time()
 
-        self._watchdog = Watchdog(float(self._timeout))
-        self._watchdog.start()
+        # self._watchdog = Watchdog(float(self._timeout))
+        # self._watchdog.start()
         self._running = True
 
         while self._running:
@@ -156,7 +156,7 @@ class ScenarioManager(object):
         if self._timestamp_last_run < timestamp.elapsed_seconds and self._running:
             self._timestamp_last_run = timestamp.elapsed_seconds
 
-            self._watchdog.update()
+            # self._watchdog.update()
 
             if self._debug_mode:
                 print("\n--------- Tick ---------\n")
@@ -182,7 +182,8 @@ class ScenarioManager(object):
             if self.scenario_tree.status != py_trees.common.Status.RUNNING:
                 self._running = False
 
-        if self._sync_mode and self._running and self._watchdog.get_status():
+        # if self._sync_mode and self._running and self._watchdog.get_status():
+        if self._sync_mode and self._running:
             CarlaDataProvider.get_world().tick()
 
     def get_running_status(self):
@@ -190,7 +191,8 @@ class ScenarioManager(object):
         returns:
            bool:  False if watchdog exception occured, True otherwise
         """
-        return self._watchdog.get_status()
+        return True
+        # return self._watchdog.get_status()
 
     def stop_scenario(self):
         """
