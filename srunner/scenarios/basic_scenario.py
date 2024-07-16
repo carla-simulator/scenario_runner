@@ -95,9 +95,9 @@ class BasicScenario(object):
             self.scenario_tree.add_child(lights)
 
         # Create the weather behavior
-        weather = self._create_weather_behavior()
-        if weather:
-            self.scenario_tree.add_child(weather)
+        # weather = self._create_weather_behavior()
+        # if weather:
+        #     self.scenario_tree.add_child(weather)
 
         # And then add it to the main tree
         self.scenario_tree.add_child(self.behavior_tree)
@@ -143,7 +143,7 @@ class BasicScenario(object):
         """
 
         # Set the appropriate weather conditions
-        world.set_weather(self.config.weather)
+        # world.set_weather(self.config.weather)
 
         # Set the appropriate road friction
         if self.config.friction is not None:
