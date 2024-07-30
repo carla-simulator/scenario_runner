@@ -163,7 +163,7 @@ class World(object):
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
         # Get a random blueprint.
-        blueprint = random.choice(self.world.get_blueprint_library().filter(self._actor_filter))
+        blueprint = self.world.get_blueprint_library().filter(self._actor_filter)[0]
         blueprint.set_attribute('role_name', 'hero')
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
@@ -246,7 +246,7 @@ class ScenarioWorld(object):
         self.world.on_tick(hud.on_world_tick)
         self.recording_enabled = False
         self.recording_start = 0
-
+                
     def restart(self, args):
 
         self.player_max_speed = 1.589
@@ -256,10 +256,11 @@ class ScenarioWorld(object):
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
 
+        scenario_process = subprocess.Popen(args=["python","scenario_runner.py", "--sync", "--openscenario2", 'srunner/examples/cut_in_and_slow_right.osc'],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # Get the ego vehicle
         while self.player is None:
             print("Waiting for the ego vehicle...")
-
             time.sleep(1)
             possible_vehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in possible_vehicles:
