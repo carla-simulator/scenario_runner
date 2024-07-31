@@ -19,7 +19,7 @@ class Control:
         self.mq_client.subscribe(self.message_api, 0)
         
     def on_mqtt_message(self, client,userdata, msg):
-        proc = subprocess.Popen(args=["python","manual_control.py", "-a", "--rolename=ego_vehicle"],
+        proc = subprocess.Popen(args=["python","manual_control.py", "--res","4120x1080", "--rolename=ego_vehicle"],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = proc.communicate()
         print(stdout)
