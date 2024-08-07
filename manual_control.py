@@ -65,6 +65,7 @@ import random
 import subprocess
 import paho.mqtt.client as mqtt
 import json
+import queue
 
 if sys.version_info >= (3, 0):
 
@@ -256,7 +257,7 @@ class ScenarioWorld(object):
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
 
-        scenario_process = subprocess.Popen(args=["python","scenario_runner.py", "--sync", "--openscenario2", 'srunner/examples/cut_in_and_slow_right.osc'],
+        scenario_process = subprocess.Popen(args=["python","scenario_runner.py", "--sync", "--frameRate", "120","--openscenario2", 'srunner/examples/cut_in_and_slow_right.osc'],
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # Get the ego vehicle
         while self.player is None:
@@ -331,6 +332,13 @@ class DualControl(object):
         self._autopilot_enabled = start_in_autopilot
         self.scenario_running = False
 
+        broker_ip = "192.168.0.30"
+        self.mq_client = mqtt.Client(client_id="avsim-Carla", transport="tcp", protocol=mqtt.MQTTv311, clean_session=True)
+        self.mq_client.on_connect = self.on_mqtt_connect
+        self.mq_client.on_message = self.on_mqtt_messeage
+        self.mq_client.connect_async(broker_ip, port=1883, keepalive=60)
+        self.mq_client.loop_start()
+
         if isinstance(world.player, carla.Vehicle):
             self._control = carla.VehicleControl()
             world.player.set_autopilot(self._autopilot_enabled)
@@ -363,6 +371,16 @@ class DualControl(object):
         self._reverse_idx = int(self._parser.get('G29 Racing Wheel', 'reverse'))
         self._handbrake_idx = int(
             self._parser.get('G29 Racing Wheel', 'handbrake'))
+        
+    def on_mqtt_connect(self, mqttc, obj, flag, rc):
+        self.mq_client.subscribe("flame/avsim/carla/mapi_set_scenario_mode", 0)
+        print("connected"+str(rc))
+
+    def on_mqtt_messeage(self, mqttc, userdata, msg):
+        print("get message")
+        self.scenario_running = False
+        event = pygame.event.Event(pygame.KEYUP, key=pygame.K_n)
+        pygame.event.post(event)
 
     def parse_events(self, world, clock):
         for event in pygame.event.get():
@@ -511,9 +529,20 @@ class KeyboardControl(object):
     def __init__(self, world, start_in_autopilot):
         self._autopilot_enabled = start_in_autopilot
         self.scenario_running = False
-        self._control = carla.VehicleControl()
+        
+        if isinstance(world.player, carla.Vehicle):
+            self._control = carla.VehicleControl()
+            world.player.set_autopilot(self._autopilot_enabled)
+
         self._lights = carla.VehicleLightState.NONE
         self._steer_cache = 0.0
+
+        self._joystick = pygame.joystick.Joystick(0)
+        self._joystick.init()
+        self._parser = ConfigParser()
+        self._parser.read('wheel_config.ini')
+        self._brake_idx = int(self._parser.get('G29 Racing Wheel', 'brake'))
+
         world.player.set_autopilot(self._autopilot_enabled)
         world.player.set_light_state(self._lights)
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
@@ -613,6 +642,7 @@ class KeyboardControl(object):
 
         if not self._autopilot_enabled:
             self._parse_vehicle_keys(pygame.key.get_pressed(), clock.get_time())
+            self._parse_vehicle_wheel()
             self._control.reverse = self._control.gear < 0
             # Set automatic control-related vehicle lights
             if self._control.brake:
@@ -627,6 +657,24 @@ class KeyboardControl(object):
                 self._lights = current_lights
                 world.player.set_light_state(carla.VehicleLightState(self._lights))
             world.player.apply_control(self._control)
+
+    def _parse_vehicle_wheel(self):
+        numAxes = self._joystick.get_numaxes()
+        jsInputs = [float(self._joystick.get_axis(i)) for i in range(numAxes)]
+        # print (jsInputs)
+
+        # Custom function to map range of inputs [1, -1] to outputs [0, 1] i.e 1 from inputs means nothing is pressed
+        # For the steering, it seems fine as it is
+
+        brakeCmd = 1.6 + (2.05 * math.log10(
+            -0.7 * jsInputs[self._brake_idx] + 1.4) - 1.2) / 0.92
+        if brakeCmd <= 0:
+            brakeCmd = 0
+        elif brakeCmd > 1:
+            brakeCmd = 1
+
+        self._control.brake = brakeCmd
+        #toggle = jsButtons[self._reverse_idx]
 
     def _parse_vehicle_keys(self, keys, milliseconds):
         if keys[K_UP] or keys[K_w]:
@@ -1240,9 +1288,11 @@ class CameraManager(object):
             image.save_to_disk('_out/%08d' % image.frame)
 
 
+
 # ==============================================================================
 # -- game_loop() ---------------------------------------------------------------
 # ==============================================================================
+
 def game_loop(args):
     pygame.init()
     pygame.font.init()
@@ -1250,7 +1300,7 @@ def game_loop(args):
     scenario_world = None
     try:
         client = carla.Client(args.host, args.port)
-        client.set_timeout(2.0)
+        client.set_timeout(10.0)
 
         display = pygame.display.set_mode(
             (args.width, args.height),
@@ -1262,20 +1312,25 @@ def game_loop(args):
         controller = DualControl(world, args.autopilot)
         clock = pygame.time.Clock()
         scenario_running = False
-
+    
         while True:
-            clock.tick_busy_loop(60)
+            clock.tick_busy_loop(120) # 60 이상으로 높힐 시 manual control의 mqtt message 전달이 안됨..
             if controller.scenario_running: # it is activated only once 
                 scenario_running = True
+                controller.scenario_running = False
 
                 sim_world = client.get_world()
 
                 scenario_world = ScenarioWorld(client.get_world(), hud, args)
+                time.sleep(2)
                 scenario_world.camera_manager.toggle_camera()
                 controller = KeyboardControl(scenario_world, args.autopilot)
+
+                if world is not None:
+                    world.destroy()
+
                 sim_world.wait_for_tick()
-                world.destroy()
-                world = None
+                
                 clock = pygame.time.Clock()
 
             if not scenario_running: # daul control world
