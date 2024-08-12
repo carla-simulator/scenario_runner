@@ -158,6 +158,7 @@ class World(object):
         self._actor_filter ='vehicle.tesla.model3'
         self.restart()
         self.world.on_tick(hud.on_world_tick)
+        
     
     def restart(self):
         # Keep same camera config if the camera manager exists.
@@ -244,10 +245,19 @@ class ScenarioWorld(object):
         self.radar_sensor = None
         self.camera_manager = None
         self.restart(args)
+        self._weather_presets = find_weather_presets()
+        self._weather_index = 0
         self.world.on_tick(hud.on_world_tick)
         self.recording_enabled = False
         self.recording_start = 0
-                
+
+    def next_weather(self, reverse=False):
+        self._weather_index += -1 if reverse else 1
+        self._weather_index %= len(self._weather_presets)
+        preset = self._weather_presets[self._weather_index]
+        self.hud.notification('Weather: %s' % preset[1])
+        self.player.get_world().set_weather(preset[0])
+
     def restart(self, args):
 
         self.player_max_speed = 1.589
@@ -257,7 +267,7 @@ class ScenarioWorld(object):
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
 
-        scenario_process = subprocess.Popen(args=["python","scenario_runner.py", "--sync", "--frameRate", "120","--openscenario2", 'srunner/examples/cut_in_and_slow_right.osc'],
+        scenario_process = subprocess.Popen(args=["python","scenario_runner.py","--openscenario2", 'srunner/examples/cut_in_and_slow_right.osc'],
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # Get the ego vehicle
         while self.player is None:
@@ -736,8 +746,10 @@ class HUD(object):
         self.server_fps = 0
         self.frame = 0
         self.simulation_time = 0
+        self.sim_start_time = None
         self._show_info = True
         self._info_text = []
+        self.ring_bell = True
         self._server_clock = pygame.time.Clock()
 
     def on_mqtt_connect(self, mqttc,obj,flags,rc):
@@ -745,12 +757,18 @@ class HUD(object):
 
     def publish_data(self, data):
         self.mq_client.publish("avsim/carla", json.dumps(data))
+        if (self.simulation_time >= 135.0 and self.simulation_time <= 135.5) and self.ring_bell:
+            self.ring_bell = False
+            self.last_published_time = self.simulation_time
+            msg = {'app':'avsim-manager', 'file':'collision_alert_1.mp3', 'volume':0.7}
+            self.mq_client.publish("flame/avsim/mixer/mapi_play", json.dumps(msg),1)
 
     def on_world_tick(self, timestamp):
         self._server_clock.tick()
         self.server_fps = self._server_clock.get_fps()
         self.frame = timestamp.frame
-        self.simulation_time = timestamp.elapsed_seconds
+        #self.simulation_time = timestamp.elapsed_seconds # fix 
+
     def average_collision(self, collision):
         if collision:
             avg_collision = sum(collision) / len(collision)
@@ -765,6 +783,13 @@ class HUD(object):
         self._notifications.tick(world, clock)
         if not self._show_info:
             return
+        
+        current_sim_time = world.world.get_snapshot().timestamp.elapsed_seconds
+        if self.sim_start_time is None:
+            self.sim_start_time = current_sim_time
+        
+        self.simulation_time = current_sim_time - self.sim_start_time
+
         t = world.player.get_transform()
         v = world.player.get_velocity()
         c = world.player.get_control()
@@ -852,6 +877,7 @@ class HUD(object):
             'collision': collision
         }
         self.publish_data(self.data) # mqtt connection
+
 
         if len(vehicles) > 1:
             self._info_text += ['Nearby vehicles:']
@@ -1314,7 +1340,7 @@ def game_loop(args):
         scenario_running = False
     
         while True:
-            clock.tick_busy_loop(120) # 60 이상으로 높힐 시 manual control의 mqtt message 전달이 안됨..
+            clock.tick_busy_loop(60) # 60 이상으로 높힐 시 manual control의 mqtt message 전달이 안됨..
             if controller.scenario_running: # it is activated only once 
                 scenario_running = True
                 controller.scenario_running = False
@@ -1322,10 +1348,9 @@ def game_loop(args):
                 sim_world = client.get_world()
 
                 scenario_world = ScenarioWorld(client.get_world(), hud, args)
-                time.sleep(2)
+                time.sleep(2) # load world properly
                 scenario_world.camera_manager.toggle_camera()
                 controller = KeyboardControl(scenario_world, args.autopilot)
-
                 if world is not None:
                     world.destroy()
 
