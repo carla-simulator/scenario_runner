@@ -4,12 +4,11 @@ struct speeds:
     def compute(x:velocity, y:velocity) -> velocity is expression x-y
 
 scenario dut.cut_in_and_slow:
-
     ego_vehicle: Model3
     npc: Rubicon
     a: time
     b: velocity
-
+    c: velocity = 75kph
 
     event start
     event end
@@ -19,16 +18,16 @@ scenario dut.cut_in_and_slow:
                 speed(b)
                 lane(1, at: start) # left to right: [1..n]
             npc.drive() with:
+                speed(c)
                 lane(right_of: ego_vehicle, at: start)
                 position(1m, behind: ego_vehicle, at: start)
-                position(20m, ahead_of: ego_vehicle, at: end)
 
-        change_lane: parallel(duration: 5s):
+        change_lane: parallel(duration: 10s):
             ego_vehicle.drive()
             npc.drive() with:
                 lane(same_as: ego_vehicle, at: end)
 
-        slow: parallel(duration: 20s):
+        slow: parallel(duration: 13s):
             ego_vehicle.drive()
             npc.drive() with:
                 speed(10kph)
@@ -40,17 +39,17 @@ scenario top:
 
     ego_vehicle: Model3
     npc: Rubicon
-    time_a: time = 30s
+    time_a: time = 79s
 
     c: speeds
 
     speed_a: velocity
-    keep (default speed_a == 30kph)
-    speed_b: velocity = 30kph
+    keep (default speed_a == 65kph)
+    speed_b: velocity = 73kph
 
     speed_c: velocity = speeds.compute(x: 70kph, y:20kph)
 
     do serial:
         # dut.cut_in_and_slow(a: time_a)
-        dut.cut_in_and_slow(a: time_a, b: speed_a)
+        dut.cut_in_and_slow(a: time_a, b: speed_b)
         # dut.cut_in_and_slow()
