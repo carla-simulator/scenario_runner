@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="OppositeVehicleRunningRedLight_1" type="OppositeVehicleRunningRedLight" town="Town10HD_Opt">
+        <ego_vehicle x="23.1" y="13.0" z="0" yaw="180" model="vehicle.lincoln.mkz" />
+    </scenario>
+</scenarios>

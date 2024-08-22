@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <scenarios>
     <scenario name="VehicleOpensDoorTwoWays_1" type="VehicleOpensDoorTwoWays" town="Town10HD_Opt">
-        <ego_vehicle x="-19.4" y="69.5" z="0.3" yaw="0" model="vehicle.lincoln.mkz_2017" />
-        <direction value="right"/>
+        <ego_vehicle x="84.4" y="124.1" z="0.3" yaw="150" model="vehicle.lincoln.mkz" />
+        <distance value="50"/>
+        <frequency from="25" to="90"/>
     </scenario>
 </scenarios>

@@ -26,19 +26,10 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import In
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import HandleJunctionScenario
 
-from srunner.tools.scenario_helper import generate_target_waypoint_in_route
-
-
-def convert_dict_to_location(actor_dict):
-    """
-    Convert a JSON string to a Carla.Location
-    """
-    location = carla.Location(
-        x=float(actor_dict['x']),
-        y=float(actor_dict['y']),
-        z=float(actor_dict['z'])
-    )
-    return location
+from srunner.tools.scenario_helper import (generate_target_waypoint,
+                                           generate_target_waypoint_in_route,
+                                           get_value_parameter,
+                                           convert_dict_to_location)
 
 
 class BlockedIntersection(BasicScenario):
@@ -47,7 +38,7 @@ class BlockedIntersection(BasicScenario):
     the ego performs a turn only to find out that the end is blocked by another vehicle.
     """
 
-    def __init__(self, world, ego_vehicles, config, debug_mode=False, criteria_enable=True,
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
         """
         Setup all relevant parameters and create scenario
@@ -79,7 +70,16 @@ class BlockedIntersection(BasicScenario):
         """
         Custom initialization
         """
-        waypoint = generate_target_waypoint_in_route(self._reference_waypoint, config.route)
+        direction = get_value_parameter(config, 'direction', str, 'right')
+        if self.route_mode:
+            waypoint = generate_target_waypoint_in_route(self._reference_waypoint, config.route)
+        elif direction == 'right':
+            waypoint = generate_target_waypoint(self._reference_waypoint, 1)
+        elif direction == 'left':
+            waypoint = generate_target_waypoint(self._reference_waypoint, -1)
+        else:
+            raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
+
         waypoint = waypoint.next(self._blocker_distance)[0]
 
         self._blocker_transform = waypoint.transform

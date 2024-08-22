@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="StaticCutIn_1" type="StaticCutIn" town="Town10HD_Opt">
+        <ego_vehicle x="-24" y="-61" z="0" yaw="0" model="vehicle.lincoln.mkz"/>
+        <direction value='right'/>
+        <distance value='50'/>
+    </scenario>
+</scenarios>
+

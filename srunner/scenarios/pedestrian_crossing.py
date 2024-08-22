@@ -26,17 +26,7 @@ from srunner.scenarios.basic_scenario import BasicScenario
 
 from srunner.tools.background_manager import HandleJunctionScenario
 
-
-def convert_dict_to_location(actor_dict):
-    """
-    Convert a JSON string to a Carla.Location
-    """
-    location = carla.Location(
-        x=float(actor_dict['x']),
-        y=float(actor_dict['y']),
-        z=float(actor_dict['z'])
-    )
-    return location
+from srunner.tools.scenario_helper import convert_dict_to_location
 
 
 class PedestrianCrossing(BasicScenario):

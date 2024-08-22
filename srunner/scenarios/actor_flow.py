@@ -23,39 +23,20 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                WaitEndIntersection,
                                                                                WaitUntilInFrontPosition)
+
 from srunner.scenarios.basic_scenario import BasicScenario
 
 from srunner.tools.background_manager import (SwitchRouteSources,
                                               ChangeOppositeBehavior,
                                               HandleJunctionScenario,
                                               RemoveRoadLane)
-from srunner.tools.scenario_helper import get_same_dir_lanes, generate_target_waypoint_in_route
 
-def convert_dict_to_location(actor_dict):
-    """
-    Convert a JSON string to a Carla.Location
-    """
-    location = carla.Location(
-        x=float(actor_dict['x']),
-        y=float(actor_dict['y']),
-        z=float(actor_dict['z'])
-    )
-    return location
+from srunner.tools.scenario_helper import (get_same_dir_lanes,
+                                           generate_target_waypoint_in_route,
+                                           get_value_parameter,
+                                           get_interval_parameter,
+                                           convert_dict_to_location)
 
-def get_value_parameter(config, name, p_type, default):
-    if name in config.other_parameters:
-        return p_type(config.other_parameters[name]['value'])
-    else:
-        return default
-
-def get_interval_parameter(config, name, p_type, default):
-    if name in config.other_parameters:
-        return [
-            p_type(config.other_parameters[name]['from']),
-            p_type(config.other_parameters[name]['to'])
-        ]
-    else:
-        return default
 
 class EnterActorFlow(BasicScenario):
     """

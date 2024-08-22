@@ -610,21 +610,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             return False
 
-        _actor_blueprint_categories = {
-            'car': 'vehicle.tesla.model3',
-            'van': 'vehicle.volkswagen.t2',
-            'truck': 'vehicle.carlamotors.carlacola',
-            'trailer': '',
-            'semitrailer': '',
-            'bus': 'vehicle.volkswagen.t2',
-            'motorbike': 'vehicle.kawasaki.ninja',
-            'bicycle': 'vehicle.diamondback.century',
-            'train': '',
-            'tram': '',
-            'pedestrian': 'walker.pedestrian.0001',
-	    'misc': 'static.prop.streetbarrier'
-        }
-
         # Set the model
         try:
             blueprints = CarlaDataProvider._blueprint_library.filter(model)
@@ -634,13 +619,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             blueprint = CarlaDataProvider._rng.choice(blueprints)
         except ValueError:
-            # The model is not part of the blueprint library. Let's take a default one for the given category
-            bp_filter = "vehicle.*"
-            new_model = _actor_blueprint_categories[actor_category]
-            if new_model != '':
-                bp_filter = new_model
-            print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
-            blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(bp_filter))
+            raise ValueError("Actor model {} not available".format(model))
 
         # Set the color
         if color:

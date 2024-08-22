@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="ConstructionObstacle_1" type="ConstructionObstacle" town="Town10HD_Opt">
+        <ego_vehicle x="-24.4" y="-57.8" z="0" yaw="0" model="vehicle.lincoln.mkz"/>
+        <start_actor_flow x="-27.0" y="-61.1" z="0"/>
+        <end_actor_flow x="59.3" y="-61.1" z="0"/>
+        <direction value='right'/>
+        <distance value='50'/>
+        <flow_speed value="6"/>
+        <source_dist_interval from="10" to="60"/>
+    </scenario>
+    <!-- ConstructionObstacle_2 means to illustrate that it can be used to make the ego cross into a opposite lane -->
+    <scenario name="ConstructionObstacle_2" type="ConstructionObstacle" town="Town10HD_Opt">
+        <ego_vehicle x="62.7" y="-64.6" z="0" yaw="180" model="vehicle.lincoln.mkz"/>
+        <start_actor_flow x="-27.0" y="-61.1" z="0"/>
+        <end_actor_flow x="59.3" y="-61.1" z="0"/>
+        <direction value='right'/>
+        <distance value='50'/>
+        <flow_speed value="6"/>
+        <source_dist_interval from="50" to="100"/>
+    </scenario>
+</scenarios>
+

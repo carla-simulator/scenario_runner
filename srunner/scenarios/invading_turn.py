@@ -24,25 +24,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Wa
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import RemoveRoadLane, ChangeOppositeBehavior, ReAddRoadLane
-
-
-def convert_dict_to_location(actor_dict):
-    """
-    Convert a JSON string to a Carla.Location
-    """
-    location = carla.Location(
-        x=float(actor_dict['x']),
-        y=float(actor_dict['y']),
-        z=float(actor_dict['z'])
-    )
-    return location
-
-
-def get_value_parameter(config, name, p_type, default):
-    if name in config.other_parameters:
-        return p_type(config.other_parameters[name]['value'])
-    else:
-        return default
+from srunner.tools.scenario_helper import convert_dict_to_location, get_value_parameter
 
 
 class InvadingTurn(BasicScenario):

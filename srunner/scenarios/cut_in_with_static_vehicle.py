@@ -24,13 +24,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
                                                                                InTimeToArrivalToLocation)
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import RemoveRoadLane, LeaveSpaceInFront, ReAddRoadLane, ChangeRoadBehavior
-
-
-def get_value_parameter(config, name, p_type, default):
-    if name in config.other_parameters:
-        return p_type(config.other_parameters[name]['value'])
-    else:
-        return default
+from srunner.tools.scenario_helper import get_value_parameter
 
 
 class StaticCutIn(BasicScenario):

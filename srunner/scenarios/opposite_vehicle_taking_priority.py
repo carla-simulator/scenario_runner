@@ -120,7 +120,7 @@ class OppositeVehicleJunction(BasicScenario):
 
         # Spawn the actor and move it below ground
         opposite_actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', self._spawn_location, attribute_filter={'special_type': 'emergency'})
+            'vehicle.ambulance.ford', self._spawn_location)
         if not opposite_actor:
             raise Exception("Couldn't spawn the actor")
         lights = opposite_actor.get_light_state()

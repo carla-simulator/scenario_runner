@@ -23,24 +23,11 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_junction_topology,
                                            filter_junction_wp_direction,
                                            get_same_dir_lanes,
-                                           get_closest_traffic_light)
+                                           get_closest_traffic_light,
+                                           get_value_parameter,
+                                           get_interval_parameter)
 
 from srunner.tools.background_manager import HandleJunctionScenario, ChangeOppositeBehavior
-
-def get_value_parameter(config, name, p_type, default):
-    if name in config.other_parameters:
-        return p_type(config.other_parameters[name]['value'])
-    else:
-        return default
-
-def get_interval_parameter(config, name, p_type, default):
-    if name in config.other_parameters:
-        return [
-            p_type(config.other_parameters[name]['from']),
-            p_type(config.other_parameters[name]['to'])
-        ]
-    else:
-        return default
 
 
 class JunctionLeftTurn(BasicScenario):

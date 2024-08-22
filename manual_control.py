@@ -202,8 +202,6 @@ class World(object):
             if sensor is not None:
                 sensor.stop()
                 sensor.destroy()
-        if self.player is not None:
-            self.player.destroy()
 
 
 # ==============================================================================

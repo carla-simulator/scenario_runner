@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="ParkingExit_1" type="ParkingExit" town="Town10HD_Opt">
+        <ego_vehicle x="46.7" y="13.4" z="0" yaw="180" model="vehicle.lincoln.mkz"/>
+        <start_actor_flow x="81.8" y="13.4" z="0"/>
+        <end_actor_flow x="14.5" y="13.4" z="0"/>
+        <front_vehicle_distance value="9"/>
+        <behind_vehicle_distance value="9"/>
+        <flow_speed value="5"/>
+        <flow_distance value="20"/>
+    </scenario> 
+    <scenario name="ParkingExit_2" type="ParkingExit" town="Town10HD_Opt">
+        <ego_vehicle x="-104" y="61" z="0" yaw="-90" model="vehicle.lincoln.mkz"/>
+        <direction value='right'/>
+    </scenario>
+</scenarios>
+
