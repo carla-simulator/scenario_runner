@@ -11,7 +11,7 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 
 from __future__ import print_function
 
-from distutils.util import strtobool
+from srunner.tools.util import strtobool
 import re
 import copy
 import datetime
