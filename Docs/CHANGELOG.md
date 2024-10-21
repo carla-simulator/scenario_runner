@@ -15,6 +15,7 @@
 ## Upcoming
 * Improvements to the CarlaDataProvider:
  - Added `spawn_actor` for a blueprint based actor creation similar to `World.spawn_actor`
+* Removed SyntaxWarnings in osc2_scenario.py
 
 ## CARLA ScenarioRunner 0.9.15
 ### :rocket: New Features
