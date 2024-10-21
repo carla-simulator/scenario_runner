@@ -26,6 +26,7 @@ def parse_actor(info):
     }
     return actor
 
+
 def parse_transform(info):
     """Parses a list into a carla.Transform"""
     transform = carla.Transform(
@@ -36,11 +37,12 @@ def parse_transform(info):
         ),
         carla.Rotation(
             roll=float(info[7][1:-1]),
-            pitch=float(info[8][:-1]), 
+            pitch=float(info[8][:-1]),
             yaw=float(info[9][:-1])
         )
     )
     return transform
+
 
 def parse_control(info):
     """Parses a list into a carla.VehicleControl"""
@@ -54,6 +56,7 @@ def parse_control(info):
         gear=int(info[11]),
     )
     return control
+
 
 def parse_vehicle_lights(info):
     """Parses a list into a carla.VehicleLightState"""
@@ -78,6 +81,7 @@ def parse_vehicle_lights(info):
 
     return lights
 
+
 def parse_traffic_light(info):
     """Parses a list into a dictionary with all the traffic light's information"""
     number_to_state = {
@@ -94,6 +98,7 @@ def parse_traffic_light(info):
     }
     return traffic_light
 
+
 def parse_velocity(info):
     """Parses a list into a carla.Vector3D with the velocity"""
     velocity = carla.Vector3D(
@@ -103,6 +108,7 @@ def parse_velocity(info):
     )
     return velocity
 
+
 def parse_angular_velocity(info):
     """Parses a list into a carla.Vector3D with the angular velocity"""
     velocity = carla.Vector3D(
@@ -111,6 +117,7 @@ def parse_angular_velocity(info):
         z=float(info[9][:-1])
     )
     return velocity
+
 
 def parse_scene_lights(info):
     """Parses a list into a carla.VehicleLightState"""
@@ -127,6 +134,7 @@ def parse_scene_lights(info):
     )
     return scene_light
 
+
 def parse_bounding_box(info):
     """
     Parses a list into a carla.BoundingBox.
@@ -136,23 +144,24 @@ def parse_bounding_box(info):
         location = carla.Location()
     else:
         location = carla.Location(
-            float(info[3][1:-1])/100,
-            float(info[4][:-1])/100,
-            float(info[5][:-1])/100,
+            float(info[3][1:-1]) / 100,
+            float(info[4][:-1]) / 100,
+            float(info[5][:-1]) / 100,
         )
 
     if 'inf' in info[7]:
         extent = carla.Vector3D()
     else:
         extent = carla.Vector3D(
-            float(info[7][1:-1])/100,
-            float(info[8][:-1])/100,
-            float(info[9][:-1])/100,
+            float(info[7][1:-1]) / 100,
+            float(info[8][:-1]) / 100,
+            float(info[9][:-1]) / 100,
         )
 
     bbox = carla.BoundingBox(location, extent)
 
     return bbox
+
 
 def parse_state_times(info):
     """Parses a list into a dict containing the state times of the traffic lights"""
@@ -163,17 +172,19 @@ def parse_state_times(info):
     }
     return state_times
 
+
 def parse_vector_list(info):
     """Parses a list of string into a list of Vector2D"""
     vector_list = []
     for i in range(0, len(info), 2):
         vector = carla.Vector2D(
             x=float(info[i][1:-1]),
-            y=float(info[i+1][:-1]),
+            y=float(info[i + 1][:-1]),
         )
         vector_list.append(vector)
 
     return vector_list
+
 
 def parse_gears_control(info):
     """Parses a list into a GearPhysicsControl"""
@@ -183,6 +194,7 @@ def parse_gears_control(info):
         up_ratio=float(info[7]),
     )
     return gears_control
+
 
 def parse_wheels_control(info):
     """Parses a list into a WheelsPhysicsControl"""
@@ -283,7 +295,7 @@ class MetricsParser(object):
                     "platform_time": None
                 },
                 "actors": {},
-                "events":{
+                "events": {
                     "scene_lights": {},
                     "physics_control": {},
                     "traffic_light_state_time": {},

@@ -57,7 +57,7 @@ class StaticCutIn(BasicScenario):
         self._front_vehicles = 3
         self._vehicle_gap = 11
 
-        self._speed = 60 # Km/h
+        self._speed = 60  # Km/h
 
         self._adversary_end_distance = 70
 
@@ -159,8 +159,8 @@ class StaticCutIn(BasicScenario):
         self._side_transforms.append([self._adversary_actor, side_wp.transform])
         self.other_actors.append(self._adversary_actor)
 
-        # This starts the engine, to allow the adversary to instantly move 
-        self._adversary_actor.apply_control(carla.VehicleControl(throttle=1.0, brake=1.0)) 
+        # This starts the engine, to allow the adversary to instantly move
+        self._adversary_actor.apply_control(carla.VehicleControl(throttle=1.0, brake=1.0))
 
         # Move to the front
         next_wps = blocker_wp.next(self._vehicle_gap)

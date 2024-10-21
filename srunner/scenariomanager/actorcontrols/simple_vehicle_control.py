@@ -241,8 +241,8 @@ class SimpleVehicleControl(BasicControl):
             offset_location = transform.location
         else:
             right_vector = transform.get_right_vector()
-            offset_location = transform.location + carla.Location(x=self._offset*right_vector.x,
-                                                                  y=self._offset*right_vector.y)
+            offset_location = transform.location + carla.Location(x=self._offset * right_vector.x,
+                                                                  y=self._offset * right_vector.y)
 
         return offset_location
 

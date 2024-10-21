@@ -1415,6 +1415,7 @@ def game_loop(args):
         if world_module is not None:
             world_module.destroy()
 
+
 def exit_game():
     module_manager.clear_modules()
     pygame.quit()
@@ -1489,6 +1490,7 @@ def main():
     print(__doc__)
 
     game_loop(args)
+
 
 if __name__ == '__main__':
     main()

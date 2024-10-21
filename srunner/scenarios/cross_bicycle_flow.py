@@ -52,6 +52,7 @@ def get_interval_parameter(config, name, p_type, default):
     else:
         return default
 
+
 class CrossingBicycleFlow(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
@@ -152,7 +153,6 @@ class CrossingBicycleFlow(BasicScenario):
             else:
                 self._flow_tl_dict[tl] = carla.TrafficLightState.Red
                 self._init_tl_dict[tl] = carla.TrafficLightState.Red
-
 
     def _create_behavior(self):
         """

@@ -175,9 +175,9 @@ class ParkingExit(BasicScenario):
         if self._direction == 'left':
             displacement_vector *= -1
 
-        new_location = wp.transform.location + carla.Location(x=displacement*displacement_vector.x,
-                                                              y=displacement*displacement_vector.y,
-                                                              z=displacement*displacement_vector.z)
+        new_location = wp.transform.location + carla.Location(x=displacement * displacement_vector.x,
+                                                              y=displacement * displacement_vector.y,
+                                                              z=displacement * displacement_vector.z)
         new_location.z += 0.05  # Just in case, avoid collisions with the ground
         return new_location
 
