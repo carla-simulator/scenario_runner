@@ -268,6 +268,13 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         @return the global route planner
         """
         return CarlaDataProvider._grp
+    
+    @staticmethod
+    def get_blueprint_library():
+        """
+        @return the blueprint library
+        """
+        return CarlaDataProvider._blueprint_library
 
     @staticmethod
     def set_ego_route(route):
