@@ -14,7 +14,7 @@ Limitations:
 - Can only consider obstacles in forward facing reaching (i.e. in tight corners obstacles may be ignored).
 """
 
-from distutils.util import strtobool
+from srunner.util import strtobool
 import math
 
 import carla
