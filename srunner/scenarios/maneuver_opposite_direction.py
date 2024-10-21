@@ -107,7 +107,7 @@ class ManeuverOppositeDirection(BasicScenario):
 
         self._source_transform = second_actor_waypoint.transform
         sink_waypoint = second_actor_waypoint.next(1)[0]
-        while not sink_waypoint.is_intersection:
+        while not sink_waypoint.is_junction:
             sink_waypoint = sink_waypoint.next(1)[0]
         self._sink_location = sink_waypoint.transform.location
 
