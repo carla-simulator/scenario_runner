@@ -6,7 +6,7 @@ psutil
 xmlschema==1.0.18
 ephem
 tabulate
-opencv-python==4.2.0.32
+opencv-python==4.8.1.78
 matplotlib
 six
 simple-watchdog-timer
