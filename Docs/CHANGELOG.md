@@ -12,7 +12,11 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
-## Upcoming
+
+## CARLA ScenarioRunner 0.10
+* Updated the scenarios to match the limitations of CARLA 0.10. This means moving them to Town10HD_Opt and updating the blueprints to the available ones.
+* Added Scenic examples to the repo, and updated the [available ones in their repo](https://github.com/BerkeleyLearnVerify/Scenic/tree/main/examples/carla/Carla_Challenge) to match the new release.
+
 * Improvements to the CarlaDataProvider:
  - Added `spawn_actor` for a blueprint based actor creation similar to `World.spawn_actor`
 

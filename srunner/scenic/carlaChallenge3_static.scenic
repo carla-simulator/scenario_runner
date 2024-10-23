@@ -12,7 +12,7 @@ model srunner.scenic.models.model
 
 ## CONSTANTS
 EGO_MODEL = "vehicle.lincoln.mkz"
-EGO_SPEED = 10
+EGO_SPEED = 8
 EGO_BRAKING_THRESHOLD = 12
 
 BRAKE_ACTION = 1.0

@@ -12,11 +12,11 @@ model srunner.scenic.models.model
 
 ## CONSTANTS
 EGO_MODEL = "vehicle.lincoln.mkz"
-EGO_SPEED = 10
+EGO_SPEED = 7
 EGO_BRAKING_THRESHOLD = 12
 
-LEAD_CAR_SPEED = 10
-LEADCAR_BRAKING_THRESHOLD = 10
+LEAD_CAR_SPEED = 8
+LEADCAR_BRAKING_THRESHOLD = 15
 
 BRAKE_ACTION = 1.0
 
@@ -46,12 +46,12 @@ lane = Uniform(*network.lanes)
 
 obstacle = new Trash on lane.centerline
 
-leadCar = new Car following roadDirection from obstacle for Range(-50, -30),
+leadCar = new Car following roadDirection from obstacle for Range(-60, -50),
         with behavior LeadingCarBehavior(LEAD_CAR_SPEED)
 
 ego = new Car following roadDirection from leadCar for Range(-15, -10),
         with blueprint EGO_MODEL,
         with behavior EgoBehavior(EGO_SPEED)
 
-require (distance to intersection) > 50
+require (distance to intersection) > 60
 terminate when ego.speed < 0.1 and (distance to obstacle) < 30

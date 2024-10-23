@@ -7,9 +7,9 @@ param carla_map = 'Town10HD_Opt'
 model srunner.scenic.models.model
 
 #CONSTANTS
-EGO_SPEED = 10
-SLOW_CAR_SPEED = 6
-EGO_TO_BICYCLE = 10
+EGO_SPEED = 8
+SLOW_CAR_SPEED = 3
+EGO_TO_BICYCLE = 25
 DIST_THRESHOLD = 15
 
 #EGO BEHAVIOR: Follow lane, then perform a lane change
@@ -20,7 +20,7 @@ behavior EgoBehavior(leftpath, origpath=[]):
         do FollowLaneBehavior(EGO_SPEED)
 
     interrupt when withinDistanceToAnyObjs(self, DIST_THRESHOLD) and not laneChangeCompleted:
-        do LaneChangeBehavior(laneSectionToSwitch=leftpath, target_speed=10)
+        do LaneChangeBehavior(laneSectionToSwitch=leftpath, target_speed=8)
         laneChangeCompleted = True
 
 #OTHER BEHAVIOR

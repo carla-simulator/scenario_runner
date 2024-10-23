@@ -22,6 +22,10 @@ from srunner.scenic.models.blueprints import oldBlueprintNames
 import srunner.scenic.models.utils.utils as utils
 import srunner.scenic.models.utils.visuals as visuals
 from scenic.syntax.veneer import verbosePrint
+from scenic.domains.driving.controllers import (
+    PIDLateralController,
+    PIDLongitudinalController,
+)
 
 
 class CarlaSimulator(DrivingSimulator):
@@ -36,7 +40,7 @@ class CarlaSimulator(DrivingSimulator):
         timeout=10,
         render=True,
         record="",
-        timestep=0.1,
+        timestep=0.05,
         traffic_manager_port=None,
     ):
         super().__init__()
@@ -115,12 +119,6 @@ class CarlaSimulation(DrivingSimulation):
         super().__init__(scene, **kwargs)
 
     def setup(self):
-        weather = self.scene.params.get("weather")
-        if weather is not None:
-            if isinstance(weather, str):
-                self.world.set_weather(getattr(carla.WeatherParameters, weather))
-            elif isinstance(weather, dict):
-                self.world.set_weather(carla.WeatherParameters(**weather))
 
         # Setup HUD
         if self.render:
@@ -317,3 +315,24 @@ class CarlaSimulation(DrivingSimulation):
 
         self.world.tick()
         super().destroy()
+
+    def getLaneFollowingControllers(self, agent):
+        """Get longitudinal and lateral controllers for lane following."""
+        dt = self.timestep
+        lon_controller = PIDLongitudinalController(K_P=1.0, K_D=0.2, K_I=1.4, dt=dt)
+        lat_controller = PIDLateralController(K_P=0.8, K_D=0.2, K_I=0.0, dt=dt)
+        return lon_controller, lat_controller
+
+    def getTurningControllers(self, agent):
+        """Get longitudinal and lateral controllers for turning."""
+        dt = self.timestep
+        lon_controller = PIDLongitudinalController(K_P=1.0, K_D=0.2, K_I=1.4, dt=dt)
+        lat_controller = PIDLateralController(K_P=2.0, K_D=0.5, K_I=0.0, dt=dt)
+        return lon_controller, lat_controller
+
+    def getLaneChangingControllers(self, agent):
+        """Get longitudinal and lateral controllers for lane changing."""
+        dt = self.timestep
+        lon_controller = PIDLongitudinalController(K_P=1.0, K_D=0.2, K_I=1.4, dt=dt)
+        lat_controller = PIDLateralController(K_P=0.8, K_D=0.2, K_I=0.0, dt=dt)
+        return lon_controller, lat_controller

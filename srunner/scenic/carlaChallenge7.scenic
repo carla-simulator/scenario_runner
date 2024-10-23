@@ -8,47 +8,49 @@ param map = localPath('assets/Town10HD_Opt.xodr')
 param carla_map = 'Town10HD_Opt'
 model srunner.scenic.models.model
 
-DELAY_TIME_1 = 1 # the delay time for ego
-DELAY_TIME_2 = 40 # the delay time for the slow car
-FOLLOWING_DISTANCE = 13 # normally 10, 40 when DELAY_TIME is 25, 50 to prevent collisions
+EGO_MODEL = "vehicle.lincoln.mkz"
 
-DISTANCE_TO_INTERSECTION1 = Uniform(15, 20) * -1
-DISTANCE_TO_INTERSECTION2 = Uniform(10, 15) * -1
-SAFETY_DISTANCE = 20
+SAFETY_DISTANCE = 15
 BRAKE_INTENSITY = 1.0
-
+DISTANCE_TO_INTERSECTION = Uniform(10, 15) * -1
 
 behavior CrossingCarBehavior(trajectory):
-    while True:
-        do FollowTrajectoryBehavior(trajectory = trajectory)
+    do FollowTrajectoryBehavior(trajectory=trajectory)
+    wait
 
 behavior EgoBehavior(trajectory):
-    
+
     try:
-        do FollowTrajectoryBehavior(trajectory=trajectory)
+        do FollowTrajectoryBehavior(target_speed=7, trajectory=trajectory)
+        terminate
     interrupt when withinDistanceToAnyObjs(self, SAFETY_DISTANCE):
         take SetBrakeAction(BRAKE_INTENSITY)
 
-
-spawnAreas = []
 fourWayIntersection = filter(lambda i: i.is4Way, network.intersections)
 intersec = Uniform(*fourWayIntersection)
 
+# Get the ego manuever
 startLane = Uniform(*intersec.incomingLanes)
-straight_maneuvers = filter(lambda i: i.type == ManeuverType.STRAIGHT, startLane.maneuvers)
-straight_maneuver = Uniform(*straight_maneuvers)
-ego_trajectory = [straight_maneuver.startLane, straight_maneuver.connectingLane, straight_maneuver.endLane]
+ego_maneuvers = filter(lambda i: i.type == ManeuverType.STRAIGHT, startLane.maneuvers)
+ego_maneuver = Uniform(*ego_maneuvers)
+ego_trajectory = [ego_maneuver.startLane, ego_maneuver.connectingLane, ego_maneuver.endLane]
 
-conflicting_straight_maneuvers = filter(lambda i: i.type == ManeuverType.STRAIGHT, straight_maneuver.conflictingManeuvers)
-csm = Uniform(*conflicting_straight_maneuvers)
-crossing_startLane = csm.startLane
-crossing_car_trajectory = [csm.startLane, csm.connectingLane, csm.endLane]
+# Get the adversary maneuver
+other_maneuvers = filter(lambda i: i.type == ManeuverType.STRAIGHT, ego_maneuver.conflictingManeuvers)
+other_maneuver = Uniform(*other_maneuvers)
+other_trajectory = [other_maneuver.startLane, other_maneuver.connectingLane, other_maneuver.endLane]
 
-ego_spwPt = startLane.centerline[-1]
-csm_spwPt = crossing_startLane.centerline[-1]
+## OBJECT PLACEMENT
+other_spwPt = new OrientedPoint in other_maneuver.startLane.centerline
+ego_spwPt = new OrientedPoint in ego_maneuver.startLane.centerline
 
-ego = new Car following roadDirection from ego_spwPt for DISTANCE_TO_INTERSECTION1,
-        with behavior EgoBehavior(trajectory = ego_trajectory)
+ego = new Car at ego_spwPt,
+    with blueprint EGO_MODEL,
+    with behavior EgoBehavior(trajectory=ego_trajectory)
 
-crossing_car = new Car following roadDirection from csm_spwPt for DISTANCE_TO_INTERSECTION2,
-                with behavior CrossingCarBehavior(crossing_car_trajectory)
+crossing_car = new Truck at other_spwPt,
+    with blueprint 'vehicle.ambulance.ford',
+    with behavior CrossingCarBehavior(other_trajectory)
+
+require 10 <= (distance to intersec) <= 15
+terminate when (distance to ego_spwPt) >= 40

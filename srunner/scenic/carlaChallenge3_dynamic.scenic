@@ -12,11 +12,11 @@ model srunner.scenic.models.model
 
 ## CONSTANTS
 EGO_MODEL = "vehicle.lincoln.mkz"
-EGO_SPEED = 6
-SAFETY_DISTANCE = 10
+EGO_SPEED = 7
+SAFETY_DISTANCE = 17
 BRAKE_INTENSITY = 1.0
 
-PEDESTRIAN_MIN_SPEED = 2.0
+PEDESTRIAN_MIN_SPEED = 15
 THRESHOLD = 30
 
 # EGO BEHAVIOR: Follow lane and brake when reaches threshold distance to obstacle
@@ -48,10 +48,10 @@ vending_machine = new VendingMachine right of vending_spot by 3,
     with heading -90 deg relative to vending_spot.heading,
     with regionContainedIn None
 
-ego = new Car following roadDirection from spot for Range(-50, -40),
+ego = new Car following roadDirection from spot for Range(-40, -35),
     with blueprint EGO_MODEL,
     with behavior EgoBehavior(EGO_SPEED)
 
 require (distance to intersection) > 50
 require (ego.laneSection._slowerLane is None)
-terminate when (distance to spot) > 30
+terminate when (distance to spot) > 40

@@ -81,7 +81,7 @@ param render = 1
 if globalParameters.render not in [0, 1]:
     raise ValueError('render param must be either 0 or 1')
 param record = ''
-param timestep = 0.1
+param timestep = 0.05
 param weather = Uniform(
     'ClearNoon',
     'CloudyNoon',
@@ -179,6 +179,18 @@ class Car(Vehicle):
     blueprints listed in :obj:`scenic.simulators.carla.blueprints.carModels`.
     """
     blueprint: Uniform(*blueprints.carModels)
+
+    @property
+    def isCar(self):
+        return True
+
+class Truck(Vehicle):
+    """A truck.
+
+    The default ``blueprint`` (see `CarlaActor`) is a uniform distribution over the
+    blueprints listed in :obj:`scenic.simulators.carla.blueprints.truckModels`.
+    """
+    blueprint: Uniform(*blueprints.truckModels)
 
     @property
     def isCar(self):

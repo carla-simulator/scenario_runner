@@ -11,9 +11,10 @@ def _snapToGround(world, location, blueprint):
     """Mutates @location to have the same z-coordinate as the nearest waypoint in @world."""
     waypoint = world.get_map().get_waypoint(location)
     # patch to avoid the spawn error issue with vehicles and walkers.
-    z_offset = 0
     if blueprint is not None and ("vehicle" in blueprint or "walker" in blueprint):
-        z_offset = 0.8
+        z_offset = 0.2
+    else:
+        z_offset = -0.05 # Put the prop a little below ground so that they aren't floating
 
     location.z = waypoint.transform.location.z + z_offset
     return location

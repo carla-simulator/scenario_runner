@@ -31,9 +31,9 @@ ego = new Car at start,
     with blueprint EGO_MODEL,
     with behavior EgoBehavior(EGO_SPEED)
 
-debris1 = new Debris following roadDirection for Range(10, 20)
+debris1 = new Debris following roadDirection from start for Range(10, 20)
 debris2 = new Debris following roadDirection from debris1 for Range(5, 10)
 debris3 = new Debris following roadDirection from debris2 for Range(5, 10)
 
 require (distance to intersection) > 50
-terminate when (distance from debris3 to ego) > 10 and (distance to start) > 50
+terminate when (distance to start) > 50

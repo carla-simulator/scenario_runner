@@ -18,40 +18,24 @@ carModels = [
     'vehicle.taxi.ford',
     'vehicle.dodgecop.charger',
     'vehicle.fuso.mitsubishi',
-    'vehicle.carlacola.actros',
     'vehicle.ue4.chevrolet.impala',
     'vehicle.ue4.ford.mustang',
     'vehicle.ue4.mercedes.ccc',
-    'vehicle.firetruck.actros',
     'vehicle.ue4.bmw.grantourer',
     'vehicle.ue4.ford.crown',
     'vehicle.ue4.audi.tt',
     'vehicle.dodge.charger',
-    'vehicle.sprinter.mercedes',
-    'vehicle.ambulance.ford',
     'vehicle.nissan.patrol',
     'vehicle.mini.cooper',
     'vehicle.lincoln.mkz'
 ]
 
-#: blueprints for bicycles
-bicycleModels = [
-    "vehicle.bh.crossbike",
-    "vehicle.diamondback.century",
-    "vehicle.gazelle.omafiets",
-]
-
-#: blueprints for motorcycles
-motorcycleModels = [
-    "vehicle.harley-davidson.low_rider",
-    "vehicle.kawasaki.ninja",
-    "vehicle.yamaha.yzf",
-]
-
 #: blueprints for trucks
 truckModels = [
-    "vehicle.carlamotors.carlacola",
-    "vehicle.tesla.cybertruck",
+    'vehicle.carlacola.actors',
+    'vehicle.firetruck.actors',
+    'vehicle.sprinter.mercedes',
+    'vehicle.ambulance.ford',
 ]
 
 ## Prop blueprints
@@ -210,18 +194,41 @@ trafficwarningModels = [
 
 #: blueprints for pedestrians
 walkerModels = [
-    "walker.pedestrian.0001",
-    "walker.pedestrian.0002",
-    "walker.pedestrian.0003",
-    "walker.pedestrian.0004",
-    "walker.pedestrian.0005",
-    "walker.pedestrian.0006",
-    "walker.pedestrian.0007",
-    "walker.pedestrian.0008",
-    "walker.pedestrian.0009",
-    "walker.pedestrian.0010",
-    "walker.pedestrian.0011",
-    "walker.pedestrian.0012",
-    "walker.pedestrian.0013",
-    "walker.pedestrian.0014",
+    "walker.pedestrian.0015",
+    "walker.pedestrian.0016",
+    "walker.pedestrian.0017",
+    "walker.pedestrian.0018",
+    "walker.pedestrian.0019",
+    "walker.pedestrian.0020",
+    "walker.pedestrian.0021",
+    "walker.pedestrian.0022",
+    "walker.pedestrian.0023",
+    "walker.pedestrian.0024",
+    "walker.pedestrian.0025",
+    "walker.pedestrian.0026",
+    "walker.pedestrian.0027",
+    "walker.pedestrian.0028",
+    "walker.pedestrian.0029",
+    "walker.pedestrian.0030",
+    "walker.pedestrian.0031",
+    "walker.pedestrian.0032",
+    "walker.pedestrian.0033",
+    "walker.pedestrian.0034",
+    "walker.pedestrian.0035",
+    "walker.pedestrian.0036",
+    "walker.pedestrian.0037",
+    "walker.pedestrian.0038",
+    "walker.pedestrian.0039",
+    "walker.pedestrian.0040",
+    "walker.pedestrian.0041",
+    "walker.pedestrian.0042",
+    "walker.pedestrian.0043",
+    "walker.pedestrian.0044",
+    "walker.pedestrian.0045",
+    "walker.pedestrian.0046",
+    "walker.pedestrian.0047",
+    "walker.pedestrian.0048",
+    "walker.pedestrian.0049",
+    "walker.pedestrian.0050",
+    "walker.pedestrian.0051",
 ]
