@@ -161,15 +161,17 @@ class LeaveSpaceInFront(AtomicBehavior):
     Updates the blackboard to tell the background activity that the ego needs more space in front.
     This only works at roads, not junctions.
     """
+
     def __init__(self, space, name="LeaveSpaceInFront"):
         self._space = space
         super().__init__(name)
 
     def update(self):
         """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_LeaveSpaceInFront", [self._space], overwrite=True)
+        py_trees.blackboard.Blackboard().set(
+            "BA_LeaveSpaceInFront", self._space, overwrite=True
+        )
         return py_trees.common.Status.SUCCESS
-
 
 class SwitchRouteSources(AtomicBehavior):
     """
@@ -221,20 +223,6 @@ class ReAddRoadLane(AtomicBehavior):
         py_trees.blackboard.Blackboard().set("BA_ReAddRoadLane", self._offset, overwrite=True)
         return py_trees.common.Status.SUCCESS
 
-
-class LeaveSpaceInFront(AtomicBehavior):
-    """
-    Updates the blackboard to tell the background activity that the ego needs more space in front.
-    This only works at roads, not junctions.
-    """
-    def __init__(self, space, name="LeaveSpaceInFront"):
-        self._space = space
-        super().__init__(name)
-
-    def update(self):
-        """Updates the blackboard and succeds"""
-        py_trees.blackboard.Blackboard().set("BA_LeaveSpaceInFront", self._space, overwrite=True)
-        return py_trees.common.Status.SUCCESS
 
 
 class LeaveCrossingSpace(AtomicBehavior):
