@@ -609,11 +609,10 @@ class OSC2Scenario(BasicScenario):
                         self.visit_call_directive(child)
                     else:
                         raise NotImplementedError(f"no implentment AST node {child}")
+            elif isinstance(sub_node, ast_node.DoMember):
+                self.visit_do_member(sub_node)
             else:
-                if isinstance(sub_node, ast_node.DoMember):
-                    self.visit_do_member(sub_node)
-                else:
-                    raise NotImplementedError("no supported ast node")
+                raise NotImplementedError("no supported ast node")
 
             if re.match(r"\d", str(self.__duration)) and self.__duration != math.inf:
                 self.father_ins.all_duration += int(self.__duration)

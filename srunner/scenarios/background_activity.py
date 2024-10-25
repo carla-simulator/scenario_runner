@@ -1846,8 +1846,7 @@ class BackgroundBehavior(AtomicBehavior):
 
             front_actors.append(actor)
             distance = location.distance(self._ego_wp.transform.location)
-            if distance < min_distance:
-                min_distance = distance
+            min_distance = min(distance, min_distance)
 
         step = space - min_distance
         if step > 0:  # Only move them if needed and only the minimum required distance

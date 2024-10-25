@@ -224,6 +224,8 @@ class ParameterRef:
 
     def __abs__(self):
         return abs(self.__float__())
+    
+    # TODO: Should implement __hash__
 
 
 class OpenScenarioParser(object):
@@ -1519,11 +1521,10 @@ class OpenScenarioParser(object):
             else:
                 raise AttributeError("Unknown private action")
 
+        elif list(action):
+            raise AttributeError("Unknown action: {}".format(maneuver_name))
         else:
-            if list(action):
-                raise AttributeError("Unknown action: {}".format(maneuver_name))
-            else:
-                return Idle(duration=0, name=maneuver_name)
+            return Idle(duration=0, name=maneuver_name)
 
         return atomic
 

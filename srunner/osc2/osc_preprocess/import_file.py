@@ -86,9 +86,9 @@ class ImportFile:
                 "[Error] file '"
                 + self.get_path()
                 + "' line "
-                + lines.__str__()
+                + str(lines)
                 + ":"
-                + index.__str__()
+                + str(index)
                 + " mismatched input '<EOF>'"
             )
             return content, lines

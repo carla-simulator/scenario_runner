@@ -318,7 +318,7 @@ class CollisionTest(Criterion):
         world = CarlaDataProvider.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._collision_sensor.listen(lambda event: self._count_collisions(event))
+        self._collision_sensor.listen(lambda event: self._count_collisions(event))  # pylint: disable=unnecessary-lambda
         super(CollisionTest, self).initialise()
 
     def update(self):
@@ -494,7 +494,7 @@ class KeepLaneTest(Criterion):
         world = self.actor.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.lane_invasion')
         self._lane_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._lane_sensor.listen(lambda event: self._count_lane_invasion(event))
+        self._lane_sensor.listen(lambda event: self._count_lane_invasion(event))  # pylint: disable=unnecessary-lambda
 
     def update(self):
         """
@@ -704,9 +704,8 @@ class EndofRoadTest(Criterion):
         if self._road_id is None:
             self._road_id = current_waypoint.road_id
 
-        else:
-            # Wait until the actor has left the road
-            if self._road_id != current_waypoint.road_id or self._start_time:
+        # Wait until the actor has left the road
+        elif self._road_id != current_waypoint.road_id or self._start_time:
 
                 # Start counting
                 if self._start_time is None:
