@@ -550,8 +550,8 @@ class BackgroundBehavior(AtomicBehavior):
 
             # Get the complex index
             current_index = -1
-            for i, complex_junctions in enumerate(complex_junctions):
-                complex_ids = [j.id for j in complex_junctions]
+            for i, complex_junction in enumerate(complex_junctions):
+                complex_ids = [j.id for j in complex_junction]
                 if junction.id in complex_ids:
                     current_index = i
                     break
