@@ -39,7 +39,7 @@ class FreeRide(BasicScenario):
     def _setup_scenario_trigger(self, config):
         """
         """
-        return None
+        return
 
     def _create_behavior(self):
         """

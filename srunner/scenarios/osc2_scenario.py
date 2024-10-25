@@ -730,7 +730,7 @@ class OSC2Scenario(BasicScenario):
                 #     scope = scenario_declaration_node_scope.resolve(name)
                 #     scope.value = value
                 del scenario_declaration_node
-                return
+                return None
 
             behavior = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE,
@@ -918,7 +918,7 @@ class OSC2Scenario(BasicScenario):
                 actor_drive.add_child(car_driving)
                 behavior.add_child(actor_drive)
                 self.__cur_behavior.add_child(behavior)
-                return
+                return None
 
             process_location_modifier(
                 self.father_ins.config, location_modifiers, self.__duration, actor_drive
@@ -933,6 +933,7 @@ class OSC2Scenario(BasicScenario):
 
             behavior.add_child(actor_drive)
             self.__cur_behavior.add_child(behavior)
+            return None
 
         def visit_modifier_invocation(self, node: ast_node.ModifierInvocation):
             # actor = node.actor
@@ -985,7 +986,7 @@ class OSC2Scenario(BasicScenario):
                 del method_declaration_node
                 if method_value is not None:
                     return method_value
-                return
+                return None
             else:
                 pass
             arguments = self.visit_children(node)
@@ -1300,7 +1301,7 @@ class OSC2Scenario(BasicScenario):
                         method_value = self.visit_binary_expression(child)
             if method_value is not None:
                 return method_value
-            return
+            return None
 
         def visit_function_application_expression(
             self, node: ast_node.FunctionApplicationExpression
@@ -1346,8 +1347,7 @@ class OSC2Scenario(BasicScenario):
                 if para_value is not None:
                     return para_value
                 return para_value
-            else:
-                pass
+            return None
 
         def visit_keep_constraint_declaration(
             self, node: ast_node.KeepConstraintDeclaration

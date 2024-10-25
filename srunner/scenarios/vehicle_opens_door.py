@@ -131,7 +131,7 @@ class VehicleOpensDoorTwoWays(BasicScenario):
         front_wps = starting_wp.next(self._parked_distance)
         if len(front_wps) == 0:
             raise ValueError("Couldn't find a spot to place the adversary vehicle")
-        elif len(front_wps) > 1:
+        if len(front_wps) > 1:
             print("WARNING: Found a diverging lane. Choosing one at random")
         self._front_wp = front_wps[0]
 

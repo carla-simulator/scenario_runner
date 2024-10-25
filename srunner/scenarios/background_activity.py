@@ -375,7 +375,7 @@ class BackgroundBehavior(AtomicBehavior):
         start_index = 0
 
         # Ignore the junction the ego spawns at
-        for i in range(0, self._route_length - 1):
+        for i in range(self._route_length - 1):
             if not self._is_junction(self._route[i]):
                 start_index = i
                 break
@@ -1021,6 +1021,7 @@ class BackgroundBehavior(AtomicBehavior):
             self._add_actor_dict_element(junction.actor_dict, actor, at_oppo_entry_lane=at_oppo_entry_lane)
 
             return actor
+        return None
 
     def _move_road_sources(self, prev_ego_index):
         """
@@ -2489,7 +2490,6 @@ class BackgroundBehavior(AtomicBehavior):
                 # Set them ready to move so that the ego can smoothly cross the junction
                 elif state == JUNCTION_EXIT_ROAD:
                     self._set_road_actor_speed(location, actor, multiplier=1.5)
-                    pass
 
                 # Wait
                 elif state == JUNCTION_EXIT_INACTIVE:

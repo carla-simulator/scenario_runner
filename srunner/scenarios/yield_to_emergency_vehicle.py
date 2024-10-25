@@ -114,7 +114,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         """
         Spawn the EV behind and wait for it to be close-by. After it has approached,
         give the ego a certain amount of time to yield to it.
-        
+
         Sequence:
         - RemoveRoadLane
         - ActorTransformSetter

@@ -352,7 +352,7 @@ class RouteScenario(BasicScenario):
         Create the weather behavior
         """
         if len(self.config.weather) == 1:
-            return  # Just set the weather at the beginning and done
+            return  None# Just set the weather at the beginning and done
         return RouteWeatherBehavior(self.ego_vehicles[0], self.route, self.config.weather)
 
     def _create_lights_behavior(self):
