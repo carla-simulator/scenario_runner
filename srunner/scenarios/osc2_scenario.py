@@ -227,7 +227,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             print("END of change lane--")
             return
     # start
-    # Deal with absolute positioning vehicles first，such as lane(1, at: start)
+    # Deal with absolute positioning vehicles first, such as lane(1, at: start)
     event_start = [
         m
         for m in modifiers
@@ -712,7 +712,7 @@ class OSC2Scenario(BasicScenario):
                 # scenario_declaration_node = self.father_ins.scenario_declaration.get(behavior_invocation_name)
                 scenario_declaration_node_scope = scenario_declaration_node.get_scope()
                 arguments = self.visit_children(node)
-                # Stores the value of the argument before the invoked scenario was overwritten， a: time=None
+                # Stores the value of the argument before the invoked scenario was overwritten, a: time=None
                 # keyword_args = {}
                 if isinstance(arguments, List):
                     for arg in arguments:
