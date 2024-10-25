@@ -270,7 +270,8 @@ def generate_target_waypoint_list(waypoint, turn=0):
                 plan[-3][0].transform.location,
                 plan[-2][0].transform.location)
             angle_wp = math.acos(
-                np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2))))
+                np.dot(v_1, v_2) / abs(np.linalg.norm(v_1) * np.linalg.norm(v_2))
+            )
             if angle_wp < threshold:
                 break
         elif reached_junction and not plan[-1][0].is_intersection:
@@ -678,8 +679,7 @@ def get_troad_from_transform(actor_transform):
         closest_road_edge = min(distance_from_lm_lane_edge, distance_from_rm_lane_edge)
         if closest_road_edge == distance_from_lm_lane_edge:
             t_road = -1*t_road
-    else:
-        if c_wp.lane_id < 0:
+    elif c_wp.lane_id < 0:
             t_road = -1*t_road
 
     return t_road
