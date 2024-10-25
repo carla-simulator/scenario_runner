@@ -83,10 +83,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         joined_threshold += int(cloudiness_dist < self.COMBINED_THRESHOLD)
         joined_threshold += int(fog_density_dist < self.COMBINED_THRESHOLD)
 
-        if joined_threshold >= 2:
-            return True
-
-        return False
+        return joined_threshold >= 2
 
     def _turn_close_lights_on(self, location):
         """Turns on the lights of all the objects close to the ego vehicle"""

@@ -703,7 +703,7 @@ def get_distance_between_actors(current, target, distance_type="euclidianDistanc
             extent_sum_x = target.bounding_box.extent.x + current.bounding_box.extent.x
             extent_sum_y = target.bounding_box.extent.y + current.bounding_box.extent.y
     if distance_type == "longitudinal":
-        if not current_wp.road_id == target_wp.road_id:
+        if current_wp.road_id != target_wp.road_id:
             distance = 0
             # Get the route
             route = global_planner.trace_route(current_transform.location, target_transform.location)

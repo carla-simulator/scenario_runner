@@ -28,10 +28,7 @@ class QualifiedBehaviorSymbol(BaseSymbol):
     def is_actor_name_defined(self):
         if self.actor_name is None:
             return True
-        elif self.enclosing_scope.symbols.get(self.actor_name) is not None:
-            return True
-        else:
-            return False
+        return self.enclosing_scope.symbols.get(self.actor_name) is not None
 
     def is_qualified_behavior_name_valid(self, ctx):
         if self.actor_name == self.behavior_name and self.actor_name:

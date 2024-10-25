@@ -156,11 +156,7 @@ class Junction(object):
         if not wp.is_junction:
             return False
         other_id = wp.get_junction().id
-        for junction in self.junctions:
-            if other_id == junction.id:
-                return True
-        return False
-
+        return any(other_id == junction.id for junction in self.junctions)
 
 class BackgroundBehavior(AtomicBehavior):
     """
@@ -2208,9 +2204,8 @@ class BackgroundBehavior(AtomicBehavior):
         ego_transform = self._route[self._route_index].transform
         ego_heading = ego_transform.get_forward_vector()
         ego_actor_vec = location - ego_transform.location
-        if ego_heading.dot(ego_actor_vec) < - 0.17:  # 100º
-            return True
-        return False
+        return ego_heading.dot(ego_actor_vec) < - 0.17  # 100º
+
 
     def _update_road_actors(self):
         """
@@ -2327,10 +2322,7 @@ class BackgroundBehavior(AtomicBehavior):
             # Some roads have starting / ending lanes in the middle. Remap if that is detected
             prev_wps = get_same_dir_lanes(prev_wp)
             current_wps = get_same_dir_lanes(current_wp)
-            if len(prev_wps) != len(current_wps):
-                return True
-
-            return False
+            return len(prev_wps) != len(current_wps)
 
         def is_road_dict_unchanging(wp_pairs):
             """Sometimes 'monitor_topology_changes' has already done the necessary changes"""
@@ -2338,10 +2330,7 @@ class BackgroundBehavior(AtomicBehavior):
             if len(wp_pairs) != len(road_dict_keys):
                 return False
 
-            for _, new_wp in wp_pairs:
-                if get_lane_key(new_wp) not in road_dict_keys:
-                    return False
-            return True
+            return all(get_lane_key(new_wp) in road_dict_keys for _, new_wp in wp_pairs)
 
         if prev_route_index == self._route_index:
             return

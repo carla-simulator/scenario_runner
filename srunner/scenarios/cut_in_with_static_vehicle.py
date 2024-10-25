@@ -180,7 +180,7 @@ class StaticCutIn(BasicScenario):
         blocker_wp = next_wps[0]
 
         # Spawn the vehicles in front of the cut in one
-        for i in range(self._front_vehicles):
+        for _ in range(self._front_vehicles):
             # Move to the side
             side_wp = blocker_wp.get_left_lane() if self._direction == 'left' else blocker_wp.get_right_lane()
             if not side_wp:

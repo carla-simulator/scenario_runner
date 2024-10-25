@@ -1268,10 +1268,10 @@ class OSC2Scenario(BasicScenario):
                 exec_context = ""
                 module_name = None
                 for elem in external_list:
-                    if "module" == elem[0]:
+                    if elem[0] == "module":
                         exec_context += "import " + str(elem[1]) + "\n"
                         module_name = str(elem[1])
-                    elif "name" == elem[0]:
+                    elif elem[0] == "name":
                         exec_context += "ret = "
                         if module_name is not None:
                             exec_context += module_name + "." + str(elem[1]) + "("
