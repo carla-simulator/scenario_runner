@@ -26,7 +26,14 @@ class ChangeRoadBehavior(AtomicBehavior):
         switch_source (bool): (De)activatea the road sources.
     """
 
-    def __init__(self, num_front_vehicles=None, num_back_vehicles=None, spawn_dist=None, extra_space=None, name="ChangeRoadBehavior"):
+    def __init__(
+        self,
+        num_front_vehicles=None,
+        num_back_vehicles=None,
+        spawn_dist=None,
+        extra_space=None,
+        name="ChangeRoadBehavior",
+    ):
         self._num_front = num_front_vehicles
         self._num_back = num_back_vehicles
         self._spawn_dist = spawn_dist
@@ -35,7 +42,9 @@ class ChangeRoadBehavior(AtomicBehavior):
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeRoadBehavior", [self._num_front, self._num_back, self._spawn_dist, self._extra_space], overwrite=True
+            "BA_ChangeRoadBehavior",
+            [self._num_front, self._num_back, self._spawn_dist, self._extra_space],
+            overwrite=True,
         )
         return py_trees.common.Status.SUCCESS
 
@@ -73,7 +82,14 @@ class ChangeJunctionBehavior(AtomicBehavior):
         max_actors (int): Max amount of concurrent alive actors spawned by the same source. Can't be negative
     """
 
-    def __init__(self, source_dist=None, spawn_dist=None, max_actors=None, source_perc=None, name="ChangeJunctionBehavior"):
+    def __init__(
+        self,
+        source_dist=None,
+        spawn_dist=None,
+        max_actors=None,
+        source_perc=None,
+        name="ChangeJunctionBehavior",
+    ):
         self._source_dist = source_dist
         self._spawn_dist = spawn_dist
         self._max_actors = max_actors
@@ -82,7 +98,9 @@ class ChangeJunctionBehavior(AtomicBehavior):
 
     def update(self):
         py_trees.blackboard.Blackboard().set(
-            "BA_ChangeJunctionBehavior", [self._source_dist, self._spawn_dist, self._max_actors, self._perc], overwrite=True
+            "BA_ChangeJunctionBehavior",
+            [self._source_dist, self._spawn_dist, self._max_actors, self._perc],
+            overwrite=True,
         )
         return py_trees.common.Status.SUCCESS
 
@@ -245,7 +263,8 @@ class HandleJunctionScenario(AtomicBehavior):
 
     Args:
         clear_junction (bool): Remove all actors inside the junction, and all that enter it afterwards
-        clear_ego_entry (bool): Remove all actors part of the ego road to ensure a smooth entry of the ego to the junction.
+        clear_ego_entry (bool): Remove all actors part of the ego road 
+            to ensure a smooth entry of the ego to the junction.
         remove_entries (list): list of waypoint representing a junction entry that needs to be removed
         remove_exits (list): list of waypoint representing a junction exit that needs to be removed
         stop_entries (bool): Stops all the junction entries

@@ -369,7 +369,7 @@ class CollisionTest(Criterion):
                 if "traffic" not in event.other_actor.type_id and "static" not in event.other_actor.type_id:
                     return
             elif self._other_actor_type not in event.other_actor.type_id:
-                    return
+                return
 
         # To avoid multiple counts of the same collision, filter some of them.
         if self._collision_id == event.other_actor.id:
@@ -892,7 +892,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
+            onsidewalk_event = TrafficEvent(
+                event_type=TrafficEventType.ON_SIDEWALK_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -907,7 +910,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
+            outsidelane_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -930,7 +936,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
+            onsidewalk_event = TrafficEvent(
+                event_type=TrafficEventType.ON_SIDEWALK_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -945,7 +954,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
+            outsidelane_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -1084,7 +1096,10 @@ class OutsideRouteLanesTest(Criterion):
         Creates the traffic event / updates it
         """
         if self._traffic_event is None:
-            self._traffic_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION, frame=GameTime.get_frame())
+            self._traffic_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self.events.append(self._traffic_event)
 
         percentage = self._wrong_distance / self._total_distance * 100
@@ -1369,7 +1384,10 @@ class InRadiusRegionTest(Criterion):
         if self.test_status != "SUCCESS":
             in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
             if in_radius:
-                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED, frame=GameTime.get_frame())
+                route_completion_event = TrafficEvent(
+                    event_type=TrafficEventType.ROUTE_COMPLETED,
+                    frame=GameTime.get_frame(),
+                )
                 route_completion_event.set_message("Destination was successfully reached")
                 self.events.append(route_completion_event)
                 self.test_status = "SUCCESS"
@@ -1491,7 +1509,10 @@ class InRouteTest(Criterion):
                 blackv = py_trees.blackboard.Blackboard()
                 _ = blackv.set("InRoute", False)
 
-                route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION, frame=GameTime.get_frame())
+                route_deviation_event = TrafficEvent(
+                    event_type=TrafficEventType.ROUTE_DEVIATION,
+                    frame=GameTime.get_frame(),
+                )
                 route_deviation_event.set_message(
                     "Agent deviated from the route at (x={}, y={}, z={})".format(
                         round(location.x, 3),
@@ -1728,7 +1749,10 @@ class RunningRedLightTest(Criterion):
                         self.test_status = "FAILURE"
                         self.actual_value += 1
                         location = traffic_light.get_transform().location
-                        red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION, frame=GameTime.get_frame())
+                        red_light_event = TrafficEvent(
+                            event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION,
+                            frame=GameTime.get_frame(),
+                        )
                         red_light_event.set_message(
                             "Agent ran a red light {} at (x={}, y={}, z={})".format(
                                 traffic_light.id,
@@ -1929,7 +1953,10 @@ class RunningStopTest(Criterion):
                 self.actual_value += 1
                 self.test_status = "FAILURE"
                 stop_location = self._target_stop_sign.get_transform().location
-                running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION, frame=GameTime.get_frame())
+                running_stop_event = TrafficEvent(
+                    event_type=TrafficEventType.STOP_INFRACTION,
+                    frame=GameTime.get_frame(),
+                )
                 running_stop_event.set_message(
                     "Agent ran a stop with id={} at (x={}, y={}, z={})".format(
                         self._target_stop_sign.id,

@@ -1348,7 +1348,8 @@ class TernaryExpression(Expression):
 
 class LogicalExpression(Expression):
     """
-    In logical expressions, for the same operator, such as a=>b=>c, the operands of the expression are placed in children.
+    In logical expressions, for the same operator, such as a=>b=>c,
+    the operands of the expression are placed in children.
     It is not divided into multiple binary expressions like binary expressions
     """
 

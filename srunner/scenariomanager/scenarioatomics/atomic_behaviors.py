@@ -2418,7 +2418,15 @@ class BasicAgentBehavior(AtomicBehavior):
     The behavior terminates after reaching the target_location (within 2 meters)
     """
 
-    def __init__(self, actor, target_location=None, plan=None, target_speed=20, opt_dict=None, name="BasicAgentBehavior"):
+    def __init__(
+        self,
+        actor,
+        target_location=None,
+        plan=None,
+        target_speed=20,
+        opt_dict=None,
+        name="BasicAgentBehavior",
+    ):
         """
         Setup actor and maximum steer value
         """
@@ -4653,8 +4661,17 @@ class WalkerFlow(AtomicBehavior):
     - sink_distance: Actors closer to the sink than this distance will be deleted. 
                      Probably due to the navigation module rerouting the walkers, a sink distance of 2 is reasonable.
     """
-    def __init__(self, source_location, sink_locations, sink_locations_prob, spawn_dist_interval, random_seed=None, sink_dist=2,
-                 name="WalkerFlow"):
+
+    def __init__(
+        self,
+        source_location,
+        sink_locations,
+        sink_locations_prob,
+        spawn_dist_interval,
+        random_seed=None,
+        sink_dist=2,
+        name="WalkerFlow",
+    ):
         """
         Setup class members
         """
@@ -4869,8 +4886,14 @@ class ScenarioTimeout(AtomicBehavior):
         Modifies the blackboard to tell the `ScenarioTimeoutTest` if the timeout was triggered
         """
         if not self._terminated:  # py_trees calls the terminate several times for some reason.
-            py_trees.blackboard.Blackboard().set(f"ScenarioTimeout_{self._scenario_name}", self._scenario_timeout, overwrite=True)
-            py_trees.blackboard.Blackboard().set("AC_SwitchActorBlockedTest", True, overwrite=True)
+            py_trees.blackboard.Blackboard().set(
+                f"ScenarioTimeout_{self._scenario_name}",
+                self._scenario_timeout,
+                overwrite=True,
+            )
+            py_trees.blackboard.Blackboard().set(
+                "AC_SwitchActorBlockedTest", True, overwrite=True
+            )
             self._terminated = True
         super().terminate(new_status)
 

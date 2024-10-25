@@ -575,7 +575,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         else:
             pos = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]  # pylint: disable=unsubscriptable-object
             CarlaDataProvider._spawn_index += 1
-            wp = CarlaDataProvider.get_map().get_waypoint(pos.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+            wp = CarlaDataProvider.get_map().get_waypoint(
+                pos.location, project_to_road=True, lane_type=carla.LaneType.Driving
+            )
 
             road_lanes = CarlaDataProvider.get_road_lanes(wp)
 
@@ -622,7 +624,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             'train': '',
             'tram': '',
             'pedestrian': 'walker.pedestrian.0001',
-	    'misc': 'static.prop.streetbarrier'
+            'misc': 'static.prop.streetbarrier'
         }
 
         # Set the model
@@ -706,7 +708,14 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actors
 
     @staticmethod
-    def spawn_actor(bp, spawn_point, must_spawn=False, track_physics=None, attach_to=None, attachment_type=carla.AttachmentType.Rigid):
+    def spawn_actor(
+        bp,
+        spawn_point,
+        must_spawn=False,
+        track_physics=None,
+        attach_to=None,
+        attachment_type=carla.AttachmentType.Rigid,
+    ):
         # type: (carla.ActorBlueprint, carla.Waypoint | carla.Transform, bool, bool | None, carla.Actor | None, carla.AttachmentType) -> carla.Actor | None # pylint: disable=line-too-long
         """
         The method will spawn and return an actor.

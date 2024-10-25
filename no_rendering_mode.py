@@ -490,22 +490,55 @@ class MapImage(object):
 
         def get_lane_markings(lane_marking_type, lane_marking_color, waypoints, sign):
             margin = 0.20
-            if lane_marking_type == carla.LaneMarkingType.Broken or (lane_marking_type == carla.LaneMarkingType.Solid):
-                marking_1 = [world_to_pixel(lateral_shift(w.transform, sign * w.lane_width * 0.5)) for w in waypoints]
+            if lane_marking_type == carla.LaneMarkingType.Broken or (
+                lane_marking_type == carla.LaneMarkingType.Solid
+            ):
+                marking_1 = [
+                    world_to_pixel(
+                        lateral_shift(w.transform, sign * w.lane_width * 0.5)
+                    )
+                    for w in waypoints
+                ]
                 return [(lane_marking_type, lane_marking_color, marking_1)]
-            elif lane_marking_type == carla.LaneMarkingType.SolidBroken or lane_marking_type == carla.LaneMarkingType.BrokenSolid:
-                marking_1 = [world_to_pixel(lateral_shift(w.transform, sign * w.lane_width * 0.5)) for w in waypoints]
-                marking_2 = [world_to_pixel(lateral_shift(w.transform,
-                                                          sign * (w.lane_width * 0.5 + margin * 2))) for w in waypoints]
-                return [(carla.LaneMarkingType.Solid, lane_marking_color, marking_1),
-                        (carla.LaneMarkingType.Broken, lane_marking_color, marking_2)]
+            elif (
+                lane_marking_type == carla.LaneMarkingType.SolidBroken
+                or lane_marking_type == carla.LaneMarkingType.BrokenSolid
+            ):
+                marking_1 = [
+                    world_to_pixel(
+                        lateral_shift(w.transform, sign * w.lane_width * 0.5)
+                    )
+                    for w in waypoints
+                ]
+                marking_2 = [
+                    world_to_pixel(
+                        lateral_shift(
+                            w.transform, sign * (w.lane_width * 0.5 + margin * 2)
+                        )
+                    )
+                    for w in waypoints
+                ]
+                return [
+                    (carla.LaneMarkingType.Solid, lane_marking_color, marking_1),
+                    (carla.LaneMarkingType.Broken, lane_marking_color, marking_2),
+                ]
             elif lane_marking_type == carla.LaneMarkingType.BrokenBroken:
-                marking = [world_to_pixel(lateral_shift(w.transform,
-                                                        sign * (w.lane_width * 0.5 - margin))) for w in waypoints]
+                marking = [
+                    world_to_pixel(
+                        lateral_shift(w.transform, sign * (w.lane_width * 0.5 - margin))
+                    )
+                    for w in waypoints
+                ]
                 return [(carla.LaneMarkingType.Broken, lane_marking_color, marking)]
             elif lane_marking_type == carla.LaneMarkingType.SolidSolid:
-                marking = [world_to_pixel(lateral_shift(w.transform,
-                                                        sign * ((w.lane_width * 0.5) - margin))) for w in waypoints]
+                marking = [
+                    world_to_pixel(
+                        lateral_shift(
+                            w.transform, sign * ((w.lane_width * 0.5) - margin)
+                        )
+                    )
+                    for w in waypoints
+                ]
                 return [(carla.LaneMarkingType.Solid, lane_marking_color, marking)]
 
             return [(carla.LaneMarkingType.NONE, carla.LaneMarkingColor.Other, [])]
