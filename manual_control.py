@@ -396,6 +396,7 @@ class HUD(object):
         self.simulation_time = timestamp.elapsed_seconds
 
     def tick(self, world, clock):
+        # type: (carla.World, pygame.time.Clock) -> None
         self._notifications.tick(world, clock)
         if not self._show_info:
             return

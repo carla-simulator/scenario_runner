@@ -244,9 +244,9 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
 
             car_config = config.get_car_config(car_name)
             car_config.set_arg({"init_transform": wp.transform})
-            LOG_INFO(
-                f"{car_name} car init position will be set to {wp.transform.location}, roadid = {wp.road_id}, laneid={wp.lane_id}, s = {wp.s}"
-            )
+            msg = (f"{car_name} car init position will be set to {wp.transform.location}, "
+                        f"roadid = {wp.road_id}, laneid={wp.lane_id}, s = {wp.s}")
+            LOG_INFO(msg)
         else:
             raise RuntimeError(f"no valid position to spawn {car_name} car")
 
@@ -303,9 +303,9 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
 
         car_config = config.get_car_config(npc_name)
         car_config.set_arg({"init_transform": init_wp.transform})
-        LOG_WARNING(
-            f"{npc_name} car init position will be set to {init_wp.transform.location},roadid = {init_wp.road_id}, laneid={init_wp.lane_id}, s={init_wp.s}"
-        )
+        msg = (f"{npc_name} car init position will be set to {init_wp.transform.location}, "
+                    f"roadid = {init_wp.road_id}, laneid={init_wp.lane_id}, s={init_wp.s}")
+        LOG_WARNING(msg)
 
     # end
     end_group = [m for m in modifiers if m.get_trigger_point() == "end"]
@@ -512,8 +512,8 @@ class OSC2Scenario(BasicScenario):
 
         def bool_result(self, option):
             # wait(x < y) @drive_distance Handling of Boolean expressions x < y
-            expression_value = re.split("\W+", option)
-            symbol = re.search("\W+", option).group()
+            expression_value = re.split(r"\W+", option)
+            symbol = re.search(r"\W+", option).group()
             if symbol == "<":
                 symbol = operator.lt
             elif symbol == ">":
@@ -615,7 +615,7 @@ class OSC2Scenario(BasicScenario):
                 else:
                     raise NotImplementedError("no supported ast node")
 
-            if re.match("\d", str(self.__duration)) and self.__duration != math.inf:
+            if re.match(r"\d", str(self.__duration)) and self.__duration != math.inf:
                 self.father_ins.all_duration += int(self.__duration)
 
         def visit_wait_directive(self, node: ast_node.WaitDirective):
@@ -696,7 +696,7 @@ class OSC2Scenario(BasicScenario):
             behavior_name = node.behavior_name
 
             behavior_invocation_name = None
-            if actor != None:
+            if actor is not None:
                 behavior_invocation_name = actor + "." + behavior_name
             else:
                 behavior_invocation_name = behavior_name
@@ -1194,10 +1194,10 @@ class OSC2Scenario(BasicScenario):
                 if isinstance(para_value, (Physical, float, int)):
                     return para_value
                 para_value = para_value.strip('"')
-                if re.fullmatch("(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
+                if re.fullmatch(r"(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
                     # Regular expression ^[-]?[0-9]+(\.[0-9]+)? matching float
                     # para_value_num = re.findall('^[-]?[0-9]+(\.[0-9]+)?', para_value)[0]
-                    patter = re.compile("(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
+                    patter = re.compile(r"(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
                     para_value_num, para_value_unit = patter.match(para_value).groups()
                     if para_value_num.count(".") == 1:
                         return Physical(
@@ -1310,7 +1310,8 @@ class OSC2Scenario(BasicScenario):
 
             arguments = OSC2Helper.flat_list(self.visit_children(node))
             line, column = node.get_loc()
-            # retrieval_name = para_type_str_sequence(config=self.father_ins.config, arguments=arguments, line=line, column=column, node=node)
+            # retrieval_name = para_type_str_sequence(config=self.father_ins.config,
+            #                                         arguments=arguments, line=line, column=column, node=node)
             retrieval_name = arguments[0].split(".")[-1]
             method_scope = node.get_scope().resolve(retrieval_name)
 

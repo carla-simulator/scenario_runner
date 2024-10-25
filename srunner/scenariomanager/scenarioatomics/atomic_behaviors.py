@@ -495,7 +495,7 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
 
         self._start_time = GameTime.get_time()
@@ -535,7 +535,7 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
 
         if actor_dict[self._actor.id].get_last_longitudinal_command() != self._start_time:
@@ -627,7 +627,7 @@ class SyncArrivalOSC(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
 
         self._start_time = GameTime.get_time()
@@ -662,7 +662,7 @@ class SyncArrivalOSC(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
 
         if actor_dict[self._actor.id].get_last_longitudinal_command() != self._start_time:
@@ -782,7 +782,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
 
         self._start_time = GameTime.get_time()
@@ -857,7 +857,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
 
         actor = actor_dict[self._actor.id]
@@ -1025,7 +1025,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
 
         self._start_time = GameTime.get_time()
@@ -1063,7 +1063,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
 
         if not self._plan:
@@ -1171,7 +1171,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
 
         self._start_time = GameTime.get_time()
@@ -1196,7 +1196,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         except AttributeError:
             pass
 
-        if not actor_dict or not self._actor.id in actor_dict:
+        if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
 
         if actor_dict[self._actor.id].get_last_lane_offset_command() != self._start_time:

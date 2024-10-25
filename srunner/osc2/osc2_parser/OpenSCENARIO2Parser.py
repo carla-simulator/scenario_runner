@@ -22502,7 +22502,7 @@ class OpenSCENARIO2Parser(Parser):
         return localctx
 
     def sempred(self, localctx: RuleContext, ruleIndex: int, predIndex: int):
-        if self._predicates == None:
+        if self._predicates is None:
             self._predicates = dict()
         self._predicates[4] = self.structuredIdentifier_sempred
         self._predicates[116] = self.relation_sempred

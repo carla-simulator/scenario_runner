@@ -552,6 +552,10 @@ class ParameterReference(AST):
 
 
 class VariableDeclaration(Declaration):
+    """
+    'var' fieldName (',' fieldName)* ':' typeDeclarator ('=' (sampleExpression | valueExp) )? NEWLINE;
+    """
+
     def __init__(self, field_name, field_type):
         super().__init__()
         self.field_name = field_name

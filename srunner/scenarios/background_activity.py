@@ -145,7 +145,7 @@ class Junction(object):
         self.exit_dict = OrderedDict()
         self.actor_dict = OrderedDict()
 
-        # Junction scenario variables 
+        # Junction scenario variables
         self.stop_non_route_entries = False
         self.clear_middle = False
         self.inactive_entry_keys = []
@@ -1031,7 +1031,7 @@ class BackgroundBehavior(AtomicBehavior):
             for lane_key in self._road_dict:
                 source = self._road_dict[lane_key]
 
-                # If no actors are found, let the last_location be ego's location 
+                # If no actors are found, let the last_location be ego's location
                 # to keep moving the source waypoint forward
                 if len(source.actors) == 0:
                     last_location = self._ego_wp.transform.location
@@ -1160,7 +1160,7 @@ class BackgroundBehavior(AtomicBehavior):
         All opposite lanes have actor sources that will continually create vehicles,
         creating the sensation of permanent traffic. The actor spawning will be done later on
         (_update_opposite_sources). These sources are at a (somewhat) fixed distance
-        from the ego, but they never entering junctions. 
+        from the ego, but they never entering junctions.
         """
         self._opposite_route_index = None
         if not self._junctions:
@@ -1301,8 +1301,20 @@ class BackgroundBehavior(AtomicBehavior):
             actor_dict = junction.actor_dict
             for source in junction.entry_sources:
                 if self.debug:
-                    draw_point(self._world, source.wp.transform.location, DEBUG_SMALL, DEBUG_JUNCTION, False)
-                    draw_string(self._world, source.wp.transform.location, str(len(source.actors)), DEBUG_JUNCTION, False)
+                    draw_point(
+                        self._world,
+                        source.wp.transform.location,
+                        DEBUG_SMALL,
+                        DEBUG_JUNCTION,
+                        False,
+                    )
+                    draw_string(
+                        self._world,
+                        source.wp.transform.location,
+                        str(len(source.actors)),
+                        DEBUG_JUNCTION,
+                        False,
+                    )
 
                 entry_lane_key = get_lane_key(source.entry_lane_wp)
                 at_oppo_entry_lane = entry_lane_key in junction.opposite_entry_keys
@@ -1331,7 +1343,11 @@ class BackgroundBehavior(AtomicBehavior):
                     actor = self._spawn_source_actor(source, self._junction_spawn_dist)
                     if not actor:
                         continue
-                    if junction.stop_non_route_entries and get_lane_key(source.entry_lane_wp) not in junction.route_entry_keys:
+                    if (
+                        junction.stop_non_route_entries
+                        and get_lane_key(source.entry_lane_wp)
+                        not in junction.route_entry_keys
+                    ):
                         self._actors_speed_perc[actor] = 0
                     self._add_actor_dict_element(actor_dict, actor, at_oppo_entry_lane=at_oppo_entry_lane)
                     source.actors.append(actor)
@@ -1431,14 +1447,18 @@ class BackgroundBehavior(AtomicBehavior):
 
                     if get_lane_key(source_wp) not in self._road_dict:
                         # Lanes created away from the center won't affect the ids of other lanes, so just add the new id
-                        self._road_dict[get_lane_key(source_wp)] = Source(source_wp, actors, active=self._active_road_sources)
+                        self._road_dict[get_lane_key(source_wp)] = Source(
+                            source_wp, actors, active=self._active_road_sources
+                        )
                     else:
                         # If the lane is inwards, all lanes have their id shifted by 1 outwards
                         # TODO: Doesn't work for more than one lane.
                         added_id = 1 if source_wp.lane_id > 0 else -1
                         new_lane_key = get_lane_key_from_ids(source_wp.road_id, source_wp.lane_id + added_id)
                         self._road_dict[new_lane_key] = self._road_dict[get_lane_key(source_wp)]
-                        self._road_dict[get_lane_key(source_wp)] = Source(source_wp, actors, active=self._active_road_sources)
+                        self._road_dict[get_lane_key(source_wp)] = Source(
+                            source_wp, actors, active=self._active_road_sources
+                        )
 
         elif len(new_wps) < len(old_wps):
             for old_wp in list(old_wps):
@@ -1887,7 +1907,7 @@ class BackgroundBehavior(AtomicBehavior):
             for _ in range(abs(lane_offset)):
                 side_wp = side_wp.get_right_lane() if lane_offset > 0 else side_wp.get_left_lane()
                 if not side_wp:
-                    print(f"WARNING: Couldn't find a lane with the desired offset")
+                    print("WARNING: Couldn't find a lane with the desired offset")
                     return
 
             add_lane_wp = side_wp
@@ -2349,7 +2369,14 @@ class BackgroundBehavior(AtomicBehavior):
                 continue
 
             if self.debug:
-                draw_arrow(self._world, old_wp.transform.location, new_wp.transform.location, DEBUG_MEDIUM, DEBUG_ROAD, True)
+                draw_arrow(
+                    self._world,
+                    old_wp.transform.location,
+                    new_wp.transform.location,
+                    DEBUG_MEDIUM,
+                    DEBUG_ROAD,
+                    True,
+                )
 
             # Check that the lane is part of the road dictionary
             if old_key in list(self._road_dict):

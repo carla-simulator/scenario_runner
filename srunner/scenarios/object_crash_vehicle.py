@@ -149,7 +149,16 @@ class DynamicObjectCrossing(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
+    def __init__(
+        self,
+        world,
+        ego_vehicles,
+        config,
+        randomize=False,
+        debug_mode=False,
+        criteria_enable=True,
+        timeout=60,
+    ):
         """
         Setup all relevant parameters and create scenario
         """
@@ -388,7 +397,16 @@ class ParkingCrossingPedestrian(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
+    def __init__(
+        self,
+        world,
+        ego_vehicles,
+        config,
+        randomize=False,
+        debug_mode=False,
+        criteria_enable=True,
+        timeout=60,
+    ):
         """
         Setup all relevant parameters and create scenario
         """
@@ -493,7 +511,7 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         walker.set_location(self._walker_transform.location + carla.Location(z=-200))
         walker = self._replace_walker(walker)
- 
+
         self.other_actors.append(walker)
 
         self._collision_wp = walker_wp

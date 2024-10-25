@@ -26,7 +26,7 @@ class QualifiedBehaviorSymbol(BaseSymbol):
             # There is no nesting problem in actors, just look for actorName in the contained scope
 
     def is_actor_name_defined(self):
-        if self.actor_name == None:
+        if self.actor_name is None:
             return True
         elif self.enclosing_scope.symbols.get(self.actor_name) is not None:
             return True
@@ -44,7 +44,7 @@ class QualifiedBehaviorSymbol(BaseSymbol):
         elif self.is_actor_name_defined() is not True:
             error_msg = "actorName: " + self.actor_name + " is not defined!"
             LOG_ERROR(error_msg, ctx)
-        elif self.behavior_name == None:
+        elif self.behavior_name is None:
             error_msg = "behaviourName can not be empty!"
             LOG_ERROR(error_msg, ctx)
         else:

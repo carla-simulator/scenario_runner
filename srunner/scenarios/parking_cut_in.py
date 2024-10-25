@@ -30,7 +30,16 @@ class ParkingCutIn(BasicScenario):
     to cut in in front of the ego vehicle, forcing it to break
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
+    def __init__(
+        self,
+        world,
+        ego_vehicles,
+        config,
+        randomize=False,
+        debug_mode=False,
+        criteria_enable=True,
+        timeout=60,
+    ):
         """
         Setup all relevant parameters and create scenario
         """
@@ -81,7 +90,11 @@ class ParkingCutIn(BasicScenario):
         self.parking_slots.append(parking_wp.transform.location)
 
         self._blocker_actor = CarlaDataProvider.request_new_actor(
-            'vehicle.*', parking_wp.transform, 'scenario no lights', attribute_filter={'base_type': 'car', 'generation': 2})
+            "vehicle.*",
+            parking_wp.transform,
+            "scenario no lights",
+            attribute_filter={"base_type": "car", "generation": 2},
+        )
         if not self._blocker_actor:
             raise ValueError("Couldn't spawn the parked actor")
         self._blocker_actor.apply_control(carla.VehicleControl(hand_brake=True))
