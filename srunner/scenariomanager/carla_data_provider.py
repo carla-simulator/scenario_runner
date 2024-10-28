@@ -415,7 +415,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Update traffic light states
         """
-        reset_params = [] # type: list[dict]
+        reset_params = []  # type: list[dict]
 
         for state in states:
             relevant_lights = []
@@ -720,31 +720,31 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         The method will spawn and return an actor.
         The actor will need an available blueprint to be created.
-        It can also be attached to a parent with a certain attachment type. 
+        It can also be attached to a parent with a certain attachment type.
 
         Args:
             bp (carla.ActorBlueprint): The blueprint of the actor to spawn.
             spawn_point (carla.Transform): The spawn point of the actor.
-            must_spawn (bool, optional): 
+            must_spawn (bool, optional):
                 If True, the actor will be spawned or an exception will be raised.
                 If False, the function returns None if the actor could not be spawned.
                 Defaults to False.
-            track_physics (bool | None, optional): 
-                If True, `get_location`, `get_transform` and `get_velocity` 
+            track_physics (bool | None, optional):
+                If True, `get_location`, `get_transform` and `get_velocity`
                 can be used for this actor.
                 If None, the actor will be tracked if it is a Vehicle or Walker.
                 Defaults to None.
-            attach_to (carla.Actor | None, optional): 
-                The parent object that the spawned actor will follow around. 
+            attach_to (carla.Actor | None, optional):
+                The parent object that the spawned actor will follow around.
                 Defaults to None.
-            attachment_type (carla.AttachmentType, optional): 
-                Determines how fixed and rigorous should be the changes in position 
+            attachment_type (carla.AttachmentType, optional):
+                Determines how fixed and rigorous should be the changes in position
                 according to its parent object.
                 Defaults to carla.AttachmentType.Rigid.
 
         Returns:
             carla.Actor | None: The spawned actor if successful, None otherwise.
-            
+
         Raises:
             RuntimeError: if `must_spawn` is True and the actor could not be spawned.
         """
@@ -1013,7 +1013,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         if actor_id in CarlaDataProvider._carla_actor_pool:
             CarlaDataProvider._carla_actor_pool[actor_id].destroy()
-            CarlaDataProvider._carla_actor_pool[actor_id] = None # type: ignore
+            CarlaDataProvider._carla_actor_pool[actor_id] = None  # type: ignore
             CarlaDataProvider._carla_actor_pool.pop(actor_id)
         else:
             print("Trying to remove a non-existing actor id {}".format(actor_id))
@@ -1104,4 +1104,3 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @property
     def world(self):
         return self._world
-
