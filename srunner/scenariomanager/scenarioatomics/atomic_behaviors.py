@@ -718,7 +718,8 @@ class SyncArrivalOSC(AtomicBehavior):
                     else:
                         print("'relative_type' must be delta or factor")
                         self._final_speed_set = True
-                        return super().terminate(new_status)
+                        super().terminate(new_status)
+                        return
                 else:
                     final_speed = self._final_speed
 
@@ -2254,6 +2255,7 @@ class CutIn(AtomicBehavior):
 
         self._map = CarlaDataProvider.get_map()
         self._grp = CarlaDataProvider.get_global_route_planner()
+        self._agent = None
 
     def initialise(self):
         """Initialises the agent"""
@@ -2736,6 +2738,7 @@ class WaypointFollower(AtomicBehavior):
             self._queue = Blackboard().get(blackboard_queue_name)
         self._args_lateral_dict = {'K_P': 1.0, 'K_D': 0.01, 'K_I': 0.0, 'dt': 0.05}
         self._avoid_collision = avoid_collision
+        self._start_time = None
         self._unique_id = 0
 
     def initialise(self):
@@ -3260,6 +3263,7 @@ class TrafficLightControllerSetter(AtomicBehavior):
         }
         self._actor.set_state(self._state)
         self._actor.set_green_time(self.duration_time)
+        return None
 
     def update(self):
         """Waits until the adequate time has passed"""
@@ -3328,7 +3332,7 @@ class ActorSource(AtomicBehavior):
                 spawn_point_blocked = True
 
             if not spawn_point_blocked:
-                for actor in world_actors:
+                for actor in world_actors:  # pylint: disable=not-an-iterable
                     if self._spawn_point.location.distance(actor.get_location()) < self._threshold:
                         spawn_point_blocked = True
                         self._last_blocking_actor = actor
@@ -3467,6 +3471,7 @@ class ActorFlow(AtomicBehavior):
         self._tm.ignore_signs_percentage(actor, 100)
         self._collision_sensor_list.append(sensor)
         self._actor_list.append(actor)
+        return None
 
     def update(self):
         """Controls the created actors and creaes / removes other when needed"""
@@ -3579,6 +3584,19 @@ class OppositeActorFlow(AtomicBehavior):
 
         self._terminated = False
 
+        # initialise attributes
+        self._speed = None # Km / h
+        self._flow_distance = -1.0
+
+        self._sink_wp = None
+        self._source_wp = None
+
+        self._source_transform = None
+        self._source_location = None
+        self._sink_location = None
+
+        self._route = None
+
     def _move_waypoint_forward(self, wp, distance):
         """Moves forward a certain distance, stopping at junctions"""
         dist = 0
@@ -3634,6 +3652,7 @@ class OppositeActorFlow(AtomicBehavior):
         self._actor_list.append([actor, controller])
 
         self._spawn_dist = self._rng.uniform(self._min_spawn_dist, self._max_spawn_dist)
+        return None
 
     def update(self):
         """Controls the created actors and creates / removes other when needed"""
@@ -3731,6 +3750,9 @@ class InvadingActorFlow(AtomicBehavior):
         self._map = CarlaDataProvider.get_map()
 
         self._terminated = False
+        # Initialise attributes
+        self._speed = None
+        self._route = None
 
     def initialise(self):
         """Get the actor flow source and sink, depending on the reference actor speed"""
@@ -3749,6 +3771,7 @@ class InvadingActorFlow(AtomicBehavior):
         controller = BasicAgent(actor, self._speed, self._opt_dict, self._map, self._grp)
         controller.set_global_plan(self._route)
         self._actor_list.append([actor, controller])
+        return None
 
     def update(self):
         """Controls the created actors and creates / removes other when needed"""
@@ -4601,8 +4624,10 @@ class AddActor(AtomicBehavior):
                 self._actor_type, self._spawn_point, color=self._color)
             if new_actor:
                 new_status = py_trees.common.Status.SUCCESS
-        except:  # pylint: disable=bare-except
+        except RuntimeError:
             print("ActorSource unable to spawn actor")
+            return py_trees.common.Status.FAILURE
+        return new_status
 
 
 class SwitchWrongDirectionTest(AtomicBehavior):
@@ -4628,6 +4653,14 @@ class SwitchWrongDirectionTest(AtomicBehavior):
 
 
 class SwitchMinSpeedCriteria(AtomicBehavior):
+    """
+    Atomic that switch the SwitchMinSpeedCriteria criterion.
+
+    Args:
+        active (bool): True: activated; False: deactivated
+        name (str): name of the behavior
+    """
+
 
     def __init__(self, active, name="ChangeMinSpeed"):
         """
@@ -4840,7 +4873,7 @@ class ScenarioTimeout(AtomicBehavior):
 
     """
     This class is an idle behavior that waits for a set amount of time
-    before stoping.
+    before stopping.
 
     It is meant to be used with the `ScenarioTimeoutTest` to be used at scenarios
     that block the ego's route (such as adding obstacles) so that if the ego is
