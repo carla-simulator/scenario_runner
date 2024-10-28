@@ -59,7 +59,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _map = None                 # type: carla.Map
     _sync_flag = False          # type: bool
     _spawn_points = None        # type: list[carla.Transform]
-    _spawn_index = 0
+    _spawn_index = 0            # type: int
+    """Index of spawn points that have been used"""
     _blueprint_library = None   # type: carla.BlueprintLibrary
     _all_actors = None          # type: carla.ActorList
     _ego_vehicle_route = None
@@ -74,10 +75,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def set_local_planner(plan):
+        """Register a local planner"""
         CarlaDataProvider._local_planner = plan
 
     @staticmethod
     def get_local_planner():
+        """Access the local planner. Needs to call `set_local_planner` before"""
         return CarlaDataProvider._local_planner
 
     @staticmethod
@@ -501,7 +504,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_index = 0
 
     @staticmethod
-    def check_road_length(wp, length: float):
+    def check_road_length(wp: carla.Waypoint, length: float):
+        """
+        Checks wether the road starting at the given waypoint is at least the given length long.
+        
+        This is done by querying waypoints in 5m steps checking their road_id and lane_id.
+        """
         waypoint_separation = 5
 
         cur_len = 0
@@ -525,6 +533,16 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_road_lanes(wp):
         # type: (carla.Waypoint) -> list[carla.Waypoint]
+        """
+        This function takes a waypoint and returns a list of waypoints representing 
+        all the parallel driving lanes from the leftmost to the rightmost lane.
+
+        Args:
+            wp (carla.Waypoint): The starting waypoint.
+
+        Returns:
+            list[carla.Waypoint]: A list of waypoints representing all driving lanes.
+        """
         if wp.is_junction:
             return []
         # find the most left lane's waypoint
@@ -561,11 +579,25 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_road_lane_cnt(wp):
+        """
+        Counts the number of parallel driving lanes at the given waypoint.
+        """
         lanes = CarlaDataProvider.get_road_lanes(wp)
         return len(lanes)
 
     @staticmethod
     def get_waypoint_by_laneid(lane_num: int):
+        """
+        Selects an unused spawn point und by using `get_road_lanes` returns a parallel waypoint.
+
+        Args:
+            lane_num (int): The lane number to select, 1 is the leftmost lane.
+                Use 0 and negative to count from the rightmost lane.
+
+        Returns:
+            carla.Waypoint | None: The selected waypoint. None if no more spawn points are available
+                or if `lane_num``is higher than the number of lanes.
+        """
         if CarlaDataProvider._spawn_points is None:
             CarlaDataProvider.generate_spawn_points()
 
@@ -600,7 +632,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if not blueprint.has_attribute(name):
                 return False
 
-            attribute_type = blueprint.get_attribute(key).type
+            attribute_type = blueprint.get_attribute(name).type
             if attribute_type == carla.ActorAttributeType.Bool:
                 return blueprint.get_attribute(name).as_bool() == value
             elif attribute_type == carla.ActorAttributeType.Int:
@@ -999,6 +1031,10 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_actor_by_name(role_name: str):
+        """
+        Queries the actor pool for an actor with the given role name.
+        Returns the first actor matching actor.
+        """
 
         for actor_id in CarlaDataProvider._carla_actor_pool:
             if CarlaDataProvider._carla_actor_pool[actor_id].attributes['role_name'] == role_name:
@@ -1103,4 +1139,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @property
     def world(self):
+        """
+        Return world
+        
+        This is a read-only property of `get_world`
+        """
         return self._world
