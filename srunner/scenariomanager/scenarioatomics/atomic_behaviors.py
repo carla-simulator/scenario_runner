@@ -717,6 +717,8 @@ class SyncArrivalOSC(AtomicBehavior):
                         final_speed = master_speed * self._final_speed
                     else:
                         print("'relative_type' must be delta or factor")
+                        self._final_speed_set = True
+                        return super().terminate(new_status)
                 else:
                     final_speed = self._final_speed
 
