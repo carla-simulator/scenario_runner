@@ -11,6 +11,8 @@ You can use this system to prepare your agent for the CARLA Challenge.
 Scenarios can be defined through a Python interface, and with the newest version
 the scenario_runner also the upcoming [OpenSCENARIO](http://www.openscenario.org/) standard and [OpenSCENARIO 2.0](https://www.asam.net/standards/detail/openscenario/v200/) standard is supported.
 
+[Read the documentation here](https://scenario-runner.readthedocs.io/en/latest/).
+
 [![Scenario_Runner for CARLA](Docs/img/scenario_runner_video.png)](https://youtu.be/ChmF8IFagpo?t=68)
 
 Getting the ScenarioRunner
@@ -40,7 +42,7 @@ Currently no build is required, as all code is in Python.
 Using the ScenarioRunner
 ------------------------
 
-Please take a look at our [Getting started](Docs/getting_scenariorunner.md)
+Please take a look at our [Getting started](https://scenario-runner.readthedocs.io/en/latest/getting_scenariorunner/)
 documentation.
 
 Challenge Evaluation
