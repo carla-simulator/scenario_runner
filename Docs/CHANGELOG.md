@@ -15,6 +15,7 @@
 ## Upcoming
 * Improvements to the CarlaDataProvider:
  - Added `spawn_actor` for a blueprint based actor creation similar to `World.spawn_actor`
+* Implement `strtobool` formerly included in `distutils`, which is removed in Python 3.12.
 
 ## CARLA ScenarioRunner 0.9.15
 ### :rocket: New Features
