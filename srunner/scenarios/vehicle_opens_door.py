@@ -55,6 +55,7 @@ class VehicleOpensDoorTwoWays(BasicScenario):
     This class holds everything required for a scenario in which another vehicle parked at the side lane
     opens the door, forcing the ego to lane change, invading the opposite lane
     """
+
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
         """
@@ -93,9 +94,9 @@ class VehicleOpensDoorTwoWays(BasicScenario):
         if self._direction == 'right':
             displacement_vector *= -1
 
-        new_location = wp.transform.location + carla.Location(x=displacement*displacement_vector.x,
-                                                              y=displacement*displacement_vector.y,
-                                                              z=displacement*displacement_vector.z)
+        new_location = wp.transform.location + carla.Location(x=displacement * displacement_vector.x,
+                                                              y=displacement * displacement_vector.y,
+                                                              z=displacement * displacement_vector.z)
         new_location.z += 0.05  # Just in case, avoid collisions with the ground
         return new_location
 

@@ -134,7 +134,7 @@ def interpolate_trajectory(waypoints_trajectory, hop_resolution=1.0):
     """
     Given some raw keypoints interpolate a full dense trajectory to be used by the user.
     returns the full interpolated route both in GPS coordinates and also in its original form.
-    
+
     Args:
         - waypoints_trajectory: the current coarse trajectory
         - hop_resolution: distance between the trajectory's waypoints

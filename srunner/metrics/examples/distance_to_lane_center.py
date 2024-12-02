@@ -50,7 +50,7 @@ class DistanceToLaneCenter(BasicMetric):
             b_norm = math.sqrt(b.x * b.x + b.y * b.y + b.z * b.z)
 
             ab_dot = a.x * b.x + a.y * b.y + a.z * b.z
-            dist_v = ab_dot/(b_norm*b_norm)*b
+            dist_v = ab_dot / (b_norm * b_norm) * b
             dist = math.sqrt(dist_v.x * dist_v.x + dist_v.y * dist_v.y + dist_v.z * dist_v.z)
 
             # Get the sign of the distance (left side is positive)
