@@ -58,7 +58,8 @@ class OSC2Helper(object):
     def vector_angle(v1: List[int], v2: List[int]) -> int:
         """Calculate the angle between vectors v1 and v2.
         Parameters:
-            v1: vector v1, list type [x1, y1, x2, y2], where x1.y1 represents the starting coordinates and x2, y2 represent the ending coordinates.
+            v1: vector v1, list type [x1, y1, x2, y2], 
+                where x1.y1 represents the starting coordinates and x2, y2 represent the ending coordinates.
             v2: same as above.
         Return: the angle, positive for clockwise and negative for counterclockwise.
         """

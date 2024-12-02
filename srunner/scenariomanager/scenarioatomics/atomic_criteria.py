@@ -51,7 +51,7 @@ class Criterion(py_trees.behaviour.Behaviour):
                  actor,
                  optional=False,
                  terminate_on_failure=False):
-        super(Criterion, self).__init__(name)
+        super().__init__(name)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         self.name = name
@@ -99,7 +99,7 @@ class MaxVelocityTest(Criterion):
         """
         Setup actor and maximum allowed velovity
         """
-        super(MaxVelocityTest, self).__init__(name, actor, optional)
+        super().__init__(name, actor, optional)
         self.success_value = max_velocity
 
     def update(self):
@@ -145,14 +145,14 @@ class DrivenDistanceTest(Criterion):
         """
         Setup actor
         """
-        super(DrivenDistanceTest, self).__init__(name, actor, optional)
+        super().__init__(name, actor, optional)
         self.success_value = distance
         self.acceptable_value = acceptable_distance
         self._last_location = None
 
     def initialise(self):
         self._last_location = CarlaDataProvider.get_location(self.actor)
-        super(DrivenDistanceTest, self).initialise()
+        super().initialise()
 
     def update(self):
         """
@@ -197,7 +197,7 @@ class DrivenDistanceTest(Criterion):
         if self.test_status != "SUCCESS":
             self.test_status = "FAILURE"
         self.actual_value = round(self.actual_value, 2)
-        super(DrivenDistanceTest, self).terminate(new_status)
+        super().terminate(new_status)
 
 
 class AverageVelocityTest(Criterion):
@@ -219,7 +219,7 @@ class AverageVelocityTest(Criterion):
         """
         Setup actor and average velovity expected
         """
-        super(AverageVelocityTest, self).__init__(name, actor, optional)
+        super().__init__(name, actor, optional)
         self.success_value = velocity
         self.acceptable_value = acceptable_velocity
         self._last_location = None
@@ -227,7 +227,7 @@ class AverageVelocityTest(Criterion):
 
     def initialise(self):
         self._last_location = CarlaDataProvider.get_location(self.actor)
-        super(AverageVelocityTest, self).initialise()
+        super().initialise()
 
     def update(self):
         """
@@ -275,7 +275,7 @@ class AverageVelocityTest(Criterion):
         """
         if self.test_status == "RUNNING":
             self.test_status = "FAILURE"
-        super(AverageVelocityTest, self).terminate(new_status)
+        super().terminate(new_status)
 
 
 class CollisionTest(Criterion):
@@ -301,7 +301,7 @@ class CollisionTest(Criterion):
         """
         Construction with sensor setup
         """
-        super(CollisionTest, self).__init__(name, actor, optional, terminate_on_failure)
+        super().__init__(name, actor, optional, terminate_on_failure)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._other_actor = other_actor
         self._other_actor_type = other_actor_type
@@ -318,8 +318,8 @@ class CollisionTest(Criterion):
         world = CarlaDataProvider.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._collision_sensor.listen(lambda event: self._count_collisions(event))
-        super(CollisionTest, self).initialise()
+        self._collision_sensor.listen(lambda event: self._count_collisions(event))  # pylint: disable=unnecessary-lambda
+        super().initialise()
 
     def update(self):
         """
@@ -354,7 +354,7 @@ class CollisionTest(Criterion):
             self._collision_sensor.stop()
             self._collision_sensor.destroy()
         self._collision_sensor = None
-        super(CollisionTest, self).terminate(new_status)
+        super().terminate(new_status)
 
     def _count_collisions(self, event):     # pylint: disable=too-many-return-statements
         """Update collision count"""
@@ -369,7 +369,7 @@ class CollisionTest(Criterion):
                 if "traffic" not in event.other_actor.type_id and "static" not in event.other_actor.type_id:
                     return
             elif self._other_actor_type not in event.other_actor.type_id:
-                    return
+                return
 
         # To avoid multiple counts of the same collision, filter some of them.
         if self._collision_id == event.other_actor.id:
@@ -489,12 +489,12 @@ class KeepLaneTest(Criterion):
         """
         Construction with sensor setup
         """
-        super(KeepLaneTest, self).__init__(name, actor, optional)
+        super().__init__(name, actor, optional)
 
         world = self.actor.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.lane_invasion')
         self._lane_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._lane_sensor.listen(lambda event: self._count_lane_invasion(event))
+        self._lane_sensor.listen(lambda event: self._count_lane_invasion(event))  # pylint: disable=unnecessary-lambda
 
     def update(self):
         """
@@ -521,7 +521,7 @@ class KeepLaneTest(Criterion):
         if self._lane_sensor is not None:
             self._lane_sensor.destroy()
             self._lane_sensor = None
-        super(KeepLaneTest, self).terminate(new_status)
+        super().terminate(new_status)
 
     def _count_lane_invasion(self, event):
         """
@@ -546,7 +546,7 @@ class ReachedRegionTest(Criterion):
         Setup trigger region (rectangle provided by
         [min_x,min_y] and [max_x,max_y]
         """
-        super(ReachedRegionTest, self).__init__(name, actor)
+        super().__init__(name, actor)
         self._min_x = min_x
         self._max_x = max_x
         self._min_y = min_y
@@ -598,7 +598,7 @@ class OffRoadTest(Criterion):
         """
         Setup of the variables
         """
-        super(OffRoadTest, self).__init__(name, actor, optional, terminate_on_failure)
+        super().__init__(name, actor, optional, terminate_on_failure)
 
         self._map = CarlaDataProvider.get_map()
         self._offroad = False
@@ -676,7 +676,7 @@ class EndofRoadTest(Criterion):
         """
         Setup of the variables
         """
-        super(EndofRoadTest, self).__init__(name, actor, optional, terminate_on_failure)
+        super().__init__(name, actor, optional, terminate_on_failure)
 
         self._map = CarlaDataProvider.get_map()
         self._end_of_road = False
@@ -704,9 +704,8 @@ class EndofRoadTest(Criterion):
         if self._road_id is None:
             self._road_id = current_waypoint.road_id
 
-        else:
-            # Wait until the actor has left the road
-            if self._road_id != current_waypoint.road_id or self._start_time:
+        # Wait until the actor has left the road
+        elif self._road_id != current_waypoint.road_id or self._start_time:
 
                 # Start counting
                 if self._start_time is None:
@@ -744,7 +743,7 @@ class OnSidewalkTest(Criterion):
         """
         Construction with sensor setup
         """
-        super(OnSidewalkTest, self).__init__(name, actor, optional, terminate_on_failure)
+        super().__init__(name, actor, optional, terminate_on_failure)
 
         self._map = CarlaDataProvider.get_map()
         self._onsidewalk_active = False
@@ -892,7 +891,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
+            onsidewalk_event = TrafficEvent(
+                event_type=TrafficEventType.ON_SIDEWALK_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -907,7 +909,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
+            outsidelane_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -930,7 +935,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
+            onsidewalk_event = TrafficEvent(
+                event_type=TrafficEventType.ON_SIDEWALK_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -945,7 +953,10 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
+            outsidelane_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -955,7 +966,7 @@ class OnSidewalkTest(Criterion):
             self._wrong_outside_lane_distance = 0
             self.events.append(outsidelane_event)
 
-        super(OnSidewalkTest, self).terminate(new_status)
+        super().terminate(new_status)
 
     def _set_event_message(self, event, location, distance):
         """
@@ -1002,7 +1013,7 @@ class OutsideRouteLanesTest(Criterion):
         """
         Constructor
         """
-        super(OutsideRouteLanesTest, self).__init__(name, actor, optional)
+        super().__init__(name, actor, optional)
         self.units = "%"
 
         self._route = route
@@ -1084,7 +1095,10 @@ class OutsideRouteLanesTest(Criterion):
         Creates the traffic event / updates it
         """
         if self._traffic_event is None:
-            self._traffic_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION, frame=GameTime.get_frame())
+            self._traffic_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION,
+                frame=GameTime.get_frame(),
+            )
             self.events.append(self._traffic_event)
 
         percentage = self._wrong_distance / self._total_distance * 100
@@ -1182,7 +1196,7 @@ class WrongLaneTest(Criterion):
         """
         Construction with sensor setup
         """
-        super(WrongLaneTest, self).__init__(name, actor, optional)
+        super().__init__(name, actor, optional)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
 
         self._map = CarlaDataProvider.get_map()
@@ -1309,7 +1323,7 @@ class WrongLaneTest(Criterion):
             self._in_lane = True
             self.events.append(wrong_way_event)
 
-        super(WrongLaneTest, self).terminate(new_status)
+        super().terminate(new_status)
 
     def _set_event_message(self, event, location, distance, road_id, lane_id):
         """
@@ -1350,7 +1364,7 @@ class InRadiusRegionTest(Criterion):
     def __init__(self, actor, x, y, radius, name="InRadiusRegionTest"):
         """
         """
-        super(InRadiusRegionTest, self).__init__(name, actor)
+        super().__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._x = x     # pylint: disable=invalid-name
         self._y = y     # pylint: disable=invalid-name
@@ -1369,7 +1383,10 @@ class InRadiusRegionTest(Criterion):
         if self.test_status != "SUCCESS":
             in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
             if in_radius:
-                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED, frame=GameTime.get_frame())
+                route_completion_event = TrafficEvent(
+                    event_type=TrafficEventType.ROUTE_COMPLETED,
+                    frame=GameTime.get_frame(),
+                )
                 route_completion_event.set_message("Destination was successfully reached")
                 self.events.append(route_completion_event)
                 self.test_status = "SUCCESS"
@@ -1403,7 +1420,7 @@ class InRouteTest(Criterion):
     def __init__(self, actor, route, offroad_min=None, offroad_max=30, name="InRouteTest", terminate_on_failure=False):
         """
         """
-        super(InRouteTest, self).__init__(name, actor, terminate_on_failure=terminate_on_failure)
+        super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self.units = None  # We care about whether or not it fails, no units attached
 
         self._route = route
@@ -1491,7 +1508,10 @@ class InRouteTest(Criterion):
                 blackv = py_trees.blackboard.Blackboard()
                 _ = blackv.set("InRoute", False)
 
-                route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION, frame=GameTime.get_frame())
+                route_deviation_event = TrafficEvent(
+                    event_type=TrafficEventType.ROUTE_DEVIATION,
+                    frame=GameTime.get_frame(),
+                )
                 route_deviation_event.set_message(
                     "Agent deviated from the route at (x={}, y={}, z={})".format(
                         round(location.x, 3),
@@ -1529,7 +1549,7 @@ class RouteCompletionTest(Criterion):
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
         """
         """
-        super(RouteCompletionTest, self).__init__(name, actor, terminate_on_failure=terminate_on_failure)
+        super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self.units = "%"
         self.success_value = 100
         self._route = route
@@ -1614,7 +1634,7 @@ class RouteCompletionTest(Criterion):
 
         if self.test_status == "INIT":
             self.test_status = "FAILURE"
-        super(RouteCompletionTest, self).terminate(new_status)
+        super().terminate(new_status)
 
 
 class RunningRedLightTest(Criterion):
@@ -1632,7 +1652,7 @@ class RunningRedLightTest(Criterion):
         """
         Init
         """
-        super(RunningRedLightTest, self).__init__(name, actor, terminate_on_failure=terminate_on_failure)
+        super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
         self._list_traffic_lights = []
@@ -1728,7 +1748,10 @@ class RunningRedLightTest(Criterion):
                         self.test_status = "FAILURE"
                         self.actual_value += 1
                         location = traffic_light.get_transform().location
-                        red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION, frame=GameTime.get_frame())
+                        red_light_event = TrafficEvent(
+                            event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION,
+                            frame=GameTime.get_frame(),
+                        )
                         red_light_event.set_message(
                             "Agent ran a red light {} at (x={}, y={}, z={})".format(
                                 traffic_light.id,
@@ -1812,7 +1835,7 @@ class RunningStopTest(Criterion):
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
         """
         """
-        super(RunningStopTest, self).__init__(name, actor, terminate_on_failure=terminate_on_failure)
+        super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
         self._list_stop_signs = []
@@ -1929,7 +1952,10 @@ class RunningStopTest(Criterion):
                 self.actual_value += 1
                 self.test_status = "FAILURE"
                 stop_location = self._target_stop_sign.get_transform().location
-                running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION, frame=GameTime.get_frame())
+                running_stop_event = TrafficEvent(
+                    event_type=TrafficEventType.STOP_INFRACTION,
+                    frame=GameTime.get_frame(),
+                )
                 running_stop_event.set_message(
                     "Agent ran a stop with id={} at (x={}, y={}, z={})".format(
                         self._target_stop_sign.id,

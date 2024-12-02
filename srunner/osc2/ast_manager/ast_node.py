@@ -552,6 +552,10 @@ class ParameterReference(AST):
 
 
 class VariableDeclaration(Declaration):
+    """
+    'var' fieldName (',' fieldName)* ':' typeDeclarator ('=' (sampleExpression | valueExp) )? NEWLINE;
+    """
+
     def __init__(self, field_name, field_type):
         super().__init__()
         self.field_name = field_name
@@ -822,31 +826,6 @@ class PositionalArgument(AST):
         else:
             return visitor.visit_children(self)
 
-
-class VariableDeclaration(Declaration):
-    """
-    'var' fieldName (',' fieldName)* ':' typeDeclarator ('=' (sampleExpression | valueExp) )? NEWLINE;
-    """
-
-    def __init__(self, field_name, field_type):
-        super().__init__()
-        self.field_name = field_name
-        self.field_type = field_type
-        self.set_children(field_name)
-
-    def enter_node(self, listener):
-        if hasattr(listener, "enter_variable_declaration"):
-            listener.enter_variable_declaration(self)
-
-    def exit_node(self, listener):
-        if hasattr(listener, "exit_variable_declaration"):
-            listener.exit_variable_declaration(self)
-
-    def accept(self, visitor):
-        if hasattr(visitor, "visit_variable_declaration"):
-            return visitor.visit_variable_declaration(self)
-        else:
-            return visitor.visit_children(self)
 
 
 class KeepConstraintDeclaration(Declaration):
@@ -1369,7 +1348,8 @@ class TernaryExpression(Expression):
 
 class LogicalExpression(Expression):
     """
-    In logical expressions, for the same operator, such as a=>b=>c, the operands of the expression are placed in children.
+    In logical expressions, for the same operator, such as a=>b=>c,
+    the operands of the expression are placed in children.
     It is not divided into multiple binary expressions like binary expressions
     """
 

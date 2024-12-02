@@ -16,7 +16,6 @@ from srunner.osc2.osc2_parser.OpenSCENARIO2Parser import OpenSCENARIO2Parser
 from srunner.osc2.ast_manager.ast_builder import ASTBuilder
 
 
- 
 def main(input_stream):
     quiet = False
     OscErrorListeners = OscErrorListener(input_stream)
@@ -59,7 +58,7 @@ if __name__ == '__main__':
             import_msg.clear_msg()
         LOG_INFO("======================== "+"error file result"+" ========================")
         for error_file in error_file_list:
-             LOG_INFO(error_file)
+            LOG_INFO(error_file)
 
     elif os.path.isfile(sys.argv[1]):
         new_file, import_msg = Preprocess(sys.argv[1]).import_process()

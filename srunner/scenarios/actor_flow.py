@@ -109,10 +109,24 @@ class EnterActorFlow(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         for source_wp, sink_wp in zip(source_wps, sink_wps):
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
-            root.add_child(ActorFlow(
-                source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
-                self._flow_speed, initial_actors=True, initial_junction=True))
+            root.add_child(
+                InTriggerDistanceToLocation(
+                    self.ego_vehicles[0],
+                    sink_wp.transform.location,
+                    self._sink_distance,
+                )
+            )
+            root.add_child(
+                ActorFlow(
+                    source_wp,
+                    sink_wp,
+                    self._source_dist_interval,
+                    self._sink_distance,
+                    self._flow_speed,
+                    initial_actors=True,
+                    initial_junction=True,
+                )
+            )
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence = py_trees.composites.Sequence()
@@ -179,7 +193,13 @@ class EnterActorFlowV2(EnterActorFlow):
                 source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
                 self._flow_speed, initial_actors=True, initial_junction=True))
         for sink_wp in sink_wps:
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+            root.add_child(
+                InTriggerDistanceToLocation(
+                    self.ego_vehicles[0],
+                    sink_wp.transform.location,
+                    self._sink_distance,
+                )
+            )
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
@@ -232,9 +252,10 @@ class HighwayExit(BasicScenario):
     This scenario is similar to CrossActorFlow
     It will remove the BackgroundActivity from the lane where ActorFlow starts.
     Then vehicles (cars) will start driving from start_actor_flow location to end_actor_flow location
-    in a relatively high speed, forcing the ego to accelerate to cut in the actor flow 
+    in a relatively high speed, forcing the ego to accelerate to cut in the actor flow
     then exit from the highway.
-    This scenario works when Background Activity is running in route mode. And there should be no junctions in front of the ego.
+    This scenario works when Background Activity is running in route mode.
+    And there should be no junctions in front of the ego.
     """
 
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
@@ -365,7 +386,11 @@ class MergerIntoSlowTraffic(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         for wp in sink_wps:
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], wp.transform.location, self._sink_distance))
+            root.add_child(
+                InTriggerDistanceToLocation(
+                    self.ego_vehicles[0], wp.transform.location, self._sink_distance
+                )
+            )
         root.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
             self._flow_speed, initial_actors=True, initial_junction=True))
@@ -417,7 +442,7 @@ class MergerIntoSlowTraffic(BasicScenario):
 
 class MergerIntoSlowTrafficV2(MergerIntoSlowTraffic):
     """
-    Variation of MergerIntoSlowTraffic 
+    Variation of MergerIntoSlowTraffic
     """
 
     def _create_behavior(self):
@@ -435,7 +460,13 @@ class MergerIntoSlowTrafficV2(MergerIntoSlowTraffic):
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
             self._flow_speed, initial_actors=True, initial_junction=True))
         for sink_wp in sink_wps:
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+            root.add_child(
+                InTriggerDistanceToLocation(
+                    self.ego_vehicles[0],
+                    sink_wp.transform.location,
+                    self._sink_distance,
+                )
+            )
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
@@ -667,7 +698,7 @@ class InterurbanAdvancedActorFlow(BasicScenario):
         return exit_wp
 
     def _initialize_actors(self, config):
-        
+
         self._source_wp_1 = self._map.get_waypoint(self._start_actor_flow_1)
         self._sink_wp_1 = self._map.get_waypoint(self._end_actor_flow_1)
 

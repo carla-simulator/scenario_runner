@@ -105,7 +105,10 @@ class ParameterRef:
         """
         Returns: True when text is a literal/number
         """
-        return self._is_matching(pattern=r"(-)?\d+(\.\d*)?") or self._is_matching(pattern=r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?")
+        return (
+            self._is_matching(pattern=r"(-)?\d+(\.\d*)?") 
+            or self._is_matching(pattern=r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?")
+        )
 
     def is_parameter(self) -> bool:
         """
@@ -221,6 +224,8 @@ class ParameterRef:
 
     def __abs__(self):
         return abs(self.__float__())
+    
+    # TODO: Should implement __hash__
 
 
 class OpenScenarioParser(object):
@@ -1516,11 +1521,10 @@ class OpenScenarioParser(object):
             else:
                 raise AttributeError("Unknown private action")
 
+        elif list(action):
+            raise AttributeError("Unknown action: {}".format(maneuver_name))
         else:
-            if list(action):
-                raise AttributeError("Unknown action: {}".format(maneuver_name))
-            else:
-                return Idle(duration=0, name=maneuver_name)
+            return Idle(duration=0, name=maneuver_name)
 
         return atomic
 

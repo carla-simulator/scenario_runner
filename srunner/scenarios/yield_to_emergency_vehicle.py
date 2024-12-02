@@ -30,7 +30,7 @@ from srunner.tools.background_manager import RemoveRoadLane, ReAddRoadLane
 class YieldToEmergencyVehicle(BasicScenario):
     """
     This class holds everything required for a scenario in which the ego has to yield its lane to emergency vehicle.
-    The background activity will be removed from the lane the emergency vehicle will pass through, 
+    The background activity will be removed from the lane the emergency vehicle will pass through,
     and will be recreated once the scenario is over.
 
     Should be on the highway which is long enough and has no junctions.
@@ -91,7 +91,10 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._ev_start_transform = ev_points[0].transform
 
         actor = CarlaDataProvider.request_new_actor(
-            "vehicle.*.*", self._ev_start_transform, attribute_filter={'special_type': 'emergency'})
+            "vehicle.*.*",
+            self._ev_start_transform,
+            attribute_filter={"special_type": "emergency"},
+        )
         if actor is None:
             raise Exception("Couldn't spawn the emergency vehicle")
 
@@ -111,7 +114,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         """
         Spawn the EV behind and wait for it to be close-by. After it has approached,
         give the ego a certain amount of time to yield to it.
-        
+
         Sequence:
         - RemoveRoadLane
         - ActorTransformSetter
@@ -130,9 +133,13 @@ class YieldToEmergencyVehicle(BasicScenario):
         if self.route_mode:
             sequence.add_child(RemoveRoadLane(self._reference_waypoint))
 
-        sequence.add_child(ActorTransformSetter(self.other_actors[0], self._ev_start_transform))
+        sequence.add_child(
+            ActorTransformSetter(self.other_actors[0], self._ev_start_transform)
+        )
 
-        main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        main_behavior = py_trees.composites.Parallel(
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE
+        )
 
         end_condition_1 = py_trees.composites.Sequence()
         end_condition_1.add_child(InTriggerDistanceToVehicle(
@@ -140,14 +147,24 @@ class YieldToEmergencyVehicle(BasicScenario):
         end_condition_1.add_child(Idle(self._ev_idle_time))
 
         end_condition_2 = py_trees.composites.Sequence()
-        end_condition_2.add_child(WaitUntilInFront(self.other_actors[0], self.ego_vehicles[0]))
-        end_condition_2.add_child(DriveDistance(self.other_actors[0], self._end_distance))
+        end_condition_2.add_child(
+            WaitUntilInFront(self.other_actors[0], self.ego_vehicles[0])
+        )
+        end_condition_2.add_child(
+            DriveDistance(self.other_actors[0], self._end_distance)
+        )
 
         main_behavior.add_child(end_condition_1)
         main_behavior.add_child(end_condition_2)
 
-        main_behavior.add_child(AdaptiveConstantVelocityAgentBehavior(
-            self.other_actors[0], self.ego_vehicles[0], speed_increment=self._speed_increment, opt_dict=self._opt_dict))
+        main_behavior.add_child(
+            AdaptiveConstantVelocityAgentBehavior(
+                self.other_actors[0],
+                self.ego_vehicles[0],
+                speed_increment=self._speed_increment,
+                opt_dict=self._opt_dict,
+            )
+        )
 
         sequence.add_child(main_behavior)
 
