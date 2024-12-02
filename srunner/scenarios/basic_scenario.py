@@ -171,6 +171,14 @@ class BasicScenario(object):
 
             for new_actor in new_actors:
                 self.other_actors.append(new_actor)
+                
+    def _destroy_other_actors(self):
+        """
+        Remove all actors upon deletion
+        """
+        for actor in self.other_actors:
+            if CarlaDataProvider.remove_actor_by_id(actor.id) is None:
+                actor.destroy()
 
     def _setup_scenario_trigger(self, config):
         """

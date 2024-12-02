@@ -417,7 +417,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
     def _replace_walker(self, adversary):
         """As the adversary is probably, replace it with another one"""
         type_id = adversary.type_id
-        adversary.destroy()
+        CarlaDataProvider.remove_actor_by_id(adversary.id)
         spawn_transform = self.ego_vehicles[0].get_transform()
         spawn_transform.location.z -= 50
         adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
