@@ -207,9 +207,9 @@ class ScenarioRunner(object):
             except RuntimeError:
                 sys.exit(-1)
 
-        self.manager.cleanup()
+        # self.manager.cleanup()
 
-        CarlaDataProvider.cleanup()
+        # CarlaDataProvider.cleanup()
 
         for i, _ in enumerate(self.ego_vehicles):
             if self.ego_vehicles[i]:
