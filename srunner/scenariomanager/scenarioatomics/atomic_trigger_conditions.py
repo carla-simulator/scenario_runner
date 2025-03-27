@@ -85,9 +85,6 @@ class IfTriggerer(AtomicCondition):
         self.actor_npc = actor_npc
         self._comparison_operator = comparison_operator
 
-    def initialise(self):
-        super().initialise()
-
     def update(self):
         ego_speed_now = CarlaDataProvider.get_velocity(self.actor_ego)
         npc_speed_now = CarlaDataProvider.get_velocity(self.actor_npc)
