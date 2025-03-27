@@ -32,6 +32,7 @@ import networkx
 import carla
 from agents.navigation.basic_agent import BasicAgent
 from agents.navigation.constant_velocity_agent import ConstantVelocityAgent
+from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.navigation.local_planner import RoadOption, LocalPlanner
 from agents.tools.misc import is_within_distance, get_speed
 
@@ -4934,6 +4935,7 @@ class ScenarioTimeout(AtomicBehavior):
 
 
 class MovePedestrianWithEgo(AtomicBehavior):
+    """This class is an atomic behavior that moves a pedestrian with the ego vehicle."""
 
     def __init__(self, reference_actor, actor, distance, displacement=0, name="TrackActor"):
         """

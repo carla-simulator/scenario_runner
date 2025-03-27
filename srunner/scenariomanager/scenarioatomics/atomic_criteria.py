@@ -1898,6 +1898,7 @@ class RunningStopTest(Criterion):
         for stop in self._list_stop_signs:
             if self.is_actor_affected_by_stop(wp_list, stop):
                 return stop
+        return None
 
     def _get_waypoints(self, actor):
         """Returns a list of waypoints starting from the ego location and a set amount forward"""
