@@ -769,7 +769,7 @@ class InTriggerDistanceToNextIntersection(AtomicCondition):
         self._map = CarlaDataProvider.get_map()
 
         waypoint = self._map.get_waypoint(self._actor.get_location())
-        while waypoint and not waypoint.is_intersection:
+        while waypoint and not waypoint.is_junction:
             waypoint = waypoint.next(1)[-1]
 
         self._final_location = waypoint.transform.location
