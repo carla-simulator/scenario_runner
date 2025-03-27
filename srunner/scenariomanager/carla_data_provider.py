@@ -166,6 +166,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the absolute velocity for the given actor
         """
+        if actor in CarlaDataProvider._actor_velocity_map:
+            return CarlaDataProvider._actor_velocity_map[actor]
+        # Look for same actor, but stored as different python object
         for key in CarlaDataProvider._actor_velocity_map:
             if key.id == actor.id:
                 return CarlaDataProvider._actor_velocity_map[key]
@@ -180,6 +183,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the location for the given actor
         """
+        if actor in CarlaDataProvider._actor_location_map:
+            return CarlaDataProvider._actor_location_map[actor]
         for key in CarlaDataProvider._actor_location_map:
             if key.id == actor.id:
                 return CarlaDataProvider._actor_location_map[key]
@@ -195,6 +200,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the transform for the given actor
         """
+        if actor in CarlaDataProvider._actor_transform_map:
+            return CarlaDataProvider._actor_transform_map[actor] or actor.get_transform()
         for key in CarlaDataProvider._actor_transform_map:
             if key.id == actor.id:
                 # The velocity location information is the entire behavior tree updated every tick
@@ -473,7 +480,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         waypoint = CarlaDataProvider.get_map().get_waypoint(location)
         # Create list of all waypoints until next intersection
         list_of_waypoints = []
-        while waypoint and not waypoint.is_intersection:
+        while waypoint and not waypoint.is_junction:
             list_of_waypoints.append(waypoint)
             waypoint = waypoint.next(2.0)[0]
 
@@ -765,12 +772,16 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         return actor
 
     @staticmethod
-    def request_new_actor(model, spawn_point, rolename='scenario', autopilot=False,
+    def request_new_actor(model, spawn_point=None, rolename='scenario', autopilot=False,
                           random_location=False, color=None, actor_category="car",
                           attribute_filter=None, tick=True):
         """
         This method tries to create a new actor, returning it if successful (None otherwise).
         """
+        if not spawn_point and not random_location:
+            raise ValueError("Either spawn_point or random_location must be set")
+        elif spawn_point and random_location:
+            print("INFO: request_new_actor : Both spawn_point and random_location are set. Omitting spawn_point.")
         blueprint = CarlaDataProvider.create_blueprint(model, rolename, color, actor_category, attribute_filter)
 
         if random_location:
