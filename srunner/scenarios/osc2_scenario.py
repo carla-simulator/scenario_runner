@@ -512,8 +512,8 @@ class OSC2Scenario(BasicScenario):
 
         def bool_result(self, option):
             # wait(x < y) @drive_distance Handling of Boolean expressions x < y
-            expression_value = re.split("\W+", option)
-            symbol = re.search("\W+", option).group()
+            expression_value = re.split(r"\W+", option)
+            symbol = re.search(r"\W+", option).group()
             if symbol == "<":
                 symbol = operator.lt
             elif symbol == ">":
@@ -1194,10 +1194,10 @@ class OSC2Scenario(BasicScenario):
                 if isinstance(para_value, (Physical, float, int)):
                     return para_value
                 para_value = para_value.strip('"')
-                if re.fullmatch("(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
+                if re.fullmatch(r"(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
                     # Regular expression ^[-]?[0-9]+(\.[0-9]+)? matching float
                     # para_value_num = re.findall('^[-]?[0-9]+(\.[0-9]+)?', para_value)[0]
-                    patter = re.compile("(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
+                    patter = re.compile(r"(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
                     para_value_num, para_value_unit = patter.match(para_value).groups()
                     if para_value_num.count(".") == 1:
                         return Physical(
