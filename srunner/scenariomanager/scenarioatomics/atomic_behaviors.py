@@ -3486,7 +3486,7 @@ class ActorFlow(AtomicBehavior):
                     sensor.stop()
                     sensor.destroy()
                 self._collision_sensor_list.remove(sensor)
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_list.remove(actor)
 
         # Spawn new actors if needed
@@ -3534,7 +3534,7 @@ class ActorFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -3664,7 +3664,7 @@ class OppositeActorFlow(AtomicBehavior):
                 continue
             sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_list.remove(actor_data)
             else:
                 actor.apply_control(controller.run_step())
@@ -3697,7 +3697,7 @@ class OppositeActorFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -3783,7 +3783,7 @@ class InvadingActorFlow(AtomicBehavior):
                 continue
             sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_list.remove(actor_data)
             else:
                 actor.apply_control(controller.run_step())
@@ -3816,7 +3816,7 @@ class InvadingActorFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -3922,7 +3922,7 @@ class BicycleFlow(AtomicBehavior):
                 continue
             sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_data.remove(actor_data)
             else:
                 actor.apply_control(controller.run_step())
@@ -3959,7 +3959,7 @@ class BicycleFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -4777,7 +4777,7 @@ class WalkerFlow(AtomicBehavior):
     def _destroy_walker(self, walker, controller):
         controller.stop()
         controller.destroy()
-        walker.destroy()
+        CarlaDataProvider.remove_actor_by_id(walker.id)
 
     def terminate(self, new_status):
         """
@@ -4857,7 +4857,7 @@ class AIWalkerBehavior(AtomicBehavior):
             controller.stop()
             controller.destroy()
         if walker:
-            walker.destroy()
+            CarlaDataProvider.remove_actor_by_id(walker.id)
 
     def terminate(self, new_status):
         """

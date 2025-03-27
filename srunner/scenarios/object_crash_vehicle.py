@@ -275,7 +275,7 @@ class DynamicObjectCrossing(BasicScenario):
             self._adversary_transform = self._get_sidewalk_transform(walker_wp, offset)
             adversary = CarlaDataProvider.request_new_actor('walker.*', self._adversary_transform)
             if adversary is None:
-                blocker.destroy()
+                CarlaDataProvider.remove_actor_by_id(blocker.id)
                 self._number_of_attempts -= 1
                 move_dist = self._retry_dist
                 print("Failed to spawn an adversary")
@@ -359,7 +359,7 @@ class DynamicObjectCrossing(BasicScenario):
     def _replace_walker(self, adversary):
         """As the adversary is probably, replace it with another one"""
         type_id = adversary.type_id
-        adversary.destroy()
+        CarlaDataProvider.remove_actor_by_id(adversary.id)
         spawn_transform = self.ego_vehicles[0].get_transform()
         spawn_transform.location.z -= 50
         adversary = CarlaDataProvider.request_new_actor(type_id, spawn_transform)
@@ -575,7 +575,7 @@ class ParkingCrossingPedestrian(BasicScenario):
     def _replace_walker(self, walker):
         """As the adversary is probably, replace it with another one"""
         type_id = walker.type_id
-        walker.destroy()
+        CarlaDataProvider.remove_actor_by_id(walker.id)
         spawn_transform = self.ego_vehicles[0].get_transform()
         spawn_transform.location.z -= 50
         walker = CarlaDataProvider.request_new_actor(type_id, spawn_transform)

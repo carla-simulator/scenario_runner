@@ -11,7 +11,7 @@ Basic scenario class using the OpenSCENARIO definition
 
 from __future__ import print_function
 
-from distutils.util import strtobool
+from srunner.tools.util import strtobool
 import itertools
 import os
 import py_trees

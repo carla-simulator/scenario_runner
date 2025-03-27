@@ -2564,7 +2564,7 @@ class BackgroundBehavior(AtomicBehavior):
         self._remove_actor_info(actor)
         try:
             actor.set_autopilot(False, self._tm_port)
-            actor.destroy()
+            CarlaDataProvider.remove_actor_by_id(actor.id)
         except RuntimeError:
             pass
 
