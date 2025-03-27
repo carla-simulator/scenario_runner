@@ -21,6 +21,9 @@ from six import iteritems
 import carla
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from typing import Iterable
 
 def calculate_velocity(actor):
     """
@@ -298,6 +301,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_all_actors():
+        # type: () -> Iterable[carla.Actor]
         """
         @return all the world actors. This is an expensive call, hence why it is part of the CDP,
         but as this might not be used by everyone, only get the actors the first time someone
@@ -475,7 +479,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the next relevant traffic light for the provided actor
         """
-
         if not use_cached_location:
             location = actor.get_transform().location
         else:
@@ -884,7 +887,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         param:
         - actor_list: list of ActorConfigurationData
         """
-
         SpawnActor = carla.command.SpawnActor  # pylint: disable=invalid-name
         PhysicsCommand = carla.command.SetSimulatePhysics  # pylint: disable=invalid-name
         FutureActor = carla.command.FutureActor  # pylint: disable=invalid-name
@@ -977,7 +979,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Some parameters are the same for all actors (rolename, autopilot and random location)
         while others are randomized (color)
         """
-
         SpawnActor = carla.command.SpawnActor  # pylint: disable=invalid-name
         SetAutopilot = carla.command.SetAutopilot  # pylint: disable=invalid-name
         FutureActor = carla.command.FutureActor  # pylint: disable=invalid-name
@@ -1067,7 +1068,6 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Queries the actor pool for an actor with the given role name.
         Returns the first actor matching actor.
         """
-
         for actor_id in CarlaDataProvider._carla_actor_pool:
             if CarlaDataProvider._carla_actor_pool[actor_id].attributes['role_name'] == role_name:
                 return CarlaDataProvider._carla_actor_pool[actor_id]
