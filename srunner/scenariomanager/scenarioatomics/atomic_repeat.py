@@ -25,6 +25,7 @@ class Decorator(behaviour.Behaviour):
         # Give a convenient alias
         self.decorated = self.children[0]
         self.decorated.parent = self
+        self.status = common.Status.INVALID
 
     def tick(self):
         """
