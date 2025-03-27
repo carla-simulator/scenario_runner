@@ -49,14 +49,19 @@ def get_value_parameter(config, name, p_type, default):
 class ParkingExit(BasicScenario):
     """
     This class holds everything required for a scenario in which the ego would be teleported to the parking lane.
-    Once the scenario is triggered, the OutsideRouteLanesTest will be deactivated since the ego is out of the driving lane.
+    Once the scenario is triggered, the OutsideRouteLanesTest will be deactivated since the ego is out of the
+    driving lane.
     Then blocking vehicles will be generated in front of and behind the parking point.
     The ego need to exit from the parking lane and then merge into the driving lane.
-    After the ego is {end_distance} meters away from the parking point, the OutsideRouteLanesTest will be activated and the scenario ends.
+    After the ego is {end_distance} meters away from the parking point,
+    the OutsideRouteLanesTest will be activated and the scenario ends.
 
-    Note 1: For route mode, this shall be the first scenario of the route. The trigger point shall be the first point of the route waypoints.
+    Note:
+        For route mode, this shall be the first scenario of the route.
+        The trigger point shall be the first point of the route waypoints.
 
-    Note 2: Make sure there are enough space for spawning blocking vehicles.
+    Note:
+        Make sure there are enough space for spawning blocking vehicles.
     """
 
     def __init__(self, world, ego_vehicles, config, debug_mode=False, criteria_enable=True,
@@ -138,7 +143,11 @@ class ParkingExit(BasicScenario):
         self.parking_slots.append(behind_points[0].transform.location)
 
         actor_behind = CarlaDataProvider.request_new_actor(
-            'vehicle.*', behind_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
+            "vehicle.*",
+            behind_points[0].transform,
+            rolename="scenario no lights",
+            attribute_filter=self._bp_attributes,
+        )
         if actor_behind is None:
             CarlaDataProvider.remove_actor_by_id(actor_front.id)
             raise ValueError("Couldn't spawn the vehicle behind the parking point")

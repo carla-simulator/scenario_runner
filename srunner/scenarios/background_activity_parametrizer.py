@@ -66,9 +66,19 @@ class BackgroundActivityParametrizer(BasicScenario):
         """
 
         sequence = py_trees.composites.Sequence()
-        sequence.add_child(ChangeRoadBehavior(self._num_front_vehicles, self._num_back_vehicles, self._road_spawn_dist))
-        sequence.add_child(ChangeJunctionBehavior(
-            self._junction_source_dist, self._junction_max_actors, self._junction_spawn_dist, self._junction_source_perc))
+        sequence.add_child(
+            ChangeRoadBehavior(
+                self._num_front_vehicles, self._num_back_vehicles, self._road_spawn_dist
+            )
+        )
+        sequence.add_child(
+            ChangeJunctionBehavior(
+                self._junction_source_dist,
+                self._junction_max_actors,
+                self._junction_spawn_dist,
+                self._junction_source_perc,
+            )
+        )
         sequence.add_child(ChangeOppositeBehavior(
             self._opposite_source_dist, self._opposite_spawn_dist, self._opposite_active))
 

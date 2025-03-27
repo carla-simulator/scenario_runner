@@ -53,7 +53,7 @@ class BasicScenario(object):
 
         # If no timeout was provided, set it to 60 seconds
         if not hasattr(self, 'timeout'):
-            self.timeout = 60 
+            self.timeout = 60
         if debug_mode:
             py_trees.logging.level = py_trees.logging.Level.DEBUG
 

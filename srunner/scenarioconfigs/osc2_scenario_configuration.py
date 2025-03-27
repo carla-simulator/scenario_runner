@@ -16,19 +16,17 @@ from srunner.osc2.ast_manager import ast_node
 from srunner.osc2.ast_manager.ast_vistor import ASTVisitor
 from srunner.osc2_dm.physical_object import *
 from srunner.osc2_dm.physical_types import Physical, Range
-
 from srunner.osc2_stdlib.path import Path
 
 # pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration
-'''
-Parses the osc2 scenario description file, generates type objects in the standard 
-library based on the type and keep constraint parameters, and sets parameters
-'''
+# '''
+# Parses the osc2 scenario description file, generates type objects in the standard
+# library based on the type and keep constraint parameters, and sets parameters
+# '''
 
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-
 # OSC2
 from srunner.tools.osc2_helper import OSC2Helper
 
@@ -48,7 +46,7 @@ def flat_list(list_of_lists):
 class OSC2ScenarioConfiguration(ScenarioConfiguration):
     def __init__(self, filename, client):
         super(OSC2ScenarioConfiguration, self).__init__()
-        
+
         self.name = self.filename = filename
         self.ast_tree = OSC2Helper.gen_osc2_ast(self.filename)
 
