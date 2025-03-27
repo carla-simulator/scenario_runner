@@ -25,6 +25,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import Iterable
 
+
 def calculate_velocity(actor):
     """
     Method to calculate the velocity of a actor
@@ -56,7 +57,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _actor_transform_map = {}   # type: dict[carla.Actor, carla.Transform]
     _traffic_light_map = {}     # type: dict[carla.TrafficLight, carla.Transform]
     _carla_actor_pool = {}      # type: dict[int, carla.Actor]
-    _global_osc_parameters = {} # type: dict[str, Any] # type: ignore : suppresses the missing Any import
+    _global_osc_parameters = {}  # type: dict[str, Any] # type: ignore : suppresses the missing Any import
     _client = None              # type: carla.Client
     _world = None               # type: carla.World
     _map = None                 # type: carla.Map
