@@ -126,7 +126,7 @@ def get_crossing_point(actor):
     """
     wp_cross = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
 
-    while not wp_cross.is_intersection:
+    while not wp_cross.is_junction:
         wp_cross = wp_cross.next(2)[0]
 
     crossing = carla.Location(x=wp_cross.transform.location.x,
@@ -197,7 +197,7 @@ def get_location_in_distance(actor, distance):
     """
     waypoint = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
     traveled_distance = 0
-    while not waypoint.is_intersection and traveled_distance < distance:
+    while not waypoint.is_junction and traveled_distance < distance:
         waypoint_new = waypoint.next(1.0)[-1]
         traveled_distance += waypoint_new.transform.location.distance(waypoint.transform.location)
         waypoint = waypoint_new
@@ -213,7 +213,7 @@ def get_location_in_distance_from_wp(waypoint, distance, stop_at_junction=True):
     @return obtained location and the traveled distance
     """
     traveled_distance = 0
-    while not (waypoint.is_intersection and stop_at_junction) and traveled_distance < distance:
+    while not (waypoint.is_junction and stop_at_junction) and traveled_distance < distance:
         wp_next = waypoint.next(1.0)
         if wp_next:
             waypoint_new = wp_next[-1]
@@ -232,7 +232,7 @@ def get_waypoint_in_distance(waypoint, distance, stop_at_junction=True):
     @return obtained waypoint and the traveled distance
     """
     traveled_distance = 0
-    while not (waypoint.is_intersection and stop_at_junction) and traveled_distance < distance:
+    while not (waypoint.is_junction and stop_at_junction) and traveled_distance < distance:
         wp_next = waypoint.next(1.0)
         if wp_next:
             waypoint_new = wp_next[-1]
@@ -273,7 +273,7 @@ def generate_target_waypoint_list(waypoint, turn=0):
                 np.dot(v_1, v_2) / abs((np.linalg.norm(v_1) * np.linalg.norm(v_2))))
             if angle_wp < threshold:
                 break
-        elif reached_junction and not plan[-1][0].is_intersection:
+        elif reached_junction and not plan[-1][0].is_junction:
             break
 
     return plan, plan[-1][0]
