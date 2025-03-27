@@ -137,18 +137,24 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Callback from CARLA
         """
         with CarlaDataProvider._lock:
-            for actor in CarlaDataProvider._actor_velocity_map:
+            for actor in CarlaDataProvider._actor_velocity_map.copy():
                 if actor is not None and actor.is_alive:
                     CarlaDataProvider._actor_velocity_map[actor] = calculate_velocity(actor)
+                else:
+                    del CarlaDataProvider._actor_velocity_map[actor]
 
-            for actor in CarlaDataProvider._actor_location_map:
+            for actor in CarlaDataProvider._actor_location_map.copy():
                 if actor is not None and actor.is_alive:
                     CarlaDataProvider._actor_location_map[actor] = actor.get_location()
+                else:
+                    del CarlaDataProvider._actor_location_map[actor]
 
-            for actor in CarlaDataProvider._actor_transform_map:
+            for actor in CarlaDataProvider._actor_transform_map.copy():
                 if actor is not None and actor.is_alive:
                     CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
-
+                else:
+                    del CarlaDataProvider._actor_transform_map[actor]
+            
             world = CarlaDataProvider._world
             if world is None:
                 print("WARNING: CarlaDataProvider couldn't find the world")
@@ -1014,11 +1020,12 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         Remove an actor from the pool using its ID
         """
         if actor_id in CarlaDataProvider._carla_actor_pool:
-            CarlaDataProvider._carla_actor_pool[actor_id].destroy()
-            CarlaDataProvider._carla_actor_pool[actor_id] = None # type: ignore
+            was_destroyed = CarlaDataProvider._carla_actor_pool[actor_id].destroy()
+            CarlaDataProvider._carla_actor_pool[actor_id] = None
             CarlaDataProvider._carla_actor_pool.pop(actor_id)
-        else:
-            print("Trying to remove a non-existing actor id {}".format(actor_id))
+            return was_destroyed
+        print("Trying to remove a non-existing actor id {}".format(actor_id))
+        return None    
 
     @staticmethod
     def remove_actors_in_surrounding(location, distance):
