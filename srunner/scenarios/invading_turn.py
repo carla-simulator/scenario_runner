@@ -67,8 +67,8 @@ class InvadingTurn(BasicScenario):
         self._reference_waypoint = self._map.get_waypoint(
             self._trigger_location)
 
-        self._flow_frequency = 40 # m
-        self._source_dist = 30 # Distance between source and end point
+        self._flow_frequency = 40  # m
+        self._source_dist = 30  # Distance between source and end point
 
         self._check_distance = 50
 
@@ -105,7 +105,7 @@ class InvadingTurn(BasicScenario):
         # Lane offset
         self._offset_constant = 0.7  # Ideally, half the vehicle lane width
         self._true_offset = self._offset + self._sink_wp.lane_width / 2 - self._offset_constant
-        self._true_offset *= -1 # Cause left direction
+        self._true_offset *= -1  # Cause left direction
 
         self._create_obstacle()
 
@@ -152,7 +152,8 @@ class InvadingTurn(BasicScenario):
         main_behavior.add_child(InvadingActorFlow(
             self._source_wp, self._sink_wp, self.ego_vehicles[0], self._flow_frequency, offset=self._true_offset))
 
-        main_behavior.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._forward_wp.transform, True, self._check_distance))
+        main_behavior.add_child(WaitUntilInFrontPosition(
+            self.ego_vehicles[0], self._forward_wp.transform, True, self._check_distance))
         main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         sequence.add_child(main_behavior)

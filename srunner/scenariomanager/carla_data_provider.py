@@ -53,7 +53,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _actor_transform_map = {}   # type: dict[carla.Actor, carla.Transform]
     _traffic_light_map = {}     # type: dict[carla.TrafficLight, carla.Transform]
     _carla_actor_pool = {}      # type: dict[int, carla.Actor]
-    _global_osc_parameters = {} # type: dict[str, Any] # type: ignore : suppresses the missing Any import
+    _global_osc_parameters = {}  # type: dict[str, Any] # type: ignore : suppresses the missing Any import
     _client = None              # type: carla.Client
     _world = None               # type: carla.World
     _map = None                 # type: carla.Map
@@ -422,7 +422,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         Update traffic light states
         """
-        reset_params = [] # type: list[dict]
+        reset_params = []  # type: list[dict]
 
         for state in states:
             relevant_lights = []
@@ -629,7 +629,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             'train': '',
             'tram': '',
             'pedestrian': 'walker.pedestrian.0001',
-	    'misc': 'static.prop.streetbarrier'
+            'misc': 'static.prop.streetbarrier'
         }
 
         # Set the model
@@ -742,7 +742,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         Returns:
             carla.Actor | None: The spawned actor if successful, None otherwise.
-            
+
         Raises:
             RuntimeError: if `must_spawn` is True and the actor could not be spawned.
         """
@@ -1015,7 +1015,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         if actor_id in CarlaDataProvider._carla_actor_pool:
             CarlaDataProvider._carla_actor_pool[actor_id].destroy()
-            CarlaDataProvider._carla_actor_pool[actor_id] = None # type: ignore
+            CarlaDataProvider._carla_actor_pool[actor_id] = None  # type: ignore
             CarlaDataProvider._carla_actor_pool.pop(actor_id)
         else:
             print("Trying to remove a non-existing actor id {}".format(actor_id))

@@ -65,7 +65,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         self._opt_dict = {
             'base_vehicle_threshold': 10, 'detection_speed_ratio': 0.15, 'use_bbs_detection': True,
             'base_min_distance': 1, 'distance_ratio': 0.2
-            }
+        }
 
         self._trigger_location = config.trigger_points[0].location
         self._reference_waypoint = self._map.get_waypoint(self._trigger_location)
@@ -111,7 +111,7 @@ class YieldToEmergencyVehicle(BasicScenario):
         """
         Spawn the EV behind and wait for it to be close-by. After it has approached,
         give the ego a certain amount of time to yield to it.
-        
+
         Sequence:
         - RemoveRoadLane
         - ActorTransformSetter

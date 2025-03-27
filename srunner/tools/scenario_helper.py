@@ -185,7 +185,7 @@ def get_geometric_linear_intersection(ego_location, other_location, move_to_junc
     if z == 0:
         return None
 
-    return carla.Location(x=x/z, y=y/z, z=0)
+    return carla.Location(x=x / z, y=y / z, z=0)
 
 
 def get_location_in_distance(actor, distance):
@@ -677,10 +677,10 @@ def get_troad_from_transform(actor_transform):
     if not right_lanes or not left_lanes:
         closest_road_edge = min(distance_from_lm_lane_edge, distance_from_rm_lane_edge)
         if closest_road_edge == distance_from_lm_lane_edge:
-            t_road = -1*t_road
+            t_road = -1 * t_road
     else:
         if c_wp.lane_id < 0:
-            t_road = -1*t_road
+            t_road = -1 * t_road
 
     return t_road
 

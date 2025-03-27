@@ -35,6 +35,7 @@ def get_value_parameter(config, name, p_type, default):
     else:
         return default
 
+
 def get_interval_parameter(config, name, p_type, default):
     if name in config.other_parameters:
         return [

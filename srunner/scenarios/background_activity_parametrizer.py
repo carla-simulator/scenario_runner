@@ -16,11 +16,13 @@ from srunner.tools.background_manager import (ChangeRoadBehavior,
                                               ChangeOppositeBehavior,
                                               ChangeJunctionBehavior)
 
+
 def get_parameter(config, name):
     if name in config.other_parameters:
         return float(config.other_parameters[name]['value'])
     else:
         return None
+
 
 class BackgroundActivityParametrizer(BasicScenario):
     """
@@ -53,11 +55,11 @@ class BackgroundActivityParametrizer(BasicScenario):
         self._junction_source_perc = get_parameter(config, "junction_source_perc")
 
         super().__init__("BackgroundActivityParametrizer",
-                          ego_vehicles,
-                          config,
-                          world,
-                          debug_mode,
-                          criteria_enable=criteria_enable)
+                         ego_vehicles,
+                         config,
+                         world,
+                         debug_mode,
+                         criteria_enable=criteria_enable)
 
     def _create_behavior(self):
         """
@@ -86,4 +88,3 @@ class BackgroundActivityParametrizer(BasicScenario):
         Remove all actors and traffic lights upon deletion
         """
         self.remove_all_actors()
-

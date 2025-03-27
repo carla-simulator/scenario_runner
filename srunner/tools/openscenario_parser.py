@@ -815,7 +815,7 @@ class OpenScenarioParser(object):
 
             if not OpenScenarioParser.use_carla_coordinate_system:
                 # multiply -1 because unlike offset t road is -ve for right side
-                t = -1*t
+                t = -1 * t
             transform = get_offset_transform(transform, t)
             return transform
 
@@ -1278,7 +1278,8 @@ class OpenScenarioParser(object):
                     atomic = ActorDestroy(entity_ref_actor)
                 elif entity_action.find('AddEntityAction') is not None:
                     position = entity_action.find('AddEntityAction').find("Position")
-                    actor_transform = OpenScenarioParser.convert_position_to_transform(position)
+                    actor_transform = OpenScenarioParser.convert_position_to_transform(
+                        position, config.other_actors + config.ego_vehicles)
                     entity_ref_actor = None
                     for _actor in config.other_actors:
                         if _actor.rolename == entity_ref:

@@ -369,7 +369,7 @@ class CollisionTest(Criterion):
                 if "traffic" not in event.other_actor.type_id and "static" not in event.other_actor.type_id:
                     return
             elif self._other_actor_type not in event.other_actor.type_id:
-                    return
+                return
 
         # To avoid multiple counts of the same collision, filter some of them.
         if self._collision_id == event.other_actor.id:
@@ -389,7 +389,7 @@ class CollisionTest(Criterion):
 
         self._collision_time = GameTime.get_time()
         self._collision_location = actor_location
-        if event.other_actor.id != 0: # Number 0: static objects -> ignore it
+        if event.other_actor.id != 0:  # Number 0: static objects -> ignore it
             self._collision_id = event.other_actor.id
 
         if ('static' in event.other_actor.type_id or 'traffic' in event.other_actor.type_id) \
@@ -892,7 +892,8 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
+            onsidewalk_event = TrafficEvent(
+                event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -907,7 +908,8 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
+            outsidelane_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -930,7 +932,8 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            onsidewalk_event = TrafficEvent(event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
+            onsidewalk_event = TrafficEvent(
+                event_type=TrafficEventType.ON_SIDEWALK_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
             self._set_event_dict(
@@ -945,7 +948,8 @@ class OnSidewalkTest(Criterion):
 
             self.actual_value += 1
 
-            outsidelane_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
+            outsidelane_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_LANE_INFRACTION, frame=GameTime.get_frame())
             self._set_event_message(
                 outsidelane_event, self._outside_lane_start_location, self._wrong_outside_lane_distance)
             self._set_event_dict(
@@ -1084,7 +1088,8 @@ class OutsideRouteLanesTest(Criterion):
         Creates the traffic event / updates it
         """
         if self._traffic_event is None:
-            self._traffic_event = TrafficEvent(event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION, frame=GameTime.get_frame())
+            self._traffic_event = TrafficEvent(
+                event_type=TrafficEventType.OUTSIDE_ROUTE_LANES_INFRACTION, frame=GameTime.get_frame())
             self.events.append(self._traffic_event)
 
         percentage = self._wrong_distance / self._total_distance * 100
@@ -1369,7 +1374,8 @@ class InRadiusRegionTest(Criterion):
         if self.test_status != "SUCCESS":
             in_radius = math.sqrt(((location.x - self._x)**2) + ((location.y - self._y)**2)) < self._radius
             if in_radius:
-                route_completion_event = TrafficEvent(event_type=TrafficEventType.ROUTE_COMPLETED, frame=GameTime.get_frame())
+                route_completion_event = TrafficEvent(
+                    event_type=TrafficEventType.ROUTE_COMPLETED, frame=GameTime.get_frame())
                 route_completion_event.set_message("Destination was successfully reached")
                 self.events.append(route_completion_event)
                 self.test_status = "SUCCESS"
@@ -1491,7 +1497,8 @@ class InRouteTest(Criterion):
                 blackv = py_trees.blackboard.Blackboard()
                 _ = blackv.set("InRoute", False)
 
-                route_deviation_event = TrafficEvent(event_type=TrafficEventType.ROUTE_DEVIATION, frame=GameTime.get_frame())
+                route_deviation_event = TrafficEvent(
+                    event_type=TrafficEventType.ROUTE_DEVIATION, frame=GameTime.get_frame())
                 route_deviation_event.set_message(
                     "Agent deviated from the route at (x={}, y={}, z={})".format(
                         round(location.x, 3),
@@ -1728,7 +1735,8 @@ class RunningRedLightTest(Criterion):
                         self.test_status = "FAILURE"
                         self.actual_value += 1
                         location = traffic_light.get_transform().location
-                        red_light_event = TrafficEvent(event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION, frame=GameTime.get_frame())
+                        red_light_event = TrafficEvent(
+                            event_type=TrafficEventType.TRAFFIC_LIGHT_INFRACTION, frame=GameTime.get_frame())
                         red_light_event.set_message(
                             "Agent ran a red light {} at (x={}, y={}, z={})".format(
                                 traffic_light.id,
@@ -1806,7 +1814,7 @@ class RunningStopTest(Criterion):
     - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
     """
     PROXIMITY_THRESHOLD = 4.0  # Stops closer than this distance will be detected [m]
-    SPEED_THRESHOLD = 0.1 # Minimum speed to consider the actor has stopped [m/s]
+    SPEED_THRESHOLD = 0.1  # Minimum speed to consider the actor has stopped [m/s]
     WAYPOINT_STEP = 0.5  # m
 
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
@@ -1929,7 +1937,8 @@ class RunningStopTest(Criterion):
                 self.actual_value += 1
                 self.test_status = "FAILURE"
                 stop_location = self._target_stop_sign.get_transform().location
-                running_stop_event = TrafficEvent(event_type=TrafficEventType.STOP_INFRACTION, frame=GameTime.get_frame())
+                running_stop_event = TrafficEvent(
+                    event_type=TrafficEventType.STOP_INFRACTION, frame=GameTime.get_frame())
                 running_stop_event.set_message(
                     "Agent ran a stop with id={} at (x={}, y={}, z={})".format(
                         self._target_stop_sign.id,
@@ -1999,7 +2008,6 @@ class MinimumSpeedRouteTest(Criterion):
 
         self._index = 0
 
-
     def update(self):
         """
         Check if the actor location is within trigger region
@@ -2009,7 +2017,7 @@ class MinimumSpeedRouteTest(Criterion):
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
-        # Check the actor progress through the route 
+        # Check the actor progress through the route
         location = CarlaDataProvider.get_location(self.actor)
         if location is None:
             return new_status
@@ -2102,7 +2110,7 @@ class YieldToEmergencyVehicleTest(Criterion):
         optional (bool): If True, the result is not considered for an overall pass/fail result
     """
 
-    WAITING_TIME_THRESHOLD = 15 # Maximum time for actor to block ev
+    WAITING_TIME_THRESHOLD = 15  # Maximum time for actor to block ev
 
     def __init__(self, actor, ev, optional=False, name="YieldToEmergencyVehicleTest"):
         """

@@ -16,6 +16,7 @@ import carla
 from agents.navigation.local_planner import RoadOption
 from agents.tools.misc import vector
 
+
 class GlobalRoutePlanner(object):
     """
     This class provides a very high level route plan.
@@ -50,7 +51,7 @@ class GlobalRoutePlanner(object):
 
         for i in range(len(route) - 1):
             road_option = self._turn_decision(i, route)
-            edge = self._graph.edges[route[i], route[i+1]]
+            edge = self._graph.edges[route[i], route[i + 1]]
             path = []
 
             if edge['type'] != RoadOption.LANEFOLLOW and edge['type'] != RoadOption.VOID:
@@ -60,7 +61,7 @@ class GlobalRoutePlanner(object):
                 next_edge = self._graph.edges[n1, n2]
                 if next_edge['path']:
                     closest_index = self._find_closest_in_list(current_waypoint, next_edge['path'])
-                    closest_index = min(len(next_edge['path'])-1, closest_index+5)
+                    closest_index = min(len(next_edge['path']) - 1, closest_index + 5)
                     current_waypoint = next_edge['path'][closest_index]
                 else:
                     current_waypoint = next_edge['exit_waypoint']
@@ -72,9 +73,9 @@ class GlobalRoutePlanner(object):
                 for waypoint in path[closest_index:]:
                     current_waypoint = waypoint
                     route_trace.append((current_waypoint, road_option))
-                    if len(route)-i <= 2 and waypoint.transform.location.distance(destination) < 2*self._sampling_resolution:
+                    if len(route) - i <= 2 and waypoint.transform.location.distance(destination) < 2 * self._sampling_resolution:
                         break
-                    elif len(route)-i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:
+                    elif len(route) - i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:
                         destination_index = self._find_closest_in_list(destination_waypoint, path)
                         if closest_index > destination_index:
                             break
@@ -192,7 +193,7 @@ class GlobalRoutePlanner(object):
                 if section_id not in self._road_id_to_edge[road_id]:
                     self._road_id_to_edge[road_id][section_id] = dict()
                 n1 = self._id_map[exit_xyz]
-                n2 = -1*count_loose_ends
+                n2 = -1 * count_loose_ends
                 self._road_id_to_edge[road_id][section_id][lane_id] = (n1, n2)
                 next_wp = end_wp.next(hop_resolution)
                 path = []
@@ -276,7 +277,7 @@ class GlobalRoutePlanner(object):
         """
         l1 = np.array(self._graph.nodes[n1]['vertex'])
         l2 = np.array(self._graph.nodes[n2]['vertex'])
-        return np.linalg.norm(l1-l2)
+        return np.linalg.norm(l1 - l2)
 
     def _path_search(self, origin, destination):
         """
@@ -305,7 +306,7 @@ class GlobalRoutePlanner(object):
 
         last_intersection_edge = None
         last_node = None
-        for node1, node2 in [(route[i], route[i+1]) for i in range(index, len(route)-1)]:
+        for node1, node2 in [(route[i], route[i + 1]) for i in range(index, len(route) - 1)]:
             candidate_edge = self._graph.edges[node1, node2]
             if node1 == route[index]:
                 last_intersection_edge = candidate_edge
@@ -324,9 +325,9 @@ class GlobalRoutePlanner(object):
         """
 
         decision = None
-        previous_node = route[index-1]
+        previous_node = route[index - 1]
         current_node = route[index]
-        next_node = route[index+1]
+        next_node = route[index + 1]
         next_edge = self._graph.edges[current_node, next_node]
         if index > 0:
             if self._previous_decision != RoadOption.VOID \
@@ -352,12 +353,12 @@ class GlobalRoutePlanner(object):
                     for neighbor in self._graph.successors(current_node):
                         select_edge = self._graph.edges[current_node, neighbor]
                         if select_edge['type'] == RoadOption.LANEFOLLOW:
-                            if neighbor != route[index+1]:
+                            if neighbor != route[index + 1]:
                                 sv = select_edge['net_vector']
                                 cross_list.append(np.cross(cv, sv)[2])
                     next_cross = np.cross(cv, nv)[2]
                     deviation = math.acos(np.clip(
-                        np.dot(cv, nv)/(np.linalg.norm(cv)*np.linalg.norm(nv)), -1.0, 1.0))
+                        np.dot(cv, nv) / (np.linalg.norm(cv) * np.linalg.norm(nv)), -1.0, 1.0))
                     if not cross_list:
                         cross_list.append(0)
                     if deviation < threshold:

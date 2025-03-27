@@ -29,6 +29,8 @@ import graphviz
 # nodes：number the nodes in traversal order and line them with numbers
 # pindex：id of the parent node
 # g：graphviz
+
+
 def render_ast(node, nodes, pindex, g):
     if not isinstance(node, Tuple):
         name = str(node)
@@ -44,65 +46,67 @@ def render_ast(node, nodes, pindex, g):
             for i in range(0, node.get_child_count()):
                 render_ast(node.get_child(i), nodes, index, g)
 
+
 class InvocationTest(ASTListener):
 
     def __init__(self):
         self.arguments = []
         self.__value = None
 
-    def enter_modifier_invocation(self,  node: ast_node.ModifierInvocation):
-        #print("enter modifier invocation!")
+    def enter_modifier_invocation(self, node: ast_node.ModifierInvocation):
+        # print("enter modifier invocation!")
         # print("modifier name:", node.modifier_name)
         self.arguments = []
         self.__value = None
 
-    def exit_modifier_invocation(self,  node: ast_node.ModifierInvocation):
-        #print("exit modifier invocation!")
-        #print(self.arguments)
+    def exit_modifier_invocation(self, node: ast_node.ModifierInvocation):
+        # print("exit modifier invocation!")
+        # print(self.arguments)
         pass
 
-    def enter_named_argument(self,  node: ast_node.NamedArgument):
+    def enter_named_argument(self, node: ast_node.NamedArgument):
         self.__value = None
 
-    def exit_named_argument(self,  node: ast_node.NamedArgument):
+    def exit_named_argument(self, node: ast_node.NamedArgument):
         self.arguments.append((node.argument_name, self.__value))
 
-    def enter_physical_literal(self,  node: ast_node.PhysicalLiteral):
+    def enter_physical_literal(self, node: ast_node.PhysicalLiteral):
         self.arguments.append((node.value, node.unit_name))
 
-    def exit_physical_literal(self,  node: ast_node.PhysicalLiteral):
+    def exit_physical_literal(self, node: ast_node.PhysicalLiteral):
         pass
 
-    def enter_integer_literal(self,  node: ast_node.IntegerLiteral):
+    def enter_integer_literal(self, node: ast_node.IntegerLiteral):
         self.__value = node.value
 
-    def exit_integer_literal(self,  node: ast_node.IntegerLiteral):
+    def exit_integer_literal(self, node: ast_node.IntegerLiteral):
         pass
 
-    def enter_float_literal(self,  node: ast_node.FloatLiteral):
+    def enter_float_literal(self, node: ast_node.FloatLiteral):
         self.__value = node.value
 
-    def exit_float_literal(self,  node: ast_node.FloatLiteral):
+    def exit_float_literal(self, node: ast_node.FloatLiteral):
         pass
 
-    def enter_bool_literal(self,  node: ast_node.BoolLiteral):
+    def enter_bool_literal(self, node: ast_node.BoolLiteral):
         self.__value = node.value
 
-    def exit_bool_literal(self,  node: ast_node.BoolLiteral):
+    def exit_bool_literal(self, node: ast_node.BoolLiteral):
         pass
 
-    def enter_string_literal(self,  node: ast_node.StringLiteral):
+    def enter_string_literal(self, node: ast_node.StringLiteral):
         self.__value = node.value
 
-    def exit_string_literal(self,  node: ast_node.StringLiteral):
+    def exit_string_literal(self, node: ast_node.StringLiteral):
         pass
 
-    def enter_identifier(self,  node: ast_node.Identifier):
+    def enter_identifier(self, node: ast_node.Identifier):
         self.__value = node.name
 
-    def exit_identifier(self,  node: ast_node.Identifier):
+    def exit_identifier(self, node: ast_node.Identifier):
         pass
- 
+
+
 def main(input_stream):
     quiet = False
     OscErrorListeners = OscErrorListener(input_stream)
@@ -124,22 +128,20 @@ def main(input_stream):
         ast = build_ast.get_ast()
         symbol = build_ast.get_symbol()
 
-        graph = graphviz.Graph(node_attr={'shape': 'plaintext'},format='png')
-        #render_symbol(symbol, [], 0, graph)
-        #render_ast(ast, [], 0, graph)
-        #graph.view()
+        graph = graphviz.Graph(node_attr={'shape': 'plaintext'}, format='png')
+        # render_symbol(symbol, [], 0, graph)
+        # render_ast(ast, [], 0, graph)
+        # graph.view()
 
         invocation_walker = ASTWalker()
         invocation_listener = InvocationTest()
         invocation_walker.walk(invocation_listener, ast)
 
-
-
     if not quiet:
-        LOG_INFO("Errors: "+ str(errors))
-        #print_parse_tree(tree, parser.ruleNames)
+        LOG_INFO("Errors: " + str(errors))
+        # print_parse_tree(tree, parser.ruleNames)
     return errors
- 
+
 
 if __name__ == '__main__':
     error_file_list = []
@@ -149,24 +151,23 @@ if __name__ == '__main__':
         files.sort()
         for fi in files:
             fpath = os.path.join(filepath, fi)
-            LOG_INFO("======================== "+fi+" ========================")
+            LOG_INFO("======================== " + fi + " ========================")
             new_file, import_msg = Preprocess(fpath).import_process()
             input_stream = FileStream(new_file, encoding='utf-8')
-            if main(input_stream)>0:
+            if main(input_stream) > 0:
                 error_file_list.append(fi)
             import_msg.clear_msg()
 
-        LOG_INFO("======================== "+"error file result"+" ========================")
+        LOG_INFO("======================== " + "error file result" + " ========================")
         for error_file in error_file_list:
-             LOG_INFO(error_file)
+            LOG_INFO(error_file)
 
     elif os.path.isfile(sys.argv[1]):
         new_file, import_msg = Preprocess(sys.argv[1]).import_process()
         input_stream = FileStream(new_file, encoding='utf-8')
-        if main(input_stream)>0:
-            LOG_INFO("======================== "+"error file result"+" ========================")
+        if main(input_stream) > 0:
+            LOG_INFO("======================== " + "error file result" + " ========================")
             LOG_INFO(sys.argv[1])
             pass
     else:
         pass
-

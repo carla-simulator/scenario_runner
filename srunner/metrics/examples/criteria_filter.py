@@ -34,13 +34,13 @@ class CriteriaFilter(BasicMetric):
         for criterion_name in criteria:
             criterion = criteria[criterion_name]
             results.update({criterion_name:
-                {
-                    "test_status": criterion["test_status"],
-                    "actual_value": criterion["actual_value"],
-                    "success_value": criterion["success_value"]
-                }
-            }
-        )
+                            {
+                                "test_status": criterion["test_status"],
+                                "actual_value": criterion["actual_value"],
+                                "success_value": criterion["success_value"]
+                            }
+                            }
+                           )
 
         with open('srunner/metrics/data/CriteriaFilter_results.json', 'w') as fw:
             json.dump(results, fw, sort_keys=False, indent=4)

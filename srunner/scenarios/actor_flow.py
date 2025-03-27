@@ -31,6 +31,7 @@ from srunner.tools.background_manager import (SwitchRouteSources,
                                               RemoveRoadLane)
 from srunner.tools.scenario_helper import get_same_dir_lanes, generate_target_waypoint_in_route
 
+
 def convert_dict_to_location(actor_dict):
     """
     Convert a JSON string to a Carla.Location
@@ -42,11 +43,13 @@ def convert_dict_to_location(actor_dict):
     )
     return location
 
+
 def get_value_parameter(config, name, p_type, default):
     if name in config.other_parameters:
         return p_type(config.other_parameters[name]['value'])
     else:
         return default
+
 
 def get_interval_parameter(config, name, p_type, default):
     if name in config.other_parameters:
@@ -56,6 +59,7 @@ def get_interval_parameter(config, name, p_type, default):
         ]
     else:
         return default
+
 
 class EnterActorFlow(BasicScenario):
     """
@@ -109,7 +113,8 @@ class EnterActorFlow(BasicScenario):
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
         for source_wp, sink_wp in zip(source_wps, sink_wps):
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+            root.add_child(InTriggerDistanceToLocation(
+                self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
             root.add_child(ActorFlow(
                 source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
                 self._flow_speed, initial_actors=True, initial_junction=True))
@@ -120,9 +125,9 @@ class EnterActorFlow(BasicScenario):
             grp = CarlaDataProvider.get_global_route_planner()
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
             extra_space = 20
-            for i in range(-2, -len(route)-1, -1):
+            for i in range(-2, -len(route) - 1, -1):
                 current_wp = route[i][0]
-                extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
+                extra_space += current_wp.transform.location.distance(route[i + 1][0].transform.location)
                 if current_wp.is_junction:
                     break
 
@@ -162,6 +167,7 @@ class EnterActorFlowV2(EnterActorFlow):
     """
     Variation of EnterActorFlow for special highway entry exits with dedicated lanes
     """
+
     def _create_behavior(self):
         """
         Hero vehicle is entering a junction in an urban area, at a signalized intersection,
@@ -176,10 +182,11 @@ class EnterActorFlowV2(EnterActorFlow):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         root.add_child(ActorFlow(
-                source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
-                self._flow_speed, initial_actors=True, initial_junction=True))
+            source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
+            self._flow_speed, initial_actors=True, initial_junction=True))
         for sink_wp in sink_wps:
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+            root.add_child(InTriggerDistanceToLocation(
+                self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
@@ -189,9 +196,9 @@ class EnterActorFlowV2(EnterActorFlow):
             grp = CarlaDataProvider.get_global_route_planner()
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
             self._extra_space = 20
-            for i in range(-2, -len(route)-1, -1):
+            for i in range(-2, -len(route) - 1, -1):
                 current_wp = route[i][0]
-                self._extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
+                self._extra_space += current_wp.transform.location.distance(route[i + 1][0].transform.location)
                 if current_wp.is_junction:
                     break
 
@@ -214,7 +221,7 @@ class EnterActorFlowV2(EnterActorFlow):
                 clear_junction=False,
                 clear_ego_entry=True,
                 remove_entries=[source_wp],
-                remove_exits= get_same_dir_lanes(exit_wp),
+                remove_exits=get_same_dir_lanes(exit_wp),
                 stop_entries=False,
                 extend_road_exit=0
             ))
@@ -337,7 +344,7 @@ class MergerIntoSlowTraffic(BasicScenario):
 
         self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
         self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
-        self._trigger_point=config.trigger_points[0].location
+        self._trigger_point = config.trigger_points[0].location
 
         self._sink_distance = 2
 
@@ -365,7 +372,8 @@ class MergerIntoSlowTraffic(BasicScenario):
         root = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         for wp in sink_wps:
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], wp.transform.location, self._sink_distance))
+            root.add_child(InTriggerDistanceToLocation(
+                self.ego_vehicles[0], wp.transform.location, self._sink_distance))
         root.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
             self._flow_speed, initial_actors=True, initial_junction=True))
@@ -377,9 +385,9 @@ class MergerIntoSlowTraffic(BasicScenario):
             grp = CarlaDataProvider.get_global_route_planner()
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
             extra_space = 0
-            for i in range(-2, -len(route)-1, -1):
+            for i in range(-2, -len(route) - 1, -1):
                 current_wp = route[i][0]
-                extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
+                extra_space += current_wp.transform.location.distance(route[i + 1][0].transform.location)
                 if current_wp.is_junction:
                     break
 
@@ -435,7 +443,8 @@ class MergerIntoSlowTrafficV2(MergerIntoSlowTraffic):
             source_wp, sink_wp, self._source_dist_interval, self._sink_distance,
             self._flow_speed, initial_actors=True, initial_junction=True))
         for sink_wp in sink_wps:
-            root.add_child(InTriggerDistanceToLocation(self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
+            root.add_child(InTriggerDistanceToLocation(
+                self.ego_vehicles[0], sink_wp.transform.location, self._sink_distance))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
         exit_wp = generate_target_waypoint_in_route(self._reference_waypoint, self.config.route)
@@ -445,9 +454,9 @@ class MergerIntoSlowTrafficV2(MergerIntoSlowTraffic):
             grp = CarlaDataProvider.get_global_route_planner()
             route = grp.trace_route(source_wp.transform.location, sink_wp.transform.location)
             self._extra_space = 20
-            for i in range(-2, -len(route)-1, -1):
+            for i in range(-2, -len(route) - 1, -1):
                 current_wp = route[i][0]
-                self._extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
+                self._extra_space += current_wp.transform.location.distance(route[i + 1][0].transform.location)
                 if current_wp.is_junction:
                     break
 
@@ -552,7 +561,7 @@ class InterurbanActorFlow(BasicScenario):
             # Enter the junction
             if not reached_junction and (road_option in (RoadOption.LEFT, RoadOption.RIGHT, RoadOption.STRAIGHT)):
                 reached_junction = True
-                entry_wp = self._map.get_waypoint(route[i-1][0].location)
+                entry_wp = self._map.get_waypoint(route[i - 1][0].location)
                 entry_wp = entry_wp.previous(2)[0]  # Just in case
 
             # End condition for the behavior, at the end of the junction
@@ -562,7 +571,6 @@ class InterurbanActorFlow(BasicScenario):
                 break
 
         return (entry_wp, exit_wp)
-
 
     def _create_behavior(self):
         """
@@ -667,7 +675,7 @@ class InterurbanAdvancedActorFlow(BasicScenario):
         return exit_wp
 
     def _initialize_actors(self, config):
-        
+
         self._source_wp_1 = self._map.get_waypoint(self._start_actor_flow_1)
         self._sink_wp_1 = self._map.get_waypoint(self._end_actor_flow_1)
 
@@ -683,9 +691,9 @@ class InterurbanAdvancedActorFlow(BasicScenario):
             route = grp.trace_route(self._source_wp_2.transform.location, self._sink_wp_2.transform.location)
             self._extra_space = 20
             route_exit_wp = None
-            for i in range(-2, -len(route)-1, -1):
+            for i in range(-2, -len(route) - 1, -1):
                 current_wp = route[i][0]
-                self._extra_space += current_wp.transform.location.distance(route[i+1][0].transform.location)
+                self._extra_space += current_wp.transform.location.distance(route[i + 1][0].transform.location)
                 if current_wp.is_junction:
                     junction = current_wp.get_junction()
                     break

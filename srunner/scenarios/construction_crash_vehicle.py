@@ -36,6 +36,7 @@ def get_value_parameter(config, name, p_type, default):
     else:
         return default
 
+
 def get_interval_parameter(config, name, p_type, default):
     if name in config.other_parameters:
         return [
@@ -44,6 +45,7 @@ def get_interval_parameter(config, name, p_type, default):
         ]
     else:
         return default
+
 
 class ConstructionObstacle(BasicScenario):
     """
@@ -226,7 +228,7 @@ class ConstructionObstacle(BasicScenario):
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
-    
+
         end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         end_condition.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._end_wp.transform, False))
@@ -271,6 +273,7 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
     """
     Variation of ConstructionObstacle where the ego has to invade the opposite lane
     """
+
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
 
         self._opposite_interval = get_interval_parameter(config, 'frequency', float, [20, 100])
@@ -292,7 +295,7 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
-    
+
         end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         end_condition.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._end_wp.transform, False))

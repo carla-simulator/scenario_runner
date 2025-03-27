@@ -493,7 +493,7 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         walker.set_location(self._walker_transform.location + carla.Location(z=-200))
         walker = self._replace_walker(walker)
- 
+
         self.other_actors.append(walker)
 
         self._collision_wp = walker_wp

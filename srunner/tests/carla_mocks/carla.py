@@ -133,6 +133,9 @@ class Waypoint():
 class Map:
     name = ""
 
+    def __init__(self, name='Town01'):
+        self.name = name
+
     def get_spawn_points(self):
         return []
 
@@ -171,6 +174,24 @@ class WeatherParameters:
     scattering_intensity = 0.000000
     mie_scattering_scale = 0.000000
     rayleigh_scattering_scale = 0.033100
+
+    def __init__(self, cloudiness=0.000000, precipitation=0.000000, precipitation_deposits=0.000000,
+                 wind_intensity=0.000000, sun_azimuth_angle=0.000000, sun_altitude_angle=0.000000,
+                 fog_density=0.000000, fog_distance=0.000000, fog_falloff=0.000000, wetness=0.000000,
+                 scattering_intensity=0.000000, mie_scattering_scale=0.000000, rayleigh_scattering_scale=0.033100):
+        self.cloudiness = cloudiness
+        self.precipitation = precipitation
+        self.precipitation_deposits = precipitation_deposits
+        self.wind_intensity = wind_intensity
+        self.sun_azimuth_angle = sun_azimuth_angle
+        self.sun_altitude_angle = sun_altitude_angle
+        self.fog_density = fog_density
+        self.fog_distance = fog_distance
+        self.fog_falloff = fog_falloff
+        self.wetness = wetness
+        self.scattering_intensity = scattering_intensity
+        self.mie_scattering_scale = mie_scattering_scale
+        self.rayleigh_scattering_scale = rayleigh_scattering_scale
 
 
 class WorldSettings:
@@ -245,12 +266,16 @@ class Vehicle(Actor):
 
 class World:
     actors = []
+    map = Map()
 
     def get_settings(self):
         return WorldSettings()
 
     def get_map(self):
-        return Map()
+        return self.map
+
+    def set_map(self, map):
+        self.map = map
 
     def get_blueprint_library(self):
         return CarlaBluePrintLibrary()
@@ -282,6 +307,7 @@ class Client:
     world = World()
 
     def load_world(self, name):
+        self.world.set_map(Map(name))
         return None
 
     def get_world(self):
@@ -306,6 +332,7 @@ class Client:
                 reponse_list.append(Response(new_actor.id))
 
         return reponse_list
+
 
 class AttachmentType:
     Rigid = 0

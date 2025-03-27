@@ -28,6 +28,8 @@ import graphviz
 # nodes：number the nodes in traversal order and line them with numbers
 # pindex：id of the parent node
 # g：graphviz
+
+
 def render_ast(node, nodes, pindex, g):
     if not isinstance(node, Tuple):
         name = str(node)
@@ -43,9 +45,12 @@ def render_ast(node, nodes, pindex, g):
             for i in range(0, node.get_child_count()):
                 render_ast(node.get_child(i), nodes, index, g)
 
+
 operator = []
 num = []
 all = []
+
+
 def traverse_list(list_name):
     for ex in list_name:
         if isinstance(ex, list):
@@ -56,19 +61,16 @@ def traverse_list(list_name):
             else:
                 num.append(ex)
             all.append(ex)
-            
-                    
-
 
 
 class InvocationTest(ASTVisitor):
 
-    def visit_modifier_invocation(self,  node: ast_node.ModifierInvocation):
+    def visit_modifier_invocation(self, node: ast_node.ModifierInvocation):
         print("visit modifier invocation!")
         print("modifier name:", node.modifier_name)
         arguments = self.visit_children(node)
         print(arguments)
-    
+
     def visit_method_body(self, node: ast_node.MethodBody):
         print("visit method body!")
         print("method body name:", node.type)
@@ -87,7 +89,7 @@ class InvocationTest(ASTVisitor):
                 right = tempStack.pop()
                 left = tempStack.pop()
                 opnum = tempStack.pop()
-                expression = opnum + ' ' + ex + ' [' + left + ', '+ right + ']'
+                expression = opnum + ' ' + ex + ' [' + left + ', ' + right + ']'
                 tempStack.append(expression)
             else:
                 tempStack.append(ex)
@@ -95,37 +97,35 @@ class InvocationTest(ASTVisitor):
         operator.clear()
         num.clear()
         all.clear()
-    
+
     def visit_relation_expression(self, node: ast_node.RelationExpression):
         return [self.visit_children(node), node.operator]
 
     def visit_binary_expression(self, node: ast_node.BinaryExpression):
         return [self.visit_children(node), node.operator]
 
-    def visit_named_argument(self,  node: ast_node.NamedArgument):
+    def visit_named_argument(self, node: ast_node.NamedArgument):
         return node.argument_name, self.visit_children(node)
 
-    def visit_physical_literal(self,  node: ast_node.PhysicalLiteral):
+    def visit_physical_literal(self, node: ast_node.PhysicalLiteral):
         return node.value, node.unit_name
 
-    def visit_integer_literal(self,  node: ast_node.IntegerLiteral):
+    def visit_integer_literal(self, node: ast_node.IntegerLiteral):
         return node.value
 
-    def visit_float_literal(self,  node: ast_node.FloatLiteral):
+    def visit_float_literal(self, node: ast_node.FloatLiteral):
         return node.value
 
-    def visit_bool_literal(self,  node: ast_node.BoolLiteral):
+    def visit_bool_literal(self, node: ast_node.BoolLiteral):
         return node.value
 
-    def visit_string_literal(self,  node: ast_node.StringLiteral):
+    def visit_string_literal(self, node: ast_node.StringLiteral):
         return node.value
 
-    def visit_identifier(self,  node: ast_node.Identifier):
+    def visit_identifier(self, node: ast_node.Identifier):
         return node.name
 
 
-
- 
 def main(input_stream):
     quiet = False
     OscErrorListeners = OscErrorListener(input_stream)
@@ -146,20 +146,18 @@ def main(input_stream):
         walker.walk(build_ast, tree)
         ast = build_ast.get_ast()
 
-        #graph = graphviz.Graph(node_attr={'shape': 'plaintext'},format='png')
-        #render_ast(ast, [], 0, graph)
-        #graph.view()
+        # graph = graphviz.Graph(node_attr={'shape': 'plaintext'},format='png')
+        # render_ast(ast, [], 0, graph)
+        # graph.view()
 
         invocation_visitor = InvocationTest()
         invocation_visitor.visit(ast)
 
-
-
     if not quiet:
-        LOG_INFO("Errors: "+ str(errors))
-        #print_parse_tree(tree, parser.ruleNames)
+        LOG_INFO("Errors: " + str(errors))
+        # print_parse_tree(tree, parser.ruleNames)
     return errors
- 
+
 
 if __name__ == '__main__':
     error_file_list = []
@@ -171,24 +169,23 @@ if __name__ == '__main__':
         files.sort()
         for fi in files:
             fpath = os.path.join(filepath, fi)
-            LOG_INFO("======================== "+fi+" ========================")
+            LOG_INFO("======================== " + fi + " ========================")
             new_file, import_msg = Preprocess(fpath).import_process()
             input_stream = FileStream(new_file, encoding='utf-8')
-            if main(input_stream)>0:
+            if main(input_stream) > 0:
                 error_file_list.append(fi)
             import_msg.clear_msg()
 
-        LOG_INFO("======================== "+"error file result"+" ========================")
+        LOG_INFO("======================== " + "error file result" + " ========================")
         for error_file in error_file_list:
-             LOG_INFO(error_file)
+            LOG_INFO(error_file)
 
     elif os.path.isfile(sys.argv[1]):
         new_file, import_msg = Preprocess(sys.argv[1]).import_process()
         input_stream = FileStream(new_file, encoding='utf-8')
-        if main(input_stream)>0:
-            LOG_INFO("======================== "+"error file result"+" ========================")
+        if main(input_stream) > 0:
+            LOG_INFO("======================== " + "error file result" + " ========================")
             LOG_INFO(sys.argv[1])
             pass
     else:
         pass
-
