@@ -21,7 +21,6 @@ import py_trees
 import shapely.geometry
 
 import carla
-from agents.tools.misc import get_speed
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
@@ -1158,7 +1157,7 @@ class OutsideRouteLanesTest(Criterion):
                 wp_yaw = waypoint.transform.rotation.yaw % 360
                 angle = (last_wp_yaw - wp_yaw) % 360
 
-                if angle > self.MAX_WAYPOINT_ANGLE and angle < (360 - self.MAX_WAYPOINT_ANGLE):
+                if self.MAX_WAYPOINT_ANGLE < angle < (360 - self.MAX_WAYPOINT_ANGLE):
                     # Is the ego vehicle going back to the lane, or going out? Take the opposite
                     self._wrong_lane_active = not bool(self._wrong_lane_active)
 
@@ -1653,7 +1652,7 @@ class RunningRedLightTest(Criterion):
         self.debug = False
 
         all_actors = CarlaDataProvider.get_all_actors()
-        for _actor in all_actors:
+        for _actor in all_actors:  # pylint: disable=not-an-iterable
             if 'traffic_light' in _actor.type_id:
                 center, waypoints = self.get_traffic_light_waypoints(_actor)
                 self._list_traffic_lights.append((_actor, center, waypoints))
@@ -1834,7 +1833,7 @@ class RunningStopTest(Criterion):
 
         self._last_failed_stop = None
 
-        for _actor in CarlaDataProvider.get_all_actors():
+        for _actor in CarlaDataProvider.get_all_actors():  # pylint: disable=not-an-iterable
             if 'traffic.stop' in _actor.type_id:
                 self._list_stop_signs.append(_actor)
 
@@ -2017,6 +2016,7 @@ class MinimumSpeedRouteTest(Criterion):
         self._checkpoint_values = []
 
         self._index = 0
+        self._traffic_event = None
 
     def update(self):
         """
@@ -2102,7 +2102,7 @@ class MinimumSpeedRouteTest(Criterion):
         if self._accum_dist[self._index] / self._accum_dist[-1] > 0.95:
             self._set_traffic_event()
 
-        if len(self._checkpoint_values):
+        if self._checkpoint_values:
             self.actual_value = round(sum(self._checkpoint_values) / len(self._checkpoint_values), 2)
         super().terminate(new_status)
 

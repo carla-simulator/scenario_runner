@@ -1178,4 +1178,3 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         This is a read-only property of `get_world`
         """
         return self._world
-
