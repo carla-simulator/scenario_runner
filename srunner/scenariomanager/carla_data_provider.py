@@ -160,6 +160,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the absolute velocity for the given actor
         """
+        if actor in CarlaDataProvider._actor_velocity_map:
+            return CarlaDataProvider._actor_velocity_map[actor]
+        # Look for same actor, but stored as different python object
         for key in CarlaDataProvider._actor_velocity_map:
             if key.id == actor.id:
                 return CarlaDataProvider._actor_velocity_map[key]
@@ -174,6 +177,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the location for the given actor
         """
+        if actor in CarlaDataProvider._actor_location_map:
+            return CarlaDataProvider._actor_location_map[actor]
         for key in CarlaDataProvider._actor_location_map:
             if key.id == actor.id:
                 return CarlaDataProvider._actor_location_map[key]
@@ -189,6 +194,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         """
         returns the transform for the given actor
         """
+        if actor in CarlaDataProvider._actor_transform_map:
+            return CarlaDataProvider._actor_transform_map[actor] or actor.get_transform()
         for key in CarlaDataProvider._actor_transform_map:
             if key.id == actor.id:
                 # The velocity location information is the entire behavior tree updated every tick
