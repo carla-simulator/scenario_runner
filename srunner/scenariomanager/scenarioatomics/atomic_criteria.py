@@ -706,19 +706,18 @@ class EndofRoadTest(Criterion):
 
         # Wait until the actor has left the road
         elif self._road_id != current_waypoint.road_id or self._start_time:
+            # Start counting
+            if self._start_time is None:
+                self._start_time = GameTime.get_time()
+                return new_status
 
-                # Start counting
-                if self._start_time is None:
-                    self._start_time = GameTime.get_time()
-                    return new_status
+            curr_time = GameTime.get_time()
+            self._time_end_road = curr_time - self._start_time
 
-                curr_time = GameTime.get_time()
-                self._time_end_road = curr_time - self._start_time
-
-                if self._time_end_road > self._duration:
-                    self.test_status = "FAILURE"
-                    self.actual_value += 1
-                    return py_trees.common.Status.SUCCESS
+            if self._time_end_road > self._duration:
+                self.test_status = "FAILURE"
+                self.actual_value += 1
+                return py_trees.common.Status.SUCCESS
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
         return new_status
@@ -894,10 +893,8 @@ class OnSidewalkTest(Criterion):
                 event_type=TrafficEventType.ON_SIDEWALK_INFRACTION,
                 frame=GameTime.get_frame(),
             )
-            self._set_event_message(
-                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
-            self._set_event_dict(
-                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self._set_event_message(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self._set_event_dict(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
             self._wrong_sidewalk_distance = 0
@@ -938,10 +935,8 @@ class OnSidewalkTest(Criterion):
                 event_type=TrafficEventType.ON_SIDEWALK_INFRACTION,
                 frame=GameTime.get_frame(),
             )
-            self._set_event_message(
-                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
-            self._set_event_dict(
-                onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self._set_event_message(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
+            self._set_event_dict(onsidewalk_event, self._sidewalk_start_location, self._wrong_sidewalk_distance)
 
             self._onsidewalk_active = False
             self._wrong_sidewalk_distance = 0
@@ -1363,8 +1358,7 @@ class InRadiusRegionTest(Criterion):
     """
 
     def __init__(self, actor, x, y, radius, name="InRadiusRegionTest"):
-        """
-        """
+        """ """
         super().__init__(name, actor)
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self._x = x  # pylint: disable=invalid-name
@@ -1419,8 +1413,7 @@ class InRouteTest(Criterion):
     WINDOWS_SIZE = 5  # Amount of additional waypoints checked
 
     def __init__(self, actor, route, offroad_min=None, offroad_max=30, name="InRouteTest", terminate_on_failure=False):
-        """
-        """
+        """ """
         super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self.units = None  # We care about whether or not it fails, no units attached
 
@@ -1547,8 +1540,7 @@ class RouteCompletionTest(Criterion):
     PERCENTAGE_THRESHOLD = 99  # %
 
     def __init__(self, actor, route, name="RouteCompletionTest", terminate_on_failure=False):
-        """
-        """
+        """ """
         super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self.units = "%"
         self.success_value = 100
@@ -1832,8 +1824,7 @@ class RunningStopTest(Criterion):
     WAYPOINT_STEP = 0.5  # m
 
     def __init__(self, actor, name="RunningStopTest", terminate_on_failure=False):
-        """
-        """
+        """ """
         super().__init__(name, actor, terminate_on_failure=terminate_on_failure)
         self._world = CarlaDataProvider.get_world()
         self._map = CarlaDataProvider.get_map()
@@ -1889,7 +1880,8 @@ class RunningStopTest(Criterion):
     def _scan_for_stop_sign(self, actor_transform, wp_list):
         """
         Check the stop signs to see if any of them affect the actor.
-        Ignore all checks when going backwards or through an opposite direction"""
+        Ignore all checks when going backwards or through an opposite direction
+        """
 
         actor_direction = actor_transform.get_forward_vector()
 

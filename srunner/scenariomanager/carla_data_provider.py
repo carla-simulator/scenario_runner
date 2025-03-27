@@ -32,6 +32,7 @@ def calculate_velocity(actor):
 
 
 class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
+
     """
     This class provides access to various data of all registered actors
     It buffers the data and updates it on every CARLA tick
@@ -153,7 +154,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
                     CarlaDataProvider._actor_transform_map[actor] = actor.get_transform()
                 else:
                     del CarlaDataProvider._actor_transform_map[actor]
-            
+
             world = CarlaDataProvider._world
             if world is None:
                 print("WARNING: CarlaDataProvider couldn't find the world")
@@ -520,7 +521,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     def check_road_length(wp: carla.Waypoint, length: float):
         """
         Checks wether the road starting at the given waypoint is at least the given length long.
-        
+
         This is done by querying waypoints in 5m steps checking their road_id and lane_id.
         """
         waypoint_separation = 5
@@ -547,7 +548,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     def get_road_lanes(wp):
         # type: (carla.Waypoint) -> list[carla.Waypoint]
         """
-        This function takes a waypoint and returns a list of waypoints representing 
+        This function takes a waypoint and returns a list of waypoints representing
         all the parallel driving lanes from the leftmost to the rightmost lane.
 
         Args:
@@ -1084,7 +1085,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             CarlaDataProvider._carla_actor_pool.pop(actor_id)
             return was_destroyed
         print("Trying to remove a non-existing actor id {}".format(actor_id))
-        return None    
+        return None
 
     @staticmethod
     def remove_actors_in_surrounding(location, distance):
@@ -1173,7 +1174,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     def world(self):
         """
         Return world
-        
+
         This is a read-only property of `get_world`
         """
         return self._world
