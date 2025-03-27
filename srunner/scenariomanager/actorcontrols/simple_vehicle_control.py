@@ -14,7 +14,6 @@ Limitations:
 - Can only consider obstacles in forward facing reaching (i.e. in tight corners obstacles may be ignored).
 """
 
-from srunner.tools.util import strtobool
 import math
 
 import carla
@@ -23,6 +22,7 @@ from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
 from srunner.scenariomanager.actorcontrols.visualizer import Visualizer
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
+from srunner.tools.util import strtobool
 
 
 class SimpleVehicleControl(BasicControl):
