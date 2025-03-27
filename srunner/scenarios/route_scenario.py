@@ -291,7 +291,8 @@ class RouteScenario(BasicScenario):
             if scenario.behavior_tree is not None:
                 scenario_behaviors.append(scenario.behavior_tree)
                 blackboard_list.append([scenario.config.route_var_name,
-                                        scenario.config.trigger_points[0].location])
+                                        scenario.config.trigger_points[0].location,
+                                        scenario.name])
 
         # Add the behavior that manages the scenario trigger conditions
         scenario_triggerer = ScenarioTriggerer(
