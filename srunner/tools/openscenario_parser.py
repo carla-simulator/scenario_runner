@@ -106,7 +106,7 @@ class ParameterRef:
         Returns: True when text is a literal/number
         """
         return (
-            self._is_matching(pattern=r"(-)?\d+(\.\d*)?") 
+            self._is_matching(pattern=r"(-)?\d+(\.\d*)?")
             or self._is_matching(pattern=r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?")
         )
 
@@ -135,7 +135,7 @@ class ParameterRef:
         elif self.is_parameter():
             value = CarlaDataProvider.get_osc_global_param_value(self.reference_text)
             if value is None:
-                raise Exception("Parameter '{}' is not defined".format(self.reference_text[1:]))
+                raise ValueError("Parameter '{}' is not defined".format(self.reference_text[1:]))
         else:
             value = None
         return value
@@ -145,14 +145,14 @@ class ParameterRef:
         if value is not None:
             return float(value)
         else:
-            raise Exception("could not convert '{}' to float".format(self.reference_text))
+            raise ValueError("could not convert '{}' to float".format(self.reference_text))
 
     def __int__(self) -> int:
         value = self.get_interpreted_value()
         if value is not None:
             return int(float(value))
         else:
-            raise Exception("could not convert '{}' to int".format(self.reference_text))
+            raise ValueError("could not convert '{}' to int".format(self.reference_text))
 
     def __str__(self) -> str:
         value = self.get_interpreted_value()
@@ -224,7 +224,7 @@ class ParameterRef:
 
     def __abs__(self):
         return abs(self.__float__())
-    
+
     # TODO: Should implement __hash__
 
 
