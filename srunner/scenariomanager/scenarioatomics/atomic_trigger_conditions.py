@@ -338,7 +338,7 @@ class StandStill(AtomicCondition):
 
         velocity = CarlaDataProvider.get_velocity(self._actor)
 
-        if velocity > EPSILON:
+        if velocity > 0.1:
             self._start_time = GameTime.get_time()
 
         if GameTime.get_time() - self._start_time > self._duration:
@@ -769,7 +769,7 @@ class InTriggerDistanceToNextIntersection(AtomicCondition):
         self._map = CarlaDataProvider.get_map()
 
         waypoint = self._map.get_waypoint(self._actor.get_location())
-        while waypoint and not waypoint.is_intersection:
+        while waypoint and not waypoint.is_junction:
             waypoint = waypoint.next(1)[-1]
 
         self._final_location = waypoint.transform.location

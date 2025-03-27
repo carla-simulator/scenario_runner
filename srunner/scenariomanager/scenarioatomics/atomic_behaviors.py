@@ -797,9 +797,9 @@ class ChangeActorWaypoints(AtomicBehavior):
         # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
         grp = CarlaDataProvider.get_global_route_planner()
         route = []
-        for i, _ in enumerate(carla_route_elements):
-            if carla_route_elements[i][1] == "shortest":
-                route.append(carla_route_elements[i][0])
+        for i, element in enumerate(carla_route_elements):
+            if element[1] == "shortest":
+                route.append(element[0])
             else:
                 if i == 0:
                     mmap = CarlaDataProvider.get_map()
@@ -812,12 +812,12 @@ class ChangeActorWaypoints(AtomicBehavior):
                     waypoint = ego_next_wp.transform.location
                 else:
                     waypoint = carla_route_elements[i - 1][0].location
-                waypoint_next = carla_route_elements[i][0].location
+                waypoint_next = element[0].location
                 try:
                     interpolated_trace = grp.trace_route(waypoint, waypoint_next)
                 except networkx.NetworkXNoPath:
                     print("WARNING: No route from {} to {} - Using direct path instead".format(waypoint, waypoint_next))
-                    route.append(carla_route_elements[i][0])
+                    route.append(element[0])
                     continue
                 for wp_tuple in interpolated_trace:
                     # The router sometimes produces points that go backward, or are almost identical
@@ -3471,7 +3471,7 @@ class ActorFlow(AtomicBehavior):
                     sensor.stop()
                     sensor.destroy()
                 self._collision_sensor_list.remove(sensor)
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_list.remove(actor)
 
         # Spawn new actors if needed
@@ -3519,7 +3519,7 @@ class ActorFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -3635,7 +3635,7 @@ class OppositeActorFlow(AtomicBehavior):
                 continue
             sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_list.remove(actor_data)
             else:
                 actor.apply_control(controller.run_step())
@@ -3668,7 +3668,7 @@ class OppositeActorFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -3750,7 +3750,7 @@ class InvadingActorFlow(AtomicBehavior):
                 continue
             sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_list.remove(actor_data)
             else:
                 actor.apply_control(controller.run_step())
@@ -3783,7 +3783,7 @@ class InvadingActorFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -3889,7 +3889,7 @@ class BicycleFlow(AtomicBehavior):
                 continue
             sink_distance = self._sink_location.distance(location)
             if sink_distance < self._sink_dist:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
                 self._actor_data.remove(actor_data)
             else:
                 actor.apply_control(controller.run_step())
@@ -3926,7 +3926,7 @@ class BicycleFlow(AtomicBehavior):
             actor.set_target_velocity(carla.Vector3D(0,0,0))
             actor.set_target_angular_velocity(carla.Vector3D(0,0,0))
             try:
-                actor.destroy()
+                CarlaDataProvider.remove_actor_by_id(actor.id)
             except RuntimeError:
                 pass  # Actor was already destroyed
 
@@ -4425,7 +4425,7 @@ class ScenarioTriggerer(AtomicBehavior):
 
         # Check which scenarios can be triggered
         blackboard = py_trees.blackboard.Blackboard()
-        for black_var_name, scen_location in self._blackboard_list:
+        for black_var_name, scen_location, scen_name in self._blackboard_list:
 
             # Close enough
             scen_distance = route_location.distance(scen_location)
@@ -4441,6 +4441,8 @@ class ScenarioTriggerer(AtomicBehavior):
             if condition1 and condition2 and condition3:
                 _ = blackboard.set(black_var_name, True)
                 self._triggered_scenarios.append(black_var_name)
+
+                CarlaDataProvider.set_latest_scenario(scen_name)
 
                 if self._debug:
                     self._world.debug.draw_point(
@@ -4591,7 +4593,9 @@ class AddActor(AtomicBehavior):
                 new_status = py_trees.common.Status.SUCCESS
         except:  # pylint: disable=bare-except
             print("ActorSource unable to spawn actor")
-
+            new_status = py_trees.common.Status.FAILURE
+        finally:
+            return new_status
 
 class SwitchWrongDirectionTest(AtomicBehavior):
 
@@ -4723,7 +4727,7 @@ class WalkerFlow(AtomicBehavior):
     def _destroy_walker(self, walker, controller):
         controller.stop()
         controller.destroy()
-        walker.destroy()
+        CarlaDataProvider.remove_actor_by_id(walker.id)
 
     def terminate(self, new_status):
         """
@@ -4803,7 +4807,7 @@ class AIWalkerBehavior(AtomicBehavior):
             controller.stop()
             controller.destroy()
         if walker:
-            walker.destroy()
+            CarlaDataProvider.remove_actor_by_id(walker.id)
 
     def terminate(self, new_status):
         """

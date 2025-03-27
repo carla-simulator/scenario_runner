@@ -38,8 +38,7 @@ class Decorator(behaviour.Behaviour):
             self.initialise()
         # interrupt proceedings and process the child node
         # (including any children it may have as well)
-        for node in self.decorated.tick():
-            yield node
+        yield from self.decorated.tick()
         # resume normal proceedings for a Behaviour's tick
         new_status = self.update()
         if new_status not in list(common.Status):

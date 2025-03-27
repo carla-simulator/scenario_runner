@@ -11,7 +11,7 @@ Basic scenario class using the OpenSCENARIO definition
 
 from __future__ import print_function
 
-from distutils.util import strtobool
+from srunner.tools.util import strtobool
 import itertools
 import os
 import py_trees
@@ -392,9 +392,9 @@ class OpenScenario(BasicScenario):
                         for actor in sequence.iter("Actors"):
                             for entity in actor.iter("EntityRef"):
                                 entity_name = entity.attrib.get('entityRef', None)
-                                for k, _ in enumerate(joint_actor_list):
-                                    if (joint_actor_list[k] and
-                                            entity_name == joint_actor_list[k].attributes['role_name']):
+                                for k, actor in enumerate(joint_actor_list):
+                                    if (actor and
+                                            entity_name == actor.attributes['role_name']):
                                         actor_ids.append(k)
                                         break
 
