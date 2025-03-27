@@ -4593,7 +4593,9 @@ class AddActor(AtomicBehavior):
                 new_status = py_trees.common.Status.SUCCESS
         except:  # pylint: disable=bare-except
             print("ActorSource unable to spawn actor")
-
+            new_status = py_trees.common.Status.FAILURE
+        finally:
+            return new_status
 
 class SwitchWrongDirectionTest(AtomicBehavior):
 

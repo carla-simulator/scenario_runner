@@ -274,7 +274,7 @@ class OpenScenarioParser(object):
         elif name.startswith("pos="):
             tl_pos = name[4:]
             pos = tl_pos.split(",")
-            for carla_tl in CCarlaDataProvider.get_all_actors().filter('traffic.traffic_light'):
+            for carla_tl in CarlaDataProvider.get_all_actors().filter('traffic.traffic_light'):
                 carla_tl_location = carla_tl.get_transform().location
                 distance = carla_tl_location.distance(carla.Location(float(pos[0]),
                                                                      float(pos[1]),
