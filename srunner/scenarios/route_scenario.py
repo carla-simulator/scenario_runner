@@ -71,7 +71,14 @@ class RouteScenario(BasicScenario):
         self.timeout = self._estimate_route_timeout()
 
         if debug_mode:
-            self._draw_waypoints(world, self.route, vertical_shift=0.1, size=0.1, persistency=self.timeout, downsample=5)
+            self._draw_waypoints(
+                world,
+                self.route,
+                vertical_shift=0.1,
+                size=0.1,
+                persistency=self.timeout,
+                downsample=5,
+            )
 
         self._build_scenarios(
             world, ego_vehicle, sampled_scenario_definitions, timeout=self.timeout, debug=debug_mode > 0
@@ -205,7 +212,15 @@ class RouteScenario(BasicScenario):
 
         return all_scenario_classes
 
-    def _build_scenarios(self, world, ego_vehicle, scenario_definitions, scenarios_per_tick=5, timeout=300, debug=False):
+    def _build_scenarios(
+        self,
+        world,
+        ego_vehicle,
+        scenario_definitions,
+        scenarios_per_tick=5,
+        timeout=300,
+        debug=False,
+    ):
         """
         Initializes the class of all the scenarios that will be present in the route.
         If a class fails to be initialized, a warning is printed but the route execution isn't stopped
@@ -306,7 +321,14 @@ class RouteScenario(BasicScenario):
         criteria.add_child(CollisionTest(self.ego_vehicles[0], name="CollisionTest"))
         criteria.add_child(RunningRedLightTest(self.ego_vehicles[0]))
         criteria.add_child(RunningStopTest(self.ego_vehicles[0]))
-        criteria.add_child(MinimumSpeedRouteTest(self.ego_vehicles[0], route=self.route, checkpoints=4, name="MinSpeedTest"))
+        criteria.add_child(
+            MinimumSpeedRouteTest(
+                self.ego_vehicles[0],
+                route=self.route,
+                checkpoints=4,
+                name="MinSpeedTest",
+            )
+        )
 
         # These stop the route early to save computational time
         criteria.add_child(InRouteTest(
@@ -331,7 +353,7 @@ class RouteScenario(BasicScenario):
         Create the weather behavior
         """
         if len(self.config.weather) == 1:
-            return  # Just set the weather at the beginning and done
+            return  None# Just set the weather at the beginning and done
         return RouteWeatherBehavior(self.ego_vehicles[0], self.route, self.config.weather)
 
     def _create_lights_behavior(self):

@@ -1648,12 +1648,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
         # Find the scope of type_name
         scope = self.__current_scope.resolve(name)
 
-        if scope:
-            pass
-        else:
-            msg = "behavior name: " + name + " is not defined!"
-            pass
-
         node = ast_node.BehaviorInvocation(actor, behavior_name)
         node.set_loc(ctx.start.line, ctx.start.column)
         node.set_scope(scope)
@@ -2083,7 +2077,7 @@ class ASTBuilder(OpenSCENARIO2Listener):
     # Enter a parse tree produced by OpenSCENARIO2Parser#inversion.
     def enterInversion(self, ctx: OpenSCENARIO2Parser.InversionContext):
         self.__node_stack.append(self.__cur_node)
-        if ctx.relation() == None:
+        if ctx.relation() is None:
             operator = "not"
             node = ast_node.LogicalExpression(operator)
             node.set_loc(ctx.start.line, ctx.start.column)

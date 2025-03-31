@@ -17,8 +17,14 @@ import os
 import py_trees
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeWeather, ChangeRoadFriction, ChangeParameter, \
-    ChangeActorLaneOffset, ChangeActorWaypoints, ChangeLateralDistance
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
+    ChangeWeather,
+    ChangeRoadFriction,
+    ChangeParameter,
+    ChangeActorLaneOffset,
+    ChangeActorWaypoints,
+    ChangeLateralDistance,
+)
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorControl, ChangeActorTargetSpeed
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.weather_sim import OSCWeatherBehavior
@@ -431,9 +437,9 @@ class OpenScenario(BasicScenario):
                                                 maneuver_behavior, "ACTION", child.attrib.get('name'))
                                             parallel_actions.add_child(
                                                 oneshot_with_check(variable_name=  # See note in get_xml_path
-                                                                   get_xml_path(story, sequence) + '>' + \
-                                                                   get_xml_path(maneuver, child) + '>' + \
-                                                                   str(actor_id),
+                                                                   get_xml_path(story, sequence) + '>'
+                                                                   + get_xml_path(maneuver, child) + '>'
+                                                                   + str(actor_id),
                                                                    behaviour=maneuver_behavior))
 
                                     if child.tag == "StartTrigger":

@@ -21,7 +21,11 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTrans
                                                                       KeepVelocity,
                                                                       StopVehicle)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
-from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerRegion, DriveDistance, WaitEndIntersection
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
+    InTriggerRegion,
+    DriveDistance,
+    WaitEndIntersection,
+)
 from srunner.scenarios.basic_scenario import BasicScenario
 
 

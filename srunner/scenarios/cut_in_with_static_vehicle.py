@@ -40,7 +40,16 @@ class StaticCutIn(BasicScenario):
     to cut in in front of the ego vehicle, forcing it to break
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
+    def __init__(
+        self,
+        world,
+        ego_vehicles,
+        config,
+        randomize=False,
+        debug_mode=False,
+        criteria_enable=True,
+        timeout=60,
+    ):
         """
         Setup all relevant parameters and create scenario
         """
@@ -153,8 +162,8 @@ class StaticCutIn(BasicScenario):
         self._side_transforms.append([self._adversary_actor, side_wp.transform])
         self.other_actors.append(self._adversary_actor)
 
-        # This starts the engine, to allow the adversary to instantly move 
-        self._adversary_actor.apply_control(carla.VehicleControl(throttle=1.0, brake=1.0)) 
+        # This starts the engine, to allow the adversary to instantly move
+        self._adversary_actor.apply_control(carla.VehicleControl(throttle=1.0, brake=1.0))
 
         # Move to the front
         next_wps = blocker_wp.next(self._vehicle_gap)
@@ -164,7 +173,7 @@ class StaticCutIn(BasicScenario):
         blocker_wp = next_wps[0]
 
         # Spawn the vehicles in front of the cut in one
-        for i in range(self._front_vehicles):
+        for _ in range(self._front_vehicles):
             # Move to the side
             side_wp = blocker_wp.get_left_lane() if self._direction == 'left' else blocker_wp.get_right_lane()
             if not side_wp:

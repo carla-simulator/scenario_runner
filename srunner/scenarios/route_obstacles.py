@@ -65,7 +65,7 @@ class Accident(BasicScenario):
         self._world = world
         self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
-        
+
         self._first_distance = 10
         self._second_distance = 6
 
@@ -74,7 +74,11 @@ class Accident(BasicScenario):
         self._wait_duration = 5
         self._offset = 0.6
 
-        self._lights = carla.VehicleLightState.Special1 | carla.VehicleLightState.Special2 | carla.VehicleLightState.Position
+        self._lights = (
+            carla.VehicleLightState.Special1
+            | carla.VehicleLightState.Special2
+            | carla.VehicleLightState.Position
+        )
 
         self._distance = get_value_parameter(config, 'distance', float, 120)
         self._direction = get_value_parameter(config, 'direction', str, 'right')
@@ -137,7 +141,11 @@ class Accident(BasicScenario):
         spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
         if accident_actor:
             actor = CarlaDataProvider.request_new_actor(
-                blueprint, spawn_transform, rolename='scenario no lights', attribute_filter={'base_type': 'car', 'generation': 2})
+                blueprint,
+                spawn_transform,
+                rolename="scenario no lights",
+                attribute_filter={"base_type": "car", "generation": 2},
+            )
         else:
             actor = CarlaDataProvider.request_new_actor(
                 blueprint, spawn_transform, rolename='scenario')
@@ -238,8 +246,17 @@ class AccidentTwoWays(Accident):
     """
     Variation of the Accident scenario but the ego now has to invade the opposite lane
     """
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
 
+    def __init__(
+        self,
+        world,
+        ego_vehicles,
+        config,
+        randomize=False,
+        debug_mode=False,
+        criteria_enable=True,
+        timeout=180,
+    ):
         self._opposite_interval = get_interval_parameter(config, 'frequency', float, [20, 100])
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
@@ -302,7 +319,11 @@ class ParkedObstacle(BasicScenario):
         self._wait_duration = 5
         self._offset = 0.7
 
-        self._lights = carla.VehicleLightState.RightBlinker | carla.VehicleLightState.LeftBlinker | carla.VehicleLightState.Position
+        self._lights = (
+            carla.VehicleLightState.RightBlinker
+            | carla.VehicleLightState.LeftBlinker
+            | carla.VehicleLightState.Position
+        )
 
         self._distance = get_value_parameter(config, 'distance', float, 120)
         self._direction = get_value_parameter(config, 'direction', str, 'right')
@@ -364,7 +385,11 @@ class ParkedObstacle(BasicScenario):
         spawn_transform = wp.transform
         spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=1)
         actor = CarlaDataProvider.request_new_actor(
-            blueprint, spawn_transform, rolename='scenario no lights', attribute_filter={'base_type': 'car', 'generation': 2})
+            blueprint,
+            spawn_transform,
+            rolename="scenario no lights",
+            attribute_filter={"base_type": "car", "generation": 2},
+        )
         if not actor:
             raise ValueError("Couldn't spawn an obstacle actor")
 
@@ -443,8 +468,17 @@ class ParkedObstacleTwoWays(ParkedObstacle):
     """
     Variation of the ParkedObstacle scenario but the ego now has to invade the opposite lane
     """
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
 
+    def __init__(
+        self,
+        world,
+        ego_vehicles,
+        config,
+        randomize=False,
+        debug_mode=False,
+        criteria_enable=True,
+        timeout=180,
+    ):
         self._opposite_interval = get_interval_parameter(config, 'frequency', float, [20, 100])
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
@@ -613,7 +647,14 @@ class HazardAtSideLane(BasicScenario):
         opt_dict = {'offset': offset}
         for actor, target_loc in zip(self.other_actors, self._target_locs):
             bicycle = py_trees.composites.Sequence(name="Bicycle behavior")
-            bicycle.add_child(BasicAgentBehavior(actor, target_loc, target_speed=self._bicycle_speed, opt_dict=opt_dict))
+            bicycle.add_child(
+                BasicAgentBehavior(
+                    actor,
+                    target_loc,
+                    target_speed=self._bicycle_speed,
+                    opt_dict=opt_dict,
+                )
+            )
             bicycle.add_child(HandBrakeVehicle(actor, 1))  # In case of collisions
             bicycle.add_child(WaitForever())  # Don't make the bicycle stop the parallel behavior
             main_behavior.add_child(bicycle)
@@ -659,8 +700,17 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
     """
     Variation of the HazardAtSideLane scenario but the ego now has to invade the opposite lane
     """
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=180):
 
+    def __init__(
+        self,
+        world,
+        ego_vehicles,
+        config,
+        randomize=False,
+        debug_mode=False,
+        criteria_enable=True,
+        timeout=180,
+    ):
         self._opposite_frequency = get_value_parameter(config, 'frequency', float, 100)
 
         super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
@@ -691,7 +741,14 @@ class HazardAtSideLaneTwoWays(HazardAtSideLane):
         opt_dict = {'offset': offset}
         for actor, target_loc in zip(self.other_actors, self._target_locs):
             bicycle = py_trees.composites.Sequence(name="Bicycle behavior")
-            bicycle.add_child(BasicAgentBehavior(actor, target_loc, target_speed=self._bicycle_speed, opt_dict=opt_dict))
+            bicycle.add_child(
+                BasicAgentBehavior(
+                    actor,
+                    target_loc,
+                    target_speed=self._bicycle_speed,
+                    opt_dict=opt_dict,
+                )
+            )
             bicycle.add_child(HandBrakeVehicle(actor, 1))  # In case of collisions
             bicycle.add_child(WaitForever())  # Don't make the bicycle stop the parallel behavior
             main_behavior.add_child(bicycle)
