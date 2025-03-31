@@ -227,7 +227,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             print("END of change lane--")
             return
     # start
-    # Deal with absolute positioning vehicles first，such as lane(1, at: start)
+    # Deal with absolute positioning vehicles first, such as lane(1, at: start)
     event_start = [
         m
         for m in modifiers
@@ -244,9 +244,9 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
 
             car_config = config.get_car_config(car_name)
             car_config.set_arg({"init_transform": wp.transform})
-            LOG_INFO(
-                f"{car_name} car init position will be set to {wp.transform.location}, roadid = {wp.road_id}, laneid={wp.lane_id}, s = {wp.s}"
-            )
+            msg = (f"{car_name} car init position will be set to {wp.transform.location}, "
+                        f"roadid = {wp.road_id}, laneid={wp.lane_id}, s = {wp.s}")
+            LOG_INFO(msg)
         else:
             raise RuntimeError(f"no valid position to spawn {car_name} car")
 
@@ -303,9 +303,9 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
 
         car_config = config.get_car_config(npc_name)
         car_config.set_arg({"init_transform": init_wp.transform})
-        LOG_WARNING(
-            f"{npc_name} car init position will be set to {init_wp.transform.location},roadid = {init_wp.road_id}, laneid={init_wp.lane_id}, s={init_wp.s}"
-        )
+        msg = (f"{npc_name} car init position will be set to {init_wp.transform.location}, "
+                    f"roadid = {init_wp.road_id}, laneid={init_wp.lane_id}, s={init_wp.s}")
+        LOG_WARNING(msg)
 
     # end
     end_group = [m for m in modifiers if m.get_trigger_point() == "end"]
@@ -512,8 +512,8 @@ class OSC2Scenario(BasicScenario):
 
         def bool_result(self, option):
             # wait(x < y) @drive_distance Handling of Boolean expressions x < y
-            expression_value = re.split("\W+", option)
-            symbol = re.search("\W+", option).group()
+            expression_value = re.split(r"\W+", option)
+            symbol = re.search(r"\W+", option).group()
             if symbol == "<":
                 symbol = operator.lt
             elif symbol == ">":
@@ -609,13 +609,12 @@ class OSC2Scenario(BasicScenario):
                         self.visit_call_directive(child)
                     else:
                         raise NotImplementedError(f"no implentment AST node {child}")
+            elif isinstance(sub_node, ast_node.DoMember):
+                self.visit_do_member(sub_node)
             else:
-                if isinstance(sub_node, ast_node.DoMember):
-                    self.visit_do_member(sub_node)
-                else:
-                    raise NotImplementedError("no supported ast node")
+                raise NotImplementedError("no supported ast node")
 
-            if re.match("\d", str(self.__duration)) and self.__duration != math.inf:
+            if re.match(r"\d", str(self.__duration)) and self.__duration != math.inf:
                 self.father_ins.all_duration += int(self.__duration)
 
         def visit_wait_directive(self, node: ast_node.WaitDirective):
@@ -696,7 +695,7 @@ class OSC2Scenario(BasicScenario):
             behavior_name = node.behavior_name
 
             behavior_invocation_name = None
-            if actor != None:
+            if actor is not None:
                 behavior_invocation_name = actor + "." + behavior_name
             else:
                 behavior_invocation_name = behavior_name
@@ -712,7 +711,7 @@ class OSC2Scenario(BasicScenario):
                 # scenario_declaration_node = self.father_ins.scenario_declaration.get(behavior_invocation_name)
                 scenario_declaration_node_scope = scenario_declaration_node.get_scope()
                 arguments = self.visit_children(node)
-                # Stores the value of the argument before the invoked scenario was overwritten， a: time=None
+                # Stores the value of the argument before the invoked scenario was overwritten, a: time=None
                 # keyword_args = {}
                 if isinstance(arguments, List):
                     for arg in arguments:
@@ -730,7 +729,7 @@ class OSC2Scenario(BasicScenario):
                 #     scope = scenario_declaration_node_scope.resolve(name)
                 #     scope.value = value
                 del scenario_declaration_node
-                return
+                return None
 
             behavior = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE,
@@ -918,7 +917,7 @@ class OSC2Scenario(BasicScenario):
                 actor_drive.add_child(car_driving)
                 behavior.add_child(actor_drive)
                 self.__cur_behavior.add_child(behavior)
-                return
+                return None
 
             process_location_modifier(
                 self.father_ins.config, location_modifiers, self.__duration, actor_drive
@@ -933,6 +932,7 @@ class OSC2Scenario(BasicScenario):
 
             behavior.add_child(actor_drive)
             self.__cur_behavior.add_child(behavior)
+            return None
 
         def visit_modifier_invocation(self, node: ast_node.ModifierInvocation):
             # actor = node.actor
@@ -985,7 +985,7 @@ class OSC2Scenario(BasicScenario):
                 del method_declaration_node
                 if method_value is not None:
                     return method_value
-                return
+                return None
             else:
                 pass
             arguments = self.visit_children(node)
@@ -1194,10 +1194,10 @@ class OSC2Scenario(BasicScenario):
                 if isinstance(para_value, (Physical, float, int)):
                     return para_value
                 para_value = para_value.strip('"')
-                if re.fullmatch("(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
+                if re.fullmatch(r"(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
                     # Regular expression ^[-]?[0-9]+(\.[0-9]+)? matching float
                     # para_value_num = re.findall('^[-]?[0-9]+(\.[0-9]+)?', para_value)[0]
-                    patter = re.compile("(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
+                    patter = re.compile(r"(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
                     para_value_num, para_value_unit = patter.match(para_value).groups()
                     if para_value_num.count(".") == 1:
                         return Physical(
@@ -1267,10 +1267,10 @@ class OSC2Scenario(BasicScenario):
                 exec_context = ""
                 module_name = None
                 for elem in external_list:
-                    if "module" == elem[0]:
+                    if elem[0] == "module":
                         exec_context += "import " + str(elem[1]) + "\n"
                         module_name = str(elem[1])
-                    elif "name" == elem[0]:
+                    elif elem[0] == "name":
                         exec_context += "ret = "
                         if module_name is not None:
                             exec_context += module_name + "." + str(elem[1]) + "("
@@ -1300,7 +1300,7 @@ class OSC2Scenario(BasicScenario):
                         method_value = self.visit_binary_expression(child)
             if method_value is not None:
                 return method_value
-            return
+            return None
 
         def visit_function_application_expression(
             self, node: ast_node.FunctionApplicationExpression
@@ -1310,7 +1310,8 @@ class OSC2Scenario(BasicScenario):
 
             arguments = OSC2Helper.flat_list(self.visit_children(node))
             line, column = node.get_loc()
-            # retrieval_name = para_type_str_sequence(config=self.father_ins.config, arguments=arguments, line=line, column=column, node=node)
+            # retrieval_name = para_type_str_sequence(config=self.father_ins.config,
+            #                                         arguments=arguments, line=line, column=column, node=node)
             retrieval_name = arguments[0].split(".")[-1]
             method_scope = node.get_scope().resolve(retrieval_name)
 
@@ -1345,8 +1346,7 @@ class OSC2Scenario(BasicScenario):
                 if para_value is not None:
                     return para_value
                 return para_value
-            else:
-                pass
+            return None
 
         def visit_keep_constraint_declaration(
             self, node: ast_node.KeepConstraintDeclaration

@@ -14,7 +14,6 @@ Limitations:
 - Can only consider obstacles in forward facing reaching (i.e. in tight corners obstacles may be ignored).
 """
 
-from distutils.util import strtobool
 import math
 
 import carla
@@ -23,6 +22,7 @@ from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
 from srunner.scenariomanager.actorcontrols.visualizer import Visualizer
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
+from srunner.tools.util import strtobool
 
 
 class SimpleVehicleControl(BasicControl):
@@ -115,7 +115,12 @@ class SimpleVehicleControl(BasicControl):
             bp.set_attribute('hit_radius', '1')
             bp.set_attribute('only_dynamics', 'True')
             self._obstacle_sensor = CarlaDataProvider.get_world().spawn_actor(
-                bp, carla.Transform(carla.Location(x=self._actor.bounding_box.extent.x, z=1.0)), attach_to=self._actor)
+                bp,
+                carla.Transform(
+                    carla.Location(x=self._actor.bounding_box.extent.x, z=1.0)
+                ),
+                attach_to=self._actor,
+            )
             self._obstacle_sensor.listen(lambda event: self._on_obstacle(event))  # pylint: disable=unnecessary-lambda
 
         if args and 'consider_trafficlights' in args and strtobool(args['consider_trafficlights']):
