@@ -1,0 +1,137 @@
+# Parameter variations for stop_sign_intersection.scenic
+---
+carla_map: Town03
+map: "../assets/Town03.xodr"
+ego_speed: 8
+adv_speed: 12
+safety_distance: 20
+ego_dist_min: 20
+ego_dist_max: 25
+adv_dist_min: 15
+adv_dist_max: 20
+trailing_offset_min: 20
+trailing_offset_max: 30
+opp_offset_min: 40
+opp_offset_max: 50
+bg_speed: 6
+ego_blueprint_param: "vehicle.lincoln.mkz_2017"
+adv_blueprint_param: "vehicle.dodge.charger_2020"
+# ---
+# carla_map: Town05
+# map: "../assets/Town05.xodr"
+# ego_speed: 10
+# adv_speed: 14
+# safety_distance: 25
+# ego_dist_min: 15
+# ego_dist_max: 25
+# adv_dist_min: 15
+# adv_dist_max: 25
+# trailing_offset_min: 20
+# trailing_offset_max: 30
+# opp_offset_min: 40
+# opp_offset_max: 50
+# bg_speed: 6
+# ego_blueprint_param: "vehicle.lincoln.mkz_2017"
+# adv_blueprint_param: "vehicle.dodge.charger_2020"
+# ---
+# carla_map: Town07
+# map: "../assets/Town07.xodr"
+# ego_speed: 6
+# adv_speed: 11
+# safety_distance: 22
+# ego_dist_min: 15
+# ego_dist_max: 25
+# adv_dist_min: 15
+# adv_dist_max: 25
+# trailing_offset_min: 20
+# trailing_offset_max: 30
+# opp_offset_min: 40
+# opp_offset_max: 50
+# bg_speed: 6
+# ego_blueprint_param: "vehicle.audi.tt"
+# adv_blueprint_param: "vehicle.ford.mustang"
+# ---
+# carla_map: Town10HD_Opt
+# map: "../assets/Town10HD_Opt.xodr"
+# ego_speed: 7
+# adv_speed: 16
+# safety_distance: 20
+# ego_dist_min: 15
+# ego_dist_max: 25
+# adv_dist_min: 15
+# adv_dist_max: 25
+# trailing_offset_min: 20
+# trailing_offset_max: 30
+# opp_offset_min: 40
+# opp_offset_max: 50
+# bg_speed: 6
+# ego_blueprint_param: "vehicle.tesla.model3"
+# adv_blueprint_param: "vehicle.dodge.charger_2020"
+# ---
+# carla_map: Town01
+# map: "../assets/Town01.xodr"
+# ego_speed: 12
+# adv_speed: 15
+# safety_distance: 30
+# ego_dist_min: 15
+# ego_dist_max: 25
+# adv_dist_min: 15
+# adv_dist_max: 25
+# trailing_offset_min: 20
+# trailing_offset_max: 30
+# opp_offset_min: 40
+# opp_offset_max: 50
+# bg_speed: 6
+# ego_blueprint_param: "vehicle.bmw.grandtourer"
+# adv_blueprint_param: "vehicle.dodge.charger_2020"
+# ---
+# carla_map: Town02
+# map: "../assets/Town02.xodr"
+# ego_speed: 5
+# adv_speed: 10
+# safety_distance: 18
+# ego_dist_min: 15
+# ego_dist_max: 25
+# adv_dist_min: 15
+# adv_dist_max: 25
+# trailing_offset_min: 20
+# trailing_offset_max: 30
+# opp_offset_min: 40
+# opp_offset_max: 50
+# bg_speed: 6
+# ego_blueprint_param: "vehicle.mini.cooper_s"
+# adv_blueprint_param: "vehicle.audi.tt"
+# ---
+# carla_map: Town04
+# map: "../assets/Town04.xodr"
+# ego_speed: 11
+# adv_speed: 14
+# safety_distance: 26
+# ego_dist_min: 15
+# ego_dist_max: 25
+# adv_dist_min: 15
+# adv_dist_max: 25
+# trailing_offset_min: 20
+# trailing_offset_max: 30
+# opp_offset_min: 40
+# opp_offset_max: 50
+# bg_speed: 6
+# ego_blueprint_param: "vehicle.lincoln.mkz_2017"
+# adv_blueprint_param: "vehicle.nissan.patrol"
+# ---
+# carla_map: Town06
+# map: "../assets/Town06.xodr"
+# ego_speed: 8
+# adv_speed: 18
+# safety_distance: 28
+# ego_dist_min: 15
+# ego_dist_max: 25
+# adv_dist_min: 15
+# adv_dist_max: 25
+# trailing_offset_min: 20
+# trailing_offset_max: 30
+# opp_offset_min: 40
+# opp_offset_max: 50
+# bg_speed: 6
+# ego_blueprint_param: "vehicle.chevrolet.impala"
+# adv_blueprint_param: "vehicle.ford.mustang"
