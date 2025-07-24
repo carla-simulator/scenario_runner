@@ -20,7 +20,7 @@ scenario dut.cut_in_and_slow:
                 lane(1, at: start) # left to right: [1..n]
             npc.drive() with:
                 lane(right_of: ego_vehicle, at: start)
-                position(1m, behind: ego_vehicle, at: start)
+                position(5m, behind: ego_vehicle, at: start)
                 position(20m, ahead_of: ego_vehicle, at: end)
 
         change_lane: parallel(duration: 5s):
@@ -45,7 +45,7 @@ scenario top:
     c: speeds
 
     speed_a: velocity
-    keep (default speed_a == 30kph)
+    keep (default speed_a == 20kph)
     speed_b: velocity = 30kph
 
     speed_c: velocity = speeds.compute(x: 70kph, y:20kph)
