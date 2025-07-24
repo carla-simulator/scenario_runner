@@ -79,7 +79,7 @@ class Physical(object):
             return value == self.num
 
     def is_single_value(self) -> bool:
-        return isinstance(self.num, Range)
+        return not isinstance(self.num, Range)
 
     def gen_single_value(self):
         if self.is_single_value():
