@@ -1,6 +1,6 @@
-# osc2-runner
+# OpenScenario 2.0
 
-We use OpenScenario 2.0 as the scenario description language specification to design and implement the corresponding compilation system, which can automatically convert the test scenario described with OpenScenario 2.0 into a test scenario based on scenario runner, so as to use carla for autonomous driving testing.
+We can use [OpenScenario 2.0](https://www.asam.net/static_downloads/public/asam-openscenario/2.0.0/welcome.html) as the scenario description language specification to design and implement the corresponding compilation system, which can automatically convert the test scenario described with OpenScenario 2.0 into a test scenario based on scenario runner, so as to use carla for autonomous driving testing.
 
 ## Installation
 
@@ -8,12 +8,16 @@ We use OpenScenario 2.0 as the scenario description language specification to de
 
 ```
 sudo apt install openjdk-17-jdk
-```    
+```
+
 Confirm installation:
+
 ```
 $ java -version
 ```
+
 Output:
+
 ```
 openjdk version "17.0.5" 2022-10-18
 OpenJDK Runtime Environment (build 17.0.5+8-Ubuntu-2ubuntu120.04)
@@ -28,26 +32,33 @@ curl -O https://www.antlr.org/download/antlr-4.10.1-complete.jar
 ```
 
 Put the .jar file into local/lib
+
 ```
 $ sudo cp antlr-4.10.1-complete.jar /usr/local/lib/
 ```
 
 The following three steps are used to configure environment variables and create aliases so that antlr4 can be easily used from the command line.
+
 ```
 $ sudo gedit ~/.bashrc
 ```
+
 Add the following at the end:
+
 ```
 export CLASSPATH=".:/usr/local/lib/antlr-4.10.1-complete.jar:$CLASSPATH"
 alias antlr4='java -jar /usr/local/lib/antlr-4.10.1-complete.jar'
 alias grun='java org.antlr.v4.gui.TestRig'
 ```
+
 And then:
+
 ```
 source ~/.bashrc
 ```
 
 Enter antlr4 for verifying in the terminal:
+
 ```
 $ antlr4
 ANTLR Parser Generator  Version 4.10.1
@@ -73,11 +84,13 @@ ANTLR Parser Generator  Version 4.10.1
 ```
 
 **4、Install antlr4 runtime**
+
 ```
 pip install antlr4-python3-runtime==4.10
 ```
 
 **5、Install python dependency**
+
 ```
 pip install -r requirements.txt
 ```
@@ -88,15 +101,14 @@ pip install -r requirements.txt
 sudo apt-get install graphviz
 ```
 
-
 **7、Configurate carla**
-    
-(1) Download [carla release](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.13.tar.gz)
 
+(1) Download [carla release](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.13.tar.gz)
 
 (2) Extract the carla installation package to a directory.
 
 On Ubuntu systems, the Carla environment variable is configured as follows:
+
 ```bash
 export CARLA_ROOT=/home/dut-aiid/CARLA_0.9.13
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.13-py3.7-linux-x86_64.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla/agents/navigation:${CARLA_ROOT}/PythonAPI/carla:${CARLA_ROOT}/PythonAPI/examples:${CARLA_ROOT}/PythonAPI
@@ -106,6 +118,8 @@ export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.13-py
 
 **1、Run carla**
 
+Launch the CARLA simulation.
+
 ```bash
 cd /home/xxx/CARLA_0.9.13
 ./CarlaUE4.sh
@@ -113,11 +127,20 @@ cd /home/xxx/CARLA_0.9.13
 
 **2、Start manual_control**
 
+Run the Scenario Runner's `manual_control.py` script
+
 ```
 python manual_control.py -a --rolename=ego_vehicle
 ```
 
+!!! note
+
+    There is a script with the same name in `PythonAPI/examples` within CARLA, here we need to run the `manual_control.py` in the ScenarioRunner repo.
+
 **3、Run a OpenSCENARIO 2.0 scenario**
+
+Run the scenario indicating the `--openscenario2` flag.
+
 ```
-python scenario_runner.py --sync  --openscenario2 srunner/examples/cut_in_and_slow_right.osc --reloadWorld 
+python scenario_runner.py --sync  --openscenario2 srunner/examples/cut_in_and_slow_right.osc --reloadWorld
 ```
