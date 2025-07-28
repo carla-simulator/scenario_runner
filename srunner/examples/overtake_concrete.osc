@@ -1,35 +1,36 @@
 import basic.osc
 
 scenario top:
-    path: Path                 
-    path.set_map("Town04")
-    path.path_min_driving_lanes(2)
+    path: Path                      	# A path in the map
+    path.set_map("Town04")              # Map to employ
+    path.path_min_driving_lanes(2)      # Path should have at least three lanes
 
-    ego_vehicle: Model3                 # ego car
+    ego_vehicle: Model3                	# Ego car
     npc: Rubicon                        # The other car
 
-    event start
+    event start                         # Define start and end events
     event end
-    do parallel(duration: 18s):
-        npc.drive(path) with: 
+    
+    do parallel(duration: 18s):                     # Execute the following lines in parallel
+        npc.drive(path) with:                       # The NPC will drive in the second lane at a constant speed
             speed(30kph)
-            lane(1, at: start) # left to right: [1..n]
+            lane(2, at: start) # left to right: [1..n]
         
-        serial:
-            get_ahead: parallel(duration: 3s):
+        serial:                                     # The following commands are serially executed
+            get_ahead: parallel(duration: 3s):      # Set the initial ego vehicle position
                 ego_vehicle.drive(path) with:
                     speed(30kph)
                     lane(same_as: npc, at: start)
                     position(10m, behind: npc, at: start)
             
-            change_lane1: parallel(duration: 5s):
+            change_lane1: parallel(duration: 5s):   # Change lane
                 ego_vehicle.drive(path) with:
-                    lane(right_of: npc, at: end)
+                    lane(left_of: npc, at: end)
 
-            accelection: parallel(duration: 5s):
+            acceleration: parallel(duration: 5s):   # Accelerate for 5s
                 ego_vehicle.drive(path) with:
                     speed(45kph)
                 
-            change_lane2: parallel(duration: 5s):
+            change_lane2: parallel(duration: 5s):   # Come back to the initial lane
                 ego_vehicle.drive(path) with:
                     lane(same_as: npc, at: end)
