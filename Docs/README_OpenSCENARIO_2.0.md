@@ -222,6 +222,18 @@ struct speeds:
     def compute(x:velocity, y:velocity) -> velocity is expression x-y
 ```
 
+#### Modifiers
+
+The OSC2 standard allows for different movement modifiers. This list shows those supported in CARLA:
+
+- `speed`: set target speed, e.g. `speed(30kph)`.
+- `position`: set position, e.g. `position(10m, behind: npc, at: start)`.
+- `lane`: set lane, e.g. `lane(1, at: start)`.
+- `acceleration`: set the vehicle acceleration, e.g. `acceleration(15kphps)`.
+- `keep_lane`: maintain the same lane, e.g. `keep_lane()`.
+- `change_speed`: change the current speed, `change_speed(3kph)`.
+- `change_lane`: change to a different lane, e.g. `change_lane(lane_changes:[1..2], side: left)`.
+
 ## Custom vehicles
 
 The following steps explain how to use custom vehicles in an scenario. For example, to add an ambulance to the scenario, the following steps are required.

@@ -876,7 +876,7 @@ class OSC2Scenario(BasicScenario):
                         elif isinstance(arguments, Physical):
                             keyword_args["desired_speed"] = arguments
                         else:
-                            return f"Needed 1 arguments, but given {len(arguments)}arguments."
+                            return f"Needed 1 arguments, but given {len(arguments)} arguments."
 
                         modifier_ins.set_args(keyword_args)
 
