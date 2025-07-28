@@ -125,7 +125,7 @@ export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.13-py
 Launch the CARLA simulation.
 
 ```bash
-cd /home/xxx/CARLA_0.9.13
+cd /home/xxx/CARLA_0.9.15
 ./CarlaUE4.sh
 ```
 
@@ -167,7 +167,7 @@ import basic.osc
 scenario top:
     path: Path                      	# A path in the map
     path.set_map("Town04")              # Map to employ
-    path.path_min_driving_lanes(3)      # Path should have at least three lanes
+    path.path_min_driving_lanes(2)      # Path should have at least two lanes
 
     ego_vehicle: Model3                	# Ego car
     npc: Rubicon                        # The other car
@@ -183,7 +183,7 @@ Define the behaviors:
     do parallel(duration: 18s):                     # Execute the following lines in parallel
         npc.drive(path) with:                       # The NPC will drive in the second lane at a constant speed
             speed(30kph)
-            lane(2, at: start) # left to right: [1..n]
+            lane(2, at: start)                      # Lanes go left to right: [1..n]
 
         serial:                                     # The following commands are serially executed
             get_ahead: parallel(duration: 3s):      # Set the initial ego vehicle position
