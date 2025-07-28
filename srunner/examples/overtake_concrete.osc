@@ -11,8 +11,8 @@ scenario top:
     event start                         # Define start and end events
     event end
     
-    do parallel(duration: 18s):                     # Execute the following lines in parallel
-        npc.drive(path) with:                       # The NPC will drive in the second lane at a constant speed
+    do parallel(duration: 18s):         # Execute the following lines in parallel
+        npc.drive(path) with:           # The NPC will drive in the second lane at a constant speed
             speed(30kph)
             lane(2, at: start) # left to right: [1..n]
         
