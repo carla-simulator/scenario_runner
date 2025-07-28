@@ -186,11 +186,11 @@ Define the behaviors:
             lane(2, at: start)                      # Lanes go left to right: [1..n]
 
         serial:                                     # The following commands are serially executed
-            get_ahead: parallel(duration: 3s):      # Set the initial ego vehicle position
+            get_ahead: parallel(duration: 3s):      # Set the initial ego vehicle position between 10 and 20m behind the NPC
                 ego_vehicle.drive(path) with:
                     speed(30kph)
                     lane(same_as: npc, at: start)
-                    position(10m, behind: npc, at: start)
+                    position([10m..20m], behind: npc, at: start)
 
             change_lane1: parallel(duration: 5s):   # Change lane
                 ego_vehicle.drive(path) with:
@@ -206,21 +206,13 @@ Define the behaviors:
 
 ```
 
-You can define custom units:
+#### Composition operators
 
-```
-type velocity is SI(m: 1, s: -1)
-unit mps                 of velocity is SI(m: 1, s: -1, factor: 1)
-unit kmph                of velocity is SI(m: 1, s: -1, factor: 0.277777778)
-unit mph                 of velocity is SI(m: 1, s: -1, factor: 0.447038889)
-```
+An OSC2 scenario can invoke one or more behaviors using three supported composition operators:
 
-Or define expressions:
-
-```
-struct speeds:
-    def compute(x:velocity, y:velocity) -> velocity is expression x-y
-```
+- `serial`: The serial (sequential) composition of scenarios.
+- `parallel`: The parallel composition of scenarios.
+- `one_of`: The one-of composition of scenarios (at least one of a set of scenarios must hold).
 
 #### Modifiers
 
@@ -234,9 +226,29 @@ The OSC2 standard allows for different movement modifiers. This list shows those
 - `change_speed`: change the current speed, `change_speed(3kph)`.
 - `change_lane`: change to a different lane, e.g. `change_lane(lane_changes:[1..2], side: left)`.
 
+#### Units
+
+You can define custom units:
+
+```
+type velocity is SI(m: 1, s: -1)
+unit mps                 of velocity is SI(m: 1, s: -1, factor: 1)
+unit kmph                of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit mph                 of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+```
+
+#### Expressions
+
+Define custom expressions, data structures and functions:
+
+```
+struct speeds:
+    def compute(x:velocity, y:velocity) -> velocity is expression x-y
+```
+
 ## Custom vehicles
 
-The following steps explain how to use custom vehicles in an scenario. For example, to add an ambulance to the scenario, the following steps are required.
+The following steps explain how to use custom vehicles in a scenario. For example, to add an ambulance to the scenario, the following steps are required.
 
 1. Edit `srunner/osc2_stdlib/vehicle.py` and add a custom vehicle class:
 

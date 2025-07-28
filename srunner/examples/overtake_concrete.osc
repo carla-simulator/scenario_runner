@@ -17,11 +17,11 @@ scenario top:
             lane(2, at: start) # left to right: [1..n]
         
         serial:                                     # The following commands are serially executed
-            get_ahead: parallel(duration: 3s):      # Set the initial ego vehicle position
+            get_ahead: parallel(duration: 3s):      # Set the initial ego vehicle position between 10 and 20m behind the NPC
                 ego_vehicle.drive(path) with:
                     speed(30kph)
                     lane(same_as: npc, at: start)
-                    position(10m, behind: npc, at: start)
+                    position([10m..20m], behind: npc, at: start)
             
             change_lane1: parallel(duration: 5s):   # Change lane
                 ego_vehicle.drive(path) with:
