@@ -14,7 +14,7 @@ scenario top:
     do parallel(duration: 18s):         # Execute the following lines in parallel
         npc.drive(path) with:           # The NPC will drive in the second lane at a constant speed
             speed(30kph)
-            lane(2, at: start) # left to right: [1..n]
+            lane(2, at: start)          # Lanes from left to right: [1..n]
         
         serial:                                     # The following commands are serially executed
             get_ahead: parallel(duration: 3s):      # Set the initial ego vehicle position between 10 and 20m behind the NPC

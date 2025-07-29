@@ -24,6 +24,7 @@ from srunner.osc2_dm.physical_types import Physical, Range
 # from sqlalchemy import true
 # from srunner.osc2_stdlib import event, variables
 from srunner.osc2_stdlib.modifier import (
+    Modifier,
     AccelerationModifier,
     ChangeLaneModifier,
     ChangeSpeedModifier,
@@ -132,7 +133,7 @@ def para_type_str_sequence(config, arguments, line, column, node):
 
 
 def process_speed_modifier(
-    config, modifiers, duration: float, all_duration: float, father_tree
+    config: OSC2ScenarioConfiguration, modifiers: list[Modifier], duration: float, all_duration: float, father_tree
 ):
     if not modifiers:
         return
@@ -197,7 +198,7 @@ def process_speed_modifier(
             LOG_WARNING("not implement modifier")
 
 
-def process_location_modifier(config, modifiers, duration: float, father_tree):
+def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list[Modifier], duration: float, father_tree):
     # position([distance: ]<distance> | time: <time>, [ahead_of: <car> | behind: <car>], [at: <event>])
     # lane([[lane: ]<lane>][right_of | left_of | same_as: <car>] | [side_of: <car>, side: <av-side>][at: <event>])
     """
