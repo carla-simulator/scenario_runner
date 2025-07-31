@@ -156,3 +156,17 @@ class AccelerationModifier(Modifier):
 
     def get_accelerate(self):
         return self.args["acceleration"]
+
+
+class FollowTrajectoryModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_points(self):
+        if self.args.get("points"):
+            return self.args.get("points")
+        else:
+            return None
+        
+    def get_trigger_point(self) -> str:
+        return self.args.get("at", "all")

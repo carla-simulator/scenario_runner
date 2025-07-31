@@ -1,0 +1,26 @@
+import basic.osc
+
+scenario top:
+    path: Path                      	# A path in the map
+    path.set_map("Town04")              # Map to employ
+    path.path_min_driving_lanes(2)      # Path should have at least two lanes
+
+    ego_vehicle: Model3                	# Ego car
+    npc: Rubicon                        # The other car
+
+    event start                         # Define start and end events
+    event end
+    
+    do parallel(duration: 18s):         # Execute the following lines in parallel
+        npc.drive(path) with:           # The NPC will drive in the second lane at a constant speed
+            speed(40kph)
+            lane(1, at: start)          # Lanes from left to right: [1..n]
+        ego_vehicle.drive(path) with:           # The NPC will drive in the second lane at a constant speed
+            speed(30kph)
+            position([10m..20m], behind: npc, at: start)
+            lane(2, at: start)          # Lanes from left to right: [1..n]
+            # follow_trajectory(points: ["0,0,0","1,0,0","1,2,0","1,3,0"])
+            # follow_trajectory(points: ["12.8,184.6,0.01","11.8,184.6,0.01","10.8,184.6,0.01","9.8,184.6,0.01"])
+            follow_trajectory(points: ["12.8,184.6,0.01","12.8,185.6,0.01","12.8,186.6,0.01","12.8,187.6,0.01"])
+        
+      

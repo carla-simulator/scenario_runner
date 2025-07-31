@@ -30,6 +30,7 @@ from srunner.osc2_stdlib.modifier import (
     LaneModifier,
     PositionModifier,
     SpeedModifier,
+    FollowTrajectoryModifier,
 )
 
 # OSC2
@@ -43,6 +44,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     LaneChange,
     UniformAcceleration,
     WaypointFollower,
+    ChangeActorControl,
     calculate_distance,
 )
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
@@ -55,6 +57,16 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import oneshot_with_check
 from srunner.tools.osc2_helper import OSC2Helper
 
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorWaypoints
+
+def flatten(nested):
+    result = []
+    for item in nested:
+        if isinstance(item, list):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
 
 def para_type_str_sequence(config, arguments, line, column, node):
     retrieval_name = ""
@@ -226,6 +238,22 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             father_tree.add_child(continue_drive)
             print("END of change lane--")
             return
+        elif isinstance(modifier, FollowTrajectoryModifier):
+            waypoints = modifier.get_points()
+            actor_name = modifier.get_actor_name()
+            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            print("trigger event",modifier.get_trigger_point())
+            print(actor.get_location())
+
+            times = [2.0 for p in waypoints]
+            # times = None
+
+            controller_atomic = ChangeActorControl(actor, control_py_module=None, args={})
+            father_tree.add_child(controller_atomic)
+
+            follow_traj = ChangeActorWaypoints(actor, waypoints=list(zip(waypoints, ['shortest'] * len(waypoints))), times=times, name="FollowTrajectory", is_osc1=False)
+            father_tree.add_child(follow_traj)
+
     # start
     # Deal with absolute positioning vehicles first, such as lane(1, at: start)
     event_start = [
@@ -906,6 +934,25 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins.set_args(keyword_args)
 
                         location_modifiers.append(modifier_ins)
+                    elif modifier_name == "follow_trajectory":
+                        modifier_ins = FollowTrajectoryModifier(actor, modifier_name)
+
+                        keyword_args = {}
+
+                        wps = []
+
+                        points = flatten(arguments[1])
+
+                        if arguments[0] is not None:
+                            for p in points:
+                                px, py, pz = p.split(",")
+                                wp = [float(px), float(py), float(pz)]
+                                wps.append(wp)
+                            keyword_args[arguments[0]] = wps
+
+                        modifier_ins.set_args(keyword_args)
+
+                        location_modifiers.append(modifier_ins)
                     else:
                         raise NotImplementedError(
                             f"no implentment function: {modifier_name}"
@@ -918,6 +965,9 @@ class OSC2Scenario(BasicScenario):
                 behavior.add_child(actor_drive)
                 self.__cur_behavior.add_child(behavior)
                 return None
+            
+            for mod in location_modifiers:
+                print(mod)
 
             process_location_modifier(
                 self.father_ins.config, location_modifiers, self.__duration, actor_drive
@@ -956,6 +1006,7 @@ class OSC2Scenario(BasicScenario):
                     "keep_lane",
                     "change_speed",
                     "change_lane",
+                    "follow_trajectory"
                 )
             ):
                 line, column = node.get_loc()
