@@ -167,6 +167,12 @@ class FollowTrajectoryModifier(Modifier):
             return self.args.get("points")
         else:
             return None
-        
+
+    def get_times(self):
+        if self.args.get("times"):
+            return self.args.get("times")
+        else:
+            return None
+
     def get_trigger_point(self) -> str:
         return self.args.get("at", "all")

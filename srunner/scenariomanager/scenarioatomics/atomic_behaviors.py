@@ -770,6 +770,9 @@ class ChangeActorWaypoints(AtomicBehavior):
         self._times = times
         self._is_osc1 = is_osc1
 
+        if len(self._waypoints) != len(self._times):
+            raise ValueError("Both 'waypoints' and 'times' must have the same length")
+
     def initialise(self):
         """
         Set _start_time and get (actor, controller) pair from Blackboard.
@@ -805,8 +808,7 @@ class ChangeActorWaypoints(AtomicBehavior):
                 wp_transf = carla.Transform(location=carla.Location(point[0],point[1],point[2]))
                 # carla_transforms = [mmap.get_waypoint(wp_transf.location)]
                 carla_route_elements.append((wp_transf, routing_option))
-            
-            print("route",carla_route_elements)
+
 
         # Obtain final route, considering the routing option
         # At the moment everything besides "shortest" will use the CARLA GlobalPlanner
@@ -852,7 +854,7 @@ class ChangeActorWaypoints(AtomicBehavior):
                     elif not route:
                         route.append(wp_tuple[0].transform)
 
-        actor_dict[self._actor.id].update_waypoints(route, start_time=self._start_time)
+        actor_dict[self._actor.id].update_waypoints(route, times=self._times, start_time=self._start_time)
 
         super().initialise()
 
@@ -882,14 +884,6 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         if actor.check_reached_waypoint_goal():
             return py_trees.common.Status.SUCCESS
-
-        if self._times is not None:
-            current_relative_time = GameTime.get_time() - self._start_time
-            current_waypoint_idx = bisect_right(self._times, current_relative_time)
-            if current_waypoint_idx >= len(self._times):
-                return py_trees.common.Status.SUCCESS
-            remaining_time = self._times[current_waypoint_idx] - current_relative_time
-            self._update_speed(actor, self._waypoints[current_waypoint_idx], remaining_time)
 
         return py_trees.common.Status.RUNNING
 

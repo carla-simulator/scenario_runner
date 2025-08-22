@@ -6,7 +6,10 @@ import operator
 import random
 import re
 import sys
+import csv
 from typing import List, Tuple
+
+import carla
 
 import py_trees
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -240,13 +243,15 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             return
         elif isinstance(modifier, FollowTrajectoryModifier):
             waypoints = modifier.get_points()
+            times = modifier.get_times()
             actor_name = modifier.get_actor_name()
             actor = CarlaDataProvider.get_actor_by_name(actor_name)
-            print("trigger event",modifier.get_trigger_point())
-            print(actor.get_location())
 
-            times = [2.0 for p in waypoints]
-            # times = None
+            _map = CarlaDataProvider.get_map()
+            initial_transform = _map.get_waypoint(carla.Location(waypoints[0][0], waypoints[0][1], waypoints[0][2])).transform
+            initial_transform.location.z += 5
+            actor_visible = ActorTransformSetter(actor, initial_transform)
+            father_tree.add_child(actor_visible)
 
             controller_atomic = ChangeActorControl(actor, control_py_module=None, args={})
             father_tree.add_child(controller_atomic)
@@ -938,21 +943,34 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins = FollowTrajectoryModifier(actor, modifier_name)
 
                         keyword_args = {}
-
                         wps = []
+                        ts = []
 
-                        points = flatten(arguments[1])
-
-                        if arguments[0] is not None:
+                        if arguments[0] == 'points':
+                            points = flatten(arguments[1])
                             for p in points:
-                                px, py, pz = p.split(",")
+                                px, py, pz, t = p.split(",")
                                 wp = [float(px), float(py), float(pz)]
                                 wps.append(wp)
-                            keyword_args[arguments[0]] = wps
+                                ts.append(float(t))
 
+                        elif arguments[0] == 'input_file':
+
+                            with open(arguments[1], newline='') as csvfile:
+                                reader = csv.reader(csvfile)
+                                points = [row for row in reader]
+                                for p in points:
+                                    wps.append([float(p[0]), float(p[1]), float(p[2])])
+                                    ts.append(float(p[3]))
+
+                        else:
+                            raise ValueError("follow_trajectory inputs need to be either 'points' or 'file'")
+
+                        keyword_args['points'] = wps
+                        keyword_args['times'] = ts
                         modifier_ins.set_args(keyword_args)
-
                         location_modifiers.append(modifier_ins)
+
                     else:
                         raise NotImplementedError(
                             f"no implentment function: {modifier_name}"
@@ -965,9 +983,9 @@ class OSC2Scenario(BasicScenario):
                 behavior.add_child(actor_drive)
                 self.__cur_behavior.add_child(behavior)
                 return None
-            
-            for mod in location_modifiers:
-                print(mod)
+
+            # for mod in location_modifiers:
+            #     print(mod)
 
             process_location_modifier(
                 self.father_ins.config, location_modifiers, self.__duration, actor_drive
