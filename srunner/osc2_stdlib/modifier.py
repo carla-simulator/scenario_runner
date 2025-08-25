@@ -174,5 +174,11 @@ class FollowTrajectoryModifier(Modifier):
         else:
             return None
 
+    def get_control(self):
+        if self.args.get("control"):
+            return self.args.get("control")
+        else:
+            return None
+
     def get_trigger_point(self) -> str:
         return self.args.get("at", "all")

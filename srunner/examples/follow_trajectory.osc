@@ -9,14 +9,13 @@ scenario top:
     npc1: Rubicon                       # Another car
     npc2: Rubicon                       # Anotherother car
 
-    do parallel(duration: 18s):         # Execute the following lines in parallel
+    do parallel(duration: 31s):         # Execute the following lines in parallel
 
         ego_vehicle.drive(path) with:
-            follow_trajectory(input_file: "ego_logs.csv")
-            # follow_trajectory(points: ["x1,y1,z1,y1", "x2,y2,z2,t2", "x3,y3,z3,t3", "x4,y4,z4,t4"])
+            follow_trajectory(input_file: "ego_logs.csv", control:"physics")
 
         npc1.drive(path) with:
-            follow_trajectory(input_file: "npc1_logs.csv")
+            follow_trajectory(input_file: "npc1_logs.csv", control:"physics")
 
         npc2.drive(path) with:
-            follow_trajectory(input_file: "npc2_logs.csv")
+            follow_trajectory(input_file: "npc2_logs.csv", control:"physics")

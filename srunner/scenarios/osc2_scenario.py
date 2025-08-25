@@ -244,16 +244,27 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
         elif isinstance(modifier, FollowTrajectoryModifier):
             waypoints = modifier.get_points()
             times = modifier.get_times()
+            control = modifier.get_control()
             actor_name = modifier.get_actor_name()
             actor = CarlaDataProvider.get_actor_by_name(actor_name)
 
-            _map = CarlaDataProvider.get_map()
-            initial_transform = _map.get_waypoint(carla.Location(waypoints[0][0], waypoints[0][1], waypoints[0][2])).transform
-            initial_transform.location.z += 5
+            initial_transform = OSC2Helper.get_init_trajectory_transform(waypoints)
             actor_visible = ActorTransformSetter(actor, initial_transform)
             father_tree.add_child(actor_visible)
 
-            controller_atomic = ChangeActorControl(actor, control_py_module=None, args={})
+            if control == "physics":
+                control_module = None
+                scenario_path = ""
+            elif control == "velocity":
+                control_module = "vehicle_velocity_control.py"
+                scenario_path = "srunner/scenariomanager/actorcontrols/"
+            elif control == "teleport":
+                control_module = "vehicle_teleport_control.py"
+                scenario_path = "srunner/scenariomanager/actorcontrols/"
+            else:
+                raise ValueError(f"Unknown control scheme '{control}' for follow trajectory modifier")
+
+            controller_atomic = ChangeActorControl(actor, control_py_module=control_module, args={}, scenario_file_path=scenario_path)
             father_tree.add_child(controller_atomic)
 
             follow_traj = ChangeActorWaypoints(actor, waypoints=list(zip(waypoints, ['shortest'] * len(waypoints))), times=times, name="FollowTrajectory", is_osc1=False)
@@ -946,30 +957,41 @@ class OSC2Scenario(BasicScenario):
                         wps = []
                         ts = []
 
-                        if arguments[0] == 'points':
-                            points = flatten(arguments[1])
-                            for p in points:
-                                px, py, pz, t = p.split(",")
-                                wp = [float(px), float(py), float(pz)]
-                                wps.append(wp)
-                                ts.append(float(t))
+                        for argument in arguments:
 
-                        elif arguments[0] == 'input_file':
+                            if argument[0] == 'control':
+                                control = argument[1]
+                                keyword_args['control'] = control
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
 
-                            with open(arguments[1], newline='') as csvfile:
-                                reader = csv.reader(csvfile)
-                                points = [row for row in reader]
+                            elif argument[0] == 'points':
+                                points = flatten(argument[1])
                                 for p in points:
-                                    wps.append([float(p[0]), float(p[1]), float(p[2])])
-                                    ts.append(float(p[3]))
+                                    px, py, pz, t = p.split(",")
+                                    wp = [float(px), float(py), float(pz)]
+                                    wps.append(wp)
+                                    ts.append(float(t))
+                                keyword_args['points'] = wps
+                                keyword_args['times'] = ts
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
 
-                        else:
-                            raise ValueError("follow_trajectory inputs need to be either 'points' or 'file'")
+                            elif argument[0] == 'input_file':
 
-                        keyword_args['points'] = wps
-                        keyword_args['times'] = ts
-                        modifier_ins.set_args(keyword_args)
-                        location_modifiers.append(modifier_ins)
+                                with open(argument[1], newline='') as csvfile:
+                                    reader = csv.reader(csvfile)
+                                    points = [row for row in reader]
+                                    for p in points:
+                                        wps.append([float(p[0]), float(p[1]), float(p[2])])
+                                        ts.append(float(p[3]))
+                                keyword_args['points'] = wps
+                                keyword_args['times'] = ts
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
+
+                            else:
+                                raise ValueError(f"Detected an unexpect input '{argument[0]}' for the follow_trajectory modifier")
 
                     else:
                         raise NotImplementedError(
