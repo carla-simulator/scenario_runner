@@ -202,3 +202,11 @@ class OSC2Helper(object):
             )
 
         return list_of_lists[:1] + OSC2Helper.flat_list(list_of_lists[1:])
+
+    @staticmethod
+    def get_init_trajectory_transform(trajectory):
+        loc_0 = carla.Location(trajectory[0][0], trajectory[0][1], trajectory[0][2])
+        loc_1 = carla.Location(trajectory[1][0], trajectory[1][1], trajectory[1][2])
+        direction = loc_1 - loc_0
+        yaw = math.degrees(math.atan2(direction.y, direction.x))
+        return carla.Transform(loc_0, carla.Rotation(yaw=yaw))
