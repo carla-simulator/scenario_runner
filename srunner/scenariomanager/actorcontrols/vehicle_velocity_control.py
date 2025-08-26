@@ -45,6 +45,10 @@ class VehicleVelocityControl(BasicControl):
         physics_control.wheels = wheels_control
         self._actor.apply_physics_control(physics_control)
 
+        # This is the maximum amount of time used to aim the vehicle towards the next point.
+        # Used to avoid weird lateral slides if the time between point is high.
+        self._max_yaw_time = 1
+
     def reset(self):
         """
         Reset the controller
@@ -92,7 +96,7 @@ class VehicleVelocityControl(BasicControl):
             delta_yaw = delta_yaw - 360
         elif delta_yaw < -180:
             delta_yaw = delta_yaw + 360
-        angular_speed = delta_yaw / delta_time
+        angular_speed = delta_yaw / min(delta_time, self._max_yaw_time)
         angular_velocity = carla.Vector3D(0, 0, angular_speed)
 
         self._actor.set_target_velocity(linear_velocity)
