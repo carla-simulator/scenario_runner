@@ -1006,9 +1006,6 @@ class OSC2Scenario(BasicScenario):
                 self.__cur_behavior.add_child(behavior)
                 return None
 
-            # for mod in location_modifiers:
-            #     print(mod)
-
             process_location_modifier(
                 self.father_ins.config, location_modifiers, self.__duration, actor_drive
             )
