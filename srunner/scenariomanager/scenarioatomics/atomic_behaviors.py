@@ -887,17 +887,6 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         return py_trees.common.Status.RUNNING
 
-    def _update_speed(self, actor, target_waypoint, remaining_time):
-        if self._is_osc1:
-            target_location = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
-                target_waypoint[0]).location
-        else:
-            point = target_waypoint[0]
-            target_location = carla.Location(point[0],point[1],point[2])
-        remaining_dist = calculate_distance(CarlaDataProvider.get_location(self._actor), target_location)
-        target_speed = remaining_dist / max(remaining_time, 0.001)
-        actor.update_target_speed(target_speed)
-
 
 class ChangeActorWaypointsToReachPosition(ChangeActorWaypoints):
 
