@@ -105,7 +105,6 @@ class Path:
         start_point = start_point.split(",")
         end_point = end_point.split(",")
         cls.is_explicit = PathExplicit(start_point, end_point, tolerance)
-        print(cls.is_explicit)
 
     @classmethod
     def path_over_speed_limit_change(cls, first_speed, sec_speed):
