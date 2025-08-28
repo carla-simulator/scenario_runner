@@ -15,7 +15,7 @@ scenario top:
             follow_trajectory(input_file: "srunner/examples/resources/ego_logs.csv", control: "physics")
 
         npc1.drive(path) with:
-            follow_trajectory(input_file: "srunner/examples/resources/npc_logs.csv", control: "physics")
+            follow_trajectory(input_file: "srunner/examples/resources/npc1_logs.csv", control: "physics")
 
         npc2.drive(path) with:
             follow_trajectory(input_file: "srunner/examples/resources/npc2_logs.csv", control: "physics")
