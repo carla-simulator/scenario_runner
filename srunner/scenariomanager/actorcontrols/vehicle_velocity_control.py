@@ -48,6 +48,7 @@ class VehicleVelocityControl(BasicControl):
         # This is the maximum amount of time used to aim the vehicle towards the next point.
         # Used to avoid weird lateral slides if the time between point is high.
         self._max_yaw_time = 1
+        self._distance_threshold = 1
 
     def reset(self):
         """
@@ -62,6 +63,7 @@ class VehicleVelocityControl(BasicControl):
         Teleports the vehicle to a given waypoint on each tick. Use the location from the waypoints
         but calculate the transform so that it is always pointing towards the next waypoint.
         """
+
         if not self._waypoints:
             return
         if not self._start_time:
@@ -88,17 +90,22 @@ class VehicleVelocityControl(BasicControl):
         linear_speed = (target_transform.location.distance(current_transform.location)) / delta_time
         linear_velocity = linear_speed * target_vec
 
-        delta_yaw = math.degrees(math.atan2(target_vec.y, target_vec.x)) - current_transform.rotation.yaw
+        self._actor.set_target_velocity(linear_velocity)
 
-        if math.fabs(delta_yaw) > 360:
-            delta_yaw = delta_yaw % 360
+
+        for i in range(len(self._waypoints)):
+            target_transform = self._waypoints[i]
+            target_time = self._times[i]
+            if current_transform.location.distance(target_transform.location) > self._distance_threshold:
+                break
+
+        delta_time = target_time + self._start_time - current_time
+        delta_yaw = math.degrees(math.atan2(target_vec.y, target_vec.x)) - current_transform.rotation.yaw
+        delta_yaw = delta_yaw % 360
         if delta_yaw > 180:
             delta_yaw = delta_yaw - 360
-        elif delta_yaw < -180:
-            delta_yaw = delta_yaw + 360
         angular_speed = delta_yaw / min(delta_time, self._max_yaw_time)
         angular_velocity = carla.Vector3D(0, 0, angular_speed)
 
-        self._actor.set_target_velocity(linear_velocity)
         self._actor.set_target_angular_velocity(angular_velocity)
         self._actor.apply_control(carla.VehicleControl(throttle=0.3))  # Make the wheels turn

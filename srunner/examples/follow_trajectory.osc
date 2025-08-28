@@ -12,10 +12,10 @@ scenario top:
     do parallel(duration: 18s):         # Execute the following lines in parallel
 
         ego_vehicle.drive(path) with:
-            follow_trajectory(input_file: "srunner/examples/resources/ego_logs.csv", control:"physics")
+            follow_trajectory(input_file: "srunner/examples/resources/ego_logs.csv", control: "physics")
 
         npc1.drive(path) with:
-            follow_trajectory(input_file: "srunner/examples/resources/npc1_logs.csv", control:"physics")
+            follow_trajectory(input_file: "srunner/examples/resources/npc1_logs.csv", control: "physics")
 
         npc2.drive(path) with:
-            follow_trajectory(input_file: "srunner/examples/resources/npc2_logs.csv", control:"physics")
+            follow_trajectory(input_file: "srunner/examples/resources/npc2_logs.csv", control: "physics")

@@ -30,6 +30,8 @@ class VehicleTeleportControl(BasicControl):
 
 
     def __init__(self, actor, args=None):
+        self._prev_yaw = None
+        self._distance_threshold = 0.01
         super(VehicleTeleportControl, self).__init__(actor)
 
     def reset(self):
@@ -49,9 +51,17 @@ class VehicleTeleportControl(BasicControl):
             return
         if not self._start_time:
             self._start_time = GameTime.get_time()
+        if not self._prev_yaw:
+            self._prev_yaw = self._actor.get_transform().rotation.yaw
 
         transform = self._waypoints.pop(0)
         vec = self._waypoints[0].location - transform.location
-        yaw = math.degrees(math.atan2(vec.y, vec.x))
+
+        if abs(vec.x) < self._distance_threshold and abs(vec.y) < self._distance_threshold:
+            yaw = self._prev_yaw  # Vehicle is stopped, avoid changing the yaw
+        else:
+            yaw = math.degrees(math.atan2(vec.y, vec.x))
 
         self._actor.set_transform(carla.Transform(transform.location, carla.Rotation(yaw=yaw)))
+
+        self._prev_yaw = yaw
