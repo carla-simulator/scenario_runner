@@ -92,19 +92,25 @@ class VehicleVelocityControl(BasicControl):
 
         self._actor.set_target_velocity(linear_velocity)
 
-
+        reached_end = True
         for i in range(len(self._waypoints)):
             target_transform = self._waypoints[i]
             target_time = self._times[i]
             if current_transform.location.distance(target_transform.location) > self._distance_threshold:
+                reached_end = False
                 break
 
-        delta_time = target_time + self._start_time - current_time
-        delta_yaw = math.degrees(math.atan2(target_vec.y, target_vec.x)) - current_transform.rotation.yaw
-        delta_yaw = delta_yaw % 360
-        if delta_yaw > 180:
-            delta_yaw = delta_yaw - 360
-        angular_speed = delta_yaw / min(delta_time, self._max_yaw_time)
+        if not reached_end:
+            delta_time = target_time + self._start_time - current_time
+            target_vec = target_transform.location - current_transform.location
+            delta_yaw = math.degrees(math.atan2(target_vec.y, target_vec.x)) - current_transform.rotation.yaw
+            delta_yaw = delta_yaw % 360
+            if delta_yaw > 180:
+                delta_yaw = delta_yaw - 360
+            angular_speed = delta_yaw / min(delta_time, self._max_yaw_time)
+        else:
+            angular_speed = 0
+
         angular_velocity = carla.Vector3D(0, 0, angular_speed)
 
         self._actor.set_target_angular_velocity(angular_velocity)
