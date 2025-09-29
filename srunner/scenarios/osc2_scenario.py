@@ -6,7 +6,10 @@ import operator
 import random
 import re
 import sys
+import csv
 from typing import List, Tuple
+
+import carla
 
 import py_trees
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -24,12 +27,14 @@ from srunner.osc2_dm.physical_types import Physical, Range
 # from sqlalchemy import true
 # from srunner.osc2_stdlib import event, variables
 from srunner.osc2_stdlib.modifier import (
+    Modifier,
     AccelerationModifier,
     ChangeLaneModifier,
     ChangeSpeedModifier,
     LaneModifier,
     PositionModifier,
     SpeedModifier,
+    FollowTrajectoryModifier,
 )
 
 # OSC2
@@ -43,6 +48,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     LaneChange,
     UniformAcceleration,
     WaypointFollower,
+    ChangeActorControl,
     calculate_distance,
 )
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
@@ -55,6 +61,16 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import oneshot_with_check
 from srunner.tools.osc2_helper import OSC2Helper
 
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorWaypoints
+
+def flatten(nested):
+    result = []
+    for item in nested:
+        if isinstance(item, list):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
 
 def para_type_str_sequence(config, arguments, line, column, node):
     retrieval_name = ""
@@ -132,7 +148,7 @@ def para_type_str_sequence(config, arguments, line, column, node):
 
 
 def process_speed_modifier(
-    config, modifiers, duration: float, all_duration: float, father_tree
+    config: OSC2ScenarioConfiguration, modifiers: list[Modifier], duration: float, all_duration: float, father_tree
 ):
     if not modifiers:
         return
@@ -197,7 +213,7 @@ def process_speed_modifier(
             LOG_WARNING("not implement modifier")
 
 
-def process_location_modifier(config, modifiers, duration: float, father_tree):
+def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list[Modifier], duration: float, father_tree):
     # position([distance: ]<distance> | time: <time>, [ahead_of: <car> | behind: <car>], [at: <event>])
     # lane([[lane: ]<lane>][right_of | left_of | same_as: <car>] | [side_of: <car>, side: <av-side>][at: <event>])
     """
@@ -226,6 +242,35 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             father_tree.add_child(continue_drive)
             print("END of change lane--")
             return
+        elif isinstance(modifier, FollowTrajectoryModifier):
+            waypoints = modifier.get_points()
+            times = modifier.get_times()
+            control = modifier.get_control()
+            actor_name = modifier.get_actor_name()
+            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+
+            initial_transform = OSC2Helper.get_init_trajectory_transform(waypoints)
+            actor_visible = ActorTransformSetter(actor, initial_transform)
+            father_tree.add_child(actor_visible)
+
+            if control == "physics":
+                control_module = None
+                scenario_path = ""
+            elif control == "velocity":
+                control_module = "vehicle_velocity_control.py"
+                scenario_path = "srunner/scenariomanager/actorcontrols/"
+            elif control == "teleport":
+                control_module = "vehicle_teleport_control.py"
+                scenario_path = "srunner/scenariomanager/actorcontrols/"
+            else:
+                raise ValueError(f"Unknown control scheme '{control}' for follow trajectory modifier")
+
+            controller_atomic = ChangeActorControl(actor, control_py_module=control_module, args={}, scenario_file_path=scenario_path)
+            father_tree.add_child(controller_atomic)
+
+            follow_traj = ChangeActorWaypoints(actor, waypoints=list(zip(waypoints, ['shortest'] * len(waypoints))), times=times, name="FollowTrajectory", is_osc1=False)
+            father_tree.add_child(follow_traj)
+
     # start
     # Deal with absolute positioning vehicles first, such as lane(1, at: start)
     event_start = [
@@ -876,7 +921,7 @@ class OSC2Scenario(BasicScenario):
                         elif isinstance(arguments, Physical):
                             keyword_args["desired_speed"] = arguments
                         else:
-                            return f"Needed 1 arguments, but given {len(arguments)}arguments."
+                            return f"Needed 1 arguments, but given {len(arguments)} arguments."
 
                         modifier_ins.set_args(keyword_args)
 
@@ -906,6 +951,49 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins.set_args(keyword_args)
 
                         location_modifiers.append(modifier_ins)
+                    elif modifier_name == "follow_trajectory":
+                        modifier_ins = FollowTrajectoryModifier(actor, modifier_name)
+
+                        keyword_args = {}
+                        wps = []
+                        ts = []
+
+                        for argument in arguments:
+
+                            if argument[0] == 'control':
+                                control = argument[1]
+                                keyword_args['control'] = control
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
+
+                            elif argument[0] == 'points':
+                                points = flatten(argument[1])
+                                for p in points:
+                                    px, py, pz, t = p.split(",")
+                                    wp = [float(px), float(py), float(pz)]
+                                    wps.append(wp)
+                                    ts.append(float(t))
+                                keyword_args['points'] = wps
+                                keyword_args['times'] = ts
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
+
+                            elif argument[0] == 'input_file':
+
+                                with open(argument[1], newline='') as csvfile:
+                                    reader = csv.reader(csvfile)
+                                    points = [row for row in reader]
+                                    for p in points:
+                                        wps.append([float(p[0]), float(p[1]), float(p[2])])
+                                        ts.append(float(p[3]))
+                                keyword_args['points'] = wps
+                                keyword_args['times'] = ts
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
+
+                            else:
+                                raise ValueError(f"Detected an unexpect input '{argument[0]}' for the follow_trajectory modifier")
+
                     else:
                         raise NotImplementedError(
                             f"no implentment function: {modifier_name}"
@@ -956,6 +1044,7 @@ class OSC2Scenario(BasicScenario):
                     "keep_lane",
                     "change_speed",
                     "change_lane",
+                    "follow_trajectory"
                 )
             ):
                 line, column = node.get_loc()

@@ -2171,7 +2171,7 @@ class YieldToEmergencyVehicleTest(Criterion):
 
 class ScenarioTimeoutTest(Criterion):
     """
-    Atomic Criterion to detect if the actor has been incapable of finishing an scenario
+    Atomic Criterion to detect if the actor has been incapable of finishing a scenario
 
     Args:
         actor (carla.Actor): CARLA actor to be used for this test
