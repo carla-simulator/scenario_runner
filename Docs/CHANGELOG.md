@@ -1,4 +1,5 @@
 ## Table of Contents
+* [CARLA ScenarioRunner 0.9.16](#carla-scenariorunner-0916)
 * [CARLA ScenarioRunner 0.9.15](#carla-scenariorunner-0915)
 * [CARLA ScenarioRunner 0.9.13](#carla-scenariorunner-0913)
 * [CARLA ScenarioRunner 0.9.12](#carla-scenariorunner-0912)
@@ -12,11 +13,23 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
-## Upcoming
+## CARLA ScenarioRunner 0.9.16
+
+### :rocket: New Features
+* New `frameRate` argument to specify the a custom frame rate. Only works in synchronous mode. 
 * Improvements to the CarlaDataProvider:
  - Added `spawn_actor` for a blueprint based actor creation similar to `World.spawn_actor`
-* Removed SyntaxWarnings in osc2_scenario.py
+ - Changed how the `request_new_actor` function handles spawn transform by having making the `spawn_point` input optional. Giving no spawn point or random location results in an error.
 * Implement `strtobool` formerly included in `distutils`, which is removed in Python 3.12.
+* OpenSCENARIO now supports scientific notation.
+* Removed SyntaxWarnings in osc2_scenario.py.
+
+### :bug: Bug Fixes
+* Fixed issue at the metrics wheel aprser returning the incorrect data.
+* Fixed several functions that were destroying the actor without using the CarlaDataProvider.
+
+### :ghost: Maintenance
+* Several have had their code quality improved and added type-hint comments.
 
 ## CARLA ScenarioRunner 0.9.15
 ### :rocket: New Features

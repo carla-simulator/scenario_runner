@@ -125,7 +125,7 @@ export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.13-py
 Launch the CARLA simulation.
 
 ```bash
-cd /home/xxx/CARLA_0.9.15
+cd /home/xxx/CARLA_0.9.16
 ./CarlaUE4.sh
 ```
 
