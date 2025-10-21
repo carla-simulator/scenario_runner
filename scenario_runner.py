@@ -325,13 +325,21 @@ class ScenarioRunner(object):
         with open(file_name, 'w', encoding='utf-8') as fp:
             json.dump(criteria_dict, fp, sort_keys=False, indent=4)
 
+    def _get_town_name(self):
+        town_name = self.world.get_map().name
+        town_id = os.path.basename(town_name)[0:6]
+        return town_id
+
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """
         Load a new CARLA world and provide data to CarlaDataProvider
         """
 
         if self._args.reloadWorld:
-            self.world = self.client.load_world(town)
+            if self._get_town_name() == town[0:6] :
+                print(f"{town} is already loaded into the simulator.")
+            else:
+                self.world = self.client.load_world(town)
         else:
             # if the world should not be reloaded, wait at least until all ego vehicles are ready
             ego_vehicle_found = False

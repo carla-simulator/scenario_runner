@@ -16,3 +16,4 @@ results*.txt
 *.svg
 *.dot
 .venv
+test.ipynb
