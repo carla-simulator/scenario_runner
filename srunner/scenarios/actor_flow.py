@@ -7,18 +7,18 @@
 
 """
 Scenarios in which another (opposite) vehicle 'illegally' takes
-priority, e.g. by running a red traffic light.
+priority, e.g. by running a red traffic light.#其他车辆违规有限通行，例如对方闯红灯
 """
-
-from __future__ import print_function
-
-import py_trees
+#基础模块和兼容性
+from __future__ import print_function#兼容python3和2,保证print行为一致
+import py_trees#行为树库，用于编排复杂有逻辑顺序的行为
 import carla
-
 from agents.navigation.local_planner import RoadOption
+
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, ScenarioTimeout, WaitForever
+
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToLocation,
                                                                                WaitEndIntersection,
@@ -42,13 +42,14 @@ def convert_dict_to_location(actor_dict):
     )
     return location
 
-def get_value_parameter(config, name, p_type, default):
+def get_value_parameter(config, name, p_type, default):#config代表所有的配置信息，name即名字，比如说speed，p_type代表类型，如int，float，default代表默认值
     if name in config.other_parameters:
         return p_type(config.other_parameters[name]['value'])
     else:
         return default
 
 def get_interval_parameter(config, name, p_type, default):
+    print(dir(config))
     if name in config.other_parameters:
         return [
             p_type(config.other_parameters[name]['from']),
@@ -56,7 +57,9 @@ def get_interval_parameter(config, name, p_type, default):
         ]
     else:
         return default
-
+#########################
+#辅助函数
+#########################
 class EnterActorFlow(BasicScenario):
     """
     This class holds everything required for a scenario in which another vehicle runs a red light
@@ -98,21 +101,23 @@ class EnterActorFlow(BasicScenario):
         Hero vehicle is entering a junction in an urban area, at a signalized intersection,
         while another actor runs a red lift, forcing the ego to break.
         """
-        source_wp = self._map.get_waypoint(self._start_actor_flow)
+        source_wp = self._map.get_waypoint(self._start_actor_flow)#获得起点终点
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
         # Get all lanes
-        source_wps = get_same_dir_lanes(source_wp)
+        source_wps = get_same_dir_lanes(source_wp)#辅助函数，获取所有的同向车道
         sink_wps = get_same_dir_lanes(sink_wp)
 
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)#创建一个parallel行为树节点，只要有一个任务成功，整个并行任务成功
 
         for source_wp, sink_wp in zip(source_wps, sink_wps):
+            #第一个子任务，条件节点
             root.add_child(
                 InTriggerDistanceToLocation(
                     self.ego_vehicles[0],
                     sink_wp.transform.location,
+                    
                     self._sink_distance,
                 )
             )

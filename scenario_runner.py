@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+# 1. 必须是第一条代码语句 (Shebang和编码声明除外)
+from __future__ import print_function
+
 # Copyright (c) 2018-2020 Intel Corporation
-#
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
@@ -12,8 +14,6 @@ This is the main script to be executed when running a scenario.
 It loads the scenario configuration, loads the scenario and manager,
 and finally triggers the scenario execution.
 """
-
-from __future__ import print_function
 
 import glob
 import traceback

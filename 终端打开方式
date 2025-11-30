@@ -1,0 +1,37 @@
+终端里面打开carla
+cd ~/download/CARLA_0.9.16
+./CarlaUE4.sh 
+
+~/.bashrc
+
+python scenario_runner.py --openscenario /home/zhang/下载/scenario_runner/srunner/examples/FollowLeadingVehicle.xosc --reloadWorld 
+
+# 在终端2
+# 注意目录是 CARLA 的 examples 目录
+cd ~/download/CARLA_0.9.16/PythonAPI/examples/
+source /home/zhang/carla_env/bin/activate
+# -n 10 代表10辆车, -w 5 代表5个行人。没有 --map 参数！
+python generate_traffic.py -n 10 -w 5 --tm-port 8000
+
+
+
+python /home/zhang/下载/scenario_runner/manual_control.py --rolename hero
+
+在文件内容中，找到您想运行的那个 <scenario> 标签
+<scenarios>
+    <scenario name="NoSignalJunctionScenario" type="NoSignalJunctionCross" town="Town03">
+        <!-- ... -->
+    </scenario>
+</scenarios>
+
+
+#carla端口被占用
+1.列出所有的端口
+sudo lsof -i :2000
+接下来会出现：
+COMMAND     PID    USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+CarlaUE4  12345   zhang   8u  IPv4 135790      0t0  TCP *:2000 (LISTEN)
+```    *   `COMMAND`: 程序的名字，这里应该是 `CarlaUE4`。
+*   `PID`: **这是最关键的信息！** 它是进程的ID号，在这个例子里是 `12345`。
+在同一个终端里面结束再打开
+sudo kill -9 12345

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="MyTakeoverScenario_Complex"
+              type="SuddenCutInScenario"
+              town="Town04"
+              scenario_file="srunner/scenarios/my_complex_scenario.py"
+              target_speed="30.0"
+              cut_in_distance="8.0"
+              num_background_vehicles="25"
+              trigger_region="240,260,-160,-140">
+        
+        <ego_vehicle x="250.0" y="-150.0" z="0.3" yaw="180" rolename="hero"/>
+
+    </scenario>
+</scenarios>
