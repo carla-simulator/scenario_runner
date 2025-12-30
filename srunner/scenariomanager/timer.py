@@ -29,7 +29,7 @@ class GameTime(object):
     _current_game_time = 0.0  # Elapsed game time after starting this Timer
     _carla_time = 0.0
     _last_frame = 0
-    _platform_timestamp = 0
+    _platform_timestamp = datetime.datetime.fromtimestamp(0)
     _init = False
 
     @staticmethod
