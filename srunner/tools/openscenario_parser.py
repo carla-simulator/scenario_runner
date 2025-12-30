@@ -11,7 +11,7 @@ This module provides a parser for scenario configuration files based on OpenSCEN
 
 from __future__ import print_function
 
-from distutils.util import strtobool
+from srunner.tools.util import strtobool
 import re
 import copy
 import datetime
@@ -105,7 +105,10 @@ class ParameterRef:
         """
         Returns: True when text is a literal/number
         """
-        return self._is_matching(pattern=r"(-)?\d+(\.\d*)?") or self._is_matching(pattern=r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?")
+        return (
+            self._is_matching(pattern=r"(-)?\d+(\.\d*)?")
+            or self._is_matching(pattern=r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?")
+        )
 
     def is_parameter(self) -> bool:
         """
@@ -132,7 +135,7 @@ class ParameterRef:
         elif self.is_parameter():
             value = CarlaDataProvider.get_osc_global_param_value(self.reference_text)
             if value is None:
-                raise Exception("Parameter '{}' is not defined".format(self.reference_text[1:]))
+                raise ValueError("Parameter '{}' is not defined".format(self.reference_text[1:]))
         else:
             value = None
         return value
@@ -142,14 +145,14 @@ class ParameterRef:
         if value is not None:
             return float(value)
         else:
-            raise Exception("could not convert '{}' to float".format(self.reference_text))
+            raise ValueError("could not convert '{}' to float".format(self.reference_text))
 
     def __int__(self) -> int:
         value = self.get_interpreted_value()
         if value is not None:
             return int(float(value))
         else:
-            raise Exception("could not convert '{}' to int".format(self.reference_text))
+            raise ValueError("could not convert '{}' to int".format(self.reference_text))
 
     def __str__(self) -> str:
         value = self.get_interpreted_value()
@@ -221,6 +224,8 @@ class ParameterRef:
 
     def __abs__(self):
         return abs(self.__float__())
+
+    # TODO: Should implement __hash__
 
 
 class OpenScenarioParser(object):
@@ -1516,11 +1521,10 @@ class OpenScenarioParser(object):
             else:
                 raise AttributeError("Unknown private action")
 
+        elif list(action):
+            raise AttributeError("Unknown action: {}".format(maneuver_name))
         else:
-            if list(action):
-                raise AttributeError("Unknown action: {}".format(maneuver_name))
-            else:
-                return Idle(duration=0, name=maneuver_name)
+            return Idle(duration=0, name=maneuver_name)
 
         return atomic
 

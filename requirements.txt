@@ -1,12 +1,12 @@
 py-trees==0.8.3
-numpy==1.18.4; python_version >= '3.0'
-networkx==2.2
-Shapely==1.7.1
+numpy==1.24.4; python_version >= '3.0'
+networkx==3.4.2
+Shapely==2.1.1
 psutil
 xmlschema==1.0.18
 ephem
 tabulate
-opencv-python==4.2.0.32
+opencv-python==4.7.0.72
 matplotlib
 six
 simple-watchdog-timer

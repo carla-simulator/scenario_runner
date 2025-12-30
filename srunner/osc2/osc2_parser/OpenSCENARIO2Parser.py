@@ -12858,16 +12858,16 @@ class OpenSCENARIO2Parser(Parser):
                 else localctx.sIBaseUnitName.text
             )
             if (
-                not (unitName == "kg")
-                and not (unitName == "m")
-                and not (unitName == "s")
-                and not (unitName == "A")
-                and not (unitName == "K")
-                and not (unitName == "mol")
-                and not (unitName == "cd")
-                and not (unitName == "factor")
-                and not (unitName == "offset")
-                and not (unitName == "rad")
+                unitName != "kg"
+                and unitName != "m"
+                and unitName != "s"
+                and unitName != "A"
+                and unitName != "K"
+                and unitName != "mol"
+                and unitName != "cd"
+                and unitName != "factor"
+                and unitName != "offset"
+                and unitName != "rad"
             ):
                 print("unit name %s is not supported" % unitName)
                 raise NoViableAltException(self)
@@ -16692,7 +16692,7 @@ class OpenSCENARIO2Parser(Parser):
                 offsetName = (
                     None if localctx._Identifier is None else localctx._Identifier.text
                 )
-                if not (offsetName == "offset"):
+                if offsetName != "offset":
                     print("%s must be offset" % offsetName)
                     raise NoViableAltException(self)
 
@@ -22502,7 +22502,7 @@ class OpenSCENARIO2Parser(Parser):
         return localctx
 
     def sempred(self, localctx: RuleContext, ruleIndex: int, predIndex: int):
-        if self._predicates == None:
+        if self._predicates is None:
             self._predicates = dict()
         self._predicates[4] = self.structuredIdentifier_sempred
         self._predicates[116] = self.relation_sempred

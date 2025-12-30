@@ -23,7 +23,7 @@ from datetime import datetime
 try:
     from packaging.version import Version
 except ImportError:
-    from distutils.version import LooseVersion as Version # Python 2 fallback
+    from distutils.version import LooseVersion as Version  # Python 2 fallback
 import importlib
 import inspect
 import os
@@ -35,11 +35,13 @@ import json
 try:
     # requires Python 3.8+
     from importlib.metadata import metadata
+
     def get_carla_version():
         return Version(metadata("carla")["Version"])
 except ModuleNotFoundError:
     # backport checking for older Python versions; module is deprecated
     import pkg_resources
+
     def get_carla_version():
         return Version(pkg_resources.get_distribution("carla").version)
 
@@ -106,7 +108,11 @@ class ScenarioRunner(object):
         self.client.set_timeout(self.client_timeout)
         carla_version = get_carla_version()
         if carla_version < Version(MIN_CARLA_VERSION):
-            raise ImportError("CARLA version {} or newer required. CARLA version found: {}".format(MIN_CARLA_VERSION, carla_version))
+            raise ImportError(
+                "CARLA version {} or newer required. CARLA version found: {}".format(
+                    MIN_CARLA_VERSION, carla_version
+                )
+            )
 
         # Load agent if requested via command line args
         # If something goes wrong an exception will be thrown by importlib (ok here)
@@ -582,8 +588,11 @@ def main():
                         help='Frame rate (Hz) to use in \'sync\' mode (default: 20)')
 
     parser.add_argument(
-        '--scenario', help='Name of the scenario to be executed. Use the preposition \'group:\' to run all scenarios of one class, e.g. ControlLoss or FollowLeadingVehicle')
-    parser.add_argument('--openscenario', help='Provide an OpenSCENARIO definition')
+        "--scenario",
+        help="Name of the scenario to be executed. Use the preposition 'group:' to run all scenarios of one class"
+             " e.g. ControlLoss or FollowLeadingVehicle",
+    )
+    parser.add_argument("--openscenario", help="Provide an OpenSCENARIO definition")
     parser.add_argument('--openscenarioparams', help='Overwrited for OpenSCENARIO ParameterDeclaration')
     parser.add_argument('--openscenario2', help='Provide an openscenario2 definition')
     parser.add_argument('--route', help='Run a route as a scenario', type=str)
@@ -604,11 +613,20 @@ def main():
     parser.add_argument('--debug', action="store_true", help='Run with debug output')
     parser.add_argument('--reloadWorld', action="store_true",
                         help='Reload the CARLA world before starting a scenario (default=True)')
-    parser.add_argument('--record', type=str, default='',
-                        help='Path were the files will be saved, relative to SCENARIO_RUNNER_ROOT.\nActivates the CARLA recording feature and saves to file all the criteria information.')
-    parser.add_argument('--randomize', action="store_true", help='Scenario parameters are randomized')
-    parser.add_argument('--repetitions', default=1, type=int, help='Number of scenario executions')
-    parser.add_argument('--waitForEgo', action="store_true", help='Connect the scenario to an existing ego vehicle')
+    parser.add_argument(
+        "--record",
+        type=str,
+        default="",
+        help="Path were the files will be saved, relative to SCENARIO_RUNNER_ROOT."
+             "\nActivates the CARLA recording feature and saves to file all the criteria information.",
+    )
+    parser.add_argument("--randomize", action="store_true", help="Scenario parameters are randomized")
+    parser.add_argument("--repetitions", default=1, type=int, help="Number of scenario executions")
+    parser.add_argument(
+        "--waitForEgo",
+        action="store_true",
+        help="Connect the scenario to an existing ego vehicle",
+    )
 
     arguments = parser.parse_args()
     # pylint: enable=line-too-long

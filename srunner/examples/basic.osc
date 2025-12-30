@@ -28,6 +28,14 @@ unit mmph                of velocity is SI(m: 1, s: -1, factor: 0.000000278)
 unit millimeter_per_hour of velocity is SI(m: 1, s: -1, factor: 0.000000278)
 # end::library-physical-velocity[]
 
+# tag::library-physical-angle[]
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)
+unit deg    of angle is SI(rad: 1, factor: 57.295779513)
+unit radian of angle is SI(rad: 1, factor: 1)
+unit rad    of angle is SI(rad: 1, factor: 1)
+# end::library-physical-angle[]
+
 actor dut
 actor Path
 modifier Path.set_map

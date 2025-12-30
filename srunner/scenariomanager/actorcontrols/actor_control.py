@@ -106,7 +106,7 @@ class ActorControl(object):
         if start_time:
             self._last_longitudinal_command = start_time
 
-    def update_waypoints(self, waypoints, start_time=None):
+    def update_waypoints(self, waypoints, times=None, start_time=None):
         """
         Update the actor's waypoints
 
@@ -114,7 +114,7 @@ class ActorControl(object):
             waypoints (List of carla.Transform): List of new waypoints.
             start_time (float): Start time of the new "maneuver" [s].
         """
-        self.control_instance.update_waypoints(waypoints)
+        self.control_instance.update_waypoints(waypoints, times)
         if start_time:
             self._last_waypoint_command = start_time
 

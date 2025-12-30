@@ -512,7 +512,7 @@ class Osc2TraceParser(object):
 
                             elif name == "use_gear_auto_box":
                                 name = "use_gear_autobox"
-                                value = True if elements[1] == "true" else False
+                                value = elements[1] == "true"
                                 setattr(physics_control, name, value)
 
                             elif "forward_gears" in name or "wheels" in name:

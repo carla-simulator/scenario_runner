@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
         LOG_INFO("======================== "+"error file result"+" ========================")
         for error_file in error_file_list:
-             LOG_INFO(error_file)
+            LOG_INFO(error_file)
 
     elif os.path.isfile(sys.argv[1]):
         new_file, import_msg = Preprocess(sys.argv[1]).import_process()
