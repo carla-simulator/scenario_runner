@@ -20,10 +20,7 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 from datetime import datetime
-try:
-    from packaging.version import Version
-except ImportError:
-    from distutils.version import LooseVersion as Version  # Python 2 fallback
+from packaging.version import Version
 import importlib
 import inspect
 import os
@@ -32,18 +29,11 @@ import sys
 import time
 import json
 
-try:
-    # requires Python 3.8+
-    from importlib.metadata import metadata
+from importlib.metadata import metadata
 
-    def get_carla_version():
-        return Version(metadata("carla")["Version"])
-except ModuleNotFoundError:
-    # backport checking for older Python versions; module is deprecated
-    import pkg_resources
 
-    def get_carla_version():
-        return Version(pkg_resources.get_distribution("carla").version)
+def get_carla_version():
+    return Version(metadata("carla")["Version"])
 
 import carla
 
