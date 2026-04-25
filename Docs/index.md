@@ -6,7 +6,7 @@
 
 ScenarioRunner is a module that allows traffic scenario definition and execution for the [CARLA](http://carla.org/ ) simulator. The scenarios can be defined through a Python interface or using the [OpenSCENARIO](http://www.openscenario.org/) standard.  
   
-ScenarioRunner can also be used to prepare AD agents for their evaluation, by easily creating complex traffic scenarios and routes for the agents to navigate through. These results can be validated and shared in the [CARLA Leaderboard](https://leaderboard.carla.org/), an open platform for the community to fairly compare their progress, evaluating agents in realistic traffic situatoins.
+ScenarioRunner can also be used to prepare AD agents for their evaluation, by easily creating complex traffic scenarios and routes for the agents to navigate through. These results can be validated and shared in the [CARLA Leaderboard](https://leaderboard.carla.org/), an open platform for the community to fairly compare their progress, evaluating agents in realistic traffic situations.
 
 
 The CARLA forum has a specific section regarding ScenarioRunner, for users to post any doubts or suggestions that may arise during the reading of this documentation.  
