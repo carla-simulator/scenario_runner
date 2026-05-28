@@ -1,4 +1,5 @@
 ## Table of Contents
+* [Unreleased — CARLA 0.10.0 / UE5 compatibility](#unreleased--carla-0100--ue5-compatibility)
 * [CARLA ScenarioRunner 0.9.16](#carla-scenariorunner-0916)
 * [CARLA ScenarioRunner 0.9.15](#carla-scenariorunner-0915)
 * [CARLA ScenarioRunner 0.9.13](#carla-scenariorunner-0913)
@@ -12,6 +13,25 @@
 * [CARLA ScenarioRunner 0.9.5.1](#carla-scenariorunner-0951)
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
+
+## Unreleased — CARLA 0.10.0 / UE5 compatibility
+
+This release extends ScenarioRunner to run against the **CARLA 0.10.0** server (UE5 / Chaos physics) while keeping full compatibility with **CARLA 0.9.x** (UE4 / PhysX). The default supported map on UE5 is `Town10HD_Opt`; other UE5 maps remain reachable for users who explicitly target them via their own configs, `--configFile`, or `--additionalScenario`.
+
+### :rocket: New Features
+* New `srunner/tools/carla_compat.py` runtime version-detection layer. Auto-detects the installed CARLA wheel and exposes `IS_UE5` / `IS_UE4` flags plus version-keyed lookup tables. The `SR_CARLA_VERSION` environment variable can force a version when the wheel disagrees with the running server.
+* `CarlaDataProvider.create_blueprint` consults a version-keyed alias table on UE5, translating legacy blueprint ids (`vehicle.lincoln.mkz_2017`, `vehicle.audi.tt`, `vehicle.dodge.charger_police_2020`, `vehicle.carlamotors.carlacola`, …) to the 0.10.0 catalogue. The per-category fallback dict is also version-keyed so missing models degrade to a documented substitute instead of crashing.
+* New `srunner/examples_ue5/` directory for Town10HD_Opt-targeted scenario configs. `srunner/tools/scenario_parser.py` reads `examples_ue5/*.xml` first on UE5 servers, then falls back to `examples/*.xml`, with per-scenario-name dedup so UE5 entries override their legacy siblings. Initial UE5 configs added for `FollowLeadingVehicle_1`, `FollowLeadingVehicleWithObstacle_1`, and `OtherLeadingVehicle_1`.
+
+### :ghost: Maintenance
+* `VehicleVelocityControl.__init__` skips the wheel-friction-zeroing setup on UE5. The Chaos `WheelPhysicsControl.friction_force_multiplier` parameter is documented but `apply_physics_control` silently discards wheel-attribute writes on the current 0.10.0 build, and no other documented UE5 API exposes per-wheel friction-override for this controller's kinematic-injection use. The UE4 `tire_friction = 0` path is unchanged.
+
+### :wrench: Behavior delta on UE5
+* `VehicleVelocityControl` on UE5 continues to track heading-aligned `set_target_velocity` calls tightly (measured 101% of target over 5 s @ 1 m/s along the vehicle's forward axis); sharp lateral / cornering motion tracks less faithfully than on UE4 because wheel lateral friction cannot currently be suppressed. Tracked upstream in carla-ue5.
+* Legacy bicycle / motorbike blueprints are absent from the 0.10.0 catalogue; the alias table substitutes a four-wheel vehicle so spawns succeed, but two-wheeler scenarios lose their visual identity until upstream content lands.
+
+### :bug: Bug Fixes
+* Fixed a latent bug in `CarlaDataProvider.create_blueprint`: when the requested model id was missing and the per-category fallback id was also missing (empty filter result), the fallback path raised an uncaught `ValueError: 'a' cannot be empty` from `np.random.choice([])`. The fallback now degrades gracefully (fallback → `vehicle.*` → explicit diagnostic `ValueError`).
 
 ## CARLA ScenarioRunner 0.9.16
 
