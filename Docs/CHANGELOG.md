@@ -35,6 +35,9 @@ This release extends ScenarioRunner to run against the **CARLA 0.10.0** server (
 ### :bug: Bug Fixes
 * Fixed a latent bug in `CarlaDataProvider.create_blueprint`: when the requested model id was missing and the per-category fallback id was also missing (empty filter result), the fallback path raised an uncaught `ValueError: 'a' cannot be empty` from `np.random.choice([])`. The fallback now degrades gracefully (fallback → `vehicle.*` → explicit diagnostic `ValueError`).
 
+### :white_check_mark: Validation
+* End-to-end validated on a live CARLA 0.10.0 server (Town10HD_Opt) with the full compat stack integrated: `FollowLeadingVehicle_1` (60.05s game), `FollowLeadingVehicleWithObstacle_1` (120.05s game), and `OtherLeadingVehicle_1` (80.05s game) all run spawn → behavior-tree tick → criteria evaluation → result reporting. `CollisionTest` reports `SUCCESS` on every run; the `TIMEOUT` global result is expected in `--scenario` mode without `--agent`.
+
 ## CARLA ScenarioRunner 0.9.16
 
 ### :rocket: New Features
