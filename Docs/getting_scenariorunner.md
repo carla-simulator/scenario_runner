@@ -254,5 +254,39 @@ python scenario_runner.py --help
 
 ---
 
+## Running against CARLA 0.10.0 (UE5)
+
+ScenarioRunner supports both **CARLA 0.9.x** (UE4 / PhysX) and **CARLA 0.10.0+** (UE5 / Chaos) from the same source tree. The engine is auto-detected at runtime from the installed `carla` wheel; no code path needs to be selected by hand.
+
+__1. Install the matching CARLA 0.10.0 wheel.__ Use a Python ≥ 3.8 environment and install the `carla-0.10.0-*.whl` shipped with the 0.10.0 server build, then `pip install -r requirements.txt` from this repository.
+
+__2. Default supported map: `Town10HD_Opt`.__ The bundled UE5 example configs target `Town10HD_Opt` only. Other UE5 maps that ship with the server (e.g. `Town15`, `Mine_01`) remain reachable: target them with your own configs via `--configFile` / `--additionalScenario`.
+
+__3. Auto-detected blueprint translation.__ Legacy 0.9.x blueprint ids (e.g. `vehicle.lincoln.mkz_2017`, `vehicle.audi.tt`, `vehicle.dodge.charger_police_2020`) are translated to their 0.10.0 catalogue equivalents on the fly. Bicycle / motorbike blueprints are absent in 0.10.0 and substituted with a four-wheel vehicle so spawns succeed.
+
+__4. Version override (advanced).__ If the running server disagrees with the installed wheel, force the detection with the `SR_CARLA_VERSION` environment variable:
+
+```sh
+export SR_CARLA_VERSION=0.10.0   # force UE5 / Chaos code path
+export SR_CARLA_VERSION=0.9.16   # force UE4 / PhysX code path
+```
+
+__5. Example run against a UE5 server.__
+
+```sh
+# Launch the 0.10.0 server in another terminal first
+python scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld --sync
+```
+
+The runner picks up `srunner/examples_ue5/FollowLeadingVehicle.xml` (Town10HD_Opt) on a UE5 server, and falls back to `srunner/examples/FollowLeadingVehicle.xml` (Town01) on a 0.9.x server.
+
+### Behavior deltas on UE5
+
+A small number of UE4-only APIs have no working UE5 replacement and are dropped on the UE5 code path. See [CHANGELOG](CHANGELOG.md) for the full inventory.
+
+* `VehicleVelocityControl` (used by the OpenSCENARIO 2.0 `follow_trajectory` modifier with `control: "velocity"`) tracks heading-aligned trajectories tightly on UE5 but degrades on sharp lateral / cornering moves because Chaos exposes no working API to zero wheel friction.
+
+---
+
 Thus concludes the installation process for ScenarioRunner. In case any unexpected error or issue occurs, the [CARLA forum](https://forum.carla.org/c/using-carla/scenario-runner) is open to everybody. There is an _ScenarioRunner_ category to post problems and doubts regarding this module. 
 
