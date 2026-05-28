@@ -21,6 +21,8 @@ from six import iteritems
 import carla
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 
+from srunner.tools.carla_compat import actor_blueprint_categories, resolve_blueprint_id
+
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import Iterable
@@ -668,37 +670,35 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
             return False
 
-        _actor_blueprint_categories = {
-            'car': 'vehicle.tesla.model3',
-            'van': 'vehicle.volkswagen.t2',
-            'truck': 'vehicle.carlamotors.carlacola',
-            'trailer': '',
-            'semitrailer': '',
-            'bus': 'vehicle.volkswagen.t2',
-            'motorbike': 'vehicle.kawasaki.ninja',
-            'bicycle': 'vehicle.diamondback.century',
-            'train': '',
-            'tram': '',
-            'pedestrian': 'walker.pedestrian.0001',
-            'misc': 'static.prop.streetbarrier'
-        }
+        _actor_blueprint_categories = actor_blueprint_categories()
+
+        # Translate legacy ids (e.g. vehicle.lincoln.mkz_2017) to the engine-native
+        # equivalent on UE5; passthrough on 0.9.x.
+        resolved_model = resolve_blueprint_id(model)
 
         # Set the model
-        try:
-            blueprints = CarlaDataProvider._blueprint_library.filter(model)
-            if attribute_filter is not None:
-                for key, value in attribute_filter.items():
-                    blueprints = [x for x in blueprints if check_attribute_value(x, key, value)]
+        blueprints = list(CarlaDataProvider._blueprint_library.filter(resolved_model))
+        if attribute_filter is not None:
+            for key, value in attribute_filter.items():
+                blueprints = [x for x in blueprints if check_attribute_value(x, key, value)]
 
+        if blueprints:
             blueprint = CarlaDataProvider._rng.choice(blueprints)
-        except ValueError:
-            # The model is not part of the blueprint library. Let's take a default one for the given category
-            bp_filter = "vehicle.*"
-            new_model = _actor_blueprint_categories[actor_category]
-            if new_model != '':
-                bp_filter = new_model
-            print("WARNING: Actor model {} not available. Using instead {}".format(model, new_model))
-            blueprint = CarlaDataProvider._rng.choice(CarlaDataProvider._blueprint_library.filter(bp_filter))
+        else:
+            # The model is not part of the blueprint library. Try the category fallback,
+            # then degrade to 'vehicle.*' so an empty filter never throws uncaught.
+            fallback_model = _actor_blueprint_categories.get(actor_category, '')
+            print("WARNING: Actor model {} not available. Using instead {}".format(
+                model, fallback_model or 'vehicle.*'))
+            fallback_candidates = list(CarlaDataProvider._blueprint_library.filter(fallback_model)) \
+                if fallback_model else []
+            if not fallback_candidates:
+                fallback_candidates = list(CarlaDataProvider._blueprint_library.filter("vehicle.*"))
+            if not fallback_candidates:
+                raise ValueError(
+                    "No blueprint available for model {} (category {}); "
+                    "blueprint library is empty even for 'vehicle.*'".format(model, actor_category))
+            blueprint = CarlaDataProvider._rng.choice(fallback_candidates)
 
         # Set the color
         if color:
