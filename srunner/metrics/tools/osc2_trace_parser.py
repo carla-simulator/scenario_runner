@@ -14,7 +14,7 @@ the CARLA recorder into a readable dictionary
 import carla
 
 from srunner.tools.carla_compat import IS_UE5
-from srunner.metrics.tools.recorder_chaos import parse_chaos_physics_block
+from srunner.metrics.tools.recorder_chaos import parse_chaos_physics_block, skip_indented_section
 
 
 def parse_actor(info):
@@ -356,10 +356,7 @@ class Osc2TraceParser(object):
             # CARLA 0.10.0 (UE5) records additional sections the 0.9.x parser
             # had no awareness of. Walk past them so downstream blocks (in
             # particular Physics Control events) remain reachable.
-            if self.frame_row.startswith(" Vehicle door animations"):
-                self.next_row()
-                while self.frame_row.startswith("  "):
-                    self.next_row()
+            skip_indented_section(self, " Vehicle door animations")
 
             if self.frame_row.startswith(" Positions"):
                 self.next_row()
@@ -416,11 +413,8 @@ class Osc2TraceParser(object):
                     frame_state["actors"][actor_id].update({"lights": lights})
                     self.next_row()
 
-            if self.frame_row.startswith(" Weathers"):
-                # 0.10.0 weather snapshot — not modelled by this parser yet.
-                self.next_row()
-                while self.frame_row.startswith("  "):
-                    self.next_row()
+            # 0.10.0 weather snapshot — not modelled by this parser yet.
+            skip_indented_section(self, " Weathers")
 
             if self.frame_row.startswith(" Scene light changes"):
                 self.next_row()
@@ -569,11 +563,8 @@ class Osc2TraceParser(object):
                     )
                     self.next_row()
 
-            if self.frame_row.startswith(" Walkers Bones"):
-                # 0.10.0 per-walker bone transforms — not consumed yet.
-                self.next_row()
-                while self.frame_row.startswith("  "):
-                    self.next_row()
+            # 0.10.0 per-walker bone transforms — not consumed yet.
+            skip_indented_section(self, " Walkers Bones")
 
             frames_info.append(frame_state)
 
