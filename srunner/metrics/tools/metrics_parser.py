@@ -13,6 +13,9 @@ the CARLA recorder into a readable dictionary
 
 import carla
 
+from srunner.tools.carla_compat import IS_UE5
+from srunner.metrics.tools.recorder_chaos import parse_chaos_physics_block
+
 
 def parse_actor(info):
     """Returns a dictionary with the basic actor information"""
@@ -345,6 +348,15 @@ class MetricsParser(object):
 
                 self.next_row()
 
+            # CARLA 0.10.0 (UE5) records additional sections the 0.9.x parser
+            # had no awareness of. Walk past them so downstream blocks (in
+            # particular Physics Control events) remain reachable. Each skip
+            # consumes the section header plus any indented sub-rows.
+            if self.frame_row.startswith(' Vehicle door animations'):
+                self.next_row()
+                while self.frame_row.startswith('  '):
+                    self.next_row()
+
             if self.frame_row.startswith(' Positions'):
                 self.next_row()
 
@@ -401,6 +413,12 @@ class MetricsParser(object):
 
                     lights = parse_vehicle_lights(elements)
                     frame_state["actors"][actor_id].update({"lights": lights})
+                    self.next_row()
+
+            if self.frame_row.startswith(' Weathers'):
+                # 0.10.0 weather snapshot — not modelled by this parser yet.
+                self.next_row()
+                while self.frame_row.startswith('  '):
                     self.next_row()
 
             if self.frame_row.startswith(' Scene light changes'):
@@ -469,60 +487,66 @@ class MetricsParser(object):
             if self.frame_row.startswith(' Physics Control'):
                 self.next_row()
 
-                actor_id = None
-                while self.frame_row.startswith('  '):
+                if IS_UE5:
+                    # CARLA 0.10.0 (Chaos) rewrites the Physics Control block —
+                    # see srunner/metrics/tools/recorder_chaos.py for the format
+                    # and the documented Chaos field set.
+                    parse_chaos_physics_block(self, frame_state["events"]["physics_control"])
+                else:
+                    actor_id = None
+                    while self.frame_row.startswith('  '):
 
-                    elements = self.get_row_elements(2, " ")
-                    actor_id = int(elements[1])
-                    physics_control = carla.VehiclePhysicsControl()
-                    self.next_row()
-
-                    forward_gears = []
-                    wheels = []
-                    while self.frame_row.startswith('   '):
-
-                        if self.frame_row.startswith('    '):
-                            elements = self.get_row_elements(4, " ")
-                            if elements[0] == "gear":
-                                forward_gears.append(parse_gears_control(elements))
-                            elif elements[0] == "wheel":
-                                wheels.append(parse_wheels_control(elements))
-
-                        else:
-                            elements = self.get_row_elements(3, " = ")
-                            name = elements[0]
-
-                            if name == "center_of_mass":
-                                values = elements[1].split(" ")
-                                value = carla.Vector3D(
-                                    float(values[0][1:-1]),
-                                    float(values[1][:-1]),
-                                    float(values[2][:-1]),
-                                )
-                                setattr(physics_control, name, value)
-                            elif name == "torque_curve" or name == "steering_curve":
-                                values = elements[1].split(" ")
-                                value = parse_vector_list(values)
-                                setattr(physics_control, name, value)
-
-                            elif name == "use_gear_auto_box":
-                                name = "use_gear_autobox"
-                                value = elements[1] == "true"
-                                setattr(physics_control, name, value)
-
-                            elif "forward_gears" in name or "wheels" in name:
-                                pass
-
-                            else:
-                                name = name.lower()
-                                value = float(elements[1])
-                                setattr(physics_control, name, value)
-
+                        elements = self.get_row_elements(2, " ")
+                        actor_id = int(elements[1])
+                        physics_control = carla.VehiclePhysicsControl()
                         self.next_row()
 
-                    setattr(physics_control, "forward_gears", forward_gears)
-                    setattr(physics_control, "wheels", wheels)
-                    frame_state["events"]["physics_control"].update({actor_id: physics_control})
+                        forward_gears = []
+                        wheels = []
+                        while self.frame_row.startswith('   '):
+
+                            if self.frame_row.startswith('    '):
+                                elements = self.get_row_elements(4, " ")
+                                if elements[0] == "gear":
+                                    forward_gears.append(parse_gears_control(elements))
+                                elif elements[0] == "wheel":
+                                    wheels.append(parse_wheels_control(elements))
+
+                            else:
+                                elements = self.get_row_elements(3, " = ")
+                                name = elements[0]
+
+                                if name == "center_of_mass":
+                                    values = elements[1].split(" ")
+                                    value = carla.Vector3D(
+                                        float(values[0][1:-1]),
+                                        float(values[1][:-1]),
+                                        float(values[2][:-1]),
+                                    )
+                                    setattr(physics_control, name, value)
+                                elif name == "torque_curve" or name == "steering_curve":
+                                    values = elements[1].split(" ")
+                                    value = parse_vector_list(values)
+                                    setattr(physics_control, name, value)
+
+                                elif name == "use_gear_auto_box":
+                                    name = "use_gear_autobox"
+                                    value = elements[1] == "true"
+                                    setattr(physics_control, name, value)
+
+                                elif "forward_gears" in name or "wheels" in name:
+                                    pass
+
+                                else:
+                                    name = name.lower()
+                                    value = float(elements[1])
+                                    setattr(physics_control, name, value)
+
+                            self.next_row()
+
+                        setattr(physics_control, "forward_gears", forward_gears)
+                        setattr(physics_control, "wheels", wheels)
+                        frame_state["events"]["physics_control"].update({actor_id: physics_control})
 
             if self.frame_row.startswith(' Traffic Light time events'):
                 self.next_row()
@@ -533,6 +557,12 @@ class MetricsParser(object):
 
                     state_times = parse_state_times(elements)
                     frame_state["events"]["traffic_light_state_time"].update({actor_id: state_times})
+                    self.next_row()
+
+            if self.frame_row.startswith(' Walkers Bones'):
+                # 0.10.0 per-walker bone transforms — not consumed yet.
+                self.next_row()
+                while self.frame_row.startswith('  '):
                     self.next_row()
 
             frames_info.append(frame_state)
