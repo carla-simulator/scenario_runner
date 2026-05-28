@@ -1,4 +1,5 @@
 ## Table of Contents
+* [Unreleased — CARLA 0.10.0 / UE5 compatibility](#unreleased--carla-0100--ue5-compatibility)
 * [CARLA ScenarioRunner 0.9.16](#carla-scenariorunner-0916)
 * [CARLA ScenarioRunner 0.9.15](#carla-scenariorunner-0915)
 * [CARLA ScenarioRunner 0.9.13](#carla-scenariorunner-0913)
@@ -12,6 +13,35 @@
 * [CARLA ScenarioRunner 0.9.5.1](#carla-scenariorunner-0951)
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
+
+## Unreleased — CARLA 0.10.0 / UE5 compatibility
+
+This release extends ScenarioRunner to run against the **CARLA 0.10.0** server (UE5 / Chaos physics) while keeping full compatibility with **CARLA 0.9.x** (UE4 / PhysX). The default supported map on UE5 is `Town10HD_Opt`; other UE5 maps remain reachable for users who explicitly target them via their own configs, `--configFile`, or `--additionalScenario`.
+
+### :rocket: New Features
+* New `srunner/tools/carla_compat.py` runtime version-detection layer. Auto-detects the installed CARLA wheel and exposes `IS_UE5` / `IS_UE4` flags plus version-keyed lookup tables. The `SR_CARLA_VERSION` environment variable can force a version when the wheel disagrees with the running server.
+* `CarlaDataProvider.create_blueprint` consults a version-keyed alias table on UE5, translating legacy blueprint ids (`vehicle.lincoln.mkz_2017`, `vehicle.audi.tt`, `vehicle.dodge.charger_police_2020`, `vehicle.carlamotors.carlacola`, …) to the 0.10.0 catalogue. The per-category fallback dict is also version-keyed so missing models degrade to a documented substitute instead of crashing.
+* New `srunner/examples_ue5/` directory for Town10HD_Opt-targeted scenario configs. `srunner/tools/scenario_parser.py` reads `examples_ue5/*.xml` first on UE5 servers, then falls back to `examples/*.xml`, with per-scenario-name dedup so UE5 entries override their legacy siblings. Initial UE5 configs added for `FollowLeadingVehicle_1`, `FollowLeadingVehicleWithObstacle_1`, and `OtherLeadingVehicle_1`.
+
+### :ghost: Maintenance
+* `VehicleVelocityControl.__init__` skips the wheel-friction-zeroing setup on UE5. The Chaos `WheelPhysicsControl.friction_force_multiplier` parameter is documented but `apply_physics_control` silently discards wheel-attribute writes on the current 0.10.0 build, and no other documented UE5 API exposes per-wheel friction-override for this controller's kinematic-injection use. The UE4 `tire_friction = 0` path is unchanged.
+* `RouteLightsBehavior` (in `srunner/scenariomanager/lights_sim.py`, used by `--route` mode) is now engine-aware. On UE5 it skips the removed `LightManager` API entirely: no `set_day_night_cycle` calls (UE5 has no auto sun motion to disable — `weather.sun_altitude_angle` is the documented day/night control, which `_get_night_mode` already drives off) and no per-street-light `turn_on`/`turn_off` enumeration (UE5 exposes no documented per-`Light` runtime toggle). Vehicle-light control (`Vehicle.set_light_state` / `get_light_state`) is preserved on both engines. On UE5 the behavior emits a one-time INFO log at construction so users know street lights are not being controlled.
+* `MetricsParser` and `Osc2TraceParser` (in `srunner/metrics/tools/`) now branch the Physics Control block parsing on `IS_UE5`. On 0.9.x the existing PhysX path is unchanged. On 0.10.0 the new `srunner/metrics/tools/recorder_chaos.py` walker handles the rewritten Chaos serialization — scalar fields, `forward_gear_ratios` / `reverse_gear_ratios` lists, and the per-wheel `friction_force_multiplier` / `cornering_stiffness` / `max_brake_torque` / `affected_by_*` / `suspension_axis` set documented at `carla-ue5/Docs/python_api.md` §`carla.VehiclePhysicsControl` and §`carla.WheelPhysicsControl`. The parsers also walk past the new top-level recorder sections introduced by the 0.10.0 server (`Vehicle door animations`, `Weathers`, `Walkers Bones`) so downstream blocks remain reachable. PhysX-only fields (`MOI`, `damping_rate*`, `clutch_strength`, `use_gear_autobox`) are not invented out of Chaos data — they are absent from the resulting `VehiclePhysicsControl` on UE5.
+* `RosAgent.publish_can` (in `srunner/autoagents/ros_agent.py`) drops the PhysX-only physics block on UE5. The `CarlaEgoVehicleInfo` message schema is modelled on the removed PhysX fields (`tire_friction`, `damping_rate`, `moi`, `damping_rate_full_throttle`, `damping_rate_zero_throttle_clutch_disengaged`, `use_gear_autobox`, `clutch_strength`); the Chaos struct exposes a different set with different semantics, so there is no faithful field-by-field port — downstream ROS consumers parse PhysX semantics. On UE5 the agent emits a one-time deprecation warning pointing at the native CARLA ROS 2 bridge (the supported ROS path going forward) and populates only the fields that survived (`mass`, `drag_coefficient`, `center_of_mass`). UE4 behavior is unchanged.
+* New carla-free unit suites — `tests/test_carla_compat.py` (16 tests: env override, `IS_UE5` thresholding, blueprint-id aliases, category fallbacks across both engines) and `tests/test_recorder_chaos.py` (25 tests: Chaos wheel-line tokenizer, Physics Control block walker, end-to-end `MetricsParser` / `Osc2TraceParser` runs against a committed 0.10.0 recorder fixture at `tests/fixtures/recorder_ue5_town10.txt`). Installs a stub `carla` module so the tests run in any Python env without a CARLA wheel installed.
+
+### :wrench: Behavior delta on UE5
+* `VehicleVelocityControl` on UE5 continues to track heading-aligned `set_target_velocity` calls tightly (measured 101% of target over 5 s @ 1 m/s along the vehicle's forward axis); sharp lateral / cornering motion tracks less faithfully than on UE4 because wheel lateral friction cannot currently be suppressed. Tracked upstream in carla-ue5.
+* `RouteLightsBehavior` no longer controls street lights on UE5. Vehicle headlights / position lights still flip on and off based on `weather.sun_altitude_angle` (validated live: state `Position|LowBeam` set under sun_altitude=-30°, cleared under sun_altitude=75°).
+* Legacy bicycle / motorbike blueprints are absent from the 0.10.0 catalogue; the alias table substitutes a four-wheel vehicle so spawns succeed, but two-wheeler scenarios lose their visual identity until upstream content lands.
+* The offline `MetricsParser` / `Osc2TraceParser` `physics_control` shape differs between engines. On 0.9.x it returns a `VehiclePhysicsControl` populated with PhysX fields (`tire_friction`, `damping_rate`, `forward_gears`, …). On 0.10.0 it returns a Chaos-shaped `VehiclePhysicsControl` (`friction_force_multiplier`, `cornering_stiffness`, `max_brake_torque`, `forward_gear_ratios`, …). Metric scripts that read these structs must branch on `srunner.tools.carla_compat.IS_UE5` to interpret the right field set. A subset of Chaos list fields (`forward_gear_ratios`, `reverse_gear_ratios`) is settable but currently not readable from Python on the 0.10.0 wheel under test — an upstream `boost::python` to-Python converter gap, not a parser issue.
+* The legacy `RosAgent` (`srunner/autoagents/ros_agent.py`) omits PhysX-only vehicle-info fields on UE5 and logs a one-time deprecation warning. Users on 0.10.0 should consume telemetry via the native CARLA ROS 2 bridge instead of the legacy `CarlaEgoVehicleInfo` schema.
+
+### :bug: Bug Fixes
+* Fixed a latent bug in `CarlaDataProvider.create_blueprint`: when the requested model id was missing and the per-category fallback id was also missing (empty filter result), the fallback path raised an uncaught `ValueError: 'a' cannot be empty` from `np.random.choice([])`. The fallback now degrades gracefully (fallback → `vehicle.*` → explicit diagnostic `ValueError`).
+
+### :white_check_mark: Validation
+* End-to-end validated on a live CARLA 0.10.0 server (Town10HD_Opt) with the full compat stack integrated: `FollowLeadingVehicle_1` (60.05s game), `FollowLeadingVehicleWithObstacle_1` (120.05s game), and `OtherLeadingVehicle_1` (80.05s game) all run spawn → behavior-tree tick → criteria evaluation → result reporting. `CollisionTest` reports `SUCCESS` on every run; the `TIMEOUT` global result is expected in `--scenario` mode without `--agent`.
 
 ## CARLA ScenarioRunner 0.9.16
 

@@ -18,6 +18,7 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
 from srunner.scenariomanager.timer import GameTime
+from srunner.tools.carla_compat import IS_UE5
 
 
 class VehicleVelocityControl(BasicControl):
@@ -37,13 +38,23 @@ class VehicleVelocityControl(BasicControl):
 
         super(VehicleVelocityControl, self).__init__(actor)
 
-        # Remove the friction of the wheels so that the velocities aren't reduced by the ground
-        physics_control = self._actor.get_physics_control()
-        wheels_control = physics_control.wheels
-        for w in wheels_control:
-            w.tire_friction = 0
-        physics_control.wheels = wheels_control
-        self._actor.apply_physics_control(physics_control)
+        # Remove the friction of the wheels so that the velocities aren't reduced by the ground.
+        # 0.9.x (PhysX): WheelPhysicsControl.tire_friction is the working knob.
+        # 0.10.0 (Chaos): no equivalent. Writes to either tire_friction or the documented
+        # Chaos parameter friction_force_multiplier are silently accepted by
+        # apply_physics_control but never reach the simulation (read-back keeps the
+        # default), and set_simulate_physics(False) breaks set_target_velocity entirely.
+        # No working UE5 API exists to zero wheel friction for this controller's
+        # kinematic-injection use, so on UE5 we skip the setup. set_target_velocity in
+        # run_step still tracks well when the requested velocity is aligned with the
+        # vehicle's heading; expect degraded tracking on sharp lateral / cornering moves.
+        if not IS_UE5:
+            physics_control = self._actor.get_physics_control()
+            wheels_control = physics_control.wheels
+            for w in wheels_control:
+                w.tire_friction = 0
+            physics_control.wheels = wheels_control
+            self._actor.apply_physics_control(physics_control)
 
         # This is the maximum amount of time used to aim the vehicle towards the next point.
         # Used to avoid weird lateral slides if the time between point is high.

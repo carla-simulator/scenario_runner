@@ -17,6 +17,38 @@ import carla
 
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration
+from srunner.tools.carla_compat import IS_UE5
+
+
+def _example_config_globs(extension):
+    """Return the list of glob patterns for example config files of the given extension,
+    in priority order (highest priority first).
+
+    On UE5 servers (0.10.0+) we read configs from srunner/examples_ue5/ first so that
+    scenarios authored for Town10HD_Opt take precedence over the legacy Town01-05
+    entries when the same scenario name is defined in both locations. On 0.9.x only
+    the legacy examples directory is read.
+    """
+    root = os.getenv('SCENARIO_RUNNER_ROOT', "./")
+    patterns = []
+    if IS_UE5:
+        patterns.append("{}/srunner/examples_ue5/*.{}".format(root, extension))
+    patterns.append("{}/srunner/examples/*.{}".format(root, extension))
+    return patterns
+
+
+def _collect_example_config_files(extensions):
+    """Glob all example config files for the active engine version, in priority order.
+
+    Each glob result is sorted so the within-directory walk is deterministic
+    across platforms; the across-directory priority (examples_ue5 before
+    examples on UE5) is preserved by the outer loop ordering.
+    """
+    files = []
+    for ext in extensions:
+        for pattern in _example_config_globs(ext):
+            files.extend(sorted(glob.glob(pattern)))
+    return files
 
 
 class ScenarioConfigurationParser(object):
@@ -43,8 +75,9 @@ class ScenarioConfigurationParser(object):
             scenario_group = False
 
         scenario_configurations = []
+        seen_names = set()
 
-        list_of_config_files = glob.glob("{}/srunner/examples/*.xml".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
+        list_of_config_files = _collect_example_config_files(["xml"])
         if additional_config_file_name != '':
             list_of_config_files.append(additional_config_file_name)
 
@@ -62,6 +95,12 @@ class ScenarioConfigurationParser(object):
                 # Check that the scenario is of the correct type
                 elif scenario_group and scenario_config_type != scenario_name:
                     continue
+
+                # Dedupe by scenario name. Files are walked in priority order
+                # (examples_ue5 first on UE5), so the first occurrence wins.
+                if scenario_config_name in seen_names:
+                    continue
+                seen_names.add(scenario_config_name)
 
                 config = ScenarioConfiguration()
                 config.town = scenario.attrib.get('town')
@@ -100,8 +139,7 @@ class ScenarioConfigurationParser(object):
         Parse *all* config files and provide a list with all scenarios @return
         """
 
-        list_of_config_files = glob.glob("{}/srunner/examples/*.xml".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
-        list_of_config_files += glob.glob("{}/srunner/examples/*.xosc".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
+        list_of_config_files = _collect_example_config_files(["xml", "xosc"])
         if additional_config_file_name != '':
             list_of_config_files.append(additional_config_file_name)
 
