@@ -38,11 +38,16 @@ def _example_config_globs(extension):
 
 
 def _collect_example_config_files(extensions):
-    """Glob all example config files for the active engine version, in priority order."""
+    """Glob all example config files for the active engine version, in priority order.
+
+    Each glob result is sorted so the within-directory walk is deterministic
+    across platforms; the across-directory priority (examples_ue5 before
+    examples on UE5) is preserved by the outer loop ordering.
+    """
     files = []
     for ext in extensions:
         for pattern in _example_config_globs(ext):
-            files.extend(glob.glob(pattern))
+            files.extend(sorted(glob.glob(pattern)))
     return files
 
 

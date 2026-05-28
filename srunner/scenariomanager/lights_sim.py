@@ -34,6 +34,10 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
     # In cases where more than one weather conditition is active, decrease the thresholds
     COMBINED_THRESHOLD = 10
 
+    # Process-wide latch so the UE5 LightManager-disabled notice fires once,
+    # not once per RouteLightsBehavior instance.
+    _ue5_notice_emitted = False
+
     def __init__(self, ego_vehicle, radius=50, radius_increase=15, name="LightsBehavior"):
         """
         Setup parameters
@@ -54,9 +58,11 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         # manager entirely and only drive vehicle lights.
         if IS_UE5:
             self._light_manager = None
-            print("[RouteLightsBehavior] CARLA 0.10.0 / UE5 detected: "
-                  "street lights will not be controlled (no LightManager API). "
-                  "Vehicle lights are still driven from weather.sun_altitude_angle.")
+            if not RouteLightsBehavior._ue5_notice_emitted:
+                print("[RouteLightsBehavior] CARLA 0.10.0 / UE5 detected: "
+                      "street lights will not be controlled (no LightManager API). "
+                      "Vehicle lights are still driven from weather.sun_altitude_angle.")
+                RouteLightsBehavior._ue5_notice_emitted = True
         else:
             self._light_manager = self._world.get_lightmanager()
             self._light_manager.set_day_night_cycle(False)

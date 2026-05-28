@@ -116,8 +116,14 @@ _WHEEL_VECTOR_FIELDS = frozenset({
 })
 
 # Recorder ↔ Chaos Python attribute name remap.
+# - `max_hand_brake_torque` (recorder) vs `max_handbrake_torque` (Chaos attr).
+# - `axle_type` (recorder, correct spelling) vs `axel_type` (Chaos binding,
+#   carla-ue5/Docs/python_api.md §carla.WheelPhysicsControl.axel_type — the
+#   upstream attribute really is mis-spelled). Drop this alias once upstream
+#   renames the binding.
 _WHEEL_FIELD_ALIASES = {
     "max_hand_brake_torque": "max_handbrake_torque",
+    "axle_type": "axel_type",
 }
 
 # Runtime telemetry the recorder appends after the wheel struct; not on
@@ -147,16 +153,26 @@ def _parse_vector3d(token_str):
 
 
 def _parse_vector2d_list(s):
-    """Parse '(0, 500) (5000, 500) ...' into a list of carla.Vector2D."""
+    """Parse '(0, 500) (5000, 500) ...' into a list of carla.Vector2D.
+
+    Best-effort: a missing closing paren stops parsing at that point rather
+    than raising, so a truncated recorder line just yields the pairs it
+    could decode.
+    """
     out = []
     i = 0
     while i < len(s):
         if s[i] == "(":
-            j = s.index(")", i)
+            j = s.find(")", i)
+            if j == -1:
+                break
             inner = s[i + 1:j]
             parts = [p.strip() for p in inner.split(",")]
             if len(parts) == 2:
-                out.append(carla.Vector2D(float(parts[0]), float(parts[1])))
+                try:
+                    out.append(carla.Vector2D(float(parts[0]), float(parts[1])))
+                except ValueError:
+                    pass
             i = j + 1
         else:
             i += 1
