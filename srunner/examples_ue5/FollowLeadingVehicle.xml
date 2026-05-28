@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!--
+  CARLA 0.10.0 / UE5 overrides for the FollowLeadingVehicle scenario set.
+  The legacy srunner/examples/FollowLeadingVehicle.xml targets Town01-Town05,
+  which do not ship with 0.10.0. Spawn points below were picked from
+  Town10HD_Opt with >= 35 m of clear road before the next junction so the
+  lead vehicle has room to be placed ahead via
+  get_waypoint_in_distance(stop_at_junction=True).
+
+  The ego model keeps the legacy id 'vehicle.lincoln.mkz_2017'; the
+  srunner/tools/carla_compat alias map translates it to
+  'vehicle.lincoln.mkz' on UE5, so this config also works unchanged on
+  0.9.x servers if you point SCENARIO_RUNNER_ROOT at this directory.
+-->
+<scenarios>
+    <scenario name="FollowLeadingVehicle_1" type="FollowLeadingVehicle" town="Town10HD_Opt">
+        <ego_vehicle x="-110.96" y="59.69" z="0.60" yaw="90.64" model="vehicle.lincoln.mkz_2017" />
+        <weather cloudiness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth_angle="0" sun_altitude_angle="75" />
+    </scenario>
+    <scenario name="FollowLeadingVehicleWithObstacle_1" type="FollowLeadingVehicleWithObstacle" town="Town10HD_Opt">
+        <ego_vehicle x="-110.96" y="59.69" z="0.60" yaw="90.64" model="vehicle.lincoln.mkz_2017" />
+    </scenario>
+</scenarios>
