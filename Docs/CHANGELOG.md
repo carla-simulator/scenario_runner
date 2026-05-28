@@ -25,9 +25,11 @@ This release extends ScenarioRunner to run against the **CARLA 0.10.0** server (
 
 ### :ghost: Maintenance
 * `VehicleVelocityControl.__init__` skips the wheel-friction-zeroing setup on UE5. The Chaos `WheelPhysicsControl.friction_force_multiplier` parameter is documented but `apply_physics_control` silently discards wheel-attribute writes on the current 0.10.0 build, and no other documented UE5 API exposes per-wheel friction-override for this controller's kinematic-injection use. The UE4 `tire_friction = 0` path is unchanged.
+* `RouteLightsBehavior` (in `srunner/scenariomanager/lights_sim.py`, used by `--route` mode) is now engine-aware. On UE5 it skips the removed `LightManager` API entirely: no `set_day_night_cycle` calls (UE5 has no auto sun motion to disable — `weather.sun_altitude_angle` is the documented day/night control, which `_get_night_mode` already drives off) and no per-street-light `turn_on`/`turn_off` enumeration (UE5 exposes no documented per-`Light` runtime toggle). Vehicle-light control (`Vehicle.set_light_state` / `get_light_state`) is preserved on both engines. On UE5 the behavior emits a one-time INFO log at construction so users know street lights are not being controlled.
 
 ### :wrench: Behavior delta on UE5
 * `VehicleVelocityControl` on UE5 continues to track heading-aligned `set_target_velocity` calls tightly (measured 101% of target over 5 s @ 1 m/s along the vehicle's forward axis); sharp lateral / cornering motion tracks less faithfully than on UE4 because wheel lateral friction cannot currently be suppressed. Tracked upstream in carla-ue5.
+* `RouteLightsBehavior` no longer controls street lights on UE5. Vehicle headlights / position lights still flip on and off based on `weather.sun_altitude_angle` (validated live: state `Position|LowBeam` set under sun_altitude=-30°, cleared under sun_altitude=75°).
 * Legacy bicycle / motorbike blueprints are absent from the 0.10.0 catalogue; the alias table substitutes a four-wheel vehicle so spawns succeed, but two-wheeler scenarios lose their visual identity until upstream content lands.
 
 ### :bug: Bug Fixes

@@ -285,6 +285,7 @@ The runner picks up `srunner/examples_ue5/FollowLeadingVehicle.xml` (Town10HD_Op
 A small number of UE4-only APIs have no working UE5 replacement and are dropped on the UE5 code path. See [CHANGELOG](CHANGELOG.md) for the full inventory.
 
 * `VehicleVelocityControl` (used by the OpenSCENARIO 2.0 `follow_trajectory` modifier with `control: "velocity"`) tracks heading-aligned trajectories tightly on UE5 but degrades on sharp lateral / cornering moves because Chaos exposes no working API to zero wheel friction.
+* `RouteLightsBehavior` (used by `--route` mode) does not control street lights on UE5. The removed `LightManager` API has no UE5 replacement. Vehicle headlights / position lights still respond to night vs. day weather (via `weather.sun_altitude_angle`).
 
 ---
 
