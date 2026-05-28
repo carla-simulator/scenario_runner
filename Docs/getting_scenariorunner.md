@@ -286,6 +286,8 @@ A small number of UE4-only APIs have no working UE5 replacement and are dropped 
 
 * `VehicleVelocityControl` (used by the OpenSCENARIO 2.0 `follow_trajectory` modifier with `control: "velocity"`) tracks heading-aligned trajectories tightly on UE5 but degrades on sharp lateral / cornering moves because Chaos exposes no working API to zero wheel friction.
 * `RouteLightsBehavior` (used by `--route` mode) does not control street lights on UE5. The removed `LightManager` API has no UE5 replacement. Vehicle headlights / position lights still respond to night vs. day weather (via `weather.sun_altitude_angle`).
+* The offline `MetricsParser` / `Osc2TraceParser` `physics_control` event returns a Chaos-shaped `VehiclePhysicsControl` on UE5 (`friction_force_multiplier`, `cornering_stiffness`, `max_brake_torque`, `forward_gear_ratios`, …) instead of the PhysX-shaped one on 0.9.x. Metric scripts that read these structs must branch on `srunner.tools.carla_compat.IS_UE5` to interpret the right field set.
+* The legacy `RosAgent` (`srunner/autoagents/ros_agent.py`) omits PhysX-only `CarlaEgoVehicleInfo` fields on UE5 (`tire_friction`, `damping_rate`, `moi`, `clutch_strength`, `use_gear_autobox`, `damping_rate_*`) and emits a one-time deprecation warning. Use the native CARLA ROS 2 bridge that ships with 0.10.0 for full physics telemetry.
 
 ---
 
