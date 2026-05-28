@@ -39,10 +39,10 @@ from __future__ import print_function
 import os
 
 try:
-    from importlib.metadata import metadata as _carla_metadata, PackageNotFoundError
+    from importlib.metadata import version as _carla_version, PackageNotFoundError
 
     def _read_carla_version_str():
-        return _carla_metadata("carla")["Version"]
+        return _carla_version("carla")
 except ImportError:
     import pkg_resources
 
@@ -66,13 +66,12 @@ def _detect_carla_version():
         return Version(override)
     try:
         return Version(_read_carla_version_str())
-    except (PackageNotFoundError, KeyError) as exc:
+    except PackageNotFoundError as exc:
         raise RuntimeError(
             "scenario_runner could not determine the CARLA version: the `carla` "
-            "Python package is not installed (or its metadata is missing). "
-            "Install the CARLA wheel matching your server, or set the "
-            "{} environment variable (e.g. SR_CARLA_VERSION=0.10.0).".format(
-                _VERSION_OVERRIDE_ENV)
+            "Python package is not installed. Install the CARLA wheel matching "
+            "your server, or set the {} environment variable "
+            "(e.g. SR_CARLA_VERSION=0.10.0).".format(_VERSION_OVERRIDE_ENV)
         ) from exc
 
 

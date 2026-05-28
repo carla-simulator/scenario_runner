@@ -279,6 +279,12 @@ def _apply_vehicle_scalar(physics_control, name, value_str):
             pass
         return
 
+    if not value_str:
+        # Recorder may emit fields with empty values (`differential_type = `).
+        # Guard before the bool branches so an empty bool isn't silently
+        # coerced to False.
+        return
+
     if name in _VEHICLE_BOOL_ALIASES:
         _set_if_settable(physics_control,
                          _VEHICLE_BOOL_ALIASES[name],
@@ -287,10 +293,6 @@ def _apply_vehicle_scalar(physics_control, name, value_str):
 
     if name in _VEHICLE_BOOL_FIELDS:
         _set_if_settable(physics_control, name, value_str == "true")
-        return
-
-    if not value_str:
-        # Recorder may emit fields with empty values (`differential_type = `).
         return
 
     if name in _VEHICLE_INT_FIELDS:
@@ -306,6 +308,24 @@ def _apply_vehicle_scalar(physics_control, name, value_str):
         except ValueError:
             pass
         return
+
+
+# ---------------------------------------------------------------------------
+# Shared section-skip helper for the new 0.10.0 recorder sections that the
+# 0.9.x text-walkers have no schema for. The pattern is identical in both
+# `MetricsParser` and `Osc2TraceParser`: header at one-space indent, body
+# rows at two-space indent.
+# ---------------------------------------------------------------------------
+
+
+def skip_indented_section(parser, header_prefix):
+    """If `parser.frame_row` starts with `header_prefix`, consume it and any
+    rows indented with two leading spaces. No-op otherwise."""
+    if not parser.frame_row.startswith(header_prefix):
+        return
+    parser.next_row()
+    while parser.frame_row.startswith("  "):
+        parser.next_row()
 
 
 # ---------------------------------------------------------------------------

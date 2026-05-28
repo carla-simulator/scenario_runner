@@ -274,11 +274,14 @@ class ChaosWheelTokenizerTests(unittest.TestCase):
 
     def test_handles_empty_value_between_keys(self):
         # `axle_type:` with no value, immediately followed by `offset: ...`
-        # — empty values must be skipped, not crash.
+        # — empty values must be skipped, not crash. The recorder spelling
+        # (`axle_type`) is aliased to the Chaos binding spelling
+        # (`axel_type`); neither should end up set when the value is empty.
         line = " axle_type:  offset: (0.0, 0.0, 0.0) wheel_radius: 35.5"
         w = recorder_chaos._parse_wheel_line(line)
         self.assertEqual(w.wheel_radius, 35.5)
         self.assertFalse(hasattr(w, "axle_type"))
+        self.assertFalse(hasattr(w, "axel_type"))
 
     def test_skips_runtime_only_fields(self):
         # `wheel_index`, `location`, `old_location`, `velocity` aren't on
@@ -378,6 +381,23 @@ class ChaosPhysicsBlockTests(unittest.TestCase):
         dest, _ = self._parse()
         pc = dest[49]
         self.assertFalse(hasattr(pc, "differential_type"))
+
+    def test_empty_bool_value_does_not_coerce_to_false(self):
+        # An empty bool value (e.g. `use_gear_auto_box = `) must skip, not
+        # set the alias target to False (which would happen if the empty
+        # guard ran after the bool branches).
+        rows = [
+            "  Id: 7",
+            "   use_gear_auto_box = ",
+            "   use_sweep_wheel_collision = ",
+            " Traffic Light time events: 0",
+        ]
+        parser = _MockParser(rows)
+        dest = {}
+        recorder_chaos.parse_chaos_physics_block(parser, dest)
+        pc = dest[7]
+        self.assertFalse(hasattr(pc, "use_automatic_gears"))
+        self.assertFalse(hasattr(pc, "use_sweep_wheel_collision"))
 
     def test_moi_recorder_field_is_not_aliased_to_rev_up_moi(self):
         # `MOI` is a server-internal artifact; Chaos `rev_up_moi` is a
