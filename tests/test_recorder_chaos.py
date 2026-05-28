@@ -159,6 +159,10 @@ def _install_fake_carla():
 
 _install_fake_carla()
 
+# Snapshot SR_CARLA_VERSION so tearDownModule can restore it for any
+# downstream suite that runs in the same process.
+_PREV_SR_CARLA_VERSION = os.environ.get("SR_CARLA_VERSION")
+
 # Force IS_UE5 before importing modules that snapshot it at import time.
 os.environ["SR_CARLA_VERSION"] = "0.10.0"
 sys.modules.pop("srunner.tools.carla_compat", None)
@@ -169,6 +173,17 @@ sys.modules.pop("srunner.metrics.tools.osc2_trace_parser", None)
 from srunner.metrics.tools import recorder_chaos
 from srunner.metrics.tools.metrics_parser import MetricsParser
 from srunner.metrics.tools.osc2_trace_parser import Osc2TraceParser
+
+
+def tearDownModule():
+    """Restore the SR_CARLA_VERSION env var so the suite is hermetic."""
+    if _PREV_SR_CARLA_VERSION is None:
+        os.environ.pop("SR_CARLA_VERSION", None)
+    else:
+        os.environ["SR_CARLA_VERSION"] = _PREV_SR_CARLA_VERSION
+    # Drop the carla_compat snapshot so later suites re-detect with the
+    # restored env (or with no env, if the wheel is present).
+    sys.modules.pop("srunner.tools.carla_compat", None)
 
 
 # ---------------------------------------------------------------------------
