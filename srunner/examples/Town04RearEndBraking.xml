@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scenarios>
+  <scenario name="Town04RearEndBraking_1" type="Town04RearEndBraking" town="Town04">
+    <ego_vehicle
+      x="65.346"
+      y="9.848"
+      z="11.993"
+      yaw="-179.767349"
+      model="vehicle.tesla.model3"
+      rolename="hero" />
+
+    <other_actor
+      x="20.346"
+      y="9.665"
+      z="12.000"
+      yaw="-179.767349"
+      model="vehicle.audi.etron"
+      rolename="lead_vehicle" />
+  </scenario>
+</scenarios>
