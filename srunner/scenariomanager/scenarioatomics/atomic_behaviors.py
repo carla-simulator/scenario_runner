@@ -824,6 +824,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         self._start_time = None
         self._times = times
         self._is_osc1 = is_osc1
+        self._rts_actor_control = None
 
         if self._times is not None and len(self._waypoints) != len(self._times):
             raise ValueError("Both 'waypoints' and 'times' must have the same length")
@@ -910,6 +911,33 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         self._start_time = GameTime.get_time()
 
+        if self.rts:
+            # RtS owns pose and velocity exclusively. Keep the command marker
+            # for behavior arbitration, but do not give the replay trajectory
+            # to the normal actor controller.
+            self._rts_actor_control = actor_dict[self._actor.id]
+            self._rts_actor_control.update_waypoints(
+                [], times=None, start_time=self._start_time)
+            self._rts_actor_control.suspend_control(self)
+
+            # CARLA keeps the last applied control command active. Neutralize it
+            # once so no stale throttle, brake, steering, or walker command can
+            # influence the actor while RtS owns its state.
+            if isinstance(self._actor, carla.Vehicle):
+                vehicle_control = self._actor.get_control()
+                vehicle_control.throttle = 0.0
+                vehicle_control.brake = 0.0
+                vehicle_control.steer = 0.0
+                vehicle_control.hand_brake = False
+                self._actor.apply_control(vehicle_control)
+            elif isinstance(self._actor, carla.Walker):
+                walker_control = self._actor.get_control()
+                walker_control.speed = 0.0
+                self._actor.apply_control(walker_control)
+
+            super().initialise()
+            return
+
         if self._is_osc1:
             # Transforming OSC waypoints to Carla waypoints
             carla_route_elements = []
@@ -969,7 +997,8 @@ class ChangeActorWaypoints(AtomicBehavior):
                     elif not route:
                         route.append(wp_tuple[0].transform)
 
-        actor_dict[self._actor.id].update_waypoints(route, times=self._times, start_time=self._start_time)
+        actor_dict[self._actor.id].update_waypoints(
+            route, times=self._times, start_time=self._start_time)
 
         super().initialise()
 
@@ -997,7 +1026,9 @@ class ChangeActorWaypoints(AtomicBehavior):
         if actor.get_last_waypoint_command() != self._start_time:
             return py_trees.common.Status.SUCCESS
 
-        if actor.check_reached_waypoint_goal():
+        # RtS completion is defined by the trajectory timestamps, not by the
+        # road-projected LocalPlanner route.
+        if not self.rts and actor.check_reached_waypoint_goal():
             return py_trees.common.Status.SUCCESS
 
         # additions for RtS or ARtS
@@ -1006,6 +1037,13 @@ class ChangeActorWaypoints(AtomicBehavior):
                 current_relative_time = GameTime.get_time() - self._start_time
                 current_waypoint_idx = bisect_right(self._times, current_relative_time)
                 if current_waypoint_idx >= len(self._times):
+                    if self.rts:
+                        final_waypoint = self._waypoints[-1]
+                        final_transform = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+                            final_waypoint[0])
+                        self._actor.set_transform(final_transform)
+                        self._actor.set_target_velocity(carla.Vector3D(0.0, 0.0, 0.0))
+                        actor.update_target_speed(0.0)
                     return py_trees.common.Status.SUCCESS
                 try:
                     # check first if actor is available or already deleted - if deleted, no speed can be set anymore and no waypoints are needed
@@ -1019,6 +1057,13 @@ class ChangeActorWaypoints(AtomicBehavior):
                 
         return py_trees.common.Status.RUNNING
 
+    def terminate(self, new_status):
+        """Release exclusive RtS control when the trajectory ends or is interrupted."""
+        if self.rts and self._rts_actor_control is not None:
+            self._rts_actor_control.resume_control(self)
+            self._rts_actor_control = None
+        super().terminate(new_status)
+
     def _update_speed_rts(self, actor, current_waypoint_idx, current_relative_time, teleporting=True, switch_following_method_at_time=math.inf, lookahead=10):
         """
         Update the velocity of the actor based on the distance to the target waypoint.
@@ -1026,7 +1071,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         Check if waypoint is passed is done comparing velocities and target directions which should be similar for consecutive waypoints.
         
         different opportunities due to inaccuracies internally in Carla processing:
-        teleporting = True: no smooth trajectory, but teleporting according to route
+        teleporting = True: time-interpolated replay by directly setting the actor pose
         teleporting = False & current time occurence of road user < switch following method at time: setting velocity, teleport rotation, but not position
         teleporting = False & current time occurence of road user >= switch following method at time: try to follow route with carla internal speed controller - quite inaccurate
         
@@ -1036,12 +1081,57 @@ class ChangeActorWaypoints(AtomicBehavior):
         target_waypoint = self._waypoints[current_waypoint_idx]
         target_transform = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(target_waypoint[0])
         target_location = target_transform.location
+
+        # Accurate replay: interpolate the pose between the surrounding
+        # trajectory samples and report the matching segment velocity to CARLA.
+        if teleporting:
+            if current_waypoint_idx == 0:
+                interpolated_transform = target_transform
+                velocity_vector = carla.Vector3D(0.0, 0.0, 0.0)
+            else:
+                prior_idx = current_waypoint_idx - 1
+                prior_waypoint = self._waypoints[prior_idx]
+                prior_transform = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
+                    prior_waypoint[0])
+                prior_location = prior_transform.location
+                segment_time = self._times[current_waypoint_idx] - self._times[prior_idx]
+
+                if segment_time <= 0.0:
+                    raise ValueError("RtS trajectory timestamps must be strictly increasing")
+
+                scale = (current_relative_time - self._times[prior_idx]) / segment_time
+                scale = min(max(scale, 0.0), 1.0)
+
+                def interpolate(before, after):
+                    return before + (after - before) * scale
+
+                interpolated_location = carla.Location(
+                    x=interpolate(prior_location.x, target_location.x),
+                    y=interpolate(prior_location.y, target_location.y),
+                    z=interpolate(prior_location.z, target_location.z))
+                interpolated_rotation = carla.Rotation(
+                    pitch=interpolate(prior_transform.rotation.pitch, target_transform.rotation.pitch),
+                    yaw=interpolate(prior_transform.rotation.yaw, target_transform.rotation.yaw),
+                    roll=interpolate(prior_transform.rotation.roll, target_transform.rotation.roll))
+                interpolated_transform = carla.Transform(interpolated_location, interpolated_rotation)
+                velocity_vector = carla.Vector3D(
+                    (target_location.x - prior_location.x) / segment_time,
+                    (target_location.y - prior_location.y) / segment_time,
+                    (target_location.z - prior_location.z) / segment_time)
+
+            target_speed = math.sqrt(
+                velocity_vector.x**2 + velocity_vector.y**2 + velocity_vector.z**2)
+            self._actor.set_transform(interpolated_transform)
+            self._actor.set_target_velocity(velocity_vector)
+            actor.update_target_speed(target_speed)
+            return
+
         actor_location = CarlaDataProvider.get_location(self._actor)
         
         # get further needed waypoints
         offset_idx = lookahead
         lookahead_idx = min(len(self._waypoints)-1, current_waypoint_idx+offset_idx)
-        prior_waypoint = None if current_waypoint_idx == 0 else self._waypoints[current_waypoint_idx]
+        prior_waypoint = None if current_waypoint_idx == 0 else self._waypoints[current_waypoint_idx - 1]
         prior_transform = None if prior_waypoint == None else sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(prior_waypoint[0])
         prior_location = None if prior_transform == None else prior_transform.location
         
@@ -1049,27 +1139,6 @@ class ChangeActorWaypoints(AtomicBehavior):
         transform_ahead = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(waypoint_ahead[0])
         location_ahead = transform_ahead.location
         
-        # accurate teleport action, but road user does not drive the trajectory
-        if teleporting:
-            # interpolating transform
-            if prior_location:
-                interpolated_location = carla.Location(x=0, y=0, z=0)
-                interpolated_rotation = carla.Rotation(pitch=0, yaw=0, roll=0)
-                def interpolate(before, after, scale):
-                    return before + (after-before)*scale
-                scale = (current_relative_time - self._times[max(current_waypoint_idx-1, 0)])/(self._times[current_waypoint_idx]-self._times[max(current_waypoint_idx-1, 0)])
-                interpolated_location.x = interpolate(prior_location.x, target_location.x, scale)
-                interpolated_location.y = interpolate(prior_location.y, target_location.y, scale)
-                interpolated_location.z = interpolate(prior_location.z, target_location.z, scale)
-                interpolated_rotation.pitch = interpolate(prior_transform.rotation.pitch, target_transform.rotation.pitch, scale)
-                interpolated_rotation.roll = interpolate(prior_transform.rotation.roll, target_transform.rotation.roll, scale)
-                interpolated_rotation.yaw = interpolate(prior_transform.rotation.yaw, target_transform.rotation.yaw, scale)
-                interpolated_transform = carla.Transform(interpolated_location, interpolated_rotation)
-            else:
-                interpolated_transform = target_transform
-            self._actor.set_transform(interpolated_transform)
-            return
-    
         # calculate scalar speed according to lookahead
         remaining_dist = self._direct_distance(actor_location, location_ahead)
         remaining_time = self._times[lookahead_idx] - current_relative_time

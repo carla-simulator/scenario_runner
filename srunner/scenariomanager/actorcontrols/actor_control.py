@@ -50,6 +50,8 @@ class ActorControl(object):
 
     Attributes:
         control_instance: Instance of the user-defined controller.
+        _control_suspensions: Owners temporarily preventing run_step from
+            forwarding control to the underlying controller.
         _last_longitudinal_command: Timestamp of the last issued longitudinal control command (e.g. target speed).
             Defaults to None. Used to avoid that 2 longitudinal control commands are issued at the same time.
         _last_waypoint_command: Timestamp of the last issued waypoint control command.
@@ -63,6 +65,8 @@ class ActorControl(object):
     _last_lane_offset_command = None
 
     def __init__(self, actor, control_py_module, args, scenario_file_path):
+
+        self._control_suspensions = set()
 
         # use importlib to import the control module
         if not control_py_module:
@@ -104,7 +108,7 @@ class ActorControl(object):
             start_time (float): Start time of the new "maneuver" [s].
         """
         self.control_instance.update_target_speed(target_speed)
-        if start_time:
+        if start_time is not None:
             self._last_longitudinal_command = start_time
 
     def update_waypoints(self, waypoints, times=None, start_time=None):
@@ -116,7 +120,7 @@ class ActorControl(object):
             start_time (float): Start time of the new "maneuver" [s].
         """
         self.control_instance.update_waypoints(waypoints, times)
-        if start_time:
+        if start_time is not None:
             self._last_waypoint_command = start_time
 
     def update_offset(self, offset, start_time=None):
@@ -128,7 +132,7 @@ class ActorControl(object):
             start_time (float): Start time of the new "maneuver" [s].
         """
         self.control_instance.update_offset(offset)
-        if start_time:
+        if start_time is not None:
             self._last_waypoint_command = start_time
             self._last_lane_offset_command = start_time
 
@@ -174,8 +178,21 @@ class ActorControl(object):
         """
         self.control_instance.set_init_speed()
 
+    def suspend_control(self, owner):
+        """Suspend control commands until the same owner releases them."""
+        self._control_suspensions.add(owner)
+
+    def resume_control(self, owner):
+        """Release a control suspension previously acquired by owner."""
+        self._control_suspensions.discard(owner)
+
+    def is_control_enabled(self):
+        """Return whether control commands are currently enabled."""
+        return not self._control_suspensions
+
     def run_step(self):
         """
         Execute on tick of the controller's control loop
         """
-        self.control_instance.run_step()
+        if self.is_control_enabled():
+            self.control_instance.run_step()
