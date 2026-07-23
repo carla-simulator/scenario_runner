@@ -1071,7 +1071,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         Check if waypoint is passed is done comparing velocities and target directions which should be similar for consecutive waypoints.
         
         different opportunities due to inaccuracies internally in Carla processing:
-        teleporting = True: time-interpolated replay by directly setting the actor pose
+        teleporting = True: time-interpolated replay enforced by setting actor pose. Warning: no smooth trajectory!
         teleporting = False & current time occurence of road user < switch following method at time: setting velocity, teleport rotation, but not position
         teleporting = False & current time occurence of road user >= switch following method at time: try to follow route with carla internal speed controller - quite inaccurate
         
