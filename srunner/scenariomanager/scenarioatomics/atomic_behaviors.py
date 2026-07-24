@@ -1041,9 +1041,11 @@ class ChangeActorWaypoints(AtomicBehavior):
                         final_waypoint = self._waypoints[-1]
                         final_transform = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(
                             final_waypoint[0])
-                        self._actor.set_transform(final_transform)
-                        self._apply_rts_velocity(
-                            actor, carla.Vector3D(0.0, 0.0, 0.0))
+                        self._apply_rts_state(
+                            actor,
+                            final_transform,
+                            carla.Vector3D(0.0, 0.0, 0.0),
+                            0.0)
                     return py_trees.common.Status.SUCCESS
                 try:
                     # check first if actor is available or already deleted - if deleted, no speed can be set anymore and no waypoints are needed
@@ -1121,8 +1123,8 @@ class ChangeActorWaypoints(AtomicBehavior):
 
             target_speed = math.sqrt(
                 velocity_vector.x**2 + velocity_vector.y**2 + velocity_vector.z**2)
-            self._actor.set_transform(interpolated_transform)
-            self._apply_rts_velocity(actor, velocity_vector, target_speed)
+            self._apply_rts_state(
+                actor, interpolated_transform, velocity_vector, target_speed)
             return
 
         actor_location = CarlaDataProvider.get_location(self._actor)
@@ -1174,28 +1176,24 @@ class ChangeActorWaypoints(AtomicBehavior):
             # give new speed to road user controller
             actor.update_target_speed(target_speed)
 
-    def _apply_rts_velocity(self, actor, velocity_vector, target_speed=None):
+    def _apply_rts_state(self, actor, transform, velocity_vector, target_speed):
         """
-        Apply an RtS velocity through the control interface supported by the actor.
+        Apply an RtS pose and velocity through the actor-specific CARLA API.
 
-        CARLA vehicles accept a target velocity directly. Walkers derive their
-        velocity from WalkerControl, which requires a unit direction and a scalar
-        speed. The regular actor controller remains suspended while RtS is active.
+        CARLA provides ApplyWalkerState to update a walker's transform and speed
+        atomically. Vehicles accept separate transform and target-velocity updates.
+        The regular actor controller remains suspended while RtS is active.
         """
-        if target_speed is None:
-            target_speed = math.sqrt(
-                velocity_vector.x**2 + velocity_vector.y**2 + velocity_vector.z**2)
-
         if isinstance(self._actor, carla.Walker):
-            walker_control = self._actor.get_control()
-            walker_control.speed = target_speed
-            if target_speed > 0.0:
-                walker_control.direction = carla.Vector3D(
-                    velocity_vector.x / target_speed,
-                    velocity_vector.y / target_speed,
-                    velocity_vector.z / target_speed)
-            self._actor.apply_control(walker_control)
+            client = CarlaDataProvider.get_client()
+            if client is None:
+                raise RuntimeError("CARLA client is not available for RtS walker state")
+            client.apply_batch_sync([
+                carla.command.ApplyWalkerState(
+                    self._actor, transform, target_speed)
+            ], False)
         else:
+            self._actor.set_transform(transform)
             self._actor.set_target_velocity(velocity_vector)
 
         actor.update_target_speed(target_speed)
