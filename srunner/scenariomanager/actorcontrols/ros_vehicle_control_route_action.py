@@ -113,6 +113,10 @@ class RosVehicleControlRouteAction(BasicControl):
         self._route_action_time = None
         return super().update_waypoints(waypoints, start_time)
 
+    def update_final_route_goal(self, waypoint):
+        """Set the exact OpenSCENARIO endpoint independently of the planned route."""
+        self.node.set_goal_pose([waypoint])
+
     def check_reached_waypoint_goal(self):
         return self.node.reached_goal
 

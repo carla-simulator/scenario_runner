@@ -999,6 +999,9 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         actor_dict[self._actor.id].update_waypoints(
             route, times=self._times, start_time=self._start_time)
+        control_instance = actor_dict[self._actor.id].control_instance
+        if carla_route_elements and hasattr(control_instance, "update_final_route_goal"):
+            control_instance.update_final_route_goal(carla_route_elements[-1][0])
 
         super().initialise()
 
