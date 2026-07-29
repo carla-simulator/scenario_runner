@@ -1183,23 +1183,48 @@ class ChangeActorWaypoints(AtomicBehavior):
         """
         Apply an RtS pose and velocity through the actor-specific CARLA API.
 
-        CARLA provides ApplyWalkerState to update a walker's transform and speed
-        atomically. Vehicles accept separate transform and target-velocity updates.
-        The regular actor controller remains suspended while RtS is active.
+        Walker trajectory transforms use the actor origin, whereas
+        ApplyWalkerState expects a foot/navmesh position and adds half the capsule
+        height. Apply the recorded transform and walker control in one batch to
+        preserve the trajectory reference point. Vehicles accept separate
+        transform and target-velocity updates. The regular actor controller
+        remains suspended while RtS is active.
         """
+        applied_speed = target_speed
+
         if isinstance(self._actor, carla.Walker):
             client = CarlaDataProvider.get_client()
             if client is None:
                 raise RuntimeError("CARLA client is not available for RtS walker state")
+
+            applied_speed = math.hypot(velocity_vector.x, velocity_vector.y)
+            walker_control = carla.WalkerControl()
+            walker_control.speed = applied_speed
+            walker_control.jump = False
+
+            if applied_speed > 0.0:
+                walker_control.direction = carla.Vector3D(
+                    velocity_vector.x / applied_speed,
+                    velocity_vector.y / applied_speed,
+                    0.0)
+            else:
+                forward_vector = transform.get_forward_vector()
+                forward_length = math.hypot(forward_vector.x, forward_vector.y)
+                if forward_length > 0.0:
+                    walker_control.direction = carla.Vector3D(
+                        forward_vector.x / forward_length,
+                        forward_vector.y / forward_length,
+                        0.0)
+
             client.apply_batch_sync([
-                carla.command.ApplyWalkerState(
-                    self._actor, transform, target_speed)
+                carla.command.ApplyTransform(self._actor, transform),
+                carla.command.ApplyWalkerControl(self._actor, walker_control)
             ], False)
         else:
             self._actor.set_transform(transform)
             self._actor.set_target_velocity(velocity_vector)
 
-        actor.update_target_speed(target_speed)
+        actor.update_target_speed(applied_speed)
             
     def _update_speed_arts(self, actor, current_waypoint_idx, current_relative_time, lookahead=10):
         from enum import IntEnum
