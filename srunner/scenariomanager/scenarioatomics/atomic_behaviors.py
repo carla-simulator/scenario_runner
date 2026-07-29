@@ -1202,7 +1202,9 @@ class ChangeActorWaypoints(AtomicBehavior):
                 carla.Location(
                     x=transform.location.x,
                     y=transform.location.y,
-                    z=transform.location.z - self._actor.bounding_box.extent.z),
+                    z=(transform.location.z
+                       - self._actor.bounding_box.extent.z
+                       + 0.2)),
                 transform.rotation)
 
             client.apply_batch_sync([
