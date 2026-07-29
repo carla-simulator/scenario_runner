@@ -38,9 +38,9 @@ class RosVehicleControlRouteAction(BasicControl):
         params["trajectory_topic"] = "/planning/drivable_trajectory"
         params["route_action"] = "/planning/lanelet2_route_planning/plan_route"
 
-        self._initial_speed_duration = float(args.get("initial_speed_duration", 0.5))
+        self._initial_speed_duration = float(args.get("initial_speed_duration", 0.2))
         self._initial_speed_end_time = None
-        self._route_action_offset = float(args.get("route_action_offset", 0.2))
+        self._route_action_offset = float(args.get("route_action_offset", 0.1))
         self._route_action_time = None
         self._debug_time_offset = float(args.get("debug_time_offset", 0.0))
 
