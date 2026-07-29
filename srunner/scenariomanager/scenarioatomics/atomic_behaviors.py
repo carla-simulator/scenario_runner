@@ -1191,16 +1191,9 @@ class ChangeActorWaypoints(AtomicBehavior):
             client = CarlaDataProvider.get_client()
             if client is None:
                 raise RuntimeError("CARLA client is not available for RtS walker state")
-
-            # Temporary workaround for CARLA UE5 servers whose walker
-            # controller normalizes the requested speed by 4096 cm/s while
-            # the walker blueprint still limits MaxWalkSpeed to 200 cm/s.
-            # Remove this scaling once the server-side WalkerController fix is
-            # built and deployed, otherwise walker velocity will be too high.
-            walker_speed_scale = 4096.0 / 200.0
             client.apply_batch_sync([
                 carla.command.ApplyWalkerState(
-                    self._actor, transform, target_speed * walker_speed_scale)
+                    self._actor, transform, target_speed)
             ], False)
         else:
             self._actor.set_transform(transform)
