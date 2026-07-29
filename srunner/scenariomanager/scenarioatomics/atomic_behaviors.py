@@ -1185,10 +1185,10 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         Walker trajectory transforms use the actor origin, whereas
         ApplyWalkerState expects a foot/navmesh position and adds half the capsule
-        height. Apply the recorded transform and walker control in one batch to
-        preserve the trajectory reference point. Vehicles accept separate
-        transform and target-velocity updates. The regular actor controller
-        remains suspended while RtS is active.
+        height. Convert the recorded actor-origin transform to that foot position
+        before applying the walker state. Vehicles accept separate transform and
+        target-velocity updates. The regular actor controller remains suspended
+        while RtS is active.
         """
         applied_speed = target_speed
 
@@ -1198,27 +1198,16 @@ class ChangeActorWaypoints(AtomicBehavior):
                 raise RuntimeError("CARLA client is not available for RtS walker state")
 
             applied_speed = math.hypot(velocity_vector.x, velocity_vector.y)
-            walker_control = carla.WalkerControl()
-            walker_control.speed = applied_speed
-            walker_control.jump = False
-
-            if applied_speed > 0.0:
-                walker_control.direction = carla.Vector3D(
-                    velocity_vector.x / applied_speed,
-                    velocity_vector.y / applied_speed,
-                    0.0)
-            else:
-                forward_vector = transform.get_forward_vector()
-                forward_length = math.hypot(forward_vector.x, forward_vector.y)
-                if forward_length > 0.0:
-                    walker_control.direction = carla.Vector3D(
-                        forward_vector.x / forward_length,
-                        forward_vector.y / forward_length,
-                        0.0)
+            walker_transform = carla.Transform(
+                carla.Location(
+                    x=transform.location.x,
+                    y=transform.location.y,
+                    z=transform.location.z - self._actor.bounding_box.extent.z),
+                transform.rotation)
 
             client.apply_batch_sync([
-                carla.command.ApplyTransform(self._actor, transform),
-                carla.command.ApplyWalkerControl(self._actor, walker_control)
+                carla.command.ApplyWalkerState(
+                    self._actor, walker_transform, applied_speed)
             ], False)
         else:
             self._actor.set_transform(transform)
