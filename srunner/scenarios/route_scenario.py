@@ -196,7 +196,13 @@ class RouteScenario(BasicScenario):
             # Get their module
             module_name = os.path.basename(scenario_file).split('.')[0]
             sys.path.insert(0, os.path.dirname(scenario_file))
-            scenario_module = importlib.import_module(module_name)
+            try:
+                scenario_module = importlib.import_module(module_name)
+            except Exception:  # pylint: disable=broad-except
+                # Skip scenario modules with unavailable dependencies (e.g. the
+                # OpenSCENARIO 2.0 support and its antlr4 runtime requirement)
+                sys.path.pop(0)
+                continue
 
             # And their members of type class
             for member in inspect.getmembers(scenario_module, inspect.isclass):
@@ -276,7 +282,8 @@ class RouteScenario(BasicScenario):
             if scenario.behavior_tree is not None:
                 scenario_behaviors.append(scenario.behavior_tree)
                 blackboard_list.append([scenario.config.route_var_name,
-                                        scenario.config.trigger_points[0].location])
+                                        scenario.config.trigger_points[0].location,
+                                        scenario.name])
 
         # Add the behavior that manages the scenario trigger conditions
         scenario_triggerer = ScenarioTriggerer(

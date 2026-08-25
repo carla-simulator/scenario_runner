@@ -419,6 +419,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         if world:
             world.get_settings()
             wmap = world.get_map()
+        self.town = CarlaDataProvider.resolve_map_name(self.town, self.client)
         if world is None or (
             wmap is not None and wmap.name.split("/")[-1] != self.town
         ):

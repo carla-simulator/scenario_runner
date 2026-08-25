@@ -177,6 +177,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             world.get_settings()
             wmap = world.get_map()
 
+        if self.town and ".xodr" not in self.town:
+            self.town = CarlaDataProvider.resolve_map_name(self.town, self.client)
+
         if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):
             if ".xodr" in self.town:
                 with open(self.town, 'r', encoding='utf-8') as od_file:

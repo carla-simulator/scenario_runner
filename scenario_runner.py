@@ -52,9 +52,16 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
-from srunner.tools.osc2_helper import OSC2Helper
-from srunner.scenarios.osc2_scenario import OSC2Scenario
-from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
+# OpenSCENARIO 2.0 support requires antlr4-python3-runtime 4.10, which conflicts
+# with other common packages (e.g. omegaconf pins 4.9.*). Import lazily so every
+# other mode works without it; --openscenario2 reports the missing dependency.
+try:
+    from srunner.tools.osc2_helper import OSC2Helper
+    from srunner.scenarios.osc2_scenario import OSC2Scenario
+    from srunner.scenarioconfigs.osc2_scenario_configuration import OSC2ScenarioConfiguration
+    OSC2_SUPPORT = True
+except Exception:  # antlr missing or incompatible
+    OSC2_SUPPORT = False
 
 # Minimum version of CARLA that is required
 MIN_CARLA_VERSION = '0.9.14'
@@ -166,7 +173,15 @@ class ScenarioRunner(object):
             # Get their module
             module_name = os.path.basename(scenario_file).split('.')[0]
             sys.path.insert(0, os.path.dirname(scenario_file))
-            scenario_module = importlib.import_module(module_name)
+            try:
+                scenario_module = importlib.import_module(module_name)
+            except Exception as import_error:  # pylint: disable=broad-except
+                # Skip scenario modules with unavailable dependencies (e.g. the
+                # OpenSCENARIO 2.0 support and its antlr4 runtime requirement)
+                if self._args.debug:
+                    print("Skipping {}: {}".format(module_name, import_error))
+                sys.path.pop(0)
+                continue
 
             # And their members of type class
             for member in inspect.getmembers(scenario_module, inspect.isclass):
@@ -323,6 +338,8 @@ class ScenarioRunner(object):
         """
         Load a new CARLA world and provide data to CarlaDataProvider
         """
+
+        town = CarlaDataProvider.resolve_map_name(town, self.client)
 
         if self._args.reloadWorld:
             self.world = self.client.load_world(town)
@@ -523,6 +540,11 @@ class ScenarioRunner(object):
         Run a scenario based on ASAM OpenSCENARIO 2.0.
         https://www.asam.net/static_downloads/public/asam-openscenario/2.0.0/welcome.html
         """
+        if not OSC2_SUPPORT:
+            print("OpenSCENARIO 2.0 support is unavailable: install antlr4-python3-runtime==4.10")
+            self._cleanup()
+            return False
+
         # Load the scenario configurations provided in the config file
         if not os.path.isfile(self._args.openscenario2):
             print("File does not exist")
@@ -613,7 +635,11 @@ def main():
     arguments = parser.parse_args()
     # pylint: enable=line-too-long
 
-    OSC2Helper.wait_for_ego = arguments.waitForEgo
+    if OSC2_SUPPORT:
+        OSC2Helper.wait_for_ego = arguments.waitForEgo
+    elif arguments.openscenario2:
+        print("OpenSCENARIO 2.0 support is unavailable: install antlr4-python3-runtime==4.10\n\n")
+        return 1
 
     if arguments.list:
         print("Currently the following scenarios are supported:")

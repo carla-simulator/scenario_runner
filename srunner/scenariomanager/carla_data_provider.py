@@ -585,6 +585,110 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             else:
                 return road_lanes[lane - 1]
 
+    # CARLA UE5 (0.10.x) renamed or removed most of the 0.9.x blueprint catalog.
+    # Legacy names are translated here so that existing scenario definitions keep
+    # working. Two-wheeled vehicles (bicycles, motorbikes) have no UE5 equivalent
+    # and deliberately have no alias: scenarios using them fail with a clear error.
+    _ue5_blueprint_aliases = {
+        'vehicle.lincoln.mkz_2017': 'vehicle.lincoln.mkz',
+        'vehicle.lincoln.mkz2017': 'vehicle.lincoln.mkz',
+        'vehicle.lincoln.mkz_2020': 'vehicle.lincoln.mkz',
+        'vehicle.tesla.model3': 'vehicle.lincoln.mkz',
+        'vehicle.audi.tt': 'vehicle.ue4.audi.tt',
+        'vehicle.audi.a2': 'vehicle.ue4.audi.tt',
+        'vehicle.audi.etron': 'vehicle.ue4.audi.tt',
+        'vehicle.bmw.grantourer': 'vehicle.ue4.bmw.grantourer',
+        'vehicle.chevrolet.impala': 'vehicle.ue4.chevrolet.impala',
+        'vehicle.ford.crown': 'vehicle.ue4.ford.crown',
+        'vehicle.ford.mustang': 'vehicle.ue4.ford.mustang',
+        'vehicle.mustang.mustang': 'vehicle.ue4.ford.mustang',
+        'vehicle.mercedes.coupe': 'vehicle.ue4.mercedes.ccc',
+        'vehicle.mercedes.coupe_2020': 'vehicle.ue4.mercedes.ccc',
+        'vehicle.mercedes-benz.coupe': 'vehicle.ue4.mercedes.ccc',
+        'vehicle.dodge.charger_2020': 'vehicle.dodge.charger',
+        'vehicle.dodge.charger_police': 'vehicle.dodgecop.charger',
+        'vehicle.dodge.charger_police_2020': 'vehicle.dodgecop.charger',
+        'vehicle.dodge_charger.police': 'vehicle.dodgecop.charger',
+        'vehicle.carlamotors.carlacola': 'vehicle.carlacola.actors',
+        'vehicle.carlamotors.firetruck': 'vehicle.firetruck.actors',
+        'vehicle.ford.ambulance': 'vehicle.ambulance.ford',
+        'vehicle.volkswagen.t2': 'vehicle.sprinter.mercedes',
+        'vehicle.volkswagen.t2_2021': 'vehicle.sprinter.mercedes',
+        'vehicle.mercedes.sprinter': 'vehicle.sprinter.mercedes',
+        'vehicle.jeep.wrangler_rubicon': 'vehicle.nissan.patrol',
+        'vehicle.nissan.patrol_2021': 'vehicle.nissan.patrol',
+        'vehicle.mini.cooper_s': 'vehicle.mini.cooper',
+        'vehicle.mini.cooper_s_2021': 'vehicle.mini.cooper',
+        'vehicle.mini.cooperst': 'vehicle.mini.cooper',
+        'vehicle.nissan.micra': 'vehicle.mini.cooper',
+        'vehicle.citroen.c3': 'vehicle.mini.cooper',
+        'vehicle.seat.leon': 'vehicle.mini.cooper',
+        'vehicle.toyota.prius': 'vehicle.lincoln.mkz',
+        'static.prop.bench03': 'static.prop.bench02',
+        'static.prop.box01': 'static.prop.creasedbox01',
+        'static.prop.box02': 'static.prop.creasedbox01',
+        'static.prop.box03': 'static.prop.creasedbox01',
+        'static.prop.creasedbox02': 'static.prop.creasedbox01',
+        'static.prop.creasedbox03': 'static.prop.creasedbox01',
+        'static.prop.busstoplb': 'static.prop.busstop',
+        'static.prop.clothcontainer': 'static.prop.container',
+        'static.prop.glasscontainer': 'static.prop.container',
+        'static.prop.foodcart': 'static.prop.kiosk_01',
+        'static.prop.haybalelb': 'static.prop.haybale',
+        'static.prop.ironplank': 'static.prop.streetbarrier',
+        'static.prop.plantpot08': 'static.prop.plantpot07',
+        'static.prop.table': 'static.prop.plastictable',
+    }
+
+    # Pedestrian numbering starts at 0015 in the UE5 content: remap the removed ids.
+    for _i in range(1, 15):
+        _ue5_blueprint_aliases['walker.pedestrian.%04d' % _i] = 'walker.pedestrian.%04d' % (_i + 14)
+    del _i
+
+    @staticmethod
+    def resolve_model_name(model):
+        # type: (str) -> str
+        """
+        Translate a legacy (CARLA 0.9.x) blueprint id into its UE5 equivalent, if
+        the requested one does not exist in the connected server's library.
+        """
+        if CarlaDataProvider._blueprint_library is not None and '*' not in model:
+            try:
+                CarlaDataProvider._blueprint_library.find(model)
+                return model  # exists as-is
+            except (IndexError, RuntimeError):
+                pass
+            alias = CarlaDataProvider._ue5_blueprint_aliases.get(model)
+            if alias is not None:
+                print("WARNING: Actor model {} does not exist in this CARLA version. Using {} instead".format(
+                    model, alias))
+                return alias
+        return model
+
+    @staticmethod
+    def resolve_map_name(town, client=None):
+        # type: (str, carla.Client | None) -> str
+        """
+        Resolve a town name against the maps available on the server. CARLA UE5
+        requires exact names and ships the classic towns as layered variants
+        (e.g. 'Town01' only exists as 'Town01_Opt').
+        """
+        client = client or CarlaDataProvider._client
+        if client is None:
+            return town
+        try:
+            available = [m.split('/')[-1] for m in client.get_available_maps()]
+        except RuntimeError:
+            return town
+        if town in available:
+            return town
+        for candidate in ('{}_Opt'.format(town), '{}HD_Opt'.format(town), '{}HD'.format(town)):
+            if candidate in available:
+                print("WARNING: Map {} does not exist in this CARLA version. Using {} instead".format(
+                    town, candidate))
+                return candidate
+        return town
+
     @staticmethod
     def create_blueprint(model, rolename='scenario', color=None, actor_category="car", attribute_filter=None):
         # type: (str, str, carla.Color | None, str, dict | None) -> carla.ActorBlueprint
@@ -612,6 +716,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         # Set the model
         try:
+            model = CarlaDataProvider.resolve_model_name(model)
             blueprints = CarlaDataProvider._blueprint_library.filter(model)
             if attribute_filter is not None:
                 for key, value in attribute_filter.items():
