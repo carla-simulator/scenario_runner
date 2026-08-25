@@ -225,11 +225,25 @@ class ScenarioRunner(object):
 
         # CarlaDataProvider.cleanup()
 
+        # The CarlaDataProvider batch-destroys every actor it spawned, ego
+        # included, and destroying an actor twice is an error for CARLA UE5
+        # servers. Actor.is_alive (and even World.get_actor) never learn about
+        # batch destructions, so check the world snapshot after a fresh tick,
+        # which is the only client-side view that reflects them.
+        snapshot = None
+        if self.world is not None:
+            try:
+                self.world.wait_for_tick()
+                snapshot = self.world.get_snapshot()
+            except RuntimeError:
+                pass
+
         for i, _ in enumerate(self.ego_vehicles):
             if self.ego_vehicles[i]:
                 if not self._args.waitForEgo and self.ego_vehicles[i] is not None and self.ego_vehicles[i].is_alive:
-                    print("Destroying ego vehicle {}".format(self.ego_vehicles[i].id))
-                    self.ego_vehicles[i].destroy()
+                    if snapshot is None or snapshot.find(self.ego_vehicles[i].id) is not None:
+                        print("Destroying ego vehicle {}".format(self.ego_vehicles[i].id))
+                        self.ego_vehicles[i].destroy()
                 self.ego_vehicles[i] = None
         self.ego_vehicles = []
 
