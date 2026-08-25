@@ -58,7 +58,8 @@ class OSC2Helper(object):
     def vector_angle(v1: List[int], v2: List[int]) -> int:
         """Calculate the angle between vectors v1 and v2.
         Parameters:
-            v1: vector v1, list type [x1, y1, x2, y2], where x1.y1 represents the starting coordinates and x2, y2 represent the ending coordinates.
+            v1: vector v1, list type [x1, y1, x2, y2], 
+                where x1.y1 represents the starting coordinates and x2, y2 represent the ending coordinates.
             v2: same as above.
         Return: the angle, positive for clockwise and negative for counterclockwise.
         """
@@ -201,3 +202,11 @@ class OSC2Helper(object):
             )
 
         return list_of_lists[:1] + OSC2Helper.flat_list(list_of_lists[1:])
+
+    @staticmethod
+    def get_init_trajectory_transform(trajectory):
+        loc_0 = carla.Location(trajectory[0][0], trajectory[0][1], trajectory[0][2])
+        loc_1 = carla.Location(trajectory[1][0], trajectory[1][1], trajectory[1][2])
+        direction = loc_1 - loc_0
+        yaw = math.degrees(math.atan2(direction.y, direction.x))
+        return carla.Transform(loc_0, carla.Rotation(yaw=yaw))

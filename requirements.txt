@@ -1,5 +1,5 @@
 py-trees==0.8.3
-numpy==1.24.4; python_version >= '3.0'
+numpy
 networkx
 Shapely
 psutil
@@ -9,6 +9,8 @@ tabulate
 opencv-python
 matplotlib
 six
-antlr4-python3-runtime
 graphviz
-xmlschema
+# Optional: only required for OpenSCENARIO 2.0 (--openscenario2) support.
+# The 4.10 runtime conflicts with packages that pin antlr4 4.9.* (e.g.
+# omegaconf); without it every other scenario_runner mode still works.
+# antlr4-python3-runtime==4.10

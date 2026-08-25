@@ -1,0 +1,21 @@
+import basic.osc
+
+scenario top:
+    path: Path                          # A path in the map
+    path.set_map("Town10HD_Opt")        # Map to employ
+    path.path_min_driving_lanes(2)      # Path should have at least two lanes
+
+    ego_vehicle: Model3                	# Ego car
+    npc1: Rubicon                       # Another car
+    npc2: Rubicon                       # Anotherother car
+
+    do parallel(duration: 18s):         # Execute the following lines in parallel
+
+        ego_vehicle.drive(path) with:
+            follow_trajectory(input_file: "srunner/examples/resources/ego_logs.csv", control: "physics")
+
+        npc1.drive(path) with:
+            follow_trajectory(input_file: "srunner/examples/resources/npc1_logs.csv", control: "physics")
+
+        npc2.drive(path) with:
+            follow_trajectory(input_file: "srunner/examples/resources/npc2_logs.csv", control: "physics")

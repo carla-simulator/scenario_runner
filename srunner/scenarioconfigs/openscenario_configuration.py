@@ -362,10 +362,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for private_action in self.init.iter("Private"):
             if private_action.attrib.get('entityRef', None) == actor_name:
                 if actor_found:
-                    # pylint: disable=line-too-long
                     self.logger.warning(
-                        " Warning: The actor '%s' was already assigned an initial position. Overwriting pose!", actor_name)
-                    # pylint: enable=line-too-long
+                        " Warning: The actor '%s' was already assigned an initial position. Overwriting pose!",
+                        actor_name,
+                    )
                 actor_found = True
                 for position in private_action.iter('Position'):
                     transform = OpenScenarioParser.convert_position_to_transform(
@@ -374,10 +374,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         actor_transform = transform
 
         if not actor_found:
-            # pylint: disable=line-too-long
             self.logger.warning(
-                " Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)", actor_name)
-            # pylint: enable=line-too-long
+                " Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)",
+                actor_name,
+            )
         return actor_transform
 
     def _get_actor_speed(self, actor_name):
@@ -390,10 +390,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         for private_action in self.init.iter("Private"):
             if private_action.attrib.get('entityRef', None) == actor_name:
                 if actor_found:
-                    # pylint: disable=line-too-long
                     self.logger.warning(
-                        " Warning: The actor '%s' was already assigned an initial speed. Overwriting inital speed!", actor_name)
-                    # pylint: enable=line-too-long
+                        " Warning: The actor '%s' was already assigned an initial speed. Overwriting initial speed!",
+                        actor_name,
+                    )
                 actor_found = True
 
                 for longitudinal_action in private_action.iter('LongitudinalAction'):
@@ -404,8 +404,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                                 if speed >= 0:
                                     actor_speed = speed
                                 else:
-                                    raise AttributeError(
-                                        "Warning: Speed value of actor {} must be positive. Speed set to 0.".format(actor_name))  # pylint: disable=line-too-long
+                                    msg = "Warning: Speed value of actor {} must be positive. Speed set to 0.".format(
+                                        actor_name
+                                    )
+                                    raise AttributeError(msg)
         return actor_speed
 
     def _validate_result(self):
@@ -427,4 +429,3 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             controller = rnw.find("TrafficSignals")
             if controller is not None:
                 OpenScenarioParser.set_traffic_signal_controller(controller)
-                

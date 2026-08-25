@@ -17,6 +17,7 @@ from agents.navigation.local_planner import RoadOption
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
+from srunner.scenariomanager.timer import GameTime
 
 
 class NpcVehicleControl(BasicControl):
@@ -99,6 +100,18 @@ class NpcVehicleControl(BasicControl):
             self._offset_updated = False
             self._update_offset()
 
+        # Times have been specified, modify the speed accordingly
+        if self._times:
+            if self._start_time is None:
+                self._start_time = GameTime.get_time()
+            plan_len = len(self._local_planner.get_plan())
+            current_index = len(self._waypoints) - plan_len
+            target_time = self._times[current_index]
+            delta_time = target_time - (GameTime.get_time() - self._start_time)
+            target_location = self._local_planner.get_plan()[0][0].transform.location
+            target_distance = self._actor.get_location().distance(target_location)
+            self._target_speed = target_distance / max(delta_time, 0.001)
+
         target_speed = self._target_speed
         # If target speed is negavite, raise an exception
         if target_speed < 0:
@@ -126,16 +139,3 @@ class NpcVehicleControl(BasicControl):
                 vx = math.cos(yaw) * target_speed
                 vy = math.sin(yaw) * target_speed
                 self._actor.set_target_velocity(carla.Vector3D(vx, vy, 0))
-
-        # Change Brake light state
-        if (current_speed > target_speed or target_speed < 0.2) and not self._brake_lights_active:
-            light_state = self._actor.get_light_state()
-            light_state |= carla.VehicleLightState.Brake
-            self._actor.set_light_state(carla.VehicleLightState(light_state))
-            self._brake_lights_active = True
-
-        if self._brake_lights_active and current_speed < target_speed:
-            self._brake_lights_active = False
-            light_state = self._actor.get_light_state()
-            light_state &= ~carla.VehicleLightState.Brake
-            self._actor.set_light_state(carla.VehicleLightState(light_state))

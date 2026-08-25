@@ -6,7 +6,10 @@ import operator
 import random
 import re
 import sys
+import csv
 from typing import List, Tuple
+
+import carla
 
 import py_trees
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -24,12 +27,14 @@ from srunner.osc2_dm.physical_types import Physical, Range
 # from sqlalchemy import true
 # from srunner.osc2_stdlib import event, variables
 from srunner.osc2_stdlib.modifier import (
+    Modifier,
     AccelerationModifier,
     ChangeLaneModifier,
     ChangeSpeedModifier,
     LaneModifier,
     PositionModifier,
     SpeedModifier,
+    FollowTrajectoryModifier,
 )
 
 # OSC2
@@ -43,6 +48,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     LaneChange,
     UniformAcceleration,
     WaypointFollower,
+    ChangeActorControl,
     calculate_distance,
 )
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
@@ -55,6 +61,16 @@ from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import oneshot_with_check
 from srunner.tools.osc2_helper import OSC2Helper
 
+from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorWaypoints
+
+def flatten(nested):
+    result = []
+    for item in nested:
+        if isinstance(item, list):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
 
 def para_type_str_sequence(config, arguments, line, column, node):
     retrieval_name = ""
@@ -132,7 +148,7 @@ def para_type_str_sequence(config, arguments, line, column, node):
 
 
 def process_speed_modifier(
-    config, modifiers, duration: float, all_duration: float, father_tree
+    config: OSC2ScenarioConfiguration, modifiers: list[Modifier], duration: float, all_duration: float, father_tree
 ):
     if not modifiers:
         return
@@ -197,7 +213,7 @@ def process_speed_modifier(
             LOG_WARNING("not implement modifier")
 
 
-def process_location_modifier(config, modifiers, duration: float, father_tree):
+def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list[Modifier], duration: float, father_tree):
     # position([distance: ]<distance> | time: <time>, [ahead_of: <car> | behind: <car>], [at: <event>])
     # lane([[lane: ]<lane>][right_of | left_of | same_as: <car>] | [side_of: <car>, side: <av-side>][at: <event>])
     """
@@ -226,8 +242,37 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             father_tree.add_child(continue_drive)
             print("END of change lane--")
             return
+        elif isinstance(modifier, FollowTrajectoryModifier):
+            waypoints = modifier.get_points()
+            times = modifier.get_times()
+            control = modifier.get_control()
+            actor_name = modifier.get_actor_name()
+            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+
+            initial_transform = OSC2Helper.get_init_trajectory_transform(waypoints)
+            actor_visible = ActorTransformSetter(actor, initial_transform)
+            father_tree.add_child(actor_visible)
+
+            if control == "physics":
+                control_module = None
+                scenario_path = ""
+            elif control == "velocity":
+                control_module = "vehicle_velocity_control.py"
+                scenario_path = "srunner/scenariomanager/actorcontrols/"
+            elif control == "teleport":
+                control_module = "vehicle_teleport_control.py"
+                scenario_path = "srunner/scenariomanager/actorcontrols/"
+            else:
+                raise ValueError(f"Unknown control scheme '{control}' for follow trajectory modifier")
+
+            controller_atomic = ChangeActorControl(actor, control_py_module=control_module, args={}, scenario_file_path=scenario_path)
+            father_tree.add_child(controller_atomic)
+
+            follow_traj = ChangeActorWaypoints(actor, waypoints=list(zip(waypoints, ['shortest'] * len(waypoints))), times=times, name="FollowTrajectory", is_osc1=False)
+            father_tree.add_child(follow_traj)
+
     # start
-    # Deal with absolute positioning vehicles first，such as lane(1, at: start)
+    # Deal with absolute positioning vehicles first, such as lane(1, at: start)
     event_start = [
         m
         for m in modifiers
@@ -244,9 +289,9 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
 
             car_config = config.get_car_config(car_name)
             car_config.set_arg({"init_transform": wp.transform})
-            LOG_INFO(
-                f"{car_name} car init position will be set to {wp.transform.location}, roadid = {wp.road_id}, laneid={wp.lane_id}, s = {wp.s}"
-            )
+            msg = (f"{car_name} car init position will be set to {wp.transform.location}, "
+                        f"roadid = {wp.road_id}, laneid={wp.lane_id}, s = {wp.s}")
+            LOG_INFO(msg)
         else:
             raise RuntimeError(f"no valid position to spawn {car_name} car")
 
@@ -303,9 +348,9 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
 
         car_config = config.get_car_config(npc_name)
         car_config.set_arg({"init_transform": init_wp.transform})
-        LOG_WARNING(
-            f"{npc_name} car init position will be set to {init_wp.transform.location},roadid = {init_wp.road_id}, laneid={init_wp.lane_id}, s={init_wp.s}"
-        )
+        msg = (f"{npc_name} car init position will be set to {init_wp.transform.location}, "
+                    f"roadid = {init_wp.road_id}, laneid={init_wp.lane_id}, s={init_wp.s}")
+        LOG_WARNING(msg)
 
     # end
     end_group = [m for m in modifiers if m.get_trigger_point() == "end"]
@@ -512,8 +557,8 @@ class OSC2Scenario(BasicScenario):
 
         def bool_result(self, option):
             # wait(x < y) @drive_distance Handling of Boolean expressions x < y
-            expression_value = re.split("\W+", option)
-            symbol = re.search("\W+", option).group()
+            expression_value = re.split(r"\W+", option)
+            symbol = re.search(r"\W+", option).group()
             if symbol == "<":
                 symbol = operator.lt
             elif symbol == ">":
@@ -609,13 +654,12 @@ class OSC2Scenario(BasicScenario):
                         self.visit_call_directive(child)
                     else:
                         raise NotImplementedError(f"no implentment AST node {child}")
+            elif isinstance(sub_node, ast_node.DoMember):
+                self.visit_do_member(sub_node)
             else:
-                if isinstance(sub_node, ast_node.DoMember):
-                    self.visit_do_member(sub_node)
-                else:
-                    raise NotImplementedError("no supported ast node")
+                raise NotImplementedError("no supported ast node")
 
-            if re.match("\d", str(self.__duration)) and self.__duration != math.inf:
+            if re.match(r"\d", str(self.__duration)) and self.__duration != math.inf:
                 self.father_ins.all_duration += int(self.__duration)
 
         def visit_wait_directive(self, node: ast_node.WaitDirective):
@@ -696,7 +740,7 @@ class OSC2Scenario(BasicScenario):
             behavior_name = node.behavior_name
 
             behavior_invocation_name = None
-            if actor != None:
+            if actor is not None:
                 behavior_invocation_name = actor + "." + behavior_name
             else:
                 behavior_invocation_name = behavior_name
@@ -712,7 +756,7 @@ class OSC2Scenario(BasicScenario):
                 # scenario_declaration_node = self.father_ins.scenario_declaration.get(behavior_invocation_name)
                 scenario_declaration_node_scope = scenario_declaration_node.get_scope()
                 arguments = self.visit_children(node)
-                # Stores the value of the argument before the invoked scenario was overwritten， a: time=None
+                # Stores the value of the argument before the invoked scenario was overwritten, a: time=None
                 # keyword_args = {}
                 if isinstance(arguments, List):
                     for arg in arguments:
@@ -730,7 +774,7 @@ class OSC2Scenario(BasicScenario):
                 #     scope = scenario_declaration_node_scope.resolve(name)
                 #     scope.value = value
                 del scenario_declaration_node
-                return
+                return None
 
             behavior = py_trees.composites.Parallel(
                 policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE,
@@ -877,7 +921,7 @@ class OSC2Scenario(BasicScenario):
                         elif isinstance(arguments, Physical):
                             keyword_args["desired_speed"] = arguments
                         else:
-                            return f"Needed 1 arguments, but given {len(arguments)}arguments."
+                            return f"Needed 1 arguments, but given {len(arguments)} arguments."
 
                         modifier_ins.set_args(keyword_args)
 
@@ -907,6 +951,49 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins.set_args(keyword_args)
 
                         location_modifiers.append(modifier_ins)
+                    elif modifier_name == "follow_trajectory":
+                        modifier_ins = FollowTrajectoryModifier(actor, modifier_name)
+
+                        keyword_args = {}
+                        wps = []
+                        ts = []
+
+                        for argument in arguments:
+
+                            if argument[0] == 'control':
+                                control = argument[1]
+                                keyword_args['control'] = control
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
+
+                            elif argument[0] == 'points':
+                                points = flatten(argument[1])
+                                for p in points:
+                                    px, py, pz, t = p.split(",")
+                                    wp = [float(px), float(py), float(pz)]
+                                    wps.append(wp)
+                                    ts.append(float(t))
+                                keyword_args['points'] = wps
+                                keyword_args['times'] = ts
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
+
+                            elif argument[0] == 'input_file':
+
+                                with open(argument[1], newline='') as csvfile:
+                                    reader = csv.reader(csvfile)
+                                    points = [row for row in reader]
+                                    for p in points:
+                                        wps.append([float(p[0]), float(p[1]), float(p[2])])
+                                        ts.append(float(p[3]))
+                                keyword_args['points'] = wps
+                                keyword_args['times'] = ts
+                                modifier_ins.set_args(keyword_args)
+                                location_modifiers.append(modifier_ins)
+
+                            else:
+                                raise ValueError(f"Detected an unexpect input '{argument[0]}' for the follow_trajectory modifier")
+
                     else:
                         raise NotImplementedError(
                             f"no implentment function: {modifier_name}"
@@ -918,7 +1005,7 @@ class OSC2Scenario(BasicScenario):
                 actor_drive.add_child(car_driving)
                 behavior.add_child(actor_drive)
                 self.__cur_behavior.add_child(behavior)
-                return
+                return None
 
             process_location_modifier(
                 self.father_ins.config, location_modifiers, self.__duration, actor_drive
@@ -933,6 +1020,7 @@ class OSC2Scenario(BasicScenario):
 
             behavior.add_child(actor_drive)
             self.__cur_behavior.add_child(behavior)
+            return None
 
         def visit_modifier_invocation(self, node: ast_node.ModifierInvocation):
             # actor = node.actor
@@ -956,6 +1044,7 @@ class OSC2Scenario(BasicScenario):
                     "keep_lane",
                     "change_speed",
                     "change_lane",
+                    "follow_trajectory"
                 )
             ):
                 line, column = node.get_loc()
@@ -985,7 +1074,7 @@ class OSC2Scenario(BasicScenario):
                 del method_declaration_node
                 if method_value is not None:
                     return method_value
-                return
+                return None
             else:
                 pass
             arguments = self.visit_children(node)
@@ -1194,10 +1283,10 @@ class OSC2Scenario(BasicScenario):
                 if isinstance(para_value, (Physical, float, int)):
                     return para_value
                 para_value = para_value.strip('"')
-                if re.fullmatch("(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
+                if re.fullmatch(r"(^[-]?[0-9]+(\.[0-9]+)?)\s*(\w+)", para_value):
                     # Regular expression ^[-]?[0-9]+(\.[0-9]+)? matching float
                     # para_value_num = re.findall('^[-]?[0-9]+(\.[0-9]+)?', para_value)[0]
-                    patter = re.compile("(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
+                    patter = re.compile(r"(^[-]?[0-9]+[\.[0-9]+]?)\s*(\w+)")
                     para_value_num, para_value_unit = patter.match(para_value).groups()
                     if para_value_num.count(".") == 1:
                         return Physical(
@@ -1267,10 +1356,10 @@ class OSC2Scenario(BasicScenario):
                 exec_context = ""
                 module_name = None
                 for elem in external_list:
-                    if "module" == elem[0]:
+                    if elem[0] == "module":
                         exec_context += "import " + str(elem[1]) + "\n"
                         module_name = str(elem[1])
-                    elif "name" == elem[0]:
+                    elif elem[0] == "name":
                         exec_context += "ret = "
                         if module_name is not None:
                             exec_context += module_name + "." + str(elem[1]) + "("
@@ -1300,7 +1389,7 @@ class OSC2Scenario(BasicScenario):
                         method_value = self.visit_binary_expression(child)
             if method_value is not None:
                 return method_value
-            return
+            return None
 
         def visit_function_application_expression(
             self, node: ast_node.FunctionApplicationExpression
@@ -1310,7 +1399,8 @@ class OSC2Scenario(BasicScenario):
 
             arguments = OSC2Helper.flat_list(self.visit_children(node))
             line, column = node.get_loc()
-            # retrieval_name = para_type_str_sequence(config=self.father_ins.config, arguments=arguments, line=line, column=column, node=node)
+            # retrieval_name = para_type_str_sequence(config=self.father_ins.config,
+            #                                         arguments=arguments, line=line, column=column, node=node)
             retrieval_name = arguments[0].split(".")[-1]
             method_scope = node.get_scope().resolve(retrieval_name)
 
@@ -1345,8 +1435,7 @@ class OSC2Scenario(BasicScenario):
                 if para_value is not None:
                     return para_value
                 return para_value
-            else:
-                pass
+            return None
 
         def visit_keep_constraint_declaration(
             self, node: ast_node.KeepConstraintDeclaration

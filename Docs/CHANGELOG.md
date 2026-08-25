@@ -1,4 +1,5 @@
 ## Table of Contents
+* [CARLA ScenarioRunner 0.9.16](#carla-scenariorunner-0916)
 * [CARLA ScenarioRunner 0.9.15](#carla-scenariorunner-0915)
 * [CARLA ScenarioRunner 0.9.13](#carla-scenariorunner-0913)
 * [CARLA ScenarioRunner 0.9.12](#carla-scenariorunner-0912)
@@ -12,13 +13,29 @@
 * [CARLA ScenarioRunner 0.9.5](#carla-scenariorunner-095)
 * [CARLA ScenarioRunner 0.9.2](#carla-scenariorunner-092)
 
-
 ## CARLA ScenarioRunner 0.10
 * Updated the scenarios to match the limitations of CARLA 0.10. This means moving them to Town10HD_Opt and updating the blueprints to the available ones.
 * Added Scenic examples to the repo, and updated the [available ones in their repo](https://github.com/BerkeleyLearnVerify/Scenic/tree/main/examples/carla/Carla_Challenge) to match the new release.
+* Resolved requested towns against the maps available on the server (CARLA UE5 requires exact names, e.g. Town01 -> Town01_Opt) and translated legacy 0.9.x blueprint ids to their UE5 equivalents.
+* Made OpenSCENARIO 2.0 support optional: its antlr4 runtime requirement conflicts with common packages, and every other mode now works without it.
 
+## CARLA ScenarioRunner 0.9.16
+
+### :rocket: New Features
+* New `frameRate` argument to specify the a custom frame rate. Only works in synchronous mode. 
 * Improvements to the CarlaDataProvider:
  - Added `spawn_actor` for a blueprint based actor creation similar to `World.spawn_actor`
+ - Changed how the `request_new_actor` function handles spawn transform by having making the `spawn_point` input optional. Giving no spawn point or random location results in an error.
+* Implement `strtobool` formerly included in `distutils`, which is removed in Python 3.12.
+* OpenSCENARIO now supports scientific notation.
+* Removed SyntaxWarnings in osc2_scenario.py.
+
+### :bug: Bug Fixes
+* Fixed issue at the metrics wheel aprser returning the incorrect data.
+* Fixed several functions that were destroying the actor without using the CarlaDataProvider.
+
+### :ghost: Maintenance
+* Several have had their code quality improved and added type-hint comments.
 
 ## CARLA ScenarioRunner 0.9.15
 ### :rocket: New Features

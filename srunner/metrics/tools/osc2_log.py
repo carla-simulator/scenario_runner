@@ -427,10 +427,7 @@ class Osc2Log(object):  # pylint: disable=too-many-public-methods
         """
         lights = self.get_vehicle_lights(vehicle_id, frame)
 
-        if light in lights:
-            return True
-
-        return False
+        return light in lights
 
     # Scene lights
     def get_scene_light_state(self, light_id, frame):

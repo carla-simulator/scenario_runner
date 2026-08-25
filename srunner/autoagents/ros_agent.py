@@ -30,9 +30,13 @@ from sensor_msgs.msg import Image, PointCloud2, NavSatFix, NavSatStatus, CameraI
 from sensor_msgs.point_cloud2 import create_cloud_xyz32
 from std_msgs.msg import Header, String
 import tf
-# pylint: disable=line-too-long
-from carla_msgs.msg import CarlaEgoVehicleStatus, CarlaEgoVehicleInfo, CarlaEgoVehicleInfoWheel, CarlaEgoVehicleControl, CarlaWorldInfo
-# pylint: enable=line-too-long
+from carla_msgs.msg import (
+    CarlaEgoVehicleStatus,
+    CarlaEgoVehicleInfo,
+    CarlaEgoVehicleInfoWheel,
+    CarlaEgoVehicleControl,
+    CarlaWorldInfo,
+)
 
 from srunner.autoagents.autonomous_agent import AutonomousAgent
 
@@ -122,42 +126,73 @@ class RosAgent(AutonomousAgent):
         self.cv_bridge = CvBridge()
 
         # setup ros publishers for sensors
-        # pylint: disable=line-too-long
         for sensor in self.sensors():
-            self.id_to_sensor_type_map[sensor['id']] = sensor['type']
-            if sensor['type'] == 'sensor.camera.rgb':
-                self.publisher_map[sensor['id']] = rospy.Publisher(
-                    '/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/image_color", Image, queue_size=1, latch=True)
-                self.id_to_camera_info_map[sensor['id']] = self.build_camera_info(sensor)
-                self.publisher_map[sensor['id'] + '_info'] = rospy.Publisher(
-                    '/carla/ego_vehicle/camera/rgb/' + sensor['id'] + "/camera_info", CameraInfo, queue_size=1, latch=True)
-            elif sensor['type'] == 'sensor.lidar.ray_cast':
-                self.publisher_map[sensor['id']] = rospy.Publisher(
-                    '/carla/ego_vehicle/lidar/' + sensor['id'] + "/point_cloud", PointCloud2, queue_size=1, latch=True)
-            elif sensor['type'] == 'sensor.other.gnss':
-                self.publisher_map[sensor['id']] = rospy.Publisher(
-                    '/carla/ego_vehicle/gnss/' + sensor['id'] + "/fix", NavSatFix, queue_size=1, latch=True)
-            elif sensor['type'] == 'sensor.can_bus':
+            self.id_to_sensor_type_map[sensor["id"]] = sensor["type"]
+            if sensor["type"] == "sensor.camera.rgb":
+                self.publisher_map[sensor["id"]] = rospy.Publisher(
+                    "/carla/ego_vehicle/camera/rgb/" + sensor["id"] + "/image_color",
+                    Image,
+                    queue_size=1,
+                    latch=True,
+                )
+                self.id_to_camera_info_map[sensor["id"]] = self.build_camera_info(
+                    sensor
+                )
+                self.publisher_map[sensor["id"] + "_info"] = rospy.Publisher(
+                    "/carla/ego_vehicle/camera/rgb/" + sensor["id"] + "/camera_info",
+                    CameraInfo,
+                    queue_size=1,
+                    latch=True,
+                )
+            elif sensor["type"] == "sensor.lidar.ray_cast":
+                self.publisher_map[sensor["id"]] = rospy.Publisher(
+                    "/carla/ego_vehicle/lidar/" + sensor["id"] + "/point_cloud",
+                    PointCloud2,
+                    queue_size=1,
+                    latch=True,
+                )
+            elif sensor["type"] == "sensor.other.gnss":
+                self.publisher_map[sensor["id"]] = rospy.Publisher(
+                    "/carla/ego_vehicle/gnss/" + sensor["id"] + "/fix",
+                    NavSatFix,
+                    queue_size=1,
+                    latch=True,
+                )
+            elif sensor["type"] == "sensor.can_bus":
                 if not self.vehicle_info_publisher:
                     self.vehicle_info_publisher = rospy.Publisher(
-                        '/carla/ego_vehicle/vehicle_info', CarlaEgoVehicleInfo, queue_size=1, latch=True)
+                        "/carla/ego_vehicle/vehicle_info",
+                        CarlaEgoVehicleInfo,
+                        queue_size=1,
+                        latch=True,
+                    )
                 if not self.vehicle_status_publisher:
                     self.vehicle_status_publisher = rospy.Publisher(
-                        '/carla/ego_vehicle/vehicle_status', CarlaEgoVehicleStatus, queue_size=1, latch=True)
-            elif sensor['type'] == 'sensor.hd_map':
+                        "/carla/ego_vehicle/vehicle_status",
+                        CarlaEgoVehicleStatus,
+                        queue_size=1,
+                        latch=True,
+                    )
+            elif sensor["type"] == "sensor.hd_map":
                 if not self.odometry_publisher:
                     self.odometry_publisher = rospy.Publisher(
-                        '/carla/ego_vehicle/odometry', Odometry, queue_size=1, latch=True)
+                        "/carla/ego_vehicle/odometry",
+                        Odometry,
+                        queue_size=1,
+                        latch=True,
+                    )
                 if not self.world_info_publisher:
                     self.world_info_publisher = rospy.Publisher(
-                        '/carla/world_info', CarlaWorldInfo, queue_size=1, latch=True)
+                        "/carla/world_info", CarlaWorldInfo, queue_size=1, latch=True
+                    )
                 if not self.map_file_publisher:
-                    self.map_file_publisher = rospy.Publisher('/carla/map_file', String, queue_size=1, latch=True)
+                    self.map_file_publisher = rospy.Publisher(
+                        "/carla/map_file", String, queue_size=1, latch=True
+                    )
                 if not self.tf_broadcaster:
                     self.tf_broadcaster = tf.TransformBroadcaster()
             else:
-                raise TypeError("Invalid sensor type: {}".format(sensor['type']))
-        # pylint: enable=line-too-long
+                raise TypeError("Invalid sensor type: {}".format(sensor["type"]))
 
     def destroy(self):
         """
@@ -293,9 +328,12 @@ class RosAgent(AutonomousAgent):
         msg.longitude = data[1]
         msg.altitude = data[2]
         msg.status.status = NavSatStatus.STATUS_SBAS_FIX
-        # pylint: disable=line-too-long
-        msg.status.service = NavSatStatus.SERVICE_GPS | NavSatStatus.SERVICE_GLONASS | NavSatStatus.SERVICE_COMPASS | NavSatStatus.SERVICE_GALILEO
-        # pylint: enable=line-too-long
+        msg.status.service = (
+            NavSatStatus.SERVICE_GPS
+            | NavSatStatus.SERVICE_GLONASS
+            | NavSatStatus.SERVICE_COMPASS
+            | NavSatStatus.SERVICE_GALILEO
+        )
         self.publisher_map[sensor_id].publish(msg)
 
     def publish_camera(self, sensor_id, data):

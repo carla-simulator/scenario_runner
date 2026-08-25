@@ -211,12 +211,6 @@ class ASTListener:
     def exit_positional_argument(self, node: ast_node.PositionalArgument):
         pass
 
-    def enter_variable_declaration(self, node: ast_node.VariableDeclaration):
-        pass
-
-    def exit_variable_declaration(self, node: ast_node.VariableDeclaration):
-        pass
-
     def enter_keep_constraint_declaration(
         self, node: ast_node.KeepConstraintDeclaration
     ):
