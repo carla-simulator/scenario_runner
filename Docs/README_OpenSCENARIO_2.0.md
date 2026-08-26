@@ -24,19 +24,19 @@ OpenJDK Runtime Environment (build 17.0.5+8-Ubuntu-2ubuntu120.04)
 OpenJDK 64-Bit Server VM (build 17.0.5+8-Ubuntu-2ubuntu120.04, mixed mode, sharing)
 ```
 
-**3 Install Antlr 4.10.1**
+**3 Install Antlr 4.9.3**
 
 [Antlr4](https://github.com/antlr/antlr4) is used to build AST and is the core component of OSC2 parsing.
 
 ```
 sudo apt install curl
-curl -O https://www.antlr.org/download/antlr-4.10.1-complete.jar
+curl -O https://www.antlr.org/download/antlr-4.9.3-complete.jar
 ```
 
 Put the .jar file into local/lib
 
 ```
-$ sudo cp antlr-4.10.1-complete.jar /usr/local/lib/
+$ sudo cp antlr-4.9.3-complete.jar /usr/local/lib/
 ```
 
 The following three steps are used to configure environment variables and create aliases so that antlr4 can be easily used from the command line.
@@ -48,8 +48,8 @@ $ sudo gedit ~/.bashrc
 Add the following at the end:
 
 ```
-export CLASSPATH=".:/usr/local/lib/antlr-4.10.1-complete.jar:$CLASSPATH"
-alias antlr4='java -jar /usr/local/lib/antlr-4.10.1-complete.jar'
+export CLASSPATH=".:/usr/local/lib/antlr-4.9.3-complete.jar:$CLASSPATH"
+alias antlr4='java -jar /usr/local/lib/antlr-4.9.3-complete.jar'
 alias grun='java org.antlr.v4.gui.TestRig'
 ```
 
@@ -63,7 +63,7 @@ Enter antlr4 for verifying in the terminal:
 
 ```
 $ antlr4
-ANTLR Parser Generator  Version 4.10.1
+ANTLR Parser Generator  Version 4.9.3
  -o ___              specify output directory where all output is generated
  -lib ___            specify location of grammars, tokens files
  -atn                generate rule augmented transition network diagrams
@@ -88,7 +88,7 @@ ANTLR Parser Generator  Version 4.10.1
 **4 Install antlr4 runtime**
 
 ```
-pip install antlr4-python3-runtime==4.10
+pip install antlr4-python3-runtime==4.9.3
 ```
 
 **5 Install python dependencies**

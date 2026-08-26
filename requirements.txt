@@ -10,7 +10,7 @@ opencv-python
 matplotlib
 six
 graphviz
-# Optional: only required for OpenSCENARIO 2.0 (--openscenario2) support.
-# The 4.10 runtime conflicts with packages that pin antlr4 4.9.* (e.g.
-# omegaconf); without it every other scenario_runner mode still works.
-# antlr4-python3-runtime==4.10
+# Required for OpenSCENARIO 2.0 (--openscenario2) support; the OSC2 parser is
+# generated with ANTLR 4.9.3, matching the 4.9.* pin of common packages such
+# as omegaconf. Every other scenario_runner mode works without it.
+antlr4-python3-runtime==4.9.3

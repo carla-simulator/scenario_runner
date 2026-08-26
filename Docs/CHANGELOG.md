@@ -17,7 +17,9 @@
 * Updated the scenarios to match the limitations of CARLA 0.10. This means moving them to Town10HD_Opt and updating the blueprints to the available ones.
 * Added Scenic examples to the repo, and updated the [available ones in their repo](https://github.com/BerkeleyLearnVerify/Scenic/tree/main/examples/carla/Carla_Challenge) to match the new release.
 * Resolved requested towns against the maps available on the server (CARLA UE5 requires exact names, e.g. Town01 -> Town01_Opt) and translated legacy 0.9.x blueprint ids to their UE5 equivalents.
-* Made OpenSCENARIO 2.0 support optional: its antlr4 runtime requirement conflicts with common packages, and every other mode now works without it.
+* Made OpenSCENARIO 2.0 support optional: every other mode works without the antlr4 runtime installed.
+* Regenerated the OpenSCENARIO 2.0 parser with ANTLR 4.9.3 (the `sum` grammar rule became `sumExpression`, as 4.9.3 reserves the name): the required antlr4-python3-runtime now matches the 4.9.* pin of common packages such as omegaconf, so both can share an environment.
+* `CarlaDataProvider.get_waypoint_by_laneid` now advances through the spawn points until one offers the requested lane instead of failing on the first candidate, whose road can sit inside a junction depending on the map's spawn point ordering.
 
 ## CARLA ScenarioRunner 0.9.16
 

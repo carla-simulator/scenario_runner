@@ -503,14 +503,14 @@ inversion
 	| relation;
 
 relation 
-	: sum #sumExp
-	| relation relationalOp sum #relationExp;
+	: sumExpression #sumExp
+	| relation relationalOp sumExpression #relationExp;
 
 relationalOp : '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in';
 
-sum 
+sumExpression 
 	: term #termExp
-	| sum additiveOp term #additiveExp;
+	| sumExpression additiveOp term #additiveExp;
 
 additiveOp 
 	: '+' 

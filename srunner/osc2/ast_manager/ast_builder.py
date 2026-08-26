@@ -2121,12 +2121,12 @@ class ASTBuilder(OpenSCENARIO2Listener):
     def exitRelationalOp(self, ctx: OpenSCENARIO2Parser.RelationalOpContext):
         pass
 
-    # Enter a parse tree produced by OpenSCENARIO2Parser#sum.
-    def enterSum(self, ctx: OpenSCENARIO2Parser.SumContext):
+    # Enter a parse tree produced by OpenSCENARIO2Parser#sumExpression.
+    def enterSumExpression(self, ctx: OpenSCENARIO2Parser.SumExpressionContext):
         pass
 
-    # Exit a parse tree produced by OpenSCENARIO2Parser#sum.
-    def exitSum(self, ctx: OpenSCENARIO2Parser.SumContext):
+    # Exit a parse tree produced by OpenSCENARIO2Parser#sumExpression.
+    def exitSumExpression(self, ctx: OpenSCENARIO2Parser.SumExpressionContext):
         pass
 
     # Enter a parse tree produced by OpenSCENARIO2Parser#additiveExp.

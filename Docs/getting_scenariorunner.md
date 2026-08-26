@@ -182,14 +182,14 @@ To permanently set the environment variables, go to *edit the environment variab
 If you need to run the scenario based on the OpenSCENARIO 2.0 format, please install graphviz and antlr first:
 ```
 sudo apt-get install -y openjdk-17-jdk graphviz
-curl -O https://www.antlr.org/download/antlr-4.10.1-complete.jar
-sudo cp antlr-4.10.1-complete.jar /usr/local/lib/
+curl -O https://www.antlr.org/download/antlr-4.9.3-complete.jar
+sudo cp antlr-4.9.3-complete.jar /usr/local/lib/
 sudo gedit ~/.bashrc
 ```
 Add environment variables into ~/.bashrc:
 ```
-export CLASSPATH=".:/usr/local/lib/antlr-4.10.1-complete.jar:$CLASSPATH"
-alias antlr4='java -jar /usr/local/lib/antlr-4.10.1-complete.jar'
+export CLASSPATH=".:/usr/local/lib/antlr-4.9.3-complete.jar:$CLASSPATH"
+alias antlr4='java -jar /usr/local/lib/antlr-4.9.3-complete.jar'
 alias grun='java org.antlr.v4.gui.TestRig'
 ```
 And make the changes into effect:

@@ -54,9 +54,10 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
-# OpenSCENARIO 2.0 support requires antlr4-python3-runtime 4.10, which conflicts
-# with other common packages (e.g. omegaconf pins 4.9.*). Import lazily so every
-# other mode works without it; --openscenario2 reports the missing dependency.
+# OpenSCENARIO 2.0 support requires antlr4-python3-runtime (the parser is
+# generated with ANTLR 4.9.3, the version that packages like omegaconf accept).
+# Import lazily so every other mode works without it; --openscenario2 reports
+# the missing dependency.
 try:
     from srunner.tools.osc2_helper import OSC2Helper
     from srunner.scenarios.osc2_scenario import OSC2Scenario
@@ -561,7 +562,7 @@ class ScenarioRunner(object):
         https://www.asam.net/static_downloads/public/asam-openscenario/2.0.0/welcome.html
         """
         if not OSC2_SUPPORT:
-            print("OpenSCENARIO 2.0 support is unavailable: install antlr4-python3-runtime==4.10")
+            print("OpenSCENARIO 2.0 support is unavailable: install antlr4-python3-runtime==4.9.3")
             self._cleanup()
             return False
 
@@ -670,7 +671,7 @@ def main():
     if OSC2_SUPPORT:
         OSC2Helper.wait_for_ego = arguments.waitForEgo
     elif arguments.openscenario2:
-        print("OpenSCENARIO 2.0 support is unavailable: install antlr4-python3-runtime==4.10\n\n")
+        print("OpenSCENARIO 2.0 support is unavailable: install antlr4-python3-runtime==4.9.3\n\n")
         return 1
 
     if arguments.list:

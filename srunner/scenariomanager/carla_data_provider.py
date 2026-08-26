@@ -624,10 +624,14 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         if CarlaDataProvider._spawn_points is None:
             CarlaDataProvider.generate_spawn_points()
 
-        if CarlaDataProvider._spawn_index >= len(CarlaDataProvider._spawn_points):
-            print("No more spawn points to use")
-            return None
-        else:
+        lane = int(float(lane_num))
+        index = lane - 1
+
+        # Advance until a spawn point whose road offers the requested lane:
+        # spawn point ordering is map-specific and the first candidates can sit
+        # inside junctions (where no parallel lane layout can be derived) or on
+        # roads with fewer lanes.
+        while CarlaDataProvider._spawn_index < len(CarlaDataProvider._spawn_points):  # pylint: disable=len-as-condition
             pos = CarlaDataProvider._spawn_points[CarlaDataProvider._spawn_index]  # pylint: disable=unsubscriptable-object
             CarlaDataProvider._spawn_index += 1
             wp = CarlaDataProvider.get_map().get_waypoint(
@@ -635,12 +639,11 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             )
 
             road_lanes = CarlaDataProvider.get_road_lanes(wp)
+            if -len(road_lanes) <= index < len(road_lanes):
+                return road_lanes[index]
 
-            lane = int(float(lane_num))
-            if lane > len(road_lanes):
-                return None
-            else:
-                return road_lanes[lane - 1]
+        print("No more spawn points to use")
+        return None
 
     # CARLA UE5 (0.10.x) renamed or removed most of the 0.9.x blueprint catalog.
     # Legacy names are translated here so that existing scenario definitions keep
