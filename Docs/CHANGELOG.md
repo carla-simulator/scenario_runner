@@ -20,6 +20,7 @@
 * Made OpenSCENARIO 2.0 support optional: every other mode works without the antlr4 runtime installed.
 * Regenerated the OpenSCENARIO 2.0 parser with ANTLR 4.9.3 (the `sum` grammar rule became `sumExpression`, as 4.9.3 reserves the name): the required antlr4-python3-runtime now matches the 4.9.* pin of common packages such as omegaconf, so both can share an environment.
 * `CarlaDataProvider.get_waypoint_by_laneid` now advances through the spawn points until one offers the requested lane instead of failing on the first candidate, whose road can sit inside a junction depending on the map's spawn point ordering.
+* Routes authored for leaderboard-2.1 no longer skip `ConstructionObstacle`, `ConstructionObstacleTwoWays` and `ParkingExit`: when a route lacks the `start_actor_flow` parameter these scenarios now require, RouteScenario falls back to their leaderboard-2.1 definitions (see `legacy_route_scenarios.py`).
 
 ## CARLA ScenarioRunner 0.9.16
 
