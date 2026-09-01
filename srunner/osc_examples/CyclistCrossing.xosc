@@ -4,7 +4,7 @@
   <ParameterDeclarations/>
   <CatalogLocations/>
   <RoadNetwork>
-    <LogicFile filepath="Town01"/>
+    <LogicFile filepath="Town01_Opt"/>
     <SceneGraphFile filepath=""/>
   </RoadNetwork>
   <Entities>

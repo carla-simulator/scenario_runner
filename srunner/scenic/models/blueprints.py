@@ -97,9 +97,9 @@ garbageModels = [
 
 #: blueprints for containers
 containerModels = [
-    "static.prop.container",
-    "static.prop.clothcontainer",
-    "static.prop.glasscontainer",
+    "static.prop.dumpster",
+    "static.prop.recyclecardboard",
+    "static.prop.recycleglass",
 ]
 
 #: blueprints for tables

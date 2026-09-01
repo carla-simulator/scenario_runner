@@ -85,8 +85,8 @@ class ScenarioRunner(object):
     ego_vehicles = []
 
     # Tunable parameters
-    client_timeout = 10.0  # in seconds
-    wait_for_world = 20.0  # in seconds
+    client_timeout = 120.0  # in seconds
+    wait_for_world = 60.0  # in seconds
 
     # CARLA world and scenario handlers
     world = None
@@ -612,7 +612,7 @@ def main():
                         help='IP of the host server (default: localhost)')
     parser.add_argument('--port', default='2000',
                         help='TCP port to listen to (default: 2000)')
-    parser.add_argument('--timeout', default="10.0",
+    parser.add_argument('--timeout', default="120.0",
                         help='Set the CARLA client timeout value in seconds')
     parser.add_argument('--trafficManagerPort', default='8000',
                         help='Port to use for the TrafficManager (default: 8000)')

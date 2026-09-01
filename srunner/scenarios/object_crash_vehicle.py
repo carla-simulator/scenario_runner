@@ -88,7 +88,7 @@ class StationaryObjectCrossing(BasicScenario):
         location += offset_location
         location.z += offset['z']
         self.transform = carla.Transform(location, carla.Rotation(yaw=orientation_yaw))
-        static = CarlaDataProvider.request_new_actor('static.prop.container', self.transform)
+        static = CarlaDataProvider.request_new_actor('static.prop.dumpster', self.transform)
         static.set_simulate_physics(True)
         self.other_actors.append(static)
 

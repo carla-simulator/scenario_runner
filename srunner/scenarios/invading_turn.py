@@ -103,7 +103,7 @@ class InvadingTurn(BasicScenario):
             displacement = 0.8 * next_wp.lane_width / 2
             r_vec = next_wp.transform.get_right_vector()
             spawn_transform = next_wp.transform
-            spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=0.3)
+            spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y)
 
             cone = CarlaDataProvider.request_new_actor('*constructioncone*', spawn_transform)
             self.other_actors.append(cone)

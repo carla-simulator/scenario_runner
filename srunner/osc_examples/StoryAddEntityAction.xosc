@@ -6,12 +6,12 @@
   </ParameterDeclarations>
   <CatalogLocations/>
   <RoadNetwork>
-    <LogicFile filepath="Town01"/>
+    <LogicFile filepath="Town01_Opt"/>
     <SceneGraphFile filepath=""/>
   </RoadNetwork>
   <Entities>
     <ScenarioObject name="hero">
-      <Vehicle name="vehicle.lincoln.mkz_2017" vehicleCategory="car">
+      <Vehicle name="vehicle.lincoln.mkz" vehicleCategory="car">
         <ParameterDeclarations/>
         <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
         <BoundingBox>
@@ -65,7 +65,7 @@
       </Vehicle>
     </ScenarioObject>
     <ScenarioObject name="C1">
-      <MiscObject mass="500.0" name="static.prop.container" miscObjectCategory="obstacle">
+      <MiscObject mass="500.0" name="static.prop.dumpster" miscObjectCategory="obstacle">
         <ParameterDeclarations/>
         <BoundingBox>
           <Center x="-1.0" y="0.0" z="0.85"/>

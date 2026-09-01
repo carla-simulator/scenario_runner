@@ -645,10 +645,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         print("No more spawn points to use")
         return None
 
-    # CARLA UE5 (0.10.x) renamed or removed most of the 0.9.x blueprint catalog.
-    # Legacy names are translated here so that existing scenario definitions keep
-    # working. Two-wheeled vehicles (bicycles, motorbikes) have no UE5 equivalent
-    # and deliberately have no alias: scenarios using them fail with a clear error.
+    # Legacy (0.9.x) blueprint id -> its CARLA UE5 equivalent. Two-wheelers keep
+    # their original ids, so they need no entry.
     _ue5_blueprint_aliases = {
         'vehicle.lincoln.mkz_2017': 'vehicle.lincoln.mkz',
         'vehicle.lincoln.mkz2017': 'vehicle.lincoln.mkz',
@@ -691,8 +689,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         'static.prop.creasedbox02': 'static.prop.creasedbox01',
         'static.prop.creasedbox03': 'static.prop.creasedbox01',
         'static.prop.busstoplb': 'static.prop.busstop',
-        'static.prop.clothcontainer': 'static.prop.container',
-        'static.prop.glasscontainer': 'static.prop.container',
+        'static.prop.clothcontainer': 'static.prop.recyclecardboard',
+        'static.prop.glasscontainer': 'static.prop.recycleglass',
         'static.prop.foodcart': 'static.prop.kiosk_01',
         'static.prop.haybalelb': 'static.prop.haybale',
         'static.prop.ironplank': 'static.prop.streetbarrier',

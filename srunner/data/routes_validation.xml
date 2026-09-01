@@ -1220,13 +1220,13 @@
          <scenario name="DynamicObjectCrossing_6" type="DynamicObjectCrossing">
             <trigger_point x="2984.5" y="3354.7" z="181.5" yaw="90.4"/>
             <distance value="55"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="6"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_7" type="DynamicObjectCrossing">
             <trigger_point x="2779.6" y="3573.7" z="177.4" yaw="0.9"/>
             <distance value="60"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="2"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_8" type="DynamicObjectCrossing">
@@ -1259,7 +1259,7 @@
          <scenario name="DynamicObjectCrossing_13" type="DynamicObjectCrossing">
             <trigger_point x="2307.00" y="5525.60" z="152.54" yaw="0.7"/>
             <distance value="70"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_14" type="DynamicObjectCrossing">
             <trigger_point x="2632.8" y="5541.5" z="158.6" yaw="90.3"/>
@@ -1270,7 +1270,7 @@
          <scenario name="DynamicObjectCrossing_15" type="DynamicObjectCrossing">
             <trigger_point x="3234.0" y="5397.8" z="172.8" yaw="270.6"/>
             <distance value="45"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="6"/>
          </scenario>
          <scenario name="ConstructionObstacleTwoWays_2" type="ConstructionObstacleTwoWays">
@@ -3891,7 +3891,7 @@
          <scenario name="DynamicObjectCrossing_2" type="DynamicObjectCrossing">
             <trigger_point x="5790.9" y="3996.1" z="159.1" yaw="90.6"/>
             <distance value="75"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="1"/>
          </scenario>
          <scenario name="ParkingCrossingPedestrian_4" type="ParkingCrossingPedestrian">
@@ -3949,7 +3949,7 @@
          <scenario name="DynamicObjectCrossing_10" type="DynamicObjectCrossing">
             <trigger_point x="3427.0" y="4986.9" z="181.0" yaw="1.2"/>
             <distance value="70"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="1"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_11" type="DynamicObjectCrossing">
@@ -5419,13 +5419,13 @@
          <scenario name="DynamicObjectCrossing_6" type="DynamicObjectCrossing">
             <trigger_point x="2984.5" y="3354.7" z="181.5" yaw="90.4"/>
             <distance value="55"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="6"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_7" type="DynamicObjectCrossing">
             <trigger_point x="2779.6" y="3573.7" z="177.4" yaw="0.9"/>
             <distance value="60"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="2"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_8" type="DynamicObjectCrossing">
@@ -5458,7 +5458,7 @@
          <scenario name="DynamicObjectCrossing_13" type="DynamicObjectCrossing">
             <trigger_point x="2307.00" y="5525.60" z="152.54" yaw="0.7"/>
             <distance value="70"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_14" type="DynamicObjectCrossing">
             <trigger_point x="2632.8" y="5541.5" z="158.6" yaw="90.3"/>
@@ -5469,7 +5469,7 @@
          <scenario name="DynamicObjectCrossing_15" type="DynamicObjectCrossing">
             <trigger_point x="3234.0" y="5397.8" z="172.8" yaw="270.6"/>
             <distance value="45"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="6"/>
          </scenario>
          <scenario name="ConstructionObstacleTwoWays_2" type="ConstructionObstacleTwoWays">
@@ -8088,7 +8088,7 @@
          <scenario name="DynamicObjectCrossing_2" type="DynamicObjectCrossing">
             <trigger_point x="5790.9" y="3996.1" z="159.1" yaw="90.6"/>
             <distance value="75"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="1"/>
          </scenario>
          <scenario name="ParkingCrossingPedestrian_4" type="ParkingCrossingPedestrian">
@@ -8146,7 +8146,7 @@
          <scenario name="DynamicObjectCrossing_10" type="DynamicObjectCrossing">
             <trigger_point x="3427.0" y="4986.9" z="181.0" yaw="1.2"/>
             <distance value="70"/>
-            <blocker_model value="static.prop.container"/>
+            <blocker_model value="static.prop.dumpster"/>
             <crossing_angle value="1"/>
          </scenario>
          <scenario name="DynamicObjectCrossing_11" type="DynamicObjectCrossing">

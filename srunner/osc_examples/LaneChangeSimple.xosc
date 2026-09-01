@@ -4,7 +4,7 @@
   <ParameterDeclarations/>
   <CatalogLocations/>
   <RoadNetwork>
-    <LogicFile filepath="Town04"/>
+    <LogicFile filepath="Town04_Opt"/>
     <SceneGraphFile filepath=""/>
   </RoadNetwork>
   <Entities>
@@ -26,7 +26,7 @@
       </Vehicle>
     </ScenarioObject>
     <ScenarioObject name="adversary">
-      <Vehicle name="vehicle.lincoln.mkz_2017" vehicleCategory="car">
+      <Vehicle name="vehicle.lincoln.mkz" vehicleCategory="car">
         <ParameterDeclarations/>
         <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
         <BoundingBox>
