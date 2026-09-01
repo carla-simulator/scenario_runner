@@ -254,7 +254,10 @@ class DynamicObjectCrossing(BasicScenario):
                     parking_location = side_wp.transform.location
 
             # Get the blocker transform and spawn it
-            offset = {"yaw": 0 if 'vehicle' in self._blocker_model else 90, "z": 0.0, "k": 1.5}
+            # Props sit across the kerb, except the dumpster, whose long axis
+            # runs along it like a vehicle's.
+            aligned = 'vehicle' in self._blocker_model or self._blocker_model == 'static.prop.dumpster'
+            offset = {"yaw": 0 if aligned else 90, "z": 0.0, "k": 1.5}
             self._blocker_transform = self._get_sidewalk_transform(sidewalk_waypoint, offset)
             blocker = CarlaDataProvider.request_new_actor(
                 self._blocker_model, self._blocker_transform, rolename="scenario no lights")
