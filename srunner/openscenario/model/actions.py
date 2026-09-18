@@ -28,3 +28,22 @@ class ParameterAction(Action):
     @property
     def is_modify(self):
         return self.modify_rule is not None
+
+
+class VariableSetAction(Action):
+    action_type = "VariableSetAction"
+
+    def __init__(self, variable_ref, value, source=None):
+        self.variable_ref = variable_ref
+        self.value = value
+        self.source = source
+
+
+class VariableModifyAction(Action):
+    action_type = "VariableModifyAction"
+
+    def __init__(self, variable_ref, rule, value, source=None):
+        self.variable_ref = variable_ref
+        self.rule = rule
+        self.value = value
+        self.source = source

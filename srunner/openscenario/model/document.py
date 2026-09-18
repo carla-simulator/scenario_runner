@@ -5,8 +5,8 @@ from __future__ import absolute_import
 import copy
 
 from srunner.openscenario.model.actions import ParameterAction
-from srunner.openscenario.model.parameters import ParameterDeclaration
-from srunner.openscenario.model.references import CatalogReference
+from srunner.openscenario.model.parameters import ParameterDeclaration, VariableDeclaration
+from srunner.openscenario.model.references import CatalogReference, Position
 
 
 class OpenScenarioDocument(object):
@@ -17,7 +17,10 @@ class OpenScenarioDocument(object):
         self.version = version
         self.source = source
         self.parameter_declarations = self._read_parameters(root)
+        self.variable_declarations = self._read_variables(root)
         self.catalog_references = self._read_catalog_references(root)
+        self.parameter_store = self._make_store(self.parameter_declarations)
+        self.variable_store = self._make_variable_store(self.variable_declarations)
 
     @staticmethod
     def _read_parameters(root):
@@ -39,6 +42,33 @@ class OpenScenarioDocument(object):
         if overrides:
             values.update(overrides)
         return values
+
+    @staticmethod
+    def _read_variables(root):
+        declarations = []
+        containers = [root.find("VariableDeclarations")]
+        storyboard = root.find("Storyboard")
+        if storyboard is not None:
+            containers.append(storyboard.find("VariableDeclarations"))
+        for container in containers:
+            if container is None:
+                continue
+            for element in container.findall("VariableDeclaration"):
+                declarations.append(VariableDeclaration(
+                    name=element.attrib.get("name"),
+                    variable_type=element.attrib.get("variableType", element.attrib.get("type")),
+                    value=element.attrib.get("value"), source=element))
+        return declarations
+
+    @staticmethod
+    def _make_store(declarations):
+        from srunner.openscenario.model.parameters import ParameterStore
+        return ParameterStore(declarations)
+
+    @staticmethod
+    def _make_variable_store(declarations):
+        from srunner.openscenario.model.parameters import VariableStore
+        return VariableStore(declarations)
 
     @staticmethod
     def _read_catalog_references(root):
@@ -112,6 +142,34 @@ class OpenScenarioDocument(object):
                     action.sequence_index = index
                     actions.append(action)
         return actions
+
+    def variable_actions(self):
+        """Yield variable actions from Init without resolving them through CARLA."""
+        from srunner.openscenario.model.actions import VariableModifyAction, VariableSetAction
+        storyboard = self.root.find("Storyboard")
+        if storyboard is None or storyboard.find("Init") is None:
+            return []
+        actions = []
+        for index, global_action in enumerate(storyboard.find("Init").iter("GlobalAction")):
+            element = global_action.find("VariableAction")
+            if element is None:
+                continue
+            set_action = element.find("VariableSetAction")
+            modify_action = element.find("VariableModifyAction")
+            if set_action is not None:
+                action = VariableSetAction(set_action.attrib.get("variableRef"), set_action.attrib.get("value"), element)
+            elif modify_action is not None:
+                action = VariableModifyAction(modify_action.attrib.get("variableRef"),
+                                              modify_action.attrib.get("modification"),
+                                              modify_action.attrib.get("value"), element)
+            else:
+                continue
+            action.sequence_index = index
+            actions.append(action)
+        return actions
+
+    def positions(self):
+        return [Position.from_xml(element) for element in self.root.iter("Position")]
 
     def copy_xml(self):
         return copy.deepcopy(self.root)

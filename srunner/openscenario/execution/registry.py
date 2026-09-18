@@ -31,3 +31,23 @@ class ActionExecutorRegistry(object):
         if executor is None:
             raise UnsupportedFeatureError(action)
         return executor(action, context)
+
+
+def register_variable_executors(registry):
+    """Register backend-independent variable actions on a registry."""
+    def set_variable(action, context):
+        try:
+            return context.evaluation.variables.set(action.variable_ref, context.evaluation.resolve(action.value))
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("Cannot set variable '{}': {}".format(action.variable_ref, error))
+
+    def modify_variable(action, context):
+        try:
+            value = context.evaluation.resolve(action.value)
+            return context.evaluation.variables.modify(action.variable_ref, action.rule, value)
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("Cannot modify variable '{}': {}".format(action.variable_ref, error))
+
+    registry.register("VariableSetAction", set_variable)
+    registry.register("VariableModifyAction", modify_variable)
+    return registry
