@@ -222,6 +222,48 @@ class OpenScenarioDocument(object):
                 source=element))
         return actions
 
+    @staticmethod
+    def action_from_xml(element):
+        """Create one semantic action from an action XML element.
+
+        This narrow entry point is used by the incremental runtime adapter so
+        migrated actions do not need to be rediscovered through the legacy
+        parser's global XML traversal.
+        """
+        if element is None:
+            return None
+        if element.tag == "AssignRouteAction":
+            route = element.find("Route")
+            reference = element.find("CatalogReference")
+            return AssignRouteAction(
+                route=Route.from_xml(route) if route is not None else None,
+                catalog_reference=CatalogReference(
+                    reference.attrib.get("catalogName"), reference.attrib.get("entryName"),
+                    source=reference) if reference is not None else None,
+                source=element)
+        if element.tag == "AcquirePositionAction":
+            position = element.find("Position")
+            return AcquirePositionAction(Position.from_xml(position), source=element)
+        if element.tag == "FollowTrajectoryAction":
+            trajectory = element.find("Trajectory")
+            reference = element.find("CatalogReference")
+            return FollowTrajectoryAction(
+                trajectory=Trajectory.from_xml(
+                    trajectory,
+                    time_reference=element.attrib.get("timeReference"),
+                    following_mode=element.attrib.get("followingMode")) if trajectory is not None else None,
+                catalog_reference=CatalogReference(
+                    reference.attrib.get("catalogName"), reference.attrib.get("entryName"),
+                    source=reference) if reference is not None else None,
+                time_reference=element.attrib.get("timeReference"),
+                following_mode=element.attrib.get("followingMode"),
+                source=element)
+        if element.tag == "SpeedProfileAction":
+            segments = [dict(child.attrib) for child in list(element)
+                        if child.tag in ("SpeedProfileEntry", "Entry", "SpeedSegment")]
+            return SpeedProfileAction(segments, element.attrib.get("entityRef"), element)
+        return None
+
     def speed_profile_actions(self):
         actions = []
         for element in self.root.iter("SpeedProfileAction"):

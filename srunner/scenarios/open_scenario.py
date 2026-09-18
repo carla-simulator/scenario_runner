@@ -32,7 +32,8 @@ from srunner.tools.py_trees_port import Decorator
 from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction
 from srunner.openscenario.compatibility.global_parameters import GlobalParameterMapping
 from srunner.openscenario.execution.context import ExecutionContext
-from srunner.openscenario.execution.registry import default_registry
+from srunner.openscenario.execution.registry import (
+    ActionExecutorRegistry, UnsupportedFeatureError, default_registry, register_route_executors)
 from srunner.openscenario.parsing.loader import load_document
 from srunner.openscenario.validation.diagnostics import diagnostics_as_validation_error
 
@@ -65,6 +66,65 @@ def create_init_parameters_behavior(context, registry=None):
         param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % sequence_index,
                                                     behaviour=update))
     return param_behavior
+
+
+class _ScenarioRunnerSemanticBackend(object):
+    """Resolve migrated semantic actions into existing ScenarioRunner atomics.
+
+    The semantic model remains CARLA-independent.  This adapter is the
+    runtime boundary used only after semantic parsing and registry dispatch.
+    Unsupported actions deliberately raise ``UnsupportedFeatureError`` so the
+    caller can preserve the legacy path.
+    """
+
+    def __init__(self, scenario, actor):
+        self.scenario = scenario
+        self.actor = actor
+
+    def assign_route(self, action, context):
+        waypoints = OpenScenarioParser.get_route(action.source, self.scenario.config.catalogs)
+        return ChangeActorWaypoints(self.actor, waypoints=waypoints, name="AssignRouteAction")
+
+    def acquire_position(self, action, context):
+        return ChangeActorWaypoints(self.actor,
+                                    waypoints=[(action.source.find("Position"), "fastest")],
+                                    name="AcquirePositionAction")
+
+    def follow_trajectory(self, action, context):
+        waypoints, times = OpenScenarioParser.get_trajectory(
+            action.source, self.scenario.config.catalogs)
+        return ChangeActorWaypoints(
+            self.actor,
+            waypoints=list(zip(waypoints, ["shortest"] * len(waypoints))),
+            times=times,
+            name="FollowTrajectoryAction")
+
+    def apply_speed_profile(self, action, context):
+        raise UnsupportedFeatureError(action)
+
+
+def _semantic_route_behavior(scenario, private_action, actor):
+    """Return a migrated route behavior, or ``None`` for legacy fallback."""
+    from srunner.openscenario.model.document import OpenScenarioDocument
+
+    routing = private_action.find("RoutingAction")
+    if routing is None:
+        return None
+    for element in routing:
+        action = OpenScenarioDocument.action_from_xml(element)
+        if action is None:
+            continue
+        context = ExecutionContext(backend=_ScenarioRunnerSemanticBackend(scenario, actor),
+                                   state={"configuration": scenario.config})
+        try:
+            return _OPENSCENARIO_ROUTE_EXECUTORS.execute(action, context)
+        except (UnsupportedFeatureError, AttributeError, ValueError):
+            return None
+    return None
+
+
+_OPENSCENARIO_ROUTE_EXECUTORS = ActionExecutorRegistry()
+register_route_executors(_OPENSCENARIO_ROUTE_EXECUTORS)
 
 
 def repeatable_behavior(behaviour, name=None):
@@ -350,25 +410,27 @@ class OpenScenario(BasicScenario):
                                                                        name=maneuver_name)
 
                                 elif private_action.find('RoutingAction') is not None:
-                                    private_action = private_action.find('RoutingAction')
-                                    if private_action.find('AssignRouteAction') is not None:
-                                        route_action = private_action.find('AssignRouteAction')
-                                        waypoints = OpenScenarioParser.get_route(route_action, self.config.catalogs)
-                                        atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
-                                                                      name="AssignRouteAction")
-                                    elif private_action.find('FollowTrajectoryAction') is not None:
-                                        trajectory_action = private_action.find('FollowTrajectoryAction')
-                                        waypoints, times = OpenScenarioParser.get_trajectory(trajectory_action,
-                                                                                             self.config.catalogs)
-                                        atomic = ChangeActorWaypoints(carla_actor, waypoints=list(
-                                            zip(waypoints, ['shortest'] * len(waypoints))),
-                                                                      times=times, name="FollowTrajectoryAction")
-                                    elif private_action.find('AcquirePositionAction') is not None:
-                                        route_action = private_action.find('AcquirePositionAction')
-                                        osc_position = route_action.find('Position')
-                                        waypoints = [(osc_position, 'fastest')]
-                                        atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
-                                                                      name="AcquirePositionAction")
+                                    atomic = _semantic_route_behavior(self, private_action, carla_actor)
+                                    if atomic is None:
+                                        private_action = private_action.find('RoutingAction')
+                                        if private_action.find('AssignRouteAction') is not None:
+                                            route_action = private_action.find('AssignRouteAction')
+                                            waypoints = OpenScenarioParser.get_route(route_action, self.config.catalogs)
+                                            atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
+                                                                          name="AssignRouteAction")
+                                        elif private_action.find('FollowTrajectoryAction') is not None:
+                                            trajectory_action = private_action.find('FollowTrajectoryAction')
+                                            waypoints, times = OpenScenarioParser.get_trajectory(trajectory_action,
+                                                                                                 self.config.catalogs)
+                                            atomic = ChangeActorWaypoints(carla_actor, waypoints=list(
+                                                zip(waypoints, ['shortest'] * len(waypoints))),
+                                                                          times=times, name="FollowTrajectoryAction")
+                                        elif private_action.find('AcquirePositionAction') is not None:
+                                            route_action = private_action.find('AcquirePositionAction')
+                                            osc_position = route_action.find('Position')
+                                            waypoints = [(osc_position, 'fastest')]
+                                            atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
+                                                                          name="AcquirePositionAction")
 
                     if controller_atomic is None:
                         controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
