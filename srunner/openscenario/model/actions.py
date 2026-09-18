@@ -47,3 +47,45 @@ class VariableModifyAction(Action):
         self.rule = rule
         self.value = value
         self.source = source
+
+
+class RouteAction(Action):
+    """Base for routing actions retaining OSC semantics."""
+
+
+class AssignRouteAction(RouteAction):
+    action_type = "AssignRouteAction"
+
+    def __init__(self, route=None, catalog_reference=None, source=None):
+        self.route = route
+        self.catalog_reference = catalog_reference
+        self.source = source
+
+
+class AcquirePositionAction(RouteAction):
+    action_type = "AcquirePositionAction"
+
+    def __init__(self, position, source=None):
+        self.position = position
+        self.source = source
+
+
+class FollowTrajectoryAction(RouteAction):
+    action_type = "FollowTrajectoryAction"
+
+    def __init__(self, trajectory=None, catalog_reference=None, time_reference=None,
+                 following_mode=None, source=None):
+        self.trajectory = trajectory
+        self.catalog_reference = catalog_reference
+        self.time_reference = time_reference
+        self.following_mode = following_mode
+        self.source = source
+
+
+class SpeedProfileAction(Action):
+    action_type = "SpeedProfileAction"
+
+    def __init__(self, segments, entity_ref=None, source=None):
+        self.segments = list(segments or [])
+        self.entity_ref = entity_ref
+        self.source = source
