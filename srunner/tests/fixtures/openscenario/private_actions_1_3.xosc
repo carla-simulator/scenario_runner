@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+  <FileHeader revMajor="1" revMinor="3" date="2026-10-14T12:00:00" description="CARLA:PrivateActions13" author="ScenarioRunner"/>
+  <ParameterDeclarations>
+    <ParameterDeclaration name="TimeScale" parameterType="double" value="2.0"/>
+  </ParameterDeclarations>
+  <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="Town01"/>
+    <SceneGraphFile filepath=""/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="hero">
+      <Vehicle name="vehicle.tesla.model3" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
+        <BoundingBox>
+          <Center x="1.5" y="0.0" z="0.9"/>
+          <Dimensions width="2.1" length="4.5" height="1.8"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3"/>
+        </Axles>
+        <Properties>
+          <Property name="type" value="ego_vehicle"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="npc">
+      <Vehicle name="vehicle.audi.tt" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
+        <BoundingBox>
+          <Center x="1.5" y="0.0" z="0.9"/>
+          <Dimensions width="2.1" length="4.5" height="1.8"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3"/>
+        </Axles>
+        <Properties>
+          <Property name="type" value="simulation"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="follower">
+      <Vehicle name="vehicle.lincoln.mkz_2017" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
+        <BoundingBox>
+          <Center x="1.5" y="0.0" z="0.9"/>
+          <Dimensions width="2.1" length="4.5" height="1.8"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3"/>
+        </Axles>
+        <Properties>
+          <Property name="type" value="simulation"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="hero">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="0" y="2" z="0" h="0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="npc">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="5" y="2" z="0" h="0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedProfileAction followingMode="follow">
+                <DynamicConstraints maxAcceleration="3.0" maxDeceleration="5.0"/>
+                <SpeedProfileEntry speed="5.0" time="2.0"/>
+                <SpeedProfileEntry speed="8.0"/>
+              </SpeedProfileAction>
+            </LongitudinalAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="follower">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="0" y="5" z="0" h="0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <RoutingAction>
+              <FollowTrajectoryAction>
+                <TrajectoryRef>
+                  <Trajectory name="InitTrajectory" closed="false">
+                    <Shape>
+                      <Polyline>
+                        <Vertex time="0">
+                          <Position>
+                            <WorldPosition x="0" y="5" z="0" h="0"/>
+                          </Position>
+                        </Vertex>
+                        <Vertex time="2">
+                          <Position>
+                            <WorldPosition x="10" y="5" z="0" h="0"/>
+                          </Position>
+                        </Vertex>
+                        <Vertex time="4">
+                          <Position>
+                            <WorldPosition x="20" y="5" z="0" h="0"/>
+                          </Position>
+                        </Vertex>
+                      </Polyline>
+                    </Shape>
+                  </Trajectory>
+                </TrajectoryRef>
+                <TimeReference>
+                  <Timing domainAbsoluteRelative="relative" offset="1.0" scale="$TimeScale"/>
+                </TimeReference>
+                <TrajectoryFollowingMode followingMode="position"/>
+              </FollowTrajectoryAction>
+            </RoutingAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="MyStory">
+      <Act name="Behavior">
+        <ManeuverGroup maximumExecutionCount="1" name="NpcGroup">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="npc"/>
+          </Actors>
+          <Maneuver name="NpcGroupManeuver">
+            <Event name="StorySpeedProfile" priority="override">
+              <Action name="StorySpeedProfile">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedProfileAction followingMode="follow" entityRef="hero">
+                      <DynamicConstraints maxAcceleration="3.0" maxDeceleration="5.0"/>
+                      <SpeedProfileEntry speed="5.0" time="2.0"/>
+                      <SpeedProfileEntry speed="8.0"/>
+                    </SpeedProfileAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="AngleStart" delay="0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="npc"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <RelativeAngleCondition entityRef="hero" angleType="heading" angle="0.0" angleTolerance="0.1"/>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+            <Event name="StoryAcquirePosition" priority="override">
+              <Action name="StoryAcquirePosition">
+                <PrivateAction>
+                  <RoutingAction>
+                    <AcquirePositionAction>
+                      <Position>
+                        <WorldPosition x="92" y="13.5" z="0" h="0"/>
+                      </Position>
+                    </AcquirePositionAction>
+                  </RoutingAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="ClearanceStart" delay="0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="npc"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <RelativeClearanceCondition oppositeLanes="false" distanceForward="20.0" distanceBackward="5.0" freeSpace="true">
+                          <RelativeLaneRange from="-1" to="1"/>
+                          <EntityRef entityRef="hero"/>
+                        </RelativeClearanceCondition>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="OverallStartCondition" delay="0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+    </Story>
+    <StopTrigger>
+      <ConditionGroup>
+        <Condition name="EndCondition" delay="0" conditionEdge="rising">
+          <ByValueCondition>
+            <SimulationTimeCondition value="100" rule="greaterThan"/>
+          </ByValueCondition>
+        </Condition>
+      </ConditionGroup>
+    </StopTrigger>
+  </Storyboard>
+</OpenSCENARIO>
