@@ -45,9 +45,11 @@ class OpenScenarioLoader(object):
 
     @staticmethod
     def _read_root(source):
-        if isinstance(source, ET.ElementTree):
+        # Duck-typed: xmlschema 1.0.x re-imports xml.etree.ElementTree, so isinstance
+        # checks against this module's classes fail for trees parsed before that import.
+        if hasattr(source, "getroot"):
             return source.getroot(), None
-        if isinstance(source, ET.Element):
+        if hasattr(source, "tag") and hasattr(source, "attrib"):
             return source, None
         if hasattr(source, "read"):
             return ET.parse(source).getroot(), getattr(source, "name", None)
