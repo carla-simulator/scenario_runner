@@ -1489,12 +1489,12 @@ def relative_angle(rotation, reference_rotation, angle_type, right_handed=True):
     """
     Angle [rad] of ``rotation`` relative to ``reference_rotation`` (carla.Rotation-like, degrees).
 
-    CARLA uses a left-handed frame; with ``right_handed`` the heading is mirrored to the
-    OpenSCENARIO convention, as for positions.
+    CARLA uses a left-handed frame; with ``right_handed`` heading and pitch are mirrored to the
+    OpenSCENARIO convention. Roll keeps the CARLA sign.
     """
     attribute = {"heading": "yaw", "pitch": "pitch", "roll": "roll"}[angle_type]
     delta = math.radians(getattr(rotation, attribute) - getattr(reference_rotation, attribute))
-    if angle_type == "heading" and right_handed:
+    if angle_type in ("heading", "pitch") and right_handed:
         delta = -delta
     return _normalize_angle(delta)
 
@@ -1596,8 +1596,16 @@ class RelativeClearance(AtomicCondition):
         return [actor for actor in CarlaDataProvider.get_all_actors()
                 if actor.id != self._actor.id and actor.type_id.startswith(("vehicle.", "walker."))]
 
+    @staticmethod
+    def _transform(actor):
+        # Actors not registered with CarlaDataProvider (e.g. traffic manager vehicles) are queried directly.
+        registered = CarlaDataProvider._actor_transform_map  # pylint: disable=protected-access
+        if any(key.id == actor.id for key in registered):
+            return CarlaDataProvider.get_transform(actor)
+        return actor.get_transform()
+
     def _occupies(self, other, transform, waypoint, carla_map):
-        other_transform = CarlaDataProvider.get_transform(other)
+        other_transform = self._transform(other)
         if other_transform is None:
             return False
         yaw = math.radians(transform.rotation.yaw)

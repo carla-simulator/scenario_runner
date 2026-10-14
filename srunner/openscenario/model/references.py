@@ -97,7 +97,10 @@ class RoutePosition(Position):
 
 
 class Route(object):
-    """Semantic OSC route; positions remain OSC objects until backend resolution."""
+    """Semantic OSC route; positions remain OSC objects until backend resolution.
+
+    ``closed`` and the waypoint route strategies stay lexical (they may be parameter references).
+    """
 
     def __init__(self, name=None, strategy=None, positions=None, closed=False,
                  parameter_declarations=None, source=None):
@@ -126,7 +129,7 @@ class Route(object):
             raise invalid("Route {!r} requires at least two waypoints".format(element.attrib.get("name")), element)
         return cls(name=element.attrib.get("name"),
                    positions=positions,
-                   closed=element.attrib.get("closed", "false").lower() == "true",
+                   closed=element.attrib.get("closed", "false"),
                    source=element)
 
 
@@ -182,7 +185,7 @@ def following_mode_from_xml(element):
 
 
 class Trajectory(object):
-    """Semantic trajectory; vertex times stay lexical until execution resolves them."""
+    """Semantic trajectory; vertex times and ``closed`` stay lexical until execution resolves them."""
 
     SHAPES = ("Polyline", "Clothoid", "ClothoidSpline", "Nurbs")
 
@@ -242,5 +245,5 @@ class Trajectory(object):
             raise invalid("Unknown trajectory shape {!r}".format(shape_name), shape_element)
         return cls(name=element.attrib.get("name"), shape=shape_name, control_points=points,
                    knots=knots, order=order,
-                   closed=element.attrib.get("closed", "false").lower() == "true",
+                   closed=element.attrib.get("closed", "false"),
                    source=element)

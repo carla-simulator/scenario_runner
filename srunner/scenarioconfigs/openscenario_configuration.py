@@ -377,6 +377,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_transform = carla.Transform()
 
         actor_found = False
+        teleport_found = False
 
         for private_action in self.init.iter("Private"):
             if self._attribute(private_action, 'entityRef') == actor_name:
@@ -388,13 +389,14 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 actor_found = True
                 # Only TeleportAction places the actor; routes and trajectories also contain positions.
                 for teleport_action in private_action.iter('TeleportAction'):
+                    teleport_found = True
                     position = teleport_action.find('Position')
                     transform = OpenScenarioParser.convert_position_to_transform(
                         position, actor_list=self.other_actors + self.ego_vehicles)
                     if transform:
                         actor_transform = transform
 
-        if not actor_found:
+        if not actor_found or not teleport_found:
             self.logger.warning(
                 " Warning: The actor '%s' was not assigned an initial position. Using (0,0,0)",
                 actor_name,

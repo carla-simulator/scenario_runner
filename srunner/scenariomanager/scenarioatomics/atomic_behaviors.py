@@ -868,6 +868,11 @@ class ChangeActorWaypoints(AtomicBehavior):
         if self._times is not None:
             offset = self._start_time if self._times_absolute else 0.0
             times = [time - offset for time in self._times]
+            if self._times_absolute and len(route) == len(times):
+                # Vertices whose absolute time already passed cannot be reached on time; join at the next one.
+                upcoming = [i for i, time in enumerate(times) if time > 0] or [len(times) - 1]
+                route = [route[i] for i in upcoming]
+                times = [max(times[i], 0.0) for i in upcoming]
         actor_dict[self._actor.id].update_waypoints(route, times=times, start_time=self._start_time)
 
         super().initialise()

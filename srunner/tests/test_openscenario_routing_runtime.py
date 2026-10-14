@@ -5,7 +5,7 @@ Real ``.xosc`` fixtures go through OpenScenarioConfiguration and OpenScenario ag
 mocked CARLA module in ``srunner/tests/carla_mocks`` (put it first on PYTHONPATH).
 """
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-public-methods
 
 from __future__ import absolute_import
 
@@ -46,9 +46,19 @@ class _Controller(object):
 
     def __init__(self):
         self.calls = []
+        self.speeds = []
+        self._last_longitudinal_command = None
 
     def update_waypoints(self, waypoints, times=None, start_time=None):
         self.calls.append((waypoints, times, start_time))
+
+    def update_target_speed(self, speed, start_time=None):
+        self.speeds.append(speed)
+        if start_time is not None:
+            self._last_longitudinal_command = start_time
+
+    def get_last_longitudinal_command(self):
+        return self._last_longitudinal_command
 
 
 @unittest.skipUnless(MOCKED_CARLA, "requires srunner/tests/carla_mocks first on PYTHONPATH")
@@ -167,7 +177,45 @@ class TestOpenScenarioRoutingRuntime(unittest.TestCase):
         py_trees.blackboard.Blackboard().set("ActorsWithController", {follower.id: controller})
         with mock.patch.object(GameTime, "_current_game_time", 3.0):
             atomic.initialise()
-        self.assertEqual(controller.calls[0][1], [-2.0, 2.0, 6.0])
+        self.assertEqual(len(controller.calls[0][0]), 2)
+        self.assertEqual(controller.calls[0][1], [2.0, 6.0])
+
+    def test_absolute_vertices_in_the_past_are_skipped(self):
+        scenario = self._load(ROUTING)
+        element = scenario.config.init.find(".//Private[@entityRef='follower']/PrivateAction/RoutingAction")
+        element.find(".//Timing").set("domainAbsoluteRelative", "absolute")
+        follower = self._actor(scenario, "follower")
+        atomic = build_private_action(element, follower, [follower], {}, scenario.execution_context)
+        controller = _Controller()
+        py_trees.blackboard.Blackboard().set("ActorsWithController", {follower.id: controller})
+        with mock.patch.object(GameTime, "_current_game_time", 6.0):
+            atomic.initialise()
+        route, times, _ = controller.calls[0]
+        self.assertEqual(times, [3.0])
+        self.assertEqual([t.location.x for t in route], [20.0])
+
+    def test_speed_profile_steps_through_every_entry(self):
+        scenario = self._load(PRIVATE_1_3, schema_gate=False)
+        npc = self._actor(scenario, "npc")
+        profile = self._node(scenario, "SpeedProfileAction", parent="InitActornpc")
+        controller = _Controller()
+        py_trees.blackboard.Blackboard().set("ActorsWithController", {npc.id: controller})
+        speed = {"value": 0.0}
+        with mock.patch.object(CarlaDataProvider, "get_velocity", side_effect=lambda actor: speed["value"]), \
+                mock.patch.object(CarlaDataProvider, "get_location", return_value=carla.Location()), \
+                mock.patch.object(GameTime, "_current_game_time", 0.0):
+            profile.tick_once()
+            self.assertEqual(profile.status, py_trees.common.Status.RUNNING)
+            self.assertEqual(controller.speeds, [5.0])
+            GameTime._current_game_time = 2.5
+            profile.tick_once()
+            self.assertEqual(profile.status, py_trees.common.Status.RUNNING)
+            self.assertEqual(controller.speeds, [5.0, 8.0])
+            profile.tick_once()
+            self.assertEqual(profile.status, py_trees.common.Status.RUNNING)
+            speed["value"] = 8.0
+            profile.tick_once()
+            self.assertEqual(profile.status, py_trees.common.Status.SUCCESS)
 
     def test_story_level_routing_actions_use_semantic_runtime(self):
         scenario = self._load(ROUTING)
@@ -249,7 +297,7 @@ class TestOpenScenarioRoutingRuntime(unittest.TestCase):
         self.assertIsInstance(timed, ChangeActorTargetSpeed)
         self.assertEqual((timed._target_speed, timed._duration), (5.0, 2.0))
         self.assertIsInstance(final.children[0], ChangeActorTargetSpeed)
-        self.assertTrue(final.children[0]._continuous)
+        self.assertEqual(final.children[0]._duration, float("inf"))
         self.assertIsInstance(final.children[1], TargetSpeedReached)
         self.assertEqual(final.children[1]._target_speed, 8.0)
 
@@ -305,6 +353,10 @@ class TestRelativeConditionGeometry(unittest.TestCase):
         self.assertAlmostEqual(relative_angle(rotation, reference, "heading", right_handed=False), math.radians(10))
         self.assertAlmostEqual(relative_angle(carla.Rotation(yaw=-170), carla.Rotation(yaw=170), "heading",
                                               right_handed=False), math.radians(20))
+        self.assertAlmostEqual(relative_angle(carla.Rotation(pitch=5), carla.Rotation(pitch=0), "pitch"),
+                               -math.radians(5))
+        self.assertAlmostEqual(relative_angle(carla.Rotation(roll=5), carla.Rotation(roll=0), "roll"),
+                               math.radians(5))
 
     def test_clearance_area(self):
         self.assertTrue(clearance_occupied(10.0, 0, False, 20.0, 5.0))

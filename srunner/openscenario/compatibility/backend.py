@@ -6,6 +6,7 @@ import py_trees
 
 from srunner.openscenario.execution.registry import (
     UnsupportedFeatureError, backend_capability_error, default_condition_registry, default_registry)
+from srunner.openscenario.model.conditions import ANGLE_TYPES
 from srunner.openscenario.model.document import OpenScenarioDocument
 from srunner.openscenario.model.references import FOLLOWING_MODES, Route, TimeReference, Trajectory, invalid
 from srunner.openscenario.model.trajectories import timed_samples
@@ -91,11 +92,11 @@ class ScenarioRunnerBackend(object):
         route = action.route
         if route is None:
             route = Route.from_xml(self._catalog_entry(action.catalog_reference, "Route"))
-        if route.closed:
+        if self._resolve(context, route.closed, "boolean"):
             context.warn(Diagnostic("approximation_warning", "Closed route {!r} is driven once".format(route.name),
                                     severity="warning", source=route.source))
-        waypoints = [(self._supported_position(point["position"]), point["route_strategy"])
-                     for point in route.positions]
+        waypoints = [(self._supported_position(point["position"]),
+                      self._resolve(context, point["route_strategy"], "string")) for point in route.positions]
         atomic = ChangeActorWaypoints(self.actor, waypoints=waypoints, name=self._name(action),
                                       position_converter=typed_position_to_transform)
         atomic.route = route
@@ -114,7 +115,7 @@ class ScenarioRunnerBackend(object):
         if trajectory.shape != "Polyline":
             raise backend_capability_error(trajectory, "{} trajectories are not supported by the ScenarioRunner "
                                            "backend; use a Polyline".format(trajectory.shape))
-        if trajectory.closed:
+        if self._resolve(context, trajectory.closed, "boolean"):
             raise backend_capability_error(trajectory, "Closed trajectories are not supported by the "
                                            "ScenarioRunner backend")
         if action.initial_distance_offset is not None and self._resolve(context, action.initial_distance_offset):
@@ -163,26 +164,31 @@ class ScenarioRunnerBackend(object):
                 profile.add_child(self._target_speed(speed, relative_actor, name, duration=time))
                 continue
             step = py_trees.composites.Parallel(name=name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-            step.add_child(self._target_speed(speed, relative_actor, name, continuous=True))
+            # An infinite duration keeps the target commanded until TargetSpeedReached ends the step.
+            step.add_child(self._target_speed(speed, relative_actor, name, duration=float("inf")))
             step.add_child(TargetSpeedReached(self.actor, speed, relative_actor, name=name + "_Reached"))
             profile.add_child(step)
         profile.entries = entries
         profile.following_mode = following_mode
         return profile
 
-    def _target_speed(self, speed, relative_actor, name, duration=None, continuous=False):
+    def _target_speed(self, speed, relative_actor, name, duration):
         if relative_actor is not None:
             return ChangeActorTargetSpeed(self.actor, 0.0, duration=duration, relative_actor=relative_actor,
-                                          value=speed, value_type="delta", continuous=continuous, name=name)
-        return ChangeActorTargetSpeed(self.actor, speed, duration=duration, continuous=continuous, name=name)
+                                          value=speed, value_type="delta", name=name)
+        return ChangeActorTargetSpeed(self.actor, speed, duration=duration, name=name)
 
     def evaluate_relative_angle(self, condition, context):
-        if condition.coordinate_system not in SUPPORTED_ANGLE_COORDINATE_SYSTEMS:
+        angle_type = self._resolve(context, condition.angle_type, "string")
+        coordinate_system = self._resolve(context, condition.coordinate_system, "string")
+        if angle_type not in ANGLE_TYPES:
+            raise invalid("RelativeAngleCondition angleType must be one of {}, got {!r}".format(
+                ", ".join(ANGLE_TYPES), angle_type), condition.source)
+        if coordinate_system not in SUPPORTED_ANGLE_COORDINATE_SYSTEMS:
             raise backend_capability_error(condition, "RelativeAngleCondition coordinateSystem {!r} is not "
-                                           "supported by the ScenarioRunner backend".format(
-                                               condition.coordinate_system))
+                                           "supported by the ScenarioRunner backend".format(coordinate_system))
         return RelativeAngleToActor(
-            self.actor, self._entity(condition.entity_ref, condition.source), condition.angle_type,
+            self.actor, self._entity(condition.entity_ref, condition.source), angle_type,
             self._resolve(context, condition.angle), self._resolve(context, condition.angle_tolerance),
             right_handed=not _legacy_parser().use_carla_coordinate_system, name=self.name or condition.kind)
 

@@ -282,10 +282,11 @@ class OpenScenario(BasicScenario):
                     actor_init_behavior = py_trees.composites.Sequence(name="InitActor{}".format(actor.rolename))
 
                     controller_atomic = None
-                    atomic = None
+                    init_atomics = []
                     for private in self.config.init.iter("Private"):
                         if osc_attribute(private, 'entityRef', 'string') == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
+                                atomic = None
                                 if private_action.find('ControllerAction') is not None:
                                     for controller_action in private_action.iter('ControllerAction'):
                                         module, args = OpenScenarioParser.get_controller(
@@ -378,11 +379,20 @@ class OpenScenario(BasicScenario):
                                     atomic = self._semantic_private_action(private_action, carla_actor,
                                                                            actor_list)
 
+                                if atomic is not None:
+                                    init_atomics.append(atomic)
+
                     if controller_atomic is None:
                         controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
                     actor_init_behavior.add_child(controller_atomic)
-                    if atomic is not None:
-                        actor_init_behavior.add_child(atomic)
+                    if len(init_atomics) == 1:
+                        actor_init_behavior.add_child(init_atomics[0])
+                    elif init_atomics:
+                        init_actions = py_trees.composites.Parallel(
+                            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
+                            name="InitActions{}".format(actor.rolename))
+                        init_actions.add_children(init_atomics)
+                        actor_init_behavior.add_child(init_actions)
 
                     if actor.speed > 0:
                         actor_init_behavior.add_child(ChangeActorTargetSpeed(carla_actor, actor.speed, init_speed=True))

@@ -51,11 +51,11 @@ class RelativeAngleCondition(Condition):
     def from_xml(cls, element, name=None, edge=None):
         _required(element, ("entityRef", "angleType", "angle", "angleTolerance"))
         angle_type = element.attrib["angleType"]
-        if angle_type not in ANGLE_TYPES:
+        if angle_type not in ANGLE_TYPES and not angle_type.startswith("$"):
             raise invalid("RelativeAngleCondition angleType must be one of {}, got {!r}".format(
                 ", ".join(ANGLE_TYPES), angle_type), element)
         coordinate_system = element.attrib.get("coordinateSystem", "entity")
-        if coordinate_system not in COORDINATE_SYSTEMS:
+        if coordinate_system not in COORDINATE_SYSTEMS and not coordinate_system.startswith("$"):
             raise invalid("RelativeAngleCondition coordinateSystem must be one of {}, got {!r}".format(
                 ", ".join(COORDINATE_SYSTEMS), coordinate_system), element)
         return cls(element.attrib["entityRef"], angle_type, element.attrib["angle"],

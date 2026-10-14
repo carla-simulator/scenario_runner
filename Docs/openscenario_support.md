@@ -239,7 +239,8 @@ objects by the semantic layer and turned into behaviors from those objects:
 * `FollowTrajectoryAction` reads `TimeReference` and `TrajectoryFollowingMode` from their child elements. With
   `TimeReference/None` the vertex times are ignored. With `Timing` each vertex time `t` becomes `t * scale + offset`,
   measured from the start of the action (`relative`) or of the simulation (`absolute`); every vertex then needs a
-  time. The following mode is passed on, but how closely the actor tracks the trajectory depends on its controller;
+  time, and with `absolute` vertices whose time has already passed are skipped. Controllers that need times, such as
+  `vehicle_velocity_control`, drive towards the vertices at the actor's target speed when there are none. The following mode is passed on, but how closely the actor tracks the trajectory depends on its controller;
   `position` is reported as an approximation warning.
 * `SpeedProfileAction` commands each `SpeedProfileEntry` speed as a target speed of the actor's controller. An entry
   with a `time` holds its target for that time before the next entry starts; an entry without a `time`, and the last
@@ -247,15 +248,17 @@ objects by the semantic layer and turned into behaviors from those objects:
   `DynamicConstraints` and the difference between the `follow` and `position` modes are not enforced (approximation
   warning).
 * `RelativeAngleCondition` compares the heading, pitch or roll of the triggering entity relative to the referenced
-  entity with `angle` ± `angleTolerance`. The heading follows the OpenSCENARIO convention unless the scenario uses
-  CARLA coordinates. The `lane`, `road` and `trajectory` coordinate systems are not supported.
+  entity with `angle` ± `angleTolerance`. Heading and pitch follow the OpenSCENARIO convention unless the scenario
+  uses CARLA coordinates; roll keeps the CARLA sign. The `lane`, `road` and `trajectory` coordinate systems are not supported.
 * `RelativeClearanceCondition` is true while no entity (or none of the listed `EntityRef`s) is between
   `distanceBackward` behind and `distanceForward` ahead of the triggering entity, along its heading, in the
   `RelativeLaneRange`s (positive lanes are to its left; no range means all lanes). Missing distances count as 0 m.
   Lanes of the opposite driving direction are only considered with `oppositeLanes="true"`, and `freeSpace="true"`
   measures between bounding boxes. Relative lanes are exact for entities on the same road section and estimated
   from the lateral offset elsewhere.
-* Attribute values may be `$name` references or `${...}` expressions; they are evaluated when the scenario is built.
+* Attribute values may be `$name` references or `${...}` expressions; they are evaluated when the scenario is built,
+  so a later `ParameterAction` does not change them.
+* Several of these actions in the `Init` of one actor run in parallel.
 
 The scenario is aborted with a structured diagnostic instead of running something different from what was written:
 

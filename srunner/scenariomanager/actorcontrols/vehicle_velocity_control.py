@@ -77,6 +77,9 @@ class VehicleVelocityControl(BasicControl):
 
         if not self._waypoints:
             return
+        if not self._times:
+            self._run_untimed_step()
+            return
         if not self._start_time:
             self._start_time = GameTime.get_time()
 
@@ -126,3 +129,25 @@ class VehicleVelocityControl(BasicControl):
 
         self._actor.set_target_angular_velocity(angular_velocity)
         self._actor.apply_control(carla.VehicleControl(throttle=0.3))  # Make the wheels turn
+
+    def _run_untimed_step(self):
+        """
+        Without waypoint times, move towards the next waypoint at the target speed.
+        """
+        current_transform = self._actor.get_transform()
+        while (self._waypoints and
+               current_transform.location.distance(self._waypoints[0].location) <= self._distance_threshold):
+            self._waypoints.pop(0)
+        self._reached_goal = not self._waypoints
+        if not self._waypoints:
+            self._actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
+            return
+
+        target_vec = self._waypoints[0].location - current_transform.location
+        self._actor.set_target_velocity(self._target_speed * target_vec.make_unit_vector())
+        delta_yaw = (math.degrees(math.atan2(target_vec.y, target_vec.x)) - current_transform.rotation.yaw) % 360
+        if delta_yaw > 180:
+            delta_yaw = delta_yaw - 360
+        self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, delta_yaw / self._max_yaw_time))
+        self._actor.apply_control(carla.VehicleControl(throttle=0.3))

@@ -40,9 +40,11 @@ def timed_samples(trajectory, time_reference, resolve=_literal_float):
     ``times`` is None for ``TimeReference/None``; otherwise each vertex time ``t`` becomes
     ``t * scale + offset``. Every vertex needs a time when Timing is used.
     """
-    samples = polyline_samples(trajectory, resolve)
     if time_reference is None or not time_reference.uses_timing:
-        return samples, None
+        if trajectory.shape != "Polyline":
+            polyline_samples(trajectory, resolve)
+        return [dict(point, time=None) for point in trajectory.control_points], None
+    samples = polyline_samples(trajectory, resolve)
     if any(sample["time"] is None for sample in samples):
         raise TrajectorySamplingError(Diagnostic(
             "semantic_error", "Every Polyline vertex of trajectory {!r} needs a time when Timing is used".format(
