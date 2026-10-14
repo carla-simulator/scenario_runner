@@ -15,7 +15,6 @@ import py_trees
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
-from srunner.tools.carla_compat import IS_UE5
 
 
 class RouteLightsBehavior(py_trees.behaviour.Behaviour):
@@ -34,9 +33,9 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
     # In cases where more than one weather conditition is active, decrease the thresholds
     COMBINED_THRESHOLD = 10
 
-    # Process-wide latch so the UE5 LightManager-disabled notice fires once,
+    # Process-wide latch so the missing-LightManager notice fires once,
     # not once per RouteLightsBehavior instance.
-    _ue5_notice_emitted = False
+    _no_light_manager_notice_emitted = False
 
     def __init__(self, ego_vehicle, radius=50, radius_increase=15, name="LightsBehavior"):
         """
@@ -47,25 +46,17 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         self._radius = radius
         self._radius_increase = radius_increase
         self._world = CarlaDataProvider.get_world()
-        # 0.9.x (UE4): LightManager owns the street-light registry and the
-        # automatic sun motion (set_day_night_cycle). We disable the cycle so
-        # weather.sun_altitude_angle drives night-mode unambiguously from below.
-        # 0.10.0 (UE5): LightManager was removed entirely. There is no auto sun
-        # motion to disable, and no documented per-Light runtime toggle API
-        # (MapLayer.StreetLights is a map-layer load flag, not a runtime
-        # toggle). _get_night_mode below already reads weather.sun_altitude_angle
-        # which is the documented UE5 day/night control, so on UE5 we skip the
-        # manager entirely and only drive vehicle lights.
-        if IS_UE5:
-            self._light_manager = None
-            if not RouteLightsBehavior._ue5_notice_emitted:
-                print("[RouteLightsBehavior] CARLA 0.10.0 / UE5 detected: "
-                      "street lights will not be controlled (no LightManager API). "
-                      "Vehicle lights are still driven from weather.sun_altitude_angle.")
-                RouteLightsBehavior._ue5_notice_emitted = True
-        else:
+        # The LightManager binding was removed in early 0.10.0 builds and has since
+        # been restored, so probe the runtime instead of keying off the engine.
+        self._light_manager = None
+        if hasattr(self._world, "get_lightmanager"):
             self._light_manager = self._world.get_lightmanager()
             self._light_manager.set_day_night_cycle(False)
+        elif not RouteLightsBehavior._no_light_manager_notice_emitted:
+            print("[RouteLightsBehavior] This CARLA server exposes no LightManager API: "
+                  "street lights will not be controlled. "
+                  "Vehicle lights are still driven from weather.sun_altitude_angle.")
+            RouteLightsBehavior._no_light_manager_notice_emitted = True
         self._vehicle_lights = carla.VehicleLightState.Position | carla.VehicleLightState.LowBeam
 
         self._prev_night_mode = False
@@ -112,8 +103,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         ego_speed = CarlaDataProvider.get_velocity(self._ego_vehicle)
         radius = max(self._radius, self._radius_increase * ego_speed)
 
-        # Street lights — only on engines that expose a LightManager (UE4 / 0.9.x).
-        # UE5 / 0.10.0 has no documented per-Light runtime toggle, so we skip it.
+        # Street lights — only when the server exposes a LightManager.
         if self._light_manager is not None:
             on_lights = []
             off_lights = []
@@ -151,7 +141,7 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
 
     def _turn_all_lights_off(self):
         """Turns off the lights of all object"""
-        # Street lights — only on engines that expose a LightManager (UE4 / 0.9.x).
+        # Street lights — only when the server exposes a LightManager.
         if self._light_manager is not None:
             all_lights = self._light_manager.get_all_lights()
             off_lights = [l for l in all_lights if l.is_on]

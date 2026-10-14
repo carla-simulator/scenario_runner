@@ -262,7 +262,7 @@ __1. Install the matching CARLA 0.10.0 wheel.__ Use a Python ≥ 3.8 environment
 
 __2. Default supported map: `Town10HD_Opt`.__ The bundled UE5 example configs target `Town10HD_Opt` only. Other UE5 maps that ship with the server (e.g. `Town15`, `Mine_01`) remain reachable: target them with your own configs via `--configFile` / `--additionalScenario`.
 
-__3. Auto-detected blueprint translation.__ Legacy 0.9.x blueprint ids (e.g. `vehicle.lincoln.mkz_2017`, `vehicle.audi.tt`, `vehicle.dodge.charger_police_2020`) are translated to their 0.10.0 catalogue equivalents on the fly. Bicycle / motorbike blueprints are absent in 0.10.0 and substituted with a four-wheel vehicle so spawns succeed.
+__3. Auto-detected blueprint translation.__ Legacy 0.9.x blueprint ids (e.g. `vehicle.lincoln.mkz_2017`, `vehicle.audi.tt`, `vehicle.dodge.charger_police_2020`) are translated to their 0.10.0 catalogue equivalents on the fly, but only when the server does not ship the requested blueprint. If the server lacks bicycle / motorbike blueprints, they are substituted with a four-wheel vehicle so spawns succeed.
 
 __4. Version override (advanced).__ If the running server disagrees with the installed wheel, force the detection with the `SR_CARLA_VERSION` environment variable:
 

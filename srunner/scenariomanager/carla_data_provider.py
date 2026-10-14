@@ -672,12 +672,13 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         _actor_blueprint_categories = actor_blueprint_categories()
 
-        # Translate legacy ids (e.g. vehicle.lincoln.mkz_2017) to the engine-native
-        # equivalent on UE5; passthrough on 0.9.x.
-        resolved_model = resolve_blueprint_id(model)
-
-        # Set the model
-        blueprints = list(CarlaDataProvider._blueprint_library.filter(resolved_model))
+        # Prefer the requested blueprint; only fall back to the compatibility
+        # alias when the server does not ship it.
+        blueprints = list(CarlaDataProvider._blueprint_library.filter(model))
+        if not blueprints:
+            resolved_model = resolve_blueprint_id(model)
+            if resolved_model != model:
+                blueprints = list(CarlaDataProvider._blueprint_library.filter(resolved_model))
         if attribute_filter is not None:
             for key, value in attribute_filter.items():
                 blueprints = [x for x in blueprints if check_attribute_value(x, key, value)]

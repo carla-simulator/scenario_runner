@@ -27,8 +27,9 @@ Design notes:
   (tesla.model3, volkswagen.t2, kawasaki.ninja, diamondback.century, ...) have
   no direct UE5 equivalent. For those, the alias table points at the closest
   documented substitute from the 0.10.0 catalogue rather than failing the
-  spawn outright. See .claude/reports/carla_ue5_0.10.0_compatibility_gap_analysis.md
-  section G1 for the full inventory.
+  spawn outright. Aliases are applied only when the requested id is missing
+  from the server's blueprint library, so ids the server ships are never
+  replaced.
 - The shim never invents an id: every UE5 target is taken from the 0.10.0
   vehicle/walker listing observed in the running server.
 - On 0.9.x the lookup is a passthrough, so legacy behaviour is preserved.
@@ -98,11 +99,10 @@ def is_ue5():
 # ---------------------------------------------------------------------------
 # Blueprint id aliases — 0.9.x identifier -> 0.10.0 identifier
 #
-# Targets are the actual ids advertised by a live CARLA 0.10.0 server's
-# blueprint library. When a 0.9.x model has no direct UE5 sibling (tesla,
-# kawasaki, diamondback, etc.) we fall through to the closest documented
-# substitute so spawns succeed; that substitution is recorded here, not
-# fabricated at call time.
+# Consulted by CarlaDataProvider.create_blueprint only when the requested id
+# is absent from the server's library. Targets are ids advertised by a CARLA
+# 0.10.0 blueprint library. Models that some 0.10.x builds do not ship (tesla,
+# kawasaki, diamondback, etc.) map to the closest substitute so spawns succeed.
 # ---------------------------------------------------------------------------
 
 _UE5_VEHICLE_ALIASES = {
@@ -169,8 +169,8 @@ _UE5_CATEGORY_FALLBACKS = {
 def resolve_blueprint_id(model):
     """Translate a possibly-legacy blueprint id to one valid on the running server.
 
-    On 0.9.x this is a passthrough. On 0.10.0+ it applies the documented
-    vehicle / walker rename tables. Unknown ids pass through unchanged so the
+    On 0.9.x this is a passthrough. On 0.10.0+ it applies the vehicle / walker
+    rename tables. Callers must consult it only for ids the server lacks. Unknown ids pass through unchanged so the
     existing wildcard `filter()` path still has a chance.
     """
     if not is_ue5() or not isinstance(model, str):
