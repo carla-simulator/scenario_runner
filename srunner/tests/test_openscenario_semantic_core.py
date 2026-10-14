@@ -30,10 +30,10 @@ class TestOpenScenarioSemanticCore(unittest.TestCase):
     def test_variable_actions_use_typed_runtime_store(self):
         xml = ET.fromstring("""<OpenSCENARIO><FileHeader revMajor='1' revMinor='3'/>
           <VariableDeclarations><VariableDeclaration name='count' variableType='int' value='1'/></VariableDeclarations>
-          <Storyboard><Init><Actions><GlobalAction><VariableAction>
-            <VariableSetAction variableRef='count' value='2'/></VariableAction></GlobalAction>
-            <GlobalAction><VariableAction><VariableModifyAction variableRef='count'
-              modification='add' value='3'/></VariableAction></GlobalAction></Actions></Init></Storyboard>
+          <Storyboard><Init><Actions><GlobalAction><VariableAction variableRef='count'>
+            <SetAction value='2'/></VariableAction></GlobalAction>
+            <GlobalAction><VariableAction variableRef='count'><ModifyAction><Rule>
+              <AddValue value='3'/></Rule></ModifyAction></VariableAction></GlobalAction></Actions></Init></Storyboard>
         </OpenSCENARIO>""")
         document = OpenScenarioLoader().load(xml)
         context = ExecutionContext(state={"evaluation": EvaluationContext(

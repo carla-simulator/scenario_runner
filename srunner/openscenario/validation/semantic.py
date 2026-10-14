@@ -3,6 +3,8 @@
 from __future__ import absolute_import
 
 from srunner.openscenario.validation.diagnostics import Diagnostic, ValidationError
+# Module import (not names): the expression module imports this package's diagnostics.
+from srunner.openscenario.model import expressions
 from srunner.openscenario.model.references import Position
 
 
@@ -11,26 +13,10 @@ class SemanticValidator(object):
 
     def validate(self, document, raise_on_error=True):
         diagnostics = []
-        names = set()
-        for declaration in document.parameter_declarations:
-            if not declaration.name:
-                diagnostics.append(Diagnostic(
-                    "semantic_error", "ParameterDeclaration requires a name", source=declaration.source))
-            elif declaration.name in names:
-                diagnostics.append(Diagnostic(
-                    "semantic_error", "Duplicate parameter declaration {!r}".format(declaration.name),
-                    source=declaration.source))
-            names.add(declaration.name)
-
-        variable_names = set()
-        for declaration in getattr(document, "variable_declarations", []):
-            if not declaration.name:
-                diagnostics.append(Diagnostic("semantic_error", "VariableDeclaration requires a name",
-                                               source=declaration.source))
-            elif declaration.name in variable_names:
-                diagnostics.append(Diagnostic("semantic_error", "Duplicate variable declaration {!r}".format(
-                    declaration.name), source=declaration.source))
-            variable_names.add(declaration.name)
+        diagnostics.extend(self._declarations(document, "parameter_declarations", "parameter_store",
+                                              "ParameterDeclaration", "parameter"))
+        diagnostics.extend(self._declarations(document, "variable_declarations", "variable_store",
+                                              "VariableDeclaration", "variable"))
 
         for reference in getattr(document, "catalog_references", []):
             if not reference.catalog_name or not reference.entry_name:
@@ -48,21 +34,95 @@ class SemanticValidator(object):
                     diagnostics.append(Diagnostic("semantic_error", str(error), source=element))
                     break
 
-        parameter_names = set(item.name for item in document.parameter_declarations)
-        for action in document.parameter_actions():
-            if action.parameter_ref not in parameter_names:
-                diagnostics.append(Diagnostic("semantic_error", "Unknown parameter reference {!r}".format(
-                    action.parameter_ref), source=action.source))
-
-        for action in document.variable_actions():
-            variable_name = (action.variable_ref or "").lstrip("$")
-            if variable_name not in variable_names:
-                diagnostics.append(Diagnostic("semantic_error", "Unknown variable reference {!r}".format(
-                    action.variable_ref), source=action.source))
-            if hasattr(action, "rule") and action.rule not in ("add", "subtract", "multiply", "divide", "+", "-", "*", "/"):
-                diagnostics.append(Diagnostic("semantic_error", "Unsupported variable modification {!r}".format(
-                    action.rule), source=action.source))
+        if hasattr(document, "variable_actions"):
+            diagnostics.extend(self._references(document))
 
         if diagnostics and raise_on_error:
             raise ValidationError(diagnostics)
         return diagnostics
+
+    @staticmethod
+    def _declarations(document, attribute, store_attribute, element_name, kind):
+        diagnostics = []
+        declarations = getattr(document, attribute, [])
+        for declaration in declarations:
+            if not declaration.name:
+                diagnostics.append(Diagnostic("semantic_error", "{} requires a name".format(element_name),
+                                              source=declaration.source))
+        store = getattr(document, store_attribute, None)
+        if store is not None:
+            return diagnostics + list(store.diagnostics)
+        names = set()
+        for declaration in declarations:
+            if declaration.name and declaration.name in names:
+                diagnostics.append(Diagnostic(
+                    "semantic_error", "Duplicate {} declaration {!r}".format(kind, declaration.name),
+                    source=declaration.source, code=Diagnostic.DUPLICATE_DECLARATION))
+            names.add(declaration.name)
+        return diagnostics
+
+    def _references(self, document):
+        diagnostics = []
+        parameters = set(item.name for item in document.parameter_declarations)
+        # Parameters declared in nested scopes (e.g. catalog entries embedded in the file) are
+        # accepted as reference targets; scoping is not modelled yet.
+        parameters.update(element.attrib.get("name") for element in document.root.iter("ParameterDeclaration"))
+        variables = dict((item.name, item.parameter_type) for item in document.variable_declarations)
+
+        for action in document.parameter_actions(include_story=True):
+            if (action.parameter_ref or "").lstrip("$") not in parameters:
+                diagnostics.append(_unknown("parameter", action.parameter_ref, action.source))
+            value = action.modify_value if action.is_modify else action.set_value
+            diagnostics.extend(_check_value(value, parameters, variables, action.source))
+
+        for action in document.variable_actions(include_story=True):
+            name = (action.variable_ref or "").lstrip("$")
+            if name not in variables:
+                diagnostics.append(_unknown("variable", action.variable_ref, action.source))
+            elif hasattr(action, "rule") and variables[name] not in expressions.NUMERIC_TYPES:
+                diagnostics.append(Diagnostic(
+                    "semantic_error", "VariableModifyAction cannot modify {} variable {!r}".format(
+                        variables[name], name), source=action.source, code=Diagnostic.TYPE_MISMATCH))
+            diagnostics.extend(_check_value(action.value, parameters, variables, action.source))
+
+        for element in document.value_conditions("VariableCondition"):
+            name = (element.attrib.get("variableRef") or "").lstrip("$")
+            rule = element.attrib.get("rule")
+            if name not in variables:
+                diagnostics.append(_unknown("variable", element.attrib.get("variableRef"), element))
+            elif variables[name] in ("string", "dateTime") and rule not in ("equalTo", "notEqualTo"):
+                diagnostics.append(Diagnostic(
+                    "semantic_error", "Rule {!r} is not defined for {} variable {!r}".format(
+                        rule, variables[name], name), source=element, code=Diagnostic.TYPE_MISMATCH))
+            diagnostics.extend(_check_value(element.attrib.get("value"), parameters, variables, element))
+
+        for element in document.value_conditions("ParameterCondition"):
+            diagnostics.extend(_check_value(element.attrib.get("value"), parameters, variables, element))
+        return diagnostics
+
+
+def _unknown(kind, name, source):
+    return Diagnostic("semantic_error", "Unknown {} reference {!r}".format(kind, name), source=source,
+                      code=Diagnostic.UNKNOWN_REFERENCE)
+
+
+def _check_value(value, parameters, variables, source):
+    """Check references and syntax of an attribute value without evaluating it."""
+    try:
+        if expressions.is_expression(value):
+            names = expressions.check_expression(value)
+        else:
+            name = expressions.reference_name(value)
+            names = [name] if name is not None else []
+    except expressions.EvaluationError as error:
+        error.diagnostic.source = source
+        return [error.diagnostic]
+    diagnostics = []
+    for name in names:
+        if name in parameters:
+            continue
+        message = "Unknown parameter reference {!r} in {!r}".format(name, value)
+        if name in variables:
+            message += "; variables can only be read by a VariableCondition"
+        diagnostics.append(Diagnostic("semantic_error", message, source=source, code=Diagnostic.UNKNOWN_REFERENCE))
+    return diagnostics

@@ -69,7 +69,8 @@ contains of submodules, which are not listed, the support status applies to all 
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | `EntityAction`                | &#9989;                          | &#9989;                          |                               |
 | `EnvironmentAction`           | &#9989;                         | &#10060;                          |                               |
-| `ParameterAction`             | &#9989;                          | &#9989;                          |                               |
+| `ParameterAction`             | &#9989;                          | &#9989;                          | Values may be literals, `$name` references or `${...}` expressions (see [Parameters, variables and expressions](#parameters-variables-and-expressions)). The parameter must be declared. |
+| `VariableAction`              | &#9989;                          | &#9989;                          | `SetAction` and `ModifyAction` (`AddValue`, `MultiplyByValue`). See [Parameters, variables and expressions](#parameters-variables-and-expressions). |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficAction`                                               | &#10060;                          | &#10060;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalControllerAction`                               | &#10060;                          | &#9989;                          |                               |
 | `InfrastructureAction` `TrafficSignalAction`<br>`TrafficSignalStateAction`                                    | &#10060;                          | &#9989;                         | As traffic signals in CARLA towns have no unique ID, they have to be set by providing their position (Example: TrafficSignalStateAction name="pos=x,y" state="green"). The id can also be used for none CARLA town (Example: TrafficSignalStateAction name="id=n" state="green") |
@@ -144,7 +145,8 @@ The following two tables list the support status for each.
 
 | ValueCondition            | Support                   | Notes                     |
 | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ParameterCondition`         | &#9989;                     | The level of support depends on the parameter. It is recommended to use other conditions if possible. Please also consider the note below.                                                  |
+| `ParameterCondition`         | &#9989;                     | The level of support depends on the parameter. It is recommended to use other conditions if possible. Please also consider the note below. The `value` may be a `$name` reference or a `${...}` expression.                                                  |
+| `VariableCondition`          | &#9989;                     | Compares a declared variable with `value` (literal, `$name` parameter reference or `${...}` expression). For `string` variables only `equalTo` and `notEqualTo` are allowed. |
 | `SimulationTimeCondition`                                    | &#9989;                     |                           |
 | `StoryboardElementStateCondition`                            | &#9989;                     | startTransition, stopTransition, endTransition and completeState are currently supported.                  |
 | `TimeOfDayCondition`         | &#9989;                     |                           |
@@ -168,6 +170,51 @@ The following two tables list the support status for each.
      * criteria_CollisionTest
      * criteria_DrivenDistanceTest
 
+
+#### Parameters, variables and expressions
+
+ParameterDeclarations, VariableDeclarations, `ParameterAction`, `VariableAction`, `ParameterCondition` and
+`VariableCondition` are evaluated by a typed semantic layer (`srunner/openscenario/`) when the scenario is built
+and while it runs:
+
+* Values can be literals, `$name` parameter references or `${...}` expressions as defined by OpenSCENARIO 1.1+.
+  Expressions support numeric and Boolean literals (`true`, `false`, `0`, `1`), parameter references, the operators
+  `+`, `-`, `*`, `/`, `%` (remainder), `not`, `and`, `or`, parentheses and the functions `round`, `floor`, `ceil`,
+  `sqrt`, `pow`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sign`, `abs`, `max`, `min`. Anything else (for example
+  `**`, comparisons, strings or other function names) is rejected. Expressions are parsed safely and never executed
+  as Python code.
+* Results are converted to the declared type of the target parameter or variable. Integers convert implicitly to
+  `double`; a `double` result is only accepted for an integer type when converted explicitly with `round`, `floor`
+  or `ceil`. `round` rounds halves away from zero. Division by zero, square roots of negative numbers, NaN, infinity
+  and integer overflow are errors.
+* ParameterDeclaration and VariableDeclaration values may themselves be references or expressions; they are
+  evaluated in declaration order after `--openscenarioparams` overrides have been applied.
+* Variables are declared in `VariableDeclarations` and can be changed with `VariableAction` in the `Init` and in
+  stories. As required by the standard, variables can only be read through `VariableCondition`; referencing a
+  variable from an expression or attribute is an error.
+* Parameter changes made by `ParameterAction` are written to the global parameter table read by `$name`
+  references, so behaviors that read the parameter after the change see the new value.
+* `${...}` expressions in other attributes are evaluated when the attribute is read after the scenario has been
+  built. Attributes read while the configuration is loaded (entity and initial actor setup) only support literals
+  and `$name` references.
+* When the scenario is built (before its non-ego actors are spawned) it is checked for duplicate parameter or
+  variable declarations, references to undeclared parameters or variables, invalid expression syntax and
+  declaration values that do not match their type. Any such error aborts the scenario with a `ValidationError`
+  listing all problems.
+* An error that can only be detected while the scenario runs (for example a `VariableAction` value that does not
+  match the variable type) makes the corresponding behavior fail and is logged; it does not crash the runner.
+
+Not supported yet:
+
+* `scenario_runner.py --openscenario` still only accepts files declaring OpenSCENARIO 1.0 and validates them against
+  the 1.0 schema. Files that contain `VariableDeclarations`, `VariableAction` or `VariableCondition` are therefore
+  rejected before they reach the semantic layer; these features are currently only usable through the Python API.
+  The 1.0 schema also restricts numeric attributes (for example `AddValue`/`MultiplyByValue` values) to literals and
+  `$name` references, so from the command line `${...}` is only accepted in string-typed attributes such as
+  `ParameterDeclaration`, `SetAction` and `ParameterCondition` values.
+* Parameter scoping (catalog parameters, nested `ParameterDeclarations`), `ConstraintGroup`s, parameter value
+  distributions, `MonitorDeclarations`, the rule that `int`, `unsignedInt` and `unsignedShort` parameters must not
+  be mixed in one expression, and reading or writing variables from outside the scenario.
 
 ##### OpenSCENARIO Positions
 

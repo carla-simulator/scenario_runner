@@ -4,8 +4,9 @@ from __future__ import absolute_import
 
 import copy
 
-from srunner.openscenario.model.actions import ParameterAction
-from srunner.openscenario.model.parameters import ParameterDeclaration, VariableDeclaration
+from srunner.openscenario.model.actions import ParameterAction, VariableModifyAction, VariableSetAction
+from srunner.openscenario.model.parameters import (
+    ParameterDeclaration, ParameterStore, VariableDeclaration, VariableStore)
 from srunner.openscenario.model.references import CatalogReference, Position
 
 
@@ -62,12 +63,10 @@ class OpenScenarioDocument(object):
 
     @staticmethod
     def _make_store(declarations):
-        from srunner.openscenario.model.parameters import ParameterStore
         return ParameterStore(declarations)
 
     @staticmethod
     def _make_variable_store(declarations):
-        from srunner.openscenario.model.parameters import VariableStore
         return VariableStore(declarations)
 
     @staticmethod
@@ -87,86 +86,81 @@ class OpenScenarioDocument(object):
             ))
         return references
 
-    def parameter_actions(self):
-        """Yield semantic ParameterActions from the Init storyboard.
-
-        This is intentionally narrow: other actions continue through the legacy
-        adapter until they are migrated one feature at a time.
-        """
+    def _global_actions(self, include_story=False):
         storyboard = self.root.find("Storyboard")
         if storyboard is None:
             return []
+        if include_story:
+            return list(storyboard.iter("GlobalAction"))
         init = storyboard.find("Init")
-        if init is None:
+        if init is None or init.find("Actions") is None:
             return []
+        return list(init.find("Actions").iter("GlobalAction"))
+
+    @staticmethod
+    def parse_parameter_action(element):
+        """Build a semantic ParameterAction from a ``ParameterAction`` element, or None."""
+        set_action = element.find("SetAction")
+        modify_action = element.find("ModifyAction")
+        if set_action is not None:
+            return ParameterAction(parameter_ref=element.attrib.get("parameterRef"),
+                                   set_value=set_action.attrib.get("value"), source=element)
+        rule = modify_action.find("Rule") if modify_action is not None else None
+        if rule is None:
+            return None
+        for tag, operator_symbol in (("AddValue", "+"), ("MultiplyByValue", "*")):
+            value = rule.find(tag)
+            if value is not None:
+                return ParameterAction(parameter_ref=element.attrib.get("parameterRef"),
+                                       modify_rule=operator_symbol, modify_value=value.attrib.get("value"),
+                                       source=element)
+        return None
+
+    @staticmethod
+    def parse_variable_action(element):
+        """Build a semantic variable action from a ``VariableAction`` element, or None."""
+        variable_ref = element.attrib.get("variableRef")
+        set_action = element.find("SetAction")
+        modify_action = element.find("ModifyAction")
+        if set_action is not None:
+            return VariableSetAction(variable_ref, set_action.attrib.get("value"), element)
+        rule = modify_action.find("Rule") if modify_action is not None else None
+        if rule is None:
+            return None
+        for tag, rule_name in (("AddValue", "add"), ("MultiplyByValue", "multiply")):
+            value = rule.find(tag)
+            if value is not None:
+                return VariableModifyAction(variable_ref, rule_name, value.attrib.get("value"), element)
+        return None
+
+    def _actions(self, tag, parser, include_story):
         actions = []
-        actions_container = init.find("Actions")
-        if actions_container is None:
-            return []
-        for index, global_action in enumerate(actions_container.iter("GlobalAction")):
-            element = global_action.find("ParameterAction")
+        for index, global_action in enumerate(self._global_actions(include_story)):
+            element = global_action.find(tag)
             if element is None:
                 continue
-            set_action = element.find("SetAction")
-            modify_action = element.find("ModifyAction")
-            if set_action is not None:
-                action = ParameterAction(
-                    parameter_ref=element.attrib.get("parameterRef"),
-                    set_value=set_action.attrib.get("value"),
-                    source=element,
-                )
+            action = parser(element)
+            if action is not None:
                 action.sequence_index = index
                 actions.append(action)
-            elif modify_action is not None:
-                rule = modify_action.find("Rule")
-                if rule is None:
-                    continue
-                add = rule.find("AddValue")
-                multiply = rule.find("MultiplyByValue")
-                if add is not None:
-                    action = ParameterAction(
-                        parameter_ref=element.attrib.get("parameterRef"),
-                        modify_rule="+",
-                        modify_value=add.attrib.get("value"),
-                        source=element,
-                    )
-                    action.sequence_index = index
-                    actions.append(action)
-                elif multiply is not None:
-                    action = ParameterAction(
-                        parameter_ref=element.attrib.get("parameterRef"),
-                        modify_rule="*",
-                        modify_value=multiply.attrib.get("value"),
-                        source=element,
-                    )
-                    action.sequence_index = index
-                    actions.append(action)
         return actions
 
-    def variable_actions(self):
-        """Yield variable actions from Init without resolving them through CARLA."""
-        from srunner.openscenario.model.actions import VariableModifyAction, VariableSetAction
-        storyboard = self.root.find("Storyboard")
-        if storyboard is None or storyboard.find("Init") is None:
-            return []
-        actions = []
-        for index, global_action in enumerate(storyboard.find("Init").iter("GlobalAction")):
-            element = global_action.find("VariableAction")
-            if element is None:
-                continue
-            set_action = element.find("VariableSetAction")
-            modify_action = element.find("VariableModifyAction")
-            if set_action is not None:
-                action = VariableSetAction(set_action.attrib.get("variableRef"), set_action.attrib.get("value"), element)
-            elif modify_action is not None:
-                action = VariableModifyAction(modify_action.attrib.get("variableRef"),
-                                              modify_action.attrib.get("modification"),
-                                              modify_action.attrib.get("value"), element)
-            else:
-                continue
-            action.sequence_index = index
-            actions.append(action)
-        return actions
+    def parameter_actions(self, include_story=False):
+        """Return semantic ParameterActions from Init (and the stories, if requested)."""
+        return self._actions("ParameterAction", self.parse_parameter_action, include_story)
+
+    def variable_actions(self, include_story=False):
+        """Return semantic VariableActions from Init (and the stories, if requested)."""
+        return self._actions("VariableAction", self.parse_variable_action, include_story)
+
+    def init_global_actions(self):
+        """Return Init Parameter/Variable actions in document order."""
+        actions = self.parameter_actions() + self.variable_actions()
+        return sorted(actions, key=lambda action: action.sequence_index)
+
+    def value_conditions(self, tag):
+        """Return ``ParameterCondition``/``VariableCondition`` elements found in the document."""
+        return list(self.root.iter(tag))
 
     def positions(self):
         return [Position.from_xml(element) for element in self.root.iter("Position")]

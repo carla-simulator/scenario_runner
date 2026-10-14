@@ -75,6 +75,10 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
+from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction, SemanticValueCondition
+from srunner.openscenario.execution.registry import default_registry
+from srunner.openscenario.model.document import OpenScenarioDocument
+from srunner.openscenario.model.expressions import is_expression
 
 
 def oneshot_with_check(variable_name, behaviour, name=None):
@@ -136,6 +140,8 @@ class ParameterRef:
             value = CarlaDataProvider.get_osc_global_param_value(self.reference_text)
             if value is None:
                 raise ValueError("Parameter '{}' is not defined".format(self.reference_text[1:]))
+        elif OpenScenarioParser.execution_context is not None and is_expression(self.reference_text):
+            value = OpenScenarioParser.execution_context.evaluation.resolve(self.reference_text)
         else:
             value = None
         return value
@@ -260,6 +266,8 @@ class OpenScenarioParser(object):
     global_osc_parameters = {}
     use_carla_coordinate_system = False
     osc_filepath = None
+    execution_context = None
+    action_registry = None
 
     @staticmethod
     def get_traffic_light_from_osc_name(name):
@@ -300,6 +308,24 @@ class OpenScenarioParser(object):
         relative paths.
         """
         OpenScenarioParser.osc_filepath = filepath
+
+    @staticmethod
+    def set_execution_context(context, registry=None):
+        """
+        Route migrated OpenSCENARIO features (ParameterAction, VariableAction,
+        ParameterCondition, VariableCondition and ${...} expressions) through the
+        semantic execution context. Pass None to restore the legacy behavior.
+        """
+        OpenScenarioParser.execution_context = context
+        if context is None:
+            OpenScenarioParser.action_registry = None
+        else:
+            OpenScenarioParser.action_registry = registry or default_registry()
+
+    @staticmethod
+    def _semantic_action(action, name):
+        return ExecuteSemanticAction(action, OpenScenarioParser.action_registry,
+                                     OpenScenarioParser.execution_context, name=name)
 
     @staticmethod
     def set_use_carla_coordinate_system():
@@ -1119,8 +1145,20 @@ class OpenScenarioParser(object):
                             atomic.add_child(criterion_instance(triggered_actor, arg_value))
                         else:
                             atomic.add_child(criterion_instance(triggered_actor))
+                elif OpenScenarioParser.execution_context is not None:
+                    atomic = SemanticValueCondition(
+                        SemanticValueCondition.PARAMETER, arg_name, rule, parameter_condition.attrib.get('value'),
+                        OpenScenarioParser.execution_context, name=condition_name)
                 else:
                     atomic = CheckParameter(arg_name, value, OpenScenarioParser.operators[rule], name=condition_name)
+            elif value_condition.find('VariableCondition') is not None:
+                if OpenScenarioParser.execution_context is None:
+                    raise NotImplementedError("VariableCondition requires the OpenSCENARIO execution context")
+                variable_condition = value_condition.find('VariableCondition')
+                atomic = SemanticValueCondition(
+                    SemanticValueCondition.VARIABLE, variable_condition.attrib.get('variableRef'),
+                    variable_condition.attrib.get('rule'), variable_condition.attrib.get('value'),
+                    OpenScenarioParser.execution_context, name=condition_name)
             elif value_condition.find('SimulationTimeCondition') is not None:
                 simtime_condition = value_condition.find('SimulationTimeCondition')
                 value = ParameterRef(simtime_condition.attrib.get('value'))
@@ -1256,6 +1294,19 @@ class OpenScenarioParser(object):
                     oneshot_with_check(variable_name=maneuver_name + ">FrictionUpdate", behaviour=friction_behavior))
 
                 return env_behavior
+            elif (global_action.find('ParameterAction') is not None and
+                  OpenScenarioParser.execution_context is not None):
+                action_model = OpenScenarioDocument.parse_parameter_action(global_action.find('ParameterAction'))
+                if action_model is None:
+                    raise AttributeError("ParameterAction requires a SetAction or ModifyAction")
+                atomic = OpenScenarioParser._semantic_action(action_model, maneuver_name)
+            elif global_action.find('VariableAction') is not None:
+                if OpenScenarioParser.execution_context is None:
+                    raise NotImplementedError("VariableAction requires the OpenSCENARIO execution context")
+                action_model = OpenScenarioDocument.parse_variable_action(global_action.find('VariableAction'))
+                if action_model is None:
+                    raise AttributeError("VariableAction requires a SetAction or ModifyAction")
+                atomic = OpenScenarioParser._semantic_action(action_model, maneuver_name)
             elif global_action.find('ParameterAction') is not None:
                 parameter_action = global_action.find('ParameterAction')
                 parameter_ref = parameter_action.attrib.get('parameterRef')

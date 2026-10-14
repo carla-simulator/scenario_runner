@@ -23,6 +23,9 @@ from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationDat
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
 from srunner.tools.openscenario_parser import OpenScenarioParser, ParameterRef
+from srunner.openscenario.compatibility.global_parameters import GlobalParameterMapping
+from srunner.openscenario.execution.context import ExecutionContext
+from srunner.openscenario.parsing.loader import load_document
 
 
 class OpenScenarioConfiguration(ScenarioConfiguration):
@@ -232,6 +235,13 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 elem, _ = OpenScenarioParser.set_parameters(elem)
 
         OpenScenarioParser.set_global_parameters(self._global_parameters)
+        # Evaluate ${...} / $ref declaration values for configuration-time consumers. Diagnostics are
+        # reported when the scenario builds its own execution context.
+        parameters = ExecutionContext.for_document(
+            load_document(self.xml_tree), parameter_overrides=self._custom_params,
+            parameter_binding=GlobalParameterMapping()).evaluation.parameters
+        for name in parameters.names():
+            self._global_parameters[name] = parameters.raw(name)
 
     def _set_actor_information(self):
         """

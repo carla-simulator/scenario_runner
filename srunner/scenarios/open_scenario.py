@@ -20,7 +20,6 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     ChangeWeather,
     ChangeRoadFriction,
-    ChangeParameter,
     ChangeActorLaneOffset,
     ChangeActorWaypoints,
     ChangeLateralDistance,
@@ -31,24 +30,41 @@ from srunner.scenariomanager.weather_sim import OSCWeatherBehavior
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, ParameterRef
 from srunner.tools.py_trees_port import Decorator
+from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction
+from srunner.openscenario.compatibility.global_parameters import GlobalParameterMapping
 from srunner.openscenario.execution.context import ExecutionContext
-from srunner.openscenario.execution.registry import ActionExecutorRegistry
+from srunner.openscenario.execution.registry import default_registry
 from srunner.openscenario.parsing.loader import load_document
 
 
-def _execute_parameter_action(action, context):
-    """Adapt the semantic ParameterAction to the existing ScenarioRunner atomic."""
-    if action.is_modify:
-        value = action.modify_value
-        rule = action.modify_rule
-    else:
-        value = action.set_value
-        rule = None
-    return ChangeParameter(action.parameter_ref, value=ParameterRef(value), rule=rule)
+def create_execution_context(config):
+    """
+    Build the semantic execution context for an OpenSCENARIO configuration.
+
+    The document's parameter store is bound to CarlaDataProvider's global parameters, so
+    legacy consumers and semantic actions share one parameter state. Semantic errors raise
+    a ValidationError carrying the diagnostics.
+    """
+    document = load_document(config.xml_tree)
+    context = ExecutionContext.for_document(
+        document, parameter_overrides=getattr(config, '_custom_params', None),
+        parameter_binding=GlobalParameterMapping(), state={"configuration": config})
+    context.raise_for_errors()
+    return context
 
 
-_OPENSCENARIO_ACTION_EXECUTORS = ActionExecutorRegistry()
-_OPENSCENARIO_ACTION_EXECUTORS.register("ParameterAction", _execute_parameter_action)
+def create_init_parameters_behavior(context, registry=None):
+    """
+    Create the behavior executing the Init ParameterActions and VariableActions in document order.
+    """
+    registry = registry or default_registry()
+    param_behavior = py_trees.composites.Sequence(name="ParametersInit")
+    for i, action in enumerate(context.document.init_global_actions()):
+        sequence_index = getattr(action, "sequence_index", i)
+        update = ExecuteSemanticAction(action, registry, context, name='InitParams_%d' % sequence_index)
+        param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % sequence_index,
+                                                    behaviour=update))
+    return param_behavior
 
 
 def repeatable_behavior(behaviour, name=None):
@@ -212,26 +228,18 @@ class OpenScenario(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
 
+        self.execution_context = create_execution_context(config)
+        OpenScenarioParser.set_execution_context(self.execution_context)
+
         super(OpenScenario, self).__init__(self.config.name, ego_vehicles=ego_vehicles, config=config,
                                            world=world, debug_mode=debug_mode,
                                            terminate_on_failure=False, criteria_enable=criteria_enable)
 
     def _initialize_parameters(self):
         """
-        Parse ParameterAction from Init and update global osc parameters.
+        Execute ParameterAction and VariableAction from Init through the semantic context.
         """
-        param_behavior = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="ParametersInit")
-        document = load_document(self.config.xml_tree)
-        context = ExecutionContext(state={"configuration": self.config})
-        for i, action in enumerate(document.parameter_actions()):
-            parameter_update = _OPENSCENARIO_ACTION_EXECUTORS.execute(action, context)
-            sequence_index = getattr(action, "sequence_index", i)
-            parameter_update.name = 'InitParams_%d' % sequence_index
-            param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % sequence_index,
-                                                        behaviour=parameter_update))
-
-        return param_behavior
+        return create_init_parameters_behavior(self.execution_context, OpenScenarioParser.action_registry)
 
     def _initialize_environment(self, world):
         """
@@ -602,6 +610,8 @@ class OpenScenario(BasicScenario):
         """
         Remove all actors upon deletion
         """
+        if OpenScenarioParser.execution_context is getattr(self, 'execution_context', None):
+            OpenScenarioParser.set_execution_context(None)
         self.remove_all_actors()
 
     def _initialize_actors(self, config):
