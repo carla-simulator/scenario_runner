@@ -759,18 +759,26 @@ class ChangeActorWaypoints(AtomicBehavior):
              in synchronous mode
     """
 
-    def __init__(self, actor, waypoints, times=None, name="ChangeActorWaypoints", is_osc1=True):
+    def __init__(self, actor, waypoints, times=None, name="ChangeActorWaypoints", is_osc1=True,
+                 times_absolute=False, position_converter=None):
         """
         Setup parameters
+
+        times (list of float): Optional target time of each waypoint, relative to the start of the
+            atomic, or to the simulation start if times_absolute is True. None disables timing.
+        position_converter (callable): Converts a waypoint position into a carla.Transform.
+            Defaults to the OpenSCENARIO XML position conversion.
         """
         super().__init__(name, actor)
 
         self._waypoints = waypoints
         self._start_time = None
         self._times = times
+        self._times_absolute = times_absolute
         self._is_osc1 = is_osc1
+        self._position_converter = position_converter
 
-        if len(self._waypoints) != len(self._times):
+        if self._times is not None and len(self._waypoints) != len(self._times):
             raise ValueError("Both 'waypoints' and 'times' must have the same length")
 
     def initialise(self):
@@ -797,10 +805,11 @@ class ChangeActorWaypoints(AtomicBehavior):
 
         if self._is_osc1:
             # Transforming OSC waypoints to Carla waypoints
+            convert = (self._position_converter or
+                       sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform)
             carla_route_elements = []
             for (osc_point, routing_option) in self._waypoints:
-                carla_transforms = sr_tools.openscenario_parser.OpenScenarioParser.convert_position_to_transform(osc_point)
-                carla_route_elements.append((carla_transforms, routing_option))
+                carla_route_elements.append((convert(osc_point), routing_option))
         else:
             carla_route_elements = []
             # mmap = CarlaDataProvider.get_map()
@@ -854,7 +863,12 @@ class ChangeActorWaypoints(AtomicBehavior):
                     elif not route:
                         route.append(wp_tuple[0].transform)
 
-        actor_dict[self._actor.id].update_waypoints(route, times=self._times, start_time=self._start_time)
+        # Controllers consume the times list, so each activation gets its own copy.
+        times = None
+        if self._times is not None:
+            offset = self._start_time if self._times_absolute else 0.0
+            times = [time - offset for time in self._times]
+        actor_dict[self._actor.id].update_waypoints(route, times=times, start_time=self._start_time)
 
         super().initialise()
 
