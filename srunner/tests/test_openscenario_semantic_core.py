@@ -12,13 +12,15 @@ from srunner.openscenario.execution.registry import (
     ConditionExecutorRegistry, UnsupportedFeatureError, register_condition_executors,
     register_route_executors)
 from srunner.openscenario.execution.resolution import resolve_position
+from srunner.openscenario.model.actions import FollowTrajectoryAction
 from srunner.openscenario.model.catalogs import CatalogResolver
+from srunner.openscenario.model.conditions import RelativeAngleCondition
 from srunner.openscenario.model.document import OpenScenarioDocument
 from srunner.openscenario.model.parameters import (
     EvaluationContext, ParameterDeclaration, ParameterStore, VariableDeclaration, VariableStore)
 from srunner.openscenario.model.references import CatalogReference, Position
 from srunner.openscenario.model.references import Route, Trajectory
-from srunner.openscenario.model.trajectories import TrajectorySamplingError, polyline_samples
+from srunner.openscenario.model.trajectories import TrajectorySamplingError, polyline_samples, timed_samples
 from srunner.openscenario.parsing.loader import OpenScenarioLoader
 from srunner.openscenario.validation.semantic import SemanticValidator
 
@@ -89,15 +91,23 @@ class TestOpenScenarioSemanticCore(unittest.TestCase):
           </Route>"""))
         self.assertEqual(route.name, "r")
         self.assertEqual([p["route_strategy"] for p in route.positions], ["shortest", "fastest"])
-        trajectory = Trajectory.from_xml(ET.fromstring("""
+        action = OpenScenarioDocument.parse_follow_trajectory_action(ET.fromstring("""
+          <FollowTrajectoryAction><TrajectoryRef>
           <Trajectory name='t' closed='false'><Shape><Polyline>
             <Vertex time='0'><Position><WorldPosition x='0' y='0' z='0' h='0'/></Position></Vertex>
             <Vertex time='2'><Position><WorldPosition x='5' y='0' z='0' h='0'/></Position></Vertex>
-          </Polyline></Shape></Trajectory>"""),
-          {"kind": "Timing", "attributes": {"domainAbsoluteRelative": "absolute"}}, "position")
+          </Polyline></Shape></Trajectory></TrajectoryRef>
+          <TimeReference><Timing domainAbsoluteRelative='absolute' offset='1' scale='2'/></TimeReference>
+          <TrajectoryFollowingMode followingMode='position'/>
+          </FollowTrajectoryAction>"""))
+        trajectory = action.trajectory
         self.assertEqual(trajectory.shape, "Polyline")
-        self.assertEqual(trajectory.control_points[1]["time"], 2.0)
-        self.assertEqual(trajectory.following_mode, "position")
+        self.assertEqual(trajectory.control_points[1]["time"], "2")
+        self.assertEqual(action.following_mode, "position")
+        self.assertEqual(action.time_reference.kind, "Timing")
+        self.assertEqual(action.time_reference.domain, "absolute")
+        _, times = timed_samples(trajectory, action.time_reference)
+        self.assertEqual(times, [1.0, 5.0])
 
     def test_route_actions_use_backend_boundary(self):
         xml = ET.fromstring("""<OpenSCENARIO><FileHeader revMajor='1' revMinor='3'/>
@@ -119,15 +129,21 @@ class TestOpenScenarioSemanticCore(unittest.TestCase):
         self.assertEqual(calls, ["WorldPosition"])
 
     def test_unsupported_trajectory_is_structured(self):
-        action = __import__("srunner.openscenario.model.actions", fromlist=["FollowTrajectoryAction"]).FollowTrajectoryAction()
+        action = FollowTrajectoryAction()
         registry = register_route_executors(ActionExecutorRegistry())
         with self.assertRaises(UnsupportedFeatureError) as error:
             registry.execute(action, ExecutionContext())
+        self.assertEqual(error.exception.diagnostic.category, "backend_capability_error")
+        self.assertFalse(error.exception.not_migrated)
+        with self.assertRaises(UnsupportedFeatureError) as error:
+            ActionExecutorRegistry().execute(action, ExecutionContext())
         self.assertEqual(error.exception.diagnostic.category, "unsupported_feature")
+        self.assertTrue(error.exception.not_migrated)
 
     def test_relative_conditions_use_condition_registry(self):
-        from srunner.openscenario.model.references import RelativeAngleCondition
-        condition = RelativeAngleCondition("npc", "0.2", "lessThan")
+        condition = RelativeAngleCondition.from_xml(ET.fromstring(
+            "<RelativeAngleCondition entityRef='npc' angleType='heading' angle='0.2' angleTolerance='0.1'/>"))
+        self.assertEqual(condition.coordinate_system, "entity")
         class Backend(object):
             def evaluate_relative_angle(self, value, context):
                 return value.entity_ref
@@ -138,7 +154,8 @@ class TestOpenScenarioSemanticCore(unittest.TestCase):
         position = Position.from_xml(ET.fromstring(
             "<Position><RoutePosition><RouteRef><Route name='r' closed='false'>"
             "<Waypoint routeStrategy='shortest'><Position><WorldPosition x='0' y='0' z='0' h='0'/>"
-            "</Position></Waypoint><Waypoint routeStrategy='shortest'><Position><WorldPosition x='1' y='0' z='0' h='0'/>"
+            "</Position></Waypoint><Waypoint routeStrategy='shortest'>"
+            "<Position><WorldPosition x='1' y='0' z='0' h='0'/>"
             "</Position></Waypoint></Route></RouteRef><InRoutePosition><FromRoadCoordinates pathS='0' t='0'/>"
             "</InRoutePosition></RoutePosition></Position>"))
         class Backend(object):

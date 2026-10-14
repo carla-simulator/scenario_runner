@@ -2,12 +2,16 @@
 
 from __future__ import absolute_import
 
+import logging
+
 from srunner.openscenario.execution.capabilities import BackendCapabilities
 from srunner.openscenario.model.expressions import EvaluationError, is_expression, reference_name
 from srunner.openscenario.model.parameters import EvaluationContext, convert_value
 from srunner.openscenario.validation.diagnostics import (
     Diagnostic, ValidationError, diagnostics_as_validation_error)
 from srunner.openscenario.validation.semantic import SemanticValidator
+
+LOGGER = logging.getLogger("[SR:OpenSCENARIO]")
 
 
 class ExecutionContext(object):
@@ -77,6 +81,19 @@ class ExecutionContext(object):
         state["evaluation"] = evaluation
         return cls(backend=backend, capabilities=capabilities, state=state, document=document,
                    diagnostics=diagnostics)
+
+    def with_backend(self, backend, capabilities=None):
+        """Return a context for ``backend`` sharing this context's evaluation state and diagnostics."""
+        context = ExecutionContext(backend=backend, capabilities=capabilities or self.capabilities,
+                                   state=self.state, document=self.document)
+        context.diagnostics = self.diagnostics
+        return context
+
+    def warn(self, diagnostic):
+        """Record a non-blocking diagnostic and log it."""
+        LOGGER.warning("%s", diagnostic)
+        self.diagnostics.append(diagnostic)
+        return diagnostic
 
     @property
     def errors(self):

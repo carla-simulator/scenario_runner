@@ -105,9 +105,10 @@ contains of submodules, which are not listed, the support status applies to all 
 | `SynchronizeAction`                                 | &#10060;             | &#10060;             |                  |
 | `TeleportAction`                                    | &#9989;            | &#9989;            |                  |
 | `VisibilityAction`                                  | &#10060;             | &#10060;             |                  |
-| `RoutingAction`<br> `AcquirePositionAction`        | &#10060;             | &#9989;            |                  |
-| `RoutingAction`<br> `AssignRouteAction`            | &#10060;             | &#9989;            | Route Options (shortest/fastest/etc) are supported. Shortests means direct path between A and B, all other will use the shortest path along the road network between A and B       |
-| `RoutingAction`<br> `FollowTrajectoryAction`       | &#10060;             | &#9989;             | Currently only Polylines without temporal constraints are supported and the trajectoryFollowingMode is up to the controller |
+| `RoutingAction`<br> `AcquirePositionAction`        | &#9989;             | &#9989;            | The target position is reached with the `fastest` route option. See [Routes, trajectories and speed profiles](#routes-trajectories-and-speed-profiles). |
+| `RoutingAction`<br> `AssignRouteAction`            | &#9989;             | &#9989;            | Route Options (shortest/fastest/etc) are supported. Shortests means direct path between A and B, all other will use the shortest path along the road network between A and B. Inline routes and `CatalogReference`s are supported. |
+| `RoutingAction`<br> `FollowTrajectoryAction`       | &#9989;             | &#9989;             | Only `Polyline` shapes. `TimeReference` (`None` or `Timing` with offset/scale, absolute or relative) is applied to the vertex times; the `trajectoryFollowingMode` is kept but executed by the actor's controller. `TrajectoryRef` (OpenSCENARIO 1.1+) is supported. |
+| `LongitudinalAction`<br> `SpeedProfileAction`      | &#9989;             | &#9989;             | OpenSCENARIO 1.2+. Each entry becomes a target speed step; see [Routes, trajectories and speed profiles](#routes-trajectories-and-speed-profiles). |
 
 <br>
 
@@ -130,6 +131,8 @@ The following two tables list the support status for each.
 | `EndOfRoadCondition`                           | &#9989;                                          |                                                |
 | `OffroadCondition`                             | &#9989;                                          |                                                |
 | `ReachPositionCondition`                       | &#9989;                                          |                                                |
+| `RelativeAngleCondition`                       | &#9989;                                          | OpenSCENARIO 1.2+. `coordinateSystem` `entity` (default) and `world` only |
+| `RelativeClearanceCondition`                   | &#9989;                                          | OpenSCENARIO 1.2+. See [Routes, trajectories and speed profiles](#routes-trajectories-and-speed-profiles) |
 | `RelativeDistanceCondition`                    | &#9989;                                          |                                                |
 | `RelativeSpeedCondition`                       | &#9989;                                          |                                                |
 | `SpeedCondition`                               | &#9989;                                          |                                                |
@@ -225,6 +228,51 @@ Not supported yet:
   distributions, `MonitorDeclarations`, the rule that `int`, `unsignedInt` and `unsignedShort` parameters must not
   be mixed in one expression, and reading or writing variables from outside the scenario.
 
+#### Routes, trajectories and speed profiles
+
+`AssignRouteAction`, `AcquirePositionAction`, `FollowTrajectoryAction` and `SpeedProfileAction` (in the `Init` and in
+stories), and the `RelativeAngleCondition` and `RelativeClearanceCondition` entity conditions, are parsed into typed
+objects by the semantic layer and turned into behaviors from those objects:
+
+* Routes and trajectories keep their positions as typed positions until the behavior starts, so relative positions
+  are resolved against the actors' poses at that moment.
+* `FollowTrajectoryAction` reads `TimeReference` and `TrajectoryFollowingMode` from their child elements. With
+  `TimeReference/None` the vertex times are ignored. With `Timing` each vertex time `t` becomes `t * scale + offset`,
+  measured from the start of the action (`relative`) or of the simulation (`absolute`); every vertex then needs a
+  time. The following mode is passed on, but how closely the actor tracks the trajectory depends on its controller;
+  `position` is reported as an approximation warning.
+* `SpeedProfileAction` commands each `SpeedProfileEntry` speed as a target speed of the actor's controller. An entry
+  with a `time` holds its target for that time before the next entry starts; an entry without a `time`, and the last
+  entry, last until the speed is reached. With `entityRef` the speeds are relative to the speed of that entity.
+  `DynamicConstraints` and the difference between the `follow` and `position` modes are not enforced (approximation
+  warning).
+* `RelativeAngleCondition` compares the heading, pitch or roll of the triggering entity relative to the referenced
+  entity with `angle` ± `angleTolerance`. The heading follows the OpenSCENARIO convention unless the scenario uses
+  CARLA coordinates. The `lane`, `road` and `trajectory` coordinate systems are not supported.
+* `RelativeClearanceCondition` is true while no entity (or none of the listed `EntityRef`s) is between
+  `distanceBackward` behind and `distanceForward` ahead of the triggering entity, along its heading, in the
+  `RelativeLaneRange`s (positive lanes are to its left; no range means all lanes). Missing distances count as 0 m.
+  Lanes of the opposite driving direction are only considered with `oppositeLanes="true"`, and `freeSpace="true"`
+  measures between bounding boxes. Relative lanes are exact for entities on the same road section and estimated
+  from the lateral offset elsewhere.
+* Attribute values may be `$name` references or `${...}` expressions; they are evaluated when the scenario is built.
+
+The scenario is aborted with a structured diagnostic instead of running something different from what was written:
+
+* Structural errors (for example a `Polyline` with fewer than two vertices, a `Route` with fewer than two waypoints, a
+  missing `TimeReference`, an unknown `followingMode`, a `ParameterAction` or `VariableAction` whose `ModifyAction`
+  has no valid `Rule`) raise a `ValidationError`.
+* Features the CARLA backend cannot execute raise an `UnsupportedFeatureError` whose diagnostic category is
+  `backend_capability_error`: `Clothoid`, `ClothoidSpline` and `Nurbs` trajectories, closed trajectories, a non-zero
+  `initialDistanceOffset`, `RoutePosition` and other position types not listed in the table below, and the
+  unsupported `RelativeAngleCondition` coordinate systems.
+* Entity conditions that are not supported at all raise an `UnsupportedFeatureError` instead of being silently
+  dropped.
+
+Other actions keep their previous implementation. As noted above, `scenario_runner.py --openscenario` still only
+accepts OpenSCENARIO 1.0 files validated against the 1.0 schema, so `SpeedProfileAction`, `TrajectoryRef`,
+`RelativeAngleCondition` and `RelativeClearanceCondition` are currently only usable through the Python API.
+
 ##### OpenSCENARIO Positions
 
 There are several ways of defining positions in OpenSCENARIO. In the following we list the
@@ -238,7 +286,7 @@ current support status for each definition format.
 | `RelativeRoadPosition`   | &#9989;                     |                          |
 | `RelativeWorldPosition`  | &#9989;                    |                          |
 | `RoadPosition`           | &#9989;                     |                          |
-| `RoutePosition`          | &#10060;                     |                          |
+| `RoutePosition`          | &#10060;                     | Parsed and validated; using it in a routing action aborts the scenario with an unsupported-feature diagnostic |
 | `WorldPosition`          | &#9989;                    |                          |
 
 <br>

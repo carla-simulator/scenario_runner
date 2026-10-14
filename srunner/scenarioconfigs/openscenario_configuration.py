@@ -386,7 +386,9 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                         actor_name,
                     )
                 actor_found = True
-                for position in private_action.iter('Position'):
+                # Only TeleportAction places the actor; routes and trajectories also contain positions.
+                for teleport_action in private_action.iter('TeleportAction'):
+                    position = teleport_action.find('Position')
                     transform = OpenScenarioParser.convert_position_to_transform(
                         position, actor_list=self.other_actors + self.ego_vehicles)
                     if transform:

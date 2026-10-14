@@ -7,12 +7,13 @@ from srunner.openscenario.model.parameters import (
 from srunner.openscenario.model.actions import (
     AcquirePositionAction, AssignRouteAction, FollowTrajectoryAction, ParameterAction,
     SpeedProfileAction, VariableModifyAction, VariableSetAction)
+from srunner.openscenario.model.conditions import (
+    Condition, RelativeAngleCondition, RelativeClearanceCondition)
 from srunner.openscenario.model.references import (
-    CatalogEntry, CatalogReference, Condition, EntityReference, Position, RelativeAngleCondition,
-    RelativeClearanceCondition, Route, RoutePosition, Trajectory)
+    CatalogEntry, CatalogReference, EntityReference, Position, Route, RoutePosition, TimeReference, Trajectory)
 from srunner.openscenario.model.catalogs import CatalogResolver
 from srunner.openscenario.model.trajectories import (
-    TrajectorySamplingError, backend_sampling_required, polyline_samples)
+    TrajectorySamplingError, backend_sampling_required, polyline_samples, timed_samples)
 
 __all__ = [
     "OpenScenarioDocument",
@@ -38,10 +39,12 @@ __all__ = [
     "Position",
     "Route",
     "RoutePosition",
+    "TimeReference",
     "Trajectory",
     "RelativeAngleCondition",
     "RelativeClearanceCondition",
     "TrajectorySamplingError",
     "polyline_samples",
+    "timed_samples",
     "backend_sampling_required",
 ]

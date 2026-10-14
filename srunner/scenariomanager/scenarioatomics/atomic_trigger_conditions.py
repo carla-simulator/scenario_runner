@@ -1479,3 +1479,191 @@ class CheckParameter(AtomicCondition):
             new_status = py_trees.common.Status.SUCCESS
 
         return new_status
+
+
+def _normalize_angle(angle):
+    return math.atan2(math.sin(angle), math.cos(angle))
+
+
+def relative_angle(rotation, reference_rotation, angle_type, right_handed=True):
+    """
+    Angle [rad] of ``rotation`` relative to ``reference_rotation`` (carla.Rotation-like, degrees).
+
+    CARLA uses a left-handed frame; with ``right_handed`` the heading is mirrored to the
+    OpenSCENARIO convention, as for positions.
+    """
+    attribute = {"heading": "yaw", "pitch": "pitch", "roll": "roll"}[angle_type]
+    delta = math.radians(getattr(rotation, attribute) - getattr(reference_rotation, attribute))
+    if angle_type == "heading" and right_handed:
+        delta = -delta
+    return _normalize_angle(delta)
+
+
+class RelativeAngleToActor(AtomicCondition):
+
+    """
+    SUCCESS while the angle of ``actor`` relative to ``reference_actor`` is within
+    ``tolerance`` of ``angle``, RUNNING otherwise.
+
+    Args:
+        actor (carla.Actor): Triggering actor.
+        reference_actor (carla.Actor): Reference actor.
+        angle_type (string): 'heading', 'pitch' or 'roll'.
+        angle (float): Expected relative angle [rad].
+        tolerance (float): Allowed deviation [rad].
+        right_handed (boolean): Measure the heading in the OpenSCENARIO right-handed convention.
+    """
+
+    def __init__(self, actor, reference_actor, angle_type, angle, tolerance, right_handed=True,
+                 name="RelativeAngleToActor"):
+        super().__init__(name)
+        self._actor = actor
+        self._reference_actor = reference_actor
+        self._angle_type = angle_type
+        self._angle = angle
+        self._tolerance = tolerance
+        self._right_handed = right_handed
+
+    def update(self):
+        transform = CarlaDataProvider.get_transform(self._actor)
+        reference = CarlaDataProvider.get_transform(self._reference_actor)
+        if transform is None or reference is None:
+            return py_trees.common.Status.RUNNING
+        measured = relative_angle(transform.rotation, reference.rotation, self._angle_type, self._right_handed)
+        if abs(_normalize_angle(measured - self._angle)) <= self._tolerance:
+            return py_trees.common.Status.SUCCESS
+        return py_trees.common.Status.RUNNING
+
+
+def clearance_occupied(longitudinal, relative_lane, opposite, distance_forward, distance_backward,
+                       lane_ranges=None, opposite_lanes=False):
+    """
+    Return True if an entity at ``longitudinal`` [m] (positive ahead) on ``relative_lane``
+    (positive to the left of the triggering entity) lies inside the clearance area.
+
+    ``lane_ranges`` is a list of (from, to) relative lane bounds, None meaning unbounded; an
+    empty list considers every lane. Opposite-direction lanes count only with ``opposite_lanes``.
+    """
+    if opposite and not opposite_lanes:
+        return False
+    if not -distance_backward <= longitudinal <= distance_forward:
+        return False
+    if not lane_ranges:
+        return True
+    for lane_from, lane_to in lane_ranges:
+        if (lane_from is None or relative_lane >= lane_from) and (lane_to is None or relative_lane <= lane_to):
+            return True
+    return False
+
+
+def _lane_rank(lane_id):
+    return lane_id if lane_id < 0 else lane_id - 1
+
+
+class RelativeClearance(AtomicCondition):
+
+    """
+    SUCCESS while no other entity occupies the clearance area around ``actor``, RUNNING otherwise.
+
+    The area spans ``distance_backward`` behind to ``distance_forward`` ahead of the actor along its
+    heading, over the relative lanes in ``lane_ranges``. Relative lanes are exact for entities on
+    the same road section; elsewhere they are estimated from the lateral offset and lane width.
+
+    Args:
+        actor (carla.Actor): Triggering actor.
+        other_actors (list of carla.Actor): Entities to check. None checks every vehicle and walker.
+        lane_ranges (list of (int or None, int or None)): Relative lane ranges, see clearance_occupied.
+        distance_forward (float): Longitudinal extent ahead [m].
+        distance_backward (float): Longitudinal extent behind [m].
+        freespace (boolean): Measure between bounding boxes instead of reference points.
+        opposite_lanes (boolean): Also consider lanes of the opposite driving direction.
+    """
+
+    def __init__(self, actor, other_actors, lane_ranges, distance_forward, distance_backward, freespace,
+                 opposite_lanes, name="RelativeClearance"):
+        super().__init__(name)
+        self._actor = actor
+        self._other_actors = other_actors
+        self._lane_ranges = list(lane_ranges or [])
+        self._distance_forward = distance_forward
+        self._distance_backward = distance_backward
+        self._freespace = freespace
+        self._opposite_lanes = opposite_lanes
+
+    def _candidates(self):
+        if self._other_actors is not None:
+            return self._other_actors
+        return [actor for actor in CarlaDataProvider.get_all_actors()
+                if actor.id != self._actor.id and actor.type_id.startswith(("vehicle.", "walker."))]
+
+    def _occupies(self, other, transform, waypoint, carla_map):
+        other_transform = CarlaDataProvider.get_transform(other)
+        if other_transform is None:
+            return False
+        yaw = math.radians(transform.rotation.yaw)
+        dx = other_transform.location.x - transform.location.x
+        dy = other_transform.location.y - transform.location.y
+        longitudinal = dx * math.cos(yaw) + dy * math.sin(yaw)
+        lateral_left = -(-dx * math.sin(yaw) + dy * math.cos(yaw))
+        if self._freespace:
+            extents = self._actor.bounding_box.extent.x + other.bounding_box.extent.x
+            longitudinal = math.copysign(max(abs(longitudinal) - extents, 0.0), longitudinal)
+
+        other_waypoint = carla_map.get_waypoint(other_transform.location)
+        same_section = (other_waypoint.road_id == waypoint.road_id and
+                        other_waypoint.section_id == waypoint.section_id)
+        if same_section:
+            opposite = (other_waypoint.lane_id > 0) != (waypoint.lane_id > 0)
+            relative_lane = int(math.copysign(abs(_lane_rank(other_waypoint.lane_id) - _lane_rank(waypoint.lane_id)),
+                                              lateral_left))
+        else:
+            own_yaw = math.radians(waypoint.transform.rotation.yaw)
+            other_yaw = math.radians(other_waypoint.transform.rotation.yaw)
+            opposite = math.cos(other_yaw - own_yaw) < 0
+            relative_lane = int(round(lateral_left / max(waypoint.lane_width, 0.1)))
+        return clearance_occupied(longitudinal, relative_lane, opposite, self._distance_forward,
+                                  self._distance_backward, self._lane_ranges, self._opposite_lanes)
+
+    def update(self):
+        transform = CarlaDataProvider.get_transform(self._actor)
+        if transform is None:
+            return py_trees.common.Status.RUNNING
+        carla_map = CarlaDataProvider.get_map()
+        waypoint = carla_map.get_waypoint(transform.location)
+        for other in self._candidates():
+            if other is not None and other.id != self._actor.id and self._occupies(other, transform, waypoint,
+                                                                                    carla_map):
+                return py_trees.common.Status.RUNNING
+        return py_trees.common.Status.SUCCESS
+
+
+class TargetSpeedReached(AtomicCondition):
+
+    """
+    SUCCESS once the speed of ``actor`` reaches ``target_speed`` (plus the speed of
+    ``relative_actor``, if given): within ``tolerance`` or after crossing it.
+    """
+
+    def __init__(self, actor, target_speed, relative_actor=None, tolerance=0.1, name="TargetSpeedReached"):
+        super().__init__(name)
+        self._actor = actor
+        self._target_speed = target_speed
+        self._relative_actor = relative_actor
+        self._tolerance = tolerance
+        self._initial_sign = None
+
+    def _difference(self):
+        target = self._target_speed
+        if self._relative_actor is not None:
+            target += CarlaDataProvider.get_velocity(self._relative_actor)
+        return target - CarlaDataProvider.get_velocity(self._actor)
+
+    def initialise(self):
+        self._initial_sign = math.copysign(1.0, self._difference())
+        super().initialise()
+
+    def update(self):
+        difference = self._difference()
+        if abs(difference) <= self._tolerance or math.copysign(1.0, difference) != self._initial_sign:
+            return py_trees.common.Status.SUCCESS
+        return py_trees.common.Status.RUNNING

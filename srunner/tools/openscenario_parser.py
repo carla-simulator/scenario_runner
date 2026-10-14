@@ -75,10 +75,13 @@ from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
 from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction, SemanticValueCondition
-from srunner.openscenario.execution.registry import default_registry
 from srunner.openscenario.compatibility.attributes import resolve_attribute
+from srunner.openscenario.compatibility.backend import build_entity_condition, build_private_action
+from srunner.openscenario.execution.context import ExecutionContext
+from srunner.openscenario.execution.registry import UnsupportedFeatureError, default_registry
 from srunner.openscenario.model.document import OpenScenarioDocument
 from srunner.openscenario.model.expressions import is_expression
+from srunner.openscenario.validation.diagnostics import Diagnostic
 
 
 def oneshot_with_check(variable_name, behaviour, name=None):
@@ -335,6 +338,34 @@ class OpenScenarioParser(object):
     def _semantic_action(action, name):
         return ExecuteSemanticAction(action, OpenScenarioParser.action_registry,
                                      OpenScenarioParser.execution_context, name=name)
+
+    @staticmethod
+    def _semantic_private_action(private_action, actor, actor_list, catalogs, name):
+        """
+        Build a migrated private action through the semantic runtime, or return None when it is
+        not migrated and the legacy implementation applies.
+        """
+        try:
+            return build_private_action(private_action, actor, actor_list, catalogs,
+                                        OpenScenarioParser.execution_context, name=name)
+        except UnsupportedFeatureError as error:
+            if not error.not_migrated:
+                raise
+            return None
+
+    @staticmethod
+    def _semantic_entity_condition(entity_condition, trigger_actor, actor_list, name):
+        """
+        Build a migrated entity condition through the semantic runtime, or return None when it is
+        not migrated and the legacy implementation applies.
+        """
+        context = OpenScenarioParser.execution_context or ExecutionContext()
+        try:
+            return build_entity_condition(entity_condition, trigger_actor, actor_list, context, name=name)
+        except UnsupportedFeatureError as error:
+            if not error.not_migrated:
+                raise
+            return None
 
     @staticmethod
     def set_use_carla_coordinate_system():
@@ -930,7 +961,11 @@ class OpenScenarioParser(object):
                             break
 
             for entity_condition in condition.find('ByEntityCondition').iter('EntityCondition'):
-                if entity_condition.find('EndOfRoadCondition') is not None:
+                semantic_atomic = OpenScenarioParser._semantic_entity_condition(
+                    entity_condition, trigger_actor, actor_list, condition_name)
+                if semantic_atomic is not None:
+                    atomic = semantic_atomic
+                elif entity_condition.find('EndOfRoadCondition') is not None:
                     end_road_condition = entity_condition.find('EndOfRoadCondition')
                     condition_duration = ParameterRef(end_road_condition.attrib.get('duration'))
                     atomic_cls = py_trees.meta.inverter(EndofRoadTest)
@@ -1232,7 +1267,11 @@ class OpenScenarioParser(object):
         else:
             raise AttributeError("Unknown condition")
 
-        if delay_atomic is not None and atomic is not None:
+        if atomic is None:
+            raise UnsupportedFeatureError(condition, Diagnostic(
+                "unsupported_feature", "Condition {!r} is not supported".format(condition_name), source=condition))
+
+        if delay_atomic is not None:
             new_atomic = py_trees.composites.Sequence("delayed sequence")
             new_atomic.add_child(delay_atomic)
             new_atomic.add_child(atomic)
@@ -1308,15 +1347,11 @@ class OpenScenarioParser(object):
             elif (global_action.find('ParameterAction') is not None and
                   OpenScenarioParser.execution_context is not None):
                 action_model = OpenScenarioDocument.parse_parameter_action(global_action.find('ParameterAction'))
-                if action_model is None:
-                    raise AttributeError("ParameterAction requires a SetAction or ModifyAction")
                 atomic = OpenScenarioParser._semantic_action(action_model, maneuver_name)
             elif global_action.find('VariableAction') is not None:
                 if OpenScenarioParser.execution_context is None:
                     raise NotImplementedError("VariableAction requires the OpenSCENARIO execution context")
                 action_model = OpenScenarioDocument.parse_variable_action(global_action.find('VariableAction'))
-                if action_model is None:
-                    raise AttributeError("VariableAction requires a SetAction or ModifyAction")
                 atomic = OpenScenarioParser._semantic_action(action_model, maneuver_name)
             elif global_action.find('ParameterAction') is not None:
                 parameter_action = global_action.find('ParameterAction')
@@ -1363,8 +1398,12 @@ class OpenScenarioParser(object):
                 atomic = RunScript(command, base_path=OpenScenarioParser.osc_filepath, name=maneuver_name)
         elif action.find('PrivateAction') is not None:
             private_action = action.find('PrivateAction')
+            semantic_atomic = OpenScenarioParser._semantic_private_action(
+                private_action, actor, actor_list, catalogs, maneuver_name)
 
-            if private_action.find('LongitudinalAction') is not None:
+            if semantic_atomic is not None:
+                atomic = semantic_atomic
+            elif private_action.find('LongitudinalAction') is not None:
                 private_action = private_action.find('LongitudinalAction')
 
                 if private_action.find('SpeedAction') is not None:

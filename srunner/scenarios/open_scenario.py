@@ -32,8 +32,8 @@ from srunner.tools.py_trees_port import Decorator
 from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction
 from srunner.openscenario.compatibility.global_parameters import GlobalParameterMapping
 from srunner.openscenario.execution.context import ExecutionContext
-from srunner.openscenario.execution.registry import (
-    ActionExecutorRegistry, UnsupportedFeatureError, default_registry, register_route_executors)
+from srunner.openscenario.compatibility.backend import build_private_action
+from srunner.openscenario.execution.registry import UnsupportedFeatureError, default_registry
 from srunner.openscenario.parsing.loader import load_document
 from srunner.openscenario.validation.diagnostics import diagnostics_as_validation_error
 
@@ -66,65 +66,6 @@ def create_init_parameters_behavior(context, registry=None):
         param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % sequence_index,
                                                     behaviour=update))
     return param_behavior
-
-
-class _ScenarioRunnerSemanticBackend(object):
-    """Resolve migrated semantic actions into existing ScenarioRunner atomics.
-
-    The semantic model remains CARLA-independent.  This adapter is the
-    runtime boundary used only after semantic parsing and registry dispatch.
-    Unsupported actions deliberately raise ``UnsupportedFeatureError`` so the
-    caller can preserve the legacy path.
-    """
-
-    def __init__(self, scenario, actor):
-        self.scenario = scenario
-        self.actor = actor
-
-    def assign_route(self, action, context):
-        waypoints = OpenScenarioParser.get_route(action.source, self.scenario.config.catalogs)
-        return ChangeActorWaypoints(self.actor, waypoints=waypoints, name="AssignRouteAction")
-
-    def acquire_position(self, action, context):
-        return ChangeActorWaypoints(self.actor,
-                                    waypoints=[(action.source.find("Position"), "fastest")],
-                                    name="AcquirePositionAction")
-
-    def follow_trajectory(self, action, context):
-        waypoints, times = OpenScenarioParser.get_trajectory(
-            action.source, self.scenario.config.catalogs)
-        return ChangeActorWaypoints(
-            self.actor,
-            waypoints=list(zip(waypoints, ["shortest"] * len(waypoints))),
-            times=times,
-            name="FollowTrajectoryAction")
-
-    def apply_speed_profile(self, action, context):
-        raise UnsupportedFeatureError(action)
-
-
-def _semantic_route_behavior(scenario, private_action, actor):
-    """Return a migrated route behavior, or ``None`` for legacy fallback."""
-    from srunner.openscenario.model.document import OpenScenarioDocument
-
-    routing = private_action.find("RoutingAction")
-    if routing is None:
-        return None
-    for element in routing:
-        action = OpenScenarioDocument.action_from_xml(element)
-        if action is None:
-            continue
-        context = ExecutionContext(backend=_ScenarioRunnerSemanticBackend(scenario, actor),
-                                   state={"configuration": scenario.config})
-        try:
-            return _OPENSCENARIO_ROUTE_EXECUTORS.execute(action, context)
-        except (UnsupportedFeatureError, AttributeError, ValueError):
-            return None
-    return None
-
-
-_OPENSCENARIO_ROUTE_EXECUTORS = ActionExecutorRegistry()
-register_route_executors(_OPENSCENARIO_ROUTE_EXECUTORS)
 
 
 def repeatable_behavior(behaviour, name=None):
@@ -410,7 +351,8 @@ class OpenScenario(BasicScenario):
                                                                        name=maneuver_name)
 
                                 elif private_action.find('RoutingAction') is not None:
-                                    atomic = _semantic_route_behavior(self, private_action, carla_actor)
+                                    atomic = self._semantic_private_action(private_action, carla_actor,
+                                                                           actor_list)
                                     if atomic is None:
                                         private_action = private_action.find('RoutingAction')
                                         if private_action.find('AssignRouteAction') is not None:
@@ -432,6 +374,10 @@ class OpenScenario(BasicScenario):
                                             atomic = ChangeActorWaypoints(carla_actor, waypoints=waypoints,
                                                                           name="AcquirePositionAction")
 
+                                elif private_action.find('LongitudinalAction/SpeedProfileAction') is not None:
+                                    atomic = self._semantic_private_action(private_action, carla_actor,
+                                                                           actor_list)
+
                     if controller_atomic is None:
                         controller_atomic = ChangeActorControl(carla_actor, control_py_module=None, args={})
                     actor_init_behavior.add_child(controller_atomic)
@@ -445,6 +391,19 @@ class OpenScenario(BasicScenario):
                     break
 
         return init_behavior
+
+    def _semantic_private_action(self, private_action, actor, actor_list):
+        """
+        Build a migrated Init private action through the semantic runtime, or return None so the
+        caller can use the legacy implementation.
+        """
+        try:
+            return build_private_action(private_action, actor, actor_list, self.config.catalogs,
+                                        self.execution_context)
+        except UnsupportedFeatureError as error:
+            if not error.not_migrated:
+                raise
+            return None
 
     def _create_behavior(self):
         """
@@ -496,7 +455,8 @@ class OpenScenario(BasicScenario):
 
                     # Collect catalog reference maneuvers in order to process them at the same time as normal maneuvers
                         catalog_maneuver_list = []
-                        for catalog_reference in sequence.iter("CatalogReference"):
+                        # Only direct children reference maneuvers; nested ones belong to actions (e.g. routes).
+                        for catalog_reference in sequence.findall("CatalogReference"):
                             catalog_maneuver = OpenScenarioParser.get_catalog_entry(self.config.catalogs,
                                                                                     catalog_reference)
                             catalog_maneuver_list.append(catalog_maneuver)

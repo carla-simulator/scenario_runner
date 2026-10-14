@@ -71,21 +71,28 @@ class AcquirePositionAction(RouteAction):
 
 
 class FollowTrajectoryAction(RouteAction):
+    """``trajectory`` or ``catalog_reference`` come from ``TrajectoryRef`` or the deprecated direct children."""
+
     action_type = "FollowTrajectoryAction"
 
     def __init__(self, trajectory=None, catalog_reference=None, time_reference=None,
-                 following_mode=None, source=None):
+                 following_mode=None, initial_distance_offset=None, source=None):
         self.trajectory = trajectory
         self.catalog_reference = catalog_reference
         self.time_reference = time_reference
         self.following_mode = following_mode
+        self.initial_distance_offset = initial_distance_offset
         self.source = source
 
 
 class SpeedProfileAction(Action):
+    """Entries are ``(speed, time)`` lexical pairs; ``time`` is None when omitted."""
+
     action_type = "SpeedProfileAction"
 
-    def __init__(self, segments, entity_ref=None, source=None):
-        self.segments = list(segments or [])
+    def __init__(self, entries, following_mode, entity_ref=None, dynamic_constraints=None, source=None):
+        self.entries = list(entries or [])
+        self.following_mode = following_mode
         self.entity_ref = entity_ref
+        self.dynamic_constraints = dict(dynamic_constraints or {})
         self.source = source

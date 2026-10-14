@@ -17,6 +17,7 @@ class Diagnostic(object):
     DUPLICATE_DECLARATION = "duplicate_declaration"
     UNDECLARED_OVERRIDE = "undeclared_override"
     MALFORMED_DOCUMENT = "malformed_document"
+    NOT_MIGRATED = "not_migrated"
 
     def __init__(self, category, message, path=None, severity="error", source=None, code=None):
         if category not in self.CATEGORIES:

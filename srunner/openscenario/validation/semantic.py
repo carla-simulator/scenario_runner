@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from srunner.openscenario.validation.diagnostics import Diagnostic, ValidationError
 # Module import (not names): the expression module imports this package's diagnostics.
 from srunner.openscenario.model import expressions
-from srunner.openscenario.model.references import Position
+from srunner.openscenario.model.references import Position, Route, Trajectory
 
 
 class SemanticValidator(object):
@@ -24,21 +24,27 @@ class SemanticValidator(object):
                                                source=reference.source))
 
         if hasattr(document, "positions"):
-            for element in document.root.iter("Position"):
-                try:
-                    position = Position.from_xml(element)
-                    if position is not None and position.kind == "RoutePosition" and not position.attributes.get("route_ref"):
-                        diagnostics.append(Diagnostic("semantic_error", "RoutePosition requires a route reference",
-                                                       source=position.source))
-                except ValueError as error:
-                    diagnostics.append(Diagnostic("semantic_error", str(error), source=element))
-                    break
+            diagnostics.extend(self._structures(document))
 
         if hasattr(document, "variable_actions"):
             diagnostics.extend(self._references(document))
 
         if diagnostics and raise_on_error:
             raise ValidationError(diagnostics)
+        return diagnostics
+
+    @staticmethod
+    def _structures(document):
+        """Report the first structural error of each Position, Route and Trajectory."""
+        diagnostics = []
+        for tag, parse in (("Position", Position.from_xml), ("Route", Route.from_xml),
+                           ("Trajectory", Trajectory.from_xml)):
+            for element in document.root.iter(tag):
+                try:
+                    parse(element)
+                except ValidationError as error:
+                    diagnostics.extend(error.diagnostics)
+                    break
         return diagnostics
 
     @staticmethod
@@ -85,11 +91,11 @@ class SemanticValidator(object):
         parameters.update(element.attrib.get("name") for element in document.root.iter("ParameterDeclaration"))
         variables = dict((item.name, item.parameter_type) for item in document.variable_declarations)
 
-        for action in document.parameter_actions(include_story=True):
+        for action in document.parameter_actions(include_story=True, diagnostics=diagnostics):
             if (action.parameter_ref or "").lstrip("$") not in parameters:
                 diagnostics.append(_unknown("parameter", action.parameter_ref, action.source))
 
-        for action in document.variable_actions(include_story=True):
+        for action in document.variable_actions(include_story=True, diagnostics=diagnostics):
             name = (action.variable_ref or "").lstrip("$")
             if name not in variables:
                 diagnostics.append(_unknown("variable", action.variable_ref, action.source))

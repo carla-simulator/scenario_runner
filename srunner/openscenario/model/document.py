@@ -9,8 +9,11 @@ from srunner.openscenario.model.actions import (
     VariableModifyAction, VariableSetAction)
 from srunner.openscenario.model.parameters import (
     ParameterDeclaration, ParameterStore, VariableDeclaration, VariableStore)
+from srunner.openscenario.model.conditions import ENTITY_CONDITIONS
+from srunner.openscenario.validation.diagnostics import ValidationError
 from srunner.openscenario.model.references import (
-    CatalogReference, Position, RelativeAngleCondition, RelativeClearanceCondition, Route, Trajectory)
+    FOLLOWING_MODES, CatalogReference, Position, Route, TimeReference, Trajectory, following_mode_from_xml,
+    invalid)
 
 
 class OpenScenarioDocument(object):
@@ -102,59 +105,74 @@ class OpenScenarioDocument(object):
 
     @staticmethod
     def parse_parameter_action(element):
-        """Build a semantic ParameterAction from a ``ParameterAction`` element, or None."""
+        """Build a semantic ParameterAction from a ``ParameterAction`` element.
+
+        Raises ValidationError when the element has neither a SetAction nor a ModifyAction with a
+        valid Rule.
+        """
         set_action = element.find("SetAction")
         modify_action = element.find("ModifyAction")
+        parameter_ref = element.attrib.get("parameterRef")
         if set_action is not None:
-            return ParameterAction(parameter_ref=element.attrib.get("parameterRef"),
-                                   set_value=set_action.attrib.get("value"), source=element)
-        rule = modify_action.find("Rule") if modify_action is not None else None
-        if rule is None:
-            return None
+            return ParameterAction(parameter_ref=parameter_ref, set_value=set_action.attrib.get("value"),
+                                   source=element)
+        if modify_action is None:
+            raise invalid("ParameterAction {!r} requires a SetAction or ModifyAction".format(parameter_ref), element)
+        rule = modify_action.find("Rule")
         for tag, operator_symbol in (("AddValue", "+"), ("MultiplyByValue", "*")):
-            value = rule.find(tag)
+            value = rule.find(tag) if rule is not None else None
             if value is not None:
-                return ParameterAction(parameter_ref=element.attrib.get("parameterRef"),
-                                       modify_rule=operator_symbol, modify_value=value.attrib.get("value"),
-                                       source=element)
-        return None
+                return ParameterAction(parameter_ref=parameter_ref, modify_rule=operator_symbol,
+                                       modify_value=value.attrib.get("value"), source=element)
+        raise invalid("ModifyAction of ParameterAction {!r} requires a Rule with AddValue or MultiplyByValue".format(
+            parameter_ref), modify_action)
 
     @staticmethod
     def parse_variable_action(element):
-        """Build a semantic variable action from a ``VariableAction`` element, or None."""
+        """Build a semantic variable action from a ``VariableAction`` element; invalid ones raise ValidationError."""
         variable_ref = element.attrib.get("variableRef")
         set_action = element.find("SetAction")
         modify_action = element.find("ModifyAction")
         if set_action is not None:
             return VariableSetAction(variable_ref, set_action.attrib.get("value"), element)
-        rule = modify_action.find("Rule") if modify_action is not None else None
-        if rule is None:
-            return None
+        if modify_action is None:
+            raise invalid("VariableAction {!r} requires a SetAction or ModifyAction".format(variable_ref), element)
+        rule = modify_action.find("Rule")
         for tag, rule_name in (("AddValue", "add"), ("MultiplyByValue", "multiply")):
-            value = rule.find(tag)
+            value = rule.find(tag) if rule is not None else None
             if value is not None:
                 return VariableModifyAction(variable_ref, rule_name, value.attrib.get("value"), element)
-        return None
+        raise invalid("ModifyAction of VariableAction {!r} requires a Rule with AddValue or MultiplyByValue".format(
+            variable_ref), modify_action)
 
-    def _actions(self, tag, parser, include_story):
+    def _actions(self, tag, parser, include_story, diagnostics=None):
         actions = []
         for index, global_action in enumerate(self._global_actions(include_story)):
             element = global_action.find(tag)
             if element is None:
                 continue
-            action = parser(element)
+            try:
+                action = parser(element)
+            except ValidationError as error:
+                if diagnostics is None:
+                    raise
+                diagnostics.extend(error.diagnostics)
+                continue
             if action is not None:
                 action.sequence_index = index
                 actions.append(action)
         return actions
 
-    def parameter_actions(self, include_story=False):
-        """Return semantic ParameterActions from Init (and the stories, if requested)."""
-        return self._actions("ParameterAction", self.parse_parameter_action, include_story)
+    def parameter_actions(self, include_story=False, diagnostics=None):
+        """Return semantic ParameterActions from Init (and the stories, if requested).
 
-    def variable_actions(self, include_story=False):
+        Invalid actions raise ValidationError, or are reported into ``diagnostics`` when given.
+        """
+        return self._actions("ParameterAction", self.parse_parameter_action, include_story, diagnostics)
+
+    def variable_actions(self, include_story=False, diagnostics=None):
         """Return semantic VariableActions from Init (and the stories, if requested)."""
-        return self._actions("VariableAction", self.parse_variable_action, include_story)
+        return self._actions("VariableAction", self.parse_variable_action, include_story, diagnostics)
 
     def init_global_actions(self):
         """Return Init Parameter/Variable actions in document order."""
@@ -175,118 +193,110 @@ class OpenScenarioDocument(object):
         return [Trajectory.from_xml(element) for element in self.root.iter("Trajectory")]
 
     @staticmethod
-    def _catalog_reference(element):
-        if element is None:
-            return None
-        return CatalogReference(element.attrib.get("catalogName"), element.attrib.get("entryName"),
-                                source=element)
+    def parse_assign_route_action(element):
+        route = element.find("Route")
+        reference = element.find("CatalogReference")
+        if (route is None) == (reference is None):
+            raise invalid("AssignRouteAction requires exactly one of Route or CatalogReference", element)
+        return AssignRouteAction(route=Route.from_xml(route) if route is not None else None,
+                                 catalog_reference=CatalogReference.from_xml(reference), source=element)
 
     @staticmethod
-    def _time_reference(element):
-        if element is None:
-            return None
-        timing = element.find("Timing")
-        if timing is not None:
-            return {"kind": "Timing", "attributes": dict(timing.attrib), "source": element}
-        return {"kind": "None", "attributes": {}, "source": element}
+    def parse_acquire_position_action(element):
+        return AcquirePositionAction(Position.from_xml(element.find("Position")), source=element)
 
     @staticmethod
-    def _following_mode(element):
-        if element is None:
-            return None
-        return element.attrib.get("followingMode")
-
-    def routing_actions(self):
-        """Yield typed routing actions; legacy execution remains available."""
-        actions = []
-        for element in self.root.iter("AssignRouteAction"):
-            route = element.find("Route")
-            actions.append(AssignRouteAction(
-                route=Route.from_xml(route) if route is not None else None,
-                catalog_reference=self._catalog_reference(element.find("CatalogReference")),
-                source=element))
-        for element in self.root.iter("AcquirePositionAction"):
-            position = element.find("Position")
-            if position is not None:
-                actions.append(AcquirePositionAction(Position.from_xml(position), element))
-        for element in self.root.iter("FollowTrajectoryAction"):
-            trajectory = element.find("Trajectory")
-            actions.append(FollowTrajectoryAction(
-                trajectory=Trajectory.from_xml(trajectory,
-                                               self._time_reference(element.find("TimeReference")),
-                                               self._following_mode(element.find("TrajectoryFollowingMode")))
-                if trajectory is not None else None,
-                catalog_reference=self._catalog_reference(element.find("CatalogReference")),
-                time_reference=self._time_reference(element.find("TimeReference")),
-                following_mode=self._following_mode(element.find("TrajectoryFollowingMode")),
-                source=element))
-        return actions
+    def parse_follow_trajectory_action(element):
+        container = element.find("TrajectoryRef")
+        legacy = [child for child in (element.find("Trajectory"), element.find("CatalogReference"))
+                  if child is not None]
+        if container is not None:
+            if legacy:
+                raise invalid("FollowTrajectoryAction must not combine TrajectoryRef with a deprecated "
+                              "Trajectory or CatalogReference", element)
+            targets = list(container)
+        else:
+            targets = legacy
+        if len(targets) != 1 or targets[0].tag not in ("Trajectory", "CatalogReference"):
+            raise invalid("FollowTrajectoryAction requires exactly one Trajectory or CatalogReference", element)
+        target = targets[0]
+        return FollowTrajectoryAction(
+            trajectory=Trajectory.from_xml(target) if target.tag == "Trajectory" else None,
+            catalog_reference=CatalogReference.from_xml(target) if target.tag == "CatalogReference" else None,
+            time_reference=TimeReference.from_xml(element.find("TimeReference")),
+            following_mode=following_mode_from_xml(element.find("TrajectoryFollowingMode")),
+            initial_distance_offset=element.attrib.get("initialDistanceOffset"),
+            source=element)
 
     @staticmethod
-    def action_from_xml(element):
-        """Create one semantic action from an action XML element.
+    def parse_speed_profile_action(element):
+        entries = []
+        for entry in element.findall("SpeedProfileEntry"):
+            if "speed" not in entry.attrib:
+                raise invalid("SpeedProfileEntry requires a speed", entry)
+            entries.append((entry.attrib["speed"], entry.attrib.get("time")))
+        if not entries:
+            raise invalid("SpeedProfileAction requires at least one SpeedProfileEntry", element)
+        mode = element.attrib.get("followingMode")
+        if mode not in FOLLOWING_MODES and not (mode or "").startswith("$"):
+            raise invalid("SpeedProfileAction followingMode must be 'follow' or 'position', got {!r}".format(
+                mode), element)
+        constraints = element.find("DynamicConstraints")
+        return SpeedProfileAction(entries, mode, element.attrib.get("entityRef"),
+                                  dict(constraints.attrib) if constraints is not None else None, element)
 
-        This narrow entry point is used by the incremental runtime adapter so
-        migrated actions do not need to be rediscovered through the legacy
-        parser's global XML traversal.
+    _PRIVATE_ACTION_PARSERS = {
+        "AssignRouteAction": "parse_assign_route_action",
+        "AcquirePositionAction": "parse_acquire_position_action",
+        "FollowTrajectoryAction": "parse_follow_trajectory_action",
+        "SpeedProfileAction": "parse_speed_profile_action",
+    }
+
+    @classmethod
+    def parse_private_action(cls, element):
+        """Build a typed action from a migrated private action element, or None if it is not migrated.
+
+        ``element`` may be the action itself, its RoutingAction/LongitudinalAction container, or the
+        enclosing PrivateAction. Structurally invalid elements raise ValidationError.
         """
         if element is None:
             return None
-        if element.tag == "AssignRouteAction":
-            route = element.find("Route")
-            reference = element.find("CatalogReference")
-            return AssignRouteAction(
-                route=Route.from_xml(route) if route is not None else None,
-                catalog_reference=CatalogReference(
-                    reference.attrib.get("catalogName"), reference.attrib.get("entryName"),
-                    source=reference) if reference is not None else None,
-                source=element)
-        if element.tag == "AcquirePositionAction":
-            position = element.find("Position")
-            return AcquirePositionAction(Position.from_xml(position), source=element)
-        if element.tag == "FollowTrajectoryAction":
-            trajectory = element.find("Trajectory")
-            reference = element.find("CatalogReference")
-            return FollowTrajectoryAction(
-                trajectory=Trajectory.from_xml(
-                    trajectory,
-                    time_reference=element.attrib.get("timeReference"),
-                    following_mode=element.attrib.get("followingMode")) if trajectory is not None else None,
-                catalog_reference=CatalogReference(
-                    reference.attrib.get("catalogName"), reference.attrib.get("entryName"),
-                    source=reference) if reference is not None else None,
-                time_reference=element.attrib.get("timeReference"),
-                following_mode=element.attrib.get("followingMode"),
-                source=element)
-        if element.tag == "SpeedProfileAction":
-            segments = [dict(child.attrib) for child in list(element)
-                        if child.tag in ("SpeedProfileEntry", "Entry", "SpeedSegment")]
-            return SpeedProfileAction(segments, element.attrib.get("entityRef"), element)
-        return None
+        if element.tag in ("PrivateAction", "RoutingAction", "LongitudinalAction"):
+            for child in element:
+                action = cls.parse_private_action(child)
+                if action is not None or child.tag in ("RoutingAction", "LongitudinalAction"):
+                    return action
+            return None
+        parser = cls._PRIVATE_ACTION_PARSERS.get(element.tag)
+        return getattr(cls, parser)(element) if parser is not None else None
+
+    def routing_actions(self):
+        """Return typed routing actions of the whole document in document order."""
+        return [self.parse_private_action(element) for element in self.root.iter()
+                if element.tag in ("AssignRouteAction", "AcquirePositionAction", "FollowTrajectoryAction")]
 
     def speed_profile_actions(self):
-        actions = []
-        for element in self.root.iter("SpeedProfileAction"):
-            segments = []
-            for child in list(element):
-                if child.tag in ("SpeedProfileEntry", "Entry", "SpeedSegment"):
-                    segments.append(dict(child.attrib))
-            actions.append(SpeedProfileAction(segments, element.attrib.get("entityRef"), element))
-        return actions
+        return [self.parse_speed_profile_action(element) for element in self.root.iter("SpeedProfileAction")]
 
-    def relative_conditions(self):
+    @staticmethod
+    def parse_entity_condition(element, name=None, edge=None):
+        """Build a typed condition from a migrated EntityCondition child, or None if it is not migrated."""
+        if element is None:
+            return None
+        if element.tag == "EntityCondition":
+            children = list(element)
+            return OpenScenarioDocument.parse_entity_condition(children[0], name, edge) if children else None
+        condition_type = ENTITY_CONDITIONS.get(element.tag)
+        return condition_type.from_xml(element, name, edge) if condition_type is not None else None
+
+    def entity_conditions(self):
         conditions = []
-        for element in self.root.iter("RelativeAngleCondition"):
-            conditions.append(RelativeAngleCondition(
-                element.attrib.get("entityRef"), element.attrib.get("angle"), element.attrib.get("rule"),
-                element.attrib.get("coordinateSystem", "entity"), element.attrib.get("name"),
-                element.attrib.get("edge"), element))
-        for element in self.root.iter("RelativeClearanceCondition"):
-            conditions.append(RelativeClearanceCondition(
-                element.attrib.get("entityRef"), element.attrib.get("distance"),
-                element.attrib.get("freespace", "false").lower() == "true", element.attrib.get("rule"),
-                element.attrib.get("distanceType", "cartesianDistance"), element.attrib.get("name"),
-                element.attrib.get("edge"), element))
+        for condition in self.root.iter("Condition"):
+            for entity_condition in condition.iter("EntityCondition"):
+                parsed = self.parse_entity_condition(entity_condition, condition.attrib.get("name"),
+                                                     condition.attrib.get("conditionEdge"))
+                if parsed is not None:
+                    conditions.append(parsed)
         return conditions
 
     def copy_xml(self):
