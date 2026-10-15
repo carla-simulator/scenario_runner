@@ -1594,7 +1594,7 @@ class RelativeClearance(AtomicCondition):
         if self._other_actors is not None:
             return self._other_actors
         return [actor for actor in CarlaDataProvider.get_all_actors()
-                if actor.id != self._actor.id and actor.type_id.startswith(("vehicle.", "walker."))]
+                if actor.id != self._actor.id and actor.type_id.startswith(("vehicle.", "walker.", "static.prop."))]
 
     @staticmethod
     def _transform(actor):
