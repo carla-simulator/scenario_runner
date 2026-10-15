@@ -23,6 +23,11 @@ from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationDat
 # pylint: enable=line-too-long
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
 from srunner.tools.openscenario_parser import OpenScenarioParser, ParameterRef
+from srunner.openscenario.compatibility.attributes import resolve_attribute
+from srunner.openscenario.compatibility.global_parameters import GlobalParameterMapping
+from srunner.openscenario.execution.context import ExecutionContext
+from srunner.openscenario.parsing.loader import load_document
+from srunner.openscenario.validation.diagnostics import diagnostics_as_validation_error
 
 
 class OpenScenarioConfiguration(ScenarioConfiguration):
@@ -58,9 +63,19 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         self.logger = logging.getLogger("[SR:OpenScenarioConfiguration]")
 
         self._global_parameters = {}
+        self._parameter_evaluation = None
 
-        self._set_parameters()
-        self._parse_openscenario_configuration()
+        with diagnostics_as_validation_error():
+            self._set_parameters()
+            self._parse_openscenario_configuration()
+
+    def _attribute(self, element, key, expected_type="string", default=None):
+        """
+        Read an attribute resolving $name references and ${...} expressions against the
+        document's parameters (declarations and overrides)
+        """
+        evaluation = getattr(self, '_parameter_evaluation', None)
+        return resolve_attribute(element.attrib.get(key), expected_type, evaluation, default)
 
     def _validate_openscenario_configuration(self):
         """
@@ -128,7 +143,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             if catalog is None:
                 continue
 
-            catalog_path = catalog.find("Directory").attrib.get('path') + "/" + catalog_type + "Catalog.xosc"
+            catalog_path = self._attribute(catalog.find("Directory"), 'path') + "/" + catalog_type + "Catalog.xosc"
             if not os.path.isabs(catalog_path) and "xosc" in self.filename:
                 catalog_path = os.path.dirname(os.path.abspath(self.filename)) + "/" + catalog_path
 
@@ -162,7 +177,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
               Hence, there can be multiple towns specified. We just use the _last_ one.
         """
         for logic in self.xml_tree.find("RoadNetwork").findall("LogicFile"):
-            self.town = logic.attrib.get('filepath', None)
+            self.town = self._attribute(logic, 'filepath')
 
         if self.town is not None and ".xodr" in self.town:
             if not os.path.isabs(self.town):
@@ -232,6 +247,15 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 elem, _ = OpenScenarioParser.set_parameters(elem)
 
         OpenScenarioParser.set_global_parameters(self._global_parameters)
+        # Evaluate ${...} / $ref declaration values for configuration-time consumers.
+        context = ExecutionContext.for_document(
+            load_document(self.xml_tree), parameter_overrides=self._custom_params,
+            parameter_binding=GlobalParameterMapping())
+        context.raise_for_errors()
+        self._parameter_evaluation = context.evaluation
+        parameters = context.evaluation.parameters
+        for name in parameters.names():
+            self._global_parameters[name] = parameters.raw(name)
 
     def _set_actor_information(self):
         """
@@ -244,9 +268,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                 rolename = obj.attrib.get('name', 'simulation')
                 args = {}
                 for prop in obj.iter("Property"):
-                    key = prop.get('name')
-                    value = prop.get('value')
-                    args[key] = value
+                    args[self._attribute(prop, 'name')] = self._attribute(prop, 'value')
 
                 for catalog_reference in obj.iter("CatalogReference"):
                     entry = OpenScenarioParser.get_catalog_entry(self.catalogs, catalog_reference)
@@ -296,14 +318,14 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         Helper function to _set_actor_information for getting vehicle information from XML tree
         """
         color = None
-        model = vehicle.attrib.get('name', "vehicle.*")
-        category = vehicle.attrib.get('vehicleCategory', "car")
+        model = self._attribute(vehicle, 'name', default="vehicle.*")
+        category = self._attribute(vehicle, 'vehicleCategory', default="car")
         ego_vehicle = False
         for prop in obj.iter("Property"):
-            if prop.get('name', '') == 'type':
-                ego_vehicle = prop.get('value') == 'ego_vehicle'
-            if prop.get('name', '') == 'color':
-                color = prop.get('value')
+            if self._attribute(prop, 'name', default='') == 'type':
+                ego_vehicle = self._attribute(prop, 'value') == 'ego_vehicle'
+            if self._attribute(prop, 'name', default='') == 'color':
+                color = self._attribute(prop, 'value')
 
         speed = self._get_actor_speed(rolename)
         new_actor = ActorConfigurationData(
@@ -318,7 +340,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Helper function to _set_actor_information for getting pedestrian information from XML tree
         """
-        model = pedestrian.attrib.get('model', "walker.*")
+        model = self._attribute(pedestrian, 'model', default="walker.*")
 
         speed = self._get_actor_speed(rolename)
         new_actor = ActorConfigurationData(model, None, rolename, speed, category="pedestrian", args=args)
@@ -329,13 +351,13 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         """
         Helper function to _set_actor_information for getting vehicle information from XML tree
         """
-        category = misc.attrib.get('miscObjectCategory')
+        category = self._attribute(misc, 'miscObjectCategory')
         if category == "barrier":
             model = "static.prop.streetbarrier"
         elif category == "guardRail":
             model = "static.prop.chainbarrier"
         else:
-            model = misc.attrib.get('name')
+            model = self._attribute(misc, 'name')
         new_actor = ActorConfigurationData(model, None, rolename, category="misc", args=args)
 
         self.other_actors.append(new_actor)
@@ -357,7 +379,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_found = False
 
         for private_action in self.init.iter("Private"):
-            if private_action.attrib.get('entityRef', None) == actor_name:
+            if self._attribute(private_action, 'entityRef') == actor_name:
                 if actor_found:
                     self.logger.warning(
                         " Warning: The actor '%s' was already assigned an initial position. Overwriting pose!",
@@ -385,7 +407,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
         actor_found = False
 
         for private_action in self.init.iter("Private"):
-            if private_action.attrib.get('entityRef', None) == actor_name:
+            if self._attribute(private_action, 'entityRef') == actor_name:
                 if actor_found:
                     self.logger.warning(
                         " Warning: The actor '%s' was already assigned an initial speed. Overwriting initial speed!",

@@ -11,7 +11,6 @@ Basic scenario class using the OpenSCENARIO definition
 
 from __future__ import print_function
 
-from srunner.tools.util import strtobool
 import itertools
 import os
 import py_trees
@@ -20,7 +19,6 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     ChangeWeather,
     ChangeRoadFriction,
-    ChangeParameter,
     ChangeActorLaneOffset,
     ChangeActorWaypoints,
     ChangeLateralDistance,
@@ -29,8 +27,44 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActor
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.weather_sim import OSCWeatherBehavior
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, ParameterRef
+from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, osc_attribute, ParameterRef
 from srunner.tools.py_trees_port import Decorator
+from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction
+from srunner.openscenario.compatibility.global_parameters import GlobalParameterMapping
+from srunner.openscenario.execution.context import ExecutionContext
+from srunner.openscenario.execution.registry import default_registry
+from srunner.openscenario.parsing.loader import load_document
+from srunner.openscenario.validation.diagnostics import diagnostics_as_validation_error
+
+
+def create_execution_context(config):
+    """
+    Build the semantic execution context for an OpenSCENARIO configuration.
+
+    The document's parameter store is bound to CarlaDataProvider's global parameters, so
+    legacy consumers and semantic actions share one parameter state. Semantic errors raise
+    a ValidationError carrying the diagnostics.
+    """
+    document = load_document(config.xml_tree)
+    context = ExecutionContext.for_document(
+        document, parameter_overrides=getattr(config, '_custom_params', None),
+        parameter_binding=GlobalParameterMapping(), state={"configuration": config})
+    context.raise_for_errors()
+    return context
+
+
+def create_init_parameters_behavior(context, registry=None):
+    """
+    Create the behavior executing the Init ParameterActions and VariableActions in document order.
+    """
+    registry = registry or default_registry()
+    param_behavior = py_trees.composites.Sequence(name="ParametersInit")
+    for i, action in enumerate(context.document.init_global_actions()):
+        sequence_index = getattr(action, "sequence_index", i)
+        update = ExecuteSemanticAction(action, registry, context, name='InitParams_%d' % sequence_index)
+        param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % sequence_index,
+                                                    behaviour=update))
+    return param_behavior
 
 
 def repeatable_behavior(behaviour, name=None):
@@ -194,35 +228,23 @@ class OpenScenario(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
 
-        super(OpenScenario, self).__init__(self.config.name, ego_vehicles=ego_vehicles, config=config,
-                                           world=world, debug_mode=debug_mode,
-                                           terminate_on_failure=False, criteria_enable=criteria_enable)
+        self.execution_context = create_execution_context(config)
+        OpenScenarioParser.set_execution_context(self.execution_context)
+
+        try:
+            with diagnostics_as_validation_error():
+                super(OpenScenario, self).__init__(self.config.name, ego_vehicles=ego_vehicles, config=config,
+                                                   world=world, debug_mode=debug_mode,
+                                                   terminate_on_failure=False, criteria_enable=criteria_enable)
+        except Exception:
+            OpenScenarioParser.set_execution_context(None)
+            raise
 
     def _initialize_parameters(self):
         """
-        Parse ParameterAction from Init and update global osc parameters.
+        Execute ParameterAction and VariableAction from Init through the semantic context.
         """
-        param_behavior = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="ParametersInit")
-        for i, global_action in enumerate(self.config.init.find('Actions').iter('GlobalAction')):
-            maneuver_name = 'InitParams'
-            if global_action.find('ParameterAction') is not None:
-                parameter_action = global_action.find('ParameterAction')
-                parameter_ref = parameter_action.attrib.get('parameterRef')
-                if parameter_action.find('ModifyAction') is not None:
-                    action_rule = parameter_action.find('ModifyAction').find("Rule")
-                    if action_rule.find("AddValue") is not None:
-                        rule, value = '+', action_rule.find("AddValue").attrib.get('value')
-                    else:
-                        rule, value = '*', action_rule.find("MultiplyByValue").attrib.get('value')
-                else:
-                    rule, value = None, parameter_action.find('SetAction').attrib.get('value')
-                parameter_update = ChangeParameter(parameter_ref, value=ParameterRef(value), rule=rule,
-                                                   name=maneuver_name + '_%d' % i)
-                param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % i,
-                                                            behaviour=parameter_update))
-
-        return param_behavior
+        return create_init_parameters_behavior(self.execution_context, OpenScenarioParser.action_registry)
 
     def _initialize_environment(self, world):
         """
@@ -261,7 +283,7 @@ class OpenScenario(BasicScenario):
                     controller_atomic = None
                     atomic = None
                     for private in self.config.init.iter("Private"):
-                        if private.attrib.get('entityRef', None) == actor.rolename:
+                        if osc_attribute(private, 'entityRef', 'string') == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
                                 if private_action.find('ControllerAction') is not None:
                                     for controller_action in private_action.iter('ControllerAction'):
@@ -275,7 +297,7 @@ class OpenScenario(BasicScenario):
                                     private_action = private_action.find('LateralAction')
                                     if private_action.find('LaneOffsetAction') is not None:
                                         lat_maneuver = private_action.find('LaneOffsetAction')
-                                        continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "true")))
+                                        continuous = osc_attribute(lat_maneuver, 'continuous', 'boolean', True)
                                         # Parsing of the different Dynamic shapes is missing
                                         lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
                                         if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
@@ -290,7 +312,8 @@ class OpenScenario(BasicScenario):
                                             relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
                                             relative_offset = ParameterRef(
                                                 relative_target_offset.attrib.get('value', 0))
-                                            relative_actor_name = relative_target_offset.attrib.get('entityRef', None)
+                                            relative_actor_name = osc_attribute(
+                                                relative_target_offset, 'entityRef', 'string')
                                             relative_actor = None
                                             for _actor in actor_list:
                                                 if _actor is not None and 'role_name' in _actor.attributes:
@@ -306,14 +329,14 @@ class OpenScenario(BasicScenario):
                                     if private_action.find("LateralDistanceAction") is not None:
                                         lat_maneuver = private_action.find('LateralDistanceAction')
                                         maneuver_name = "LateralDistanceActionInit"
-                                        continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "false")))
-                                        freespace = bool(strtobool(lat_maneuver.attrib.get('freespace', "false")))
+                                        continuous = osc_attribute(lat_maneuver, 'continuous', 'boolean', False)
+                                        freespace = osc_attribute(lat_maneuver, 'freespace', 'boolean', False)
                                         distance = ParameterRef(lat_maneuver.attrib.get('distance', float("inf")))
                                         constraints = lat_maneuver.find('DynamicConstraints')
-                                        max_speed = constraints.attrib.get('maxSpeed',
-                                                                           None) if constraints is not None else None
+                                        max_speed = osc_attribute(
+                                            constraints, 'maxSpeed', 'double') if constraints is not None else None
                                         relative_actor = None
-                                        relative_actor_name = lat_maneuver.attrib.get('entityRef', None)
+                                        relative_actor_name = osc_attribute(lat_maneuver, 'entityRef', 'string')
                                         for _actor in actor_list:
                                             if _actor is not None and 'role_name' in _actor.attributes:
                                                 if relative_actor_name == _actor.attributes['role_name']:
@@ -390,14 +413,14 @@ class OpenScenario(BasicScenario):
 
                 for sequence in act.iter("ManeuverGroup"):
                     sequence_behavior = py_trees.composites.Sequence(name=sequence.attrib.get('name'))
-                    repetitions = sequence.attrib.get('maximumExecutionCount', 1)
+                    repetitions = osc_attribute(sequence, 'maximumExecutionCount', 'int', 1)
 
-                    for _ in range(int(repetitions)):
+                    for _ in range(repetitions):
 
                         actor_ids = []
                         for actor in sequence.iter("Actors"):
                             for entity in actor.iter("EntityRef"):
-                                entity_name = entity.attrib.get('entityRef', None)
+                                entity_name = osc_attribute(entity, 'entityRef', 'string')
                                 for k, actor in enumerate(joint_actor_list):
                                     if (actor and
                                             entity_name == actor.attributes['role_name']):
@@ -593,6 +616,8 @@ class OpenScenario(BasicScenario):
         """
         Remove all actors upon deletion
         """
+        if OpenScenarioParser.execution_context is getattr(self, 'execution_context', None):
+            OpenScenarioParser.set_execution_context(None)
         self.remove_all_actors()
 
     def _initialize_actors(self, config):
@@ -603,7 +628,7 @@ class OpenScenario(BasicScenario):
             for global_action in self.config.init.find("Actions").iter("GlobalAction"):
                 if global_action.find("EntityAction") is not None:
                     entity_action = global_action.find("EntityAction")
-                    entity_ref = entity_action.attrib.get("entityRef")
+                    entity_ref = osc_attribute(entity_action, 'entityRef', 'string')
                     if entity_action.find('AddEntityAction') is not None:
                         position = entity_action.find('AddEntityAction').find("Position")
                         actor_transform = OpenScenarioParser.convert_position_to_transform(

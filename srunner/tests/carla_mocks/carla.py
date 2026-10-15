@@ -132,6 +132,14 @@ class Waypoint():
 
 class Map:
     name = ""
+    opendrive = ""
+
+    def __init__(self, name="Town01", opendrive=""):
+        self.name = name
+        self.opendrive = opendrive
+
+    def to_opendrive(self):
+        return self.opendrive
 
     def get_spawn_points(self):
         return []
@@ -172,6 +180,10 @@ class WeatherParameters:
     mie_scattering_scale = 0.000000
     rayleigh_scattering_scale = 0.033100
 
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
 
 class WorldSettings:
     synchronous_mode = False
@@ -210,7 +222,7 @@ class Actor:
     def __init__(self):
         self.attributes = {'role_name': ''}
         self.id = 0
-        self.type_id = None
+        self.type_id = 'vehicle.mock.actor'
         self.location = Location()
         self.rotation = Rotation()
         self.transform = Transform(self.location, self.rotation)
@@ -246,11 +258,17 @@ class Vehicle(Actor):
 class World:
     actors = []
 
+    def __init__(self, carla_map=None):
+        self._map = carla_map if carla_map is not None else Map()
+
     def get_settings(self):
         return WorldSettings()
 
     def get_map(self):
-        return Map()
+        return self._map
+
+    def tick(self):
+        return 0
 
     def get_blueprint_library(self):
         return CarlaBluePrintLibrary()
@@ -258,10 +276,10 @@ class World:
     def wait_for_tick(self):
         pass
 
-    def get_actors(self, ids=[]):
+    def get_actors(self, actor_ids=None):
         actor_list = []
         for actor in self.actors:
-            if actor.id in ids:
+            if actor_ids is None or actor.id in actor_ids:
                 actor_list.append(actor)
 
         return ActorList(actor_list)
@@ -281,8 +299,16 @@ class World:
 class Client:
     world = World()
 
-    def load_world(self, name):
-        return None
+    def load_world(self, name, *args, **kwargs):
+        self.world = World(Map(name=name))
+        return self.world
+
+    def reload_world(self, *args, **kwargs):
+        return self.load_world(self.world.get_map().name)
+
+    def generate_opendrive_world(self, opendrive, parameters=None, reset_settings=True):
+        self.world = World(Map(name="OpenDriveMap", opendrive=opendrive))
+        return self.world
 
     def get_world(self):
         return self.world
@@ -306,6 +332,20 @@ class Client:
                 reponse_list.append(Response(new_actor.id))
 
         return reponse_list
+
+class OpendriveGenerationParameters:
+
+    def __init__(self, vertex_distance=2.0, max_road_length=50.0, wall_height=1.0,
+                 additional_width=0.6, smooth_junctions=True, enable_mesh_visibility=True,
+                 enable_pedestrian_navigation=True):
+        self.vertex_distance = vertex_distance
+        self.max_road_length = max_road_length
+        self.wall_height = wall_height
+        self.additional_width = additional_width
+        self.smooth_junctions = smooth_junctions
+        self.enable_mesh_visibility = enable_mesh_visibility
+        self.enable_pedestrian_navigation = enable_pedestrian_navigation
+
 
 class AttachmentType:
     Rigid = 0
