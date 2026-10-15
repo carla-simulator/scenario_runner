@@ -75,7 +75,7 @@ from srunner.scenariomanager.timer import TimeOut, SimulationTimeCondition
 from srunner.tools.py_trees_port import oneshot_behavior
 from srunner.tools.scenario_helper import get_offset_transform, get_troad_from_transform
 from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction, SemanticValueCondition
-from srunner.openscenario.compatibility.attributes import resolve_attribute
+from srunner.openscenario.compatibility.attributes import global_evaluation, resolve_attribute
 from srunner.openscenario.compatibility.backend import build_entity_condition, build_private_action
 from srunner.openscenario.execution.context import ExecutionContext
 from srunner.openscenario.execution.registry import UnsupportedFeatureError, default_registry
@@ -359,7 +359,7 @@ class OpenScenarioParser(object):
         Build a migrated entity condition through the semantic runtime, or return None when it is
         not migrated and the legacy implementation applies.
         """
-        context = OpenScenarioParser.execution_context or ExecutionContext()
+        context = OpenScenarioParser.execution_context or ExecutionContext(state={"evaluation": global_evaluation()})
         try:
             return build_entity_condition(entity_condition, trigger_actor, actor_list, context, name=name)
         except UnsupportedFeatureError as error:

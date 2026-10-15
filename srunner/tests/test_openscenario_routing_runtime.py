@@ -326,6 +326,30 @@ class TestOpenScenarioRoutingRuntime(unittest.TestCase):
         self.assertIs(clearance._freespace, True)
         self.assertIs(clearance._opposite_lanes, False)
 
+    def test_routing_attributes_resolve_parameter_references(self):
+        def edit(root):
+            declarations = root.find("ParameterDeclarations")
+            for name, parameter_type, value in (("Reference", "string", "hero"), ("Speed", "double", "6.0"),
+                                                ("Lanes", "int", "2"), ("Free", "boolean", "true")):
+                ET.SubElement(declarations, "ParameterDeclaration",
+                              name=name, parameterType=parameter_type, value=value)
+            root.find(".//SpeedProfileEntry").set("speed", "$Speed")
+            angle = root.find(".//RelativeAngleCondition")
+            angle.set("entityRef", "$Reference")
+            angle.set("angleTolerance", "${$TimeScale / 10}")
+            clearance = root.find(".//RelativeClearanceCondition")
+            clearance.set("freeSpace", "$Free")
+            clearance.find("RelativeLaneRange").set("to", "$Lanes")
+        scenario = self._load(self._variant(PRIVATE_1_3, edit), schema_gate=False)
+        profile = self._node(scenario, "SpeedProfileAction", parent="InitActornpc")
+        self.assertEqual(profile.entries[0], (6.0, 2.0))
+        angle = self._node(scenario, "AngleStart", RelativeAngleToActor)
+        self.assertIs(angle._reference_actor, self._actor(scenario, "hero"))
+        self.assertAlmostEqual(angle._tolerance, 0.2)
+        clearance = self._node(scenario, "ClearanceStart", RelativeClearance)
+        self.assertEqual(clearance._lane_ranges, [(-1, 2)])
+        self.assertIs(clearance._freespace, True)
+
     def test_unsupported_angle_coordinate_system_is_a_backend_diagnostic(self):
         def edit(root):
             root.find(".//RelativeAngleCondition").set("coordinateSystem", "lane")

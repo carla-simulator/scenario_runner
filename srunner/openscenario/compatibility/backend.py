@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import py_trees
 
+from srunner.openscenario.compatibility.attributes import resolve_attribute
 from srunner.openscenario.execution.registry import (
     UnsupportedFeatureError, backend_capability_error, default_condition_registry, default_registry)
 from srunner.openscenario.model.conditions import ANGLE_TYPES
@@ -53,9 +54,10 @@ class ScenarioRunnerBackend(object):
 
     @staticmethod
     def _resolve(context, value, value_type="double"):
-        return context.evaluation.resolve(value, value_type)
+        return resolve_attribute(value, value_type, context.evaluation)
 
-    def _entity(self, entity_ref, source):
+    def _entity(self, entity_ref, source, context):
+        entity_ref = self._resolve(context, entity_ref, "string")
         for actor in self.actor_list:
             if actor.attributes.get("role_name") == entity_ref:
                 return actor
@@ -146,7 +148,7 @@ class ScenarioRunnerBackend(object):
         return atomic
 
     def apply_speed_profile(self, action, context):
-        relative_actor = self._entity(action.entity_ref, action.source) if action.entity_ref else None
+        relative_actor = self._entity(action.entity_ref, action.source, context) if action.entity_ref else None
         following_mode = self._following_mode(context, action)
         entries = [(self._resolve(context, speed), self._resolve(context, time) if time is not None else None)
                    for speed, time in action.entries]
@@ -188,7 +190,7 @@ class ScenarioRunnerBackend(object):
             raise backend_capability_error(condition, "RelativeAngleCondition coordinateSystem {!r} is not "
                                            "supported by the ScenarioRunner backend".format(coordinate_system))
         return RelativeAngleToActor(
-            self.actor, self._entity(condition.entity_ref, condition.source), angle_type,
+            self.actor, self._entity(condition.entity_ref, condition.source, context), angle_type,
             self._resolve(context, condition.angle), self._resolve(context, condition.angle_tolerance),
             right_handed=not _legacy_parser().use_carla_coordinate_system, name=self.name or condition.kind)
 
@@ -199,7 +201,7 @@ class ScenarioRunnerBackend(object):
         def distance(value):
             return self._resolve(context, value) if value is not None else 0.0
 
-        others = [self._entity(ref, condition.source) for ref in condition.entity_refs] or None
+        others = [self._entity(ref, condition.source, context) for ref in condition.entity_refs] or None
         return RelativeClearance(
             self.actor, others, [(bound(low), bound(high)) for low, high in condition.lane_ranges],
             distance(condition.distance_forward), distance(condition.distance_backward),
