@@ -40,14 +40,12 @@ from __future__ import print_function
 import os
 
 try:
-    from importlib.metadata import version as _carla_version, PackageNotFoundError
+    from importlib.metadata import version as _carla_version
 
     def _read_carla_version_str():
         return _carla_version("carla")
 except ImportError:
     import pkg_resources
-
-    PackageNotFoundError = pkg_resources.DistributionNotFound  # type: ignore[misc,assignment]
 
     def _read_carla_version_str():
         return pkg_resources.get_distribution("carla").version
@@ -61,19 +59,20 @@ UE5_THRESHOLD = Version("0.10.0")
 _VERSION_OVERRIDE_ENV = "SR_CARLA_VERSION"
 
 
+_FALLBACK_VERSION = "0.9.16"
+
+
 def _detect_carla_version():
     override = os.environ.get(_VERSION_OVERRIDE_ENV)
     if override:
         return Version(override)
     try:
         return Version(_read_carla_version_str())
-    except PackageNotFoundError as exc:
-        raise RuntimeError(
-            "scenario_runner could not determine the CARLA version: the `carla` "
-            "Python package is not installed. Install the CARLA wheel matching "
-            "your server, or set the {} environment variable "
-            "(e.g. SR_CARLA_VERSION=0.10.0).".format(_VERSION_OVERRIDE_ENV)
-        ) from exc
+    except Exception:  # pylint: disable=broad-except
+        # Egg installs on PYTHONPATH and mocked test environments expose no package metadata.
+        print("WARNING: could not determine the installed CARLA version; assuming {} (UE4 / PhysX). "
+              "Set {} to override.".format(_FALLBACK_VERSION, _VERSION_OVERRIDE_ENV))
+        return Version(_FALLBACK_VERSION)
 
 
 CARLA_VERSION = _detect_carla_version()

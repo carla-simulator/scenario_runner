@@ -19,6 +19,7 @@ import importlib
 import os
 import sys
 import unittest
+from unittest import mock
 
 # Make `import srunner.tools.carla_compat` resolvable when this file is run
 # directly from `tests/` (the existing OSC2 unit suites do the same).
@@ -70,6 +71,21 @@ class CarlaCompatVersionDetectionTests(unittest.TestCase):
 
     def test_is_ue5_false_for_0_9_14_minimum(self):
         compat = _reload_carla_compat("0.9.14")
+        self.assertFalse(compat.IS_UE5)
+
+
+class CarlaCompatMissingMetadataTests(unittest.TestCase):
+    """Import must not fail when the carla package metadata is unavailable."""
+
+    def tearDown(self):
+        os.environ.pop("SR_CARLA_VERSION", None)
+        sys.modules.pop("srunner.tools.carla_compat", None)
+
+    def test_falls_back_to_legacy_engine_without_metadata(self):
+        os.environ.pop("SR_CARLA_VERSION", None)
+        sys.modules.pop("srunner.tools.carla_compat", None)
+        with mock.patch("importlib.metadata.version", side_effect=Exception("no metadata")):
+            compat = importlib.import_module("srunner.tools.carla_compat")
         self.assertFalse(compat.IS_UE5)
 
 

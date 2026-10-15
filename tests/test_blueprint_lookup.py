@@ -31,9 +31,12 @@ class _RealCarlaCase(unittest.TestCase):
         try:
             import carla  # noqa: F401
             from srunner.scenariomanager import carla_data_provider, lights_sim
-        except ImportError as exc:
+        except (ImportError, AttributeError) as exc:
             cls._cleanup()
             raise unittest.SkipTest("carla stack not importable: {}".format(exc))
+        if "carla_mocks" in (getattr(carla, "__file__", None) or ""):
+            cls._cleanup()
+            raise unittest.SkipTest("real carla wheel required, mocked carla is on the path")
         cls.provider_module = carla_data_provider
         cls.CarlaDataProvider = carla_data_provider.CarlaDataProvider
         cls.lights_sim = lights_sim
