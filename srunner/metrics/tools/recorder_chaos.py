@@ -42,9 +42,8 @@ Chaos (0.10.0+)::
 with the rest of the physics block), so the per-version paths cannot share a
 walker. This module owns the Chaos walker; PhysX stays inline in the parsers.
 
-Field-name and type reference (citations in `carla-ue5/Docs/python_api.md`):
-- `carla.VehiclePhysicsControl` — §carla.VehiclePhysicsControl, lines ~2793-2895.
-- `carla.WheelPhysicsControl`   — §carla.WheelPhysicsControl,   lines ~3209-3320.
+Field-name and type reference: the `carla.VehiclePhysicsControl` and
+`carla.WheelPhysicsControl` sections of the CARLA 0.10.0 Python API documentation.
 """
 
 from __future__ import print_function
@@ -118,7 +117,7 @@ _WHEEL_VECTOR_FIELDS = frozenset({
 # Recorder ↔ Chaos Python attribute name remap.
 # - `max_hand_brake_torque` (recorder) vs `max_handbrake_torque` (Chaos attr).
 # - `axle_type` (recorder, correct spelling) vs `axel_type` (Chaos binding,
-#   carla-ue5/Docs/python_api.md §carla.WheelPhysicsControl.axel_type — the
+#   the CARLA 0.10.0 Python API docs list `WheelPhysicsControl.axel_type` — the
 #   upstream attribute really is mis-spelled). Drop this alias once upstream
 #   renames the binding.
 _WHEEL_FIELD_ALIASES = {
