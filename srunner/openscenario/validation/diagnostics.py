@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import
 
+import contextlib
+
 
 class Diagnostic(object):
     CATEGORIES = frozenset((
@@ -14,6 +16,7 @@ class Diagnostic(object):
     ARITHMETIC_ERROR = "arithmetic_error"
     DUPLICATE_DECLARATION = "duplicate_declaration"
     UNDECLARED_OVERRIDE = "undeclared_override"
+    MALFORMED_DOCUMENT = "malformed_document"
 
     def __init__(self, category, message, path=None, severity="error", source=None, code=None):
         if category not in self.CATEGORIES:
@@ -39,7 +42,24 @@ class Diagnostic(object):
             self.category, self.code, self.message, self.path)
 
 
-class ValidationError(ValueError):
+class DiagnosticError(ValueError):
+    """Base of the errors carrying structured ``diagnostics``."""
+
+    diagnostics = ()
+
+
+class ValidationError(DiagnosticError):
     def __init__(self, diagnostics):
         self.diagnostics = list(diagnostics)
         super(ValidationError, self).__init__("; ".join(str(item) for item in self.diagnostics))
+
+
+@contextlib.contextmanager
+def diagnostics_as_validation_error():
+    """Re-raise a DiagnosticError (e.g. EvaluationError) raised in the block as a ValidationError."""
+    try:
+        yield
+    except ValidationError:
+        raise
+    except DiagnosticError as error:
+        raise ValidationError(error.diagnostics) from error

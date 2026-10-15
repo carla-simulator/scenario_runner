@@ -14,7 +14,7 @@ import ast
 import math
 import re
 
-from srunner.openscenario.validation.diagnostics import Diagnostic
+from srunner.openscenario.validation.diagnostics import Diagnostic, DiagnosticError
 
 NAME_PATTERN = r"[A-Za-z_][A-Za-z0-9_]*"
 INTEGER_TYPES = ("int", "integer", "unsignedInt", "unsignedShort", "unsignedByte")
@@ -29,7 +29,7 @@ _INT_LIMIT = 2 ** 63
 _UNSIGNED_LIMITS = {"unsignedShort": 2 ** 16, "unsignedByte": 2 ** 8, "unsignedInt": 2 ** 32}
 
 
-class EvaluationError(ValueError):
+class EvaluationError(DiagnosticError):
     """An expression or reference could not be evaluated; carries a Diagnostic."""
 
     def __init__(self, message, code=Diagnostic.INVALID_EXPRESSION, expression=None, source=None):
@@ -38,6 +38,10 @@ class EvaluationError(ValueError):
             message = "{} (in {!r})".format(message, expression)
         self.diagnostic = Diagnostic("semantic_error", message, source=source, code=code)
         super(EvaluationError, self).__init__(str(self.diagnostic))
+
+    @property
+    def diagnostics(self):
+        return [self.diagnostic]
 
     def __str__(self):
         return str(self.diagnostic)

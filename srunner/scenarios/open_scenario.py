@@ -11,7 +11,6 @@ Basic scenario class using the OpenSCENARIO definition
 
 from __future__ import print_function
 
-from srunner.tools.util import strtobool
 import itertools
 import os
 import py_trees
@@ -28,13 +27,14 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActor
 from srunner.scenariomanager.timer import GameTime
 from srunner.scenariomanager.weather_sim import OSCWeatherBehavior
 from srunner.scenarios.basic_scenario import BasicScenario
-from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, ParameterRef
+from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, osc_attribute, ParameterRef
 from srunner.tools.py_trees_port import Decorator
 from srunner.openscenario.compatibility.atomics import ExecuteSemanticAction
 from srunner.openscenario.compatibility.global_parameters import GlobalParameterMapping
 from srunner.openscenario.execution.context import ExecutionContext
 from srunner.openscenario.execution.registry import default_registry
 from srunner.openscenario.parsing.loader import load_document
+from srunner.openscenario.validation.diagnostics import diagnostics_as_validation_error
 
 
 def create_execution_context(config):
@@ -231,9 +231,14 @@ class OpenScenario(BasicScenario):
         self.execution_context = create_execution_context(config)
         OpenScenarioParser.set_execution_context(self.execution_context)
 
-        super(OpenScenario, self).__init__(self.config.name, ego_vehicles=ego_vehicles, config=config,
-                                           world=world, debug_mode=debug_mode,
-                                           terminate_on_failure=False, criteria_enable=criteria_enable)
+        try:
+            with diagnostics_as_validation_error():
+                super(OpenScenario, self).__init__(self.config.name, ego_vehicles=ego_vehicles, config=config,
+                                                   world=world, debug_mode=debug_mode,
+                                                   terminate_on_failure=False, criteria_enable=criteria_enable)
+        except Exception:
+            OpenScenarioParser.set_execution_context(None)
+            raise
 
     def _initialize_parameters(self):
         """
@@ -278,7 +283,7 @@ class OpenScenario(BasicScenario):
                     controller_atomic = None
                     atomic = None
                     for private in self.config.init.iter("Private"):
-                        if private.attrib.get('entityRef', None) == actor.rolename:
+                        if osc_attribute(private, 'entityRef', 'string') == actor.rolename:
                             for private_action in private.iter("PrivateAction"):
                                 if private_action.find('ControllerAction') is not None:
                                     for controller_action in private_action.iter('ControllerAction'):
@@ -292,7 +297,7 @@ class OpenScenario(BasicScenario):
                                     private_action = private_action.find('LateralAction')
                                     if private_action.find('LaneOffsetAction') is not None:
                                         lat_maneuver = private_action.find('LaneOffsetAction')
-                                        continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "true")))
+                                        continuous = osc_attribute(lat_maneuver, 'continuous', 'boolean', True)
                                         # Parsing of the different Dynamic shapes is missing
                                         lane_target_offset = lat_maneuver.find('LaneOffsetTarget')
                                         if lane_target_offset.find('AbsoluteTargetLaneOffset') is not None:
@@ -307,7 +312,8 @@ class OpenScenario(BasicScenario):
                                             relative_target_offset = lane_target_offset.find('RelativeTargetLaneOffset')
                                             relative_offset = ParameterRef(
                                                 relative_target_offset.attrib.get('value', 0))
-                                            relative_actor_name = relative_target_offset.attrib.get('entityRef', None)
+                                            relative_actor_name = osc_attribute(
+                                                relative_target_offset, 'entityRef', 'string')
                                             relative_actor = None
                                             for _actor in actor_list:
                                                 if _actor is not None and 'role_name' in _actor.attributes:
@@ -323,14 +329,14 @@ class OpenScenario(BasicScenario):
                                     if private_action.find("LateralDistanceAction") is not None:
                                         lat_maneuver = private_action.find('LateralDistanceAction')
                                         maneuver_name = "LateralDistanceActionInit"
-                                        continuous = bool(strtobool(lat_maneuver.attrib.get('continuous', "false")))
-                                        freespace = bool(strtobool(lat_maneuver.attrib.get('freespace', "false")))
+                                        continuous = osc_attribute(lat_maneuver, 'continuous', 'boolean', False)
+                                        freespace = osc_attribute(lat_maneuver, 'freespace', 'boolean', False)
                                         distance = ParameterRef(lat_maneuver.attrib.get('distance', float("inf")))
                                         constraints = lat_maneuver.find('DynamicConstraints')
-                                        max_speed = constraints.attrib.get('maxSpeed',
-                                                                           None) if constraints is not None else None
+                                        max_speed = osc_attribute(
+                                            constraints, 'maxSpeed', 'double') if constraints is not None else None
                                         relative_actor = None
-                                        relative_actor_name = lat_maneuver.attrib.get('entityRef', None)
+                                        relative_actor_name = osc_attribute(lat_maneuver, 'entityRef', 'string')
                                         for _actor in actor_list:
                                             if _actor is not None and 'role_name' in _actor.attributes:
                                                 if relative_actor_name == _actor.attributes['role_name']:
@@ -407,14 +413,14 @@ class OpenScenario(BasicScenario):
 
                 for sequence in act.iter("ManeuverGroup"):
                     sequence_behavior = py_trees.composites.Sequence(name=sequence.attrib.get('name'))
-                    repetitions = sequence.attrib.get('maximumExecutionCount', 1)
+                    repetitions = osc_attribute(sequence, 'maximumExecutionCount', 'int', 1)
 
-                    for _ in range(int(repetitions)):
+                    for _ in range(repetitions):
 
                         actor_ids = []
                         for actor in sequence.iter("Actors"):
                             for entity in actor.iter("EntityRef"):
-                                entity_name = entity.attrib.get('entityRef', None)
+                                entity_name = osc_attribute(entity, 'entityRef', 'string')
                                 for k, actor in enumerate(joint_actor_list):
                                     if (actor and
                                             entity_name == actor.attributes['role_name']):
@@ -622,7 +628,7 @@ class OpenScenario(BasicScenario):
             for global_action in self.config.init.find("Actions").iter("GlobalAction"):
                 if global_action.find("EntityAction") is not None:
                     entity_action = global_action.find("EntityAction")
-                    entity_ref = entity_action.attrib.get("entityRef")
+                    entity_ref = osc_attribute(entity_action, 'entityRef', 'string')
                     if entity_action.find('AddEntityAction') is not None:
                         position = entity_action.find('AddEntityAction').find("Position")
                         actor_transform = OpenScenarioParser.convert_position_to_transform(

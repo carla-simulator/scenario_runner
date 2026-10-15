@@ -5,7 +5,8 @@ from __future__ import absolute_import
 from srunner.openscenario.execution.capabilities import BackendCapabilities
 from srunner.openscenario.model.expressions import EvaluationError, is_expression, reference_name
 from srunner.openscenario.model.parameters import EvaluationContext, convert_value
-from srunner.openscenario.validation.diagnostics import Diagnostic, ValidationError
+from srunner.openscenario.validation.diagnostics import (
+    Diagnostic, ValidationError, diagnostics_as_validation_error)
 from srunner.openscenario.validation.semantic import SemanticValidator
 
 
@@ -29,7 +30,15 @@ class ExecutionContext(object):
         mutable mapping the parameter store mirrors (the runtime's global
         parameter dictionary).  Construction does not raise on document errors;
         they are collected in ``diagnostics`` (see :meth:`raise_for_errors`).
+        An unexpected evaluation failure is raised as ValidationError.
         """
+        with diagnostics_as_validation_error():
+            return cls._for_document(document, backend, capabilities, parameter_overrides, state,
+                                     parameter_binding, validator)
+
+    @classmethod
+    def _for_document(cls, document, backend, capabilities, parameter_overrides, state, parameter_binding,
+                      validator):
         diagnostics = []
         parameters = document.parameter_store
         variables = document.variable_store
@@ -58,7 +67,12 @@ class ExecutionContext(object):
         if parameter_binding is not None:
             parameters.bind(parameter_binding)
 
-        diagnostics.extend((validator or SemanticValidator()).validate(document, raise_on_error=False))
+        validation = (validator or SemanticValidator()).validate(document, raise_on_error=False)
+        # The validator also reports unknown references in declaration values; keep one diagnostic each.
+        reported = set(id(item.source) for item in validation if item.code == Diagnostic.UNKNOWN_REFERENCE)
+        diagnostics = [item for item in diagnostics
+                       if item.code != Diagnostic.UNKNOWN_REFERENCE or id(item.source) not in reported]
+        diagnostics.extend(validation)
         state = state if state is not None else {}
         state["evaluation"] = evaluation
         return cls(backend=backend, capabilities=capabilities, state=state, document=document,

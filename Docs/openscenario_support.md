@@ -194,13 +194,22 @@ and while it runs:
   variable from an expression or attribute is an error.
 * Parameter changes made by `ParameterAction` are written to the global parameter table read by `$name`
   references, so behaviors that read the parameter after the change see the new value.
-* `${...}` expressions in other attributes are evaluated when the attribute is read after the scenario has been
-  built. Attributes read while the configuration is loaded (entity and initial actor setup) only support literals
-  and `$name` references.
-* When the scenario is built (before its non-ego actors are spawned) it is checked for duplicate parameter or
-  variable declarations, references to undeclared parameters or variables, invalid expression syntax and
-  declaration values that do not match their type. Any such error aborts the scenario with a `ValidationError`
-  listing all problems.
+* `$name` references and `${...}` expressions are also resolved in the other attributes ScenarioRunner reads, for
+  example weather, positions, condition values and `delay`, Boolean flags such as `freespace` or `continuous`,
+  entity models (`Vehicle name="$Model"`), properties and catalog paths. Attributes read while the configuration is
+  loaded are evaluated with the declaration values and the `--openscenarioparams` overrides. Attributes that name
+  an element (`ScenarioObject`, story element and condition names, `storyboardElementRef`) are identifiers and are
+  used as written.
+* When the configuration is loaded, and again when the scenario is built (before its non-ego actors are spawned),
+  the document is checked for duplicate parameter or variable declarations, references to undeclared parameters or
+  variables in any attribute, invalid expression syntax and declaration values that do not match their type. Any
+  such error aborts the scenario with a `ValidationError` listing all problems. A reference counts as declared if
+  the parameter is declared in any `ParameterDeclarations` of the document, because parameter scoping is not
+  modelled yet.
+* A document that is not an OpenSCENARIO document (wrong root element, missing `FileHeader` or `revMajor`/`revMinor`,
+  XML syntax error) raises a `ValidationError` as well. So does an attribute whose value cannot be evaluated while
+  the scenario is built (for example a division by zero or a value of the wrong type); each diagnostic names the
+  failing attribute value.
 * An error that can only be detected while the scenario runs (for example a `VariableAction` value that does not
   match the variable type) makes the corresponding behavior fail and is logged; it does not crash the runner.
 

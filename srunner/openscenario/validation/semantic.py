@@ -61,19 +61,33 @@ class SemanticValidator(object):
             names.add(declaration.name)
         return diagnostics
 
+    # Attributes that name a parameter/variable instead of using its value.
+    _NAME_ATTRIBUTES = {
+        "ParameterDeclaration": ("name",),
+        "VariableDeclaration": ("name",),
+        "ParameterAssignment": ("parameterRef",),
+        "ParameterAction": ("parameterRef",),
+        "ParameterCondition": ("parameterRef",),
+        "VariableAction": ("variableRef",),
+        "VariableCondition": ("variableRef",),
+    }
+
     def _references(self, document):
+        """Check parameter/variable references.
+
+        Every attribute value in the document is scanned for ``$name`` and
+        ``${...}`` references.  Scoping is not modelled: a parameter declared in
+        any ParameterDeclarations of the document (including nested catalog
+        entries or stories) is an accepted reference target everywhere.
+        """
         diagnostics = []
         parameters = set(item.name for item in document.parameter_declarations)
-        # Parameters declared in nested scopes (e.g. catalog entries embedded in the file) are
-        # accepted as reference targets; scoping is not modelled yet.
         parameters.update(element.attrib.get("name") for element in document.root.iter("ParameterDeclaration"))
         variables = dict((item.name, item.parameter_type) for item in document.variable_declarations)
 
         for action in document.parameter_actions(include_story=True):
             if (action.parameter_ref or "").lstrip("$") not in parameters:
                 diagnostics.append(_unknown("parameter", action.parameter_ref, action.source))
-            value = action.modify_value if action.is_modify else action.set_value
-            diagnostics.extend(_check_value(value, parameters, variables, action.source))
 
         for action in document.variable_actions(include_story=True):
             name = (action.variable_ref or "").lstrip("$")
@@ -83,7 +97,6 @@ class SemanticValidator(object):
                 diagnostics.append(Diagnostic(
                     "semantic_error", "VariableModifyAction cannot modify {} variable {!r}".format(
                         variables[name], name), source=action.source, code=Diagnostic.TYPE_MISMATCH))
-            diagnostics.extend(_check_value(action.value, parameters, variables, action.source))
 
         for element in document.value_conditions("VariableCondition"):
             name = (element.attrib.get("variableRef") or "").lstrip("$")
@@ -94,10 +107,21 @@ class SemanticValidator(object):
                 diagnostics.append(Diagnostic(
                     "semantic_error", "Rule {!r} is not defined for {} variable {!r}".format(
                         rule, variables[name], name), source=element, code=Diagnostic.TYPE_MISMATCH))
-            diagnostics.extend(_check_value(element.attrib.get("value"), parameters, variables, element))
 
-        for element in document.value_conditions("ParameterCondition"):
-            diagnostics.extend(_check_value(element.attrib.get("value"), parameters, variables, element))
+        for condition in document.root.iter("Condition"):
+            # ScenarioRunner criteria_* conditions use parameterRef to name a criterion argument.
+            if (condition.attrib.get("name") or "").startswith("criteria_"):
+                continue
+            for element in condition.iter("ParameterCondition"):
+                name = (element.attrib.get("parameterRef") or "").lstrip("$")
+                if name not in parameters:
+                    diagnostics.append(_unknown("parameter", element.attrib.get("parameterRef"), element))
+
+        for element in document.root.iter():
+            skipped = self._NAME_ATTRIBUTES.get(element.tag, ())
+            for key, value in element.attrib.items():
+                if key not in skipped and "$" in value:
+                    diagnostics.extend(_check_value(value, parameters, variables, element))
         return diagnostics
 
 
@@ -113,6 +137,9 @@ def _check_value(value, parameters, variables, source):
             names = expressions.check_expression(value)
         else:
             name = expressions.reference_name(value)
+            if name is None and isinstance(value, str) and value.strip().startswith("$"):
+                raise expressions.EvaluationError("Invalid parameter reference", Diagnostic.INVALID_EXPRESSION,
+                                                  value)
             names = [name] if name is not None else []
     except expressions.EvaluationError as error:
         error.diagnostic.source = source

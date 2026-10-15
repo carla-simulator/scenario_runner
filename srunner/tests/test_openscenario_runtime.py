@@ -117,7 +117,7 @@ class TestOpenScenarioRuntimeWiring(unittest.TestCase):
         OpenScenarioParser.set_execution_context(None)
         self.assertIsInstance(self._action(context, "BumpCounterAction"), ChangeParameter)
         self.assertIsInstance(self._condition(context, "WhenCounterSet"), CheckParameter)
-        self.assertIsNone(ParameterRef("${1 + 1}").get_interpreted_value())
+        self.assertEqual(ParameterRef("${1 + 1}").get_interpreted_value(), 2)
         with self.assertRaises(NotImplementedError):
             self._action(context, "SetLabelAction")
         with self.assertRaises(NotImplementedError):

@@ -6,6 +6,12 @@ import os
 import xml.etree.ElementTree as ET
 
 from srunner.openscenario.model.document import OpenScenarioDocument
+from srunner.openscenario.validation.diagnostics import Diagnostic, ValidationError
+
+
+def _malformed(message, source=None):
+    return ValidationError([Diagnostic("schema_error", message, source=source,
+                                       code=Diagnostic.MALFORMED_DOCUMENT)])
 
 
 class OpenScenarioVersion(object):
@@ -28,19 +34,25 @@ class OpenScenarioVersion(object):
 
 
 class OpenScenarioLoader(object):
-    """Load XML and retain the declared standard version."""
+    """Load XML and retain the declared standard version.
+
+    Malformed documents raise ValidationError (a ValueError) with a MALFORMED_DOCUMENT diagnostic.
+    """
 
     def load(self, source):
         root, source_name = self._read_root(source)
         if root.tag != "OpenSCENARIO":
-            raise ValueError("Expected OpenSCENARIO root element, got {!r}".format(root.tag))
+            raise _malformed("Expected OpenSCENARIO root element, got {!r}".format(root.tag), root)
         header = root.find("FileHeader")
         if header is None:
-            raise ValueError("OpenSCENARIO document is missing FileHeader")
+            raise _malformed("OpenSCENARIO document is missing FileHeader", root)
         if "revMajor" not in header.attrib or "revMinor" not in header.attrib:
-            raise ValueError("FileHeader must declare revMajor and revMinor")
-        version = OpenScenarioVersion(
-            header.attrib["revMajor"], header.attrib["revMinor"], header.attrib.get("revPatch"))
+            raise _malformed("FileHeader must declare revMajor and revMinor", header)
+        try:
+            version = OpenScenarioVersion(
+                header.attrib["revMajor"], header.attrib["revMinor"], header.attrib.get("revPatch"))
+        except ValueError as error:
+            raise _malformed("Invalid FileHeader revision: {}".format(error), header) from error
         return OpenScenarioDocument(root, version, source_name)
 
     @staticmethod
@@ -52,10 +64,17 @@ class OpenScenarioLoader(object):
         if hasattr(source, "tag") and hasattr(source, "attrib"):
             return source, None
         if hasattr(source, "read"):
-            return ET.parse(source).getroot(), getattr(source, "name", None)
+            return OpenScenarioLoader._parse(source), getattr(source, "name", None)
         if not isinstance(source, str) and not isinstance(source, bytes):
             raise TypeError("source must be an XML path, file object, ElementTree, or Element")
-        return ET.parse(source).getroot(), os.path.abspath(source)
+        return OpenScenarioLoader._parse(source), os.path.abspath(source)
+
+    @staticmethod
+    def _parse(source):
+        try:
+            return ET.parse(source).getroot()
+        except ET.ParseError as error:
+            raise _malformed("XML parse error: {}".format(error)) from error
 
 
 def load_document(source):
