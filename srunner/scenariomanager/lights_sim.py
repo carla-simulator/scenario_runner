@@ -33,6 +33,10 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
     # In cases where more than one weather conditition is active, decrease the thresholds
     COMBINED_THRESHOLD = 10
 
+    # Process-wide latch so the missing-LightManager notice fires once,
+    # not once per RouteLightsBehavior instance.
+    _no_light_manager_notice_emitted = False
+
     def __init__(self, ego_vehicle, radius=50, radius_increase=15, name="LightsBehavior"):
         """
         Setup parameters
@@ -42,8 +46,17 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         self._radius = radius
         self._radius_increase = radius_increase
         self._world = CarlaDataProvider.get_world()
-        self._light_manager = self._world.get_lightmanager()
-        self._light_manager.set_day_night_cycle(False)
+        # The LightManager binding was removed in early 0.10.0 builds and has since
+        # been restored, so probe the runtime instead of keying off the engine.
+        self._light_manager = None
+        if hasattr(self._world, "get_lightmanager"):
+            self._light_manager = self._world.get_lightmanager()
+            self._light_manager.set_day_night_cycle(False)
+        elif not RouteLightsBehavior._no_light_manager_notice_emitted:
+            print("[RouteLightsBehavior] This CARLA server exposes no LightManager API: "
+                  "street lights will not be controlled. "
+                  "Vehicle lights are still driven from weather.sun_altitude_angle.")
+            RouteLightsBehavior._no_light_manager_notice_emitted = True
         self._vehicle_lights = carla.VehicleLightState.Position | carla.VehicleLightState.LowBeam
 
         self._prev_night_mode = False
@@ -90,21 +103,22 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         ego_speed = CarlaDataProvider.get_velocity(self._ego_vehicle)
         radius = max(self._radius, self._radius_increase * ego_speed)
 
-        # Street lights
-        on_lights = []
-        off_lights = []
+        # Street lights — only when the server exposes a LightManager.
+        if self._light_manager is not None:
+            on_lights = []
+            off_lights = []
 
-        all_lights = self._light_manager.get_all_lights()
-        for light in all_lights:
-            if light.location.distance(location) > radius:
-                if light.is_on:
-                    off_lights.append(light)
-            else:
-                if not light.is_on:
-                    on_lights.append(light)
+            all_lights = self._light_manager.get_all_lights()
+            for light in all_lights:
+                if light.location.distance(location) > radius:
+                    if light.is_on:
+                        off_lights.append(light)
+                else:
+                    if not light.is_on:
+                        on_lights.append(light)
 
-        self._light_manager.turn_on(on_lights)
-        self._light_manager.turn_off(off_lights)
+            self._light_manager.turn_on(on_lights)
+            self._light_manager.turn_off(off_lights)
 
         # Vehicles
         all_vehicles = CarlaDataProvider.get_all_actors().filter('*vehicle.*')
@@ -127,9 +141,11 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
 
     def _turn_all_lights_off(self):
         """Turns off the lights of all object"""
-        all_lights = self._light_manager.get_all_lights()
-        off_lights = [l for l in all_lights if l.is_on]
-        self._light_manager.turn_off(off_lights)
+        # Street lights — only when the server exposes a LightManager.
+        if self._light_manager is not None:
+            all_lights = self._light_manager.get_all_lights()
+            off_lights = [l for l in all_lights if l.is_on]
+            self._light_manager.turn_off(off_lights)
 
         # Vehicles
         all_vehicles = CarlaDataProvider.get_all_actors().filter('*vehicle.*')
@@ -146,5 +162,6 @@ class RouteLightsBehavior(py_trees.behaviour.Behaviour):
         self._ego_vehicle.set_light_state(carla.VehicleLightState(lights))
 
     def terminate(self, new_status):
-        self._light_manager.set_day_night_cycle(True)
+        if self._light_manager is not None:
+            self._light_manager.set_day_night_cycle(True)
         return super().terminate(new_status)

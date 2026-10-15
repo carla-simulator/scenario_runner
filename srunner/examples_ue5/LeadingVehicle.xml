@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+  CARLA 0.10.0 / UE5 overrides for the OtherLeadingVehicle scenario set.
+  The legacy srunner/examples/LeadingVehicle.xml targets Town04, which does
+  not ship with 0.10.0. Spawn points below were picked from Town10HD_Opt
+  with >= 35 m of clear road AND a same-direction left lane so the parallel
+  lane vehicle can be placed alongside the ego.
+-->
+<scenarios>
+    <scenario name="OtherLeadingVehicle_1" type="OtherLeadingVehicle" town="Town10HD_Opt">
+        <ego_vehicle x="-24.34" y="-57.79" z="0.60" yaw="0.60" model="vehicle.lincoln.mkz_2017" />
+        <weather cloudiness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth_angle="0" sun_altitude_angle="75" />
+    </scenario>
+</scenarios>

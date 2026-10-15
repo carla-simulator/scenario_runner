@@ -31,6 +31,24 @@ from srunner.scenariomanager.weather_sim import OSCWeatherBehavior
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, ParameterRef
 from srunner.tools.py_trees_port import Decorator
+from srunner.openscenario.execution.context import ExecutionContext
+from srunner.openscenario.execution.registry import ActionExecutorRegistry
+from srunner.openscenario.parsing.loader import load_document
+
+
+def _execute_parameter_action(action, context):
+    """Adapt the semantic ParameterAction to the existing ScenarioRunner atomic."""
+    if action.is_modify:
+        value = action.modify_value
+        rule = action.modify_rule
+    else:
+        value = action.set_value
+        rule = None
+    return ChangeParameter(action.parameter_ref, value=ParameterRef(value), rule=rule)
+
+
+_OPENSCENARIO_ACTION_EXECUTORS = ActionExecutorRegistry()
+_OPENSCENARIO_ACTION_EXECUTORS.register("ParameterAction", _execute_parameter_action)
 
 
 def repeatable_behavior(behaviour, name=None):
@@ -204,23 +222,14 @@ class OpenScenario(BasicScenario):
         """
         param_behavior = py_trees.composites.Parallel(
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="ParametersInit")
-        for i, global_action in enumerate(self.config.init.find('Actions').iter('GlobalAction')):
-            maneuver_name = 'InitParams'
-            if global_action.find('ParameterAction') is not None:
-                parameter_action = global_action.find('ParameterAction')
-                parameter_ref = parameter_action.attrib.get('parameterRef')
-                if parameter_action.find('ModifyAction') is not None:
-                    action_rule = parameter_action.find('ModifyAction').find("Rule")
-                    if action_rule.find("AddValue") is not None:
-                        rule, value = '+', action_rule.find("AddValue").attrib.get('value')
-                    else:
-                        rule, value = '*', action_rule.find("MultiplyByValue").attrib.get('value')
-                else:
-                    rule, value = None, parameter_action.find('SetAction').attrib.get('value')
-                parameter_update = ChangeParameter(parameter_ref, value=ParameterRef(value), rule=rule,
-                                                   name=maneuver_name + '_%d' % i)
-                param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % i,
-                                                            behaviour=parameter_update))
+        document = load_document(self.config.xml_tree)
+        context = ExecutionContext(state={"configuration": self.config})
+        for i, action in enumerate(document.parameter_actions()):
+            parameter_update = _OPENSCENARIO_ACTION_EXECUTORS.execute(action, context)
+            sequence_index = getattr(action, "sequence_index", i)
+            parameter_update.name = 'InitParams_%d' % sequence_index
+            param_behavior.add_child(oneshot_with_check(variable_name="InitialParameters" + '_%d' % sequence_index,
+                                                        behaviour=parameter_update))
 
         return param_behavior
 

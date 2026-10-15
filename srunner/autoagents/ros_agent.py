@@ -39,6 +39,7 @@ from carla_msgs.msg import (
 )
 
 from srunner.autoagents.autonomous_agent import AutonomousAgent
+from srunner.tools.carla_compat import IS_UE5
 
 
 class RosAgent(AutonomousAgent):
@@ -358,24 +359,49 @@ class RosAgent(AutonomousAgent):
             self.vehicle_info_publisher = rospy.Publisher(
                 '/carla/ego_vehicle/vehicle_info', CarlaEgoVehicleInfo, queue_size=1, latch=True)
             info_msg = CarlaEgoVehicleInfo()
-            for wheel in data['wheels']:
-                wheel_info = CarlaEgoVehicleInfoWheel()
-                wheel_info.tire_friction = wheel['tire_friction']
-                wheel_info.damping_rate = wheel['damping_rate']
-                wheel_info.steer_angle = wheel['steer_angle']
-                wheel_info.disable_steering = wheel['disable_steering']
-                info_msg.wheels.append(wheel_info)
-            info_msg.max_rpm = data['max_rpm']
-            info_msg.moi = data['moi']
-            info_msg.damping_rate_full_throttle = data['damping_rate_full_throttle']
-            info_msg.damping_rate_zero_throttle_clutch_disengaged = data['damping_rate_zero_throttle_clutch_disengaged']
-            info_msg.use_gear_autobox = data['use_gear_autobox']
-            info_msg.clutch_strength = data['clutch_strength']
-            info_msg.mass = data['mass']
-            info_msg.drag_coefficient = data['drag_coefficient']
-            info_msg.center_of_mass.x = data['center_of_mass']['x']
-            info_msg.center_of_mass.y = data['center_of_mass']['y']
-            info_msg.center_of_mass.z = data['center_of_mass']['z']
+            if IS_UE5:
+                # CARLA 0.10.0 (UE5 / Chaos) removed every PhysX-shaped field this
+                # message schema was modelled on (tire_friction, damping_rate, moi,
+                # damping_rate_full_throttle, damping_rate_zero_throttle_clutch_disengaged,
+                # use_gear_autobox, clutch_strength). The Chaos struct exposes a
+                # different set with different semantics (friction_force_multiplier,
+                # cornering_stiffness, max_brake_torque, forward_gear_ratios, ...) so
+                # there is no faithful field-by-field port — downstream ROS consumers
+                # parse PhysX semantics. We populate only the fields that survived
+                # (mass, drag_coefficient, center_of_mass) and leave the rest at
+                # their CarlaEgoVehicleInfo defaults. CARLA 0.10.0 ships a native
+                # ROS 2 bridge that is the supported ROS path going forward.
+                if not getattr(self, "_ros_agent_ue5_warned", False):
+                    rospy.logwarn(
+                        "RosAgent: omitting PhysX-only vehicle info fields on "
+                        "CARLA 0.10.0 (UE5/Chaos) — use the native CARLA ROS 2 "
+                        "bridge for full physics telemetry."
+                    )
+                    self._ros_agent_ue5_warned = True
+                info_msg.mass = data['mass']
+                info_msg.drag_coefficient = data['drag_coefficient']
+                info_msg.center_of_mass.x = data['center_of_mass']['x']
+                info_msg.center_of_mass.y = data['center_of_mass']['y']
+                info_msg.center_of_mass.z = data['center_of_mass']['z']
+            else:
+                for wheel in data['wheels']:
+                    wheel_info = CarlaEgoVehicleInfoWheel()
+                    wheel_info.tire_friction = wheel['tire_friction']
+                    wheel_info.damping_rate = wheel['damping_rate']
+                    wheel_info.steer_angle = wheel['steer_angle']
+                    wheel_info.disable_steering = wheel['disable_steering']
+                    info_msg.wheels.append(wheel_info)
+                info_msg.max_rpm = data['max_rpm']
+                info_msg.moi = data['moi']
+                info_msg.damping_rate_full_throttle = data['damping_rate_full_throttle']
+                info_msg.damping_rate_zero_throttle_clutch_disengaged = data['damping_rate_zero_throttle_clutch_disengaged']
+                info_msg.use_gear_autobox = data['use_gear_autobox']
+                info_msg.clutch_strength = data['clutch_strength']
+                info_msg.mass = data['mass']
+                info_msg.drag_coefficient = data['drag_coefficient']
+                info_msg.center_of_mass.x = data['center_of_mass']['x']
+                info_msg.center_of_mass.y = data['center_of_mass']['y']
+                info_msg.center_of_mass.z = data['center_of_mass']['z']
             self.vehicle_info_publisher.publish(info_msg)
         msg = CarlaEgoVehicleStatus()
         msg.header = self.get_header()
