@@ -18,6 +18,7 @@ from agents.navigation.local_planner import RoadOption
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
 from srunner.scenariomanager.timer import GameTime
+from srunner.tools.carla_compat import IS_UE5
 
 
 class VehicleVelocityControl(BasicControl):
@@ -37,13 +38,23 @@ class VehicleVelocityControl(BasicControl):
 
         super(VehicleVelocityControl, self).__init__(actor)
 
-        # Remove the friction of the wheels so that the velocities aren't reduced by the ground
-        physics_control = self._actor.get_physics_control()
-        wheels_control = physics_control.wheels
-        for w in wheels_control:
-            w.tire_friction = 0
-        physics_control.wheels = wheels_control
-        self._actor.apply_physics_control(physics_control)
+        # Remove the friction of the wheels so that the velocities aren't reduced by the ground.
+        # 0.9.x (PhysX): WheelPhysicsControl.tire_friction is the working knob.
+        # 0.10.0 (Chaos): no equivalent. Writes to either tire_friction or the documented
+        # Chaos parameter friction_force_multiplier are silently accepted by
+        # apply_physics_control but never reach the simulation (read-back keeps the
+        # default), and set_simulate_physics(False) breaks set_target_velocity entirely.
+        # No working UE5 API exists to zero wheel friction for this controller's
+        # kinematic-injection use, so on UE5 we skip the setup. set_target_velocity in
+        # run_step still tracks well when the requested velocity is aligned with the
+        # vehicle's heading; expect degraded tracking on sharp lateral / cornering moves.
+        if not IS_UE5:
+            physics_control = self._actor.get_physics_control()
+            wheels_control = physics_control.wheels
+            for w in wheels_control:
+                w.tire_friction = 0
+            physics_control.wheels = wheels_control
+            self._actor.apply_physics_control(physics_control)
 
         # This is the maximum amount of time used to aim the vehicle towards the next point.
         # Used to avoid weird lateral slides if the time between point is high.
@@ -65,6 +76,9 @@ class VehicleVelocityControl(BasicControl):
         """
 
         if not self._waypoints:
+            return
+        if not self._times:
+            self._run_untimed_step()
             return
         if not self._start_time:
             self._start_time = GameTime.get_time()
@@ -115,3 +129,25 @@ class VehicleVelocityControl(BasicControl):
 
         self._actor.set_target_angular_velocity(angular_velocity)
         self._actor.apply_control(carla.VehicleControl(throttle=0.3))  # Make the wheels turn
+
+    def _run_untimed_step(self):
+        """
+        Without waypoint times, move towards the next waypoint at the target speed.
+        """
+        current_transform = self._actor.get_transform()
+        while (self._waypoints and
+               current_transform.location.distance(self._waypoints[0].location) <= self._distance_threshold):
+            self._waypoints.pop(0)
+        self._reached_goal = not self._waypoints
+        if not self._waypoints:
+            self._actor.set_target_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
+            return
+
+        target_vec = self._waypoints[0].location - current_transform.location
+        self._actor.set_target_velocity(self._target_speed * target_vec.make_unit_vector())
+        delta_yaw = (math.degrees(math.atan2(target_vec.y, target_vec.x)) - current_transform.rotation.yaw) % 360
+        if delta_yaw > 180:
+            delta_yaw = delta_yaw - 360
+        self._actor.set_target_angular_velocity(carla.Vector3D(0, 0, delta_yaw / self._max_yaw_time))
+        self._actor.apply_control(carla.VehicleControl(throttle=0.3))

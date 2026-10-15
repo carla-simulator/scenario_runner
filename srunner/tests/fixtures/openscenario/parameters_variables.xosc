@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+  <FileHeader revMajor="1" revMinor="3" date="2026-10-14T12:00:00" description="CARLA:ParametersVariables" author="ScenarioRunner"/>
+  <ParameterDeclarations>
+    <ParameterDeclaration name="BaseSpeed" parameterType="double" value="10.0"/>
+    <ParameterDeclaration name="Factor" parameterType="int" value="2"/>
+    <ParameterDeclaration name="TargetSpeed" parameterType="double" value="${$BaseSpeed * $Factor + 1}"/>
+    <ParameterDeclaration name="Laps" parameterType="int" value="${round($BaseSpeed / 4)}"/>
+    <ParameterDeclaration name="Counter" parameterType="int" value="0"/>
+  </ParameterDeclarations>
+  <VariableDeclarations>
+    <VariableDeclaration name="Ready" variableType="boolean" value="false"/>
+    <VariableDeclaration name="Count" variableType="int" value="${$Factor + 1}"/>
+    <VariableDeclaration name="Label" variableType="string" value="idle"/>
+  </VariableDeclarations>
+  <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="Town01"/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="hero">
+      <Vehicle name="vehicle.lincoln.mkz_2017" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <BoundingBox>
+          <Center x="1.5" y="0.0" z="0.9"/>
+          <Dimensions width="2.1" length="4.5" height="1.8"/>
+        </BoundingBox>
+        <Performance maxSpeed="69.444" maxAcceleration="200" maxDeceleration="10.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.6" trackWidth="1.8" positionX="3.1" positionZ="0.3"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.6" trackWidth="1.8" positionX="0.0" positionZ="0.3"/>
+        </Axles>
+        <Properties>
+          <Property name="type" value="ego_vehicle"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <GlobalAction>
+          <ParameterAction parameterRef="Counter">
+            <SetAction value="${$Factor * 5}"/>
+          </ParameterAction>
+        </GlobalAction>
+        <GlobalAction>
+          <VariableAction variableRef="Count">
+            <ModifyAction>
+              <Rule>
+                <AddValue value="$Factor"/>
+              </Rule>
+            </ModifyAction>
+          </VariableAction>
+        </GlobalAction>
+        <GlobalAction>
+          <VariableAction variableRef="Ready">
+            <SetAction value="true"/>
+          </VariableAction>
+        </GlobalAction>
+        <GlobalAction>
+          <VariableAction variableRef="Count">
+            <ModifyAction>
+              <Rule>
+                <MultiplyByValue value="2"/>
+              </Rule>
+            </ModifyAction>
+          </VariableAction>
+        </GlobalAction>
+      </Actions>
+    </Init>
+    <Story name="MainStory">
+      <Act name="MainAct">
+        <ManeuverGroup maximumExecutionCount="1" name="MainGroup">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="hero"/>
+          </Actors>
+          <Maneuver name="MainManeuver">
+            <Event name="SetLabel" priority="override">
+              <Action name="SetLabelAction">
+                <GlobalAction>
+                  <VariableAction variableRef="Label">
+                    <SetAction value="running"/>
+                  </VariableAction>
+                </GlobalAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="WhenReady" delay="0" conditionEdge="none">
+                    <ByValueCondition>
+                      <VariableCondition variableRef="Ready" rule="equalTo" value="true"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+            <Event name="BumpCounter" priority="override">
+              <Action name="BumpCounterAction">
+                <GlobalAction>
+                  <ParameterAction parameterRef="Counter">
+                    <ModifyAction>
+                      <Rule>
+                        <AddValue value="${$Factor + 1}"/>
+                      </Rule>
+                    </ModifyAction>
+                  </ParameterAction>
+                </GlobalAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="WhenCounterSet" delay="0" conditionEdge="none">
+                    <ByValueCondition>
+                      <ParameterCondition parameterRef="Counter" rule="greaterOrEqual" value="${$Factor * 5}"/>
+                    </ByValueCondition>
+                  </Condition>
+                  <Condition name="WhenCountReached" delay="0" conditionEdge="none">
+                    <ByValueCondition>
+                      <VariableCondition variableRef="Count" rule="greaterThan" value="${$Factor * 4}"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+            <Event name="RunCommand" priority="override">
+              <Action name="RunCommandAction">
+                <UserDefinedAction>
+                  <CustomCommandAction type="echo legacy"/>
+                </UserDefinedAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="AfterStart" delay="0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="ActStart" delay="0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+    </Story>
+    <StopTrigger/>
+  </Storyboard>
+</OpenSCENARIO>
