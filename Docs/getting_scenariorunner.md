@@ -3,10 +3,11 @@
 This tutorial explains how to download ScenarioRunner and run a simple example to test it. ScenarioRunner needs CARLA in order to run, and must match the CARLA version being used. If the CARLA being used is a build from source, download ScenarioRunner from source. If the CARLA being used is a package, download the corresponding version of ScenarioRunner.  
 
 *   __[Installation summary](#installation-summary)__  
-*   __[A. Download a ScenarioRunner release](#a.-download-a-scenariorunner-release)__  
+*   __[A. Download a ScenarioRunner release](#a-download-a-scenariorunner-release)__
 	*   [Update the release](#update-the-release)  
-*   __[B. Download ScenarioRunner from source](#b.-build-scenariorunner-from-source)__  
-	*   [Update the build from source](#update-the-build-from-source)  
+*   __[B. Download ScenarioRunner from source](#b-download-scenariorunner-from-source)__
+	*   [Update from source](#update-from-source)
+*   __[Configure the Python environment](#configure-the-python-environment)__
 *   __[Run a test](#run-a-test)__  
 
 ---
@@ -75,7 +76,10 @@ __2. Download the matching ScenarioRunner release.__ All of the releases are lis
 !!! Important
     Both versions have to match. If the CARLA release is *0.9.9*, use also ScenarioRunner *0.9.9*. [Here](https://github.com/carla-simulator/scenario_runner) is a brief list of compatibilities between CARLA and ScenarioRunner.  
 
-__3. Extract the content.__ The directory does not matter.  
+__3. Extract the content.__ The directory does not matter.
+
+Before running a scenario, [configure the Python environment](#configure-the-python-environment).
+This is required for release packages as well as source checkouts.
 
 
 ### Update the release
@@ -125,6 +129,9 @@ pip3 install --user -r requirements.txt
 !!! Warning
     py-trees newer than v0.8 are __not__ supported.
 
+After installing the requirements, [configure the Python environment](#configure-the-python-environment)
+before running a scenario. You do not need to perform the update steps below for a new checkout.
+
 
 ### Update from source  
 
@@ -142,13 +149,30 @@ __3. Pull the latest changes from the repository.__
 git pull
 ```
 
-__4. Add environment variables and Python paths__ These are necessary for the system to find CARLA, and add the PythonAPI to the Python path.
+---
+## Configure the Python environment
+
+Complete this step after installing either a release package or a source checkout,
+before running ScenarioRunner for the first time. These variables are also needed
+in each new terminal used to run ScenarioRunner or manual control, unless they are
+set in your shell configuration.
+
+ScenarioRunner needs both the CARLA Python API (`carla`) and CARLA's navigation
+helpers (`agents`). The `agents` directory is supplied with the matching CARLA
+installation under `PythonAPI/carla/agents`. Add its parent directory,
+`PythonAPI/carla`, to `PYTHONPATH` so Python can resolve imports such as
+`agents.navigation.local_planner`.
+
+!!! Warning
+    Do not install the unrelated PyPI package `agents` to resolve a missing
+    `agents` import. Installing the CARLA Python API alone does not replace the
+    navigation helpers in the CARLA installation.
 
 *   __For Linux__
 
 ```sh
 # ${CARLA_ROOT} is the CARLA installation directory
-# ${SCENARIO_RUNNER} is the ScenarioRunner installation directory
+# ${SCENARIO_RUNNER_ROOT} is the ScenarioRunner installation directory
 # <VERSION> is the correct string for the Python version being used
 # In a build from source, the .egg files may be in: ${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI
 export CARLA_ROOT=/path/to/your/carla/installation
@@ -165,7 +189,7 @@ export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
 
 ```sh
 # %CARLA_ROOT% is the CARLA installation directory
-# %SCENARIO_RUNNER% is the ScenarioRunner installation directory
+# %SCENARIO_RUNNER_ROOT% is the ScenarioRunner installation directory
 # <VERSION> is the correct string for the Python version being used
 # In a build from source, the .egg files may be in: ${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI
 set CARLA_ROOT=\path\to\your\carla\installation
@@ -200,9 +224,10 @@ source ~/.bashrc
 ---
 ## Run a test 
 
-Running the follow vehicle example
-First of all, you need to get latest master branch from CARLA. Then you have to
-include CARLA Python API to the Python path:
+Before running the follow vehicle example, complete
+[Configure the Python environment](#configure-the-python-environment) in the
+terminal where you will run ScenarioRunner. Use the CARLA version matching your
+ScenarioRunner release or source checkout.
 
 !!! Important
     If working with builds from source, make sure to upload these. Download the latest content in the master branches.  
