@@ -17,7 +17,7 @@ jobs:
   docker-ros:
     runs-on: ubuntu-latest
     steps:
-      - uses: ika-rwth-aachen/docker-ros@main
+      - uses: ika-rwth-aachen/docker-ros@feature/required-packages-only
         with:
           platform: amd64
           target: dev,run
