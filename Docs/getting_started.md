@@ -35,18 +35,10 @@ Note: py-trees newer than v0.8 is _NOT_ supported.
 
 ## Running the follow vehicle example
 
-First of all, you need to get latest master branch from CARLA. Then you have to
-include CARLA Python API to the Python path:
-
-```Bash
-export CARLA_ROOT=/path/to/your/carla/installation
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla
-```
-
-NOTE: ${CARLA_ROOT} needs to be replaced with your CARLA installation directory,
-and <VERSION> needs to be replaced with the correct string.
-If you build CARLA from source, the egg files maybe located in:
-${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI.
+First, follow [Configure the Python environment](getting_scenariorunner.md#configure-the-python-environment)
+for your platform. This is required for both release packages and source checkouts,
+and includes the paths for the CARLA Python API and its `agents` navigation helpers.
+The `agents` helpers come from CARLA, not the unrelated PyPI package of that name.
 
 Now, you can start the CARLA server from ${CARLA_ROOT}
 
